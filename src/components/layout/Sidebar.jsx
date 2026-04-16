@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Flame, Radio, Music2, Gamepad2, GraduationCap, Newspaper, Cpu, Crown, Coins, Upload, User as UserIcon, Heart } from "lucide-react";
+import { Home, Flame, Radio, Music2, Gamepad2, GraduationCap, Newspaper, Cpu, Crown, Coins, Upload, User as UserIcon, Heart, LayoutDashboard, Tv2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const mainNav = [
@@ -21,6 +21,8 @@ const categories = [
 const features = [
   { to: "/premium", label: "Premium", icon: Crown, color: "text-premium" },
   { to: "/trix-store", label: "TRIX Store", icon: Coins, color: "text-trix" },
+  { to: "/studio", label: "Lancer un live", icon: Tv2, color: "text-live" },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/upload", label: "Mettre en ligne", icon: Upload },
   { to: "/profile", label: "Mon profil", icon: UserIcon },
 ];

@@ -21,6 +21,8 @@ import Premium from '@/pages/Premium';
 import TrixStore from '@/pages/TrixStore';
 import Upload from '@/pages/Upload';
 import Profile from '@/pages/Profile';
+import StudioSetup from '@/pages/StudioSetup';
+import Dashboard from '@/pages/Dashboard';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -58,6 +60,8 @@ const AuthenticatedApp = () => {
         <Route path="/trix-store" element={<TrixStore />} />
         <Route path="/upload" element={<Upload />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/studio" element={<StudioSetup />} />
+        <Route path="/dashboard" element={<Dashboard />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

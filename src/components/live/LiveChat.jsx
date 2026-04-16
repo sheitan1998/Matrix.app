@@ -2,20 +2,32 @@ import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Coins, Crown, Star, Send, MessageCircle } from "lucide-react";
+import { Crown, Star, Send, MessageCircle, Euro, Smile } from "lucide-react";
 import { cn } from "@/lib/utils";
 import TrixDonationDialog from "./TrixDonationDialog";
+import EuroDonationDialog from "./EuroDonationDialog";
+import TrixIcon from "@/components/TrixIcon";
+
+const EMOJIS = ["😂", "❤️", "🔥", "👏", "😍", "🎉", "💯", "🤣", "😮", "👍", "💚", "🎮"];
 
 function MessageItem({ m }) {
   if (m.type === "trix_donation") {
+    const isEuro = m.euro_amount > 0;
     return (
-      <div className="rounded-lg p-3 gradient-trix text-background shadow-lg">
+      <div className={cn("rounded-lg p-3 shadow-lg", isEuro ? "bg-green-600 text-white" : "gradient-trix text-background")}>
         <div className="flex items-center justify-between">
           <span className="font-bold text-sm">{m.author_name}</span>
-          <div className="flex items-center gap-1 font-mono font-black">
-            <Coins className="w-4 h-4" />
-            {m.trix_amount}
-          </div>
+          {isEuro ? (
+            <div className="flex items-center gap-1 font-mono font-black">
+              <Euro className="w-4 h-4" />
+              {m.euro_amount}
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 font-mono font-black">
+              <TrixIcon size={16} />
+              <span className="ml-0.5">{m.trix_amount}</span>
+            </div>
+          )}
         </div>
         {m.content && <p className="text-sm mt-1">{m.content}</p>}
       </div>
@@ -28,14 +40,11 @@ function MessageItem({ m }) {
         {m.sub_tier === "vip" && <Crown className="w-3.5 h-3.5 text-trix" />}
         {m.sub_tier === "supporter" && <Star className="w-3.5 h-3.5 text-primary" />}
         {m.is_premium && <Crown className="w-3.5 h-3.5 text-premium" />}
-        <span
-          className={cn(
-            "font-semibold",
-            m.sub_tier === "vip" ? "text-trix" :
-            m.sub_tier === "supporter" ? "text-primary" :
-            m.is_premium ? "text-premium" : "text-foreground"
-          )}
-        >
+        <span className={cn("font-semibold",
+          m.sub_tier === "vip" ? "text-trix" :
+          m.sub_tier === "supporter" ? "text-primary" :
+          m.is_premium ? "text-premium" : "text-foreground"
+        )}>
           {m.author_name || "Anon"}
         </span>
       </span>
@@ -49,6 +58,8 @@ export default function LiveChat({ video, channel, user, onUserUpdate }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [donateOpen, setDonateOpen] = useState(false);
+  const [euroOpen, setEuroOpen] = useState(false);
+  const [showEmojis, setShowEmojis] = useState(false);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -60,10 +71,7 @@ export default function LiveChat({ video, channel, user, onUserUpdate }) {
     };
     load();
     const interval = setInterval(load, 3000);
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
+    return () => { active = false; clearInterval(interval); };
   }, [video?.id]);
 
   useEffect(() => {
@@ -74,7 +82,7 @@ export default function LiveChat({ video, channel, user, onUserUpdate }) {
   useEffect(() => {
     if (!user || !channel?.id) return;
     base44.entities.Subscription.filter({ user_email: user.email, channel_id: channel.id }).then((l) => setUserSub(l[0] || null));
-  }, [user, channel?.id, messages.length]);
+  }, [user, channel?.id]);
 
   const send = async () => {
     if (!text.trim() || !user || !video) return;
@@ -90,6 +98,12 @@ export default function LiveChat({ video, channel, user, onUserUpdate }) {
       sub_tier: userSub?.tier,
     });
     setText("");
+    setShowEmojis(false);
+  };
+
+  const addEmoji = (e) => {
+    setText((t) => t + e);
+    setShowEmojis(false);
   };
 
   return (
@@ -108,8 +122,23 @@ export default function LiveChat({ video, channel, user, onUserUpdate }) {
           )}
         </div>
 
+        {/* Emoji picker */}
+        {showEmojis && (
+          <div className="px-3 pb-2 flex flex-wrap gap-1.5 border-t border-border pt-2">
+            {EMOJIS.map((e) => (
+              <button key={e} onClick={() => addEmoji(e)} className="text-xl hover:scale-125 transition">{e}</button>
+            ))}
+          </div>
+        )}
+
         <div className="p-3 border-t border-border space-y-2">
           <div className="flex gap-2">
+            <button
+              onClick={() => setShowEmojis((s) => !s)}
+              className="p-2 rounded-lg hover:bg-secondary transition shrink-0"
+            >
+              <Smile className="w-5 h-5 text-muted-foreground" />
+            </button>
             <Input
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -122,25 +151,29 @@ export default function LiveChat({ video, channel, user, onUserUpdate }) {
               <Send className="w-4 h-4" />
             </Button>
           </div>
-          <Button
-            onClick={() => setDonateOpen(true)}
-            disabled={!user}
-            className="w-full gradient-trix text-background font-bold hover:opacity-90"
-          >
-            <Coins className="w-4 h-4 mr-1.5" />
-            Envoyer des TRIX
-          </Button>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              onClick={() => setDonateOpen(true)}
+              disabled={!user}
+              className="gradient-trix text-background font-bold hover:opacity-90 gap-1.5"
+            >
+              <TrixIcon size={16} />
+              TRIX
+            </Button>
+            <Button
+              onClick={() => setEuroOpen(true)}
+              disabled={!user}
+              className="bg-green-600 text-white font-bold hover:bg-green-600/90 gap-1.5"
+            >
+              <Euro className="w-4 h-4" />
+              Super Chat
+            </Button>
+          </div>
         </div>
       </div>
 
-      <TrixDonationDialog
-        open={donateOpen}
-        onOpenChange={setDonateOpen}
-        video={video}
-        channel={channel}
-        user={user}
-        onSent={onUserUpdate}
-      />
+      <TrixDonationDialog open={donateOpen} onOpenChange={setDonateOpen} video={video} channel={channel} user={user} onSent={onUserUpdate} />
+      <EuroDonationDialog open={euroOpen} onOpenChange={setEuroOpen} video={video} channel={channel} user={user} onSent={onUserUpdate} />
     </>
   );
 }

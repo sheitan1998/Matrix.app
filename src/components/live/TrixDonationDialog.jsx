@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Coins } from "lucide-react";
+import TrixIcon from "@/components/TrixIcon";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -69,7 +70,7 @@ export default function TrixDonationDialog({ open, onOpenChange, video, channel,
       <DialogContent className="max-w-md bg-card border-border">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-black">
-            <Coins className="w-5 h-5 text-trix" />
+            <TrixIcon size={20} />
             Envoyer des TRIX
           </DialogTitle>
         </DialogHeader>

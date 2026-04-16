@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
 import { base44 } from "@/api/base44Client";
 import VideoPlayer from "@/components/video/VideoPlayer";
 import VideoCard from "@/components/video/VideoCard";
@@ -11,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ThumbsUp, ThumbsDown, Share2, Coins, CheckCircle2 } from "lucide-react";
 import { formatViews, formatTimeAgo } from "@/lib/format";
 import ShareDialog from "@/components/ShareDialog";
+import TrixIcon from "@/components/TrixIcon";
 
 export default function Watch() {
   const { id } = useParams();
@@ -18,6 +20,8 @@ export default function Watch() {
   const [donateOpen, setDonateOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [adDone, setAdDone] = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [disliked, setDisliked] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => setUser(null));
@@ -90,11 +94,27 @@ export default function Watch() {
               {channel && <SubscribeButton channel={channel} user={user} />}
 
               <div className="flex rounded-full bg-secondary overflow-hidden">
-                <button className="flex items-center gap-1.5 px-4 h-10 hover:bg-secondary/70 transition border-r border-border">
+                <button
+                  onClick={() => {
+                    if (liked) return;
+                    setLiked(true);
+                    if (disliked) setDisliked(false);
+                    base44.entities.Video.update(video.id, { likes: (video.likes || 0) + 1 });
+                  }}
+                  className={cn("flex items-center gap-1.5 px-4 h-10 hover:bg-secondary/70 transition border-r border-border", liked && "text-primary")}
+                >
                   <ThumbsUp className="w-4 h-4" />
-                  <span className="text-sm font-semibold">{formatViews(video.likes || 0)}</span>
+                  <span className="text-sm font-semibold">{formatViews((video.likes || 0) + (liked ? 1 : 0))}</span>
                 </button>
-                <button className="px-4 h-10 hover:bg-secondary/70 transition">
+                <button
+                  onClick={() => {
+                    if (disliked) return;
+                    setDisliked(true);
+                    if (liked) setLiked(false);
+                    base44.entities.Video.update(video.id, { dislikes: (video.dislikes || 0) + 1 });
+                  }}
+                  className={cn("px-4 h-10 hover:bg-secondary/70 transition", disliked && "text-destructive")}
+                >
                   <ThumbsDown className="w-4 h-4" />
                 </button>
               </div>
