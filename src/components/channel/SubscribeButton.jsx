@@ -27,6 +27,13 @@ export default function SubscribeButton({ channel, user, onSubscribed }) {
       });
       setSub(null);
     } else {
+      // Check for duplicates before creating
+      const existing = await base44.entities.Subscription.filter({ user_email: user.email, channel_id: channel.id });
+      if (existing.length > 0) {
+        setSub(existing[0]);
+        setLoading(false);
+        return;
+      }
       const created = await base44.entities.Subscription.create({
         user_email: user.email,
         channel_id: channel.id,

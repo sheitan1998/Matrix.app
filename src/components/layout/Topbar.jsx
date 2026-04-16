@@ -24,12 +24,9 @@ export default function Topbar() {
     <header className="sticky top-0 z-50 h-16 bg-background/85 backdrop-blur-xl border-b border-border">
       <div className="h-full flex items-center gap-4 px-4 lg:px-6">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 shrink-0">
-          <div className="relative w-9 h-9 rounded-lg gradient-matrix flex items-center justify-center shadow-glow">
-            <span className="font-mono font-black text-background text-lg">M</span>
-          </div>
-          <span className="hidden sm:block font-black text-xl tracking-tight">
-            MATRIX
+        <Link to="/" className="flex items-center shrink-0">
+          <span className="font-black text-xl tracking-tight">
+            <span className="text-premium">M</span>ATRIX
           </span>
         </Link>
 

@@ -10,11 +10,13 @@ import TrixDonationDialog from "@/components/live/TrixDonationDialog";
 import { Button } from "@/components/ui/button";
 import { ThumbsUp, ThumbsDown, Share2, Coins, CheckCircle2 } from "lucide-react";
 import { formatViews, formatTimeAgo } from "@/lib/format";
+import ShareDialog from "@/components/ShareDialog";
 
 export default function Watch() {
   const { id } = useParams();
   const [user, setUser] = useState(null);
   const [donateOpen, setDonateOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [adDone, setAdDone] = useState(false);
 
   useEffect(() => {
@@ -106,7 +108,7 @@ export default function Watch() {
                 TRIX
               </Button>
 
-              <Button variant="secondary" className="rounded-full h-10">
+              <Button variant="secondary" onClick={() => setShareOpen(true)} className="rounded-full h-10">
                 <Share2 className="w-4 h-4 mr-1.5" /> Partager
               </Button>
             </div>
@@ -131,6 +133,8 @@ export default function Watch() {
           </div>
         </div>
       </div>
+
+      <ShareDialog open={shareOpen} onOpenChange={setShareOpen} url={window.location.href} title={video.title} />
 
       <TrixDonationDialog
         open={donateOpen}
