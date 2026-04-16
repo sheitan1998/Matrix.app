@@ -1,0 +1,40 @@
+{
+  "name": "TrixTransaction",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "purchase",
+        "donation",
+        "subscription_payment",
+        "refund"
+      ],
+      "description": "Transaction type"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Amount of TRIX (positive = gained, negative = spent)"
+    },
+    "target_channel_id": {
+      "type": "string"
+    },
+    "target_channel_name": {
+      "type": "string"
+    },
+    "video_id": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "user_email",
+    "type",
+    "amount"
+  ]
+}

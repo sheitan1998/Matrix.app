@@ -1,0 +1,50 @@
+{
+  "name": "ChatMessage",
+  "type": "object",
+  "properties": {
+    "video_id": {
+      "type": "string"
+    },
+    "author_email": {
+      "type": "string"
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "author_avatar": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "message",
+        "trix_donation",
+        "subscription",
+        "system"
+      ],
+      "default": "message"
+    },
+    "trix_amount": {
+      "type": "number",
+      "default": 0
+    },
+    "is_premium": {
+      "type": "boolean",
+      "default": false
+    },
+    "is_subscriber": {
+      "type": "boolean",
+      "default": false
+    },
+    "sub_tier": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "video_id",
+    "content"
+  ]
+}

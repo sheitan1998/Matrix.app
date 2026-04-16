@@ -1,0 +1,46 @@
+{
+  "name": "Channel",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Channel name"
+    },
+    "handle": {
+      "type": "string",
+      "description": "Unique @handle"
+    },
+    "description": {
+      "type": "string"
+    },
+    "avatar_url": {
+      "type": "string"
+    },
+    "banner_url": {
+      "type": "string"
+    },
+    "owner_email": {
+      "type": "string"
+    },
+    "subscribers_count": {
+      "type": "number",
+      "default": 0
+    },
+    "verified": {
+      "type": "boolean",
+      "default": false
+    },
+    "total_views": {
+      "type": "number",
+      "default": 0
+    },
+    "trix_received": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "name",
+    "handle"
+  ]
+}

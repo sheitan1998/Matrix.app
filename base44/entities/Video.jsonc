@@ -1,0 +1,76 @@
+{
+  "name": "Video",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "thumbnail_url": {
+      "type": "string"
+    },
+    "video_url": {
+      "type": "string"
+    },
+    "channel_id": {
+      "type": "string"
+    },
+    "channel_name": {
+      "type": "string"
+    },
+    "channel_avatar": {
+      "type": "string"
+    },
+    "duration": {
+      "type": "string",
+      "description": "Duration in MM:SS format"
+    },
+    "views": {
+      "type": "number",
+      "default": 0
+    },
+    "likes": {
+      "type": "number",
+      "default": 0
+    },
+    "dislikes": {
+      "type": "number",
+      "default": 0
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "music",
+        "gaming",
+        "education",
+        "entertainment",
+        "sports",
+        "news",
+        "tech",
+        "lifestyle",
+        "comedy",
+        "other"
+      ],
+      "default": "other"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "is_live": {
+      "type": "boolean",
+      "default": false
+    },
+    "viewers_count": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "title"
+  ]
+}

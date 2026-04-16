@@ -1,0 +1,30 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "trix_balance": {
+      "type": "number",
+      "default": 0,
+      "description": "Current TRIX coin balance"
+    },
+    "is_premium": {
+      "type": "boolean",
+      "default": false,
+      "description": "Premium subscription - no ads"
+    },
+    "premium_until": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "avatar_url": {
+      "type": "string"
+    },
+    "bio": {
+      "type": "string"
+    },
+    "channel_id": {
+      "type": "string",
+      "description": "Associated channel if creator"
+    }
+  }
+}

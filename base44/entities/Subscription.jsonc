@@ -1,0 +1,33 @@
+{
+  "name": "Subscription",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string"
+    },
+    "channel_id": {
+      "type": "string"
+    },
+    "channel_name": {
+      "type": "string"
+    },
+    "tier": {
+      "type": "string",
+      "enum": [
+        "free",
+        "supporter",
+        "vip"
+      ],
+      "default": "free",
+      "description": "Subscription tier - supporter and vip are paid channel subs"
+    },
+    "notifications_enabled": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "user_email",
+    "channel_id"
+  ]
+}
