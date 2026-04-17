@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
 import MainLayout from '@/components/layout/MainLayout';
+import Landing from '@/pages/Landing';
 import Home from '@/pages/Home';
 import Trending from '@/pages/Trending';
 import LiveHub from '@/pages/LiveHub';
@@ -23,6 +24,8 @@ import Upload from '@/pages/Upload';
 import Profile from '@/pages/Profile';
 import StudioSetup from '@/pages/StudioSetup';
 import Dashboard from '@/pages/Dashboard';
+import Community from '@/pages/community/Community';
+import Shorts from '@/pages/Shorts';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -46,8 +49,11 @@ const AuthenticatedApp = () => {
 
   return (
     <Routes>
+      <Route path="/" element={<Landing />} />
+      <Route path="/community" element={<Community />} />
+      <Route path="/shorts" element={<Shorts />} />
       <Route element={<MainLayout />}>
-        <Route path="/" element={<Home />} />
+        <Route path="/stream" element={<Home />} />
         <Route path="/trending" element={<Trending />} />
         <Route path="/live" element={<LiveHub />} />
         <Route path="/subscriptions" element={<Subscriptions />} />

@@ -1,0 +1,27 @@
+{
+  "name": "VoiceRoom",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "owner_email": {
+      "type": "string"
+    },
+    "owner_name": {
+      "type": "string"
+    },
+    "is_public": {
+      "type": "boolean",
+      "default": true
+    },
+    "participants_count": {
+      "type": "number",
+      "default": 1
+    }
+  },
+  "required": [
+    "name",
+    "owner_email"
+  ]
+}

@@ -1,13 +1,15 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Flame, Radio, Music2, Gamepad2, GraduationCap, Newspaper, Cpu, Crown, Coins, Upload, User as UserIcon, Heart, LayoutDashboard, Tv2 } from "lucide-react";
+import { Home, Flame, Radio, Music2, Gamepad2, GraduationCap, Newspaper, Cpu, Crown, Coins, Upload, User as UserIcon, Heart, LayoutDashboard, Tv2, Clapperboard, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const mainNav = [
-  { to: "/", label: "Accueil", icon: Home },
+  { to: "/stream", label: "Accueil", icon: Home },
   { to: "/trending", label: "Tendances", icon: Flame },
   { to: "/live", label: "En direct", icon: Radio },
+  { to: "/shorts", label: "Shorts", icon: Clapperboard },
   { to: "/subscriptions", label: "Abonnements", icon: Heart },
+  { to: "/community", label: "Communauté", icon: Users, color: "text-premium" },
 ];
 
 const categories = [
@@ -46,11 +48,12 @@ function NavItem({ to, label, icon: Icon, color, active }) {
 
 export default function Sidebar() {
   const { pathname } = useLocation();
+  const isActive = (to) => pathname === to || (to === "/stream" && pathname === "/");
   return (
     <aside className="hidden lg:flex flex-col w-64 shrink-0 border-r border-border h-[calc(100vh-64px)] sticky top-16 overflow-y-auto scrollbar-thin py-4 px-3 gap-1">
       <div className="flex flex-col gap-0.5">
         {mainNav.map((item) => (
-          <NavItem key={item.to} {...item} active={pathname === item.to} />
+          <NavItem key={item.to} {...item} active={isActive(item.to)} />
         ))}
       </div>
 

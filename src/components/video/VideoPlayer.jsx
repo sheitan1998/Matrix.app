@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Radio } from "lucide-react";
+import QualitySelector from "./QualitySelector";
 
 export default function VideoPlayer({ video, showPreAd = false, onAdEnd }) {
   const [adSeconds, setAdSeconds] = useState(5);
   const [showingAd, setShowingAd] = useState(showPreAd);
+  const [quality, setQuality] = useState("Auto");
 
   useEffect(() => {
     if (!showingAd) return;
@@ -21,15 +23,9 @@ export default function VideoPlayer({ video, showPreAd = false, onAdEnd }) {
       <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-black flex items-center justify-center">
         <div className="absolute inset-0 gradient-matrix opacity-20" />
         <div className="relative text-center">
-          <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-2">
-            Publicité
-          </p>
-          <p className="text-2xl md:text-4xl font-black text-foreground">
-            Passe à MATRIX PREMIUM
-          </p>
-          <p className="text-sm text-muted-foreground mt-2">
-            Sans pub. Pour toujours.
-          </p>
+          <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-2">Publicité</p>
+          <p className="text-2xl md:text-4xl font-black text-foreground">Passe à MATRIX PREMIUM</p>
+          <p className="text-sm text-muted-foreground mt-2">Sans pub. Pour toujours.</p>
         </div>
         <div className="absolute bottom-3 right-3 px-3 py-1.5 rounded-full bg-background/80 backdrop-blur text-sm font-mono">
           Passer dans {adSeconds}s
@@ -39,7 +35,7 @@ export default function VideoPlayer({ video, showPreAd = false, onAdEnd }) {
   }
 
   return (
-    <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-black">
+    <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-black group">
       {video.video_url ? (
         <video
           src={video.video_url}
@@ -56,6 +52,16 @@ export default function VideoPlayer({ video, showPreAd = false, onAdEnd }) {
       {video.is_live && (
         <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 bg-live text-white rounded-md text-xs font-bold">
           <Radio className="w-3 h-3 animate-live-pulse" /> LIVE
+        </div>
+      )}
+      {/* Quality selector overlay */}
+      <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition">
+        <QualitySelector current={quality} onSelect={setQuality} />
+      </div>
+      {/* Quality badge when not hovering */}
+      {quality !== "Auto" && (
+        <div className="absolute top-3 right-3 px-2 py-0.5 rounded bg-black/70 text-white text-xs font-mono font-bold group-hover:opacity-0 transition">
+          {quality}
         </div>
       )}
     </div>
