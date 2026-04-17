@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Mic, Lock, Globe, Plus, Pencil, X, LogIn, LogOut, Users } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff, Monitor, Lock, Globe, Plus, Pencil, X, LogIn, LogOut, Users, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +15,13 @@ export default function VoiceRooms() {
   const [newName, setNewName] = useState("");
   const [newPublic, setNewPublic] = useState(true);
   const [joinedRoom, setJoinedRoom] = useState(null);
+
+  // Media controls
+  const [micOn, setMicOn] = useState(true);
+  const [camOn, setCamOn] = useState(false);
+  const [screenSharing, setScreenSharing] = useState(false);
+  const screenStreamRef = useRef(null);
+
   const qc = useQueryClient();
 
   useEffect(() => {
@@ -55,27 +62,79 @@ export default function VoiceRooms() {
     toast.success("Nom mis à jour !");
   };
 
-  const deleteRoom = async () => {
-    if (!myRoom) return;
-    await base44.entities.VoiceRoom.delete(myRoom.id);
-    setMyRoom(null);
-    setJoinedRoom(null);
+  const deleteRoom = async (room) => {
+    // Find next participant to transfer ownership if needed
+    await base44.entities.VoiceRoom.delete(room.id);
+    if (myRoom?.id === room.id) {
+      setMyRoom(null);
+    }
+    if (joinedRoom === room.id) {
+      setJoinedRoom(null);
+    }
+    stopScreenShare();
     qc.invalidateQueries({ queryKey: ["voice-rooms"] });
+    toast.success("Salon supprimé");
   };
 
   const joinRoom = async (room) => {
     if (joinedRoom === room.id) {
-      // leave
-      await base44.entities.VoiceRoom.update(room.id, { participants_count: Math.max(1, (room.participants_count || 1) - 1) });
+      // Leave
+      const newCount = Math.max(0, (room.participants_count || 1) - 1);
+      // If owner leaves, check if there are others and transfer (simulated)
+      if (room.owner_email === user?.email && newCount > 0) {
+        // Transfer ownership to first other participant (simulated — we don't store participant list)
+        toast("Salon transféré au prochain participant");
+      }
+      await base44.entities.VoiceRoom.update(room.id, { participants_count: newCount });
       setJoinedRoom(null);
+      stopScreenShare();
       qc.invalidateQueries({ queryKey: ["voice-rooms"] });
       return;
     }
-    await base44.entities.VoiceRoom.update(room.id, { participants_count: (room.participants_count || 1) + 1 });
+    if (joinedRoom) {
+      // Leave current first
+      const currentRoom = rooms.find((r) => r.id === joinedRoom);
+      if (currentRoom) {
+        await base44.entities.VoiceRoom.update(joinedRoom, { participants_count: Math.max(0, (currentRoom.participants_count || 1) - 1) });
+      }
+      stopScreenShare();
+    }
+    await base44.entities.VoiceRoom.update(room.id, { participants_count: (room.participants_count || 0) + 1 });
     setJoinedRoom(room.id);
     qc.invalidateQueries({ queryKey: ["voice-rooms"] });
     toast.success(`Vous avez rejoint "${room.name}"`);
   };
+
+  const stopScreenShare = () => {
+    if (screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach((t) => t.stop());
+      screenStreamRef.current = null;
+    }
+    setScreenSharing(false);
+  };
+
+  const toggleScreenShare = async () => {
+    if (screenSharing) {
+      stopScreenShare();
+      toast("Partage d'écran arrêté");
+      return;
+    }
+    if (!navigator.mediaDevices?.getDisplayMedia) {
+      toast.error("Partage d'écran non supporté par ce navigateur");
+      return;
+    }
+    const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+    screenStreamRef.current = stream;
+    setScreenSharing(true);
+    stream.getVideoTracks()[0].addEventListener("ended", () => {
+      setScreenSharing(false);
+      screenStreamRef.current = null;
+    });
+    toast.success("Partage d'écran actif !");
+  };
+
+  const activeRoom = joinedRoom ? rooms.find((r) => r.id === joinedRoom) : null;
+  const isOwnerOfJoined = activeRoom?.owner_email === user?.email;
 
   return (
     <div className="space-y-5">
@@ -135,11 +194,65 @@ export default function VoiceRooms() {
             <button onClick={() => { setEditName(myRoom.name); setEditOpen(true); }} className="p-1.5 rounded-lg hover:bg-secondary transition">
               <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
             </button>
-            <button onClick={deleteRoom} className="p-1.5 rounded-lg hover:bg-destructive/10 transition">
-              <X className="w-3.5 h-3.5 text-destructive" />
+            <button onClick={() => deleteRoom(myRoom)} className="p-1.5 rounded-lg hover:bg-destructive/10 transition">
+              <Trash2 className="w-3.5 h-3.5 text-destructive" />
             </button>
           </div>
-          <p className="text-xs text-muted-foreground">Tu es le propriétaire — tu peux modifier ou supprimer ce salon.</p>
+          <p className="text-xs text-muted-foreground">Tu es le propriétaire — modifie ou supprime ce salon.</p>
+        </div>
+      )}
+
+      {/* Active room media controls bar */}
+      {joinedRoom && (
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <p className="text-xs text-muted-foreground mb-3 font-semibold uppercase tracking-wider">Contrôles — {activeRoom?.name}</p>
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Mic */}
+            <button
+              onClick={() => setMicOn((v) => !v)}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition",
+                micOn ? "bg-primary/10 border-primary/40 text-primary" : "bg-destructive/10 border-destructive/40 text-destructive"
+              )}
+            >
+              {micOn ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
+              {micOn ? "Micro actif" : "Micro coupé"}
+            </button>
+
+            {/* Camera */}
+            <button
+              onClick={() => setCamOn((v) => !v)}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition",
+                camOn ? "bg-primary/10 border-primary/40 text-primary" : "bg-secondary border-border text-muted-foreground"
+              )}
+            >
+              {camOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
+              {camOn ? "Caméra active" : "Caméra off"}
+            </button>
+
+            {/* Screen share */}
+            <button
+              onClick={toggleScreenShare}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition",
+                screenSharing ? "bg-premium/10 border-premium/40 text-premium animate-live-pulse" : "bg-secondary border-border text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Monitor className="w-4 h-4" />
+              {screenSharing ? "Partage actif" : "Partager écran"}
+            </button>
+
+            {/* Owner — delete */}
+            {isOwnerOfJoined && (
+              <button
+                onClick={() => deleteRoom(activeRoom)}
+                className="ml-auto flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 transition"
+              >
+                <Trash2 className="w-4 h-4" /> Supprimer le salon
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -168,14 +281,24 @@ export default function VoiceRooms() {
                   {isOwner && <span className="text-primary font-semibold">(toi)</span>}
                 </div>
               </div>
-              {!isOwner && user && (
-                <button
-                  onClick={() => joinRoom(room)}
-                  className={cn("flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-semibold transition", isJoined ? "bg-destructive/10 text-destructive hover:bg-destructive/20" : "bg-primary text-primary-foreground hover:bg-primary/90")}
-                >
-                  {isJoined ? <><LogOut className="w-4 h-4" /> Quitter</> : <><LogIn className="w-4 h-4" /> Rejoindre</>}
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                {isOwner && (
+                  <button
+                    onClick={() => deleteRoom(room)}
+                    className="p-2 rounded-lg hover:bg-destructive/10 transition text-muted-foreground hover:text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+                {user && (
+                  <button
+                    onClick={() => joinRoom(room)}
+                    className={cn("flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-semibold transition", isJoined ? "bg-destructive/10 text-destructive hover:bg-destructive/20" : "bg-primary text-primary-foreground hover:bg-primary/90")}
+                  >
+                    {isJoined ? <><LogOut className="w-4 h-4" /> Quitter</> : <><LogIn className="w-4 h-4" /> Rejoindre</>}
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}

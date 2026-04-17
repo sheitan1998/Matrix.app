@@ -15,7 +15,11 @@ export default function Premium() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => { base44.auth.me().then(setUser).catch(() => {}); }, []);
+  const [loadingUser, setLoadingUser] = useState(true);
+
+  useEffect(() => {
+    base44.auth.me().then((u) => { setUser(u); setLoadingUser(false); }).catch(() => setLoadingUser(false));
+  }, []);
 
   const activate = async () => {
     if (!user) return;
@@ -74,10 +78,10 @@ export default function Premium() {
             ) : (
               <Button
                 onClick={activate}
-                disabled={loading || !user}
+                disabled={loading || loadingUser}
                 className="h-12 px-8 rounded-full bg-white text-premium hover:bg-white/90 font-bold text-base"
               >
-                {loading ? "Activation..." : "Devenir Premium"}
+                {loading ? "Activation..." : loadingUser ? "Chargement..." : "Devenir Premium"}
               </Button>
             )}
           </div>

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Coins, Crown, LogOut, Upload, Radio, History } from "lucide-react";
+import { Coins, Crown, LogOut, Radio, History, LayoutDashboard, Upload, Clapperboard } from "lucide-react";
 import { formatTrix, formatTimeAgo } from "@/lib/format";
 
 export default function Profile() {
@@ -24,12 +24,13 @@ export default function Profile() {
 
   return (
     <div className="px-4 lg:px-6 py-10 max-w-4xl mx-auto space-y-8">
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center gap-5 p-6 rounded-2xl bg-card border border-border">
         <div className="w-20 h-20 rounded-full gradient-matrix flex items-center justify-center text-3xl font-black text-background shrink-0">
           {user.full_name?.[0]?.toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-2xl font-black truncate">{user.full_name}</h1>
             {user.is_premium && (
               <div className="flex items-center gap-1 px-2 py-0.5 rounded-full gradient-premium text-white text-xs font-bold">
@@ -44,7 +45,8 @@ export default function Profile() {
         </Button>
       </div>
 
-      <div className="grid sm:grid-cols-3 gap-4">
+      {/* Quick stats */}
+      <div className="grid sm:grid-cols-2 gap-4">
         <Link to="/trix-store" className="p-5 rounded-2xl bg-card border border-border hover:border-trix/40 transition group">
           <Coins className="w-6 h-6 text-trix" />
           <p className="text-xs text-muted-foreground mt-3">Solde TRIX</p>
@@ -53,15 +55,48 @@ export default function Profile() {
         <Link to="/premium" className="p-5 rounded-2xl bg-card border border-border hover:border-premium/40 transition">
           <Crown className="w-6 h-6 text-premium" />
           <p className="text-xs text-muted-foreground mt-3">Abonnement</p>
-          <p className="text-2xl font-black mt-1">{user.is_premium ? "Premium" : "Gratuit"}</p>
-        </Link>
-        <Link to="/upload" className="p-5 rounded-2xl bg-card border border-border hover:border-primary/40 transition">
-          <Radio className="w-6 h-6 text-primary" />
-          <p className="text-xs text-muted-foreground mt-3">Créer</p>
-          <p className="text-2xl font-black mt-1">Publier</p>
+          <p className="text-2xl font-black mt-1">{user.is_premium ? "Premium ✓" : "Gratuit"}</p>
         </Link>
       </div>
 
+      {/* Creator tools */}
+      <div className="rounded-2xl bg-card border border-border p-6">
+        <h2 className="font-bold text-lg mb-4">Espace Créateur</h2>
+        <div className="grid sm:grid-cols-3 gap-3">
+          <Link
+            to="/dashboard"
+            className="flex flex-col items-start gap-3 p-4 rounded-xl border border-border hover:border-primary/40 hover:bg-primary/5 transition group"
+          >
+            <LayoutDashboard className="w-6 h-6 text-primary" />
+            <div>
+              <p className="font-semibold text-sm">Dashboard</p>
+              <p className="text-xs text-muted-foreground">Stats & gestion de ta chaîne</p>
+            </div>
+          </Link>
+          <Link
+            to="/upload"
+            className="flex flex-col items-start gap-3 p-4 rounded-xl border border-border hover:border-primary/40 hover:bg-primary/5 transition group"
+          >
+            <Upload className="w-6 h-6 text-primary" />
+            <div>
+              <p className="font-semibold text-sm">Publier une vidéo</p>
+              <p className="text-xs text-muted-foreground">Mise en ligne de contenu</p>
+            </div>
+          </Link>
+          <Link
+            to="/studio"
+            className="flex flex-col items-start gap-3 p-4 rounded-xl border border-border hover:border-live/40 hover:bg-live/5 transition group"
+          >
+            <Radio className="w-6 h-6 text-live" />
+            <div>
+              <p className="font-semibold text-sm">Lancer un Live</p>
+              <p className="text-xs text-muted-foreground">Diffusion en direct via OBS</p>
+            </div>
+          </Link>
+        </div>
+      </div>
+
+      {/* Transaction history */}
       <div className="p-6 rounded-2xl bg-card border border-border">
         <div className="flex items-center gap-2 mb-5">
           <History className="w-5 h-5 text-muted-foreground" />

@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Send } from "lucide-react";
+import { Send, Trash2 } from "lucide-react";
 import { formatTimeAgo } from "@/lib/format";
+import { toast } from "sonner";
 
 export default function PostComments({ postId, user }) {
   const [text, setText] = useState("");
@@ -22,7 +23,6 @@ export default function PostComments({ postId, user }) {
       author_avatar: user.avatar_url,
       content: text.trim(),
     });
-    // bump count
     const posts = await base44.entities.Post.filter({ id: postId });
     if (posts[0]) await base44.entities.Post.update(postId, { comments_count: (posts[0].comments_count || 0) + 1 });
     setText("");
@@ -30,22 +30,42 @@ export default function PostComments({ postId, user }) {
     qc.invalidateQueries({ queryKey: ["posts"] });
   };
 
+  const deleteComment = async (comment) => {
+    await base44.entities.PostComment.delete(comment.id);
+    const posts = await base44.entities.Post.filter({ id: postId });
+    if (posts[0]) await base44.entities.Post.update(postId, { comments_count: Math.max(0, (posts[0].comments_count || 1) - 1) });
+    qc.invalidateQueries({ queryKey: ["post-comments", postId] });
+    qc.invalidateQueries({ queryKey: ["posts"] });
+    toast.success("Commentaire supprimé");
+  };
+
   return (
     <div className="border-t border-border bg-secondary/20 px-4 py-4 space-y-3">
-      {comments.map((c) => (
-        <div key={c.id} className="flex gap-2.5 text-sm">
-          <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden">
-            {c.author_avatar ? <img src={c.author_avatar} alt="" className="w-full h-full object-cover" /> : (c.author_name?.[0] || "?")}
-          </div>
-          <div className="flex-1">
-            <div className="flex items-baseline gap-2">
-              <span className="font-semibold text-xs">{c.author_name}</span>
-              <span className="text-[10px] text-muted-foreground">{formatTimeAgo(c.created_date)}</span>
+      {comments.map((c) => {
+        const isOwn = user?.email === c.author_email;
+        return (
+          <div key={c.id} className="flex gap-2.5 text-sm group">
+            <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden">
+              {c.author_avatar ? <img src={c.author_avatar} alt="" className="w-full h-full object-cover" /> : (c.author_name?.[0] || "?")}
             </div>
-            <p className="text-muted-foreground text-xs mt-0.5">{c.content}</p>
+            <div className="flex-1">
+              <div className="flex items-baseline gap-2">
+                <span className="font-semibold text-xs">{c.author_name}</span>
+                <span className="text-[10px] text-muted-foreground">{formatTimeAgo(c.created_date)}</span>
+              </div>
+              <p className="text-muted-foreground text-xs mt-0.5">{c.content}</p>
+            </div>
+            {isOwn && (
+              <button
+                onClick={() => deleteComment(c)}
+                className="opacity-0 group-hover:opacity-100 transition p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            )}
           </div>
-        </div>
-      ))}
+        );
+      })}
       {user && (
         <div className="flex gap-2 pt-1">
           <input
