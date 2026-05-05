@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Tv2, Users, Zap, Shield, Star } from "lucide-react";
+import { Tv2, Users, Zap, Shield, Star, ShoppingBag, Cpu, Dices } from "lucide-react";
 
 const PARTICLES = Array.from({ length: 20 }, (_, i) => ({
   id: i,
@@ -129,7 +129,7 @@ export default function Landing() {
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: "easeOut" }}
-          className="relative z-10 mt-14 grid grid-cols-1 sm:grid-cols-2 gap-5 px-6 w-full max-w-2xl"
+          className="relative z-10 mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 px-6 w-full max-w-5xl"
         >
           {/* Streaming */}
           <motion.button
@@ -196,6 +196,111 @@ export default function Landing() {
               Discute, réagis, commente. Rejoins ou crée des salons vocaux.
             </p>
             <div className="mt-5 inline-flex items-center gap-2 text-sm font-bold" style={{ color: "hsl(280 100% 65%)" }}>
+              ENTRER →
+            </div>
+          </motion.button>
+
+          {/* Marketplace */}
+          <motion.button
+            whileHover={{ scale: 1.03, y: -6 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => nav("/market")}
+            className="group relative rounded-3xl overflow-hidden text-left p-7 transition-all duration-300"
+            style={{
+              background: "linear-gradient(135deg, hsl(25 100% 55% / 0.08) 0%, hsl(0 0% 6%) 60%)",
+              border: "1px solid hsl(25 100% 55% / 0.25)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.boxShadow = "0 8px 40px hsl(25 100% 55% / 0.15), inset 0 1px 0 hsl(25 100% 55% / 0.1)";
+              e.currentTarget.style.borderColor = "hsl(25 100% 55% / 0.5)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow = "none";
+              e.currentTarget.style.borderColor = "hsl(25 100% 55% / 0.25)";
+            }}
+          >
+            <div className="absolute top-0 right-0 w-24 h-24 rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              style={{ background: "radial-gradient(circle, hsl(25 100% 55% / 0.12) 0%, transparent 70%)" }} />
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-5"
+              style={{ background: "hsl(25 100% 55% / 0.12)", border: "1px solid hsl(25 100% 55% / 0.2)" }}>
+              <ShoppingBag className="w-6 h-6" style={{ color: "hsl(25 100% 55%)" }} />
+            </div>
+            <h2 className="text-xl font-black text-white mb-1.5">Market</h2>
+            <p className="text-sm leading-relaxed" style={{ color: "hsl(0 0% 55%)" }}>
+              Achète et vends vêtements, objets, accessoires. Simple, rapide.
+            </p>
+            <div className="mt-5 inline-flex items-center gap-2 text-sm font-bold" style={{ color: "hsl(25 100% 55%)" }}>
+              ENTRER →
+            </div>
+          </motion.button>
+
+          {/* AI Studio */}
+          <motion.button
+            whileHover={{ scale: 1.03, y: -6 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => nav("/ai")}
+            className="group relative rounded-3xl overflow-hidden text-left p-7 transition-all duration-300"
+            style={{
+              background: "linear-gradient(135deg, hsl(200 100% 55% / 0.08) 0%, hsl(0 0% 6%) 60%)",
+              border: "1px solid hsl(200 100% 55% / 0.25)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.boxShadow = "0 8px 40px hsl(200 100% 55% / 0.15), inset 0 1px 0 hsl(200 100% 55% / 0.1)";
+              e.currentTarget.style.borderColor = "hsl(200 100% 55% / 0.5)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow = "none";
+              e.currentTarget.style.borderColor = "hsl(200 100% 55% / 0.25)";
+            }}
+          >
+            <div className="absolute top-0 right-0 w-24 h-24 rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              style={{ background: "radial-gradient(circle, hsl(200 100% 55% / 0.12) 0%, transparent 70%)" }} />
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-5"
+              style={{ background: "hsl(200 100% 55% / 0.12)", border: "1px solid hsl(200 100% 55% / 0.2)" }}>
+              <Cpu className="w-6 h-6" style={{ color: "hsl(200 100% 55%)" }} />
+            </div>
+            <h2 className="text-xl font-black text-white mb-1.5">AI Studio</h2>
+            <p className="text-sm leading-relaxed" style={{ color: "hsl(0 0% 55%)" }}>
+              Chat, création, code, histoires. Exploite l'IA sans limites.
+            </p>
+            <div className="mt-5 inline-flex items-center gap-2 text-sm font-bold" style={{ color: "hsl(200 100% 55%)" }}>
+              ENTRER →
+            </div>
+          </motion.button>
+
+          {/* Casino */}
+          <motion.button
+            whileHover={{ scale: 1.03, y: -6 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => nav("/casino")}
+            className="group relative rounded-3xl overflow-hidden text-left p-7 transition-all duration-300 sm:col-span-2 lg:col-span-1"
+            style={{
+              background: "linear-gradient(135deg, hsl(45 100% 55% / 0.08) 0%, hsl(0 0% 6%) 60%)",
+              border: "1px solid hsl(45 100% 55% / 0.25)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.boxShadow = "0 8px 40px hsl(45 100% 55% / 0.2), inset 0 1px 0 hsl(45 100% 55% / 0.1)";
+              e.currentTarget.style.borderColor = "hsl(45 100% 55% / 0.6)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow = "none";
+              e.currentTarget.style.borderColor = "hsl(45 100% 55% / 0.25)";
+            }}
+          >
+            <div className="absolute top-0 right-0 w-24 h-24 rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              style={{ background: "radial-gradient(circle, hsl(45 100% 55% / 0.15) 0%, transparent 70%)" }} />
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-5"
+              style={{ background: "hsl(45 100% 55% / 0.12)", border: "1px solid hsl(45 100% 55% / 0.2)" }}>
+              <Dices className="w-6 h-6" style={{ color: "hsl(45 100% 55%)" }} />
+            </div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <h2 className="text-xl font-black text-white">Casino</h2>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "hsl(0 84% 60% / 0.2)", color: "hsl(0 84% 65%)" }}>18+</span>
+            </div>
+            <p className="text-sm leading-relaxed" style={{ color: "hsl(0 0% 55%)" }}>
+              Roulette, machines à sous, blackjack. Jeux fictifs uniquement.
+            </p>
+            <div className="mt-5 inline-flex items-center gap-2 text-sm font-bold" style={{ color: "hsl(45 100% 55%)" }}>
               ENTRER →
             </div>
           </motion.button>

@@ -26,6 +26,10 @@ import StudioSetup from '@/pages/StudioSetup';
 import Dashboard from '@/pages/Dashboard';
 import Community from '@/pages/community/Community';
 import Shorts from '@/pages/Shorts';
+import Marketplace from '@/pages/marketplace/Marketplace';
+import ListingDetail from '@/pages/marketplace/ListingDetail';
+import AIStudio from '@/pages/AIStudio';
+import Casino from '@/pages/Casino';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -52,6 +56,10 @@ const AuthenticatedApp = () => {
       <Route path="/" element={<Landing />} />
       <Route path="/community" element={<Community />} />
       <Route path="/shorts" element={<Shorts />} />
+      <Route path="/market" element={<Marketplace />} />
+      <Route path="/market/:id" element={<ListingDetail />} />
+      <Route path="/ai" element={<AIStudio />} />
+      <Route path="/casino" element={<Casino />} />
       <Route element={<MainLayout />}>
         <Route path="/stream" element={<Home />} />
         <Route path="/trending" element={<Trending />} />

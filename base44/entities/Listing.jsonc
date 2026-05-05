@@ -1,0 +1,86 @@
+{
+  "name": "Listing",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "price": {
+      "type": "number"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "vetements_femme",
+        "vetements_homme",
+        "vetements_enfant",
+        "chaussures",
+        "accessoires",
+        "sport",
+        "maison",
+        "electronique",
+        "livres",
+        "autre"
+      ],
+      "default": "autre"
+    },
+    "size": {
+      "type": "string"
+    },
+    "brand": {
+      "type": "string"
+    },
+    "condition": {
+      "type": "string",
+      "enum": [
+        "neuf_avec_etiquette",
+        "neuf_sans_etiquette",
+        "tres_bon_etat",
+        "bon_etat",
+        "satisfaisant"
+      ],
+      "default": "tres_bon_etat"
+    },
+    "color": {
+      "type": "string"
+    },
+    "photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "seller_email": {
+      "type": "string"
+    },
+    "seller_name": {
+      "type": "string"
+    },
+    "seller_avatar": {
+      "type": "string"
+    },
+    "is_sold": {
+      "type": "boolean",
+      "default": false
+    },
+    "location": {
+      "type": "string"
+    },
+    "views": {
+      "type": "number",
+      "default": 0
+    },
+    "likes": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "title",
+    "price",
+    "seller_email"
+  ]
+}

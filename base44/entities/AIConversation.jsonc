@@ -1,0 +1,41 @@
+{
+  "name": "AIConversation",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "creative",
+        "code",
+        "debate",
+        "story",
+        "image_prompt",
+        "general"
+      ],
+      "default": "general"
+    },
+    "messages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "user_email"
+  ]
+}
