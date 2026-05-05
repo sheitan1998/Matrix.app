@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Video, VideoOff, Monitor, Lock, Globe, Plus, Pencil, X, LogIn, LogOut, Users, Trash2 } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff, Monitor, Lock, Globe, Plus, Pencil, X, LogIn, LogOut, Users, Trash2, Zap } from "lucide-react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -138,6 +139,19 @@ export default function VoiceRooms() {
 
   return (
     <div className="space-y-5">
+      {/* Booster CTA */}
+      {user && !user.community_plan && (
+        <Link to="/community/subscription"
+          className="flex items-center gap-3 p-3 rounded-2xl border border-premium/30 bg-premium/5 hover:bg-premium/10 transition">
+          <Zap className="w-4 h-4 text-premium shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-premium">Abonnement Booster</p>
+            <p className="text-xs text-muted-foreground">Crée des serveurs privés · 2 boosts inclus · 10€/mois</p>
+          </div>
+          <span className="text-xs font-bold text-premium shrink-0">Voir →</span>
+        </Link>
+      )}
+
       {/* Create room */}
       {user && !myRoom && (
         creating ? (

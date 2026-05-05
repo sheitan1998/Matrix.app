@@ -27,9 +27,13 @@ import Dashboard from '@/pages/Dashboard';
 import Community from '@/pages/community/Community';
 import Shorts from '@/pages/Shorts';
 import Marketplace from '@/pages/marketplace/Marketplace';
+import MarketHome from '@/pages/marketplace/MarketHome';
+import MarketSubscription from '@/pages/marketplace/MarketSubscription';
 import ListingDetail from '@/pages/marketplace/ListingDetail';
 import AIStudio from '@/pages/AIStudio';
+import AISubscription from '@/pages/AISubscription';
 import Casino from '@/pages/Casino';
+import CommunitySubscription from '@/pages/community/CommunitySubscription';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -56,10 +60,14 @@ const AuthenticatedApp = () => {
       <Route path="/" element={<Landing />} />
       <Route path="/community" element={<Community />} />
       <Route path="/shorts" element={<Shorts />} />
-      <Route path="/market" element={<Marketplace />} />
+      <Route path="/market" element={<MarketHome />} />
+      <Route path="/market/browse" element={<Marketplace />} />
+      <Route path="/market/subscription" element={<MarketSubscription />} />
       <Route path="/market/:id" element={<ListingDetail />} />
       <Route path="/ai" element={<AIStudio />} />
+      <Route path="/ai/subscription" element={<AISubscription />} />
       <Route path="/casino" element={<Casino />} />
+      <Route path="/community/subscription" element={<CommunitySubscription />} />
       <Route element={<MainLayout />}>
         <Route path="/stream" element={<Home />} />
         <Route path="/trending" element={<Trending />} />

@@ -1,41 +1,80 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Send, Sparkles, Code, BookOpen, Swords, Image, MessageSquare, Trash2, Loader2 } from "lucide-react";
+import { ArrowLeft, Send, Sparkles, Code, BookOpen, Swords, Image, MessageSquare, Trash2, Loader2, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
+import { toast } from "sonner";
 
 const MODES = [
   { key: "general", label: "Chat", icon: MessageSquare, color: "hsl(135 100% 50%)", prompt: "Tu es un assistant IA polyvalent, intelligent et bienveillant." },
-  { key: "creative", label: "Créatif", icon: Sparkles, color: "hsl(280 100% 65%)", prompt: "Tu es un IA ultra-créative. Aide avec l'écriture créative, poèmes, scénarios, idées originales. Sois inventif, surprenant, poétique." },
+  { key: "creative", label: "Créatif", icon: Sparkles, color: "hsl(280 100% 65%)", prompt: "Tu es une IA ultra-créative. Aide avec l'écriture créative, poèmes, scénarios, idées originales. Sois inventif, surprenant, poétique." },
   { key: "code", label: "Code", icon: Code, color: "hsl(200 100% 55%)", prompt: "Tu es un expert développeur full-stack. Explique le code clairement, propose des solutions optimisées, corrige les bugs avec précision." },
   { key: "story", label: "Histoire", icon: BookOpen, color: "hsl(45 100% 55%)", prompt: "Tu es un conteur extraordinaire. Crée des histoires captivantes, des univers fantastiques, des personnages mémorables. L'utilisateur peut co-écrire avec toi." },
   { key: "debate", label: "Débat", icon: Swords, color: "hsl(0 84% 60%)", prompt: "Tu es un débatteur intellectuel. Défends des positions avec arguments solides, explore les deux côtés d'un sujet, stimule la réflexion critique." },
   { key: "image_prompt", label: "Prompts Image", icon: Image, color: "hsl(25 100% 55%)", prompt: "Tu es expert en génération de prompts pour IA image (Midjourney, DALL-E, Stable Diffusion). Génère des prompts détaillés, artistiques et optimisés." },
 ];
 
+const FREE_DAILY_LIMIT = 10;
+
+function getDayKey() {
+  return new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+}
+
+function getUsage() {
+  const data = JSON.parse(localStorage.getItem("ai_usage") || "{}");
+  const today = getDayKey();
+  return data[today] || 0;
+}
+
+function incrementUsage() {
+  const today = getDayKey();
+  const data = JSON.parse(localStorage.getItem("ai_usage") || "{}");
+  data[today] = (data[today] || 0) + 1;
+  localStorage.setItem("ai_usage", JSON.stringify(data));
+}
+
+const PLAN_LIMITS = { free: 10, explorer: 100, creator: 500, pro: -1 };
+
 export default function AIStudio() {
   const [mode, setMode] = useState("general");
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState(null);
+  const [usage, setUsage] = useState(getUsage());
   const bottomRef = useRef(null);
 
   const currentMode = MODES.find((m) => m.key === mode);
 
   useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {});
+  }, []);
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
+  const plan = user?.ai_plan || "free";
+  const dailyLimit = PLAN_LIMITS[plan] ?? FREE_DAILY_LIMIT;
+  const isLimitReached = dailyLimit !== -1 && usage >= dailyLimit;
+  const remaining = dailyLimit === -1 ? "∞" : Math.max(0, dailyLimit - usage);
+
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
+    if (isLimitReached) {
+      toast.error("Limite quotidienne atteinte. Passe à un abonnement supérieur !");
+      return;
+    }
     const userMsg = { role: "user", content: input.trim() };
     const newMessages = [...messages, userMsg];
     setMessages(newMessages);
     setInput("");
     setLoading(true);
+    incrementUsage();
+    setUsage(getUsage());
 
     const history = newMessages.map((m) => `${m.role === "user" ? "Utilisateur" : "IA"}: ${m.content}`).join("\n");
     const prompt = `${currentMode.prompt}\n\nHistorique de la conversation:\n${history}\n\nRéponds à la dernière question de l'utilisateur.`;
@@ -50,14 +89,14 @@ export default function AIStudio() {
   return (
     <div className="fixed inset-0 bg-background flex flex-col">
       {/* Header */}
-      <div className="shrink-0 border-b border-border bg-background/90 backdrop-blur-xl px-4 py-3 flex items-center gap-3">
+      <div className="shrink-0 border-b border-border bg-background/90 backdrop-blur-xl px-4 py-3 flex items-center gap-2 flex-wrap">
         <Link to="/" className="text-muted-foreground hover:text-foreground transition">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <span className="font-black text-lg">
           <span style={{ color: currentMode.color }}>M</span>ATRIX AI
         </span>
-        <div className="flex gap-1 overflow-x-auto no-scrollbar ml-2">
+        <div className="flex gap-1 overflow-x-auto no-scrollbar ml-1">
           {MODES.map((m) => {
             const Icon = m.icon;
             return (
@@ -76,18 +115,28 @@ export default function AIStudio() {
             );
           })}
         </div>
-        {messages.length > 0 && (
-          <button onClick={clearChat} className="ml-auto text-muted-foreground hover:text-foreground transition">
-            <Trash2 className="w-4 h-4" />
-          </button>
-        )}
+        <div className="ml-auto flex items-center gap-2 shrink-0">
+          {/* Usage counter */}
+          <Link to="/ai/subscription" className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition",
+            isLimitReached ? "border-destructive/50 bg-destructive/10 text-destructive" : "border-border text-muted-foreground hover:text-foreground"
+          )}>
+            {plan !== "free" && <Crown className="w-3 h-3 text-trix" />}
+            {isLimitReached ? "Limite atteinte" : `${remaining} msgs restants`}
+          </Link>
+          {messages.length > 0 && (
+            <button onClick={clearChat} className="text-muted-foreground hover:text-foreground transition">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto scrollbar-thin px-4 py-6 space-y-4">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center gap-4">
-            <div className="w-20 h-20 rounded-3xl flex items-center justify-center text-3xl"
+            <div className="w-20 h-20 rounded-3xl flex items-center justify-center"
               style={{ background: `${currentMode.color}20`, border: `1px solid ${currentMode.color}40` }}>
               {React.createElement(currentMode.icon, { className: "w-10 h-10", style: { color: currentMode.color } })}
             </div>
@@ -101,6 +150,9 @@ export default function AIStudio() {
                 {mode === "image_prompt" && "Décris une scène ou une idée. Je génère le prompt parfait pour Midjourney."}
                 {mode === "general" && "Pose-moi n'importe quelle question. Je suis là pour t'aider."}
               </p>
+              {plan === "free" && (
+                <p className="text-xs text-muted-foreground mt-2">{remaining} messages gratuits aujourd'hui · <Link to="/ai/subscription" className="text-premium hover:underline">Passer Premium</Link></p>
+              )}
             </div>
           </div>
         )}
@@ -114,17 +166,13 @@ export default function AIStudio() {
             )}
             <div className={cn(
               "max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed",
-              msg.role === "user"
-                ? "bg-secondary text-foreground"
-                : "bg-card border border-border"
+              msg.role === "user" ? "bg-secondary text-foreground" : "bg-card border border-border"
             )}>
               {msg.role === "assistant" ? (
                 <ReactMarkdown className="prose prose-sm prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
                   {msg.content}
                 </ReactMarkdown>
-              ) : (
-                msg.content
-              )}
+              ) : msg.content}
             </div>
           </div>
         ))}
@@ -141,6 +189,18 @@ export default function AIStudio() {
         <div ref={bottomRef} />
       </div>
 
+      {/* Limit reached banner */}
+      {isLimitReached && (
+        <div className="shrink-0 mx-4 mb-2 p-3 rounded-xl border border-destructive/40 bg-destructive/10 flex items-center justify-between gap-3">
+          <p className="text-sm text-destructive font-semibold">Limite de {dailyLimit} messages/jour atteinte.</p>
+          <Link to="/ai/subscription">
+            <Button size="sm" className="gap-1 shrink-0" style={{ background: "hsl(280 100% 65%)", color: "#000" }}>
+              <Crown className="w-3.5 h-3.5" /> Débloquer
+            </Button>
+          </Link>
+        </div>
+      )}
+
       {/* Input */}
       <div className="shrink-0 border-t border-border bg-background/90 backdrop-blur p-4">
         <div className="max-w-3xl mx-auto flex gap-3 items-end">
@@ -148,11 +208,12 @@ export default function AIStudio() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-            placeholder={`Message en mode ${currentMode.label}... (Entrée pour envoyer)`}
-            className="resize-none min-h-[44px] max-h-36 bg-secondary/60 border-border"
+            placeholder={isLimitReached ? "Limite atteinte — passe à un abonnement supérieur" : `Message en mode ${currentMode.label}... (Entrée pour envoyer)`}
+            disabled={isLimitReached}
+            className="resize-none min-h-[44px] max-h-36 bg-secondary/60 border-border disabled:opacity-50"
             rows={1}
           />
-          <Button onClick={sendMessage} disabled={!input.trim() || loading} size="icon" className="h-11 w-11 shrink-0"
+          <Button onClick={sendMessage} disabled={!input.trim() || loading || isLimitReached} size="icon" className="h-11 w-11 shrink-0"
             style={{ background: currentMode.color, color: "hsl(0 0% 5%)" }}>
             <Send className="w-4 h-4" />
           </Button>

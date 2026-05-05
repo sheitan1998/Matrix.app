@@ -66,6 +66,14 @@
       "type": "boolean",
       "default": false
     },
+    "is_boosted": {
+      "type": "boolean",
+      "default": false
+    },
+    "boost_until": {
+      "type": "string",
+      "format": "date-time"
+    },
     "location": {
       "type": "string"
     },
