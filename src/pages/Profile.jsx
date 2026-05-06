@@ -2,12 +2,13 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Coins, Crown, LogOut, Radio, History, LayoutDashboard, Upload, Clapperboard } from "lucide-react";
+import { Coins, Crown, LogOut, Radio, History, LayoutDashboard, Upload, Trash2, AlertTriangle } from "lucide-react";
 import { formatTrix, formatTimeAgo } from "@/lib/format";
 
 export default function Profile() {
   const [user, setUser] = useState(null);
   const [transactions, setTransactions] = useState([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -40,9 +41,14 @@ export default function Profile() {
           </div>
           <p className="text-sm text-muted-foreground">{user.email}</p>
         </div>
-        <Button variant="outline" onClick={() => base44.auth.logout()} className="rounded-full">
-          <LogOut className="w-4 h-4 mr-1.5" /> Déconnexion
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" onClick={() => base44.auth.logout()} className="rounded-full">
+            <LogOut className="w-4 h-4 mr-1.5" /> Déconnexion
+          </Button>
+          <Button variant="outline" onClick={() => setShowDeleteConfirm(true)} className="rounded-full border-destructive/40 text-destructive hover:bg-destructive/10">
+            <Trash2 className="w-4 h-4 mr-1.5" /> Supprimer le compte
+          </Button>
+        </div>
       </div>
 
       {/* Quick stats */}
@@ -119,6 +125,36 @@ export default function Profile() {
           ))}
         </div>
       </div>
+      {/* Delete account confirmation dialog */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="w-full max-w-sm bg-card border border-destructive/40 rounded-3xl p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-full bg-destructive/15 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5 text-destructive" />
+              </div>
+              <div>
+                <h3 className="font-black text-lg">Supprimer le compte</h3>
+                <p className="text-xs text-muted-foreground">Cette action est irréversible</p>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Toutes tes données, vidéos, transactions TRIX et abonnements seront définitivement supprimés. Tu ne pourras pas récupérer ton compte.
+            </p>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => setShowDeleteConfirm(false)} className="flex-1 rounded-full">
+                Annuler
+              </Button>
+              <Button
+                onClick={() => { setShowDeleteConfirm(false); base44.auth.logout(); }}
+                className="flex-1 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Supprimer
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

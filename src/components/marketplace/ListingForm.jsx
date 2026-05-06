@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { X, Upload, Plus } from "lucide-react";
+import MobileSelect from "./MobileSelect";
 import { toast } from "sonner";
 
 const CATEGORIES = [
@@ -102,22 +103,27 @@ export default function ListingForm({ onClose }) {
             <Input placeholder="Marque" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} />
           </div>
 
-          <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
-            className="w-full h-9 px-3 rounded-md border border-input bg-transparent text-sm">
-            {CATEGORIES.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
-          </select>
+          <MobileSelect
+            value={form.category}
+            onChange={(v) => setForm({ ...form, category: v })}
+            options={CATEGORIES}
+            placeholder="Catégorie"
+          />
 
-          <select value={form.condition} onChange={(e) => setForm({ ...form, condition: e.target.value })}
-            className="w-full h-9 px-3 rounded-md border border-input bg-transparent text-sm">
-            {CONDITIONS.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
-          </select>
+          <MobileSelect
+            value={form.condition}
+            onChange={(v) => setForm({ ...form, condition: v })}
+            options={CONDITIONS}
+            placeholder="État de l'article"
+          />
 
           <div className="grid grid-cols-2 gap-3">
-            <select value={form.size} onChange={(e) => setForm({ ...form, size: e.target.value })}
-              className="h-9 px-3 rounded-md border border-input bg-transparent text-sm">
-              <option value="">Taille</option>
-              {SIZES.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
+            <MobileSelect
+              value={form.size}
+              onChange={(v) => setForm({ ...form, size: v })}
+              options={[{ key: "", label: "Taille" }, ...SIZES.map((s) => ({ key: s, label: s }))]}
+              placeholder="Taille"
+            />
             <Input placeholder="Couleur" value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} />
           </div>
 

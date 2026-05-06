@@ -22,6 +22,8 @@ export default function Watch() {
   const [adDone, setAdDone] = useState(false);
   const [liked, setLiked] = useState(false);
   const [disliked, setDisliked] = useState(false);
+  const [optimisticLikes, setOptimisticLikes] = useState(null);
+  const [optimisticDislikes, setOptimisticDislikes] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => setUser(null));
@@ -97,23 +99,31 @@ export default function Watch() {
                 <button
                   onClick={() => {
                     if (liked) return;
+                    const newLikes = (video.likes || 0) + 1;
+                    setOptimisticLikes(newLikes);
                     setLiked(true);
-                    if (disliked) setDisliked(false);
-                    base44.entities.Video.update(video.id, { likes: (video.likes || 0) + 1 });
+                    if (disliked) { setDisliked(false); setOptimisticDislikes((video.dislikes || 0)); }
+                    base44.entities.Video.update(video.id, { likes: newLikes }).catch(() => {
+                      setOptimisticLikes(null); setLiked(false);
+                    });
                   }}
-                  className={cn("flex items-center gap-1.5 px-4 h-10 hover:bg-secondary/70 transition border-r border-border", liked && "text-primary")}
+                  className={cn("flex items-center gap-1.5 px-4 h-11 hover:bg-secondary/70 transition border-r border-border select-none", liked && "text-primary")}
                 >
                   <ThumbsUp className="w-4 h-4" />
-                  <span className="text-sm font-semibold">{formatViews((video.likes || 0) + (liked ? 1 : 0))}</span>
+                  <span className="text-sm font-semibold">{formatViews(optimisticLikes ?? (video.likes || 0))}</span>
                 </button>
                 <button
                   onClick={() => {
                     if (disliked) return;
+                    const newDislikes = (video.dislikes || 0) + 1;
+                    setOptimisticDislikes(newDislikes);
                     setDisliked(true);
-                    if (liked) setLiked(false);
-                    base44.entities.Video.update(video.id, { dislikes: (video.dislikes || 0) + 1 });
+                    if (liked) { setLiked(false); setOptimisticLikes((video.likes || 0)); }
+                    base44.entities.Video.update(video.id, { dislikes: newDislikes }).catch(() => {
+                      setOptimisticDislikes(null); setDisliked(false);
+                    });
                   }}
-                  className={cn("px-4 h-10 hover:bg-secondary/70 transition", disliked && "text-destructive")}
+                  className={cn("px-4 h-11 hover:bg-secondary/70 transition select-none", disliked && "text-destructive")}
                 >
                   <ThumbsDown className="w-4 h-4" />
                 </button>

@@ -8,6 +8,8 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
 import MainLayout from '@/components/layout/MainLayout';
+import BottomTabs from '@/components/layout/BottomTabs';
+import AnimatedRoutes from '@/components/layout/AnimatedRoutes';
 import Landing from '@/pages/Landing';
 import Home from '@/pages/Home';
 import Trending from '@/pages/Trending';
@@ -56,6 +58,7 @@ const AuthenticatedApp = () => {
   }
 
   return (
+    <AnimatedRoutes>
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/community" element={<Community />} />
@@ -87,6 +90,7 @@ const AuthenticatedApp = () => {
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
+    </AnimatedRoutes>
   );
 };
 
