@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Search, Upload, Crown, Coins, Menu, Bell } from "lucide-react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Search, Upload, Crown, Coins, Bell, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { base44 } from "@/api/base44Client";
 import { formatTrix } from "@/lib/format";
 
+const ROOT_ROUTES = ["/stream", "/trending", "/shorts", "/profile", "/"];
+
 export default function Topbar() {
   const [user, setUser] = useState(null);
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
+  const isRoot = ROOT_ROUTES.includes(location.pathname);
+  const showBack = !isRoot;
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => setUser(null));
@@ -23,6 +28,16 @@ export default function Topbar() {
   return (
     <header className="sticky top-0 z-50 h-16 bg-background/85 backdrop-blur-xl border-b border-border">
       <div className="h-full flex items-center gap-4 px-4 lg:px-6">
+        {/* Back button (mobile, non-root routes) */}
+        {showBack && (
+          <button
+            onClick={() => navigate(-1)}
+            className="md:hidden flex items-center justify-center w-10 h-10 rounded-full hover:bg-secondary transition shrink-0 select-none"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+        )}
+
         {/* Logo */}
         <Link to="/" className="flex items-center shrink-0">
           <span className="font-black text-xl tracking-tight">

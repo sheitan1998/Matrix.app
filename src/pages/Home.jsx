@@ -3,20 +3,24 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import VideoGrid from "@/components/video/VideoGrid";
 import CategoryChips from "@/components/video/CategoryChips";
+import usePullToRefresh from "@/hooks/usePullToRefresh";
+import PullToRefreshIndicator from "@/components/ui/PullToRefreshIndicator";
 
 export default function Home() {
   const [category, setCategory] = useState("all");
 
-  const { data: videos, isLoading } = useQuery({
+  const { data: videos, isLoading, refetch } = useQuery({
     queryKey: ["videos", "home"],
     queryFn: () => base44.entities.Video.list("-created_date", 60),
     initialData: [],
   });
 
+  const { pulling, pullY } = usePullToRefresh({ onRefresh: refetch });
   const filtered = category === "all" ? videos : videos.filter((v) => v.category === category);
 
   return (
     <div className="px-4 lg:px-6 py-4 space-y-5">
+      <PullToRefreshIndicator pulling={pulling} pullY={pullY} />
       <div className="sticky top-16 z-30 -mx-4 lg:-mx-6 px-4 lg:px-6 py-3 bg-background/85 backdrop-blur-xl">
         <CategoryChips active={category} onChange={setCategory} />
       </div>

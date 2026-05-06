@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Plus, Search, SlidersHorizontal } from "lucide-react";
+import { ArrowLeft, Plus, Search } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import ListingCard from "@/components/marketplace/ListingCard";
 import ListingForm from "@/components/marketplace/ListingForm";
 import { cn } from "@/lib/utils";
+import usePullToRefresh from "@/hooks/usePullToRefresh";
+import PullToRefreshIndicator from "@/components/ui/PullToRefreshIndicator";
 
 const CATEGORIES = [
   { key: "all", label: "Tout" },
@@ -32,6 +34,8 @@ export default function Marketplace() {
     queryKey: ["listings"],
     queryFn: () => base44.entities.Listing.list("-created_date", 80),
   });
+
+  const { pulling, pullY } = usePullToRefresh({ onRefresh: refetch });
 
   const filtered = listings.filter((l) => {
     if (l.is_sold) return false;
@@ -87,6 +91,7 @@ export default function Marketplace() {
         </div>
       </div>
 
+      <PullToRefreshIndicator pulling={pulling} pullY={pullY} />
       <div className="max-w-6xl mx-auto px-4 py-6">
         {filtered.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
