@@ -59,8 +59,8 @@ export default function PostFeed() {
     const current = myReactions[postId];
     const postReactions = reactions[postId] || {};
 
+    // Optimistic update
     if (current === emoji) {
-      // remove
       const updated = { ...postReactions, [emoji]: Math.max(0, (postReactions[emoji] || 0) - 1) };
       setReactions((r) => ({ ...r, [postId]: updated }));
       setMyReactions((m) => { const n = { ...m }; delete n[postId]; return n; });
@@ -70,6 +70,14 @@ export default function PostFeed() {
       updated[emoji] = (updated[emoji] || 0) + 1;
       setReactions((r) => ({ ...r, [postId]: updated }));
       setMyReactions((m) => ({ ...m, [postId]: emoji }));
+    }
+    // Persist like count on the post (fire-and-forget, no rollback needed for emoji counters)
+    const post = posts.find((p) => p.id === postId);
+    if (post) {
+      const delta = current ? 0 : 1; // net new like (simplified)
+      if (!current && emoji === "❤️") {
+        base44.entities.Post.update(postId, { likes: (post.likes || 0) + 1 }).catch(() => {});
+      }
     }
   };
 

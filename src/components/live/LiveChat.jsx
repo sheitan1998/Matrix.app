@@ -86,7 +86,8 @@ export default function LiveChat({ video, channel, user, onUserUpdate }) {
 
   const send = async () => {
     if (!text.trim() || !user || !video) return;
-    await base44.entities.ChatMessage.create({
+    const optimistic = {
+      id: `opt-${Date.now()}`,
       video_id: video.id,
       author_email: user.email,
       author_name: user.full_name,
@@ -96,9 +97,15 @@ export default function LiveChat({ video, channel, user, onUserUpdate }) {
       is_premium: !!user.is_premium,
       is_subscriber: !!userSub,
       sub_tier: userSub?.tier,
-    });
+    };
+    // Optimistic: add instantly
+    setMessages((prev) => [...prev, optimistic]);
     setText("");
     setShowEmojis(false);
+    // Persist in background
+    const saved = await base44.entities.ChatMessage.create(optimistic);
+    // Replace optimistic entry with real one
+    setMessages((prev) => prev.map((m) => (m.id === optimistic.id ? saved : m)));
   };
 
   const addEmoji = (e) => {

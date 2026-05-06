@@ -10,9 +10,31 @@ const TABS = [
   { to: "/profile", icon: User, label: "Profil" },
 ];
 
+// Per-tab last visited path memory (persists across tab switches in memory)
+const tabMemory = {
+  "/stream": "/stream",
+  "/trending": "/trending",
+  "/shorts": "/shorts",
+  "/profile": "/profile",
+};
+
+export function updateTabMemory(pathname) {
+  // Called by pages to record their path into the owning tab's memory
+  for (const root of Object.keys(tabMemory)) {
+    if (pathname === root || pathname.startsWith(root + "/")) {
+      tabMemory[root] = pathname;
+      return;
+    }
+  }
+}
+
 export default function BottomTabs() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
+
+  const activeTab = TABS.find(
+    (t) => pathname === t.to || pathname.startsWith(t.to + "/")
+  );
 
   return (
     <nav
@@ -21,17 +43,19 @@ export default function BottomTabs() {
     >
       <div className="flex">
         {TABS.map(({ to, icon: Icon, label }) => {
-          const active = pathname === to;
+          const active = activeTab?.to === to;
           return (
             <button
               key={to}
               onClick={() => {
                 if (active) {
-                  // Reset: navigate to root of this tab (replaces history stack)
+                  // Re-tap active tab: reset to root
+                  tabMemory[to] = to;
                   navigate(to, { replace: true });
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 } else {
-                  navigate(to);
+                  // Switch to last remembered path in that tab
+                  navigate(tabMemory[to] || to);
                 }
               }}
               className={cn(

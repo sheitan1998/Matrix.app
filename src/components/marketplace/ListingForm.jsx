@@ -67,12 +67,12 @@ export default function ListingForm({ onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur flex items-end sm:items-center justify-center p-4">
-      <div className="w-full max-w-lg bg-card border border-border rounded-3xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="w-full max-w-lg bg-card border border-border rounded-3xl overflow-hidden flex flex-col max-h-[90vh] overscroll-contain">
         <div className="flex items-center justify-between p-5 border-b border-border shrink-0">
           <h2 className="font-black text-lg">Mettre en vente</h2>
           <button onClick={onClose}><X className="w-5 h-5 text-muted-foreground" /></button>
         </div>
-        <div className="overflow-y-auto flex-1 p-5 space-y-4">
+        <div className="overflow-y-auto overscroll-contain flex-1 p-5 space-y-4">
           {/* Photos */}
           <div>
             <p className="text-sm font-semibold mb-2">Photos (max 5)</p>

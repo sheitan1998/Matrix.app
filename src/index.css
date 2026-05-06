@@ -36,35 +36,35 @@
     --font-mono: 'JetBrains Mono', monospace;
   }
 
-  .dark {
-    --background: 0 0% 4%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 7%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 6%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 135 100% 50%;
-    --primary-foreground: 0 0% 5%;
-    --secondary: 0 0% 12%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 10%;
-    --muted-foreground: 0 0% 64%;
-    --accent: 135 100% 50%;
-    --accent-foreground: 0 0% 5%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14%;
-    --input: 0 0% 12%;
-    --ring: 135 100% 50%;
+  /* Light mode — system preference */
+  @media (prefers-color-scheme: light) {
+    :root {
+      --background: 0 0% 97%;
+      --foreground: 0 0% 6%;
+      --card: 0 0% 100%;
+      --card-foreground: 0 0% 6%;
+      --popover: 0 0% 100%;
+      --popover-foreground: 0 0% 6%;
+      --primary: 135 80% 38%;
+      --primary-foreground: 0 0% 100%;
+      --secondary: 0 0% 92%;
+      --secondary-foreground: 0 0% 10%;
+      --muted: 0 0% 90%;
+      --muted-foreground: 0 0% 40%;
+      --accent: 135 80% 38%;
+      --accent-foreground: 0 0% 100%;
+      --destructive: 0 84% 50%;
+      --destructive-foreground: 0 0% 100%;
+      --border: 0 0% 84%;
+      --input: 0 0% 88%;
+      --ring: 135 80% 38%;
+    }
   }
 }
 
 @layer base {
   * {
     @apply border-border;
-  }
-  html {
-    @apply dark;
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
@@ -139,6 +139,13 @@
       linear-gradient(90deg, hsl(var(--border) / 0.4) 1px, transparent 1px);
     background-size: 40px 40px;
   }
+}
+
+/* Prevent background scroll-through on modals/sheets on touch devices */
+[role="dialog"] > div,
+[data-radix-popper-content-wrapper],
+.overscroll-contain {
+  overscroll-behavior: contain;
 }
 
 @keyframes live-pulse {

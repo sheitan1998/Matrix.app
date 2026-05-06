@@ -42,7 +42,7 @@ export default function EuroDonationDialog({ open, onOpenChange, video, channel,
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md bg-card border-border">
+      <DialogContent className="max-w-md bg-card border-border max-h-[90vh] overflow-y-auto overscroll-contain">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-black">
             <Euro className="w-5 h-5 text-green-400" />

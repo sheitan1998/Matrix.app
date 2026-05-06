@@ -47,7 +47,7 @@ export default function ShareDialog({ open, onOpenChange, url, title }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm bg-card border-border">
+      <DialogContent className="max-w-sm bg-card border-border max-h-[90vh] overflow-y-auto overscroll-contain">
         <DialogHeader>
           <DialogTitle>Partager</DialogTitle>
         </DialogHeader>
