@@ -11,8 +11,28 @@
     "icon_emoji": {
       "type": "string"
     },
+    "icon_url": {
+      "type": "string"
+    },
     "banner_color": {
       "type": "string"
+    },
+    "banner_url": {
+      "type": "string"
+    },
+    "visual_theme": {
+      "type": "string",
+      "enum": [
+        "default",
+        "ruby",
+        "galaxy",
+        "ocean",
+        "forest",
+        "neon",
+        "gold",
+        "midnight"
+      ],
+      "default": "default"
     },
     "theme": {
       "type": "string",
@@ -45,6 +65,28 @@
     },
     "invite_code": {
       "type": "string"
+    },
+    "channels": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "voice",
+              "announce"
+            ]
+          }
+        }
+      }
     }
   },
   "required": [

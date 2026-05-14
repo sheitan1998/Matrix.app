@@ -16,7 +16,7 @@ const BETS = [
   { key: "19-36", label: "19–36", payout: 2 },
 ];
 
-export default function RouletteGame({ balance, setBalance }) {
+export default function RouletteGame({ balance, setBalance, accentColor = "hsl(45 100% 55%)" }) {
   const [bet, setBet] = useState("red");
   const [amount, setAmount] = useState("50");
   const [result, setResult] = useState(null);
@@ -203,7 +203,7 @@ export default function RouletteGame({ balance, setBalance }) {
         <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)}
           placeholder="Mise" className="bg-white/5 border-white/10 text-white" />
         <Button onClick={spin} disabled={spinning}
-          className="shrink-0 px-8 font-bold" style={{ background: "hsl(45 100% 55%)", color: "#0a0a0a" }}>
+          className="shrink-0 px-8 font-bold" style={{ background: accentColor, color: "#0a0a0a" }}>
           {spinning ? "⏳" : "Lancer"}
         </Button>
       </div>

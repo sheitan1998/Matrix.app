@@ -55,7 +55,7 @@ function Card({ card, hidden, delay = 0 }) {
   );
 }
 
-export default function BlackjackGame({ balance, setBalance }) {
+export default function BlackjackGame({ balance, setBalance, accentColor = "hsl(45 100% 55%)" }) {
   const [deck, setDeck] = useState([]);
   const [playerHand, setPlayerHand] = useState([]);
   const [dealerHand, setDealerHand] = useState([]);
@@ -168,7 +168,7 @@ export default function BlackjackGame({ balance, setBalance }) {
         <div className="flex gap-3">
           <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)}
             placeholder="Mise" className="bg-white/5 border-white/10 text-white" />
-          <Button onClick={deal} className="shrink-0 px-8 font-bold" style={{ background: "hsl(45 100% 55%)", color: "#0a0a0a" }}>
+          <Button onClick={deal} className="shrink-0 px-8 font-bold" style={{ background: accentColor, color: "#0a0a0a" }}>
             Distribuer
           </Button>
         </div>
@@ -187,7 +187,7 @@ export default function BlackjackGame({ balance, setBalance }) {
 
       {phase === "done" && (
         <Button onClick={reset} className="w-full font-bold h-11 rounded-2xl"
-          style={{ background: "hsl(45 100% 55%)", color: "#0a0a0a" }}>
+          style={{ background: accentColor, color: "#0a0a0a" }}>
           Rejouer
         </Button>
       )}

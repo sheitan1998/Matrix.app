@@ -1,0 +1,78 @@
+export const VISUAL_THEMES = [
+  {
+    key: "default",
+    label: "MATRIX",
+    emoji: "🟢",
+    bg: "linear-gradient(135deg, #0a0f0a 0%, #0d1610 100%)",
+    accent: "#00ff41",
+    card: "rgba(10,20,10,0.95)",
+    border: "rgba(0,255,65,0.15)",
+  },
+  {
+    key: "ruby",
+    label: "Rubis",
+    emoji: "💎",
+    bg: "linear-gradient(135deg, #1a0010 0%, #2d0020 50%, #1a0015 100%)",
+    accent: "#ff2060",
+    card: "rgba(30,0,20,0.95)",
+    border: "rgba(255,32,96,0.2)",
+  },
+  {
+    key: "galaxy",
+    label: "Galaxie",
+    emoji: "🌌",
+    bg: "linear-gradient(135deg, #04001a 0%, #0a0030 40%, #180040 100%)",
+    accent: "#a855f7",
+    card: "rgba(8,0,30,0.95)",
+    border: "rgba(168,85,247,0.2)",
+  },
+  {
+    key: "ocean",
+    label: "Océan",
+    emoji: "🌊",
+    bg: "linear-gradient(135deg, #001520 0%, #002540 50%, #001030 100%)",
+    accent: "#06b6d4",
+    card: "rgba(0,20,35,0.95)",
+    border: "rgba(6,182,212,0.2)",
+  },
+  {
+    key: "forest",
+    label: "Forêt",
+    emoji: "🌲",
+    bg: "linear-gradient(135deg, #021208 0%, #051e0c 50%, #031510 100%)",
+    accent: "#22c55e",
+    card: "rgba(3,18,8,0.95)",
+    border: "rgba(34,197,94,0.2)",
+  },
+  {
+    key: "neon",
+    label: "Néon",
+    emoji: "⚡",
+    bg: "linear-gradient(135deg, #0a001a 0%, #12002a 50%, #0a0020 100%)",
+    accent: "#f0ff00",
+    card: "rgba(12,0,25,0.95)",
+    border: "rgba(240,255,0,0.15)",
+  },
+  {
+    key: "gold",
+    label: "Or",
+    emoji: "👑",
+    bg: "linear-gradient(135deg, #1a1000 0%, #2a1a00 50%, #1a1200 100%)",
+    accent: "#f59e0b",
+    card: "rgba(25,16,0,0.95)",
+    border: "rgba(245,158,11,0.2)",
+  },
+  {
+    key: "midnight",
+    label: "Minuit",
+    emoji: "🌙",
+    bg: "linear-gradient(135deg, #050510 0%, #0a0a20 50%, #080815 100%)",
+    accent: "#818cf8",
+    card: "rgba(6,6,18,0.95)",
+    border: "rgba(129,140,248,0.2)",
+  },
+];
+
+export function getTheme(key) {
+  return VISUAL_THEMES.find((t) => t.key === key) || VISUAL_THEMES[0];
+}

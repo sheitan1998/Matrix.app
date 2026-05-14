@@ -52,7 +52,7 @@ function Reel({ spinning, finalSymbol, delay }) {
   );
 }
 
-export default function SlotsGame({ balance, setBalance }) {
+export default function SlotsGame({ balance, setBalance, accentColor = "hsl(45 100% 55%)" }) {
   const [spinning, setSpinning] = useState(false);
   const [finalReels, setFinalReels] = useState(["🎰","🎰","🎰"]);
   const [showFinal, setShowFinal] = useState(false);
@@ -139,7 +139,7 @@ export default function SlotsGame({ balance, setBalance }) {
         <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)}
           placeholder="Mise" className="bg-white/5 border-white/10 text-white" />
         <Button onClick={play} disabled={spinning} className="shrink-0 px-8 font-bold"
-          style={{ background: "hsl(45 100% 55%)", color: "#0a0a0a" }}>
+          style={{ background: accentColor, color: "#0a0a0a" }}>
           {spinning ? "🎰..." : "Jouer"}
         </Button>
       </div>
