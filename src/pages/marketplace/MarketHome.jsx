@@ -1,12 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Search, Plus, TrendingUp, Flame, Star, Crown } from "lucide-react";
+import { ArrowLeft, Search, Plus, Flame, Star, Crown, Rocket, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ListingCard from "@/components/marketplace/ListingCard";
 import ListingForm from "@/components/marketplace/ListingForm";
+import SellerProfile from "@/components/marketplace/SellerProfile";
 
 const CATEGORY_ICONS = {
   vetements_femme: "👗", vetements_homme: "👔", vetements_enfant: "🧸",
@@ -27,6 +28,7 @@ export default function MarketHome() {
   const nav = useNavigate();
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
 
   const { data: listings = [], refetch } = useQuery({
     queryKey: ["listings-home"],
@@ -55,10 +57,21 @@ export default function MarketHome() {
             <span className="font-black text-xl">
               <span style={{ color: "hsl(25 100% 55%)" }}>M</span>ATRIX Market
             </span>
-            <Button size="sm" onClick={() => setShowForm(true)} className="ml-auto gap-1 shrink-0 font-bold"
-              style={{ background: "hsl(25 100% 55%)", color: "white" }}>
-              <Plus className="w-4 h-4" /> Vendre
-            </Button>
+            <div className="ml-auto flex items-center gap-2">
+              <Link to="/market/subscription"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border shrink-0"
+                style={{ borderColor: "hsl(25 100% 55% / 0.4)", background: "hsl(25 100% 55% / 0.1)", color: "hsl(25 100% 55%)" }}>
+                <Rocket className="w-3.5 h-3.5" /> Abonnement
+              </Link>
+              <button onClick={() => setShowProfile(true)}
+                className="p-2 rounded-xl border border-border hover:bg-secondary transition text-muted-foreground hover:text-foreground">
+                <User className="w-4 h-4" />
+              </button>
+              <Button size="sm" onClick={() => setShowForm(true)} className="gap-1 shrink-0 font-bold"
+                style={{ background: "hsl(25 100% 55%)", color: "white" }}>
+                <Plus className="w-4 h-4" /> Vendre
+              </Button>
+            </div>
           </div>
           {/* Search bar */}
           <form onSubmit={handleSearch} className="relative">
@@ -151,6 +164,7 @@ export default function MarketHome() {
       </div>
 
       {showForm && <ListingForm onClose={() => { setShowForm(false); refetch(); }} />}
+      {showProfile && <SellerProfile onClose={() => setShowProfile(false)} />}
     </div>
   );
 }

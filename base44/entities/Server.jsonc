@@ -1,0 +1,54 @@
+{
+  "name": "Server",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "icon_emoji": {
+      "type": "string"
+    },
+    "banner_color": {
+      "type": "string"
+    },
+    "theme": {
+      "type": "string",
+      "enum": [
+        "gaming",
+        "music",
+        "tech",
+        "sport",
+        "art",
+        "cinema",
+        "humour",
+        "news",
+        "autre"
+      ],
+      "default": "autre"
+    },
+    "is_public": {
+      "type": "boolean",
+      "default": true
+    },
+    "owner_email": {
+      "type": "string"
+    },
+    "owner_name": {
+      "type": "string"
+    },
+    "members_count": {
+      "type": "number",
+      "default": 1
+    },
+    "invite_code": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "owner_email"
+  ]
+}

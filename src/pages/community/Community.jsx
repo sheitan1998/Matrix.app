@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Filter } from "lucide-react";
+import { ArrowLeft, Filter, Server, Sparkles } from "lucide-react";
 import PostFeed from "@/components/community/PostFeed";
 import VoiceRooms from "@/components/community/VoiceRooms";
+import ServerList from "@/components/community/ServerList";
 import { cn } from "@/lib/utils";
 
 const THEMES = [
@@ -20,6 +21,7 @@ const THEMES = [
 export default function Community() {
   const [theme, setTheme] = useState("all");
   const [showFilter, setShowFilter] = useState(false);
+  const [tab, setTab] = useState("feed"); // feed | servers | voice
 
   return (
     <div className="min-h-screen bg-background">
@@ -32,16 +34,35 @@ export default function Community() {
           <span className="font-black text-lg">
             <span className="text-premium">M</span>ATRIX Community
           </span>
+          <Link to="/community/subscription"
+            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-premium/40 bg-premium/10 text-premium hover:bg-premium/20 transition">
+            <Sparkles className="w-3.5 h-3.5" /> Nitro
+          </Link>
           <button
             onClick={() => setShowFilter(!showFilter)}
             className={cn(
-              "ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition",
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition",
               showFilter ? "border-premium/50 bg-premium/10 text-premium" : "border-border text-muted-foreground hover:text-foreground"
             )}
           >
             <Filter className="w-3.5 h-3.5" />
             {theme !== "all" ? THEMES.find((t) => t.key === theme)?.label : "Thème"}
           </button>
+        </div>
+
+        {/* Tab bar */}
+        <div className="flex gap-1 mb-1">
+          {[
+            { key: "feed", label: "📰 Fil" },
+            { key: "servers", label: "🏠 Serveurs" },
+            { key: "voice", label: "🎙️ Vocal" },
+          ].map((t) => (
+            <button key={t.key} onClick={() => setTab(t.key)}
+              className={cn("px-3 py-1.5 rounded-xl text-xs font-semibold transition",
+                tab === t.key ? "bg-premium/15 text-premium" : "text-muted-foreground hover:text-foreground")}>
+              {t.label}
+            </button>
+          ))}
         </div>
         {/* Theme filter row */}
         {showFilter && (
@@ -64,35 +85,40 @@ export default function Community() {
         )}
       </div>
 
-      {/* Side-by-side layout on large screens, stacked on mobile */}
+      {/* Content */}
       <div className="max-w-6xl mx-auto px-4 py-6">
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Feed */}
-          <div className="flex-1 min-w-0">
-            <h2 className="font-bold text-sm text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-premium inline-block" />
-              Fil d'actualité
-              {theme !== "all" && (
-                <span className="ml-1 px-2 py-0.5 rounded-full bg-premium/10 text-premium text-xs">
-                  {THEMES.find((t) => t.key === theme)?.label}
-                </span>
-              )}
-            </h2>
-            <PostFeed theme={theme} />
+        {tab === "feed" && (
+          <div className="flex flex-col lg:flex-row gap-6">
+            <div className="flex-1 min-w-0">
+              <h2 className="font-bold text-sm text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-premium inline-block" />
+                Fil d'actualité
+                {theme !== "all" && (
+                  <span className="ml-1 px-2 py-0.5 rounded-full bg-premium/10 text-premium text-xs">
+                    {THEMES.find((t) => t.key === theme)?.label}
+                  </span>
+                )}
+              </h2>
+              <PostFeed theme={theme} />
+            </div>
           </div>
+        )}
 
-          {/* Divider */}
-          <div className="hidden lg:block w-px bg-border self-stretch" />
+        {tab === "servers" && (
+          <div className="max-w-xl mx-auto">
+            <ServerList />
+          </div>
+        )}
 
-          {/* Voice rooms */}
-          <div className="w-full lg:w-80 shrink-0">
+        {tab === "voice" && (
+          <div className="max-w-xl mx-auto">
             <h2 className="font-bold text-sm text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-live animate-live-pulse inline-block" />
               Salons Vocaux
             </h2>
             <VoiceRooms />
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
