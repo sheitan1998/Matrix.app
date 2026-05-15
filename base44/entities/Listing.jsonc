@@ -93,12 +93,14 @@
   ],
   "rls": {
     "create": {
-      "created_by": "{{user.email}}"
+      "data.seller_email": "{{user.email}}"
     },
     "read": {},
     "update": {
-      "data.seller_email": "{{user.email}}",
       "$or": [
+        {
+          "data.seller_email": "{{user.email}}"
+        },
         {
           "user_condition": {
             "role": "admin"
@@ -107,8 +109,10 @@
       ]
     },
     "delete": {
-      "data.seller_email": "{{user.email}}",
       "$or": [
+        {
+          "data.seller_email": "{{user.email}}"
+        },
         {
           "user_condition": {
             "role": "admin"
