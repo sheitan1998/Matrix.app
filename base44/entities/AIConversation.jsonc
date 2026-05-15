@@ -40,16 +40,37 @@
   ],
   "rls": {
     "create": {
-      "data.user_email": "{{user.email}}"
+      "created_by": "{{user.email}}"
     },
     "read": {
-      "data.user_email": "{{user.email}}"
+      "data.user_email": "{{user.email}}",
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     },
     "update": {
-      "data.user_email": "{{user.email}}"
+      "data.user_email": "{{user.email}}",
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     },
     "delete": {
-      "data.user_email": "{{user.email}}"
+      "data.user_email": "{{user.email}}",
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     }
   }
 }
