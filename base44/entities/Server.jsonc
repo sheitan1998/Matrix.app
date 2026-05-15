@@ -98,10 +98,10 @@
       "data.owner_email": "{{user.email}}"
     },
     "read": {
+      "data.is_public": true
+    },
+    "update": {
       "$or": [
-        {
-          "data.is_public": true
-        },
         {
           "data.owner_email": "{{user.email}}"
         },
@@ -112,19 +112,11 @@
         }
       ]
     },
-    "update": {
-      "data.owner_email": "{{user.email}}",
+    "delete": {
       "$or": [
         {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "delete": {
-      "data.owner_email": "{{user.email}}",
-      "$or": [
+          "data.owner_email": "{{user.email}}"
+        },
         {
           "user_condition": {
             "role": "admin"
