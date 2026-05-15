@@ -29,19 +29,7 @@
       "data.owner_email": "{{user.email}}"
     },
     "read": {
-      "$or": [
-        {
-          "data.is_public": true
-        },
-        {
-          "data.owner_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "data.is_public": true
     },
     "update": {
       "$or": [
