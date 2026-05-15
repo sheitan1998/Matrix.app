@@ -53,7 +53,7 @@
   ],
   "rls": {
     "create": {
-      "data.author_email": "{{user.email}}"
+      "created_by": "{{user.email}}"
     },
     "read": {},
     "update": {
