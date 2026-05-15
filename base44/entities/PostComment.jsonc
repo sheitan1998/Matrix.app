@@ -24,13 +24,13 @@
     "content"
   ],
   "rls": {
-    "create": {},
+    "create": {
+      "data.author_email": "{{user.email}}"
+    },
     "read": {},
     "update": {
+      "data.author_email": "{{user.email}}",
       "$or": [
-        {
-          "data.author_email": "{{user.email}}"
-        },
         {
           "user_condition": {
             "role": "admin"
@@ -39,10 +39,8 @@
       ]
     },
     "delete": {
+      "data.author_email": "{{user.email}}",
       "$or": [
-        {
-          "data.author_email": "{{user.email}}"
-        },
         {
           "user_condition": {
             "role": "admin"
