@@ -1,0 +1,58 @@
+{
+  "name": "ServerMember",
+  "type": "object",
+  "properties": {
+    "server_id": {
+      "type": "string"
+    },
+    "user_email": {
+      "type": "string"
+    },
+    "user_name": {
+      "type": "string"
+    },
+    "user_avatar": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "member",
+        "moderator",
+        "admin"
+      ],
+      "default": "member"
+    },
+    "custom_role": {
+      "type": "string"
+    },
+    "is_banned": {
+      "type": "boolean",
+      "default": false
+    },
+    "ban_until": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "is_muted_text": {
+      "type": "boolean",
+      "default": false
+    },
+    "mute_text_until": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "is_muted_voice": {
+      "type": "boolean",
+      "default": false
+    },
+    "mute_voice_until": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "server_id",
+    "user_email"
+  ]
+}

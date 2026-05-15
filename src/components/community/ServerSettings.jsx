@@ -1,0 +1,284 @@
+import React, { useState, useEffect } from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, Upload, Trash2, Copy, Shield, Ban, MicOff, Crown, Plus, X, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { VISUAL_THEMES } from "@/lib/visualThemes";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
+const ROLES = [
+  { key: "member", label: "Membre", color: "#888" },
+  { key: "moderator", label: "Modérateur", color: "#3b82f6" },
+  { key: "admin", label: "Admin", color: "#f59e0b" },
+];
+
+const BAN_DURATIONS = [
+  { key: "1h", label: "1 heure" },
+  { key: "24h", label: "24 heures" },
+  { key: "7d", label: "7 jours" },
+  { key: "perm", label: "Permanent" },
+];
+
+function durationToDate(key) {
+  if (key === "perm") return null;
+  const ms = { "1h": 3600000, "24h": 86400000, "7d": 604800000 }[key] || 0;
+  return new Date(Date.now() + ms).toISOString();
+}
+
+export default function ServerSettings({ server, theme, onClose, onUpdate, onDelete, uploadIcon, uploadBanner, uploadingIcon, uploadingBanner, copyInvite }) {
+  const qc = useQueryClient();
+  const [tab, setTab] = useState("general");
+  const [memberAction, setMemberAction] = useState(null); // { member, action }
+  const [banDuration, setBanDuration] = useState("24h");
+
+  const { data: members = [], refetch: refetchMembers } = useQuery({
+    queryKey: ["server-members", server.id],
+    queryFn: () => base44.entities.ServerMember.filter({ server_id: server.id }, "-created_date", 100),
+  });
+
+  const updateMember = async (memberId, data) => {
+    await base44.entities.ServerMember.update(memberId, data);
+    refetchMembers();
+    toast.success("Membre mis à jour");
+    setMemberAction(null);
+  };
+
+  const handleBan = async (member) => {
+    const until = banDuration === "perm" ? null : durationToDate(banDuration);
+    await updateMember(member.id, {
+      is_banned: true,
+      ban_until: until,
+    });
+  };
+
+  const handleUnban = async (member) => {
+    await updateMember(member.id, { is_banned: false, ban_until: null });
+  };
+
+  const handleMuteText = async (member) => {
+    const until = banDuration === "perm" ? null : durationToDate(banDuration);
+    await updateMember(member.id, { is_muted_text: true, mute_text_until: until });
+  };
+
+  const handleMuteVoice = async (member) => {
+    const until = banDuration === "perm" ? null : durationToDate(banDuration);
+    await updateMember(member.id, { is_muted_voice: true, mute_voice_until: until });
+  };
+
+  const handleSetRole = async (member, role) => {
+    await updateMember(member.id, { role });
+  };
+
+  const accent = theme?.accent || "hsl(var(--primary))";
+
+  return (
+    <div className="absolute inset-0 z-30 overflow-hidden flex flex-col" style={{ background: theme?.bg || "hsl(var(--background))" }}>
+      {/* Header */}
+      <div className="shrink-0 flex items-center gap-3 p-4 border-b" style={{ borderColor: theme?.border }}>
+        <button onClick={onClose} className="text-muted-foreground hover:text-white">
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <h2 className="font-black text-lg text-white">Paramètres — {server.name}</h2>
+      </div>
+
+      {/* Tabs */}
+      <div className="shrink-0 flex gap-1 px-4 py-2 border-b overflow-x-auto no-scrollbar" style={{ borderColor: theme?.border }}>
+        {[
+          { key: "general", label: "Général" },
+          { key: "appearance", label: "Apparence" },
+          { key: "members", label: "Membres" },
+        ].map((t) => (
+          <button key={t.key} onClick={() => setTab(t.key)}
+            className={cn("shrink-0 px-4 py-1.5 rounded-xl text-xs font-bold transition",
+              tab === t.key ? "text-black" : "text-muted-foreground hover:text-white")}
+            style={tab === t.key ? { background: accent } : {}}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-5">
+        {/* GENERAL */}
+        {tab === "general" && (
+          <>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Code d'invitation</p>
+              <div className="flex items-center gap-2 p-3 rounded-xl border font-mono text-sm text-white" style={{ borderColor: theme?.border }}>
+                <span className="flex-1">{server.invite_code || "—"}</span>
+                {server.invite_code && (
+                  <button onClick={() => copyInvite(server.invite_code)} className="text-muted-foreground hover:text-white">
+                    <Copy className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+            <Button onClick={onDelete} variant="destructive" className="w-full font-bold">
+              <Trash2 className="w-4 h-4 mr-2" /> Supprimer ce serveur
+            </Button>
+          </>
+        )}
+
+        {/* APPEARANCE */}
+        {tab === "appearance" && (
+          <>
+            {/* Icon */}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Icône du serveur</p>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-dashed flex items-center justify-center"
+                  style={{ borderColor: accent + "60" }}>
+                  {server.icon_url
+                    ? <img src={server.icon_url} className="w-full h-full object-cover" alt="" />
+                    : <span className="text-2xl">{server.icon_emoji || "🏠"}</span>}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-white">{uploadingIcon ? "Envoi..." : "Changer l'icône"}</p>
+                  <p className="text-xs text-muted-foreground">PNG, JPG</p>
+                </div>
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && uploadIcon(e.target.files[0])} disabled={uploadingIcon} />
+              </label>
+            </div>
+
+            {/* Banner */}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Bannière</p>
+              <label className="cursor-pointer block">
+                <div className="w-full h-24 rounded-2xl overflow-hidden border-2 border-dashed flex items-center justify-center"
+                  style={{ borderColor: accent + "60" }}>
+                  {server.banner_url
+                    ? <img src={server.banner_url} className="w-full h-full object-cover" alt="" />
+                    : <div className="flex flex-col items-center gap-1 text-muted-foreground">
+                        <Upload className="w-5 h-5" />
+                        <span className="text-xs">{uploadingBanner ? "Envoi..." : "Ajouter une bannière"}</span>
+                      </div>}
+                </div>
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && uploadBanner(e.target.files[0])} disabled={uploadingBanner} />
+              </label>
+            </div>
+
+            {/* Theme */}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Thème visuel</p>
+              <div className="grid grid-cols-4 gap-2">
+                {VISUAL_THEMES.map((t) => (
+                  <button key={t.key} onClick={() => onUpdate({ visual_theme: t.key })}
+                    className={cn("flex flex-col items-center gap-1 p-2 rounded-2xl border-2 transition text-xs font-semibold",
+                      (server.visual_theme || "default") === t.key ? "scale-105" : "border-transparent hover:border-white/20")}
+                    style={{ background: t.bg, borderColor: (server.visual_theme || "default") === t.key ? t.accent : undefined }}>
+                    <span className="text-xl">{t.emoji}</span>
+                    <span className="text-white/80 text-[10px]">{t.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* MEMBERS */}
+        {tab === "members" && (
+          <>
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{members.length} membres</p>
+            {members.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-6">Aucun membre enregistré</p>
+            )}
+            {members.map((m) => {
+              const role = ROLES.find((r) => r.key === m.role) || ROLES[0];
+              return (
+                <div key={m.id} className="p-3 rounded-2xl border space-y-2" style={{ borderColor: theme?.border, background: "rgba(255,255,255,0.04)" }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-white shrink-0"
+                      style={{ background: accent + "30" }}>
+                      {(m.user_name || "?")[0].toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm text-white truncate">{m.user_name || m.user_email}</p>
+                      <p className="text-[10px] text-muted-foreground">{m.user_email}</p>
+                    </div>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                      style={{ background: role.color + "20", color: role.color }}>
+                      {m.custom_role || role.label}
+                    </span>
+                  </div>
+
+                  {/* Status badges */}
+                  <div className="flex gap-2 flex-wrap">
+                    {m.is_banned && <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/20 text-red-400">🚫 Banni</span>}
+                    {m.is_muted_text && <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400">🔇 Muet texte</span>}
+                    {m.is_muted_voice && <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400">🎙️ Muet vocal</span>}
+                  </div>
+
+                  {/* Actions */}
+                  {memberAction?.member?.id === m.id ? (
+                    <div className="space-y-2 pt-1 border-t" style={{ borderColor: theme?.border }}>
+                      {memberAction.action === "role" && (
+                        <div className="flex gap-2 flex-wrap">
+                          {ROLES.map((r) => (
+                            <button key={r.key} onClick={() => handleSetRole(m, r.key)}
+                              className="px-3 py-1.5 rounded-xl text-xs font-bold border transition"
+                              style={{ borderColor: r.color + "40", color: r.color, background: r.color + "10" }}>
+                              {r.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {(memberAction.action === "ban" || memberAction.action === "mute_text" || memberAction.action === "mute_voice") && (
+                        <div className="space-y-2">
+                          <div className="flex gap-2 flex-wrap">
+                            {BAN_DURATIONS.map((d) => (
+                              <button key={d.key} onClick={() => setBanDuration(d.key)}
+                                className={cn("px-3 py-1.5 rounded-xl text-xs font-bold border transition",
+                                  banDuration === d.key ? "text-white" : "border-white/10 text-muted-foreground")}
+                                style={banDuration === d.key ? { background: accent + "30", borderColor: accent } : {}}>
+                                {d.label}
+                              </button>
+                            ))}
+                          </div>
+                          <Button size="sm" variant="destructive" onClick={() => {
+                            if (memberAction.action === "ban") handleBan(m);
+                            else if (memberAction.action === "mute_text") handleMuteText(m);
+                            else handleMuteVoice(m);
+                          }} className="w-full text-xs font-bold">
+                            Confirmer
+                          </Button>
+                        </div>
+                      )}
+                      <button onClick={() => setMemberAction(null)} className="text-xs text-muted-foreground hover:text-white">Annuler</button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2 flex-wrap pt-1 border-t" style={{ borderColor: theme?.border }}>
+                      <button onClick={() => setMemberAction({ member: m, action: "role" })}
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold border border-white/10 text-muted-foreground hover:text-white hover:border-white/20 transition">
+                        <Crown className="w-3 h-3" /> Rôle
+                      </button>
+                      <button onClick={() => setMemberAction({ member: m, action: "mute_text" })}
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold border border-orange-500/20 text-orange-400 hover:bg-orange-500/10 transition">
+                        <MicOff className="w-3 h-3" /> Muet texte
+                      </button>
+                      <button onClick={() => setMemberAction({ member: m, action: "mute_voice" })}
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold border border-yellow-500/20 text-yellow-400 hover:bg-yellow-500/10 transition">
+                        <MicOff className="w-3 h-3" /> Muet vocal
+                      </button>
+                      {m.is_banned ? (
+                        <button onClick={() => handleUnban(m)}
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold border border-green-500/20 text-green-400 hover:bg-green-500/10 transition">
+                          <Shield className="w-3 h-3" /> Débannir
+                        </button>
+                      ) : (
+                        <button onClick={() => setMemberAction({ member: m, action: "ban" })}
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold border border-red-500/20 text-red-400 hover:bg-red-500/10 transition">
+                          <Ban className="w-3 h-3" /> Bannir
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

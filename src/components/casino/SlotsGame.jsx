@@ -3,51 +3,92 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
-const SYMBOLS = ["🍒","🍋","🍊","🍇","🔔","💎","7️⃣","⭐"];
+const SYMBOLS = [
+  { s: "🍒", name: "Cerise", mult: 5 },
+  { s: "🍋", name: "Citron", mult: 5 },
+  { s: "🍊", name: "Orange", mult: 5 },
+  { s: "🍇", name: "Raisin", mult: 6 },
+  { s: "🔔", name: "Cloche", mult: 8 },
+  { s: "💎", name: "Diamant", mult: 50 },
+  { s: "7️⃣", name: "Sept", mult: 20 },
+  { s: "⭐", name: "Étoile", mult: 10 },
+];
 
 function getMultiplier(reels) {
   const [a, b, c] = reels;
-  if (a === b && b === c) {
-    if (a === "💎") return 50;
-    if (a === "7️⃣") return 20;
-    if (a === "⭐") return 10;
-    return 5;
-  }
+  if (a === b && b === c) return SYMBOLS.find((s) => s.s === a)?.mult || 5;
   if (a === b || b === c || a === c) return 1.5;
   return 0;
 }
 
-function Reel({ spinning, finalSymbol, delay }) {
-  const [display, setDisplay] = useState(finalSymbol || "🎰");
+function Reel({ spinning, finalSymbol, delay, index }) {
+  const [displaySymbols, setDisplaySymbols] = useState([finalSymbol, "🎰", "🎰"]);
+  const [offset, setOffset] = useState(0);
+  const [settled, setSettled] = useState(true);
   const intervalRef = useRef(null);
   const timeoutRef = useRef(null);
 
   useEffect(() => {
     if (spinning) {
-      setDisplay(SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]);
+      setSettled(false);
       intervalRef.current = setInterval(() => {
-        setDisplay(SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]);
-      }, 80);
+        setDisplaySymbols([
+          SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)].s,
+          SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)].s,
+          SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)].s,
+        ]);
+        setOffset((o) => (o + 1) % 3);
+      }, 60 + index * 10);
     } else {
       timeoutRef.current = setTimeout(() => {
         clearInterval(intervalRef.current);
-        setDisplay(finalSymbol || "🎰");
+        setDisplaySymbols([
+          SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)].s,
+          finalSymbol || "🎰",
+          SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)].s,
+        ]);
+        setSettled(true);
       }, delay);
     }
-    return () => {
-      clearInterval(intervalRef.current);
-      clearTimeout(timeoutRef.current);
-    };
-  }, [spinning, finalSymbol, delay]);
+    return () => { clearInterval(intervalRef.current); clearTimeout(timeoutRef.current); };
+  }, [spinning, finalSymbol, delay, index]);
+
+  const glowColor = spinning ? "rgba(255,215,0,0.4)" : "rgba(255,255,255,0.05)";
 
   return (
-    <div className={cn(
-      "w-20 h-24 sm:w-24 sm:h-28 rounded-2xl border-2 flex items-center justify-center text-4xl sm:text-5xl transition-all",
-      spinning ? "border-yellow-500/60 shadow-[0_0_20px_rgba(255,215,0,0.3)] scale-105" : "border-white/10 bg-white/5"
-    )}
-      style={spinning ? { background: "linear-gradient(135deg, rgba(255,215,0,0.08), rgba(255,215,0,0.02))" } : {}}>
-      <span className={spinning ? "animate-spin" : "transition-all duration-300"}>{display}</span>
+    <div className="relative overflow-hidden rounded-2xl border-2 w-20 sm:w-24"
+      style={{
+        height: "88px",
+        borderColor: spinning ? "rgba(255,215,0,0.5)" : "rgba(255,255,255,0.12)",
+        background: spinning
+          ? "linear-gradient(145deg, rgba(255,215,0,0.06), rgba(0,0,0,0.4))"
+          : "linear-gradient(145deg, rgba(255,255,255,0.04), rgba(0,0,0,0.3))",
+        boxShadow: spinning ? `0 0 20px ${glowColor}, inset 0 0 15px rgba(255,215,0,0.04)` : "inset 0 2px 4px rgba(0,0,0,0.5)",
+        transition: "all 0.3s",
+      }}>
+      {/* Top/bottom fade masks */}
+      <div className="absolute top-0 left-0 right-0 h-6 z-10 pointer-events-none"
+        style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.9), transparent)" }} />
+      <div className="absolute bottom-0 left-0 right-0 h-6 z-10 pointer-events-none"
+        style={{ background: "linear-gradient(to top, rgba(0,0,0,0.9), transparent)" }} />
+
+      {/* Symbols strip */}
+      <div className="flex flex-col items-center justify-center h-full gap-0">
+        {displaySymbols.map((sym, i) => (
+          <div key={i} className={cn("flex items-center justify-center", i === 1 ? "text-4xl sm:text-5xl" : "text-2xl opacity-30")}
+            style={{ height: i === 1 ? "52px" : "18px" }}>
+            {sym}
+          </div>
+        ))}
+      </div>
+
+      {/* Payline highlight on middle row */}
+      {settled && (
+        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-14 pointer-events-none rounded-xl border"
+          style={{ borderColor: "rgba(255,215,0,0.15)", background: "rgba(255,215,0,0.03)" }} />
+      )}
     </div>
   );
 }
@@ -58,6 +99,14 @@ export default function SlotsGame({ balance, setBalance, accentColor = "hsl(45 1
   const [showFinal, setShowFinal] = useState(false);
   const [amount, setAmount] = useState("50");
   const [result, setResult] = useState(null);
+  const [leverPressed, setLeverPressed] = useState(false);
+  const [lightFrame, setLightFrame] = useState(0);
+
+  useEffect(() => {
+    let t;
+    if (spinning) t = setInterval(() => setLightFrame((f) => (f + 1) % 7), 100);
+    return () => clearInterval(t);
+  }, [spinning]);
 
   const play = () => {
     const stake = parseInt(amount);
@@ -65,85 +114,131 @@ export default function SlotsGame({ balance, setBalance, accentColor = "hsl(45 1
     setSpinning(true);
     setShowFinal(false);
     setResult(null);
+    setLeverPressed(true);
+    setTimeout(() => setLeverPressed(false), 400);
 
-    const final = [0,1,2].map(() => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]);
-    setFinalReels(final);
+    const final = SYMBOLS.map(() => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)].s);
+    const selected = [0,1,2].map(() => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)].s);
+    setFinalReels(selected);
 
     setTimeout(() => {
       setSpinning(false);
       setShowFinal(true);
-      const mult = getMultiplier(final);
+      const mult = getMultiplier(selected);
       const gain = mult > 0 ? Math.round(stake * mult) - stake : -stake;
       setBalance((b) => b + gain);
-      setResult({ gain, mult, final });
-      if (gain > 0) toast.success(`x${mult} — +${gain} 🪙 !`);
-      else toast.error(`-${stake} 🪙 Rejouer !`);
-    }, 2000);
+      setResult({ gain, mult, symbols: selected });
+      if (gain > 0) toast.success(`${selected[0]}${selected[1]}${selected[2]} — x${mult} → +${gain} 🪙 !`);
+      else toast.error("Pas de chance... Réessaie !");
+    }, 2400);
   };
 
   return (
-    <div className="space-y-6">
-      <h3 className="font-black text-xl text-center text-white">Machines à Sous</h3>
+    <div className="space-y-5">
+      <h3 className="font-black text-xl text-center text-white tracking-wide">🎰 Machines à Sous</h3>
 
-      {/* Machine frame */}
-      <div className="relative mx-auto max-w-xs">
-        <div className="rounded-3xl border border-yellow-500/20 p-4 sm:p-6"
-          style={{ background: "linear-gradient(145deg, rgba(255,215,0,0.05), rgba(0,0,0,0.3))", boxShadow: "inset 0 2px 0 rgba(255,215,0,0.1), 0 0 40px rgba(0,0,0,0.5)" }}>
-          {/* Light bar top */}
-          <div className="flex justify-center gap-1 mb-4">
-            {Array.from({length: 7}).map((_,i) => (
-              <div key={i} className={cn("w-2 h-2 rounded-full transition-all", spinning ? "animate-pulse bg-yellow-400" : "bg-yellow-500/30")}
-                style={{ animationDelay: `${i * 100}ms` }} />
+      <div className="relative mx-auto max-w-sm">
+        {/* Machine body */}
+        <div className="rounded-3xl border overflow-hidden"
+          style={{
+            background: "linear-gradient(160deg, rgba(80,40,0,0.6) 0%, rgba(40,20,0,0.8) 100%)",
+            borderColor: "rgba(255,215,0,0.2)",
+            boxShadow: "0 0 60px rgba(0,0,0,0.8), inset 0 2px 0 rgba(255,215,0,0.15)",
+          }}>
+
+          {/* Light strip */}
+          <div className="flex justify-center gap-1.5 px-6 py-3 border-b" style={{ borderColor: "rgba(255,215,0,0.1)" }}>
+            {Array.from({length:11}).map((_,i) => (
+              <div key={i} className="w-2.5 h-2.5 rounded-full transition-all duration-100"
+                style={{
+                  background: spinning && (i % 7 === lightFrame) ? accentColor : "rgba(255,215,0,0.2)",
+                  boxShadow: spinning && (i % 7 === lightFrame) ? `0 0 8px ${accentColor}` : "none",
+                }} />
             ))}
           </div>
 
-          {/* Reels */}
-          <div className="flex items-center justify-center gap-2 sm:gap-3">
-            {[0,1,2].map((i) => (
-              <Reel key={i} spinning={spinning} finalSymbol={showFinal ? finalReels[i] : "🎰"} delay={i * 300} />
-            ))}
+          {/* Screen area */}
+          <div className="px-6 py-4 bg-black/40">
+            {/* Reels */}
+            <div className="flex items-center justify-center gap-2 sm:gap-3 relative">
+              {[0,1,2].map((i) => (
+                <Reel key={i} spinning={spinning} finalSymbol={showFinal ? finalReels[i] : "🎰"} delay={600 + i * 400} index={i} />
+              ))}
+              {/* Payline arrow indicators */}
+              <div className="absolute -left-2 top-1/2 -translate-y-1/2 text-xs font-black" style={{ color: accentColor }}>▶</div>
+              <div className="absolute -right-2 top-1/2 -translate-y-1/2 text-xs font-black" style={{ color: accentColor }}>◀</div>
+            </div>
           </div>
 
-          {/* Payline indicator */}
-          <div className="flex justify-center mt-4">
-            <div className="h-0.5 w-3/4 rounded-full" style={{ background: spinning ? "rgba(255,215,0,0.6)" : "rgba(255,255,255,0.1)" }} />
+          {/* Bottom panel */}
+          <div className="px-6 py-4 border-t" style={{ borderColor: "rgba(255,215,0,0.1)" }}>
+            {/* Credit display */}
+            <div className="flex justify-between items-center mb-3 text-xs">
+              <div className="text-center">
+                <p className="text-muted-foreground">CRÉDIT</p>
+                <p className="font-mono font-black text-sm" style={{ color: accentColor }}>{balance.toLocaleString()}</p>
+              </div>
+              <div className="w-px h-6 bg-white/10" />
+              <div className="text-center">
+                <p className="text-muted-foreground">MISE</p>
+                <p className="font-mono font-black text-sm" style={{ color: accentColor }}>{amount || 0}</p>
+              </div>
+              <div className="w-px h-6 bg-white/10" />
+              <div className="text-center">
+                <p className="text-muted-foreground">GAIN</p>
+                <p className={cn("font-mono font-black text-sm", result?.gain > 0 ? "text-green-400" : "text-muted-foreground")}>
+                  {result ? (result.gain > 0 ? `+${result.gain}` : result.gain) : "—"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)}
+                className="h-9 bg-black/50 border-white/10 text-white font-mono text-center" />
+              <Button onClick={play} disabled={spinning} className="shrink-0 px-6 h-9 font-bold rounded-xl"
+                style={{ background: accentColor, color: "#0a0a0a" }}>
+                {spinning ? "⏳" : "JOUER"}
+              </Button>
+            </div>
           </div>
         </div>
 
         {/* Lever */}
         <button onClick={play} disabled={spinning}
-          className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-24 flex flex-col items-center gap-0.5 cursor-pointer disabled:opacity-50"
-          style={{ filter: spinning ? "none" : "drop-shadow(0 0 6px rgba(255,215,0,0.4))" }}>
-          <div className="w-5 h-5 rounded-full bg-red-500 border-2 border-red-300 shadow-lg" />
-          <div className="flex-1 w-2 rounded-full bg-gradient-to-b from-yellow-600 to-yellow-800 border border-yellow-500/40" />
+          className="absolute -right-5 top-1/4 flex flex-col items-center gap-0 cursor-pointer disabled:opacity-40 select-none"
+          style={{ filter: `drop-shadow(0 0 8px ${accentColor}40)` }}>
+          <motion.div animate={leverPressed ? { y: 20 } : { y: 0 }} transition={{ type: "spring", stiffness: 600, damping: 20 }}>
+            <div className="w-6 h-6 rounded-full border-2 shadow-lg"
+              style={{ background: "radial-gradient(circle at 30% 30%, #ff6b6b, #cc0000)", borderColor: "#ff9999" }} />
+          </motion.div>
+          <motion.div
+            animate={leverPressed ? { scaleY: 0.7, originY: 0 } : { scaleY: 1 }}
+            className="w-3 rounded-full mt-0.5"
+            style={{ height: "64px", background: "linear-gradient(to bottom, #b8860b, #8B6914)", border: "1px solid rgba(255,215,0,0.3)" }} />
+          <div className="w-5 h-3 rounded-b-lg" style={{ background: "#4a3200" }} />
         </button>
       </div>
 
       {/* Result */}
-      {result && !spinning && (
-        <div className={cn("text-center p-3 rounded-2xl font-bold",
-          result.gain > 0 ? "bg-primary/10 text-primary border border-primary/30" : "bg-destructive/10 text-destructive border border-destructive/30")}>
-          {result.gain > 0 ? `🎉 x${result.mult} — +${result.gain} 🪙` : `💸 Pas de chance...`}
-        </div>
-      )}
+      <AnimatePresence>
+        {result && !spinning && (
+          <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ opacity: 0 }}
+            className={cn("text-center p-3 rounded-2xl font-bold border",
+              result.gain > 0 ? "bg-primary/10 text-primary border-primary/30" : "bg-destructive/10 text-destructive border-destructive/30")}>
+            {result.gain > 0 ? `🎉 x${result.mult} — +${result.gain} 🪙` : "💸 Pas de chance... Encore !"}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Paytable */}
-      <div className="text-[10px] sm:text-xs text-center text-muted-foreground grid grid-cols-2 gap-1 px-2">
-        <span>💎💎💎 = <b className="text-yellow-400">×50</b></span>
-        <span>7️⃣7️⃣7️⃣ = <b className="text-yellow-400">×20</b></span>
-        <span>⭐⭐⭐ = <b className="text-yellow-400">×10</b></span>
-        <span>3 identiques = <b className="text-yellow-400">×5</b></span>
+      <div className="grid grid-cols-4 gap-1 text-center text-[10px] text-muted-foreground">
+        {SYMBOLS.slice(4).map((s) => (
+          <div key={s.s} className="p-1.5 rounded-lg" style={{ background: "rgba(255,255,255,0.03)" }}>
+            <p className="text-base">{s.s}{s.s}{s.s}</p>
+            <p className="font-bold" style={{ color: accentColor }}>×{s.mult}</p>
+          </div>
+        ))}
       </div>
-
-      <div className="flex gap-3">
-        <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)}
-          placeholder="Mise" className="bg-white/5 border-white/10 text-white" />
-        <Button onClick={play} disabled={spinning} className="shrink-0 px-8 font-bold"
-          style={{ background: accentColor, color: "#0a0a0a" }}>
-          {spinning ? "🎰..." : "Jouer"}
-        </Button>
-      </div>
-      <p className="text-xs text-center text-muted-foreground">Solde : {balance.toLocaleString()} 🪙</p>
     </div>
   );
 }

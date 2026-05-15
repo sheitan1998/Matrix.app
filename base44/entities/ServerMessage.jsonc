@@ -1,0 +1,42 @@
+{
+  "name": "ServerMessage",
+  "type": "object",
+  "properties": {
+    "server_id": {
+      "type": "string"
+    },
+    "channel_id": {
+      "type": "string"
+    },
+    "author_email": {
+      "type": "string"
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "author_avatar": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "text",
+        "system",
+        "file"
+      ],
+      "default": "text"
+    },
+    "file_url": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "server_id",
+    "channel_id",
+    "author_email",
+    "content"
+  ]
+}

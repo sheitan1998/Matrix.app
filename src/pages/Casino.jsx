@@ -1,20 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Dices, CircleDot, Spade, Trophy, ShoppingCart, Palette, Users } from "lucide-react";
+import { ArrowLeft, Dices, CircleDot, Radio, Trophy, ShoppingCart, Palette, Grid3X3 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import AgeGate from "@/components/casino/AgeGate";
 import RouletteGame from "@/components/casino/RouletteGame";
 import SlotsGame from "@/components/casino/SlotsGame";
-import BlackjackGame from "@/components/casino/BlackjackGame";
+import BingoGame from "@/components/casino/BingoGame";
 import SportsBetting from "@/components/casino/SportsBetting";
+import SportLive from "@/components/casino/SportLive";
 import CasinoShop from "@/pages/casino/CasinoShop";
 import { cn } from "@/lib/utils";
 
 const GAMES = [
+  { key: "sports_live", label: "Sport Live", icon: Radio, desc: "En direct 🔴" },
   { key: "sports", label: "Paris Sportifs", icon: Trophy, desc: "Misez sur vos équipes" },
   { key: "roulette", label: "Roulette", icon: CircleDot, desc: "Rouge ou noir" },
-  { key: "slots", label: "Machines à sous", icon: Dices, desc: "7 fruits chanceux" },
-  { key: "blackjack", label: "Blackjack", icon: Spade, desc: "Battez le croupier" },
+  { key: "slots", label: "Slots", icon: Dices, desc: "7 fruits chanceux" },
+  { key: "bingo", label: "Bingo", icon: Grid3X3, desc: "BINGO !" },
 ];
 
 const CASINO_THEMES = [
@@ -82,7 +84,7 @@ const CASINO_THEMES = [
 
 export default function Casino() {
   const [ageVerified, setAgeVerified] = useState(false);
-  const [game, setGame] = useState("sports");
+  const [game, setGame] = useState("sports_live");
   const [balance, setBalance] = useState(1000);
   const [showShop, setShowShop] = useState(false);
   const [showThemePicker, setShowThemePicker] = useState(false);
@@ -189,10 +191,11 @@ export default function Casino() {
           <div className="absolute inset-0 opacity-5 pointer-events-none rounded-3xl"
             style={{ backgroundImage: "repeating-linear-gradient(45deg, white 0, white 1px, transparent 0, transparent 50%)", backgroundSize: "8px 8px" }} />
           <div className="p-6 sm:p-8 relative">
+            {game === "sports_live" && <SportLive accentColor={theme.accent} />}
             {game === "sports" && <SportsBetting balance={balance} setBalance={setBalance} />}
             {game === "roulette" && <RouletteGame balance={balance} setBalance={setBalance} accentColor={theme.accent} />}
             {game === "slots" && <SlotsGame balance={balance} setBalance={setBalance} accentColor={theme.accent} />}
-            {game === "blackjack" && <BlackjackGame balance={balance} setBalance={setBalance} accentColor={theme.accent} />}
+            {game === "bingo" && <BingoGame balance={balance} setBalance={setBalance} accentColor={theme.accent} />}
           </div>
         </div>
       </div>
