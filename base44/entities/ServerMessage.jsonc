@@ -40,8 +40,14 @@
     "content"
   ],
   "rls": {
-    "create": {},
-    "read": {},
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "read": {
+      "created_by": {
+        "$exists": true
+      }
+    },
     "update": {
       "$or": [
         {
