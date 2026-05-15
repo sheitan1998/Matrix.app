@@ -44,8 +44,10 @@
       ]
     },
     "update": {
-      "data.owner_email": "{{user.email}}",
       "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
         {
           "user_condition": {
             "role": "admin"
@@ -54,8 +56,10 @@
       ]
     },
     "delete": {
-      "data.owner_email": "{{user.email}}",
       "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
         {
           "user_condition": {
             "role": "admin"
