@@ -1,0 +1,46 @@
+{
+  "name": "WalletTransaction",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "casino_win",
+        "casino_loss",
+        "market_purchase",
+        "market_sale",
+        "challenge_reward",
+        "deposit",
+        "withdrawal"
+      ],
+      "default": "deposit"
+    },
+    "amount": {
+      "type": "number"
+    },
+    "description": {
+      "type": "string"
+    },
+    "reference_id": {
+      "type": "string"
+    },
+    "universe": {
+      "type": "string",
+      "enum": [
+        "casino",
+        "market",
+        "community",
+        "general"
+      ],
+      "default": "general"
+    }
+  },
+  "required": [
+    "user_email",
+    "type",
+    "amount"
+  ]
+}

@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Send, Hash, Paperclip, Smile } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Send, Hash, AtSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { NitroAvatar } from "@/components/NitroAvatarPicker";
 
 export default function ServerChat({ server, channel, theme, user }) {
   const [input, setInput] = useState("");
@@ -32,15 +32,38 @@ export default function ServerChat({ server, channel, theme, user }) {
   const send = async () => {
     if (!input.trim() || sending) return;
     setSending(true);
+    const content = input.trim();
     await base44.entities.ServerMessage.create({
       server_id: server.id,
       channel_id: channel.id,
       author_email: user.email,
       author_name: user.full_name || user.email.split("@")[0],
-      author_avatar: user.avatar_url || "",
-      content: input.trim(),
+      author_avatar: user.animated_avatar || user.avatar_url || "",
+      content,
       type: "text",
     });
+
+    // Detect @mentions and push notifications
+    const mentionRegex = /@(\S+)/g;
+    let match;
+    while ((match = mentionRegex.exec(content)) !== null) {
+      const mentioned = match[1].toLowerCase();
+      // Notify — in real app would look up by username; simplified here
+      toast.info(`Mention @${mentioned} envoyée`);
+      // Create notification for mentioned user (if we know their email)
+      if (mentioned !== user.full_name?.toLowerCase()) {
+        await base44.entities.Notification.create({
+          user_email: mentioned.includes("@") ? mentioned : `${mentioned}@matrix.app`,
+          type: "mention",
+          title: `@${user.full_name || "Quelqu'un"} t'a mentionné`,
+          body: content,
+          server_id: server.id,
+          channel_id: channel.id,
+          is_read: false,
+        }).catch(() => {});
+      }
+    }
+
     setInput("");
     setSending(false);
     qc.invalidateQueries({ queryKey });
@@ -79,15 +102,8 @@ export default function ServerChat({ server, channel, theme, user }) {
         {grouped.map((msg) => (
           <div key={msg.id} className={cn("flex gap-3 group", msg.isContinuation ? "mt-0.5" : "mt-3")}>
             {!msg.isContinuation ? (
-              <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 mt-0.5">
-                {msg.author_avatar
-                  ? <img src={msg.author_avatar} className="w-full h-full object-cover" alt="" />
-                  : <div className="w-full h-full flex items-center justify-center text-sm font-bold text-white rounded-full"
-                      style={{ background: accent + "50" }}>
-                      {(msg.author_name || "?")[0].toUpperCase()}
-                    </div>}
-              </div>
-            ) : <div className="w-9 shrink-0" />}
+              <NitroAvatar url={msg.author_avatar} name={msg.author_name} size="sm" className="mt-0.5 shrink-0" />
+            ) : <div className="w-7 shrink-0" />}
             <div className="flex-1 min-w-0">
               {!msg.isContinuation && (
                 <div className="flex items-baseline gap-2 mb-0.5">
@@ -97,7 +113,13 @@ export default function ServerChat({ server, channel, theme, user }) {
                   </span>
                 </div>
               )}
-              <p className="text-sm text-white/80 leading-relaxed break-words">{msg.content}</p>
+              <p className="text-sm text-white/80 leading-relaxed break-words">
+                {msg.content.split(/(@\S+)/g).map((part, i) =>
+                  part.startsWith("@")
+                    ? <span key={i} className="font-bold px-1 rounded" style={{ color: accent, background: accent + "20" }}>{part}</span>
+                    : <React.Fragment key={i}>{part}</React.Fragment>
+                )}
+              </p>
             </div>
           </div>
         ))}

@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { VISUAL_THEMES, getTheme } from "@/lib/visualThemes";
 import { Input } from "@/components/ui/input";
+import NotificationBell from "@/components/NotificationBell";
 
 const CHANNEL_TYPES = [
   { key: "text", label: "Textuel", icon: Hash },
@@ -138,10 +139,13 @@ export default function Community() {
           <>
             <Link to="/" className="text-muted-foreground hover:text-foreground transition"><ArrowLeft className="w-5 h-5" /></Link>
             <span className="font-black text-lg"><span className="text-premium">M</span>ATRIX Community</span>
-            <Link to="/community/subscription"
-              className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-premium/40 bg-premium/10 text-premium">
-              <Sparkles className="w-3.5 h-3.5" /> Nitro
-            </Link>
+            <div className="ml-auto flex items-center gap-2">
+              {user && <NotificationBell user={user} />}
+              <Link to="/community/subscription"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-premium/40 bg-premium/10 text-premium">
+                <Sparkles className="w-3.5 h-3.5" /> Nitro
+              </Link>
+            </div>
           </>
         )}
       </div>

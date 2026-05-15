@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Dices, CircleDot, Radio, Trophy, ShoppingCart, Palette, Grid3X3 } from "lucide-react";
+import NotificationBell from "@/components/NotificationBell";
+import { ArrowLeft, Dices, CircleDot, Radio, Trophy, ShoppingCart, Palette, Grid3X3, Wallet } from "lucide-react";
+import { useWallet } from "@/hooks/useWallet";
 import { base44 } from "@/api/base44Client";
 import AgeGate from "@/components/casino/AgeGate";
 import RouletteGame from "@/components/casino/RouletteGame";
@@ -85,11 +87,11 @@ const CASINO_THEMES = [
 export default function Casino() {
   const [ageVerified, setAgeVerified] = useState(false);
   const [game, setGame] = useState("sports_live");
-  const [balance, setBalance] = useState(1000);
   const [showShop, setShowShop] = useState(false);
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [casinoTheme, setCasinoTheme] = useState("matrix");
   const [user, setUser] = useState(null);
+  const { balance, setBalance, addTransaction } = useWallet();
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -123,11 +125,16 @@ export default function Casino() {
           <span className="text-sm font-bold" style={{ color: theme.accent }}>{theme.emoji} {theme.label.toUpperCase()}</span>
         </span>
         <div className="ml-auto flex items-center gap-2">
+          {user && <NotificationBell user={user} />}
           <button onClick={() => setShowThemePicker(!showThemePicker)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition"
             style={{ borderColor: theme.border, color: theme.accent, background: `${theme.accent}10` }}>
             <Palette className="w-3.5 h-3.5" /> Lieu
           </button>
+          <Link to="/wallet" className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition mr-1"
+            style={{ borderColor: theme.border, color: theme.accent, background: `${theme.accent}10` }}>
+            <Wallet className="w-3.5 h-3.5" />
+          </Link>
           <button onClick={() => setShowShop(true)}
             className="flex items-center gap-2 px-3 py-1.5 rounded-xl border transition"
             style={{ borderColor: `${theme.accent}40`, background: `${theme.accent}10` }}>

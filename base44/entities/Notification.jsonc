@@ -1,0 +1,47 @@
+{
+  "name": "Notification",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "mention",
+        "role_assigned",
+        "sport_event",
+        "new_message",
+        "invite"
+      ],
+      "default": "mention"
+    },
+    "title": {
+      "type": "string"
+    },
+    "body": {
+      "type": "string"
+    },
+    "link": {
+      "type": "string"
+    },
+    "is_read": {
+      "type": "boolean",
+      "default": false
+    },
+    "icon": {
+      "type": "string"
+    },
+    "server_id": {
+      "type": "string"
+    },
+    "channel_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "user_email",
+    "type",
+    "title"
+  ]
+}

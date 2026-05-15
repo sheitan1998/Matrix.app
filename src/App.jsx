@@ -36,6 +36,7 @@ import AIStudio from '@/pages/AIStudio';
 import AISubscription from '@/pages/AISubscription';
 import Casino from '@/pages/Casino';
 import CommunitySubscription from '@/pages/community/CommunitySubscription';
+import Wallet from '@/pages/Wallet';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -71,6 +72,7 @@ const AuthenticatedApp = () => {
       <Route path="/ai/subscription" element={<AISubscription />} />
       <Route path="/casino" element={<Casino />} />
       <Route path="/community/subscription" element={<CommunitySubscription />} />
+      <Route path="/wallet" element={<Wallet />} />
       <Route element={<MainLayout />}>
         <Route path="/stream" element={<Home />} />
         <Route path="/trending" element={<Trending />} />
