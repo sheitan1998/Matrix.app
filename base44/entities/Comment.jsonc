@@ -31,7 +31,9 @@
     "content"
   ],
   "rls": {
-    "create": {},
+    "create": {
+      "data.author_email": "{{user.email}}"
+    },
     "read": {},
     "update": {
       "$or": [
