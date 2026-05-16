@@ -1,202 +1,173 @@
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Trophy, Crown, Flame, TrendingUp, Medal } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
+import { Crown, Flame, Trophy } from "lucide-react";
 
-const MOCK_PLAYERS = [
-  { rank: 1, name: "NeonKing_XL", avatar: "👑", score: 9842350, game: "Slots", streak: 12, badge: "🏆" },
-  { rank: 2, name: "VegasDiablo", avatar: "😈", score: 7634200, game: "Blackjack", streak: 8, badge: "🥈" },
-  { rank: 3, name: "QueenOfLuck", avatar: "🌟", score: 5921800, game: "Roulette", streak: 6, badge: "🥉" },
-  { rank: 4, name: "MrJackpot77", avatar: "🎰", score: 4103500, game: "Slots", streak: 4, badge: null },
-  { rank: 5, name: "BlackAce_Pro", avatar: "🃏", score: 3287100, game: "Blackjack", streak: 3, badge: null },
-  { rank: 6, name: "RouletteGod", avatar: "🔴", score: 2845600, game: "Roulette", streak: 5, badge: null },
-  { rank: 7, name: "LuckyCharm88", avatar: "🍀", score: 2341200, game: "Slots", streak: 2, badge: null },
-  { rank: 8, name: "CryptoGambler", avatar: "💎", score: 1987400, game: "Blackjack", streak: 1, badge: null },
-  { rank: 9, name: "NightOwl_X", avatar: "🦉", score: 1432100, game: "Bingo", streak: 3, badge: null },
-  { rank: 10, name: "LasVegas_MVP", avatar: "🎲", score: 987600, game: "Sports", streak: 2, badge: null },
+const PLAYERS = [
+  { rank: 1,  name: "Gabriel",    avatar: "👨‍💼", earnings: "82.49T", chips: "x4,000", game: "Blackjack", color: "#ffd700" },
+  { rank: 2,  name: "Damien",     avatar: "😎",    earnings: "67.72T", chips: "x3,000", game: "Slots",     color: "#cccccc" },
+  { rank: 3,  name: "Tobias",     avatar: "🧔",    earnings: "65.73T", chips: "x2,400", game: "Roulette",  color: "#cd7f32" },
+  { rank: 4,  name: "Adrian",     avatar: "👩‍🦱", earnings: "65.65T", chips: "x2,000", game: "Slots",     color: "#9988ff" },
+  { rank: 5,  name: "Spencer",    avatar: "🧑‍🎤", earnings: "60.4T",  chips: "x2,000", game: "Blackjack", color: "#9988ff" },
+  { rank: 6,  name: "Felix",      avatar: "😄",    earnings: "59.09T", chips: "x2,000", game: "Roulette",  color: "#9988ff" },
+  { rank: 7,  name: "Ashton",     avatar: "👦",    earnings: "57.59T", chips: "x2,000", game: "Slots",     color: "#9988ff" },
+  { rank: 8,  name: "Julian",     avatar: "🧑‍🦱", earnings: "55.78T", chips: "x2,000", game: "Bingo",     color: "#9988ff" },
+  { rank: 9,  name: "Tristan",    avatar: "👱",    earnings: "46.98T", chips: "x2,000", game: "Sports",    color: "#9988ff" },
+  { rank: 10, name: "NightHawk",  avatar: "🦅",    earnings: "41.2T",  chips: "x2,000", game: "Blackjack", color: "#9988ff" },
 ];
 
-const GAME_COLORS = {
-  Slots: "#ff00ff",
-  Blackjack: "#ffd700",
-  Roulette: "#ff2020",
-  Bingo: "#00ffcc",
-  Sports: "#44ff00",
-};
+const TABS = ["All-Time", "Weekly", "Today"];
+const ROW_BG = ["#b8860b", "#808080", "#8b4513", "#4a3880", "#3a2870", "#2a1860", "#3a2870", "#2a1860", "#3a2870", "#2a1860"];
 
-const TABS = ["Tout temps", "Cette semaine", "Aujourd'hui"];
-
-export default function CasinoLeaderboard({ accentColor = "#ff00ff", currentUserBalance = 0 }) {
+export default function CasinoLeaderboard({ accentColor, currentUserBalance = 0 }) {
   const [tab, setTab] = useState(0);
-  const [animating, setAnimating] = useState(false);
-  const [players, setPlayers] = useState(MOCK_PLAYERS);
+  const [players, setPlayers] = useState(PLAYERS);
+  const [levelAnim, setLevelAnim] = useState(false);
 
-  const switchTab = (i) => {
-    setAnimating(true);
-    setTimeout(() => {
-      setTab(i);
-      // Shuffle scores slightly for different periods
-      const shuffled = [...MOCK_PLAYERS].map(p => ({
-        ...p,
-        score: Math.round(p.score * (0.3 + Math.random() * 0.7))
-      })).sort((a, b) => b.score - a.score).map((p, idx) => ({ ...p, rank: idx + 1 }));
-      setPlayers(shuffled);
-      setAnimating(false);
-    }, 200);
-  };
-
-  // Estimate user position
-  const userRank = players.findIndex(p => currentUserBalance > p.score / 100) + 1 || players.length + 1;
+  useEffect(() => {
+    setLevelAnim(true);
+    const t = setTimeout(() => {
+      const reordered = [...PLAYERS]
+        .map(p => ({ ...p, sortScore: Math.random() }))
+        .sort((a, b) => b.sortScore - a.sortScore)
+        .map((p, i) => ({ ...p, rank: i + 1, color: i < 3 ? PLAYERS[i].color : "#9988ff" }));
+      setPlayers(tab === 0 ? PLAYERS : reordered);
+      setLevelAnim(false);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [tab]);
 
   return (
-    <div className="space-y-4">
+    <div className="select-none">
       {/* Header */}
-      <div className="text-center">
-        <div className="inline-flex items-center gap-2 mb-1">
-          <Trophy className="w-6 h-6" style={{ color: "#ffd700", filter: "drop-shadow(0 0 8px #ffd700)" }} />
-          <h2 className="text-2xl font-black tracking-wider"
-            style={{ color: "#ffd700", textShadow: "0 0 15px #ffaa00", fontFamily: "'Arial Black', sans-serif" }}>
-            CLASSEMENT
-          </h2>
-          <Trophy className="w-6 h-6" style={{ color: "#ffd700", filter: "drop-shadow(0 0 8px #ffd700)" }} />
+      <div className="relative rounded-3xl overflow-hidden mb-4"
+        style={{
+          background: "linear-gradient(160deg, #1a0040 0%, #2d0070 50%, #1a0040 100%)",
+          border: "2px solid #8844ff60"
+        }}>
+        {/* Background card image effect */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
+          {["🃏","🂡","🂱","🃁"].map((c, i) => (
+            <div key={i} className="absolute text-4xl"
+              style={{ left: `${i * 25}%`, top: `${10 + (i % 2) * 20}%`, transform: `rotate(${-15 + i * 10}deg)` }}>
+              {c}
+            </div>
+          ))}
         </div>
-        <p className="text-xs text-fuchsia-400 font-semibold">Meilleurs joueurs MATRIX Casino</p>
+
+        <div className="relative z-10 p-4 text-center">
+          <p className="text-[10px] font-black uppercase tracking-widest mb-0.5" style={{ color: "#ff8844" }}>
+            MEGA HIT POKER LEAGUE
+          </p>
+          <p className="font-black text-3xl text-white" style={{ fontFamily: "'Arial Black', sans-serif", textShadow: "0 0 15px rgba(255,255,255,0.3)" }}>
+            TOP LEAGUE
+          </p>
+          {/* Tabs */}
+          <div className="flex justify-center mt-3">
+            {TABS.map((t, i) => (
+              <button key={t} onClick={() => setTab(i)}
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all mx-1"
+                style={{
+                  background: tab === i ? "linear-gradient(135deg, #ffaa00, #cc7700)" : "rgba(255,255,255,0.08)",
+                  color: tab === i ? "#000" : "#888",
+                  border: tab === i ? "none" : "1px solid rgba(255,255,255,0.1)"
+                }}>
+                {i === 0 && "🏅 "}
+                {t === "All-Time" ? "All-Time Winners" : t}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Mythical rank badge */}
+        <div className="relative z-10 mx-3 mb-3 rounded-2xl p-2 flex items-center gap-3"
+          style={{ background: "linear-gradient(135deg, #3d1560, #6622aa)", border: "1px solid #9944ff60" }}>
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
+            style={{ background: "linear-gradient(135deg, #8844ff, #5522aa)" }}>
+            🌟
+          </div>
+          <div>
+            <div className="flex items-center gap-1">
+              <span className="font-mono font-black text-2xl text-white">16</span>
+              <div>
+                <p className="text-[10px] font-bold text-purple-300">NIVEAU</p>
+              </div>
+            </div>
+          </div>
+          <div className="ml-auto">
+            <span className="font-black text-lg" style={{ color: "#ff88ff", textShadow: "0 0 8px #ff00ff", fontFamily: "'Arial Black', sans-serif" }}>
+              MYTHICAL
+            </span>
+          </div>
+        </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-2xl" style={{ background: "rgba(255,255,255,0.05)" }}>
-        {TABS.map((t, i) => (
-          <button key={t} onClick={() => switchTab(i)}
-            className="flex-1 py-2 rounded-xl text-xs font-bold transition-all"
-            style={{
-              background: tab === i ? "linear-gradient(135deg, #8800ff, #4400aa)" : "transparent",
-              color: tab === i ? "white" : "#666",
-              boxShadow: tab === i ? "0 0 10px #8800ff60" : "none"
-            }}>
-            {t}
-          </button>
-        ))}
+      {/* Column headers */}
+      <div className="flex items-center px-3 py-1.5 mb-1 rounded-xl"
+        style={{ background: "rgba(255,255,255,0.04)" }}>
+        <span className="w-16 text-[10px] font-black uppercase tracking-widest text-purple-400">Place</span>
+        <span className="flex-1 text-[10px] font-black uppercase tracking-widest text-purple-400">Name</span>
+        <span className="text-[10px] font-black uppercase tracking-widest text-purple-400">Earnings</span>
       </div>
 
-      {/* Top 3 podium */}
-      <div className="flex items-end justify-center gap-3 py-4">
-        {/* 2nd */}
-        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}
-          className="flex flex-col items-center gap-1">
-          <div className="text-2xl">{players[1]?.avatar}</div>
-          <div className="w-16 rounded-t-2xl flex flex-col items-center pt-2 pb-1"
-            style={{ height: "80px", background: "linear-gradient(180deg, #888888, #555555)", boxShadow: "0 0 15px #88888840" }}>
-            <span className="text-xl">🥈</span>
-            <span className="text-[10px] font-bold text-white mt-1">2</span>
-          </div>
-          <p className="text-[10px] font-bold text-white text-center max-w-[60px] truncate">{players[1]?.name}</p>
-          <p className="text-[9px] font-black" style={{ color: "#aaaaaa" }}>{(players[1]?.score / 1000).toFixed(0)}K</p>
-        </motion.div>
-
-        {/* 1st */}
-        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0 }}
-          className="flex flex-col items-center gap-1">
-          <motion.div animate={{ y: [0, -4, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>
-            <Crown className="w-8 h-8 mx-auto" style={{ color: "#ffd700", filter: "drop-shadow(0 0 10px #ffd700)" }} />
-          </motion.div>
-          <div className="text-3xl">{players[0]?.avatar}</div>
-          <div className="w-20 rounded-t-2xl flex flex-col items-center pt-2 pb-1 relative overflow-hidden"
-            style={{ height: "100px", background: "linear-gradient(180deg, #ffd700, #aa8800)", boxShadow: "0 0 25px #ffd70060" }}>
-            <div className="absolute inset-0 pointer-events-none"
-              style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 50%)" }} />
-            <span className="text-2xl">🏆</span>
-            <span className="text-xs font-black text-black mt-1">1</span>
-          </div>
-          <p className="text-[10px] font-bold text-white text-center max-w-[70px] truncate">{players[0]?.name}</p>
-          <p className="text-[9px] font-black" style={{ color: "#ffd700" }}>{(players[0]?.score / 1000).toFixed(0)}K</p>
-        </motion.div>
-
-        {/* 3rd */}
-        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}
-          className="flex flex-col items-center gap-1">
-          <div className="text-2xl">{players[2]?.avatar}</div>
-          <div className="w-16 rounded-t-2xl flex flex-col items-center pt-2 pb-1"
-            style={{ height: "60px", background: "linear-gradient(180deg, #cd7f32, #8b4513)", boxShadow: "0 0 15px #cd7f3240" }}>
-            <span className="text-lg">🥉</span>
-            <span className="text-[10px] font-bold text-white mt-0.5">3</span>
-          </div>
-          <p className="text-[10px] font-bold text-white text-center max-w-[60px] truncate">{players[2]?.name}</p>
-          <p className="text-[9px] font-black" style={{ color: "#cd7f32" }}>{(players[2]?.score / 1000).toFixed(0)}K</p>
-        </motion.div>
-      </div>
-
-      {/* Full leaderboard list */}
+      {/* Player rows */}
       <div className="space-y-1.5">
-        {players.map((player, idx) => {
-          const gameColor = GAME_COLORS[player.game] || "#888";
-          const isTop3 = idx < 3;
-          return (
-            <motion.div key={player.name}
-              initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: idx * 0.04 }}
-              className={cn("flex items-center gap-3 px-3 py-2.5 rounded-2xl transition-all", animating && "opacity-0")}
+        <AnimatePresence>
+          {players.map((p, idx) => (
+            <motion.div key={`${p.name}-${tab}`}
+              initial={{ x: -30, opacity: 0 }}
+              animate={{ x: 0, opacity: levelAnim ? 0 : 1 }}
+              transition={{ delay: idx * 0.04, duration: 0.3 }}
+              className="flex items-center px-3 py-2.5 rounded-2xl"
               style={{
-                background: isTop3
-                  ? `linear-gradient(135deg, ${gameColor}15, rgba(255,255,255,0.03))`
-                  : "rgba(255,255,255,0.04)",
-                border: `1px solid ${isTop3 ? gameColor + "30" : "rgba(255,255,255,0.06)"}`,
-                boxShadow: isTop3 ? `0 0 10px ${gameColor}10` : "none"
+                background: `linear-gradient(135deg, ${ROW_BG[idx]}cc, ${ROW_BG[idx]}88)`,
+                border: `1px solid ${p.color}40`
               }}>
-              {/* Rank */}
-              <div className="w-7 text-center">
-                {idx === 0 ? <span className="text-lg">🏆</span>
-                  : idx === 1 ? <span className="text-lg">🥈</span>
-                  : idx === 2 ? <span className="text-lg">🥉</span>
-                  : <span className="text-xs font-black text-muted-foreground">#{player.rank}</span>}
-              </div>
-
-              {/* Avatar */}
-              <div className="w-9 h-9 rounded-full flex items-center justify-center text-xl"
-                style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${gameColor}40` }}>
-                {player.avatar}
-              </div>
-
-              {/* Name + game */}
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm text-white truncate">{player.name}</p>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-                    style={{ background: gameColor + "20", color: gameColor }}>
-                    {player.game}
-                  </span>
-                  {player.streak > 3 && (
-                    <span className="text-[9px] font-bold flex items-center gap-0.5 text-orange-400">
-                      <Flame className="w-2.5 h-2.5" />{player.streak}🔥
-                    </span>
-                  )}
+              {/* Rank + chips */}
+              <div className="w-16 shrink-0">
+                <p className="font-black text-sm" style={{ color: p.color }}>
+                  {idx === 0 ? "1st" : idx === 1 ? "2nd" : idx === 2 ? "3rd" : `${idx + 1}th`}
+                </p>
+                <div className="flex items-center gap-0.5 mt-0.5">
+                  <span className="text-[8px]">🪙</span>
+                  <span className="text-[9px] font-bold text-yellow-400">{p.chips}</span>
                 </div>
               </div>
 
-              {/* Score */}
-              <div className="text-right">
-                <p className="font-mono font-black text-sm"
-                  style={{ color: isTop3 ? gameColor : "#888", textShadow: isTop3 ? `0 0 8px ${gameColor}` : "none" }}>
-                  {player.score.toLocaleString()}
+              {/* Avatar + name */}
+              <div className="flex items-center gap-2 flex-1">
+                <div className="w-9 h-9 rounded-full flex items-center justify-center text-xl shrink-0"
+                  style={{
+                    background: `radial-gradient(circle at 30% 30%, ${p.color}40, ${p.color}10)`,
+                    border: `2px solid ${p.color}60`
+                  }}>
+                  {p.avatar}
+                </div>
+                <div>
+                  <p className="font-bold text-sm text-white">{p.name}</p>
+                  <p className="text-[9px] text-purple-300">{p.game}</p>
+                </div>
+              </div>
+
+              {/* Earnings */}
+              <div className="text-right shrink-0">
+                <p className="font-mono font-black text-sm" style={{ color: p.color, textShadow: idx < 3 ? `0 0 8px ${p.color}` : "none" }}>
+                  ${p.earnings}
                 </p>
-                <p className="text-[9px] text-muted-foreground">🪙</p>
               </div>
             </motion.div>
-          );
-        })}
+          ))}
+        </AnimatePresence>
       </div>
 
-      {/* User position */}
-      <div className="rounded-2xl px-4 py-3 mt-4"
-        style={{ background: "linear-gradient(135deg, #1a0035, #2a005a)", border: "1px solid #8800ff40" }}>
-        <div className="flex items-center gap-3">
-          <Medal className="w-5 h-5 text-fuchsia-400" />
-          <div className="flex-1">
-            <p className="text-xs text-fuchsia-400 font-semibold">Votre position estimée</p>
-            <p className="font-black text-white">#{userRank > 10 ? "10+" : userRank} — {currentUserBalance.toLocaleString()} 🪙</p>
-          </div>
-          <TrendingUp className="w-4 h-4 text-fuchsia-400" />
-        </div>
-      </div>
+      {/* CTA */}
+      <motion.div
+        animate={{ scale: [1, 1.02, 1] }} transition={{ duration: 1.5, repeat: Infinity }}
+        className="mt-4 py-3 px-4 rounded-2xl text-center"
+        style={{ background: "linear-gradient(135deg, #ffd700, #ff8800)", boxShadow: "0 0 20px #ffd70060" }}>
+        <p className="font-black text-xl text-black" style={{ fontFamily: "'Arial Black', sans-serif" }}>
+          MONTREZ VOS TALENTS ! 🎲
+        </p>
+      </motion.div>
     </div>
   );
 }
