@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import NotificationBell from "@/components/NotificationBell";
-import { ArrowLeft, Dices, CircleDot, Radio, Trophy, ShoppingCart, Palette, Grid3X3, Wallet } from "lucide-react";
+import { ArrowLeft, Dices, CircleDot, Radio, Trophy, ShoppingCart, Wallet, Spade } from "lucide-react";
 import { useWallet } from "@/hooks/useWallet";
 import { base44 } from "@/api/base44Client";
 import AgeGate from "@/components/casino/AgeGate";
@@ -10,201 +10,219 @@ import SlotsGame from "@/components/casino/SlotsGame";
 import BingoGame from "@/components/casino/BingoGame";
 import SportsBetting from "@/components/casino/SportsBetting";
 import SportLive from "@/components/casino/SportLive";
+import BlackjackGame from "@/components/casino/BlackjackGame";
+import CasinoLeaderboard from "@/components/casino/CasinoLeaderboard";
 import CasinoShop from "@/pages/casino/CasinoShop";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 const GAMES = [
-  { key: "sports_live", label: "Sport Live", icon: Radio, desc: "En direct 🔴" },
-  { key: "sports", label: "Paris Sportifs", icon: Trophy, desc: "Misez sur vos équipes" },
-  { key: "roulette", label: "Roulette", icon: CircleDot, desc: "Rouge ou noir" },
-  { key: "slots", label: "Slots", icon: Dices, desc: "7 fruits chanceux" },
-  { key: "bingo", label: "Bingo", icon: Grid3X3, desc: "BINGO !" },
-];
-
-const CASINO_THEMES = [
-  {
-    key: "matrix",
-    label: "MATRIX",
-    emoji: "🟩",
-    bg: "linear-gradient(160deg, #0a0a12 0%, #110a1a 50%, #0a0f0a 100%)",
-    felt: "linear-gradient(145deg, #0f1a0f 0%, #0d1510 50%, #0a130a 100%)",
-    accent: "#00ff41",
-    header: "linear-gradient(to right, rgba(10,10,20,0.95), rgba(17,10,26,0.95))",
-    border: "rgba(0,255,65,0.15)",
-  },
-  {
-    key: "vegas",
-    label: "Las Vegas",
-    emoji: "🎰",
-    bg: "linear-gradient(160deg, #1a0a00 0%, #2a1500 50%, #1a0800 100%)",
-    felt: "linear-gradient(145deg, #1a0800 0%, #250d00 50%, #1a0600 100%)",
-    accent: "#ff6b00",
-    header: "linear-gradient(to right, rgba(30,10,0,0.95), rgba(40,20,0,0.95))",
-    border: "rgba(255,107,0,0.2)",
-  },
-  {
-    key: "macao",
-    label: "Macao",
-    emoji: "🏮",
-    bg: "linear-gradient(160deg, #1a0000 0%, #2d0000 50%, #1a0010 100%)",
-    felt: "linear-gradient(145deg, #1a0505 0%, #250808 50%, #1a0305 100%)",
-    accent: "#ff2020",
-    header: "linear-gradient(to right, rgba(30,0,0,0.95), rgba(45,0,0,0.95))",
-    border: "rgba(255,32,32,0.2)",
-  },
-  {
-    key: "montecarlo",
-    label: "Monte-Carlo",
-    emoji: "👑",
-    bg: "linear-gradient(160deg, #0a0a00 0%, #1a1500 50%, #0a0c00 100%)",
-    felt: "linear-gradient(145deg, #0f1208 0%, #141a0a 50%, #0c1008 100%)",
-    accent: "#ffd700",
-    header: "linear-gradient(to right, rgba(15,12,0,0.95), rgba(25,20,0,0.95))",
-    border: "rgba(255,215,0,0.2)",
-  },
-  {
-    key: "space",
-    label: "Espace",
-    emoji: "🚀",
-    bg: "linear-gradient(160deg, #04001a 0%, #0a0030 50%, #020010 100%)",
-    felt: "linear-gradient(145deg, #04001a 0%, #080028 50%, #04000f 100%)",
-    accent: "#a855f7",
-    header: "linear-gradient(to right, rgba(4,0,26,0.95), rgba(10,0,48,0.95))",
-    border: "rgba(168,85,247,0.2)",
-  },
-  {
-    key: "underwater",
-    label: "Sous-marin",
-    emoji: "🌊",
-    bg: "linear-gradient(160deg, #001520 0%, #002035 50%, #001018 100%)",
-    felt: "linear-gradient(145deg, #001520 0%, #002030 50%, #001018 100%)",
-    accent: "#06b6d4",
-    header: "linear-gradient(to right, rgba(0,20,30,0.95), rgba(0,30,45,0.95))",
-    border: "rgba(6,182,212,0.2)",
-  },
+  { key: "slots", label: "Slots", emoji: "🎰", desc: "7 néon chanceux", color: "#ff00ff" },
+  { key: "blackjack", label: "Blackjack", emoji: "🃏", desc: "Blackjack pays 3:2", color: "#ffd700" },
+  { key: "roulette", label: "Roulette", emoji: "🎡", desc: "Rouge ou noir", color: "#ff2020" },
+  { key: "sports_live", label: "Sport Live", emoji: "📡", desc: "En direct 🔴", color: "#44ff00" },
+  { key: "sports", label: "Paris", emoji: "⚽", desc: "Misez vos équipes", color: "#00aaff" },
+  { key: "bingo", label: "Bingo", emoji: "🎱", desc: "BINGO !", color: "#ffaa00" },
+  { key: "leaderboard", label: "Classement", emoji: "🏆", desc: "Top joueurs", color: "#ffd700" },
 ];
 
 export default function Casino() {
   const [ageVerified, setAgeVerified] = useState(false);
-  const [game, setGame] = useState("sports_live");
+  const [game, setGame] = useState("slots");
   const [showShop, setShowShop] = useState(false);
-  const [showThemePicker, setShowThemePicker] = useState(false);
-  const [casinoTheme, setCasinoTheme] = useState("matrix");
   const [user, setUser] = useState(null);
   const { balance, setBalance, addTransaction } = useWallet();
+  const [lightPhase, setLightPhase] = useState(0);
+  const [jackpotDisplay, setJackpotDisplay] = useState(12847635);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
     const verified = sessionStorage.getItem("casino_age_ok");
     if (verified === "yes") setAgeVerified(true);
-    const savedTheme = localStorage.getItem("casino_theme");
-    if (savedTheme) setCasinoTheme(savedTheme);
+  }, []);
+
+  useEffect(() => {
+    const t1 = setInterval(() => setLightPhase(p => (p + 1) % 10), 150);
+    const t2 = setInterval(() => setJackpotDisplay(j => j + Math.floor(Math.random() * 47 + 3)), 250);
+    return () => { clearInterval(t1); clearInterval(t2); };
   }, []);
 
   const onVerified = () => { sessionStorage.setItem("casino_age_ok", "yes"); setAgeVerified(true); };
-
-  const applyTheme = (key) => {
-    setCasinoTheme(key);
-    localStorage.setItem("casino_theme", key);
-    setShowThemePicker(false);
-  };
-
-  const theme = CASINO_THEMES.find((t) => t.key === casinoTheme) || CASINO_THEMES[0];
+  const activeGame = GAMES.find(g => g.key === game);
 
   if (!ageVerified) return <AgeGate onVerified={onVerified} />;
 
   return (
-    <div className="min-h-screen" style={{ background: theme.bg }}>
-      {/* Header */}
-      <div className="sticky top-0 z-40 border-b backdrop-blur-xl px-4 py-3 flex items-center gap-3"
-        style={{ background: theme.header, borderColor: theme.border }}>
-        <Link to="/" className="text-muted-foreground hover:text-foreground transition"><ArrowLeft className="w-5 h-5" /></Link>
-        <span className="font-black text-lg tracking-wide">
-          <span style={{ color: theme.accent, textShadow: `0 0 20px ${theme.accent}80` }}>M</span>
-          <span className="text-white">ATRIX </span>
-          <span className="text-sm font-bold" style={{ color: theme.accent }}>{theme.emoji} {theme.label.toUpperCase()}</span>
-        </span>
-        <div className="ml-auto flex items-center gap-2">
-          {user && <NotificationBell user={user} />}
-          <button onClick={() => setShowThemePicker(!showThemePicker)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition"
-            style={{ borderColor: theme.border, color: theme.accent, background: `${theme.accent}10` }}>
-            <Palette className="w-3.5 h-3.5" /> Lieu
-          </button>
-          <Link to="/wallet" className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition mr-1"
-            style={{ borderColor: theme.border, color: theme.accent, background: `${theme.accent}10` }}>
-            <Wallet className="w-3.5 h-3.5" />
-          </Link>
-          <button onClick={() => setShowShop(true)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl border transition"
-            style={{ borderColor: `${theme.accent}40`, background: `${theme.accent}10` }}>
-            <ShoppingCart className="w-4 h-4" style={{ color: theme.accent }} />
-            <span className="text-sm font-mono font-black" style={{ color: theme.accent }}>{balance.toLocaleString()} 🪙</span>
-          </button>
-        </div>
-      </div>
+    <div className="min-h-screen" style={{ background: "linear-gradient(160deg, #08000f 0%, #100020 40%, #08000f 100%)" }}>
 
-      {/* Theme picker */}
-      {showThemePicker && (
-        <div className="px-4 py-4 border-b" style={{ borderColor: theme.border, background: theme.header }}>
-          <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: theme.accent }}>Choisir le lieu</p>
-          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-            {CASINO_THEMES.map((t) => (
-              <button key={t.key} onClick={() => applyTheme(t.key)}
-                className={cn("shrink-0 flex flex-col items-center gap-1 p-3 rounded-2xl border-2 transition w-20 text-xs font-bold text-white",
-                  casinoTheme === t.key ? "scale-105" : "opacity-70 hover:opacity-100")}
-                style={{ background: t.bg, borderColor: casinoTheme === t.key ? t.accent : "transparent" }}>
-                <span className="text-2xl">{t.emoji}</span>
-                <span style={{ color: t.accent }}>{t.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* === ANIMATED NEON HEADER === */}
+      <div className="sticky top-0 z-40 backdrop-blur-xl"
+        style={{
+          background: "linear-gradient(180deg, rgba(20,0,40,0.98) 0%, rgba(10,0,25,0.95) 100%)",
+          borderBottom: "2px solid #6600cc40",
+          boxShadow: "0 4px 30px rgba(136,0,255,0.15)"
+        }}>
 
-      {/* Responsible gaming */}
-      <div className="px-4 py-2 text-center text-xs font-semibold border-b" style={{ background: `${theme.accent}08`, color: theme.accent + "cc", borderColor: theme.border }}>
-        ⚠️ Jeu fictif — Aucun argent réel — 18+ uniquement
-      </div>
-
-      <div className="max-w-5xl mx-auto px-4 py-6 space-y-5">
-        {/* Game selector */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {GAMES.map((g) => {
-            const Icon = g.icon;
+        {/* Top animated neon lights */}
+        <div className="flex overflow-hidden h-1.5">
+          {Array.from({ length: 40 }).map((_, i) => {
+            const colors = ["#ff00ff", "#8800ff", "#0088ff", "#ff0088", "#ffcc00"];
+            const active = i % 5 === lightPhase % 5;
             return (
-              <button key={g.key} onClick={() => setGame(g.key)}
-                className={cn("relative p-4 rounded-2xl border text-left transition overflow-hidden",
-                  game === g.key ? "" : "hover:opacity-90")}
-                style={game === g.key
-                  ? { borderColor: `${theme.accent}60`, background: `${theme.accent}15` }
-                  : { borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)" }}>
-                {game === g.key && (
-                  <div className="absolute inset-0 opacity-20 pointer-events-none"
-                    style={{ background: `radial-gradient(circle at top left, ${theme.accent}, transparent 60%)` }} />
-                )}
-                <Icon className="w-5 h-5 mb-2" style={{ color: game === g.key ? theme.accent : "hsl(var(--muted-foreground))" }} />
-                <p className="font-bold text-sm" style={{ color: game === g.key ? "white" : "hsl(var(--muted-foreground))" }}>{g.label}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5 hidden sm:block">{g.desc}</p>
-              </button>
+              <div key={i} className="flex-1 transition-all duration-150"
+                style={{
+                  background: active ? colors[i % 5] : "rgba(255,255,255,0.06)",
+                  boxShadow: active ? `0 0 6px ${colors[i % 5]}` : "none"
+                }} />
             );
           })}
         </div>
 
-        {/* Game table */}
-        <div className="rounded-3xl overflow-hidden border"
-          style={{ background: theme.felt, boxShadow: `0 0 60px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05)`, borderColor: theme.border }}>
-          {/* Table felt texture overlay */}
-          <div className="absolute inset-0 opacity-5 pointer-events-none rounded-3xl"
-            style={{ backgroundImage: "repeating-linear-gradient(45deg, white 0, white 1px, transparent 0, transparent 50%)", backgroundSize: "8px 8px" }} />
-          <div className="p-6 sm:p-8 relative">
-            {game === "sports_live" && <SportLive accentColor={theme.accent} />}
-            {game === "sports" && <SportsBetting balance={balance} setBalance={setBalance} />}
-            {game === "roulette" && <RouletteGame balance={balance} setBalance={setBalance} accentColor={theme.accent} />}
-            {game === "slots" && <SlotsGame balance={balance} setBalance={setBalance} accentColor={theme.accent} />}
-            {game === "bingo" && <BingoGame balance={balance} setBalance={setBalance} accentColor={theme.accent} />}
+        <div className="px-4 py-3 flex items-center gap-3">
+          <Link to="/" className="text-muted-foreground hover:text-white transition">
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+
+          {/* Casino title */}
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1">
+              <span className="font-black text-xl tracking-widest"
+                style={{ color: "#ffd700", textShadow: "0 0 10px #ffaa00, 0 0 20px #ff8800", fontFamily: "'Arial Black', sans-serif" }}>
+                MATRIX
+              </span>
+              <span className="font-black text-xl tracking-widest"
+                style={{ color: "#ff00ff", textShadow: "0 0 10px #ff00ff, 0 0 20px #aa00ff", fontFamily: "'Arial Black', sans-serif" }}>
+                {" "}CASINO
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-[10px] font-bold text-red-400">LIVE</span>
+              <span className="text-[10px] text-muted-foreground">• Jeu fictif 18+</span>
+            </div>
+          </div>
+
+          {/* Rolling jackpot */}
+          <div className="hidden sm:flex flex-col items-center px-3 py-1 rounded-xl border"
+            style={{ borderColor: "#ffd70030", background: "rgba(255,215,0,0.06)" }}>
+            <span className="text-[8px] font-bold text-yellow-600 uppercase tracking-widest">Jackpot</span>
+            <span className="font-mono font-black text-sm" style={{ color: "#ffd700", textShadow: "0 0 8px #ffaa00" }}>
+              {jackpotDisplay.toLocaleString()}🪙
+            </span>
+          </div>
+
+          <div className="ml-auto flex items-center gap-2">
+            {user && <NotificationBell user={user} />}
+            <Link to="/wallet"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition"
+              style={{ borderColor: "#6600cc40", color: "#aa66ff", background: "rgba(136,0,255,0.1)" }}>
+              <Wallet className="w-3.5 h-3.5" />
+            </Link>
+            <button onClick={() => setShowShop(true)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border transition"
+              style={{ borderColor: "#ffd70040", background: "rgba(255,215,0,0.08)" }}>
+              <ShoppingCart className="w-4 h-4 text-yellow-400" />
+              <span className="text-sm font-mono font-black" style={{ color: "#ffd700" }}>
+                {balance.toLocaleString()}🪙
+              </span>
+            </button>
           </div>
         </div>
+
+        {/* Bottom animated neon lights */}
+        <div className="flex overflow-hidden h-1">
+          {Array.from({ length: 40 }).map((_, i) => {
+            const colors = ["#00ffcc", "#0088ff", "#ff00ff", "#ffd700"];
+            const active = i % 4 === (lightPhase + 2) % 4;
+            return (
+              <div key={i} className="flex-1 transition-all duration-150"
+                style={{
+                  background: active ? colors[i % 4] : "rgba(255,255,255,0.04)",
+                  boxShadow: active ? `0 0 4px ${colors[i % 4]}` : "none"
+                }} />
+            );
+          })}
+        </div>
+      </div>
+
+      {/* === GAME SELECTOR (horizontal scroll) === */}
+      <div className="px-3 pt-4 pb-2">
+        <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
+          {GAMES.map(g => (
+            <motion.button key={g.key} onClick={() => setGame(g.key)}
+              whileTap={{ scale: 0.93 }}
+              className="shrink-0 flex flex-col items-center gap-1 px-4 py-3 rounded-2xl border-2 transition-all"
+              style={{
+                minWidth: "80px",
+                background: game === g.key
+                  ? `linear-gradient(135deg, ${g.color}20, ${g.color}08)`
+                  : "rgba(255,255,255,0.04)",
+                borderColor: game === g.key ? g.color + "80" : "rgba(255,255,255,0.08)",
+                boxShadow: game === g.key ? `0 0 20px ${g.color}30, inset 0 0 15px ${g.color}08` : "none",
+              }}>
+              <span className="text-2xl" style={{ filter: game === g.key ? `drop-shadow(0 0 6px ${g.color})` : "none" }}>
+                {g.emoji}
+              </span>
+              <span className="text-[10px] font-bold"
+                style={{ color: game === g.key ? g.color : "#666", textShadow: game === g.key ? `0 0 8px ${g.color}` : "none" }}>
+                {g.label}
+              </span>
+            </motion.button>
+          ))}
+        </div>
+      </div>
+
+      {/* === GAME AREA === */}
+      <div className="px-3 pb-24">
+        {/* Game title banner */}
+        <div className="flex items-center gap-2 mb-3 px-1">
+          <div className="h-px flex-1" style={{ background: `linear-gradient(to right, transparent, ${activeGame?.color || "#888"}40)` }} />
+          <span className="text-sm font-black tracking-widest" style={{ color: activeGame?.color, textShadow: `0 0 10px ${activeGame?.color}` }}>
+            {activeGame?.emoji} {activeGame?.label?.toUpperCase()}
+          </span>
+          <div className="h-px flex-1" style={{ background: `linear-gradient(to left, transparent, ${activeGame?.color || "#888"}40)` }} />
+        </div>
+
+        {/* Game container */}
+        <AnimatePresence mode="wait">
+          <motion.div key={game}
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.25 }}
+            className="rounded-3xl overflow-hidden"
+            style={{
+              background: "linear-gradient(160deg, #0f0020 0%, #180030 50%, #0f0020 100%)",
+              border: `2px solid ${activeGame?.color || "#333"}30`,
+              boxShadow: `0 0 40px rgba(0,0,0,0.8), 0 0 20px ${activeGame?.color || "#000"}10`
+            }}>
+            <div className="p-4 sm:p-6">
+              {game === "slots" && <SlotsGame balance={balance} setBalance={setBalance} accentColor={activeGame.color} />}
+              {game === "blackjack" && <BlackjackGame balance={balance} setBalance={setBalance} accentColor={activeGame.color} />}
+              {game === "roulette" && <RouletteGame balance={balance} setBalance={setBalance} accentColor={activeGame.color} />}
+              {game === "sports_live" && <SportLive accentColor={activeGame.color} />}
+              {game === "sports" && <SportsBetting balance={balance} setBalance={setBalance} />}
+              {game === "bingo" && <BingoGame balance={balance} setBalance={setBalance} accentColor={activeGame.color} />}
+              {game === "leaderboard" && <CasinoLeaderboard accentColor={activeGame.color} currentUserBalance={balance} />}
+            </div>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Quick game promo cards */}
+        {game !== "leaderboard" && (
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            {GAMES.filter(g => g.key !== game && g.key !== "leaderboard" && g.key !== "sports_live").slice(0, 3).map(g => (
+              <button key={g.key} onClick={() => setGame(g.key)}
+                className="rounded-2xl p-3 text-left transition-all hover:scale-105"
+                style={{
+                  background: `linear-gradient(135deg, ${g.color}15, rgba(0,0,0,0.4))`,
+                  border: `1px solid ${g.color}30`
+                }}>
+                <span className="text-xl block mb-1" style={{ filter: `drop-shadow(0 0 4px ${g.color})` }}>{g.emoji}</span>
+                <p className="text-[10px] font-black" style={{ color: g.color }}>{g.label.toUpperCase()}</p>
+                <p className="text-[9px] text-muted-foreground mt-0.5">{g.desc}</p>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {showShop && <CasinoShop balance={balance} setBalance={setBalance} onClose={() => setShowShop(false)} />}

@@ -1,6 +1,4 @@
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -26,54 +24,74 @@ function handTotal(hand) {
 }
 
 function Card({ card, hidden, delay = 0 }) {
-  const isRed = ["♥","♦"].includes(card?.suit);
+  const isRed = card && ["♥","♦"].includes(card.suit);
   return (
     <motion.div
-      initial={{ rotateY: 90, opacity: 0, y: -20 }}
-      animate={{ rotateY: 0, opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, delay, ease: "backOut" }}
-      className="shrink-0"
-      style={{ perspective: 600 }}
-    >
+      initial={{ rotateY: 180, opacity: 0, y: -30, scale: 0.8 }}
+      animate={{ rotateY: 0, opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.4, delay, ease: "backOut" }}
+      className="shrink-0 relative"
+      style={{ perspective: "800px" }}>
       {hidden ? (
-        <div className="w-14 h-20 sm:w-16 sm:h-24 rounded-xl flex items-center justify-center text-2xl border-2 select-none"
-          style={{ background: "linear-gradient(135deg, #1a1060, #0d0940)", borderColor: "rgba(100,80,200,0.4)", boxShadow: "0 4px 12px rgba(0,0,0,0.5)" }}>
-          🂠
+        <div className="w-12 h-18 rounded-xl flex items-center justify-center select-none"
+          style={{
+            width: "48px", height: "72px",
+            background: "linear-gradient(135deg, #1a0060, #0d0040)",
+            border: "1px solid rgba(100,80,200,0.6)",
+            boxShadow: "0 6px 20px rgba(0,0,0,0.7), 0 0 10px rgba(100,50,255,0.3)"
+          }}>
+          <span className="text-2xl">🂠</span>
         </div>
       ) : (
-        <div className={cn(
-          "w-14 h-20 sm:w-16 sm:h-24 rounded-xl flex flex-col p-1.5 border border-gray-200/10 select-none",
-          isRed ? "text-red-500" : "text-white"
-        )}
-          style={{ background: "linear-gradient(135deg, #fafafa, #e8e8e8)", boxShadow: "0 4px 12px rgba(0,0,0,0.4)", color: isRed ? "#dc2626" : "#111" }}>
-          <span className="text-base font-black leading-none">{card.value}</span>
-          <span className="text-lg leading-none">{card.suit}</span>
-          <span className="mt-auto text-base font-black leading-none self-end rotate-180">{card.value}</span>
+        <div className="rounded-xl flex flex-col p-1 select-none relative overflow-hidden"
+          style={{
+            width: "48px", height: "72px",
+            background: "linear-gradient(135deg, #fefefe, #e8e8e8)",
+            border: "1px solid rgba(255,255,255,0.2)",
+            boxShadow: "0 6px 20px rgba(0,0,0,0.7), 0 2px 4px rgba(0,0,0,0.3)"
+          }}>
+          <span className="text-sm font-black leading-none" style={{ color: isRed ? "#dc2626" : "#111" }}>
+            {card.value}
+          </span>
+          <span className="text-base leading-none mt-0.5" style={{ color: isRed ? "#dc2626" : "#111" }}>
+            {card.suit}
+          </span>
+          <span className="mt-auto text-sm font-black leading-none self-end rotate-180" style={{ color: isRed ? "#dc2626" : "#111" }}>
+            {card.value}
+          </span>
+          {/* Shine */}
+          <div className="absolute inset-0 pointer-events-none"
+            style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.5) 0%, transparent 50%)", borderRadius: "10px" }} />
         </div>
       )}
     </motion.div>
   );
 }
 
-export default function BlackjackGame({ balance, setBalance, accentColor = "hsl(45 100% 55%)" }) {
+const BETS_PRESET = [100, 250, 500, 1000, 2500];
+
+export default function BlackjackGame({ balance, setBalance, accentColor = "#ffd700" }) {
   const [deck, setDeck] = useState([]);
   const [playerHand, setPlayerHand] = useState([]);
   const [dealerHand, setDealerHand] = useState([]);
   const [phase, setPhase] = useState("bet");
-  const [amount, setAmount] = useState("50");
+  const [bet, setBet] = useState(250);
   const [stake, setStake] = useState(0);
   const [message, setMessage] = useState("");
   const [hideDealer, setHideDealer] = useState(true);
+  const [chipAnim, setChipAnim] = useState(false);
 
   const deal = () => {
-    const s = parseInt(amount);
-    if (!s || s <= 0 || s > balance) { toast.error("Mise invalide"); return; }
+    if (bet <= 0 || bet > balance) { toast.error("Mise invalide"); return; }
+    setChipAnim(true);
+    setTimeout(() => setChipAnim(false), 600);
     const d = newDeck();
     const p = [d.pop(), d.pop()];
     const dl = [d.pop(), d.pop()];
-    setDeck(d); setPlayerHand(p); setDealerHand(dl); setStake(s);
+    setDeck(d); setPlayerHand(p); setDealerHand(dl); setStake(bet);
     setHideDealer(true); setMessage(""); setPhase("playing");
-    if (handTotal(p) === 21) endGame(p, dl, d, true, s);
+    setBalance(b => b - bet);
+    if (handTotal(p) === 21) endGame(p, dl, d, true, bet);
   };
 
   const endGame = (ph, dh, d, natural, s) => {
@@ -85,13 +103,18 @@ export default function BlackjackGame({ balance, setBalance, accentColor = "hsl(
     const pt = natural ? 21 : handTotal(ph);
     const dt = handTotal(dl);
     let gain = 0, msg = "";
-    if (pt > 21) { gain = -s; msg = `💸 Bust ! -${s} 🪙`; }
-    else if (dt > 21 || pt > dt) { gain = natural ? Math.round(s * 1.5) : s; msg = `🎉 Gagné ! +${gain} 🪙`; }
-    else if (pt === dt) { gain = 0; msg = "🤝 Égalité !"; }
-    else { gain = -s; msg = `💸 Croupier gagne. -${s} 🪙`; }
-    setBalance((b) => b + gain);
+    if (pt > 21) { gain = 0; msg = "💸 Bust ! Perdu"; }
+    else if (dt > 21 || pt > dt) {
+      gain = natural ? Math.round(s * 2.5) : s * 2;
+      msg = natural ? `🃏 BLACKJACK ! +${gain} 🪙` : `🎉 Gagné ! +${gain} 🪙`;
+    }
+    else if (pt === dt) { gain = s; msg = "🤝 Égalité — remboursé"; }
+    else { gain = 0; msg = `💸 Croupier gagne. -${s} 🪙`; }
+    if (gain > 0) setBalance(b => b + gain);
     setMessage(msg);
     setPhase("done");
+    if (gain > s) toast.success(msg);
+    else if (gain === 0) toast.error(msg);
   };
 
   const hit = () => {
@@ -106,93 +129,210 @@ export default function BlackjackGame({ balance, setBalance, accentColor = "hsl(
   const reset = () => { setPhase("bet"); setPlayerHand([]); setDealerHand([]); setMessage(""); };
 
   return (
-    <div className="space-y-5">
-      <h3 className="font-black text-xl text-center text-white">Blackjack</h3>
+    <div className="space-y-4 select-none">
+      {/* Title */}
+      <div className="text-center">
+        <p className="text-3xl font-black tracking-wider"
+          style={{
+            color: "#ffd700",
+            textShadow: "0 0 10px #ffaa00, 0 0 30px #ff8800",
+            fontFamily: "'Arial Black', sans-serif",
+            WebkitTextStroke: "1px #ff8800"
+          }}>
+          BLACKJACK
+        </p>
+        <p className="text-xs text-yellow-600 font-semibold mt-0.5">DEALER PAYS 3 TO 2 · DEALER HITS SOFT 17</p>
+      </div>
 
-      {/* Table felt area */}
-      {phase !== "bet" && (
-        <div className="rounded-3xl p-4 space-y-4"
-          style={{ background: "linear-gradient(145deg, #0a2010, #061508)", border: "1px solid rgba(255,255,255,0.06)" }}>
-          {/* Dealer */}
-          <div>
-            <p className="text-xs text-muted-foreground mb-2 text-center font-semibold tracking-wider uppercase">
-              Croupier {!hideDealer ? `(${handTotal(dealerHand)})` : ""}
-            </p>
-            <div className="flex gap-2 justify-center flex-wrap">
-              <AnimatePresence>
-                {dealerHand.map((c, i) => (
-                  <Card key={i} card={c} hidden={hideDealer && i === 1} delay={i * 0.15} />
-                ))}
-              </AnimatePresence>
-            </div>
-          </div>
+      {/* Table */}
+      <div className="relative rounded-3xl overflow-hidden"
+        style={{
+          background: "radial-gradient(ellipse at center, #1a4a1a 0%, #0d2d0d 60%, #071507 100%)",
+          border: "3px solid #4a8a1a40",
+          boxShadow: "inset 0 0 60px rgba(0,0,0,0.8), 0 0 40px rgba(0,0,0,0.6)",
+          minHeight: "360px"
+        }}>
 
-          {/* Divider */}
-          <div className="flex items-center gap-3 px-4">
-            <div className="flex-1 h-px bg-white/10" />
-            <span className="text-[10px] text-white/30 uppercase tracking-widest">vs</span>
-            <div className="flex-1 h-px bg-white/10" />
-          </div>
+        {/* Table texture overlay */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none"
+          style={{ backgroundImage: "repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0, rgba(255,255,255,0.05) 1px, transparent 0, transparent 50%)", backgroundSize: "4px 4px" }} />
 
-          {/* Player */}
-          <div>
-            <p className="text-xs text-muted-foreground mb-2 text-center font-semibold tracking-wider uppercase">
-              Vous ({handTotal(playerHand)})
-            </p>
-            <div className="flex gap-2 justify-center flex-wrap">
-              <AnimatePresence>
-                {playerHand.map((c, i) => (
-                  <Card key={i} card={c} hidden={false} delay={i * 0.15 + 0.2} />
-                ))}
-              </AnimatePresence>
-            </div>
-          </div>
+        {/* Floating coins decoration */}
+        {["💰","💰","🪙","💰"].map((c, i) => (
+          <motion.div key={i} className="absolute pointer-events-none text-2xl opacity-60"
+            style={{ left: `${10 + i * 25}%`, top: `${15 + (i % 2) * 60}%` }}
+            animate={{ y: [0, -8, 0], rotate: [0, 15, 0] }}
+            transition={{ duration: 2 + i * 0.5, repeat: Infinity, delay: i * 0.3 }}>
+            {c}
+          </motion.div>
+        ))}
+
+        {/* Blackjack watermark */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5">
+          <p className="text-6xl font-black text-white tracking-widest">BLACKJACK</p>
         </div>
-      )}
+
+        <div className="relative z-10 p-4 space-y-3">
+          {/* Dealer area */}
+          {phase !== "bet" && (
+            <div>
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <div className="h-px flex-1 bg-yellow-900/40" />
+                <p className="text-xs font-bold tracking-widest text-yellow-700 uppercase">
+                  Croupier {!hideDealer ? `• ${handTotal(dealerHand)}` : ""}
+                </p>
+                <div className="h-px flex-1 bg-yellow-900/40" />
+              </div>
+              <div className="flex gap-1.5 justify-center flex-wrap">
+                <AnimatePresence>
+                  {dealerHand.map((c, i) => (
+                    <Card key={i} card={c} hidden={hideDealer && i === 1} delay={i * 0.15} />
+                  ))}
+                </AnimatePresence>
+              </div>
+            </div>
+          )}
+
+          {/* Center divider */}
+          {phase !== "bet" && (
+            <div className="flex items-center gap-2 px-4 py-1">
+              <div className="flex-1 h-px" style={{ background: "rgba(255,215,0,0.15)" }} />
+              <div className="px-3 py-0.5 rounded-full text-[10px] font-bold text-yellow-600 border border-yellow-800/40">
+                vs
+              </div>
+              <div className="flex-1 h-px" style={{ background: "rgba(255,215,0,0.15)" }} />
+            </div>
+          )}
+
+          {/* Player area */}
+          {phase !== "bet" && (
+            <div>
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <div className="h-px flex-1 bg-yellow-900/40" />
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full border-2 border-yellow-600 overflow-hidden bg-gradient-to-br from-purple-600 to-indigo-800 flex items-center justify-center">
+                    <span className="text-base">👤</span>
+                  </div>
+                  <p className="text-xs font-bold tracking-widest text-yellow-700 uppercase">
+                    Vous • {handTotal(playerHand)}
+                  </p>
+                </div>
+                <div className="h-px flex-1 bg-yellow-900/40" />
+              </div>
+              <div className="flex gap-1.5 justify-center flex-wrap">
+                <AnimatePresence>
+                  {playerHand.map((c, i) => (
+                    <Card key={i} card={c} hidden={false} delay={i * 0.15 + 0.2} />
+                  ))}
+                </AnimatePresence>
+              </div>
+            </div>
+          )}
+
+          {/* Bet phase */}
+          {phase === "bet" && (
+            <div className="py-8 text-center space-y-4">
+              <p className="text-white/40 text-sm font-semibold">Choisissez votre mise</p>
+              <div className="flex gap-2 justify-center flex-wrap">
+                {BETS_PRESET.map(b => (
+                  <motion.button key={b} whileTap={{ scale: 0.9 }} onClick={() => setBet(b)}
+                    className="relative flex flex-col items-center transition-all"
+                    style={{ filter: bet === b ? `drop-shadow(0 0 12px ${accentColor})` : "none" }}>
+                    <div className="w-14 h-14 rounded-full flex items-center justify-center font-black text-sm border-4 transition-all"
+                      style={{
+                        background: bet === b
+                          ? `radial-gradient(circle at 30% 30%, ${accentColor}, #aa7700)`
+                          : "radial-gradient(circle at 30% 30%, #4a3a1a, #2a1a08)",
+                        borderColor: bet === b ? accentColor : "#3a2a0a",
+                        color: bet === b ? "#0a0a0a" : "#888",
+                        boxShadow: bet === b ? `0 4px 0 #664400, 0 6px 12px rgba(0,0,0,0.5)` : "0 4px 0 #1a0e00",
+                      }}>
+                      {b >= 1000 ? `${b/1000}K` : b}
+                    </div>
+                  </motion.button>
+                ))}
+              </div>
+              <p className="text-xs text-yellow-700">Solde: <span className="font-bold text-yellow-500">{balance.toLocaleString()} 🪙</span></p>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Message */}
       <AnimatePresence>
         {message && (
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-            className={cn("text-center p-4 rounded-2xl font-bold text-lg",
-              message.includes("Gagné") ? "bg-primary/10 text-primary border border-primary/30"
-              : message.includes("Égalité") ? "bg-white/5 text-white border border-white/10"
-              : "bg-destructive/10 text-destructive border border-destructive/30")}>
+          <motion.div initial={{ opacity: 0, scale: 0.9, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0 }}
+            className="text-center py-3 px-4 rounded-2xl font-black text-lg"
+            style={{
+              background: message.includes("Gagné") || message.includes("BLACKJACK")
+                ? "linear-gradient(135deg, #0a2a00, #153d00)"
+                : message.includes("Égalité")
+                  ? "linear-gradient(135deg, #1a1a00, #2a2a00)"
+                  : "linear-gradient(135deg, #2a0000, #3d0000)",
+              border: `1px solid ${message.includes("Gagné") || message.includes("BLACKJACK") ? "#44ff0040" : message.includes("Égalité") ? "#ffff0030" : "#ff000040"}`,
+              color: message.includes("Gagné") || message.includes("BLACKJACK") ? "#44ff44" : message.includes("Égalité") ? "#ffff66" : "#ff6666",
+              textShadow: "0 0 10px currentColor"
+            }}>
             {message}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Controls */}
+      {/* Action buttons */}
       {phase === "bet" && (
-        <div className="flex gap-3">
-          <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)}
-            placeholder="Mise" className="bg-white/5 border-white/10 text-white" />
-          <Button onClick={deal} className="shrink-0 px-8 font-bold" style={{ background: accentColor, color: "#0a0a0a" }}>
-            Distribuer
-          </Button>
-        </div>
+        <motion.button onClick={deal} whileTap={{ scale: 0.97 }}
+          className="w-full py-4 rounded-2xl font-black text-xl tracking-wider text-black"
+          style={{
+            background: `linear-gradient(135deg, ${accentColor}, #cc8800)`,
+            boxShadow: `0 0 20px ${accentColor}60, 0 4px 0 #664400`,
+            textShadow: "0 1px 2px rgba(0,0,0,0.3)"
+          }}>
+          🃏 DISTRIBUER
+        </motion.button>
       )}
 
       {phase === "playing" && (
-        <div className="flex gap-3 justify-center">
-          <Button onClick={hit} className="px-8 font-bold bg-primary text-background hover:bg-primary/90">
-            +Carte
-          </Button>
-          <Button onClick={stand} variant="outline" className="px-8 font-bold border-white/20 text-white hover:bg-white/10">
-            Rester
-          </Button>
+        <div className="flex gap-3">
+          <motion.button onClick={hit} whileTap={{ scale: 0.95 }}
+            className="flex-1 py-4 rounded-2xl font-black text-lg text-black"
+            style={{
+              background: "linear-gradient(135deg, #44aaff, #2266cc)",
+              boxShadow: "0 0 15px #44aaff40, 0 4px 0 #113366",
+              color: "white"
+            }}>
+            HIT
+          </motion.button>
+          <motion.button onClick={stand} whileTap={{ scale: 0.95 }}
+            className="flex-1 py-4 rounded-2xl font-black text-lg"
+            style={{
+              background: "linear-gradient(135deg, #ff6644, #cc3300)",
+              boxShadow: "0 0 15px #ff664440, 0 4px 0 #661100",
+              color: "white"
+            }}>
+            STAND
+          </motion.button>
         </div>
       )}
 
       {phase === "done" && (
-        <Button onClick={reset} className="w-full font-bold h-11 rounded-2xl"
-          style={{ background: accentColor, color: "#0a0a0a" }}>
-          Rejouer
-        </Button>
+        <motion.button onClick={reset} whileTap={{ scale: 0.97 }}
+          className="w-full py-4 rounded-2xl font-black text-xl"
+          style={{
+            background: `linear-gradient(135deg, ${accentColor}, #cc8800)`,
+            boxShadow: `0 0 20px ${accentColor}60, 0 4px 0 #664400`,
+            color: "#0a0a0a"
+          }}>
+          🔄 REJOUER
+        </motion.button>
       )}
 
-      <p className="text-xs text-center text-muted-foreground">Solde : {balance.toLocaleString()} 🪙</p>
+      {/* Huge jackpots footer */}
+      <div className="text-center py-2">
+        <p className="text-2xl font-black tracking-wider"
+          style={{ color: "#ffd700", textShadow: "0 0 15px #ffaa00, 0 0 30px #ff8800", fontFamily: "'Arial Black', sans-serif" }}>
+          HUGE JACKPOTS!
+        </p>
+      </div>
     </div>
   );
 }
