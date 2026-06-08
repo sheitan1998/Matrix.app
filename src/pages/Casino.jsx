@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import NotificationBell from "@/components/NotificationBell";
-import { ArrowLeft, ShoppingCart, Wallet } from "lucide-react";
+import { ArrowLeft, ShoppingCart } from "lucide-react";
 import { useWallet } from "@/hooks/useWallet";
 import { base44 } from "@/api/base44Client";
 import AgeGate from "@/components/casino/AgeGate";
@@ -14,6 +14,8 @@ import BlackjackGame from "@/components/casino/BlackjackGame";
 import CasinoLeaderboard from "@/components/casino/CasinoLeaderboard";
 import CasinoHome from "@/components/casino/CasinoHome";
 import CasinoShop from "@/pages/casino/CasinoShop";
+import CasinoProfile from "@/pages/casino/CasinoProfile";
+import TrixCounter from "@/components/casino/TrixCounter";
 import { motion, AnimatePresence } from "framer-motion";
 
 const GAME_META = {
@@ -30,6 +32,7 @@ export default function Casino() {
   const [ageVerified, setAgeVerified] = useState(false);
   const [screen, setScreen] = useState("home"); // "home" | game key
   const [showShop, setShowShop] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [user, setUser] = useState(null);
   const { balance, setBalance } = useWallet();
   const [lightPhase, setLightPhase] = useState(0);
@@ -48,6 +51,11 @@ export default function Casino() {
   const onVerified = () => { sessionStorage.setItem("casino_age_ok", "yes"); setAgeVerified(true); };
   if (!ageVerified) return <AgeGate onVerified={onVerified} />;
 
+  // Profile screen
+  if (showProfile) {
+    return <CasinoProfile onBack={() => setShowProfile(false)} />;
+  }
+
   // Home screen — delegated to CasinoHome
   if (screen === "home") {
     return (
@@ -55,6 +63,7 @@ export default function Casino() {
         balance={balance}
         onSelectGame={(key) => setScreen(key)}
         onShop={() => setShowShop(true)}
+        onProfile={() => setShowProfile(true)}
       />
     );
   }
@@ -100,18 +109,15 @@ export default function Casino() {
 
           <div className="ml-auto flex items-center gap-2">
             {user && <NotificationBell user={user} />}
-            <Link to="/wallet"
+            <button onClick={() => setShowProfile(true)}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold"
               style={{ borderColor: "rgba(136,68,255,0.3)", color: "#aa88ff", background: "rgba(100,40,255,0.1)" }}>
-              <Wallet className="w-3.5 h-3.5" />
-            </Link>
+              👤
+            </button>
             <button onClick={() => setShowShop(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border"
-              style={{ borderColor: "rgba(255,215,0,0.3)", background: "rgba(255,215,0,0.07)" }}>
-              <ShoppingCart className="w-4 h-4 text-yellow-400" />
-              <span className="text-sm font-mono font-black" style={{ color: "#ffd700" }}>
-                {balance.toLocaleString()}🪙
-              </span>
+              className="flex items-center gap-1 rounded-xl"
+              style={{ background: "transparent", border: "none" }}>
+              <TrixCounter balance={balance} />
             </button>
           </div>
         </div>

@@ -114,7 +114,7 @@ function FloatingCoins() {
   );
 }
 
-export default function CasinoHome({ onSelectGame, balance, onShop }) {
+export default function CasinoHome({ onSelectGame, balance, onShop, onProfile }) {
   const [jackpot, setJackpot] = useState(1_250_203_560);
   const [lightPhase, setLightPhase] = useState(0);
   const [hoveredGame, setHoveredGame] = useState(null);
@@ -159,6 +159,11 @@ export default function CasinoHome({ onSelectGame, balance, onShop }) {
             className="w-9 h-9 rounded-xl flex items-center justify-center"
             style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)" }}>
             <ShoppingCart className="w-4 h-4 text-white" />
+          </button>
+          <button onClick={onProfile}
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-base"
+            style={{ background: "rgba(136,68,255,0.15)", border: "1px solid rgba(136,68,255,0.4)" }}>
+            👤
           </button>
         </div>
       </div>

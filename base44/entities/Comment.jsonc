@@ -29,24 +29,5 @@
   "required": [
     "video_id",
     "content"
-  ],
-  "rls": {
-    "create": {
-      "data.author_email": "{{user.email}}"
-    },
-    "read": {},
-    "update": {
-      "$or": [
-        {
-          "data.author_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "delete": null
-  }
+  ]
 }

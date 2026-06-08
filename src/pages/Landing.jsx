@@ -118,44 +118,88 @@ export default function Landing() {
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            className="w-full max-w-lg grid grid-cols-1 gap-3"
+            className="w-full max-w-lg space-y-4"
           >
-            {UNIVERSES.map(({ path, label, desc, icon: Icon, hsl, badge }, idx) => (
-              <motion.button
-                key={path}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.07, duration: 0.4 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => nav(path)}
-                className="relative rounded-2xl overflow-hidden text-left transition-all active:brightness-90"
-                style={{
-                  background: `linear-gradient(135deg, hsl(${hsl} / 0.1) 0%, hsl(0 0% 6%) 60%)`,
-                  border: `1px solid hsl(${hsl} / 0.3)`,
-                  padding: "18px 20px",
-                }}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ background: `hsl(${hsl} / 0.12)`, border: `1px solid hsl(${hsl} / 0.25)` }}>
-                    <Icon className="w-5 h-5" style={{ color: `hsl(${hsl})` }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <h2 className="text-base font-black text-white">{label}</h2>
-                      {badge && (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                          style={{ background: "hsl(0 84% 60% / 0.2)", color: "hsl(0 84% 65%)" }}>
-                          {badge}
-                        </span>
-                      )}
+            {/* Main universe cards */}
+            <div className="grid grid-cols-1 gap-3">
+              {UNIVERSES.map(({ path, label, desc, icon: Icon, hsl, badge }, idx) => (
+                <motion.button
+                  key={path}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.07, duration: 0.4 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => nav(path)}
+                  className="relative rounded-2xl overflow-hidden text-left transition-all active:brightness-90"
+                  style={{
+                    background: `linear-gradient(135deg, hsl(${hsl} / 0.1) 0%, hsl(0 0% 6%) 60%)`,
+                    border: `1px solid hsl(${hsl} / 0.3)`,
+                    padding: "18px 20px",
+                  }}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ background: `hsl(${hsl} / 0.12)`, border: `1px solid hsl(${hsl} / 0.25)` }}>
+                      <Icon className="w-5 h-5" style={{ color: `hsl(${hsl})` }} />
                     </div>
-                    <p className="text-xs leading-relaxed" style={{ color: "hsl(0 0% 55%)" }}>{desc}</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <h2 className="text-base font-black text-white">{label}</h2>
+                        {badge && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                            style={{ background: "hsl(0 84% 60% / 0.2)", color: "hsl(0 84% 65%)" }}>
+                            {badge}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs leading-relaxed" style={{ color: "hsl(0 0% 55%)" }}>{desc}</p>
+                    </div>
+                    <span className="text-sm font-black shrink-0" style={{ color: `hsl(${hsl})` }}>→</span>
                   </div>
-                  <span className="text-sm font-black shrink-0" style={{ color: `hsl(${hsl})` }}>→</span>
-                </div>
-              </motion.button>
-            ))}
+                </motion.button>
+              ))}
+            </div>
+
+            {/* Quick Casino Games section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
+              className="rounded-2xl overflow-hidden"
+              style={{ background: "linear-gradient(135deg, hsl(45 100% 55% / 0.06) 0%, hsl(0 0% 4%) 100%)", border: "1px solid hsl(45 100% 55% / 0.2)" }}>
+              <div className="px-4 pt-3 pb-2 flex items-center justify-between">
+                <span className="text-xs font-black uppercase tracking-widest" style={{ color: "hsl(45 100% 55% / 0.7)" }}>
+                  🎰 Jeux Casino
+                </span>
+                <button onClick={() => nav("/casino")}
+                  className="text-[10px] font-bold px-2 py-1 rounded-full"
+                  style={{ background: "hsl(45 100% 55% / 0.12)", color: "hsl(45 100% 55%)" }}>
+                  Tout voir →
+                </button>
+              </div>
+              <div className="flex gap-2 px-3 pb-3 overflow-x-auto no-scrollbar">
+                {[
+                  { emoji: "💎", label: "Slots",      path: "/casino", key: "slots" },
+                  { emoji: "🃏", label: "Blackjack",  path: "/casino", key: "blackjack" },
+                  { emoji: "🎡", label: "Roulette",   path: "/casino", key: "roulette" },
+                  { emoji: "⚽", label: "Sports",     path: "/casino", key: "sports" },
+                  { emoji: "🎱", label: "Bingo",      path: "/casino", key: "bingo" },
+                ].map((g, i) => (
+                  <motion.button
+                    key={g.key}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.55 + i * 0.06 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => nav(g.path)}
+                    className="flex flex-col items-center gap-1.5 shrink-0 px-3 py-2.5 rounded-xl transition-all"
+                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", minWidth: "64px" }}>
+                    <span className="text-2xl">{g.emoji}</span>
+                    <span className="text-[10px] font-bold text-white/60 whitespace-nowrap">{g.label}</span>
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </div>

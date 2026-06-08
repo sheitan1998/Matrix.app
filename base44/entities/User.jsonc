@@ -26,5 +26,11 @@
       "type": "string",
       "description": "Associated channel if creator"
     }
-  }
+  },
+  "required": [
+    "premium_until",
+    "avatar_url",
+    "bio",
+    "channel_id"
+  ]
 }
