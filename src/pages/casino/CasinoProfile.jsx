@@ -4,6 +4,20 @@ import { ArrowLeft, Trophy, Zap, TrendingUp, Crown, Star, Target, Flame } from "
 import { useWallet } from "@/hooks/useWallet";
 import { base44 } from "@/api/base44Client";
 
+const BADGES = [
+  { id: "first_spin",   label: "Premier Spin",    emoji: "🎰", desc: "Joue pour la premiere fois",      threshold: 0,       },
+  { id: "lucky_1k",     label: "Lucky Starter",   emoji: "🍀", desc: "Atteindre 1 000 Trix",           threshold: 1000,    },
+  { id: "hot_streak",   label: "Hot Streak",       emoji: "🔥", desc: "Atteindre 10 000 Trix",          threshold: 10000,   },
+  { id: "silver_hand",  label: "Silver Hand",      emoji: "🥈", desc: "Rang SILVER atteint",            threshold: 10000,   },
+  { id: "golden_touch", label: "Golden Touch",     emoji: "✨", desc: "Atteindre 50 000 Trix",          threshold: 50000,   },
+  { id: "gold_rank",    label: "Gold Player",      emoji: "🥇", desc: "Rang GOLD atteint",              threshold: 50000,   },
+  { id: "high_roller",  label: "High Roller",      emoji: "💸", desc: "Atteindre 200 000 Trix",         threshold: 200000,  },
+  { id: "platinum_vip", label: "Platinum VIP",     emoji: "💠", desc: "Rang PLATINUM atteint",          threshold: 200000,  },
+  { id: "millionaire",  label: "Millionnaire",     emoji: "💎", desc: "Depasser 1 000 000 Trix",        threshold: 1000000, },
+  { id: "diamond_king", label: "Diamond King",     emoji: "👑", desc: "Rang DIAMOND atteint",           threshold: 1000000, },
+  { id: "mythical_god", label: "Mythical God",     emoji: "🌟", desc: "Rang MYTHICAL - Legende vivante",threshold: 10000000,},
+];
+
 const RANK_TIERS = [
   { name: "BRONZE",   min: 0,       max: 9999,      color: "#cd7f32", glow: "#8b4513", emoji: "🥉" },
   { name: "SILVER",   min: 10000,   max: 49999,     color: "#c0c0c0", glow: "#888888", emoji: "🥈" },
@@ -50,7 +64,7 @@ function StatCard({ label, value, icon, color }) {
 export default function CasinoProfile({ onBack }) {
   const { balance } = useWallet();
   const [user, setUser] = useState(null);
-  const [tab, setTab] = useState("stats");
+  const [tab, setTab] = useState("badges");
   const [lightPhase, setLightPhase] = useState(0);
 
   useEffect(() => {
@@ -155,8 +169,9 @@ export default function CasinoProfile({ onBack }) {
         </motion.div>
 
         {/* Tabs */}
-        <div className="flex gap-2">
+        <div className="flex gap-1.5 flex-wrap">
           {[
+            { key: "badges", label: "🏅 Badges" },
             { key: "stats", label: "📊 Stats" },
             { key: "history", label: "📜 Historique" },
             { key: "leaderboard", label: "🏆 Classement" },
@@ -173,6 +188,55 @@ export default function CasinoProfile({ onBack }) {
             </button>
           ))}
         </div>
+
+        {/* BADGES TAB */}
+        {tab === "badges" && (
+          <motion.div key="badges" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            className="space-y-3">
+            <p className="text-xs font-black uppercase tracking-widest text-center" style={{ color: "#aa88ff" }}>
+              Badges et Titres
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {BADGES.map((badge) => {
+                const unlocked = balance >= badge.threshold;
+                return (
+                  <motion.div key={badge.id}
+                    initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                    className="relative p-3 rounded-2xl text-center overflow-hidden"
+                    style={{
+                      background: unlocked ? `linear-gradient(135deg, ${rank.color}15, #0a001a)` : "rgba(255,255,255,0.02)",
+                      border: `1px solid ${unlocked ? rank.color + "50" : "rgba(255,255,255,0.06)"}`,
+                      boxShadow: unlocked ? `0 0 12px ${rank.color}12` : "none",
+                    }}>
+                    {!unlocked && (
+                      <div className="absolute inset-0 rounded-2xl flex items-end justify-center pb-2 z-10"
+                        style={{ background: "rgba(0,0,0,0.6)" }}>
+                        <span className="text-[8px] font-bold text-white/40">
+                          {badge.threshold.toLocaleString()} Trix requis
+                        </span>
+                      </div>
+                    )}
+                    <div className="text-3xl mb-1"
+                      style={{ filter: unlocked ? `drop-shadow(0 0 8px ${rank.color})` : "grayscale(1) opacity(0.35)" }}>
+                      {badge.emoji}
+                    </div>
+                    <p className="font-black text-xs text-white leading-none">{badge.label}</p>
+                    <p className="text-[9px] mt-0.5 leading-tight"
+                      style={{ color: unlocked ? rank.color + "cc" : "rgba(255,255,255,0.25)" }}>
+                      {badge.desc}
+                    </p>
+                    {unlocked && (
+                      <span className="inline-block mt-1.5 text-[8px] font-black px-1.5 py-0.5 rounded-full"
+                        style={{ background: `${rank.color}25`, color: rank.color }}>
+                        DEBLOQUE
+                      </span>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
 
         {/* STATS TAB */}
         <AnimatePresence mode="wait">

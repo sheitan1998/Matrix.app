@@ -43,24 +43,44 @@ export default function ServerChat({ server, channel, theme, user }) {
       type: "text",
     });
 
-    // Detect @mentions and push notifications
-    const mentionRegex = /@(\S+)/g;
-    let match;
-    while ((match = mentionRegex.exec(content)) !== null) {
-      const mentioned = match[1].toLowerCase();
-      // Notify — in real app would look up by username; simplified here
-      toast.info(`Mention @${mentioned} envoyée`);
-      // Create notification for mentioned user (if we know their email)
-      if (mentioned !== user.full_name?.toLowerCase()) {
-        await base44.entities.Notification.create({
-          user_email: mentioned.includes("@") ? mentioned : `${mentioned}@matrix.app`,
-          type: "mention",
-          title: `@${user.full_name || "Quelqu'un"} t'a mentionné`,
-          body: content,
-          server_id: server.id,
-          channel_id: channel.id,
-          is_read: false,
+    // Detect @everyone — notify all server members
+    if (content.includes("@everyone")) {
+      toast.info("@everyone envoyé — tous les membres seront notifiés");
+      // Fetch server members and notify each one
+      base44.entities.ServerMember.filter({ server_id: server.id }, "-created_date", 200)
+        .then(async (members) => {
+          for (const m of members) {
+            if (m.user_email !== user.email) {
+              await base44.entities.Notification.create({
+                user_email: m.user_email,
+                type: "mention",
+                title: `@everyone dans #${channel.name}`,
+                body: `${user.full_name || "Quelqu'un"}: ${content}`,
+                server_id: server.id,
+                channel_id: channel.id,
+                is_read: false,
+                icon: "📢",
+              }).catch(() => {});
+            }
+          }
         }).catch(() => {});
+    } else {
+      // Detect individual @mentions
+      const mentionRegex = /@(\S+)/g;
+      let match;
+      while ((match = mentionRegex.exec(content)) !== null) {
+        const mentioned = match[1].toLowerCase();
+        if (mentioned !== "everyone" && mentioned !== user.full_name?.toLowerCase()) {
+          await base44.entities.Notification.create({
+            user_email: mentioned.includes("@") ? mentioned : `${mentioned}@matrix.app`,
+            type: "mention",
+            title: `@${user.full_name || "Quelqu'un"} t'a mentionné`,
+            body: content,
+            server_id: server.id,
+            channel_id: channel.id,
+            is_read: false,
+          }).catch(() => {});
+        }
       }
     }
 

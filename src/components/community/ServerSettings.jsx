@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Upload, Trash2, Copy, Shield, Ban, MicOff, Crown, Plus, X, Users } from "lucide-react";
+import { ArrowLeft, Upload, Trash2, Copy, Shield, Ban, MicOff, Crown, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { VISUAL_THEMES } from "@/lib/visualThemes";
@@ -30,8 +30,12 @@ function durationToDate(key) {
 export default function ServerSettings({ server, theme, onClose, onUpdate, onDelete, uploadIcon, uploadBanner, uploadingIcon, uploadingBanner, copyInvite }) {
   const qc = useQueryClient();
   const [tab, setTab] = useState("general");
-  const [memberAction, setMemberAction] = useState(null); // { member, action }
+  const [memberAction, setMemberAction] = useState(null);
   const [banDuration, setBanDuration] = useState("24h");
+  const [newRoleName, setNewRoleName] = useState("");
+  const [newRoleColor, setNewRoleColor] = useState("#3b82f6");
+  const [customRoles, setCustomRoles] = useState(server.custom_roles || []);
+  const [assigningRole, setAssigningRole] = useState(null); // member id
 
   const { data: members = [], refetch: refetchMembers } = useQuery({
     queryKey: ["server-members", server.id],
@@ -88,6 +92,7 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
         {[
           { key: "general", label: "Général" },
           { key: "appearance", label: "Apparence" },
+          { key: "roles", label: "Rôles" },
           { key: "members", label: "Membres" },
         ].map((t) => (
           <button key={t.key} onClick={() => setTab(t.key)}
@@ -176,6 +181,57 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
           </>
         )}
 
+        {/* ROLES */}
+        {tab === "roles" && (
+          <>
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Rôles personnalisés</p>
+            <p className="text-xs text-muted-foreground">Créez des rôles pour vos membres. Vous pouvez ensuite les assigner depuis l'onglet Membres.</p>
+
+            {/* Existing custom roles */}
+            <div className="space-y-2">
+              {customRoles.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-3">Aucun rôle personnalisé</p>
+              )}
+              {customRoles.map((r, i) => (
+                <div key={i} className="flex items-center gap-3 p-2 rounded-xl border" style={{ borderColor: theme?.border, background: "rgba(255,255,255,0.03)" }}>
+                  <div className="w-3 h-3 rounded-full shrink-0" style={{ background: r.color }} />
+                  <span className="flex-1 text-sm font-semibold text-white">{r.name}</span>
+                  <button onClick={() => {
+                    const updated = customRoles.filter((_, j) => j !== i);
+                    setCustomRoles(updated);
+                    onUpdate({ custom_roles: updated });
+                  }} className="text-muted-foreground hover:text-red-400 transition">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Add new role */}
+            <div className="p-3 rounded-2xl border space-y-3" style={{ borderColor: theme?.border, background: "rgba(255,255,255,0.03)" }}>
+              <p className="text-xs font-bold text-white">Nouveau rôle</p>
+              <div className="flex gap-2 items-center">
+                <input type="color" value={newRoleColor} onChange={(e) => setNewRoleColor(e.target.value)}
+                  className="w-8 h-8 rounded-lg cursor-pointer border-0 p-0.5" style={{ background: "transparent" }} />
+                <input value={newRoleName} onChange={(e) => setNewRoleName(e.target.value)}
+                  placeholder="Nom du rôle..."
+                  className="flex-1 h-8 px-3 text-xs rounded-xl outline-none text-white placeholder:text-white/30"
+                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }} />
+                <Button size="sm" onClick={() => {
+                  if (!newRoleName.trim()) return;
+                  const updated = [...customRoles, { name: newRoleName.trim(), color: newRoleColor }];
+                  setCustomRoles(updated);
+                  onUpdate({ custom_roles: updated });
+                  setNewRoleName("");
+                  toast.success("Rôle créé !");
+                }} style={{ background: accent }}>
+                  <Plus className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
+
         {/* MEMBERS */}
         {tab === "members" && (
           <>
@@ -213,14 +269,35 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
                   {memberAction?.member?.id === m.id ? (
                     <div className="space-y-2 pt-1 border-t" style={{ borderColor: theme?.border }}>
                       {memberAction.action === "role" && (
-                        <div className="flex gap-2 flex-wrap">
-                          {ROLES.map((r) => (
-                            <button key={r.key} onClick={() => handleSetRole(m, r.key)}
-                              className="px-3 py-1.5 rounded-xl text-xs font-bold border transition"
-                              style={{ borderColor: r.color + "40", color: r.color, background: r.color + "10" }}>
-                              {r.label}
-                            </button>
-                          ))}
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase">Rôles système</p>
+                          <div className="flex gap-2 flex-wrap">
+                            {ROLES.map((r) => (
+                              <button key={r.key} onClick={() => handleSetRole(m, r.key)}
+                                className="px-3 py-1.5 rounded-xl text-xs font-bold border transition"
+                                style={{ borderColor: r.color + "40", color: r.color, background: r.color + "10" }}>
+                                {r.label}
+                              </button>
+                            ))}
+                          </div>
+                          {customRoles.length > 0 && (
+                            <>
+                              <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1">Rôles personnalisés</p>
+                              <div className="flex gap-2 flex-wrap">
+                                {customRoles.map((r, i) => (
+                                  <button key={i} onClick={() => updateMember(m.id, { custom_role: r.name })}
+                                    className="px-3 py-1.5 rounded-xl text-xs font-bold border transition"
+                                    style={{ borderColor: r.color + "40", color: r.color, background: r.color + "10" }}>
+                                    {r.name}
+                                  </button>
+                                ))}
+                                <button onClick={() => updateMember(m.id, { custom_role: null })}
+                                  className="px-3 py-1.5 rounded-xl text-xs font-bold border border-white/10 text-muted-foreground hover:text-white transition">
+                                  Aucun rôle personnalisé
+                                </button>
+                              </div>
+                            </>
+                          )}
                         </div>
                       )}
                       {(memberAction.action === "ban" || memberAction.action === "mute_text" || memberAction.action === "mute_voice") && (

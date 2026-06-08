@@ -3,13 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Tv2, Users, Zap, Shield, Star, ShoppingBag, Cpu, Dices } from "lucide-react";
 
-const PARTICLES = Array.from({ length: 20 }, (_, i) => ({
+const PARTICLES = Array.from({ length: 30 }, (_, i) => ({
   id: i,
   x: Math.random() * 100,
   y: Math.random() * 100,
-  size: Math.random() * 3 + 1,
-  delay: Math.random() * 3,
-  duration: Math.random() * 4 + 3,
+  size: Math.random() * 4 + 1,
+  delay: Math.random() * 4,
+  duration: Math.random() * 5 + 3,
+  color: ["hsl(280 100% 65%)", "hsl(135 100% 50%)", "hsl(45 100% 55%)", "hsl(200 100% 60%)"][i % 4],
 }));
 
 export default function Landing() {
@@ -58,16 +59,41 @@ export default function Landing() {
             backgroundSize: "100% 4px",
           }}
         />
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-premium/8 blur-[120px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 rounded-full bg-primary/6 blur-[100px]" />
+        {/* Animated glow orbs */}
+        <motion.div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-[120px]"
+          style={{ background: "hsl(280 100% 65% / 0.12)" }}
+          animate={{ scale: [1, 1.2, 1], opacity: [0.6, 1, 0.6] }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }} />
+        <motion.div className="absolute bottom-1/4 right-1/4 w-64 h-64 rounded-full blur-[100px]"
+          style={{ background: "hsl(135 100% 50% / 0.08)" }}
+          animate={{ scale: [1, 1.3, 1], opacity: [0.4, 0.8, 0.4] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 2 }} />
+        <motion.div className="absolute top-3/4 left-1/2 w-48 h-48 rounded-full blur-[80px]"
+          style={{ background: "hsl(45 100% 55% / 0.07)" }}
+          animate={{ scale: [1, 1.4, 1], opacity: [0.3, 0.7, 0.3] }}
+          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 4 }} />
         {/* Floating particles */}
         {PARTICLES.map((p) => (
           <motion.div
             key={p.id}
-            className="absolute rounded-full bg-premium/60"
-            style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size }}
-            animate={{ y: [0, -30, 0], opacity: [0.3, 0.8, 0.3] }}
+            className="absolute rounded-full"
+            style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size, background: p.color }}
+            animate={{ y: [0, -40, 0], opacity: [0.2, 0.9, 0.2], scale: [1, 1.5, 1] }}
             transition={{ duration: p.duration, delay: p.delay, repeat: Infinity, ease: "easeInOut" }}
+          />
+        ))}
+        {/* Shooting stars */}
+        {[0, 1, 2].map((i) => (
+          <motion.div key={`star-${i}`}
+            className="absolute h-px"
+            style={{
+              top: `${20 + i * 25}%`,
+              left: "-10%",
+              width: "120px",
+              background: `linear-gradient(90deg, transparent, hsl(280 100% 65% / 0.8), transparent)`,
+            }}
+            animate={{ x: ["0vw", "120vw"], opacity: [0, 1, 0] }}
+            transition={{ duration: 2.5, delay: i * 3 + 2, repeat: Infinity, repeatDelay: 8 + i * 3 }}
           />
         ))}
       </div>
@@ -160,46 +186,6 @@ export default function Landing() {
               ))}
             </div>
 
-            {/* Quick Casino Games section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.5 }}
-              className="rounded-2xl overflow-hidden"
-              style={{ background: "linear-gradient(135deg, hsl(45 100% 55% / 0.06) 0%, hsl(0 0% 4%) 100%)", border: "1px solid hsl(45 100% 55% / 0.2)" }}>
-              <div className="px-4 pt-3 pb-2 flex items-center justify-between">
-                <span className="text-xs font-black uppercase tracking-widest" style={{ color: "hsl(45 100% 55% / 0.7)" }}>
-                  🎰 Jeux Casino
-                </span>
-                <button onClick={() => nav("/casino")}
-                  className="text-[10px] font-bold px-2 py-1 rounded-full"
-                  style={{ background: "hsl(45 100% 55% / 0.12)", color: "hsl(45 100% 55%)" }}>
-                  Tout voir →
-                </button>
-              </div>
-              <div className="flex gap-2 px-3 pb-3 overflow-x-auto no-scrollbar">
-                {[
-                  { emoji: "💎", label: "Slots",      path: "/casino", key: "slots" },
-                  { emoji: "🃏", label: "Blackjack",  path: "/casino", key: "blackjack" },
-                  { emoji: "🎡", label: "Roulette",   path: "/casino", key: "roulette" },
-                  { emoji: "⚽", label: "Sports",     path: "/casino", key: "sports" },
-                  { emoji: "🎱", label: "Bingo",      path: "/casino", key: "bingo" },
-                ].map((g, i) => (
-                  <motion.button
-                    key={g.key}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.55 + i * 0.06 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => nav(g.path)}
-                    className="flex flex-col items-center gap-1.5 shrink-0 px-3 py-2.5 rounded-xl transition-all"
-                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", minWidth: "64px" }}>
-                    <span className="text-2xl">{g.emoji}</span>
-                    <span className="text-[10px] font-bold text-white/60 whitespace-nowrap">{g.label}</span>
-                  </motion.button>
-                ))}
-              </div>
-            </motion.div>
           </motion.div>
         )}
       </div>

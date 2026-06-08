@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import WinEffect from "./WinEffect";
+import CasinoWinEffect from "./CasinoWinEffect";
 
 // ---- SYMBOLS ----
 const SYMBOLS = [
@@ -178,6 +179,13 @@ export default function SlotsGame({ balance, setBalance, accentColor }) {
 
   return (
     <div className="space-y-0 select-none">
+      <CasinoWinEffect
+        show={showWin}
+        amount={winData?.amount}
+        multiplier={winData?.multiplier}
+        isJackpot={winData?.isJackpot}
+        onDone={() => setShowWin(false)}
+      />
       <WinEffect
         show={showWin}
         amount={winData?.amount}

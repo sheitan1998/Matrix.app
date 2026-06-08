@@ -84,9 +84,35 @@
               "voice",
               "announce"
             ]
+          },
+          "topic": {
+            "type": "string"
+          },
+          "is_nsfw": {
+            "type": "boolean",
+            "default": false
+          },
+          "slowmode_seconds": {
+            "type": "number",
+            "default": 0
           }
         }
       }
+    },
+    "custom_roles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
     }
   },
   "required": [

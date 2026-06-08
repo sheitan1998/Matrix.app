@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Sparkles, Plus, Hash, Volume2, Megaphone, Settings, Trash2, Copy, Globe, Lock, Users } from "lucide-react";
+import { ArrowLeft, Sparkles, Plus, Hash, Volume2, Megaphone, Settings, Trash2, Search } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import PostFeed from "@/components/community/PostFeed";
@@ -8,10 +8,11 @@ import ServerCreator from "@/components/community/ServerCreator";
 import ServerChat from "@/components/community/ServerChat";
 import VoiceChannel from "@/components/community/VoiceChannel";
 import ServerSettings from "@/components/community/ServerSettings";
+import MembersList from "@/components/community/MembersList";
+import ServerSearch from "@/components/community/ServerSearch";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { VISUAL_THEMES, getTheme } from "@/lib/visualThemes";
-import { Input } from "@/components/ui/input";
 import NotificationBell from "@/components/NotificationBell";
 
 const CHANNEL_TYPES = [
@@ -32,8 +33,7 @@ export default function Community() {
   const [activeChannel, setActiveChannel] = useState(null);
   const [showCreator, setShowCreator] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [newChannelName, setNewChannelName] = useState("");
-  const [newChannelType, setNewChannelType] = useState("text");
+  const [showSearch, setShowSearch] = useState(false);
   const [uploadingIcon, setUploadingIcon] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const qc = useQueryClient();
@@ -64,19 +64,6 @@ export default function Community() {
     qc.invalidateQueries({ queryKey: ["servers"] });
     setSelectedServer(null);
     toast.success("Serveur supprimé");
-  };
-
-  const addChannel = async () => {
-    if (!newChannelName.trim()) return;
-    const ch = {
-      id: Date.now().toString(),
-      name: newChannelName.trim().toLowerCase().replace(/\s+/g, "-"),
-      type: newChannelType,
-    };
-    const updated = [...(selectedServer.channels?.length ? selectedServer.channels : defaultChannels), ch];
-    await updateServer({ channels: updated });
-    setNewChannelName("");
-    toast.success("Salon créé !");
   };
 
   const removeChannel = async (id) => {
@@ -141,6 +128,10 @@ export default function Community() {
             <span className="font-black text-lg"><span className="text-premium">M</span>ATRIX Community</span>
             <div className="ml-auto flex items-center gap-2">
               {user && <NotificationBell user={user} />}
+              <button onClick={() => setShowSearch(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-border hover:bg-secondary transition">
+                <Search className="w-3.5 h-3.5" /> Explorer
+              </button>
               <Link to="/community/subscription"
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-premium/40 bg-premium/10 text-premium">
                 <Sparkles className="w-3.5 h-3.5" /> Nitro
@@ -224,8 +215,24 @@ export default function Community() {
                 <img src={selectedServer.banner_url} className="w-full h-full object-cover" alt="" />
               </div>
             )}
-            <div className="p-3 border-b shrink-0" style={{ borderColor: theme.border }}>
+            <div className="p-3 border-b shrink-0 flex items-center justify-between" style={{ borderColor: theme.border }}>
               <p className="text-xs font-black text-muted-foreground uppercase tracking-widest">Salons</p>
+              {isOwner && (
+                <button
+                  onClick={() => {
+                    const name = prompt("Nom du salon :");
+                    if (!name) return;
+                    const type = prompt("Type : text / voice / announce") || "text";
+                    const ch = { id: Date.now().toString(), name: name.trim().toLowerCase().replace(/\s+/g, "-"), type: ["text","voice","announce"].includes(type) ? type : "text" };
+                    const updated = [...(selectedServer.channels?.length ? selectedServer.channels : defaultChannels), ch];
+                    updateServer({ channels: updated }).then(() => toast.success("Salon créé !"));
+                  }}
+                  className="w-5 h-5 rounded-md flex items-center justify-center transition hover:opacity-80"
+                  style={{ background: theme.accent, color: "#000" }}
+                  title="Créer un salon">
+                  <Plus className="w-3 h-3" />
+                </button>
+              )}
             </div>
 
             <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
@@ -250,31 +257,7 @@ export default function Community() {
               })}
             </div>
 
-            {isOwner && (
-              <div className="p-2 border-t space-y-2 shrink-0" style={{ borderColor: theme.border }}>
-                <div className="flex gap-1">
-                  {CHANNEL_TYPES.map((t) => {
-                    const Icon = t.icon;
-                    return (
-                      <button key={t.key} onClick={() => setNewChannelType(t.key)}
-                        className={cn("flex-1 flex items-center justify-center p-1.5 rounded-lg transition",
-                          newChannelType === t.key ? "text-white" : "text-muted-foreground hover:text-white")}
-                        style={newChannelType === t.key ? { background: theme.accent + "40" } : {}}>
-                        <Icon className="w-3.5 h-3.5" />
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="flex gap-1">
-                  <input value={newChannelName} onChange={(e) => setNewChannelName(e.target.value)}
-                    placeholder="nouveau-salon" onKeyDown={(e) => e.key === "Enter" && addChannel()}
-                    className="flex-1 h-7 px-2 text-xs rounded-lg outline-none text-white placeholder:text-white/30"
-                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }} />
-                  <button onClick={addChannel} className="px-2 rounded-lg text-white font-bold text-sm hover:opacity-80"
-                    style={{ background: theme.accent }}>+</button>
-                </div>
-              </div>
-            )}
+
           </div>
         )}
 
@@ -341,10 +324,24 @@ export default function Community() {
             <VoiceChannel channel={activeChannel} server={selectedServer} theme={theme} user={user} />
           )}
         </div>
+
+        {/* Members list — right panel */}
+        {selectedServer && selectedServer.id !== "__feed__" && activeChannel && (
+          <MembersList server={selectedServer} theme={theme} currentUserEmail={user?.email} />
+        )}
       </div>
 
       {showCreator && (
         <ServerCreator onClose={() => setShowCreator(false)} onCreated={() => qc.invalidateQueries({ queryKey: ["servers"] })} />
+      )}
+
+      {showSearch && (
+        <div className="fixed inset-0 z-50">
+          <ServerSearch
+            onSelectServer={selectServer}
+            onClose={() => setShowSearch(false)}
+          />
+        </div>
       )}
     </div>
   );
