@@ -1,0 +1,76 @@
+{
+  "name": "Friend",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email of the user who sent/owns this friend record"
+    },
+    "friend_email": {
+      "type": "string",
+      "description": "Email of the friend"
+    },
+    "friend_name": {
+      "type": "string",
+      "description": "Display name of the friend"
+    },
+    "friend_pseudo": {
+      "type": "string",
+      "description": "Unique pseudo with #NNNN"
+    },
+    "friend_avatar": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending_sent",
+        "pending_received",
+        "accepted",
+        "blocked"
+      ],
+      "default": "pending_sent"
+    },
+    "is_online": {
+      "type": "boolean",
+      "default": false
+    },
+    "last_seen": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "user_email",
+    "friend_email",
+    "friend_pseudo"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "data.friend_email": "{{user.email}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "data.friend_email": "{{user.email}}"
+        }
+      ]
+    },
+    "delete": {
+      "data.user_email": "{{user.email}}"
+    }
+  }
+}

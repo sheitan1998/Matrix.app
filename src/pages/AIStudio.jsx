@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Send, Sparkles, Code, BookOpen, Swords, Image, MessageSquare, Trash2, Loader2, Crown, Video, ChevronDown } from "lucide-react";
+import { ArrowLeft, Send, Sparkles, Code, BookOpen, Swords, Image, MessageSquare, Trash2, Loader2, Crown, Video, ChevronDown, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -47,9 +47,11 @@ export default function AIStudio() {
   const [user, setUser] = useState(null);
   const [usage, setUsage] = useState(getUsage());
   const [videoPrompt, setVideoPrompt] = useState("");
+  const [videoDuration, setVideoDuration] = useState(6);
   const [generatingVideo, setGeneratingVideo] = useState(false);
   const [generatedVideo, setGeneratedVideo] = useState(null);
   const [showVideo, setShowVideo] = useState(false);
+  const [videoUsage, setVideoUsage] = useState(0);
   const bottomRef = useRef(null);
 
   const currentMode = MODES.find((m) => m.key === mode);
@@ -89,12 +91,25 @@ export default function AIStudio() {
     setLoading(false);
   };
 
+  const FREE_VIDEO_LIMIT = 3;
+  const videoRemaining = Math.max(0, FREE_VIDEO_LIMIT - videoUsage);
+
   const generateVideo = async () => {
     if (!videoPrompt.trim()) return;
+    const isPremium = plan !== "free";
+    if (videoDuration > 6 && !isPremium) {
+      toast.error("Vidéo > 6s réservée aux abonnés !");
+      return;
+    }
+    if (!isPremium && videoUsage >= FREE_VIDEO_LIMIT) {
+      toast.error("Limite de vidéos gratuites atteinte !");
+      return;
+    }
     setGeneratingVideo(true);
-    toast.info("Génération vidéo en cours (~40 secondes)...");
-    const result = await base44.integrations.Core.GenerateVideo({ prompt: videoPrompt, duration: 6 });
+    toast.info(`Génération vidéo ${videoDuration}s en cours (~40 secondes)...`);
+    const result = await base44.integrations.Core.GenerateVideo({ prompt: videoPrompt, duration: videoDuration });
     setGeneratedVideo(result.url);
+    if (!isPremium) setVideoUsage((u) => u + 1);
     setGeneratingVideo(false);
     toast.success("Vidéo générée !");
   };
@@ -176,7 +191,34 @@ export default function AIStudio() {
               <Video className="w-8 h-8 text-pink-400" />
             </div>
             <h2 className="text-xl font-black">Génération Vidéo IA</h2>
-            <p className="text-sm text-muted-foreground">Décris une scène, un lieu, une action — l'IA génère une vidéo de 6 secondes.</p>
+            <p className="text-sm text-muted-foreground">Décris une scène — gratuit jusqu'à 6s, jusqu'à 3 min en premium.</p>
+            <div className="flex items-center justify-center gap-2 mt-2">
+              {[4, 6, 8].map((d) => (
+                <button key={d} onClick={() => setVideoDuration(d)}
+                  className={`px-3 py-1 rounded-full text-xs font-bold border transition ${
+                    videoDuration === d ? "bg-pink-500/30 border-pink-400 text-pink-300" : "border-border text-muted-foreground hover:border-pink-500/30"
+                  }`}>
+                  {d}s {d > 6 && plan === "free" ? "🔒" : ""}
+                </button>
+              ))}
+              {["60s", "120s", "180s"].map((label, i) => {
+                const secs = [60, 120, 180][i];
+                return (
+                  <button key={label} onClick={() => { if (plan !== "free") setVideoDuration(secs); }}
+                    className={`px-3 py-1 rounded-full text-xs font-bold border transition ${
+                      videoDuration === secs ? "bg-pink-500/30 border-pink-400 text-pink-300" : "border-border text-muted-foreground hover:border-pink-500/30"
+                    } ${plan === "free" ? "opacity-50 cursor-not-allowed" : ""}`}>
+                    {label} {plan === "free" ? "🔒" : "⭐"}
+                  </button>
+                );
+              })}
+            </div>
+            {plan === "free" && (
+              <p className="text-xs text-muted-foreground">
+                <Clock className="w-3 h-3 inline mr-1" />{videoRemaining} vidéos gratuites restantes · 
+                <Link to="/ai/subscription" className="text-premium hover:underline ml-1">Premium illimité</Link>
+              </p>
+            )}
           </div>
 
           <div className="space-y-3">

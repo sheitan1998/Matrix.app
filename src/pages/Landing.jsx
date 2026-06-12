@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Tv2, Users, Zap, Shield, Star, ShoppingBag, Cpu, Dices } from "lucide-react";
+import { Tv2, Users, Zap, Shield, Star, Cpu, Dices } from "lucide-react";
 
 const PARTICLES = Array.from({ length: 30 }, (_, i) => ({
   id: i,
@@ -30,10 +30,6 @@ export default function Landing() {
     {
       path: "/community", label: "Communauté", desc: "Discute, réagis, commente. Rejoins ou crée des salons vocaux.",
       icon: Users, hsl: "280 100% 65%",
-    },
-    {
-      path: "/market", label: "Market", desc: "Achète et vends vêtements, objets, accessoires. Simple, rapide.",
-      icon: ShoppingBag, hsl: "25 100% 55%",
     },
     {
       path: "/ai", label: "AI Studio", desc: "Chat, création, code, histoires. Exploite l'IA sans limites.",

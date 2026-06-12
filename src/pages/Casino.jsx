@@ -4,14 +4,12 @@ import NotificationBell from "@/components/NotificationBell";
 import { ArrowLeft, ShoppingCart } from "lucide-react";
 import { useWallet } from "@/hooks/useWallet";
 import { base44 } from "@/api/base44Client";
-import AgeGate from "@/components/casino/AgeGate";
 import RouletteGame from "@/components/casino/RouletteGame";
 import SlotsGame from "@/components/casino/SlotsGame";
 import BingoGame from "@/components/casino/BingoGame";
-import SportsBetting from "@/components/casino/SportsBetting";
-import SportLive from "@/components/casino/SportLive";
 import BlackjackGame from "@/components/casino/BlackjackGame";
 import CasinoLeaderboard from "@/components/casino/CasinoLeaderboard";
+import LottoGame from "@/components/casino/LottoGame";
 import CasinoHome from "@/components/casino/CasinoHome";
 import CasinoShop from "@/pages/casino/CasinoShop";
 import CasinoProfile from "@/pages/casino/CasinoProfile";
@@ -22,34 +20,27 @@ const GAME_META = {
   slots:       { label: "DIAMOND SLOTS",     color: "#8866ff", emoji: "💎" },
   blackjack:   { label: "BLACKJACK",          color: "#ffd700", emoji: "🃏" },
   roulette:    { label: "ROULETTE",           color: "#ff2020", emoji: "🎡" },
-  sports_live: { label: "SPORT EN DIRECT",    color: "#44ff00", emoji: "📡" },
-  sports:      { label: "PARIS SPORTIFS",     color: "#00aaff", emoji: "⚽" },
   bingo:       { label: "BINGO",              color: "#ffaa00", emoji: "🎱" },
+  lotto:       { label: "LOTO",               color: "#ffd700", emoji: "🎰" },
   leaderboard: { label: "TOP LEAGUE",         color: "#ffd700", emoji: "🏆" },
 };
 
 export default function Casino() {
-  const [ageVerified, setAgeVerified] = useState(false);
   const [screen, setScreen] = useState("home"); // "home" | game key
   const [showShop, setShowShop] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [user, setUser] = useState(null);
-  const { balance, setBalance } = useWallet();
+  const { balance, setBalance, addTransaction } = useWallet();
   const [lightPhase, setLightPhase] = useState(0);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
-    const verified = sessionStorage.getItem("casino_age_ok");
-    if (verified === "yes") setAgeVerified(true);
   }, []);
 
   useEffect(() => {
     const t = setInterval(() => setLightPhase(p => (p + 1) % 12), 120);
     return () => clearInterval(t);
   }, []);
-
-  const onVerified = () => { sessionStorage.setItem("casino_age_ok", "yes"); setAgeVerified(true); };
-  if (!ageVerified) return <AgeGate onVerified={onVerified} />;
 
   // Profile screen
   if (showProfile) {
@@ -154,12 +145,11 @@ export default function Casino() {
               boxShadow: `0 0 50px rgba(0,0,0,0.8), 0 0 25px ${meta.color}08`
             }}>
             <div className="p-4 sm:p-6">
-              {screen === "slots"       && <SlotsGame balance={balance} setBalance={setBalance} accentColor={meta.color} />}
+              {screen === "slots"       && <SlotsGame balance={balance} setBalance={setBalance} accentColor={meta.color} addTransaction={addTransaction} />}
               {screen === "blackjack"   && <BlackjackGame balance={balance} setBalance={setBalance} accentColor={meta.color} />}
               {screen === "roulette"    && <RouletteGame balance={balance} setBalance={setBalance} accentColor={meta.color} />}
-              {screen === "sports_live" && <SportLive accentColor={meta.color} />}
-              {screen === "sports"      && <SportsBetting balance={balance} setBalance={setBalance} />}
               {screen === "bingo"       && <BingoGame balance={balance} setBalance={setBalance} accentColor={meta.color} />}
+              {screen === "lotto"      && <LottoGame balance={balance} setBalance={setBalance} addTransaction={addTransaction} />}
               {screen === "leaderboard" && <CasinoLeaderboard accentColor={meta.color} currentUserBalance={balance} />}
             </div>
           </motion.div>

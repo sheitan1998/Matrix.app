@@ -276,6 +276,7 @@ export default function Community() {
               uploadingIcon={uploadingIcon}
               uploadingBanner={uploadingBanner}
               copyInvite={copyInvite}
+              channels={channels}
             />
           )}
 

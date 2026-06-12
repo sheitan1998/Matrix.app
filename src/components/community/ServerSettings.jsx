@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Upload, Trash2, Copy, Shield, Ban, MicOff, Crown, Plus, X } from "lucide-react";
+import { ArrowLeft, Upload, Trash2, Copy, Shield, Ban, MicOff, Crown, Plus, X, Hash, Volume2, Megaphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { VISUAL_THEMES } from "@/lib/visualThemes";
@@ -13,6 +13,8 @@ const ROLES = [
   { key: "moderator", label: "Modérateur", color: "#3b82f6" },
   { key: "admin", label: "Admin", color: "#f59e0b" },
 ];
+
+const CH_ICONS = { text: Hash, voice: Volume2, announce: Megaphone };
 
 const BAN_DURATIONS = [
   { key: "1h", label: "1 heure" },
@@ -27,7 +29,7 @@ function durationToDate(key) {
   return new Date(Date.now() + ms).toISOString();
 }
 
-export default function ServerSettings({ server, theme, onClose, onUpdate, onDelete, uploadIcon, uploadBanner, uploadingIcon, uploadingBanner, copyInvite }) {
+export default function ServerSettings({ server, theme, onClose, onUpdate, onDelete, uploadIcon, uploadBanner, uploadingIcon, uploadingBanner, copyInvite, channels = [] }) {
   const qc = useQueryClient();
   const [tab, setTab] = useState("general");
   const [memberAction, setMemberAction] = useState(null);
@@ -93,6 +95,7 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
           { key: "general", label: "Général" },
           { key: "appearance", label: "Apparence" },
           { key: "roles", label: "Rôles" },
+          { key: "channels", label: "Salons" },
           { key: "members", label: "Membres" },
         ].map((t) => (
           <button key={t.key} onClick={() => setTab(t.key)}
@@ -229,6 +232,66 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
                 </Button>
               </div>
             </div>
+          </>
+        )}
+
+        {/* CHANNELS */}
+        {tab === "channels" && (
+          <>
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Configuration des salons</p>
+            <p className="text-xs text-muted-foreground">Définissez les permissions pour chaque salon. Seul le propriétaire peut modifier ces paramètres.</p>
+            {channels.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">Aucun salon à configurer</p>
+            ) : (
+              channels.map((ch) => {
+                const settings = ch.settings || {};
+                const updateChannel = async (key, value) => {
+                  const updated = channels.map((c) =>
+                    c.id === ch.id ? { ...c, settings: { ...settings, [key]: value } } : c
+                  );
+                  await onUpdate({ channels: updated });
+                };
+                return (
+                  <div key={ch.id} className="p-4 rounded-2xl border space-y-3" style={{ borderColor: theme?.border, background: "rgba(255,255,255,0.03)" }}>
+                    <div className="flex items-center gap-2">
+                      {React.createElement(CH_ICONS[ch.type] || Hash, { className: "w-4 h-4", style: { color: accent } })}
+                      <span className="font-bold text-white">#{ch.name}</span>
+                      <span className="text-[10px] text-muted-foreground">{ch.type}</span>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">Salon visible</span>
+                        <button onClick={() => updateChannel("visible", !(settings.visible !== false))}
+                          className={cn("w-10 h-5 rounded-full transition", settings.visible !== false ? "bg-green-500" : "bg-white/20")}>
+                          <div className={cn("w-4 h-4 rounded-full bg-white transition-transform", settings.visible !== false ? "translate-x-5" : "translate-x-0.5")} />
+                        </button>
+                      </label>
+                      <label className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">@mentions autorisées</span>
+                        <button onClick={() => updateChannel("mentions", !settings.mentions)}
+                          className={cn("w-10 h-5 rounded-full transition", settings.mentions ? "bg-green-500" : "bg-white/20")}>
+                          <div className={cn("w-4 h-4 rounded-full bg-white transition-transform", settings.mentions ? "translate-x-5" : "translate-x-0.5")} />
+                        </button>
+                      </label>
+                      <label className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">Envoi d'images</span>
+                        <button onClick={() => updateChannel("allow_images", !(settings.allow_images !== false))}
+                          className={cn("w-10 h-5 rounded-full transition", settings.allow_images !== false ? "bg-green-500" : "bg-white/20")}>
+                          <div className={cn("w-4 h-4 rounded-full bg-white transition-transform", settings.allow_images !== false ? "translate-x-5" : "translate-x-0.5")} />
+                        </button>
+                      </label>
+                      <label className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">Envoi de liens</span>
+                        <button onClick={() => updateChannel("allow_links", !(settings.allow_links !== false))}
+                          className={cn("w-10 h-5 rounded-full transition", settings.allow_links !== false ? "bg-green-500" : "bg-white/20")}>
+                          <div className={cn("w-4 h-4 rounded-full bg-white transition-transform", settings.allow_links !== false ? "translate-x-5" : "translate-x-0.5")} />
+                        </button>
+                      </label>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </>
         )}
 

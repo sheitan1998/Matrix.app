@@ -121,8 +121,11 @@ function Reel({ spinning, finalSymbol, stopDelay, showResult }) {
 }
 
 // ---- MAIN COMPONENT ----
-export default function SlotsGame({ balance, setBalance, accentColor }) {
+export default function SlotsGame({ balance, setBalance, accentColor, addTransaction }) {
   const [spinning, setSpinning] = useState(false);
+  const [autoSpinning, setAutoSpinning] = useState(false);
+  const [autoCount, setAutoCount] = useState(0);
+  const autoRef = useRef(null);
   const [finalReels, setFinalReels] = useState([SYMBOLS[4], SYMBOLS[5], SYMBOLS[6]]);
   const [result, setResult] = useState(null);
   const [bet, setBet] = useState(100);
@@ -144,37 +147,58 @@ export default function SlotsGame({ balance, setBalance, accentColor }) {
 
   const BETS = [50, 100, 250, 500, 1000];
 
-  const spin = () => {
-    if (spinning || bet > balance || bet <= 0) { toast.error("Mise invalide"); return; }
+  useEffect(() => {
+    return () => { if (autoRef.current) clearTimeout(autoRef.current); };
+  }, []);
+
+  const doSpin = () => {
+    if (bet > balance || bet <= 0) { stopAutoSpin(); return; }
     setSpinning(true);
     setResult(null);
     setBalance(b => b - bet);
-
     const selected = [pickSymbol(), pickSymbol(), pickSymbol()];
     setFinalReels(selected);
-
-    const totalStop = 600 + 2 * 500 + 400;
     setTimeout(() => {
       setSpinning(false);
       const mult = getMultiplier(selected);
-      const isJackpot3x7 = selected[0].s === "7" && selected[1].s === "7" && selected[2].s === "7";
-      const isJackpot3D = selected[0].s === "💎" && selected[1].s === "💎" && selected[2].s === "💎";
-      const jackpotHit = isJackpot3x7 || isJackpot3D;
-
+      const jp3x7 = selected[0].s === "7" && selected[1].s === "7" && selected[2].s === "7";
+      const jp3D = selected[0].s === "💎" && selected[1].s === "💎" && selected[2].s === "💎";
+      const jpHit = jp3x7 || jp3D;
       let winAmount = mult > 0 ? Math.round(bet * mult) : 0;
-      if (jackpotHit) winAmount += jackpot;
-
+      if (jpHit) winAmount += jackpot;
       setLastWin(winAmount);
+      const netGain = winAmount - bet;
       if (winAmount > 0) setBalance(b => b + winAmount);
-      setResult({ gain: winAmount - bet, mult, symbols: selected, win: winAmount > 0, jackpot: jackpotHit });
-
-      if (winAmount > 0) {
-        setWinData({ amount: winAmount, multiplier: mult, isJackpot: jackpotHit });
-        setShowWin(true);
-      } else {
-        toast.error("Pas de chance ! Encore !");
+      setResult({ gain: netGain, mult, symbols: selected, win: winAmount > 0, jackpot: jpHit });
+      if (addTransaction) {
+        addTransaction(netGain > 0 ? "casino_win" : "casino_loss", netGain > 0 ? netGain : -bet, netGain > 0 ? `Slots: +${netGain}` : `Slots: -${bet}`, "casino");
       }
-    }, totalStop);
+      if (winAmount > 0) {
+        setWinData({ amount: winAmount, multiplier: mult, isJackpot: jpHit });
+        setShowWin(true);
+      }
+      if (autoSpinning && balance - bet >= 0) {
+        setAutoCount(c => c + 1);
+        autoRef.current = setTimeout(() => doSpin(), 800);
+      } else if (autoSpinning) {
+        stopAutoSpin();
+      }
+    }, 2000);
+  };
+
+  const spin = () => { if (!autoSpinning) doSpin(); };
+
+  const toggleAutoSpin = () => {
+    if (autoSpinning) { stopAutoSpin(); return; }
+    if (bet > balance) { toast.error("Solde insuffisant"); return; }
+    setAutoSpinning(true);
+    setAutoCount(0);
+    doSpin();
+  };
+
+  const stopAutoSpin = () => {
+    setAutoSpinning(false);
+    if (autoRef.current) { clearTimeout(autoRef.current); autoRef.current = null; }
   };
 
   return (
@@ -319,28 +343,42 @@ export default function SlotsGame({ balance, setBalance, accentColor }) {
                   {lastWin.toLocaleString()}
                 </motion.p>
               </div>
-              {/* SPIN button */}
-              <motion.button onClick={spin} disabled={spinning}
+              {/* SPIN / AUTO-SPIN buttons */}
+              <div className="flex gap-1.5">
+              <motion.button onClick={spin} disabled={spinning || autoSpinning}
                 whileTap={{ scale: 0.9 }}
-                className="px-5 py-3 rounded-2xl font-black text-base transition-all"
+                className="px-4 py-3 rounded-2xl font-black text-sm transition-all"
                 style={{
-                  background: spinning
+                  background: spinning || autoSpinning
                     ? "linear-gradient(135deg, #333, #222)"
                     : "linear-gradient(135deg, #44cc00, #22aa00)",
                   color: "white",
-                  boxShadow: spinning ? "none" : "0 0 20px #44cc0080, 0 4px 0 #116600",
+                  boxShadow: spinning || autoSpinning ? "none" : "0 0 20px #44cc0080, 0 4px 0 #116600",
                   border: "none",
-                  minWidth: "90px"
                 }}>
                 {spinning ? (
                   <span className="flex items-center gap-1.5">
                     <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     ...
                   </span>
-                ) : (
-                  <span>SPIN<br /><span className="text-[9px] font-semibold opacity-70">HOLD AUTOSPIN</span></span>
-                )}
+                ) : autoSpinning ? "..." : "SPIN"}
               </motion.button>
+              <motion.button onClick={toggleAutoSpin}
+                whileTap={{ scale: 0.9 }}
+                className="px-3 py-3 rounded-2xl font-black text-xs transition-all"
+                style={{
+                  background: autoSpinning
+                    ? "linear-gradient(135deg, #ff4444, #cc0000)"
+                    : "linear-gradient(135deg, #ff8800, #cc6600)",
+                  color: "white",
+                  boxShadow: autoSpinning ? "0 0 10px #ff444480" : "0 0 10px #ff880040",
+                  border: "none",
+                }}>
+                {autoSpinning ? (
+                  <span>STOP<br /><span className="text-[9px] opacity-70">×{autoCount}</span></span>
+                ) : "AUTO"}
+              </motion.button>
+              </div>
             </div>
 
             {/* Bet chips */}

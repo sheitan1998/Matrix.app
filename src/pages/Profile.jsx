@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Coins, Crown, LogOut, Radio, History, LayoutDashboard, Upload, Trash2, AlertTriangle, Wallet, Sparkles } from "lucide-react";
 import { formatTrix, formatTimeAgo } from "@/lib/format";
 import NitroAvatarPicker, { NitroAvatar } from "@/components/NitroAvatarPicker";
+import FriendsList from "@/components/profile/FriendsList";
 
 export default function Profile() {
   const [user, setUser] = useState(null);
@@ -110,6 +111,11 @@ export default function Profile() {
             </div>
           </Link>
         </div>
+      </div>
+
+      {/* Friends */}
+      <div className="p-6 rounded-2xl bg-card border border-border">
+        <FriendsList user={user} />
       </div>
 
       {/* Transaction history */}
