@@ -47,12 +47,23 @@ function TrixRain({ amount }) {
   );
 }
 
+function getWinTier(amount, multiplier) {
+  if (!amount) return null;
+  if (multiplier >= 50) return { label: "ULTRA WIN", color: "#ff00ff", glow: "#ff00ff", bg: "#1a0030", border: "#ff00ff", emoji: "💎", count: 80 };
+  if (multiplier >= 30 || amount >= 100000) return { label: "MEGA WIN", color: "#ff8800", glow: "#ff6600", bg: "#1a0a00", border: "#ff8800", emoji: "🔥", count: 60 };
+  if (multiplier >= 15 || amount >= 5000) return { label: "BIG WIN", color: "#44ff88", glow: "#22cc66", bg: "#001a00", border: "#44ff88", emoji: "🎉", count: 40 };
+  return { label: "WIN", color: "#44aaff", glow: "#2288ff", bg: "#000a1a", border: "#44aaff", emoji: "✨", count: 20 };
+}
+
 export default function CasinoWinEffect({ show, amount, multiplier, isJackpot, onDone }) {
+  const tier = getWinTier(amount, multiplier);
   useEffect(() => {
     if (!show) return;
-    const t = setTimeout(onDone, isJackpot ? 4000 : 2800);
+    const t = setTimeout(onDone, isJackpot ? 5000 : tier?.label === "ULTRA WIN" ? 4000 : tier?.label === "MEGA WIN" ? 3500 : 2800);
     return () => clearTimeout(t);
-  }, [show, isJackpot, onDone]);
+  }, [show, isJackpot, tier, onDone]);
+
+  const count = isJackpot ? 100 : tier?.count || 30;
 
   return (
     <AnimatePresence>
@@ -62,9 +73,9 @@ export default function CasinoWinEffect({ show, amount, multiplier, isJackpot, o
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none"
-          style={{ background: isJackpot ? "rgba(0,0,0,0.75)" : "rgba(0,0,0,0.45)" }}>
+          style={{ background: isJackpot ? "rgba(0,0,0,0.85)" : tier?.label === "ULTRA WIN" ? "rgba(0,0,0,0.7)" : "rgba(0,0,0,0.45)" }}>
 
-          <Confetti count={isJackpot ? 60 : 30} />
+          <Confetti count={count} />
           <TrixRain amount={amount} />
 
           {isJackpot ? (
@@ -78,7 +89,6 @@ export default function CasinoWinEffect({ show, amount, multiplier, isJackpot, o
                 border: "4px solid #ffd700",
                 boxShadow: "0 0 80px #ffd70080, 0 0 40px #ffd70040"
               }}>
-              {/* Rotating stars */}
               {["★","✦","★","✦"].map((s, i) => (
                 <motion.span key={i} className="absolute text-yellow-400 text-xl"
                   style={{ top: `${[-8, -8, 100, 100][i]}%`, left: `${[-5, 105, -5, 105][i]}%`, transform: "translate(-50%,-50%)" }}
@@ -103,19 +113,30 @@ export default function CasinoWinEffect({ show, amount, multiplier, isJackpot, o
               transition={{ duration: 0.5, ease: "easeOut" }}
               className="text-center px-8 py-6 rounded-3xl"
               style={{
-                background: "linear-gradient(135deg, #001a00, #003300)",
-                border: "3px solid #44ff88",
-                boxShadow: "0 0 50px #44ff8860"
+                background: `linear-gradient(135deg, ${tier?.bg || "#001a00"}, ${tier?.bg || "#003300"})`,
+                border: `3px solid ${tier?.border || "#44ff88"}`,
+                boxShadow: `0 0 50px ${tier?.glow || "#44ff88"}60`
               }}>
-              <p className="font-black text-3xl mb-1" style={{ color: "#44ff88", fontFamily: "'Arial Black', sans-serif" }}>
-                BIG WIN! 🎉
-              </p>
-              <motion.p className="font-mono font-black text-2xl text-white"
-                animate={{ scale: [1, 1.06, 1] }} transition={{ duration: 0.4, repeat: Infinity }}>
-                +{amount?.toLocaleString()} 🪙
+              <motion.div animate={{ scale: [1, 1.08, 1] }} transition={{ duration: 0.4, repeat: Infinity }}>
+                <p className="font-black" style={{
+                  fontSize: tier?.label === "ULTRA WIN" ? "42px" : tier?.label === "MEGA WIN" ? "36px" : "28px",
+                  color: tier?.color || "#44ff88",
+                  textShadow: `0 0 20px ${tier?.glow}, 0 0 40px ${tier?.glow}`,
+                  fontFamily: "'Arial Black', sans-serif"
+                }}>
+                  {tier?.emoji} {tier?.label} {tier?.emoji}
+                </p>
+              </motion.div>
+              <motion.p className="font-mono font-black mt-2"
+                style={{ fontSize: tier?.label === "ULTRA WIN" ? "44px" : "32px", color: "#ffffff", textShadow: "0 0 20px rgba(255,255,255,0.5)" }}>
+                +{amount?.toLocaleString()}
               </motion.p>
+              <p className="text-lg font-black mt-1" style={{ color: tier?.color }}>🪙 TRIX</p>
               {multiplier > 1 && (
-                <p className="text-green-400 font-bold mt-1 text-xs">×{multiplier} multiplicateur</p>
+                <div className="mt-3 inline-block px-4 py-1.5 rounded-full font-black text-sm"
+                  style={{ background: `${tier?.color}20`, color: tier?.color, border: `1px solid ${tier?.color}50` }}>
+                  ×{multiplier} MULTIPLIER
+                </div>
               )}
             </motion.div>
           )}

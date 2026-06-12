@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import CasinoWinEffect from "./CasinoWinEffect";
 
 function generateCard() {
   const cols = [
@@ -27,6 +28,8 @@ export default function BingoGame({ balance, setBalance, accentColor = "#ffd700"
   const [calledBalls, setCalledBalls] = useState([]);
   const [running, setRunning] = useState(false);
   const [won, setWon] = useState(false);
+  const [showWin, setShowWin] = useState(false);
+  const [winData, setWinData] = useState(null);
   const [amount, setAmount] = useState("50");
   const [lastBall, setLastBall] = useState(null);
   const [showLast, setShowLast] = useState(false);
@@ -91,6 +94,8 @@ export default function BingoGame({ balance, setBalance, accentColor = "#ffd700"
           setWon(true);
           const prize = stakeRef.current * 10;
           setBalance((b) => b + prize);
+          setWinData({ amount: prize, multiplier: 10 });
+          setShowWin(true);
           toast.success(`🎉 BINGO ! +${prize} 🪙`);
         }
         return next;
@@ -111,6 +116,7 @@ export default function BingoGame({ balance, setBalance, accentColor = "#ffd700"
 
   return (
     <div className="space-y-5">
+      <CasinoWinEffect show={showWin} amount={winData?.amount} multiplier={winData?.multiplier} onDone={() => setShowWin(false)} />
       <h3 className="font-black text-xl text-center text-white">🎱 Bingo</h3>
 
       {/* Last ball indicator */}

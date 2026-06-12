@@ -126,7 +126,12 @@ export default function SlotsGame({ balance, setBalance, accentColor, addTransac
   const [autoSpinning, setAutoSpinning] = useState(false);
   const [autoCount, setAutoCount] = useState(0);
   const autoRef = useRef(null);
+  const balanceRef = useRef(balance);
+  const autoSpinningRef = useRef(false);
   const [finalReels, setFinalReels] = useState([SYMBOLS[4], SYMBOLS[5], SYMBOLS[6]]);
+
+  useEffect(() => { balanceRef.current = balance; }, [balance]);
+  useEffect(() => { autoSpinningRef.current = autoSpinning; }, [autoSpinning]);
   const [result, setResult] = useState(null);
   const [bet, setBet] = useState(100);
   const [jackpot, setJackpot] = useState(1_250_203_560);
@@ -152,7 +157,8 @@ export default function SlotsGame({ balance, setBalance, accentColor, addTransac
   }, []);
 
   const doSpin = () => {
-    if (bet > balance || bet <= 0) { stopAutoSpin(); return; }
+    const currentBalance = balanceRef.current;
+    if (bet > currentBalance || bet <= 0) { stopAutoSpin(); return; }
     setSpinning(true);
     setResult(null);
     setBalance(b => b - bet);
@@ -177,10 +183,10 @@ export default function SlotsGame({ balance, setBalance, accentColor, addTransac
         setWinData({ amount: winAmount, multiplier: mult, isJackpot: jpHit });
         setShowWin(true);
       }
-      if (autoSpinning && balance - bet >= 0) {
+      if (autoSpinningRef.current && balanceRef.current - bet >= 0) {
         setAutoCount(c => c + 1);
         autoRef.current = setTimeout(() => doSpin(), 800);
-      } else if (autoSpinning) {
+      } else if (autoSpinningRef.current) {
         stopAutoSpin();
       }
     }, 2000);

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import CasinoWinEffect from "./CasinoWinEffect";
 
 const SUITS = ["♠","♥","♦","♣"];
 const VALUES = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
@@ -80,6 +81,8 @@ export default function BlackjackGame({ balance, setBalance, accentColor = "#ffd
   const [message, setMessage] = useState("");
   const [hideDealer, setHideDealer] = useState(true);
   const [chipAnim, setChipAnim] = useState(false);
+  const [showWin, setShowWin] = useState(false);
+  const [winData, setWinData] = useState(null);
 
   const deal = () => {
     if (bet <= 0 || bet > balance) { toast.error("Mise invalide"); return; }
@@ -113,7 +116,11 @@ export default function BlackjackGame({ balance, setBalance, accentColor = "#ffd
     if (gain > 0) setBalance(b => b + gain);
     setMessage(msg);
     setPhase("done");
-    if (gain > s) toast.success(msg);
+    if (gain > s) {
+      setWinData({ amount: gain, multiplier: Math.round(gain / s) });
+      setShowWin(true);
+      toast.success(msg);
+    } else if (gain === s) { setWinData({ amount: s, multiplier: 1 }); setShowWin(true); toast.success(msg); }
     else if (gain === 0) toast.error(msg);
   };
 
@@ -130,6 +137,7 @@ export default function BlackjackGame({ balance, setBalance, accentColor = "#ffd
 
   return (
     <div className="space-y-4 select-none">
+      <CasinoWinEffect show={showWin} amount={winData?.amount} multiplier={winData?.multiplier} onDone={() => setShowWin(false)} />
       {/* Title */}
       <div className="text-center">
         <p className="text-3xl font-black tracking-wider"

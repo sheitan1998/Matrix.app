@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import CasinoWinEffect from "./CasinoWinEffect";
 
 const RED_NUMBERS = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
 const WHEEL_NUMBERS = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
@@ -23,6 +24,8 @@ export default function RouletteGame({ balance, setBalance, accentColor = "hsl(4
   const [result, setResult] = useState(null);
   const [spinning, setSpinning] = useState(false);
   const [ballVisible, setBallVisible] = useState(false);
+  const [showWin, setShowWin] = useState(false);
+  const [winData, setWinData] = useState(null);
   const canvasRef = useRef(null);
   const animFrameRef = useRef(null);
   const startTimeRef = useRef(null);
@@ -222,8 +225,11 @@ export default function RouletteGame({ balance, setBalance, accentColor = "hsl(4
       const gain = win ? stake : -stake;
       setBalance((b) => b + gain);
       setResult({ num, color, win, gain });
-      if (win) toast.success(`🎉 ${num} — +${stake} 🪙`);
-      else toast.error(`💸 ${num} — -${stake} 🪙`);
+      if (win) {
+        setWinData({ amount: stake, multiplier: 2 });
+        setShowWin(true);
+        toast.success(`🎉 ${num} — +${stake} 🪙`);
+      } else toast.error(`💸 ${num} — -${stake} 🪙`);
     }, duration);
   };
 
@@ -231,6 +237,7 @@ export default function RouletteGame({ balance, setBalance, accentColor = "hsl(4
 
   return (
     <div className="space-y-5">
+      <CasinoWinEffect show={showWin} amount={winData?.amount} multiplier={winData?.multiplier} onDone={() => setShowWin(false)} />
       <h3 className="font-black text-xl text-center text-white tracking-wide">♠ Roulette ♠</h3>
 
       {/* Wheel container with felt */}

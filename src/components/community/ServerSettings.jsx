@@ -258,35 +258,102 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
                       <span className="font-bold text-white">#{ch.name}</span>
                       <span className="text-[10px] text-muted-foreground">{ch.type}</span>
                     </div>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase">Permissions générales</p>
                     <div className="space-y-2">
-                      <label className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">Salon visible</span>
-                        <button onClick={() => updateChannel("visible", !(settings.visible !== false))}
-                          className={cn("w-10 h-5 rounded-full transition", settings.visible !== false ? "bg-green-500" : "bg-white/20")}>
-                          <div className={cn("w-4 h-4 rounded-full bg-white transition-transform", settings.visible !== false ? "translate-x-5" : "translate-x-0.5")} />
-                        </button>
-                      </label>
-                      <label className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">@mentions autorisées</span>
-                        <button onClick={() => updateChannel("mentions", !settings.mentions)}
-                          className={cn("w-10 h-5 rounded-full transition", settings.mentions ? "bg-green-500" : "bg-white/20")}>
-                          <div className={cn("w-4 h-4 rounded-full bg-white transition-transform", settings.mentions ? "translate-x-5" : "translate-x-0.5")} />
-                        </button>
-                      </label>
-                      <label className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">Envoi d'images</span>
-                        <button onClick={() => updateChannel("allow_images", !(settings.allow_images !== false))}
-                          className={cn("w-10 h-5 rounded-full transition", settings.allow_images !== false ? "bg-green-500" : "bg-white/20")}>
-                          <div className={cn("w-4 h-4 rounded-full bg-white transition-transform", settings.allow_images !== false ? "translate-x-5" : "translate-x-0.5")} />
-                        </button>
-                      </label>
-                      <label className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">Envoi de liens</span>
-                        <button onClick={() => updateChannel("allow_links", !(settings.allow_links !== false))}
-                          className={cn("w-10 h-5 rounded-full transition", settings.allow_links !== false ? "bg-green-500" : "bg-white/20")}>
-                          <div className={cn("w-4 h-4 rounded-full bg-white transition-transform", settings.allow_links !== false ? "translate-x-5" : "translate-x-0.5")} />
-                        </button>
-                      </label>
+                      {[
+                        { key: "visible", label: "Voir le salon", default: true },
+                        { key: "manage_channel", label: "Gérer le salon", ownerOnly: true },
+                        { key: "manage_permissions", label: "Gérer les permissions", ownerOnly: true },
+                        { key: "manage_webhooks", label: "Gérer les webhooks", ownerOnly: true },
+                        { key: "create_invite", label: "Créer une invitation", default: true },
+                      ].map(p => {
+                        const val = p.ownerOnly ? false : (settings[p.key] !== false);
+                        return (
+                          <label key={p.key} className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground">{p.label}{p.ownerOnly ? " (fondateur)" : ""}</span>
+                            <button onClick={() => !p.ownerOnly && updateChannel(p.key, !val)}
+                              className={cn("w-10 h-5 rounded-full transition", p.ownerOnly ? "opacity-40 cursor-not-allowed" : "", val ? "bg-green-500" : "bg-white/20")}>
+                              <div className={cn("w-4 h-4 rounded-full bg-white transition-transform", val ? "translate-x-5" : "translate-x-0.5")} />
+                            </button>
+                          </label>
+                        );
+                      })}
+                    </div>
+
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase mt-3">Permissions des messages</p>
+                    <div className="space-y-2">
+                      {[
+                        { key: "send_messages", label: "Envoyer des messages", default: true },
+                        { key: "embed_links", label: "Intégrer des liens", default: true },
+                        { key: "add_reactions", label: "Ajouter des réactions", default: true },
+                        { key: "use_external_emoji", label: "Utiliser des émojis externes", default: true },
+                        { key: "use_external_stickers", label: "Utiliser des autocollants externes", default: true },
+                        { key: "mention_everyone", label: "Mentionner @everyone, @here et tous les rôles", default: true },
+                        { key: "manage_messages", label: "Gérer les messages", default: false },
+                        { key: "ignore_slowmode", label: "Ignorer le mode lent", default: false },
+                        { key: "read_history", label: "Voir les anciens messages", default: true },
+                        { key: "send_tts", label: "Envoyer des messages de synthèse vocale", default: false },
+                        { key: "send_voice", label: "Envoyer des messages vocaux", default: true },
+                        { key: "create_polls", label: "Créer des sondages", default: true },
+                      ].map(p => {
+                        const val = settings[p.key] !== false;
+                        return (
+                          <label key={p.key} className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground">{p.label}</span>
+                            <button onClick={() => updateChannel(p.key, !val)}
+                              className={cn("w-10 h-5 rounded-full transition", val ? "bg-green-500" : "bg-white/20")}>
+                              <div className={cn("w-4 h-4 rounded-full bg-white transition-transform", val ? "translate-x-5" : "translate-x-0.5")} />
+                            </button>
+                          </label>
+                        );
+                      })}
+                    </div>
+
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase mt-3">Permissions vocales</p>
+                    <div className="space-y-2">
+                      {[
+                        { key: "voice_connect", label: "Se connecter", default: true },
+                        { key: "voice_speak", label: "Parler", default: true },
+                        { key: "voice_video", label: "Vidéo", default: false },
+                        { key: "voice_soundboard", label: "Utiliser Soundboard", default: true },
+                        { key: "voice_external_sounds", label: "Utiliser des sons externes", default: true },
+                        { key: "voice_activity", label: "Utiliser la Détection de la voix", default: true },
+                        { key: "voice_priority", label: "Voix prioritaire", default: false },
+                        { key: "voice_mute_members", label: "Rendre les membres muets", default: false },
+                        { key: "voice_deafen_members", label: "Mettre en sourdine des membres", default: false },
+                        { key: "voice_move_members", label: "Déplacer des membres", default: false },
+                        { key: "voice_set_status", label: "Définir un statut pour le salon vocal", default: false },
+                      ].map(p => {
+                        const val = settings[p.key] !== false;
+                        return (
+                          <label key={p.key} className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground">{p.label}</span>
+                            <button onClick={() => updateChannel(p.key, !val)}
+                              className={cn("w-10 h-5 rounded-full transition", val ? "bg-green-500" : "bg-white/20")}>
+                              <div className={cn("w-4 h-4 rounded-full bg-white transition-transform", val ? "translate-x-5" : "translate-x-0.5")} />
+                            </button>
+                          </label>
+                        );
+                      })}
+                    </div>
+
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase mt-3">Permissions d'événements</p>
+                    <div className="space-y-2">
+                      {[
+                        { key: "create_events", label: "Créer des événements", default: true },
+                        { key: "manage_events", label: "Gérer les événements", default: false },
+                      ].map(p => {
+                        const val = settings[p.key] !== false;
+                        return (
+                          <label key={p.key} className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground">{p.label}</span>
+                            <button onClick={() => updateChannel(p.key, !val)}
+                              className={cn("w-10 h-5 rounded-full transition", val ? "bg-green-500" : "bg-white/20")}>
+                              <div className={cn("w-4 h-4 rounded-full bg-white transition-transform", val ? "translate-x-5" : "translate-x-0.5")} />
+                            </button>
+                          </label>
+                        );
+                      })}
                     </div>
                   </div>
                 );

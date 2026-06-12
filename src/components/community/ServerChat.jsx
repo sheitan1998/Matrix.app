@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Send, Hash, AtSign } from "lucide-react";
+import { Send, Hash, Image, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -10,8 +10,12 @@ import { NitroAvatar } from "@/components/NitroAvatarPicker";
 export default function ServerChat({ server, channel, theme, user }) {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef(null);
   const bottomRef = useRef(null);
   const qc = useQueryClient();
+
+  const isOwner = server?.owner_email === user?.email;
 
   const queryKey = ["server-messages", server.id, channel.id];
 
@@ -29,24 +33,34 @@ export default function ServerChat({ server, channel, theme, user }) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
-  const send = async () => {
-    if (!input.trim() || sending) return;
-    setSending(true);
+  const send = async (fileUrl = null) => {
     const content = input.trim();
+    if ((!content && !fileUrl) || sending) return;
+    setSending(true);
+    const channelSettings = channel.settings || {};
+    if (fileUrl && channelSettings.allow_images === false) {
+      toast.error("Les images ne sont pas autorisées dans ce salon");
+      setSending(false);
+      return;
+    }
+    if (content && /https?:\/\//.test(content) && channelSettings.allow_links === false) {
+      toast.error("Les liens ne sont pas autorisés dans ce salon");
+      setSending(false);
+      return;
+    }
     await base44.entities.ServerMessage.create({
       server_id: server.id,
       channel_id: channel.id,
       author_email: user.email,
       author_name: user.full_name || user.email.split("@")[0],
       author_avatar: user.animated_avatar || user.avatar_url || "",
-      content,
-      type: "text",
+      content: fileUrl ? `[Image] ${content}` : content || "[Image]",
+      type: fileUrl ? "file" : "text",
+      file_url: fileUrl || "",
     });
 
-    // Detect @everyone — notify all server members
-    if (content.includes("@everyone")) {
+    if (content && content.includes("@everyone")) {
       toast.info("@everyone envoyé — tous les membres seront notifiés");
-      // Fetch server members and notify each one
       base44.entities.ServerMember.filter({ server_id: server.id }, "-created_date", 200)
         .then(async (members) => {
           for (const m of members) {
@@ -64,8 +78,7 @@ export default function ServerChat({ server, channel, theme, user }) {
             }
           }
         }).catch(() => {});
-    } else {
-      // Detect individual @mentions
+    } else if (content) {
       const mentionRegex = /@(\S+)/g;
       let match;
       while ((match = mentionRegex.exec(content)) !== null) {
@@ -87,6 +100,28 @@ export default function ServerChat({ server, channel, theme, user }) {
     setInput("");
     setSending(false);
     qc.invalidateQueries({ queryKey });
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      await send(file_url);
+    } catch (err) {
+      // Integration credits exhausted — show fallback
+      toast.error("Upload indisponible — crédits épuisés");
+    }
+    setUploadingImage(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const deleteMessage = async (msg) => {
+    if (msg.author_email !== user?.email && !isOwner) return;
+    await base44.entities.ServerMessage.delete(msg.id);
+    qc.invalidateQueries({ queryKey });
+    toast.success("Message supprimé");
   };
 
   const accent = theme?.accent || "hsl(135 100% 50%)";
@@ -134,12 +169,23 @@ export default function ServerChat({ server, channel, theme, user }) {
                 </div>
               )}
               <p className="text-sm text-white/80 leading-relaxed break-words">
-                {msg.content.split(/(@\S+)/g).map((part, i) =>
+                {msg.type === "file" && msg.file_url ? (
+                  <img src={msg.file_url} alt="Uploaded" className="max-w-xs max-h-64 rounded-xl mb-1 border border-white/10" />
+                ) : msg.content.split(/(@\S+)/g).map((part, i) =>
                   part.startsWith("@")
                     ? <span key={i} className="font-bold px-1 rounded" style={{ color: accent, background: accent + "20" }}>{part}</span>
                     : <React.Fragment key={i}>{part}</React.Fragment>
                 )}
               </p>
+              {/* Delete button */}
+              {(msg.author_email === user?.email || isOwner) && (
+                <button
+                  onClick={() => deleteMessage(msg)}
+                  className="opacity-0 group-hover:opacity-100 transition absolute right-2 top-1 text-white/40 hover:text-red-400"
+                  title="Supprimer">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
           </div>
         ))}
@@ -150,6 +196,14 @@ export default function ServerChat({ server, channel, theme, user }) {
       <div className="shrink-0 px-4 pb-4 pt-2">
         <div className="flex items-center gap-2 px-4 rounded-2xl border"
           style={{ borderColor: theme?.border || "hsl(var(--border))", background: "rgba(255,255,255,0.05)" }}>
+          <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageUpload} className="hidden" />
+          <button onClick={() => fileInputRef.current?.click()} disabled={uploadingImage}
+            className="w-8 h-8 rounded-xl flex items-center justify-center transition text-white/40 hover:text-white disabled:opacity-30"
+            title="Envoyer une image">
+            {uploadingImage ? (
+              <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : <Image className="w-4 h-4" />}
+          </button>
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -157,7 +211,7 @@ export default function ServerChat({ server, channel, theme, user }) {
             placeholder={`Message #${channel.name}`}
             className="flex-1 bg-transparent py-3 text-sm text-white placeholder:text-white/30 outline-none"
           />
-          <button onClick={send} disabled={!input.trim() || sending}
+          <button onClick={() => send()} disabled={(!input.trim() || sending) && !uploadingImage}
             className="w-8 h-8 rounded-xl flex items-center justify-center transition disabled:opacity-30"
             style={{ background: input.trim() ? accent + "30" : "transparent", color: accent }}>
             <Send className="w-4 h-4" />
