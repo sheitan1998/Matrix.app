@@ -191,7 +191,7 @@ export default function AIStudio() {
               <Video className="w-8 h-8 text-pink-400" />
             </div>
             <h2 className="text-xl font-black">Génération Vidéo IA</h2>
-            <p className="text-sm text-muted-foreground">Décris une scène — gratuit jusqu'à 6s, jusqu'à 3 min en premium.</p>
+            <p className="text-sm text-muted-foreground">Décris une scène — durées de 4, 6 ou 8 secondes.</p>
             <div className="flex items-center justify-center gap-2 mt-2">
               {[4, 6, 8].map((d) => (
                 <button key={d} onClick={() => setVideoDuration(d)}
@@ -201,17 +201,7 @@ export default function AIStudio() {
                   {d}s {d > 6 && plan === "free" ? "🔒" : ""}
                 </button>
               ))}
-              {["60s", "120s", "180s"].map((label, i) => {
-                const secs = [60, 120, 180][i];
-                return (
-                  <button key={label} onClick={() => { if (plan !== "free") setVideoDuration(secs); }}
-                    className={`px-3 py-1 rounded-full text-xs font-bold border transition ${
-                      videoDuration === secs ? "bg-pink-500/30 border-pink-400 text-pink-300" : "border-border text-muted-foreground hover:border-pink-500/30"
-                    } ${plan === "free" ? "opacity-50 cursor-not-allowed" : ""}`}>
-                    {label} {plan === "free" ? "🔒" : "⭐"}
-                  </button>
-                );
-              })}
+
             </div>
             {plan === "free" && (
               <p className="text-xs text-muted-foreground">
