@@ -108,15 +108,24 @@ export default function ServerChat({ server, channel, theme, user }) {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingImage(true);
-    // Convert to base64 data URL — no credits needed
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-      const dataUrl = ev.target.result;
+    // Compress image to stay within field size limits
+    const img = new window.Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = async () => {
+      URL.revokeObjectURL(objectUrl);
+      const MAX = 600;
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.6);
       await send(dataUrl);
       setUploadingImage(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     };
-    reader.readAsDataURL(file);
+    img.src = objectUrl;
   };
 
   const deleteMessage = async (msg) => {
