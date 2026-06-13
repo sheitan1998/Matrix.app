@@ -33,21 +33,17 @@ export default function ServerChat({ server, channel, theme, user }) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
+  const settings = channel.settings || {};
+  const canSendMessages = settings.send_messages !== false;
+  const canSendImages = settings.embed_links !== false; // reuse embed_links for images
+  const canMentionEveryone = settings.mention_everyone !== false;
+
   const send = async (fileUrl = null) => {
     const content = input.trim();
     if ((!content && !fileUrl) || sending) return;
+    if (!canSendMessages) { toast.error("Envoi de messages désactivé dans ce salon"); return; }
+    if (fileUrl && !canSendImages) { toast.error("Les images ne sont pas autorisées dans ce salon"); return; }
     setSending(true);
-    const channelSettings = channel.settings || {};
-    if (fileUrl && channelSettings.allow_images === false) {
-      toast.error("Les images ne sont pas autorisées dans ce salon");
-      setSending(false);
-      return;
-    }
-    if (content && /https?:\/\//.test(content) && channelSettings.allow_links === false) {
-      toast.error("Les liens ne sont pas autorisés dans ce salon");
-      setSending(false);
-      return;
-    }
     await base44.entities.ServerMessage.create({
       server_id: server.id,
       channel_id: channel.id,
@@ -58,6 +54,12 @@ export default function ServerChat({ server, channel, theme, user }) {
       type: fileUrl ? "file" : "text",
       file_url: fileUrl || "",
     });
+
+    if (content && content.includes("@everyone") && !canMentionEveryone) {
+      toast.error("Vous n'êtes pas autorisé à mentionner @everyone");
+      setSending(false);
+      return;
+    }
 
     if (content && content.includes("@everyone")) {
       toast.info("@everyone envoyé — tous les membres seront notifiés");
@@ -106,15 +108,15 @@ export default function ServerChat({ server, channel, theme, user }) {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingImage(true);
-    try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      await send(file_url);
-    } catch (err) {
-      // Integration credits exhausted — show fallback
-      toast.error("Upload indisponible — crédits épuisés");
-    }
-    setUploadingImage(false);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    // Convert to base64 data URL — no credits needed
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const dataUrl = ev.target.result;
+      await send(dataUrl);
+      setUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+    reader.readAsDataURL(file);
   };
 
   const deleteMessage = async (msg) => {
@@ -155,7 +157,7 @@ export default function ServerChat({ server, channel, theme, user }) {
           </div>
         )}
         {grouped.map((msg) => (
-          <div key={msg.id} className={cn("flex gap-3 group", msg.isContinuation ? "mt-0.5" : "mt-3")}>
+          <div key={msg.id} className={cn("flex gap-3 group relative", msg.isContinuation ? "mt-0.5" : "mt-3")}>
             {!msg.isContinuation ? (
               <NitroAvatar url={msg.author_avatar} name={msg.author_name} size="sm" className="mt-0.5 shrink-0" />
             ) : <div className="w-7 shrink-0" />}
@@ -197,7 +199,7 @@ export default function ServerChat({ server, channel, theme, user }) {
         <div className="flex items-center gap-2 px-4 rounded-2xl border"
           style={{ borderColor: theme?.border || "hsl(var(--border))", background: "rgba(255,255,255,0.05)" }}>
           <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageUpload} className="hidden" />
-          <button onClick={() => fileInputRef.current?.click()} disabled={uploadingImage}
+          <button onClick={() => fileInputRef.current?.click()} disabled={uploadingImage || !canSendMessages}
             className="w-8 h-8 rounded-xl flex items-center justify-center transition text-white/40 hover:text-white disabled:opacity-30"
             title="Envoyer une image">
             {uploadingImage ? (
@@ -208,8 +210,9 @@ export default function ServerChat({ server, channel, theme, user }) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-            placeholder={`Message #${channel.name}`}
-            className="flex-1 bg-transparent py-3 text-sm text-white placeholder:text-white/30 outline-none"
+            placeholder={canSendMessages ? `Message #${channel.name}` : "Envoi désactivé dans ce salon"}
+            disabled={!canSendMessages}
+            className="flex-1 bg-transparent py-3 text-sm text-white placeholder:text-white/30 outline-none disabled:opacity-50"
           />
           <button onClick={() => send()} disabled={(!input.trim() || sending) && !uploadingImage}
             className="w-8 h-8 rounded-xl flex items-center justify-center transition disabled:opacity-30"

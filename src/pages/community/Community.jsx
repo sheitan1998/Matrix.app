@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Sparkles, Plus, Hash, Volume2, Megaphone, Settings, Trash2, Search } from "lucide-react";
+import { ArrowLeft, Sparkles, Plus, Hash, Volume2, Megaphone, Settings, Trash2, Search, UserPlus, Link2 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import PostFeed from "@/components/community/PostFeed";
@@ -34,6 +34,8 @@ export default function Community() {
   const [showCreator, setShowCreator] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [showInviteJoin, setShowInviteJoin] = useState(false);
+  const [inviteCodeInput, setInviteCodeInput] = useState("");
   const [uploadingIcon, setUploadingIcon] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const qc = useQueryClient();
@@ -90,6 +92,37 @@ export default function Community() {
 
   const copyInvite = (code) => { navigator.clipboard.writeText(code); toast.success("Code copié !"); };
 
+  const joinByInviteCode = async () => {
+    const code = inviteCodeInput.trim();
+    if (!code) return;
+    const allServers = await base44.entities.Server.list("-created_date", 200);
+    const found = allServers.find((s) => s.invite_code === code);
+    if (!found) { toast.error("Code invalide ou expiré"); return; }
+    // Check if already a member
+    const existing = await base44.entities.ServerMember.filter({ server_id: found.id, user_email: user.email });
+    if (existing.length === 0) {
+      await base44.entities.ServerMember.create({
+        server_id: found.id,
+        user_email: user.email,
+        user_name: user.full_name || user.email.split("@")[0],
+        role: "member",
+      });
+      await base44.entities.Server.update(found.id, { members_count: (found.members_count || 1) + 1 });
+    }
+    qc.invalidateQueries({ queryKey: ["servers"] });
+    setShowInviteJoin(false);
+    setInviteCodeInput("");
+    selectServer(found);
+    toast.success(`Rejoint "${found.name}" !`);
+  };
+
+  const inviteToServer = (server) => {
+    if (!server.invite_code) { toast.error("Ce serveur n'a pas de code d'invitation"); return; }
+    const link = `Rejoins mon serveur "${server.name}" sur MATRIX ! Code: ${server.invite_code}`;
+    navigator.clipboard.writeText(link);
+    toast.success("Lien d'invitation copié !");
+  };
+
   const selectServer = (s) => {
     setSelectedServer(s);
     setActiveChannel(null);
@@ -115,6 +148,11 @@ export default function Community() {
               <p className="font-black text-sm truncate text-white">{selectedServer.name}</p>
               <p className="text-[10px] text-muted-foreground">{selectedServer.is_public ? "🌍 Public" : "🔒 Privé"} · {channels.length} salons</p>
             </div>
+            <button onClick={() => inviteToServer(selectedServer)}
+              className="p-2 rounded-xl transition text-muted-foreground hover:text-white"
+              title="Copier le lien d'invitation">
+              <UserPlus className="w-4 h-4" />
+            </button>
             {isOwner && (
               <button onClick={() => setShowSettings(!showSettings)}
                 className={cn("p-2 rounded-xl transition", showSettings ? "text-white bg-white/10" : "text-muted-foreground hover:text-white")}>
@@ -128,6 +166,10 @@ export default function Community() {
             <span className="font-black text-lg"><span className="text-premium">M</span>ATRIX Community</span>
             <div className="ml-auto flex items-center gap-2">
               {user && <NotificationBell user={user} />}
+              <button onClick={() => setShowInviteJoin(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-border hover:bg-secondary transition">
+                <UserPlus className="w-3.5 h-3.5" /> Rejoindre
+              </button>
               <button onClick={() => setShowSearch(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-border hover:bg-secondary transition">
                 <Search className="w-3.5 h-3.5" /> Explorer
@@ -342,6 +384,37 @@ export default function Community() {
             onSelectServer={selectServer}
             onClose={() => setShowSearch(false)}
           />
+        </div>
+      )}
+
+      {/* Join by invite code modal */}
+      {showInviteJoin && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)" }}>
+          <div className="w-full max-w-sm rounded-3xl p-6 space-y-4" style={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}>
+            <div className="text-center">
+              <span className="text-4xl">🔗</span>
+              <h2 className="font-black text-lg text-white mt-2">Rejoindre un serveur</h2>
+              <p className="text-xs text-muted-foreground">Entre le code d'invitation du serveur</p>
+            </div>
+            <input
+              value={inviteCodeInput}
+              onChange={(e) => setInviteCodeInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && joinByInviteCode()}
+              placeholder="Code d'invitation..."
+              className="w-full px-4 py-3 rounded-2xl bg-secondary border border-border text-white placeholder:text-muted-foreground outline-none text-sm"
+            />
+            <div className="flex gap-3">
+              <button onClick={() => { setShowInviteJoin(false); setInviteCodeInput(""); }}
+                className="flex-1 py-2.5 rounded-2xl border border-border text-sm font-bold text-muted-foreground hover:text-white transition">
+                Annuler
+              </button>
+              <button onClick={joinByInviteCode}
+                className="flex-1 py-2.5 rounded-2xl font-bold text-sm text-black transition"
+                style={{ background: "hsl(var(--primary))" }}>
+                Rejoindre
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -51,25 +51,29 @@ export default function LottoGame({ balance, setBalance, addTransaction }) {
     return () => clearInterval(t);
   }, [nextDraw]);
 
-  // Load existing tickets
+  // Load existing tickets for current draw
   useEffect(() => {
     if (!user) return;
     const saved = localStorage.getItem(`lotto_tickets_${user.email}`);
     if (saved) {
       try {
         const data = JSON.parse(saved);
+        // Keep tickets for current draw only
         if (data.drawDate === nextDraw.toISOString() && Array.isArray(data.tickets)) {
           setTickets(data.tickets);
+        } else {
+          // Old draw — clear
+          localStorage.removeItem(`lotto_tickets_${user.email}`);
         }
-      } catch {}
+      } catch { localStorage.removeItem(`lotto_tickets_${user.email}`); }
     }
-  }, [user, nextDraw.toISOString()]);
+  }, [user]);
 
-  const hasValidatedTicket = tickets.length > 0;
+  const allTicketsFull = tickets.length >= MAX_TICKETS;
   const ticketsRemaining = MAX_TICKETS - tickets.length;
 
   const toggleNumber = (n) => {
-    if (hasValidatedTicket) return;
+    if (allTicketsFull) return;
     if (picked.includes(n)) {
       setPicked(picked.filter((x) => x !== n));
     } else if (picked.length < 6) {
@@ -129,6 +133,7 @@ export default function LottoGame({ balance, setBalance, addTransaction }) {
     if (tickets.length === 0) return;
     let totalPrize = 0;
     let bestLabel = "";
+    let bestPrize = 0;
     tickets.forEach((ticket) => {
       const bet = ticket.bet || 100;
       const matches = ticket.numbers.filter((n) => winNumbers.includes(n)).length;
@@ -142,7 +147,7 @@ export default function LottoGame({ balance, setBalance, addTransaction }) {
       else if (matches === 3) { prize = 500 * (bet / 100); label = "3 numéros"; }
       if (prize > 0) {
         totalPrize += prize;
-        if (!bestLabel || prize > totalPrize) bestLabel = label;
+        if (prize > bestPrize) { bestPrize = prize; bestLabel = label; }
       }
     });
     if (totalPrize > 0) {
@@ -205,7 +210,7 @@ export default function LottoGame({ balance, setBalance, addTransaction }) {
       )}
 
       {/* Bet amount selector */}
-      {!hasValidatedTicket && !drawNumbers && (
+      {!allTicketsFull && !drawNumbers && (
         <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/10">
           <p className="text-xs font-bold text-muted-foreground mb-2 uppercase tracking-widest text-center">Montant de la mise</p>
           <div className="flex gap-1.5">
@@ -224,24 +229,27 @@ export default function LottoGame({ balance, setBalance, addTransaction }) {
       {/* Number grid */}
       <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/10">
         <p className="text-xs font-bold text-muted-foreground mb-2 uppercase tracking-widest text-center">
-          {hasValidatedTicket ? "✅ Tickets enregistrés" : tickets.length >= MAX_TICKETS ? "✅ Maximum atteint" : `Choisis 6 numéros (${picked.length}/6)`}
+          {allTicketsFull ? "✅ Maximum atteint — en attente du tirage" : `Ticket ${tickets.length + 1}/${MAX_TICKETS} — Choisis 6 numéros (${picked.length}/6)`}
         </p>
         <div className="grid grid-cols-7 gap-1.5">
           {Array.from({ length: 49 }, (_, i) => i + 1).map((n) => {
             const isPicked = picked.includes(n);
             const isDrawn = drawn.includes(n);
             const isBonus = drawNumbers?.bonus === n;
+            // also highlight numbers already in purchased tickets
+            const isInAnyTicket = tickets.some(t => t.numbers.includes(n));
             let bg = "bg-white/5";
             if (isDrawn) bg = "bg-green-500/40 border-green-400";
             else if (isPicked) bg = "bg-primary/30 border-primary/40";
+            else if (isInAnyTicket) bg = "bg-white/10 border-white/20";
             if (isBonus) bg = "bg-yellow-500/40 border-yellow-400";
 
             return (
-              <motion.button key={n} onClick={() => toggleNumber(n)} disabled={hasValidatedTicket || tickets.length >= MAX_TICKETS}
+              <motion.button key={n} onClick={() => toggleNumber(n)} disabled={allTicketsFull}
                 whileTap={{ scale: 0.9 }}
                 className={`w-9 h-9 rounded-lg text-xs font-bold border transition ${bg} 
-                  ${isPicked ? "text-white" : "text-muted-foreground"}
-                  ${hasValidatedTicket || tickets.length >= MAX_TICKETS ? "cursor-not-allowed opacity-60" : "hover:border-primary/60"}`}>
+                  ${isPicked ? "text-white" : isInAnyTicket ? "text-white/40" : "text-muted-foreground"}
+                  ${allTicketsFull ? "cursor-not-allowed opacity-60" : "hover:border-primary/60"}`}>
                 {n}
               </motion.button>
             );
@@ -274,7 +282,7 @@ export default function LottoGame({ balance, setBalance, addTransaction }) {
       )}
 
       {/* Buy button */}
-      {!hasValidatedTicket && tickets.length < MAX_TICKETS && !drawNumbers && (
+      {!allTicketsFull && !drawNumbers && (
         <button onClick={buyTicket}
           disabled={picked.length !== 6}
           className="w-full py-3 rounded-2xl font-black text-sm transition-all disabled:opacity-30"
@@ -284,12 +292,12 @@ export default function LottoGame({ balance, setBalance, addTransaction }) {
             border: "none",
             boxShadow: picked.length === 6 ? "0 0 20px #ffd70060" : "none",
           }}>
-          {picked.length === 6 ? `🎫 Acheter (${betAmount} TRIX) — ${ticketsRemaining} restant(s)` : "Choisis 6 numéros"}
+          {picked.length === 6 ? `🎫 Valider ticket ${tickets.length + 1}/${MAX_TICKETS} (${betAmount} TRIX)` : `Choisis 6 numéros — ticket ${tickets.length + 1}/${MAX_TICKETS}`}
         </button>
       )}
 
       {/* Flash aleatoire */}
-      {!hasValidatedTicket && tickets.length < MAX_TICKETS && !drawNumbers && (
+      {!allTicketsFull && !drawNumbers && (
         <button onClick={() => {
           const nums = new Set();
           while (nums.size < 6) nums.add(Math.floor(Math.random() * 49) + 1);
