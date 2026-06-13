@@ -11,6 +11,14 @@
     "author_avatar": {
       "type": "string"
     },
+    "author_role": {
+      "type": "string",
+      "enum": [
+        "user",
+        "admin"
+      ],
+      "default": "user"
+    },
     "content": {
       "type": "string"
     },

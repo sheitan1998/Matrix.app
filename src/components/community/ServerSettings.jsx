@@ -74,7 +74,10 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
   };
 
   const handleSetRole = async (member, role) => {
-    await updateMember(member.id, { role });
+    await base44.entities.ServerMember.update(member.id, { role });
+    refetchMembers();
+    toast.success(`Rôle "${role}" attribué à ${member.user_name || member.user_email}`);
+    setMemberAction(null);
   };
 
   const accent = theme?.accent || "hsl(var(--primary))";

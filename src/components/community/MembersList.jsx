@@ -1,7 +1,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Crown, Shield } from "lucide-react";
+import { Crown, Shield, MessageCircle } from "lucide-react";
 
 const ROLE_ICONS = {
   admin: { icon: Crown, color: "#f59e0b" },
@@ -9,7 +9,7 @@ const ROLE_ICONS = {
   member: { icon: null, color: "#888" },
 };
 
-export default function MembersList({ server, theme, currentUserEmail }) {
+export default function MembersList({ server, theme, currentUserEmail, onOpenDm }) {
   const { data: members = [] } = useQuery({
     queryKey: ["server-members", server.id],
     queryFn: () => base44.entities.ServerMember.filter({ server_id: server.id }, "-created_date", 100),
@@ -55,7 +55,8 @@ export default function MembersList({ server, theme, currentUserEmail }) {
 
                 return (
                   <div key={m.id}
-                    className="flex items-center gap-2 px-1.5 py-1 rounded-lg group hover:bg-white/5 transition cursor-default">
+                    className="flex items-center gap-2 px-1.5 py-1 rounded-lg group hover:bg-white/5 transition cursor-default"
+                    title={!isMe ? `Écrire à ${m.user_name || m.user_email}` : ""}>
                     {/* Avatar */}
                     <div className="relative shrink-0">
                       <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
@@ -83,6 +84,14 @@ export default function MembersList({ server, theme, currentUserEmail }) {
                         </p>
                       )}
                     </div>
+                    {!isMe && onOpenDm && (
+                      <button
+                        onClick={() => onOpenDm(m)}
+                        className="opacity-0 group-hover:opacity-100 transition text-muted-foreground hover:text-white shrink-0"
+                        title="Message privé">
+                        <MessageCircle className="w-3 h-3" />
+                      </button>
+                    )}
                   </div>
                 );
               })}

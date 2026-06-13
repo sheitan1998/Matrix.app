@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Send, Hash, Image, Trash2 } from "lucide-react";
+import { Send, Hash, Image, Trash2, Pencil, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -11,9 +11,19 @@ export default function ServerChat({ server, channel, theme, user }) {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [contextMenu, setContextMenu] = useState(null);
+  const [editingMsg, setEditingMsg] = useState(null); // { id, content }
   const fileInputRef = useRef(null);
   const bottomRef = useRef(null);
   const qc = useQueryClient();
+
+  const REACTIONS = ["❤️", "😂", "🔥", "👏", "😮", "😢"];
+
+  useEffect(() => {
+    const close = () => setContextMenu(null);
+    document.addEventListener("click", close);
+    return () => document.removeEventListener("click", close);
+  }, []);
 
   const isOwner = server?.owner_email === user?.email;
 
@@ -133,6 +143,21 @@ export default function ServerChat({ server, channel, theme, user }) {
     await base44.entities.ServerMessage.delete(msg.id);
     qc.invalidateQueries({ queryKey });
     toast.success("Message supprimé");
+    setContextMenu(null);
+  };
+
+  const saveEdit = async () => {
+    if (!editingMsg) return;
+    await base44.entities.ServerMessage.update(editingMsg.id, { content: editingMsg.content });
+    qc.invalidateQueries({ queryKey });
+    setEditingMsg(null);
+    toast.success("Message modifié");
+  };
+
+  const handleContextMenu = (e, msg) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({ msg, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 220) });
   };
 
   const accent = theme?.accent || "hsl(135 100% 50%)";
@@ -166,7 +191,9 @@ export default function ServerChat({ server, channel, theme, user }) {
           </div>
         )}
         {grouped.map((msg) => (
-          <div key={msg.id} className={cn("flex gap-3 group relative", msg.isContinuation ? "mt-0.5" : "mt-3")}>
+          <div key={msg.id}
+            className={cn("flex gap-3 group relative", msg.isContinuation ? "mt-0.5" : "mt-3")}
+            onContextMenu={(e) => handleContextMenu(e, msg)}>
             {!msg.isContinuation ? (
               <NitroAvatar url={msg.author_avatar} name={msg.author_name} size="sm" className="mt-0.5 shrink-0" />
             ) : <div className="w-7 shrink-0" />}
@@ -179,23 +206,28 @@ export default function ServerChat({ server, channel, theme, user }) {
                   </span>
                 </div>
               )}
-              <p className="text-sm text-white/80 leading-relaxed break-words">
-                {msg.type === "file" && msg.file_url ? (
-                  <img src={msg.file_url} alt="Uploaded" className="max-w-xs max-h-64 rounded-xl mb-1 border border-white/10" />
-                ) : msg.content.split(/(@\S+)/g).map((part, i) =>
-                  part.startsWith("@")
-                    ? <span key={i} className="font-bold px-1 rounded" style={{ color: accent, background: accent + "20" }}>{part}</span>
-                    : <React.Fragment key={i}>{part}</React.Fragment>
-                )}
-              </p>
-              {/* Delete button */}
-              {(msg.author_email === user?.email || isOwner) && (
-                <button
-                  onClick={() => deleteMessage(msg)}
-                  className="opacity-0 group-hover:opacity-100 transition absolute right-2 top-1 text-white/40 hover:text-red-400"
-                  title="Supprimer">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+              {editingMsg?.id === msg.id ? (
+                <div className="flex gap-2 items-center">
+                  <input
+                    value={editingMsg.content}
+                    onChange={(e) => setEditingMsg(prev => ({ ...prev, content: e.target.value }))}
+                    onKeyDown={(e) => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") setEditingMsg(null); }}
+                    className="flex-1 bg-white/10 rounded-lg px-2 py-1 text-sm text-white outline-none border border-white/20"
+                    autoFocus
+                  />
+                  <button onClick={saveEdit} className="text-green-400 hover:text-green-300"><Check className="w-4 h-4" /></button>
+                  <button onClick={() => setEditingMsg(null)} className="text-muted-foreground hover:text-white"><X className="w-4 h-4" /></button>
+                </div>
+              ) : (
+                <p className="text-sm text-white/80 leading-relaxed break-words">
+                  {msg.type === "file" && msg.file_url ? (
+                    <img src={msg.file_url} alt="Uploaded" className="max-w-xs max-h-64 rounded-xl mb-1 border border-white/10" />
+                  ) : msg.content.split(/(@\S+)/g).map((part, i) =>
+                    part.startsWith("@")
+                      ? <span key={i} className="font-bold px-1 rounded" style={{ color: accent, background: accent + "20" }}>{part}</span>
+                      : <React.Fragment key={i}>{part}</React.Fragment>
+                  )}
+                </p>
               )}
             </div>
           </div>

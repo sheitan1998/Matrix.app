@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { VISUAL_THEMES, getTheme } from "@/lib/visualThemes";
 import NotificationBell from "@/components/NotificationBell";
+import PrivateChat from "@/components/community/PrivateChat";
 
 const CHANNEL_TYPES = [
   { key: "text", label: "Textuel", icon: Hash },
@@ -38,6 +39,7 @@ export default function Community() {
   const [inviteCodeInput, setInviteCodeInput] = useState("");
   const [uploadingIcon, setUploadingIcon] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [activeDm, setActiveDm] = useState(null); // { friend_email, friend_name }
   const qc = useQueryClient();
 
   useEffect(() => { base44.auth.me().then(setUser).catch(() => {}); }, []);
@@ -370,9 +372,14 @@ export default function Community() {
 
         {/* Members list — right panel */}
         {selectedServer && selectedServer.id !== "__feed__" && activeChannel && (
-          <MembersList server={selectedServer} theme={theme} currentUserEmail={user?.email} />
+          <MembersList server={selectedServer} theme={theme} currentUserEmail={user?.email} onOpenDm={(m) => setActiveDm({ friend_email: m.user_email, friend_name: m.user_name })} />
         )}
       </div>
+
+      {/* Private Chat */}
+      {activeDm && user && (
+        <PrivateChat user={user} friend={activeDm} onClose={() => setActiveDm(null)} />
+      )}
 
       {showCreator && (
         <ServerCreator onClose={() => setShowCreator(false)} onCreated={() => qc.invalidateQueries({ queryKey: ["servers"] })} />

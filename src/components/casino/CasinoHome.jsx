@@ -65,6 +65,18 @@ const GAME_CARDS = [
     hot: true,
   },
   {
+    key: "poker",
+    title: "POKER",
+    subtitle: "TABLES MULTIJOUEUR",
+    bg: "linear-gradient(160deg, #001a10 0%, #003d20 50%, #001a10 100%)",
+    border: "#00ff88",
+    glow: "#00cc66",
+    emoji: "♠️",
+    badge: "LIVE",
+    badgeColor: "#00ff88",
+    hot: true,
+  },
+  {
     key: "leaderboard",
     title: "TOP LEAGUE",
     subtitle: "CLASSEMENT MONDIAL",
@@ -102,16 +114,16 @@ function FloatingCoins() {
   );
 }
 
-export default function CasinoHome({ onSelectGame, balance, onShop, onProfile }) {
-  const [jackpot, setJackpot] = useState(1_250_203_560);
+export default function CasinoHome({ onSelectGame, balance, jackpot: jackpotProp, onShop, onProfile }) {
   const [lightPhase, setLightPhase] = useState(0);
   const [hoveredGame, setHoveredGame] = useState(null);
 
   useEffect(() => {
-    const t1 = setInterval(() => setJackpot(j => j + Math.floor(Math.random() * 137 + 13)), 150);
     const t2 = setInterval(() => setLightPhase(p => (p + 1) % 12), 100);
-    return () => { clearInterval(t1); clearInterval(t2); };
+    return () => { clearInterval(t2); };
   }, []);
+  
+  const jackpot = jackpotProp || 0;
 
   return (
     <div className="min-h-screen relative overflow-hidden select-none"

@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, MessageCircle, ImagePlus, X, Trash2 } from "lucide-react";
+import { Heart, MessageCircle, ImagePlus, X, Trash2, Pencil, Check } from "lucide-react";
 import { formatTimeAgo } from "@/lib/format";
 import PostComments from "./PostComments";
 import { cn } from "@/lib/utils";
@@ -14,15 +14,25 @@ const REACTIONS = ["❤️", "😂", "🔥", "👏", "😮", "😢"];
 export default function PostFeed() {
   const [user, setUser] = useState(null);
   const [text, setText] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [showImageInput, setShowImageInput] = useState(false);
-  const [reactions, setReactions] = useState({}); // { postId: { emoji: count } }
-  const [myReactions, setMyReactions] = useState({}); // { postId: emoji }
+  const [imagePreview, setImagePreview] = useState(null); // base64
+  const [reactions, setReactions] = useState({});
+  const [myReactions, setMyReactions] = useState({});
   const [openComments, setOpenComments] = useState(null);
+  const [contextMenu, setContextMenu] = useState(null); // { postId, x, y }
+  const [editingPost, setEditingPost] = useState(null); // { id, content }
+  const [emojiPickerPost, setEmojiPickerPost] = useState(null);
+  const fileRef = useRef(null);
   const qc = useQueryClient();
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => null);
+  }, []);
+
+  // Close context menu on outside click
+  useEffect(() => {
+    const close = () => { setContextMenu(null); setEmojiPickerPost(null); };
+    document.addEventListener("click", close);
+    return () => document.removeEventListener("click", close);
   }, []);
 
   const { data: posts = [], isLoading } = useQuery({
@@ -36,30 +46,56 @@ export default function PostFeed() {
         author_email: user.email,
         author_name: user.full_name,
         author_avatar: user.avatar_url,
+        author_role: user.role === "admin" ? "admin" : "user",
         content: text.trim(),
-        image_url: imageUrl.trim() || undefined,
+        image_url: imagePreview || undefined,
         likes: 0,
         comments_count: 0,
       }),
     onSuccess: () => {
       setText("");
-      setImageUrl("");
-      setShowImageInput(false);
+      setImagePreview(null);
       qc.invalidateQueries({ queryKey: ["posts"] });
     },
   });
+
+  const handleImageSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const img = new window.Image();
+    const objUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objUrl);
+      const MAX = 1200;
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      setImagePreview(canvas.toDataURL("image/jpeg", 0.8));
+    };
+    img.src = objUrl;
+    if (fileRef.current) fileRef.current.value = "";
+  };
 
   const deletePost = async (postId) => {
     await base44.entities.Post.delete(postId);
     qc.invalidateQueries({ queryKey: ["posts"] });
     toast.success("Post supprimé");
+    setContextMenu(null);
+  };
+
+  const saveEdit = async () => {
+    if (!editingPost) return;
+    await base44.entities.Post.update(editingPost.id, { content: editingPost.content });
+    qc.invalidateQueries({ queryKey: ["posts"] });
+    setEditingPost(null);
+    toast.success("Post modifié");
   };
 
   const toggleReaction = (postId, emoji) => {
     const current = myReactions[postId];
     const postReactions = reactions[postId] || {};
-
-    // Optimistic update
     if (current === emoji) {
       const updated = { ...postReactions, [emoji]: Math.max(0, (postReactions[emoji] || 0) - 1) };
       setReactions((r) => ({ ...r, [postId]: updated }));
@@ -71,17 +107,24 @@ export default function PostFeed() {
       setReactions((r) => ({ ...r, [postId]: updated }));
       setMyReactions((m) => ({ ...m, [postId]: emoji }));
     }
-    // Persist like count on the post (fire-and-forget, no rollback needed for emoji counters)
     const post = posts.find((p) => p.id === postId);
-    if (post) {
-      const delta = current ? 0 : 1; // net new like (simplified)
-      if (!current && emoji === "❤️") {
-        base44.entities.Post.update(postId, { likes: (post.likes || 0) + 1 }).catch(() => {});
-      }
+    if (post && !myReactions[postId] && emoji === "❤️") {
+      base44.entities.Post.update(postId, { likes: (post.likes || 0) + 1 }).catch(() => {});
     }
+    setEmojiPickerPost(null);
+    setContextMenu(null);
   };
 
+  const isAdmin = user?.role === "admin";
+
   const getReactionCount = (postId, emoji) => reactions[postId]?.[emoji] || 0;
+
+  const handleContextMenu = (e, post) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (post.author_email !== user?.email && !isAdmin) return;
+    setContextMenu({ postId: post.id, post, x: e.clientX, y: e.clientY });
+  };
 
   return (
     <div className="space-y-6">
@@ -89,8 +132,11 @@ export default function PostFeed() {
       {user && (
         <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
           <div className="flex gap-3">
-            <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center font-bold text-sm shrink-0">
-              {user.full_name?.[0] || "U"}
+            <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center font-bold text-sm shrink-0 relative">
+              {user.avatar_url ? <img src={user.avatar_url} className="w-full h-full rounded-full object-cover" alt="" /> : (user.full_name?.[0] || "U")}
+              {isAdmin && (
+                <span className="absolute -top-1 -right-1 text-[9px] font-black px-1 rounded-full" style={{ background: "#ffd700", color: "#000" }}>A</span>
+              )}
             </div>
             <Textarea
               value={text}
@@ -100,23 +146,18 @@ export default function PostFeed() {
               className="resize-none bg-secondary/60 border-border flex-1"
             />
           </div>
-          {showImageInput && (
-            <div className="flex gap-2">
-              <input
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="URL de l'image..."
-                className="flex-1 h-9 rounded-md border border-input bg-secondary/60 px-3 text-sm"
-              />
-              <button onClick={() => { setShowImageInput(false); setImageUrl(""); }}><X className="w-4 h-4 text-muted-foreground" /></button>
+          {imagePreview && (
+            <div className="relative">
+              <img src={imagePreview} alt="" className="rounded-xl max-h-64 object-cover w-full" />
+              <button onClick={() => setImagePreview(null)} className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center">
+                <X className="w-3.5 h-3.5 text-white" />
+              </button>
             </div>
           )}
-          {imageUrl && (
-            <img src={imageUrl} alt="" className="rounded-xl max-h-64 object-cover w-full" onError={(e) => e.target.style.display = "none"} />
-          )}
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
           <div className="flex items-center justify-between">
-            <button onClick={() => setShowImageInput((s) => !s)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition">
-              <ImagePlus className="w-4 h-4" /> Image
+            <button onClick={() => fileRef.current?.click()} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition">
+              <ImagePlus className="w-4 h-4" /> Photo
             </button>
             <Button
               onClick={() => createPost.mutate()}
@@ -137,29 +178,67 @@ export default function PostFeed() {
       ) : (
         posts.map((post) => {
           const isOwn = user?.email === post.author_email;
+          const canManage = isOwn || isAdmin;
+          const postAuthorIsAdmin = post.author_email && (
+            // We mark admin posts with a flag stored in image_url starting with __admin
+            post.is_admin === true
+          );
           return (
-            <div key={post.id} className="rounded-2xl border border-border bg-card overflow-hidden">
+            <div key={post.id} className="rounded-2xl border border-border bg-card overflow-hidden"
+              onContextMenu={(e) => canManage && handleContextMenu(e, post)}>
               <div className="p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden">
                     {post.author_avatar ? <img src={post.author_avatar} alt="" className="w-full h-full object-cover" /> : (post.author_name?.[0] || "?")}
                   </div>
                   <div className="flex-1">
-                    <p className="font-semibold text-sm">{post.author_name || "Anonyme"}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-semibold text-sm" style={post.author_role === "admin" ? { color: "#ffd700" } : {}}>
+                        {post.author_name || "Anonyme"}
+                      </p>
+                      {post.author_role === "admin" && (
+                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full" style={{ background: "#ffd700", color: "#000" }}>
+                          ADMIN
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground">{formatTimeAgo(post.created_date)}</p>
                   </div>
-                  {isOwn && (
-                    <button
-                      onClick={() => deletePost(post.id)}
-                      className="p-1.5 rounded-lg hover:bg-destructive/10 transition text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                  {canManage && (
+                    <div className="flex gap-1">
+                      {isOwn && (
+                        <button onClick={() => setEditingPost({ id: post.id, content: post.content })}
+                          className="p-1.5 rounded-lg hover:bg-secondary transition text-muted-foreground hover:text-white">
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      <button onClick={() => deletePost(post.id)}
+                        className="p-1.5 rounded-lg hover:bg-destructive/10 transition text-muted-foreground hover:text-destructive">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   )}
                 </div>
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">{post.content}</p>
-                {post.image_url && (
-                  <img src={post.image_url} alt="" className="mt-3 rounded-xl w-full max-h-96 object-cover" onError={(e) => e.target.style.display = "none"} />
+
+                {editingPost?.id === post.id ? (
+                  <div className="space-y-2">
+                    <Textarea
+                      value={editingPost.content}
+                      onChange={(e) => setEditingPost(prev => ({ ...prev, content: e.target.value }))}
+                      rows={3}
+                      className="resize-none bg-secondary/60 border-border w-full"
+                    />
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={saveEdit}><Check className="w-3.5 h-3.5 mr-1" /> Sauvegarder</Button>
+                      <Button size="sm" variant="ghost" onClick={() => setEditingPost(null)}>Annuler</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{post.content}</p>
+                )}
+
+                {post.image_url && !post.image_url.startsWith("__") && (
+                  <img src={post.image_url} alt="" className="mt-3 rounded-xl w-full max-h-[500px] object-contain bg-black/20" onError={(e) => e.target.style.display = "none"} />
                 )}
               </div>
 
@@ -169,16 +248,12 @@ export default function PostFeed() {
                   const count = getReactionCount(post.id, emoji);
                   const active = myReactions[post.id] === emoji;
                   return (
-                    <button
-                      key={emoji}
+                    <button key={emoji}
                       onClick={() => user && toggleReaction(post.id, emoji)}
                       className={cn(
                         "flex items-center gap-1 px-2 py-1 rounded-full text-sm transition hover:scale-110",
-                        active
-                          ? "bg-premium/20 border border-premium/40"
-                          : "hover:bg-secondary/60 border border-transparent"
-                      )}
-                    >
+                        active ? "bg-premium/20 border border-premium/40" : "hover:bg-secondary/60 border border-transparent"
+                      )}>
                       <span>{emoji}</span>
                       {count > 0 && <span className="text-xs text-muted-foreground font-mono">{count}</span>}
                     </button>
@@ -190,8 +265,7 @@ export default function PostFeed() {
               <div className="px-4 pb-4 flex items-center gap-3">
                 <button
                   onClick={() => setOpenComments(openComments === post.id ? null : post.id)}
-                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition"
-                >
+                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition">
                   <MessageCircle className="w-4 h-4" />
                   {post.comments_count || 0} commentaires
                 </button>
@@ -201,6 +275,34 @@ export default function PostFeed() {
             </div>
           );
         })
+      )}
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <div
+          className="fixed z-[999] rounded-2xl overflow-hidden shadow-2xl border border-border"
+          style={{ top: contextMenu.y, left: contextMenu.x, background: "hsl(var(--card))", minWidth: "180px" }}
+          onClick={(e) => e.stopPropagation()}>
+          {/* Emoji reactions */}
+          <div className="p-2 flex gap-1 border-b border-border">
+            {REACTIONS.map(emoji => (
+              <button key={emoji} onClick={() => toggleReaction(contextMenu.postId, emoji)}
+                className="text-xl hover:scale-125 transition p-1">{emoji}</button>
+            ))}
+          </div>
+          {contextMenu.post.author_email === user?.email && (
+            <button
+              onClick={() => { setEditingPost({ id: contextMenu.postId, content: contextMenu.post.content }); setContextMenu(null); }}
+              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-white hover:bg-secondary transition">
+              <Pencil className="w-4 h-4" /> Modifier
+            </button>
+          )}
+          <button
+            onClick={() => deletePost(contextMenu.postId)}
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition">
+            <Trash2 className="w-4 h-4" /> Supprimer
+          </button>
+        </div>
       )}
     </div>
   );

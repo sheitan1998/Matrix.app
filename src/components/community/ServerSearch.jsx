@@ -1,15 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, UserPlus, Globe, Lock } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Search, X, UserPlus, Globe, Lock, ArrowLeft } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { getTheme } from "@/lib/visualThemes";
+import { toast } from "sonner";
 
 export default function ServerSearch({ onSelectServer, onClose }) {
   const [query, setQuery] = useState("");
-  const [friendEmail, setFriendEmail] = useState("");
+  const [friendPseudo, setFriendPseudo] = useState("");
   const [tab, setTab] = useState("servers"); // "servers" | "friends"
   const [addingFriend, setAddingFriend] = useState(false);
+  const [user, setUser] = useState(null);
+  const qc = useQueryClient();
+
+  useEffect(() => { base44.auth.me().then(setUser).catch(() => {}); }, []);
 
   const { data: allServers = [] } = useQuery({
     queryKey: ["servers-all"],
@@ -24,15 +29,37 @@ export default function ServerSearch({ onSelectServer, onClose }) {
     : allServers;
 
   const addFriend = async () => {
-    if (!friendEmail.trim()) return;
+    const pseudo = friendPseudo.trim();
+    if (!pseudo || !user) return;
+    if (!pseudo.includes("#")) { toast.error("Format : Pseudo#NNNN"); return; }
     setAddingFriend(true);
-    // In a real app, you'd look up user & create friend relation
-    // Here we show a success toast simulation
-    setTimeout(() => {
-      setAddingFriend(false);
-      setFriendEmail("");
-      alert(`Demande envoyée à ${friendEmail} !`);
-    }, 800);
+    // Search users by pseudo stored on User entity
+    const allUsers = await base44.entities.User.list("-created_date", 200).catch(() => []);
+    const found = allUsers.find(u => u.pseudo === pseudo || u.full_name === pseudo.split("#")[0]);
+    if (!found) { toast.error("Utilisateur introuvable"); setAddingFriend(false); return; }
+    if (found.email === user.email) { toast.error("C'est vous !"); setAddingFriend(false); return; }
+    // Check if already friends
+    const existing = await base44.entities.Friend.filter({ user_email: user.email, friend_email: found.email }).catch(() => []);
+    if (existing.length > 0) { toast.info("Déjà ami ou demande en cours"); setAddingFriend(false); return; }
+    await base44.entities.Friend.create({
+      user_email: user.email,
+      friend_email: found.email,
+      friend_name: found.full_name || found.email.split("@")[0],
+      friend_pseudo: pseudo,
+      status: "pending_sent",
+    });
+    // Create reciprocal
+    await base44.entities.Friend.create({
+      user_email: found.email,
+      friend_email: user.email,
+      friend_name: user.full_name || user.email.split("@")[0],
+      friend_pseudo: user.pseudo || (user.full_name + "#0000"),
+      status: "pending_received",
+    });
+    toast.success(`Demande envoyée à ${pseudo} !`);
+    setFriendPseudo("");
+    setAddingFriend(false);
+    qc.invalidateQueries({ queryKey: ["friends"] });
   };
 
   return (
@@ -45,6 +72,9 @@ export default function ServerSearch({ onSelectServer, onClose }) {
 
       {/* Header */}
       <div className="shrink-0 px-4 py-3 border-b border-border flex items-center gap-3">
+        <button onClick={onClose} className="text-muted-foreground hover:text-white">
+          <ArrowLeft className="w-5 h-5" />
+        </button>
         <span className="font-black text-white text-base flex-1">Découvrir</span>
         <button onClick={onClose} className="text-muted-foreground hover:text-white">
           <X className="w-5 h-5" />
@@ -136,20 +166,20 @@ export default function ServerSearch({ onSelectServer, onClose }) {
             <div className="text-center">
               <p className="text-4xl mb-2">👥</p>
               <p className="font-black text-white text-lg">Ajouter un ami</p>
-              <p className="text-xs text-muted-foreground mt-1">Entrez l'adresse e-mail de la personne</p>
+              <p className="text-xs text-muted-foreground mt-1">Entrez le Pseudo#NNNN de la personne</p>
             </div>
             <div className="flex items-center gap-2 px-3 py-2 rounded-2xl border border-border bg-secondary/40">
               <UserPlus className="w-4 h-4 text-muted-foreground shrink-0" />
               <input
-                value={friendEmail}
-                onChange={(e) => setFriendEmail(e.target.value)}
+                value={friendPseudo}
+                onChange={(e) => setFriendPseudo(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addFriend()}
-                placeholder="ami@example.com"
-                type="email"
+                placeholder="Pseudo#1234"
                 className="flex-1 bg-transparent text-sm text-white placeholder:text-muted-foreground outline-none"
               />
             </div>
-            <button onClick={addFriend} disabled={!friendEmail.trim() || addingFriend}
+            <p className="text-[10px] text-muted-foreground text-center">Format : NomUtilisateur#NNNN</p>
+            <button onClick={addFriend} disabled={!friendPseudo.trim() || addingFriend}
               className="w-full py-3 rounded-2xl font-bold text-sm transition disabled:opacity-40"
               style={{ background: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" }}>
               {addingFriend ? "Envoi..." : "Envoyer la demande d'ami"}

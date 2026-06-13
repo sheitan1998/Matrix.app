@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import NotificationBell from "@/components/NotificationBell";
 import { ArrowLeft, ShoppingCart } from "lucide-react";
@@ -10,6 +10,7 @@ import BingoGame from "@/components/casino/BingoGame";
 import BlackjackGame from "@/components/casino/BlackjackGame";
 import CasinoLeaderboard from "@/components/casino/CasinoLeaderboard";
 import LottoGame from "@/components/casino/LottoGame";
+import PokerGame from "@/components/casino/PokerGame";
 import CasinoHome from "@/components/casino/CasinoHome";
 import CasinoShop from "@/pages/casino/CasinoShop";
 import CasinoProfile from "@/pages/casino/CasinoProfile";
@@ -22,15 +23,60 @@ const GAME_META = {
   roulette:    { label: "ROULETTE",           color: "#ff2020", emoji: "🎡" },
   bingo:       { label: "BINGO",              color: "#ffaa00", emoji: "🎱" },
   lotto:       { label: "LOTO",               color: "#ffd700", emoji: "🎰" },
+  poker:       { label: "POKER",              color: "#00ff88", emoji: "♠️" },
   leaderboard: { label: "TOP LEAGUE",         color: "#ffd700", emoji: "🏆" },
 };
+
+// Casino coins are SEPARATE from Trix (streaming currency)
+const CASINO_BALANCE_KEY = "matrix_casino_coins";
+function useCasinoCoins() {
+  const [coins, setCoinsState] = React.useState(() => {
+    const s = localStorage.getItem(CASINO_BALANCE_KEY);
+    return s ? parseInt(s, 10) : 5000;
+  });
+  const setCoins = React.useCallback((valOrFn) => {
+    setCoinsState(prev => {
+      const next = typeof valOrFn === "function" ? valOrFn(prev) : valOrFn;
+      localStorage.setItem(CASINO_BALANCE_KEY, String(next));
+      return next;
+    });
+  }, []);
+  return [coins, setCoins];
+}
+
+// Global jackpot — stored in localStorage, resets to 0 on win, grows over time
+const JACKPOT_KEY = "matrix_casino_jackpot";
+function useJackpot() {
+  const [jackpot, setJackpotState] = React.useState(() => {
+    const s = localStorage.getItem(JACKPOT_KEY);
+    return s ? parseInt(s, 10) : 1000000;
+  });
+  const setJackpot = React.useCallback((v) => {
+    const next = typeof v === "function" ? v(parseInt(localStorage.getItem(JACKPOT_KEY) || "1000000", 10)) : v;
+    localStorage.setItem(JACKPOT_KEY, String(next));
+    setJackpotState(next);
+  }, []);
+  // Grow jackpot continuously
+  React.useEffect(() => {
+    const t = setInterval(() => setJackpot(j => j + Math.floor(Math.random() * 500 + 100)), 500);
+    return () => clearInterval(t);
+  }, []);
+  const winJackpot = React.useCallback(() => {
+    const amount = parseInt(localStorage.getItem(JACKPOT_KEY) || "1000000", 10);
+    setJackpot(0); // Reset to 0 on win
+    return amount;
+  }, []);
+  return [jackpot, winJackpot];
+}
 
 export default function Casino() {
   const [screen, setScreen] = useState("home"); // "home" | game key
   const [showShop, setShowShop] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [user, setUser] = useState(null);
-  const { balance, setBalance, addTransaction } = useWallet();
+  const { addTransaction } = useWallet(); // Trix = streaming only
+  const [casinoCoins, setCasinoCoins] = useCasinoCoins(); // Casino-specific coins
+  const [jackpot, winJackpot] = useJackpot();
   const [lightPhase, setLightPhase] = useState(0);
 
   useEffect(() => {
@@ -51,7 +97,8 @@ export default function Casino() {
   if (screen === "home") {
     return (
       <CasinoHome
-        balance={balance}
+        balance={casinoCoins}
+        jackpot={jackpot}
         onSelectGame={(key) => setScreen(key)}
         onShop={() => setShowShop(true)}
         onProfile={() => setShowProfile(true)}
@@ -106,9 +153,9 @@ export default function Casino() {
               👤
             </button>
             <button onClick={() => setShowShop(true)}
-              className="flex items-center gap-1 rounded-xl"
-              style={{ background: "transparent", border: "none" }}>
-              <TrixCounter balance={balance} />
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold font-mono"
+              style={{ borderColor: "rgba(255,215,0,0.3)", color: "#ffd700", background: "rgba(255,215,0,0.08)" }}>
+              {casinoCoins.toLocaleString()} 🪙
             </button>
           </div>
         </div>
@@ -145,12 +192,13 @@ export default function Casino() {
               boxShadow: `0 0 50px rgba(0,0,0,0.8), 0 0 25px ${meta.color}08`
             }}>
             <div className="p-4 sm:p-6">
-              {screen === "slots"       && <SlotsGame balance={balance} setBalance={setBalance} accentColor={meta.color} addTransaction={addTransaction} />}
-              {screen === "blackjack"   && <BlackjackGame balance={balance} setBalance={setBalance} accentColor={meta.color} />}
-              {screen === "roulette"    && <RouletteGame balance={balance} setBalance={setBalance} accentColor={meta.color} />}
-              {screen === "bingo"       && <BingoGame balance={balance} setBalance={setBalance} accentColor={meta.color} />}
-              {screen === "lotto"      && <LottoGame balance={balance} setBalance={setBalance} addTransaction={addTransaction} />}
-              {screen === "leaderboard" && <CasinoLeaderboard accentColor={meta.color} currentUserBalance={balance} />}
+              {screen === "slots"       && <SlotsGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} addTransaction={addTransaction} jackpot={jackpot} winJackpot={winJackpot} />}
+              {screen === "blackjack"   && <BlackjackGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} />}
+              {screen === "roulette"    && <RouletteGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} />}
+              {screen === "bingo"       && <BingoGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} />}
+              {screen === "lotto"       && <LottoGame balance={casinoCoins} setBalance={setCasinoCoins} addTransaction={addTransaction} />}
+              {screen === "poker"       && <PokerGame balance={casinoCoins} setBalance={setCasinoCoins} addTransaction={addTransaction} />}
+              {screen === "leaderboard" && <CasinoLeaderboard accentColor={meta.color} currentUserBalance={casinoCoins} />}
             </div>
           </motion.div>
         </AnimatePresence>
@@ -163,7 +211,7 @@ export default function Casino() {
         </button>
       </div>
 
-      {showShop && <CasinoShop balance={balance} setBalance={setBalance} onClose={() => setShowShop(false)} />}
+      {showShop && <CasinoShop balance={casinoCoins} setBalance={setCasinoCoins} onClose={() => setShowShop(false)} />}
     </div>
   );
 }
