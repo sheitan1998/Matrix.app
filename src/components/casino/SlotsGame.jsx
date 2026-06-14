@@ -121,7 +121,7 @@ function Reel({ spinning, finalSymbol, stopDelay, showResult }) {
 }
 
 // ---- MAIN COMPONENT ----
-export default function SlotsGame({ balance, setBalance, accentColor, addTransaction }) {
+export default function SlotsGame({ balance, setBalance, accentColor, addTransaction, jackpot: globalJackpot = 0, winJackpot }) {
   const [spinning, setSpinning] = useState(false);
   const [autoSpinning, setAutoSpinning] = useState(false);
   const [autoCount, setAutoCount] = useState(0);
@@ -170,8 +170,13 @@ export default function SlotsGame({ balance, setBalance, accentColor, addTransac
       const jp3x7 = selected[0].s === "7" && selected[1].s === "7" && selected[2].s === "7";
       const jp3D = selected[0].s === "💎" && selected[1].s === "💎" && selected[2].s === "💎";
       const jpHit = jp3x7 || jp3D;
+      // 0.0001% jackpot chance on any losing spin too
+      const randomJp = !jpHit && mult === 0 && Math.random() < 0.000001 && winJackpot && globalJackpot > 0;
       let winAmount = mult > 0 ? Math.round(bet * mult) : 0;
-      if (jpHit) winAmount += jackpot;
+      if (jpHit || randomJp) {
+        const jpAmount = randomJp ? winJackpot() : globalJackpot;
+        winAmount += jpAmount;
+      }
       setLastWin(winAmount);
       const netGain = winAmount - bet;
       if (winAmount > 0) setBalance(b => b + winAmount);
@@ -240,7 +245,7 @@ export default function SlotsGame({ balance, setBalance, accentColor, addTransac
           <span className="text-xs font-black" style={{ color: "#ffd700" }}>✨ JACKPOT</span>
           <motion.span animate={{ scale: [1, 1.03, 1] }} transition={{ duration: 0.5, repeat: Infinity }}
             className="font-mono font-black text-xl" style={{ color: "#ffd700", textShadow: "0 0 12px #ffaa00" }}>
-            {jackpot.toLocaleString()}
+            {(globalJackpot || jackpot).toLocaleString()}
           </motion.span>
           <span className="text-xs font-black" style={{ color: "#ffd700" }}>MAJOR ×2</span>
         </div>

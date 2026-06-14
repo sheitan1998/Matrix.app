@@ -71,7 +71,7 @@ function Card({ card, hidden, delay = 0 }) {
 
 const BETS_PRESET = [100, 250, 500, 1000, 2500];
 
-export default function BlackjackGame({ balance, setBalance, accentColor = "#ffd700" }) {
+export default function BlackjackGame({ balance, setBalance, accentColor = "#ffd700", jackpot = 0, winJackpot }) {
   const [deck, setDeck] = useState([]);
   const [playerHand, setPlayerHand] = useState([]);
   const [dealerHand, setDealerHand] = useState([]);
@@ -113,11 +113,19 @@ export default function BlackjackGame({ balance, setBalance, accentColor = "#ffd
     }
     else if (pt === dt) { gain = s; msg = "🤝 Égalité — remboursé"; }
     else { gain = 0; msg = `💸 Croupier gagne. -${s} 🪙`; }
+    // 0.0001% jackpot chance on win
+    let isJackpotWin = false;
+    if (gain > s && Math.random() < 0.000001 && winJackpot && jackpot > 0) {
+      const jpAmount = winJackpot();
+      isJackpotWin = true;
+      gain = jpAmount;
+      msg = `🎰 JACKPOT ! +${jpAmount.toLocaleString()} 🪙`;
+    }
     if (gain > 0) setBalance(b => b + gain);
     setMessage(msg);
     setPhase("done");
-    if (gain > s) {
-      setWinData({ amount: gain, multiplier: Math.round(gain / s) });
+    if (gain > s || isJackpotWin) {
+      setWinData({ amount: gain, multiplier: Math.round(gain / s), isJackpot: isJackpotWin });
       setShowWin(true);
       toast.success(msg);
     } else if (gain === s) { setWinData({ amount: s, multiplier: 1 }); setShowWin(true); toast.success(msg); }
@@ -137,7 +145,7 @@ export default function BlackjackGame({ balance, setBalance, accentColor = "#ffd
 
   return (
     <div className="space-y-4 select-none">
-      <CasinoWinEffect show={showWin} amount={winData?.amount} multiplier={winData?.multiplier} onDone={() => setShowWin(false)} />
+      <CasinoWinEffect show={showWin} amount={winData?.amount} multiplier={winData?.multiplier} isJackpot={winData?.isJackpot} onDone={() => setShowWin(false)} />
       {/* Title */}
       <div className="text-center">
         <p className="text-3xl font-black tracking-wider"

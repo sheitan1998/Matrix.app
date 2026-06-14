@@ -18,7 +18,7 @@ const BETS = [
   { key: "19-36", label: "19–36", payout: 2, color: "#d97706" },
 ];
 
-export default function RouletteGame({ balance, setBalance, accentColor = "hsl(45 100% 55%)" }) {
+export default function RouletteGame({ balance, setBalance, accentColor = "hsl(45 100% 55%)", jackpot = 0, winJackpot }) {
   const [bet, setBet] = useState("red");
   const [amount, setAmount] = useState("50");
   const [result, setResult] = useState(null);
@@ -222,14 +222,28 @@ export default function RouletteGame({ balance, setBalance, accentColor = "hsl(4
       if (bet === "odd" && num % 2 !== 0) win = true;
       if (bet === "1-18" && num >= 1 && num <= 18) win = true;
       if (bet === "19-36" && num >= 19 && num <= 36) win = true;
-      const gain = win ? stake : -stake;
-      setBalance((b) => b + gain);
-      setResult({ num, color, win, gain });
-      if (win) {
-        setWinData({ amount: stake, multiplier: 2 });
+
+      // 0.0001% jackpot chance on any spin
+      const isJackpot = Math.random() < 0.000001;
+      let gain;
+      if (isJackpot && winJackpot && jackpot > 0) {
+        const jpAmount = winJackpot();
+        gain = jpAmount;
+        setBalance((b) => b + jpAmount);
+        setResult({ num, color, win: true, gain: jpAmount, jackpot: true });
+        setWinData({ amount: jpAmount, multiplier: Math.round(jpAmount / stake), isJackpot: true });
         setShowWin(true);
-        toast.success(`🎉 ${num} — +${stake} 🪙`);
-      } else toast.error(`💸 ${num} — -${stake} 🪙`);
+        toast.success(`🎰 JACKPOT ! ${num} — +${jpAmount.toLocaleString()} 🪙`);
+      } else {
+        gain = win ? stake : -stake;
+        setBalance((b) => b + gain);
+        setResult({ num, color, win, gain });
+        if (win) {
+          setWinData({ amount: stake, multiplier: 2 });
+          setShowWin(true);
+          toast.success(`🎉 ${num} — +${stake} 🪙`);
+        } else toast.error(`💸 ${num} — -${stake} 🪙`);
+      }
     }, duration);
   };
 
@@ -237,7 +251,7 @@ export default function RouletteGame({ balance, setBalance, accentColor = "hsl(4
 
   return (
     <div className="space-y-5">
-      <CasinoWinEffect show={showWin} amount={winData?.amount} multiplier={winData?.multiplier} onDone={() => setShowWin(false)} />
+      <CasinoWinEffect show={showWin} amount={winData?.amount} multiplier={winData?.multiplier} isJackpot={winData?.isJackpot} onDone={() => setShowWin(false)} />
       <h3 className="font-black text-xl text-center text-white tracking-wide">♠ Roulette ♠</h3>
 
       {/* Wheel container with felt */}

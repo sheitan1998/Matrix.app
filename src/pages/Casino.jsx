@@ -193,9 +193,9 @@ export default function Casino() {
             }}>
             <div className="p-4 sm:p-6">
               {screen === "slots"       && <SlotsGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} addTransaction={addTransaction} jackpot={jackpot} winJackpot={winJackpot} />}
-              {screen === "blackjack"   && <BlackjackGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} />}
-              {screen === "roulette"    && <RouletteGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} />}
-              {screen === "bingo"       && <BingoGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} />}
+              {screen === "blackjack"   && <BlackjackGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} winJackpot={winJackpot} />}
+              {screen === "roulette"    && <RouletteGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} winJackpot={winJackpot} />}
+              {screen === "bingo"       && <BingoGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} winJackpot={winJackpot} />}
               {screen === "lotto"       && <LottoGame balance={casinoCoins} setBalance={setCasinoCoins} addTransaction={addTransaction} />}
               {screen === "poker"       && <PokerGame balance={casinoCoins} setBalance={setCasinoCoins} addTransaction={addTransaction} />}
               {screen === "leaderboard" && <CasinoLeaderboard accentColor={meta.color} currentUserBalance={casinoCoins} />}

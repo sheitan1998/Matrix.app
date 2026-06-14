@@ -22,7 +22,7 @@ function generateCard() {
 
 const BALL_COLORS = ["#e53e3e","#dd6b20","#d69e2e","#38a169","#3182ce","#805ad5","#d53f8c"];
 
-export default function BingoGame({ balance, setBalance, accentColor = "#ffd700" }) {
+export default function BingoGame({ balance, setBalance, accentColor = "#ffd700", jackpot = 0, winJackpot }) {
   const [card, setCard] = useState(generateCard());
   const [marked, setMarked] = useState(new Set());
   const [calledBalls, setCalledBalls] = useState([]);
@@ -92,11 +92,13 @@ export default function BingoGame({ balance, setBalance, accentColor = "#ffd700"
           clearInterval(intervalRef.current);
           setRunning(false);
           setWon(true);
-          const prize = stakeRef.current * 10;
+          // 0.0001% jackpot chance on bingo
+          const isJackpot = Math.random() < 0.000001 && winJackpot && jackpot > 0;
+          const prize = isJackpot ? winJackpot() : stakeRef.current * 10;
           setBalance((b) => b + prize);
-          setWinData({ amount: prize, multiplier: 10 });
+          setWinData({ amount: prize, multiplier: isJackpot ? Math.round(prize / stakeRef.current) : 10, isJackpot });
           setShowWin(true);
-          toast.success(`🎉 BINGO ! +${prize} 🪙`);
+          toast.success(isJackpot ? `🎰 JACKPOT BINGO ! +${prize.toLocaleString()} 🪙` : `🎉 BINGO ! +${prize} 🪙`);
         }
         return next;
       });

@@ -262,6 +262,35 @@ export default function ServerChat({ server, channel, theme, user }) {
           </button>
         </div>
       </div>
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <div
+          className="fixed z-[999] rounded-2xl overflow-hidden shadow-2xl border border-white/10"
+          style={{ top: contextMenu.y, left: contextMenu.x, background: "hsl(var(--card))", minWidth: "180px" }}
+          onClick={(e) => e.stopPropagation()}>
+          <div className="p-2 flex gap-1 border-b border-white/10">
+            {REACTIONS.map(emoji => (
+              <button key={emoji} onClick={() => { toast.info(`Réaction ${emoji} ajoutée`); setContextMenu(null); }}
+                className="text-xl hover:scale-125 transition p-0.5">{emoji}</button>
+            ))}
+          </div>
+          {contextMenu.msg.author_email === user?.email && (
+            <button
+              onClick={() => { setEditingMsg({ id: contextMenu.msg.id, content: contextMenu.msg.content }); setContextMenu(null); }}
+              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-white hover:bg-white/10 transition">
+              <Pencil className="w-4 h-4" /> Modifier
+            </button>
+          )}
+          {(contextMenu.msg.author_email === user?.email || isOwner) && (
+            <button
+              onClick={() => deleteMessage(contextMenu.msg)}
+              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition">
+              <Trash2 className="w-4 h-4" /> Supprimer
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
