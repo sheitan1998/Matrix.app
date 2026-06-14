@@ -92,6 +92,50 @@ export default function Landing() {
             transition={{ duration: 2.5, delay: i * 3 + 2, repeat: Infinity, repeatDelay: 8 + i * 3 }}
           />
         ))}
+        {/* Meteors — random diagonal paths */}
+        {Array.from({ length: 6 }, (_, i) => {
+          const startX = Math.random() * 90 + 5;
+          const startY = Math.random() * 40;
+          const angle = -25 - Math.random() * 40;
+          const length = 80 + Math.random() * 160;
+          const endX = startX + Math.cos((angle * Math.PI) / 180) * (length / window.innerWidth * 100);
+          const endY = startY + Math.sin((angle * Math.PI) / 180) * (length / window.innerHeight * 100) * -1;
+          const colors = ["#ffd700", "#ff00ff", "#00ffcc", "#ff6644", "#44aaff", "#ff44ff"];
+          return (
+            <motion.div key={`meteor-${i}`}
+              className="absolute rounded-full"
+              style={{
+                top: `${startY}%`,
+                left: `${startX}%`,
+                width: "2px",
+                height: "2px",
+                background: colors[i % colors.length],
+                boxShadow: `0 0 10px 2px ${colors[i % colors.length]}80, 0 0 40px 6px ${colors[i % colors.length]}30`,
+              }}
+              animate={{
+                x: [`0vw`, `${endX - startX}vw`],
+                y: [`0vh`, `${-(endY - startY)}vh`],
+                opacity: [0, 1, 0],
+                scale: [0.5, 1.5, 0.3],
+              }}
+              transition={{
+                duration: 1.5 + Math.random() * 2,
+                delay: i * 2 + Math.random() * 4,
+                repeat: Infinity,
+                repeatDelay: 4 + Math.random() * 8,
+                ease: "easeOut",
+              }}>
+              {/* Meteor trail */}
+              <div className="absolute top-1/2 -translate-y-1/2"
+                style={{
+                  right: "100%",
+                  width: `${40 + Math.random() * 60}px`,
+                  height: "1px",
+                  background: `linear-gradient(90deg, transparent, ${colors[i % colors.length]}cc, ${colors[i % colors.length]})`,
+                }} />
+            </motion.div>
+          );
+        })}
       </div>
 
       {/* Scrollable content */}

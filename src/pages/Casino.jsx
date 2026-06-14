@@ -44,28 +44,71 @@ function useCasinoCoins() {
   return [coins, setCoins];
 }
 
-// Global jackpot — stored in localStorage, resets to 0 on win, grows over time
-const JACKPOT_KEY = "matrix_casino_jackpot";
+// Global jackpot — stored in ServerMessage entity for all users, resets to 0 on win
 function useJackpot() {
-  const [jackpot, setJackpotState] = React.useState(() => {
-    const s = localStorage.getItem(JACKPOT_KEY);
-    return s ? parseInt(s, 10) : 1000000;
-  });
-  const setJackpot = React.useCallback((v) => {
-    const next = typeof v === "function" ? v(parseInt(localStorage.getItem(JACKPOT_KEY) || "1000000", 10)) : v;
-    localStorage.setItem(JACKPOT_KEY, String(next));
-    setJackpotState(next);
+  const [jackpot, setJackpotState] = React.useState(1000000);
+  const [loaded, setLoaded] = React.useState(false);
+
+  // Load jackpot from shared entity on mount
+  React.useEffect(() => {
+    base44.entities.ServerMessage.filter({ server_id: "casino_jackpot", channel_id: "global" }, "-created_date", 1)
+      .then(msgs => {
+        if (msgs.length > 0) {
+          try {
+            const data = JSON.parse(msgs[0].content);
+            setJackpotState(data.amount || 1000000);
+          } catch { setJackpotState(1000000); }
+        } else {
+          base44.entities.ServerMessage.create({
+            server_id: "casino_jackpot", channel_id: "global",
+            author_email: "system", author_name: "System",
+            content: JSON.stringify({ amount: 1000000 }), type: "system"
+          }).catch(() => {});
+        }
+        setLoaded(true);
+      }).catch(() => setLoaded(true));
   }, []);
+
+  const saveJackpot = React.useCallback(async (amount) => {
+    const msgs = await base44.entities.ServerMessage.filter({ server_id: "casino_jackpot", channel_id: "global" }, "-created_date", 1);
+    if (msgs.length > 0) {
+      await base44.entities.ServerMessage.update(msgs[0].id, { content: JSON.stringify({ amount }) });
+    } else {
+      await base44.entities.ServerMessage.create({
+        server_id: "casino_jackpot", channel_id: "global",
+        author_email: "system", author_name: "System",
+        content: JSON.stringify({ amount }), type: "system"
+      });
+    }
+  }, []);
+
   // Grow jackpot continuously
   React.useEffect(() => {
-    const t = setInterval(() => setJackpot(j => j + Math.floor(Math.random() * 500 + 100)), 500);
+    if (!loaded) return;
+    const t = setInterval(() => {
+      setJackpotState(j => {
+        const next = j + Math.floor(Math.random() * 500 + 100);
+        return next;
+      });
+    }, 500);
     return () => clearInterval(t);
-  }, []);
+  }, [loaded]);
+
+  // Save jackpot periodically
+  React.useEffect(() => {
+    if (!loaded) return;
+    const t = setInterval(() => {
+      setJackpotState(j => { saveJackpot(j).catch(() => {}); return j; });
+    }, 5000);
+    return () => clearInterval(t);
+  }, [loaded, saveJackpot]);
+
   const winJackpot = React.useCallback(() => {
-    const amount = parseInt(localStorage.getItem(JACKPOT_KEY) || "1000000", 10);
-    setJackpot(0); // Reset to 0 on win
+    let amount = 0;
+    setJackpotState(j => { amount = j; return 0; });
+    saveJackpot(0).catch(() => {});
     return amount;
-  }, []);
+  }, [saveJackpot]);
   return [jackpot, winJackpot];
 }
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Sparkles, Plus, Hash, Volume2, Megaphone, Settings, Trash2, Search, UserPlus, Link2 } from "lucide-react";
+import { ArrowLeft, Sparkles, Plus, Hash, Volume2, Megaphone, Settings, Trash2, Search, UserPlus, Link2, MessageCircle, X } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import PostFeed from "@/components/community/PostFeed";
@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { VISUAL_THEMES, getTheme } from "@/lib/visualThemes";
 import NotificationBell from "@/components/NotificationBell";
 import PrivateChat from "@/components/community/PrivateChat";
+import DmList from "@/components/community/DmList";
 
 const CHANNEL_TYPES = [
   { key: "text", label: "Textuel", icon: Hash },
@@ -39,7 +40,8 @@ export default function Community() {
   const [inviteCodeInput, setInviteCodeInput] = useState("");
   const [uploadingIcon, setUploadingIcon] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
-  const [activeDm, setActiveDm] = useState(null); // { friend_email, friend_name }
+  const [activeDm, setActiveDm] = useState(null);
+  const [showDmList, setShowDmList] = useState(false);
   const qc = useQueryClient();
 
   useEffect(() => { base44.auth.me().then(setUser).catch(() => {}); }, []);
@@ -168,6 +170,11 @@ export default function Community() {
             <span className="font-black text-lg"><span className="text-premium">M</span>ATRIX Community</span>
             <div className="ml-auto flex items-center gap-2">
               {user && <NotificationBell user={user} />}
+              <button onClick={() => setShowDmList(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-border hover:bg-secondary transition"
+                title="Messages privés">
+                <MessageCircle className="w-3.5 h-3.5" /> MP
+              </button>
               <button onClick={() => setShowInviteJoin(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-border hover:bg-secondary transition">
                 <UserPlus className="w-3.5 h-3.5" /> Rejoindre
@@ -379,6 +386,21 @@ export default function Community() {
       {/* Private Chat */}
       {activeDm && user && (
         <PrivateChat user={user} friend={activeDm} onClose={() => setActiveDm(null)} />
+      )}
+
+      {/* DM List */}
+      {showDmList && user && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)" }}
+          onClick={() => setShowDmList(false)}>
+          <div className="w-full max-w-sm max-h-[80vh] rounded-3xl p-6 space-y-4 overflow-y-auto" style={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h2 className="font-black text-lg text-white flex items-center gap-2"><MessageCircle className="w-5 h-5 text-primary" /> Messages Privés</h2>
+              <button onClick={() => setShowDmList(false)} className="text-muted-foreground hover:text-white"><X className="w-4 h-4" /></button>
+            </div>
+            <DmList user={user} onOpenDm={(friend) => { setActiveDm(friend); setShowDmList(false); }} />
+          </div>
+        </div>
       )}
 
       {showCreator && (

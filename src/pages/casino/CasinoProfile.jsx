@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Trophy, Zap, TrendingUp, Crown, Star, Target, Flame } from "lucide-react";
+import { ArrowLeft, Trophy, Zap, TrendingUp, Crown, Star, Target, Flame, Upload } from "lucide-react";
 import { useWallet } from "@/hooks/useWallet";
 import { base44 } from "@/api/base44Client";
+import { toast } from "sonner";
 
 const BADGES = [
   { id: "first_spin",   label: "Premier Spin",    emoji: "🎰", desc: "Joue pour la premiere fois",      threshold: 0,       },
@@ -66,6 +67,28 @@ export default function CasinoProfile({ onBack }) {
   const [user, setUser] = useState(null);
   const [tab, setTab] = useState("badges");
   const [lightPhase, setLightPhase] = useState(0);
+  const [casinoAvatar, setCasinoAvatar] = useState(user?.casino_avatar || "");
+  const fileRef = React.useRef(null);
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const img = new window.Image();
+    const objUrl = URL.createObjectURL(file);
+    img.onload = async () => {
+      URL.revokeObjectURL(objUrl);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.min(img.width, 300);
+      canvas.height = Math.min(img.height, 300);
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+      setCasinoAvatar(dataUrl);
+      await base44.auth.updateMe({ casino_avatar: dataUrl });
+      toast.success("Avatar casino mis à jour !");
+    };
+    img.src = objUrl;
+    if (fileRef.current) fileRef.current.value = "";
+  };
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -123,10 +146,16 @@ export default function CasinoProfile({ onBack }) {
             style={{ backgroundImage: "repeating-linear-gradient(45deg, rgba(255,255,255,0.1) 0, rgba(255,255,255,0.1) 1px, transparent 0, transparent 50%)", backgroundSize: "10px 10px" }} />
 
           <div className="relative z-10 flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-4xl"
-              style={{ background: `radial-gradient(circle at 30% 30%, ${rank.color}40, ${rank.color}10)`, border: `2px solid ${rank.color}60` }}>
-              👤
-            </div>
+            <button onClick={() => fileRef.current?.click()} className="group relative">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-4xl overflow-hidden"
+                style={{ background: `radial-gradient(circle at 30% 30%, ${rank.color}40, ${rank.color}10)`, border: `2px solid ${rank.color}60` }}>
+                {casinoAvatar ? <img src={casinoAvatar} alt="" className="w-full h-full object-cover" /> : "👤"}
+              </div>
+              <div className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                <Upload className="w-5 h-5 text-white" />
+              </div>
+            </button>
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
             <div className="flex-1">
               <p className="font-black text-white text-lg">{user?.full_name || "Joueur"}</p>
               <div className="flex items-center gap-2 mt-0.5">

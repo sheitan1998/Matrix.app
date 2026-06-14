@@ -19,10 +19,14 @@ export default function PostFeed() {
   const [myReactions, setMyReactions] = useState({});
   const [openComments, setOpenComments] = useState(null);
   const [contextMenu, setContextMenu] = useState(null); // { postId, x, y }
-  const [editingPost, setEditingPost] = useState(null); // { id, content }
+  const [editingPost, setEditingPost] = useState(null);
   const [emojiPickerPost, setEmojiPickerPost] = useState(null);
+  const [lastPostTime, setLastPostTime] = useState(0);
+  const [postCooldown, setPostCooldown] = useState(30); // seconds, admin can change
+  const [cooldownLeft, setCooldownLeft] = useState(0);
   const fileRef = useRef(null);
   const qc = useQueryClient();
+  const cooldownRef = useRef(null);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => null);
@@ -55,6 +59,7 @@ export default function PostFeed() {
     onSuccess: () => {
       setText("");
       setImagePreview(null);
+      setLastPostTime(Date.now());
       qc.invalidateQueries({ queryKey: ["posts"] });
     },
   });
@@ -117,6 +122,21 @@ export default function PostFeed() {
 
   const isAdmin = user?.role === "admin";
 
+  // Cooldown timer
+  useEffect(() => {
+    if (lastPostTime > 0) {
+      cooldownRef.current = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - lastPostTime) / 1000);
+        const left = Math.max(0, postCooldown - elapsed);
+        setCooldownLeft(left);
+        if (left <= 0) { clearInterval(cooldownRef.current); setLastPostTime(0); }
+      }, 100);
+      return () => clearInterval(cooldownRef.current);
+    }
+  }, [lastPostTime, postCooldown]);
+
+  const canPost = lastPostTime === 0 || cooldownLeft <= 0;
+
   const getReactionCount = (postId, emoji) => reactions[postId]?.[emoji] || 0;
 
   const handleContextMenu = (e, post) => {
@@ -159,12 +179,22 @@ export default function PostFeed() {
             <button onClick={() => fileRef.current?.click()} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition">
               <ImagePlus className="w-4 h-4" /> Photo
             </button>
+            {isAdmin && (
+              <select value={postCooldown} onChange={(e) => setPostCooldown(parseInt(e.target.value))}
+                className="text-xs rounded-lg bg-secondary/60 border-border px-2 py-1 outline-none text-muted-foreground">
+                <option value="0">0s</option>
+                <option value="10">10s</option>
+                <option value="30">30s</option>
+                <option value="60">60s</option>
+                <option value="120">120s</option>
+              </select>
+            )}
             <Button
               onClick={() => createPost.mutate()}
-              disabled={!text.trim() || createPost.isPending}
+              disabled={!text.trim() || createPost.isPending || (!canPost && !isAdmin)}
               className="rounded-full h-9 px-5 bg-foreground text-background hover:bg-foreground/90 font-semibold"
             >
-              Publier
+              {!canPost && !isAdmin ? `⏳ ${cooldownLeft}s` : "Publier"}
             </Button>
           </div>
         </div>

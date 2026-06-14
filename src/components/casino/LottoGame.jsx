@@ -34,6 +34,8 @@ export default function LottoGame({ balance, setBalance, addTransaction }) {
   const [countdown, setCountdown] = useState("");
   const [betAmount, setBetAmount] = useState(100);
   const [presenterActive, setPresenterActive] = useState(false);
+  const [lastDrawResult, setLastDrawResult] = useState(null); // Store last draw for replay
+  const [showReplay, setShowReplay] = useState(false);
 
   const MAX_TICKETS = 3;
   const BET_OPTIONS = [50, 100, 250, 500, 1000];
@@ -58,14 +60,17 @@ export default function LottoGame({ balance, setBalance, addTransaction }) {
     if (saved) {
       try {
         const data = JSON.parse(saved);
-        // Keep tickets for current draw only
         if (data.drawDate === nextDraw.toISOString() && Array.isArray(data.tickets)) {
           setTickets(data.tickets);
         } else {
-          // Old draw — clear
           localStorage.removeItem(`lotto_tickets_${user.email}`);
         }
       } catch { localStorage.removeItem(`lotto_tickets_${user.email}`); }
+    }
+    // Load last draw for replay
+    const lastDraw = localStorage.getItem("lotto_last_draw");
+    if (lastDraw) {
+      try { setLastDrawResult(JSON.parse(lastDraw)); } catch {}
     }
   }, [user]);
 
@@ -124,6 +129,10 @@ export default function LottoGame({ balance, setBalance, addTransaction }) {
           setPresenterActive(false);
           checkWin(winNumbers, bonus);
           setNextDraw(getNextSaturday());
+          // Save for replay
+          const result = { numbers: winNumbers, bonus, date: new Date().toISOString() };
+          setLastDrawResult(result);
+          localStorage.setItem("lotto_last_draw", JSON.stringify(result));
         }, 2000);
       }
     }, 1500);
@@ -183,14 +192,53 @@ export default function LottoGame({ balance, setBalance, addTransaction }) {
         </div>
       </div>
 
-      {/* Presenter animation */}
+      {/* Presenter animation — beautiful woman presenter */}
       {presenterActive && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          className="p-4 rounded-2xl bg-gradient-to-r from-pink-500/10 to-purple-500/10 border border-pink-500/30 text-center">
-          <motion.div animate={{ y: [0, -5, 0] }} transition={{ duration: 1, repeat: Infinity }}
-            className="text-5xl mb-2">👩‍🦰</motion.div>
-          <p className="text-pink-300 font-bold text-sm">Le tirage est en cours...</p>
-          <p className="text-white/50 text-xs">Restez attentif aux numéros !</p>
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+          className="relative overflow-hidden rounded-3xl"
+          style={{
+            background: "linear-gradient(135deg, #1a0020, #2d0040, #1a0020)",
+            border: "2px solid #ff44aa40",
+            boxShadow: "0 0 40px #ff44aa20"
+          }}>
+          {/* Stage lights */}
+          <div className="absolute top-0 left-0 right-0 flex justify-center gap-2 pt-2">
+            {["#ff4488","#ffaa00","#44ff88","#4488ff","#ff44ff"].map((c, i) => (
+              <motion.div key={i} className="w-2 h-2 rounded-full"
+                animate={{ opacity: [0.5, 1, 0.5], scale: [1, 1.3, 1] }}
+                transition={{ duration: 1.2, delay: i * 0.15, repeat: Infinity }}
+                style={{ background: c, boxShadow: `0 0 10px ${c}` }} />
+            ))}
+          </div>
+          <div className="p-5 text-center relative z-10">
+            {/* Presenter */}
+            <motion.div
+              animate={{ y: [0, -6, 0], rotate: [0, 2, -2, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              className="relative mx-auto w-20 h-20 mb-3">
+              <div className="w-20 h-20 rounded-full flex items-center justify-center text-5xl"
+                style={{
+                  background: "radial-gradient(circle at 30% 30%, #ff88cc40, #ff44aa20)",
+                  border: "3px solid #ff44aa60",
+                  boxShadow: "0 0 30px #ff44aa40"
+                }}>
+                👩‍🦰
+              </div>
+              {/* Sparkles around presenter */}
+              {["✨","⭐","💫"].map((s, i) => (
+                <motion.span key={i} className="absolute text-sm"
+                  style={{ top: `${-10 + i * 20}%`, left: `${i * 40}%` }}
+                  animate={{ opacity: [0, 1, 0], y: [-5, -15, -25], scale: [0.5, 1.2, 0.5] }}
+                  transition={{ duration: 1.5, delay: i * 0.3, repeat: Infinity }}>
+                  {s}
+                </motion.span>
+              ))}
+            </motion.div>
+            <p className="font-black text-base" style={{ color: "#ff88cc", fontFamily: "'Arial Black', sans-serif", textShadow: "0 0 10px #ff44aa" }}>
+              Marie vous présente le tirage !
+            </p>
+            <p className="text-xs text-pink-300/60 mt-1">Restez attentif aux numéros...</p>
+          </div>
         </motion.div>
       )}
 
@@ -319,6 +367,47 @@ export default function LottoGame({ balance, setBalance, addTransaction }) {
           <span>3 numéros → 500 TRIX</span>
         </div>
       </div>
+
+      {/* Replay last draw */}
+      {lastDrawResult && !presenterActive && (
+        <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/10 text-center space-y-2">
+          <button onClick={() => setShowReplay(!showReplay)}
+            className="text-xs font-bold text-purple-400 hover:text-purple-300 transition flex items-center gap-1 justify-center">
+            🔄 {showReplay ? "Masquer" : "Replay"} le dernier tirage
+          </button>
+          {showReplay && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
+              className="space-y-2">
+              <div className="flex items-center justify-center gap-2">
+                <motion.div animate={{ y: [0, -4, 0] }} transition={{ duration: 1, repeat: Infinity }}
+                  className="text-3xl">👩‍🦰</motion.div>
+                <p className="text-xs text-pink-300">Tirage du {new Date(lastDrawResult.date).toLocaleDateString("fr-FR")}</p>
+              </div>
+              <div className="flex flex-wrap justify-center gap-2">
+                {lastDrawResult.numbers.map((n, i) => (
+                  <motion.div key={n}
+                    initial={{ scale: 0, rotate: -30 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ delay: i * 0.15, type: "spring" }}
+                    className="w-10 h-10 rounded-xl bg-green-500/30 border-2 border-green-400 flex items-center justify-center font-black text-white text-sm">
+                    {n}
+                  </motion.div>
+                ))}
+                <div className="flex items-center gap-1">
+                  <span className="text-yellow-400 text-xs font-bold">+</span>
+                  <motion.div
+                    initial={{ scale: 0, rotate: -30 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ delay: 0.9, type: "spring" }}
+                    className="w-10 h-10 rounded-xl bg-yellow-500/30 border-2 border-yellow-400 flex items-center justify-center font-black text-white text-sm">
+                    {lastDrawResult.bonus}
+                  </motion.div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

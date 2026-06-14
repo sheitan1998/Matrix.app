@@ -77,7 +77,7 @@ export default function ServerChat({ server, channel, theme, user }) {
         .then(async (members) => {
           for (const m of members) {
             if (m.user_email !== user.email) {
-              await base44.entities.Notification.create({
+              base44.entities.Notification.create({
                 user_email: m.user_email,
                 type: "mention",
                 title: `@everyone dans #${channel.name}`,
@@ -86,25 +86,25 @@ export default function ServerChat({ server, channel, theme, user }) {
                 channel_id: channel.id,
                 is_read: false,
                 icon: "📢",
-              }).catch(() => {});
+              });
             }
           }
-        }).catch(() => {});
+        });
     } else if (content) {
       const mentionRegex = /@(\S+)/g;
       let match;
       while ((match = mentionRegex.exec(content)) !== null) {
         const mentioned = match[1].toLowerCase();
         if (mentioned !== "everyone" && mentioned !== user.full_name?.toLowerCase()) {
-          await base44.entities.Notification.create({
-            user_email: mentioned.includes("@") ? mentioned : `${mentioned}@matrix.app`,
-            type: "mention",
-            title: `@${user.full_name || "Quelqu'un"} t'a mentionné`,
-            body: content,
-            server_id: server.id,
-            channel_id: channel.id,
-            is_read: false,
-          }).catch(() => {});
+        base44.entities.Notification.create({
+          user_email: mentioned.includes("@") ? mentioned : `${mentioned}@matrix.app`,
+          type: "mention",
+          title: `@${user.full_name || "Quelqu'un"} t'a mentionné`,
+          body: content,
+          server_id: server.id,
+          channel_id: channel.id,
+          is_read: false,
+        });
         }
       }
     }

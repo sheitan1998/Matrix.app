@@ -168,7 +168,13 @@ function PokerTable({ user, balance, setBalance, tableInfo, onLeave, addTransact
   const [communityCards, setCommunityCards] = useState([]);
   const [pot, setPot] = useState(0);
   const [phase, setPhase] = useState("waiting"); // waiting, preflop, flop, turn, river, showdown
-  const [players, setPlayers] = useState([{ email: user.email, name: user.full_name || user.email.split("@")[0], chips: tableInfo.buyIn, folded: false }]);
+  const [players, setPlayers] = useState(() => {
+    // Only host starts in the players list
+    if (tableInfo.isHost) {
+      return [{ email: user.email, name: user.full_name || user.email.split("@")[0], chips: tableInfo.buyIn, folded: false }];
+    }
+    return [];
+  });
   const [myBet, setMyBet] = useState(0);
   const [betInput, setBetInput] = useState(tableInfo.buyIn > 200 ? 50 : 20);
   const [result, setResult] = useState("");
@@ -232,9 +238,19 @@ function PokerTable({ user, balance, setBalance, tableInfo, onLeave, addTransact
 
   const joinTable = async () => {
     if (balance < tableInfo.buyIn) { toast.error("Solde insuffisant"); return; }
+    if (players.find(p => p.email === user.email)) { toast.error("Déjà à la table !"); return; }
     setBalance(b => b - tableInfo.buyIn);
+    // Add self to local players
+    setPlayers(prev => [...prev, { email: user.email, name: user.full_name || user.email.split("@")[0], chips: tableInfo.buyIn, folded: false }]);
     await broadcast("join", { email: user.email, name: user.full_name || user.email.split("@")[0] });
     toast.success(`Rejoint la table (${tableInfo.buyIn} 🪙)`);
+  };
+
+  const leaveTable = () => {
+    setBalance(b => b + (players.find(p => p.email === user.email)?.chips || tableInfo.buyIn));
+    broadcast("fold", { email: user.email, name: user.full_name || "Toi" });
+    setPlayers(prev => prev.filter(p => p.email !== user.email));
+    onLeave();
   };
 
   const startGame = async () => {
@@ -359,10 +375,14 @@ function PokerTable({ user, balance, setBalance, tableInfo, onLeave, addTransact
 
       {/* Actions */}
       <div className="space-y-3">
-        {phase === "waiting" && !players.find(p => p.email === user.email) && (
+        {phase === "waiting" && !players.find(p => p.email === user.email) ? (
           <button onClick={joinTable} className="w-full py-3 rounded-2xl font-black text-sm"
             style={{ background: "linear-gradient(135deg, #6644ff, #4422cc)", color: "#fff" }}>
             Rejoindre la table ({tableInfo.buyIn} 🪙)
+          </button>
+        ) : phase === "waiting" && !isHost && (
+          <button onClick={leaveTable} className="w-full py-2.5 rounded-2xl font-black text-sm bg-red-500/20 text-red-400 border border-red-500/30">
+            Quitter la table
           </button>
         )}
 
