@@ -40,7 +40,12 @@ export default function Landing() {
         <header className="flex items-center justify-between mb-8 lg:mb-12">
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white">
-              <span style={{ color: "#a855f7", textShadow: "0 0 30px rgba(168,85,247,0.6)" }}>M</span>ATRIX
+              <span style={{
+                background: "linear-gradient(135deg, #a855f7, #3b82f6)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                filter: "drop-shadow(0 0 20px rgba(168,85,247,0.6))",
+              }}>M</span>ATRIX
             </h1>
             <div className="flex items-center gap-2 mt-1">
               <div className="h-px w-8" style={{ background: "linear-gradient(to right, transparent, #a855f7)" }} />
