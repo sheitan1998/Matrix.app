@@ -1,233 +1,106 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Tv2, Users, Zap, Shield, Star, Cpu, Dices } from "lucide-react";
+import { base44 } from "@/api/base44Client";
+import { Tv2, Users, Cpu, Dices, Gem, Star, MessageCircle, Radio, Play, Music, Camera, ChevronDown, User } from "lucide-react";
+import MeteorBackground from "@/components/landing/MeteorBackground";
+import UniverseCard from "@/components/landing/UniverseCard";
+import DiscoverSection from "@/components/landing/DiscoverSection";
+import LiveNowSection from "@/components/landing/LiveNowSection";
 
-const PARTICLES = Array.from({ length: 30 }, (_, i) => ({
-  id: i,
-  x: Math.random() * 100,
-  y: Math.random() * 100,
-  size: Math.random() * 4 + 1,
-  delay: Math.random() * 4,
-  duration: Math.random() * 5 + 3,
-  color: ["hsl(280 100% 65%)", "hsl(135 100% 50%)", "hsl(45 100% 55%)", "hsl(200 100% 60%)"][i % 4],
-}));
+const UNIVERSES = [
+  { path: "/stream", label: "Streaming", desc: "Vidéos, lives, shorts. Crée ta chaîne et partage ton contenu.", icon: Tv2, color: "#22c55e" },
+  { path: "/community", label: "Communauté", desc: "Discute, réagis, commente. Rejoins ou crée des salons vocaux.", icon: Users, color: "#a855f7" },
+  { path: "/ai", label: "AI Studio", desc: "Chat, création, code, histoires. Exploite l'IA sans limites.", icon: Cpu, color: "#06b6d4" },
+  { path: "/casino", label: "Casino", desc: "Roulette, machines à sous, blackjack. Jeux fictifs uniquement.", icon: Dices, color: "#eab308", badge: "18+" },
+];
+
+const SOCIALS = [
+  { icon: MessageCircle, label: "Discord" },
+  { icon: Radio, label: "Twitch" },
+  { icon: Play, label: "YouTube" },
+  { icon: Music, label: "TikTok" },
+  { icon: Camera, label: "Instagram" },
+];
 
 export default function Landing() {
   const nav = useNavigate();
-  const [showChoices, setShowChoices] = useState(false);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const t = setTimeout(() => setShowChoices(true), 1800);
-    return () => clearTimeout(t);
+    base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
-  const UNIVERSES = [
-    {
-      path: "/stream", label: "Streaming", desc: "Vidéos, lives, shorts. Crée ta chaîne et partage ton contenu.",
-      icon: Tv2, hsl: "135 100% 50%",
-    },
-    {
-      path: "/community", label: "Communauté", desc: "Discute, réagis, commente. Rejoins ou crée des salons vocaux.",
-      icon: Users, hsl: "280 100% 65%",
-    },
-    {
-      path: "/ai", label: "AI Studio", desc: "Chat, création, code, histoires. Exploite l'IA sans limites.",
-      icon: Cpu, hsl: "200 100% 55%",
-    },
-    {
-      path: "/casino", label: "Casino", desc: "Roulette, machines à sous, blackjack. Jeux fictifs uniquement.",
-      icon: Dices, hsl: "45 100% 55%", badge: "18+",
-    },
-  ];
-
   return (
-    <div className="min-h-screen bg-black overflow-y-auto overflow-x-hidden"
-      style={{ WebkitOverflowScrolling: "touch" }}>
+    <div className="min-h-screen relative overflow-y-auto overflow-x-hidden" style={{ background: "#050505" }}>
+      <MeteorBackground />
 
-      {/* Fixed decorative background — non-interactive */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute inset-0 grid-bg opacity-30" />
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,1) 2px, rgba(255,255,255,1) 4px)",
-            backgroundSize: "100% 4px",
-          }}
-        />
-        {/* Animated glow orbs */}
-        <motion.div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-[120px]"
-          style={{ background: "hsl(280 100% 65% / 0.12)" }}
-          animate={{ scale: [1, 1.2, 1], opacity: [0.6, 1, 0.6] }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }} />
-        <motion.div className="absolute bottom-1/4 right-1/4 w-64 h-64 rounded-full blur-[100px]"
-          style={{ background: "hsl(135 100% 50% / 0.08)" }}
-          animate={{ scale: [1, 1.3, 1], opacity: [0.4, 0.8, 0.4] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 2 }} />
-        <motion.div className="absolute top-3/4 left-1/2 w-48 h-48 rounded-full blur-[80px]"
-          style={{ background: "hsl(45 100% 55% / 0.07)" }}
-          animate={{ scale: [1, 1.4, 1], opacity: [0.3, 0.7, 0.3] }}
-          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 4 }} />
-        {/* Floating particles */}
-        {PARTICLES.map((p) => (
-          <motion.div
-            key={p.id}
-            className="absolute rounded-full"
-            style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size, background: p.color }}
-            animate={{ y: [0, -40, 0], opacity: [0.2, 0.9, 0.2], scale: [1, 1.5, 1] }}
-            transition={{ duration: p.duration, delay: p.delay, repeat: Infinity, ease: "easeInOut" }}
-          />
-        ))}
-        {/* Shooting stars */}
-        {[0, 1, 2].map((i) => (
-          <motion.div key={`star-${i}`}
-            className="absolute h-px"
-            style={{
-              top: `${20 + i * 25}%`,
-              left: "-10%",
-              width: "120px",
-              background: `linear-gradient(90deg, transparent, hsl(280 100% 65% / 0.8), transparent)`,
-            }}
-            animate={{ x: ["0vw", "120vw"], opacity: [0, 1, 0] }}
-            transition={{ duration: 2.5, delay: i * 3 + 2, repeat: Infinity, repeatDelay: 8 + i * 3 }}
-          />
-        ))}
-        {/* Meteors — random diagonal paths */}
-        {Array.from({ length: 6 }, (_, i) => {
-          const startX = Math.random() * 90 + 5;
-          const startY = Math.random() * 40;
-          const angle = -25 - Math.random() * 40;
-          const length = 80 + Math.random() * 160;
-          const endX = startX + Math.cos((angle * Math.PI) / 180) * (length / window.innerWidth * 100);
-          const endY = startY + Math.sin((angle * Math.PI) / 180) * (length / window.innerHeight * 100) * -1;
-          const colors = ["#ffd700", "#ff00ff", "#00ffcc", "#ff6644", "#44aaff", "#ff44ff"];
-          return (
-            <motion.div key={`meteor-${i}`}
-              className="absolute rounded-full"
-              style={{
-                top: `${startY}%`,
-                left: `${startX}%`,
-                width: "2px",
-                height: "2px",
-                background: colors[i % colors.length],
-                boxShadow: `0 0 10px 2px ${colors[i % colors.length]}80, 0 0 40px 6px ${colors[i % colors.length]}30`,
-              }}
-              animate={{
-                x: [`0vw`, `${endX - startX}vw`],
-                y: [`0vh`, `${-(endY - startY)}vh`],
-                opacity: [0, 1, 0],
-                scale: [0.5, 1.5, 0.3],
-              }}
-              transition={{
-                duration: 1.5 + Math.random() * 2,
-                delay: i * 2 + Math.random() * 4,
-                repeat: Infinity,
-                repeatDelay: 4 + Math.random() * 8,
-                ease: "easeOut",
-              }}>
-              {/* Meteor trail */}
-              <div className="absolute top-1/2 -translate-y-1/2"
-                style={{
-                  right: "100%",
-                  width: `${40 + Math.random() * 60}px`,
-                  height: "1px",
-                  background: `linear-gradient(90deg, transparent, ${colors[i % colors.length]}cc, ${colors[i % colors.length]})`,
-                }} />
-            </motion.div>
-          );
-        })}
-      </div>
-
-      {/* Scrollable content */}
-      <div className="relative z-10 flex flex-col items-center px-5 pt-16 pb-12 min-h-screen">
-
-        {/* Wordmark */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, delay: 0.3, ease: "easeOut" }}
-          className="text-center mb-10"
-        >
-          <div className="flex items-center justify-center mb-3">
-            <span className="text-6xl md:text-8xl font-black tracking-tight text-white">
-              <span style={{ color: "hsl(280 100% 65%)", textShadow: "0 0 40px hsl(280 100% 65% / 0.6)" }}>M</span>ATRIX
-            </span>
-          </div>
-          <motion.div
-            initial={{ opacity: 0, scaleX: 0 }}
-            animate={{ opacity: 1, scaleX: 1 }}
-            transition={{ delay: 0.9, duration: 0.6 }}
-            className="flex items-center justify-center gap-4 mb-3"
-          >
-            <div className="h-px flex-1 max-w-16" style={{ background: "linear-gradient(to right, transparent, hsl(280 100% 65% / 0.5))" }} />
-            <div className="flex items-center gap-1.5">
-              <Zap className="w-3 h-3" style={{ color: "hsl(280 100% 65%)" }} />
-              <Shield className="w-3 h-3" style={{ color: "hsl(280 100% 65%)" }} />
-              <Star className="w-3 h-3" style={{ color: "hsl(280 100% 65%)" }} />
+      <div className="relative z-10 min-h-screen flex flex-col px-4 sm:px-6 lg:px-10 py-4">
+        {/* Header */}
+        <header className="flex items-center justify-between mb-8 lg:mb-12">
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white">
+              <span style={{ color: "#a855f7", textShadow: "0 0 30px rgba(168,85,247,0.6)" }}>M</span>ATRIX
+            </h1>
+            <div className="flex items-center gap-2 mt-1">
+              <div className="h-px w-8" style={{ background: "linear-gradient(to right, transparent, #a855f7)" }} />
+              <div className="flex items-center gap-1.5">
+                <Cpu className="w-3 h-3" style={{ color: "#a855f7" }} />
+                <Gem className="w-3 h-3" style={{ color: "#a855f7" }} />
+                <Star className="w-3 h-3" style={{ color: "#a855f7" }} />
+              </div>
+              <div className="h-px w-8" style={{ background: "linear-gradient(to left, transparent, #a855f7)" }} />
             </div>
-            <div className="h-px flex-1 max-w-16" style={{ background: "linear-gradient(to left, transparent, hsl(280 100% 65% / 0.5))" }} />
+            <p className="text-[10px] md:text-xs tracking-[0.3em] uppercase text-white/40 mt-1.5 font-mono">Choisissez votre univers</p>
           </motion.div>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.2, duration: 0.8 }}
-            className="text-sm md:text-base tracking-[0.35em] uppercase font-mono"
-            style={{ color: "hsl(0 0% 50%)" }}
-          >
-            Choisissez votre univers
-          </motion.p>
-        </motion.div>
 
-        {/* Universe cards */}
-        {showChoices && (
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            className="w-full max-w-lg space-y-4"
-          >
-            {/* Main universe cards */}
-            <div className="grid grid-cols-1 gap-3">
-              {UNIVERSES.map(({ path, label, desc, icon: Icon, hsl, badge }, idx) => (
-                <motion.button
-                  key={path}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.07, duration: 0.4 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => nav(path)}
-                  className="relative rounded-2xl overflow-hidden text-left transition-all active:brightness-90"
-                  style={{
-                    background: `linear-gradient(135deg, hsl(${hsl} / 0.1) 0%, hsl(0 0% 6%) 60%)`,
-                    border: `1px solid hsl(${hsl} / 0.3)`,
-                    padding: "18px 20px",
-                  }}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ background: `hsl(${hsl} / 0.12)`, border: `1px solid hsl(${hsl} / 0.25)` }}>
-                      <Icon className="w-5 h-5" style={{ color: `hsl(${hsl})` }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <h2 className="text-base font-black text-white">{label}</h2>
-                        {badge && (
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                            style={{ background: "hsl(0 84% 60% / 0.2)", color: "hsl(0 84% 65%)" }}>
-                            {badge}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs leading-relaxed" style={{ color: "hsl(0 0% 55%)" }}>{desc}</p>
-                    </div>
-                    <span className="text-sm font-black shrink-0" style={{ color: `hsl(${hsl})` }}>→</span>
-                  </div>
-                </motion.button>
+          <motion.button
+            initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}
+            onClick={() => user ? nav("/profile") : base44.auth.redirectToLogin()}
+            className="flex items-center gap-2 px-3 py-2 rounded-full tap-sm"
+            style={{ border: "1.5px solid rgba(168,85,247,0.4)", background: "rgba(168,85,247,0.05)" }}>
+            <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(168,85,247,0.2)" }}>
+              <User className="w-3.5 h-3.5" style={{ color: "#a855f7" }} />
+            </div>
+            <span className="text-xs font-bold text-white">{user?.pseudo || user?.full_name || user?.email?.split("@")[0] || "Se connecter"}</span>
+            <ChevronDown className="w-3.5 h-3.5 text-white/40" />
+          </motion.button>
+        </header>
+
+        {/* Main content */}
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6 lg:gap-8">
+          <div className="space-y-3">
+            {UNIVERSES.map((u, i) => (
+              <UniverseCard key={u.path} {...u} delay={0.3 + i * 0.1} onClick={() => nav(u.path)} />
+            ))}
+          </div>
+          <div className="space-y-5">
+            <DiscoverSection />
+            <LiveNowSection />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <footer className="mt-8 lg:mt-12 flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-white/5">
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] font-bold tracking-widest text-white/30">CONNECTÉ AVEC</span>
+            <div className="flex items-center gap-2">
+              {SOCIALS.map((s, i) => (
+                <div key={i} className="w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer hover:bg-white/5 transition" title={s.label}>
+                  <s.icon className="w-3.5 h-3.5 text-white/40 hover:text-white transition" />
+                </div>
               ))}
             </div>
-
-          </motion.div>
-        )}
+          </div>
+          <p className="text-[10px] text-white/30 font-mono">© 2025 MATRIX. TOUS DROITS RÉSERVÉS.</p>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+            style={{ border: "1px solid rgba(34,197,94,0.2)", background: "rgba(34,197,94,0.05)" }}>
+            <motion.div className="w-2 h-2 rounded-full bg-green-500"
+              animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 2, repeat: Infinity }} />
+            <span className="text-[10px] font-bold text-green-400">SYSTÈME EN LIGNE</span>
+            <span className="text-[9px] text-white/30 hidden sm:inline">· TOUT EST OPÉRATIONNEL</span>
+          </div>
+        </footer>
       </div>
     </div>
   );
