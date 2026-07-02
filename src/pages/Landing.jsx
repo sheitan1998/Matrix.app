@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Tv2, Users, Cpu, Dices, Gem, Star, MessageCircle, Radio, Play, Music, Camera, ChevronDown, User } from "lucide-react";
-import MeteorBackground from "@/components/landing/MeteorBackground";
 import UniverseCard from "@/components/landing/UniverseCard";
 import DiscoverSection from "@/components/landing/DiscoverSection";
 import LiveNowSection from "@/components/landing/LiveNowSection";
@@ -32,8 +31,15 @@ export default function Landing() {
   }, []);
 
   return (
-    <div className="min-h-screen relative overflow-y-auto overflow-x-hidden" style={{ background: "#050505" }}>
-      <MeteorBackground />
+    <div className="min-h-screen relative overflow-y-auto overflow-x-hidden"
+      style={{
+        backgroundImage: `url(https://media.base44.com/images/public/69e14a987a927963a9924d5a/e20a0d5be_ChatGPTImage2juil202604_45_31.png)`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
+        backgroundColor: "#050505",
+      }}>
+      <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.4)" }} />
 
       <div className="relative z-10 min-h-screen flex flex-col px-4 sm:px-6 lg:px-10 py-4">
         {/* Header */}
