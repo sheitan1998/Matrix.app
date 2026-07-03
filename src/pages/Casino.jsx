@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Link } from "react-router-dom";
-import NotificationBell from "@/components/NotificationBell";
-import { ArrowLeft, ShoppingCart } from "lucide-react";
-import { useWallet } from "@/hooks/useWallet";
+import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
+import { useWallet } from "@/hooks/useWallet";
+import { ArrowLeft, Trophy } from "lucide-react";
+
 import RouletteGame from "@/components/casino/RouletteGame";
 import SlotsGame from "@/components/casino/SlotsGame";
 import BingoGame from "@/components/casino/BingoGame";
@@ -11,30 +11,44 @@ import BlackjackGame from "@/components/casino/BlackjackGame";
 import CasinoLeaderboard from "@/components/casino/CasinoLeaderboard";
 import LottoGame from "@/components/casino/LottoGame";
 import PokerGame from "@/components/casino/PokerGame";
-import CasinoHome from "@/components/casino/CasinoHome";
 import CasinoShop from "@/pages/casino/CasinoShop";
 import CasinoProfile from "@/pages/casino/CasinoProfile";
-import TrixCounter from "@/components/casino/TrixCounter";
-import { motion, AnimatePresence } from "framer-motion";
+
+import CasinoBackground from "@/components/casino/CasinoBackground";
+import CasinoSidebar from "@/components/casino/CasinoSidebar";
+import CasinoTopbar from "@/components/casino/CasinoTopbar";
+import JackpotBanner from "@/components/casino/JackpotBanner";
+import CasinoCategoryFilters from "@/components/casino/CasinoCategoryFilters";
+import CasinoGameCard from "@/components/casino/CasinoGameCard";
+import CasinoLiveSection from "@/components/casino/CasinoLiveSection";
+import CasinoTournaments from "@/components/casino/CasinoTournaments";
+import CasinoRecentWinners from "@/components/casino/CasinoRecentWinners";
+import CasinoLeaderboards from "@/components/casino/CasinoLeaderboards";
+import CasinoVIPClub from "@/components/casino/CasinoVIPClub";
+import CasinoPromotions from "@/components/casino/CasinoPromotions";
+import CasinoQuests from "@/components/casino/CasinoQuests";
+import CasinoAchievements from "@/components/casino/CasinoAchievements";
+import CasinoSettings from "@/components/casino/CasinoSettings";
+import CasinoSecurityBar from "@/components/casino/CasinoSecurityBar";
+import { GAMES, VIP_TIERS } from "@/components/casino/casinoData";
 
 const GAME_META = {
-  slots:       { label: "DIAMOND SLOTS",     color: "#8866ff", emoji: "💎" },
-  blackjack:   { label: "BLACKJACK",          color: "#ffd700", emoji: "🃏" },
-  roulette:    { label: "ROULETTE",           color: "#ff2020", emoji: "🎡" },
-  bingo:       { label: "BINGO",              color: "#ffaa00", emoji: "🎱" },
-  lotto:       { label: "LOTO",               color: "#ffd700", emoji: "🎰" },
-  poker:       { label: "POKER",              color: "#00ff88", emoji: "♠️" },
-  leaderboard: { label: "TOP LEAGUE",         color: "#ffd700", emoji: "🏆" },
+  slots:       { label: "DIAMOND SLOTS", color: "#8866ff", emoji: "💎" },
+  blackjack:   { label: "BLACKJACK", color: "#ffd700", emoji: "🃏" },
+  roulette:    { label: "ROULETTE", color: "#ff2020", emoji: "🎡" },
+  bingo:       { label: "BINGO", color: "#ffaa00", emoji: "🎱" },
+  lotto:       { label: "LOTO", color: "#ffd700", emoji: "🎰" },
+  poker:       { label: "POKER", color: "#00ff88", emoji: "♠️" },
+  leaderboard: { label: "TOP LEAGUE", color: "#ffd700", emoji: "🏆" },
 };
 
-// Casino coins are SEPARATE from Trix (streaming currency)
 const CASINO_BALANCE_KEY = "matrix_casino_coins";
 function useCasinoCoins() {
-  const [coins, setCoinsState] = React.useState(() => {
+  const [coins, setCoinsState] = useState(() => {
     const s = localStorage.getItem(CASINO_BALANCE_KEY);
     return s ? parseInt(s, 10) : 5000;
   });
-  const setCoins = React.useCallback((valOrFn) => {
+  const setCoins = useCallback((valOrFn) => {
     setCoinsState(prev => {
       const next = typeof valOrFn === "function" ? valOrFn(prev) : valOrFn;
       localStorage.setItem(CASINO_BALANCE_KEY, String(next));
@@ -44,20 +58,16 @@ function useCasinoCoins() {
   return [coins, setCoins];
 }
 
-// Global jackpot — stored in ServerMessage entity for all users, resets to 0 on win
 function useJackpot() {
-  const [jackpot, setJackpotState] = React.useState(1000000);
-  const [loaded, setLoaded] = React.useState(false);
+  const [jackpot, setJackpotState] = useState(1000000);
+  const [loaded, setLoaded] = useState(false);
 
-  // Load jackpot from shared entity on mount
-  React.useEffect(() => {
+  useEffect(() => {
     base44.entities.ServerMessage.filter({ server_id: "casino_jackpot", channel_id: "global" }, "-created_date", 1)
       .then(msgs => {
         if (msgs.length > 0) {
-          try {
-            const data = JSON.parse(msgs[0].content);
-            setJackpotState(data.amount || 1000000);
-          } catch { setJackpotState(1000000); }
+          try { setJackpotState(JSON.parse(msgs[0].content).amount || 1000000); }
+          catch { setJackpotState(1000000); }
         } else {
           base44.entities.ServerMessage.create({
             server_id: "casino_jackpot", channel_id: "global",
@@ -69,192 +79,235 @@ function useJackpot() {
       }).catch(() => setLoaded(true));
   }, []);
 
-  const saveJackpot = React.useCallback(async (amount) => {
+  const saveJackpot = useCallback(async (amount) => {
     const msgs = await base44.entities.ServerMessage.filter({ server_id: "casino_jackpot", channel_id: "global" }, "-created_date", 1);
-    if (msgs.length > 0) {
-      await base44.entities.ServerMessage.update(msgs[0].id, { content: JSON.stringify({ amount }) });
-    } else {
-      await base44.entities.ServerMessage.create({
-        server_id: "casino_jackpot", channel_id: "global",
-        author_email: "system", author_name: "System",
-        content: JSON.stringify({ amount }), type: "system"
-      });
-    }
+    if (msgs.length > 0) await base44.entities.ServerMessage.update(msgs[0].id, { content: JSON.stringify({ amount }) });
+    else await base44.entities.ServerMessage.create({
+      server_id: "casino_jackpot", channel_id: "global",
+      author_email: "system", author_name: "System",
+      content: JSON.stringify({ amount }), type: "system"
+    });
   }, []);
 
-  // Grow jackpot continuously
-  React.useEffect(() => {
+  useEffect(() => {
     if (!loaded) return;
-    const t = setInterval(() => {
-      setJackpotState(j => {
-        const next = j + Math.floor(Math.random() * 500 + 100);
-        return next;
-      });
-    }, 500);
+    const t = setInterval(() => setJackpotState(j => j + Math.floor(Math.random() * 500 + 100)), 500);
     return () => clearInterval(t);
   }, [loaded]);
 
-  // Save jackpot periodically
-  React.useEffect(() => {
+  useEffect(() => {
     if (!loaded) return;
-    const t = setInterval(() => {
-      setJackpotState(j => { saveJackpot(j).catch(() => {}); return j; });
-    }, 5000);
+    const t = setInterval(() => { setJackpotState(j => { saveJackpot(j).catch(() => {}); return j; }); }, 5000);
     return () => clearInterval(t);
   }, [loaded, saveJackpot]);
 
-  const winJackpot = React.useCallback(() => {
+  const winJackpot = useCallback(() => {
     let amount = 0;
     setJackpotState(j => { amount = j; return 0; });
     saveJackpot(0).catch(() => {});
     return amount;
   }, [saveJackpot]);
+
   return [jackpot, winJackpot];
 }
 
 export default function Casino() {
-  const [screen, setScreen] = useState("home"); // "home" | game key
+  const [screen, setScreen] = useState("home");
   const [showShop, setShowShop] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [user, setUser] = useState(null);
-  const { addTransaction } = useWallet(); // Trix = streaming only
-  const [casinoCoins, setCasinoCoins] = useCasinoCoins(); // Casino-specific coins
+  const [showSettings, setShowSettings] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [activeSidebar, setActiveSidebar] = useState("home");
+  const [category, setCategory] = useState("all");
+  const { addTransaction } = useWallet();
+  const [casinoCoins, setCasinoCoins] = useCasinoCoins();
   const [jackpot, winJackpot] = useJackpot();
-  const [lightPhase, setLightPhase] = useState(0);
+  const [settings, setSettings] = useState({ bgVariant: "space", accent: "#a855f7", glow: true, particles: true, animations: true });
 
-  useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    const t = setInterval(() => setLightPhase(p => (p + 1) % 12), 120);
-    return () => clearInterval(t);
-  }, []);
+  const vipTier = [...VIP_TIERS].reverse().find(t => casinoCoins >= t.min) || VIP_TIERS[0];
 
   // Profile screen
-  if (showProfile) {
-    return <CasinoProfile onBack={() => setShowProfile(false)} />;
-  }
+  if (showProfile) return <CasinoProfile onBack={() => setShowProfile(false)} />;
 
-  // Home screen — delegated to CasinoHome
-  if (screen === "home") {
+  // Game screen — premium wrapper around existing game components
+  const meta = GAME_META[screen];
+  if (meta) {
     return (
-      <CasinoHome
-        balance={casinoCoins}
-        jackpot={jackpot}
-        onSelectGame={(key) => setScreen(key)}
-        onShop={() => setShowShop(true)}
-        onProfile={() => setShowProfile(true)}
-      />
+      <div className="min-h-screen relative">
+        <CasinoBackground variant={settings.bgVariant} />
+        <div className="relative z-10">
+          {/* Game header */}
+          <div className="sticky top-0 z-40 flex items-center gap-3 px-4 py-3"
+            style={{ background: "rgba(8,8,12,0.85)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+            <button onClick={() => setScreen("home")} className="flex items-center gap-2 text-white/60 hover:text-white transition">
+              <ArrowLeft className="w-4 h-4" />
+              <span className="text-xs font-bold hidden sm:inline">Retour</span>
+            </button>
+            <div className="flex items-center gap-2">
+              <span className="text-lg" style={{ filter: `drop-shadow(0 0 6px ${meta.color})` }}>{meta.emoji}</span>
+              <span className="font-black text-sm tracking-wider" style={{ color: meta.color, textShadow: `0 0 10px ${meta.color}80` }}>
+                {meta.label}
+              </span>
+            </div>
+            <div className="ml-auto flex items-center gap-2">
+              <div className="flex items-center gap-1.5 px-3 h-8 rounded-lg" style={{ background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.15)" }}>
+                <span className="text-xs font-mono font-bold" style={{ color: "#fbbf24" }}>{casinoCoins.toLocaleString()}</span>
+              </div>
+              <button onClick={() => setShowShop(true)} className="h-8 px-3 rounded-lg text-xs font-bold text-white transition"
+                style={{ background: "linear-gradient(135deg, #8b5cf6, #6d28d9)" }}>
+                Boutique
+              </button>
+            </div>
+          </div>
+
+          {/* Responsible gaming */}
+          <div className="px-4 py-1.5 text-center text-[10px] font-semibold"
+            style={{ background: "rgba(251,191,36,0.04)", color: "rgba(251,191,36,0.4)", borderBottom: "1px solid rgba(251,191,36,0.08)" }}>
+            ⚠️ Jeu fictif — Aucun argent réel — 18+ uniquement
+          </div>
+
+          <div className="px-3 py-4 pb-12">
+            <AnimatePresence mode="wait">
+              <motion.div key={screen}
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+                className="rounded-3xl overflow-hidden"
+                style={{ background: "linear-gradient(160deg, rgba(14,0,30,0.6), rgba(18,0,40,0.4), rgba(14,0,30,0.6))", border: `1px solid ${meta.color}20`, boxShadow: `0 0 40px rgba(0,0,0,0.5)` }}>
+                <div className="p-4 sm:p-6">
+                  {screen === "slots" && <SlotsGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} addTransaction={addTransaction} jackpot={jackpot} winJackpot={winJackpot} />}
+                  {screen === "blackjack" && <BlackjackGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} winJackpot={winJackpot} />}
+                  {screen === "roulette" && <RouletteGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} winJackpot={winJackpot} />}
+                  {screen === "bingo" && <BingoGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} winJackpot={winJackpot} />}
+                  {screen === "lotto" && <LottoGame balance={casinoCoins} setBalance={setCasinoCoins} addTransaction={addTransaction} />}
+                  {screen === "poker" && <PokerGame balance={casinoCoins} setBalance={setCasinoCoins} addTransaction={addTransaction} />}
+                  {screen === "leaderboard" && <CasinoLeaderboard accentColor={meta.color} currentUserBalance={casinoCoins} />}
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </div>
+
+        {showShop && <CasinoShop balance={casinoCoins} setBalance={setCasinoCoins} onClose={() => setShowShop(false)} />}
+      </div>
     );
   }
 
-  const meta = GAME_META[screen] || GAME_META.slots;
+  // === HOME (premium casino lobby) ===
+  const filteredGames = GAMES.filter(g => {
+    if (category === "all") return true;
+    if (category === "new") return g.badge === "new";
+    if (category === "hot") return g.isHot;
+    if (category === "jackpot") return g.badge === "jackpot";
+    if (category === "live") return g.badge === "live";
+    if (category === "cards") return g.category === "cards";
+    if (category === "slots") return g.category === "slots";
+    if (category === "roulette") return g.category === "roulette";
+    if (category === "poker") return g.category === "poker";
+    if (category === "blackjack") return g.key === "blackjack";
+    return true;
+  });
+
+  const handleSidebarSelect = (target, gameKey) => {
+    setActiveSidebar(target);
+    if (gameKey && GAME_META[gameKey]) { setScreen(gameKey); }
+    else if (gameKey && !GAME_META[gameKey]) {
+      // Games without components — show a toast-like state
+      // For now, just select the closest available game
+      if (gameKey === "crash" || gameKey === "mines" || gameKey === "dice") setScreen("slots");
+      else if (gameKey === "baccarat") setScreen("blackjack");
+    }
+  };
 
   return (
-    <div className="min-h-screen"
-      style={{ background: "linear-gradient(160deg, #080015 0%, #0f0028 50%, #080015 100%)" }}>
+    <div className="min-h-screen relative">
+      <CasinoBackground variant={settings.bgVariant} />
 
-      {/* === HEADER === */}
-      <div className="sticky top-0 z-40 backdrop-blur-xl"
-        style={{
-          background: "linear-gradient(180deg, rgba(15,0,35,0.98), rgba(8,0,20,0.95))",
-          borderBottom: "2px solid rgba(136,68,255,0.25)",
-          boxShadow: "0 4px 30px rgba(100,40,255,0.12)"
-        }}>
-        {/* Top neon strip */}
-        <div className="h-1.5 flex overflow-hidden">
-          {Array.from({ length: 36 }).map((_, i) => {
-            const colors = ["#ff00ff", "#8844ff", "#0088ff", "#ff0088", "#ffcc00", "#00ffcc"];
-            const active = i % 6 === lightPhase % 6;
-            return (
-              <div key={i} className="flex-1 transition-all duration-100"
-                style={{ background: active ? colors[i % 6] : "rgba(255,255,255,0.05)", boxShadow: active ? `0 0 5px ${colors[i % 6]}` : "none" }} />
-            );
-          })}
-        </div>
+      <div className="relative z-10 flex min-h-screen">
+        {/* Sidebar */}
+        <CasinoSidebar
+          active={activeSidebar}
+          onSelect={handleSidebarSelect}
+          collapsed={sidebarCollapsed}
+          onToggle={() => setSidebarCollapsed(v => !v)}
+          coins={casinoCoins}
+          vipTier={vipTier}
+        />
 
-        <div className="px-4 py-3 flex items-center gap-3">
-          <button onClick={() => setScreen("home")} className="text-white/60 hover:text-white transition">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+        {/* Main */}
+        <div className="flex-1 min-w-0 flex flex-col">
+          <CasinoTopbar
+            balance={casinoCoins}
+            onDeposit={() => setShowShop(true)}
+            onWithdraw={() => setShowShop(true)}
+            onSettings={() => setShowSettings(true)}
+          />
 
-          {/* Game title */}
-          <div className="flex items-center gap-2">
-            <span className="text-xl" style={{ filter: `drop-shadow(0 0 6px ${meta.color})` }}>{meta.emoji}</span>
-            <span className="font-black text-base tracking-wider"
-              style={{ color: meta.color, textShadow: `0 0 10px ${meta.color}80`, fontFamily: "'Arial Black', sans-serif" }}>
-              {meta.label}
-            </span>
+          {/* Responsible gaming strip */}
+          <div className="px-4 py-1 text-center text-[10px] font-medium"
+            style={{ background: "rgba(251,191,36,0.03)", color: "rgba(251,191,36,0.35)" }}>
+            ⚠️ Jeu fictif — Aucun argent réel — 18+ uniquement
           </div>
 
-          <div className="ml-auto flex items-center gap-2">
-            {user && <NotificationBell user={user} />}
-            <button onClick={() => setShowProfile(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold"
-              style={{ borderColor: "rgba(136,68,255,0.3)", color: "#aa88ff", background: "rgba(100,40,255,0.1)" }}>
-              👤
-            </button>
-            <button onClick={() => setShowShop(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold font-mono"
-              style={{ borderColor: "rgba(255,215,0,0.3)", color: "#ffd700", background: "rgba(255,215,0,0.08)" }}>
-              {casinoCoins.toLocaleString()} 🪙
-            </button>
-          </div>
-        </div>
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto scrollbar-thin">
+            <div className="p-4 lg:p-6 space-y-8 max-w-7xl mx-auto pb-12">
 
-        {/* Bottom neon strip */}
-        <div className="h-0.5 flex overflow-hidden">
-          {Array.from({ length: 36 }).map((_, i) => {
-            const colors = ["#00ffcc", "#0088ff", "#ff0088", "#aa44ff"];
-            const active = i % 4 === (lightPhase + 2) % 4;
-            return (
-              <div key={i} className="flex-1 transition-all duration-100"
-                style={{ background: active ? colors[i % 4] : "transparent" }} />
-            );
-          })}
-        </div>
-      </div>
+              {/* Jackpot Banner */}
+              <JackpotBanner jackpot={jackpot} onViewJackpots={() => setScreen("slots")} />
 
-      {/* Responsible gaming */}
-      <div className="px-4 py-1.5 text-center text-[10px] font-semibold"
-        style={{ background: "rgba(255,215,0,0.05)", color: "rgba(255,200,0,0.5)", borderBottom: "1px solid rgba(255,215,0,0.1)" }}>
-        ⚠️ Jeu fictif — Aucun argent réel — 18+ uniquement
-      </div>
+              {/* Category Filters */}
+              <CasinoCategoryFilters active={category} onSelect={setCategory} />
 
-      {/* === GAME AREA === */}
-      <div className="px-3 pb-28 pt-4">
-        <AnimatePresence mode="wait">
-          <motion.div key={screen}
-            initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.3 }}
-            className="rounded-3xl overflow-hidden"
-            style={{
-              background: "linear-gradient(160deg, #0e001e 0%, #180035 60%, #0e001e 100%)",
-              border: `2px solid ${meta.color}25`,
-              boxShadow: `0 0 50px rgba(0,0,0,0.8), 0 0 25px ${meta.color}08`
-            }}>
-            <div className="p-4 sm:p-6">
-              {screen === "slots"       && <SlotsGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} addTransaction={addTransaction} jackpot={jackpot} winJackpot={winJackpot} />}
-              {screen === "blackjack"   && <BlackjackGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} winJackpot={winJackpot} />}
-              {screen === "roulette"    && <RouletteGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} winJackpot={winJackpot} />}
-              {screen === "bingo"       && <BingoGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} winJackpot={winJackpot} />}
-              {screen === "lotto"       && <LottoGame balance={casinoCoins} setBalance={setCasinoCoins} addTransaction={addTransaction} />}
-              {screen === "poker"       && <PokerGame balance={casinoCoins} setBalance={setCasinoCoins} addTransaction={addTransaction} />}
-              {screen === "leaderboard" && <CasinoLeaderboard accentColor={meta.color} currentUserBalance={casinoCoins} />}
+              {/* Game grid */}
+              <section>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-black text-white">Jeux</h3>
+                  <span className="text-xs text-white/40">{filteredGames.length} jeux</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                  {filteredGames.map((g, i) => (
+                    <CasinoGameCard key={g.key} game={g} delay={i * 0.04}
+                      onPlay={(key) => { if (GAME_META[key]) setScreen(key); }} />
+                  ))}
+                </div>
+              </section>
+
+              {/* Two-column: Live + Winners */}
+              <div className="grid lg:grid-cols-[2fr_1fr] gap-6">
+                <CasinoLiveSection onJoin={() => setScreen("roulette")} />
+                <CasinoRecentWinners />
+              </div>
+
+              {/* Tournaments + Leaderboards */}
+              <div className="grid lg:grid-cols-[1fr_1fr] gap-6">
+                <CasinoTournaments onParticipate={() => setScreen("leaderboard")} />
+                <div className="rounded-2xl p-5" style={{ background: "rgba(12,12,16,0.7)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <CasinoLeaderboards />
+                </div>
+              </div>
+
+              {/* VIP Club */}
+              <CasinoVIPClub coins={casinoCoins} />
+
+              {/* Promotions */}
+              <CasinoPromotions />
+
+              {/* Quests + Achievements */}
+              <div className="grid lg:grid-cols-[1fr_1fr] gap-6">
+                <CasinoQuests />
+                <CasinoAchievements />
+              </div>
+
+              {/* Security bar */}
+              <CasinoSecurityBar />
             </div>
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Quick nav back */}
-        <button onClick={() => setScreen("home")}
-          className="mt-4 w-full py-3 rounded-2xl font-bold text-sm text-center transition-all"
-          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#666" }}>
-          ← Retour à l'accueil Casino
-        </button>
+          </div>
+        </div>
       </div>
 
+      {/* Modals */}
       {showShop && <CasinoShop balance={casinoCoins} setBalance={setCasinoCoins} onClose={() => setShowShop(false)} />}
+      <CasinoSettings open={showSettings} onClose={() => setShowSettings(false)} settings={settings} onChange={setSettings} />
     </div>
   );
 }
