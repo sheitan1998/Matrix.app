@@ -30,7 +30,9 @@ export default function UniverseCard({ label, desc, icon: Icon, color, badge, de
             <h2 className="text-base font-black text-white">{label}</h2>
             {badge && (
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                style={{ background: "rgba(239,68,68,0.2)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)" }}>
+                style={badge === "18+"
+                  ? { background: "rgba(239,68,68,0.2)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)" }
+                  : { background: "rgba(139,92,246,0.2)", color: "#c4b5fd", border: "1px solid rgba(139,92,246,0.3)" }}>
                 {badge}
               </span>
             )}
