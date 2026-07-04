@@ -11,6 +11,7 @@ import BlackjackGame from "@/components/casino/BlackjackGame";
 import CasinoLeaderboard from "@/components/casino/CasinoLeaderboard";
 import LottoGame from "@/components/casino/LottoGame";
 import PokerGame from "@/components/casino/PokerGame";
+import BaccaratGame from "@/components/casino/BaccaratGame";
 import CasinoShop from "@/pages/casino/CasinoShop";
 import CasinoProfile from "@/pages/casino/CasinoProfile";
 
@@ -39,6 +40,7 @@ const GAME_META = {
   bingo:       { label: "BINGO", color: "#ffaa00", emoji: "🎱" },
   lotto:       { label: "LOTO", color: "#ffd700", emoji: "🎰" },
   poker:       { label: "POKER", color: "#00ff88", emoji: "♠️" },
+  baccarat:    { label: "BACCARAT PRO", color: "#a855f7", emoji: "🎴" },
   leaderboard: { label: "TOP LEAGUE", color: "#ffd700", emoji: "🏆" },
 };
 
@@ -180,6 +182,7 @@ export default function Casino() {
                   {screen === "bingo" && <BingoGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} winJackpot={winJackpot} />}
                   {screen === "lotto" && <LottoGame balance={casinoCoins} setBalance={setCasinoCoins} addTransaction={addTransaction} />}
                   {screen === "poker" && <PokerGame balance={casinoCoins} setBalance={setCasinoCoins} addTransaction={addTransaction} />}
+                  {screen === "baccarat" && <BaccaratGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} winJackpot={winJackpot} addTransaction={addTransaction} />}
                   {screen === "leaderboard" && <CasinoLeaderboard accentColor={meta.color} currentUserBalance={casinoCoins} />}
                 </div>
               </motion.div>
@@ -211,10 +214,7 @@ export default function Casino() {
     setActiveSidebar(target);
     if (gameKey && GAME_META[gameKey]) { setScreen(gameKey); }
     else if (gameKey && !GAME_META[gameKey]) {
-      // Games without components — show a toast-like state
-      // For now, just select the closest available game
       if (gameKey === "crash" || gameKey === "mines" || gameKey === "dice") setScreen("slots");
-      else if (gameKey === "baccarat") setScreen("blackjack");
     }
   };
 

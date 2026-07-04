@@ -26,7 +26,6 @@ const features = [
   { to: "/studio", label: "Lancer un live", icon: Tv2, color: "text-live" },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/upload", label: "Mettre en ligne", icon: Upload },
-  { to: "/profile", label: "Mon profil", icon: UserIcon },
 ];
 
 function NavItem({ to, label, icon: Icon, color, active }) {

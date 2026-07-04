@@ -28,11 +28,12 @@ export default function Topbar() {
   return (
     <header className="sticky top-0 z-50 h-16 bg-background/85 backdrop-blur-xl border-b border-border">
       <div className="h-full flex items-center gap-4 px-4 lg:px-6">
-        {/* Back button (mobile, non-root routes) */}
+        {/* Back button (all viewports, non-root routes) */}
         {showBack && (
           <button
             onClick={() => navigate(-1)}
-            className="md:hidden flex items-center justify-center w-10 h-10 rounded-full hover:bg-secondary transition shrink-0 select-none"
+            className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-secondary transition shrink-0 select-none"
+            title="Retour"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
