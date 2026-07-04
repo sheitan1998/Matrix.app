@@ -13,25 +13,6 @@ export default function MatrixRightSidebar({ tools = [], liveUsers = DEFAULT_LIV
     <aside className="hidden xl:flex flex-col w-72 shrink-0 h-screen sticky top-0 p-4 gap-4 overflow-y-auto scrollbar-thin"
       style={{ background: "rgba(10,10,12,0.5)", backdropFilter: "blur(16px)", borderLeft: "1px solid rgba(255,255,255,0.06)" }}>
 
-      {/* En direct */}
-      <Panel title="En direct sur MATRIX" dotColor="#a855f7">
-        <div className="space-y-2">
-          {liveUsers.map((u) => (
-            <div key={u.name} className="flex items-center gap-2.5 group cursor-pointer rounded-lg p-1.5 -m-1.5 hover:bg-white/5 transition">
-              <div className="relative">
-                <img src={u.avatar} alt="" className="w-8 h-8 rounded-full object-cover" />
-                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#0a0a0c]" style={{ background: "#ef4444" }} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-white truncate group-hover:text-purple-300 transition">{u.name}</p>
-                <p className="text-[10px] text-white/40 truncate">{u.activity}</p>
-              </div>
-              <span className="text-[10px] font-bold text-red-400">{u.viewers > 999 ? `${(u.viewers/1000).toFixed(1)}K` : u.viewers}</span>
-            </div>
-          ))}
-        </div>
-      </Panel>
-
       {/* Outils */}
       <Panel title="Raccourcis outils">
         <div className="space-y-1">

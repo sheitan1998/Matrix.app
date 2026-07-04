@@ -16,6 +16,19 @@ import { VISUAL_THEMES, getTheme } from "@/lib/visualThemes";
 import NotificationBell from "@/components/NotificationBell";
 import PrivateChat from "@/components/community/PrivateChat";
 import DmList from "@/components/community/DmList";
+import CommunityRightSidebar from "@/components/community/CommunityRightSidebar";
+import { useProgression } from "@/context/ProgressionContext";
+import { getRank } from "@/lib/progressionData";
+import { Gamepad2, Cpu, Music, Palette, Film, Newspaper } from "lucide-react";
+
+const CATEGORIES = [
+  { id: "gaming", label: "Jeux Vidéo", icon: Gamepad2 },
+  { id: "tech", label: "Technologie", icon: Cpu },
+  { id: "music", label: "Musique", icon: Music },
+  { id: "art", label: "Art", icon: Palette },
+  { id: "cinema", label: "Cinéma", icon: Film },
+  { id: "news", label: "Actualités", icon: Newspaper },
+];
 
 const CHANNEL_TYPES = [
   { key: "text", label: "Textuel", icon: Hash },
@@ -43,6 +56,8 @@ export default function Community() {
   const [activeDm, setActiveDm] = useState(null);
   const [showDmList, setShowDmList] = useState(false);
   const qc = useQueryClient();
+  const { progress } = useProgression();
+  const rank = progress ? getRank(progress.level) : null;
 
   useEffect(() => { base44.auth.me().then(setUser).catch(() => {}); }, []);
 
@@ -254,6 +269,36 @@ export default function Community() {
                 📰 Fil d'actualité
               </button>
             </div>
+
+            {/* Categories */}
+            <div className="px-3 mt-2 border-t border-border pt-3">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">Catégories</p>
+              {CATEGORIES.map((c) => (
+                <button key={c.id} className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-secondary/50 transition text-sm font-medium text-muted-foreground hover:text-white">
+                  <c.icon className="w-4 h-4 shrink-0" style={{ color: "#a855f7" }} />
+                  {c.label}
+                </button>
+              ))}
+            </div>
+
+            {/* User widget with XP */}
+            {user && progress && rank && (
+              <div className="mx-2 mt-3 p-3 rounded-2xl" style={{ background: "rgba(18,18,21,0.8)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-9 h-9 rounded-full overflow-hidden shrink-0" style={{ border: `1.5px solid ${rank.color}40` }}>
+                    {user.avatar_url ? <img src={user.avatar_url} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full flex items-center justify-center text-xs font-bold bg-secondary">{user.full_name?.[0] || "U"}</div>}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-white truncate">{user.full_name || user.email?.split("@")[0]}</p>
+                    <p className="text-[10px]" style={{ color: rank.color }}>{rank.icon} Niv. {progress.level}</p>
+                  </div>
+                </div>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+                  <div className="h-full rounded-full" style={{ width: `${Math.min(100, (progress.xp / (100 * Math.pow(progress.level, 1.4))) * 100)}%`, background: "linear-gradient(90deg, #a855f7, #6d28d9)" }} />
+                </div>
+                <p className="text-[9px] text-white/30 mt-1 font-mono">{progress.xp.toLocaleString()} XP</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -331,10 +376,13 @@ export default function Community() {
             />
           )}
 
-          {/* Community feed */}
+          {/* Community feed — 3-column layout */}
           {(!selectedServer || selectedServer.id === "__feed__") && (
-            <div className="flex-1 overflow-y-auto p-4">
-              <PostFeed theme="all" />
+            <div className="flex-1 overflow-hidden flex">
+              <div className="flex-1 overflow-y-auto p-4 max-w-2xl mx-auto w-full">
+                <PostFeed theme="all" />
+              </div>
+              <CommunityRightSidebar />
             </div>
           )}
 
