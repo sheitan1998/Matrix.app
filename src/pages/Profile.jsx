@@ -6,12 +6,16 @@ import { Coins, Crown, LogOut, Radio, History, LayoutDashboard, Upload, Trash2, 
 import { formatTrix, formatTimeAgo } from "@/lib/format";
 import NitroAvatarPicker, { NitroAvatar } from "@/components/NitroAvatarPicker";
 import FriendsList from "@/components/profile/FriendsList";
+import XPBar from "@/components/progression/XPBar";
+import { useProgression } from "@/context/ProgressionContext";
+import { Zap } from "lucide-react";
 
 export default function Profile() {
   const [user, setUser] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const { progress } = useProgression();
 
   useEffect(() => {
     (async () => {
@@ -61,6 +65,13 @@ export default function Profile() {
           </Button>
         </div>
       </div>
+
+      {/* Progression XP Bar */}
+      {progress && (
+        <Link to="/progression" className="block">
+          <XPBar />
+        </Link>
+      )}
 
       {/* Quick stats */}
       <div className="grid sm:grid-cols-2 gap-4">

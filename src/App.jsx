@@ -43,6 +43,8 @@ import CommunitySubscription from '@/pages/community/CommunitySubscription';
 import Wallet from '@/pages/Wallet';
 import VideoStudio from '@/pages/VideoStudio';
 import Playlists from '@/pages/Playlists';
+import Progression from '@/pages/Progression';
+import { ProgressionProvider } from '@/context/ProgressionContext';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings } = useAuth();
@@ -56,6 +58,7 @@ const AuthenticatedApp = () => {
   }
 
   return (
+    <ProgressionProvider>
     <AnimatedRoutes>
     <Routes>
       <Route path="/login" element={<Login />} />
@@ -77,6 +80,7 @@ const AuthenticatedApp = () => {
         <Route path="/wallet" element={<Wallet />} />
         <Route path="/video-studio" element={<VideoStudio />} />
         <Route path="/playlists" element={<Playlists />} />
+        <Route path="/progression" element={<Progression />} />
         <Route element={<MainLayout />}>
           <Route path="/stream" element={<Home />} />
         <Route path="/trending" element={<Trending />} />
@@ -98,6 +102,7 @@ const AuthenticatedApp = () => {
       <Route path="*" element={<PageNotFound />} />
     </Routes>
     </AnimatedRoutes>
+    </ProgressionProvider>
   );
 };
 

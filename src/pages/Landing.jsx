@@ -14,6 +14,7 @@ const UNIVERSES = [
   { path: "/casino", label: "Casino", desc: "Roulette, machines à sous, blackjack. Jeux fictifs uniquement.", icon: Dices, color: "#eab308", badge: "18+" },
   { path: "/video-studio", label: "Video Studio", desc: "Édite, assemble, partage. Un studio vidéo complet intégré.", icon: Clapperboard, color: "#8b5cf6", badge: "NEW" },
   { path: "/playlists", label: "Playlists", desc: "Crée, organise, partage tes playlists musicales.", icon: ListMusic, color: "#ec4899", badge: "NEW" },
+  { path: "/progression", label: "Progression", desc: "Niveaux, XP, badges, missions, classements et boutique.", icon: Star, color: "#fbbf24", badge: "NEW" },
 ];
 
 const SOCIALS = [
