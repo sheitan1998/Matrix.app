@@ -25,6 +25,9 @@
     "image_url": {
       "type": "string"
     },
+    "video_url": {
+      "type": "string"
+    },
     "likes": {
       "type": "number",
       "default": 0

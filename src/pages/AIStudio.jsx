@@ -39,7 +39,7 @@ function incrementUsage() {
 
 export default function AIStudio() {
   const [mode, setMode] = useState("general");
-  const [selectedModel, setSelectedModel] = useState("auto");
+  const [selectedModel, setSelectedModel] = useState("mini");
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -76,10 +76,10 @@ export default function AIStudio() {
     incrementUsage();
     setUsage(getUsage());
 
-    const history = newMessages.map((m) => `${m.role === "user" ? "Utilisateur" : "IA"}: ${m.content}`).join("\n");
-    const prompt = `${currentMode.prompt}\n\nHistorique:\n${history}\n\nRéponds à la dernière question.`;
+    const history = newMessages.slice(-6).map((m) => `${m.role === "user" ? "User" : "AI"}: ${m.content}`).join("\n");
+    const prompt = `${currentMode.prompt}\n\n${history}\n\nRéponds concisément à la dernière question.`;
 
-    const modelKey = currentAI?.model || "automatic";
+    const modelKey = currentAI?.model || "gpt_5_mini";
     const useInternet = modelKey === "gemini_3_1_pro" || modelKey === "gemini_3_flash";
 
     const response = await base44.integrations.Core.InvokeLLM({

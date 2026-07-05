@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import TrixDonationDialog from "./TrixDonationDialog";
 import EuroDonationDialog from "./EuroDonationDialog";
 import TrixIcon from "@/components/TrixIcon";
+import FloatingReactions from "./FloatingReactions";
 
 const EMOJIS = ["😂", "❤️", "🔥", "👏", "😍", "🎉", "💯", "🤣", "😮", "👍", "💚", "🎮"];
 
@@ -70,8 +71,17 @@ export default function LiveChat({ video, channel, user, onUserUpdate }) {
       if (active) setMessages(list.reverse());
     };
     load();
-    const interval = setInterval(load, 3000);
-    return () => { active = false; clearInterval(interval); };
+    // Real-time subscription for instant updates
+    const unsubscribe = base44.entities.ChatMessage.subscribe((event) => {
+      if (!active || event.data?.video_id !== video.id) return;
+      if (event.type === "create" && event.data?.type !== "reaction") {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === event.data.id)) return prev;
+          return [...prev, event.data];
+        });
+      }
+    });
+    return () => { active = false; unsubscribe(); };
   }, [video?.id]);
 
   useEffect(() => {
@@ -115,10 +125,18 @@ export default function LiveChat({ video, channel, user, onUserUpdate }) {
 
   return (
     <>
-      <div className="flex flex-col h-full border border-border rounded-xl bg-card overflow-hidden">
+      <div className="flex flex-col h-full border border-border rounded-xl bg-card overflow-hidden relative">
         <div className="px-4 py-3 border-b border-border flex items-center gap-2">
           <MessageCircle className="w-4 h-4 text-muted-foreground" />
           <span className="font-semibold text-sm">Chat en direct</span>
+          <span className="ml-auto flex items-center gap-1 text-[10px] text-green-400 font-bold">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" /> LIVE
+          </span>
+        </div>
+
+        {/* Floating reactions overlay */}
+        <div className="absolute top-12 right-0 bottom-32 w-full pointer-events-none z-10">
+          <FloatingReactions videoId={video?.id} />
         </div>
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto scrollbar-thin px-3 py-3 space-y-2 min-h-0">

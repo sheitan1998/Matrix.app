@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, MessageCircle, ImagePlus, X, Trash2, Pencil, Check } from "lucide-react";
+import { Heart, MessageCircle, ImagePlus, X, Trash2, Pencil, Check, Video as VideoIcon } from "lucide-react";
 import { formatTimeAgo } from "@/lib/format";
 import PostComments from "./PostComments";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,7 @@ export default function PostFeed() {
   const [user, setUser] = useState(null);
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null); // base64
+  const [videoPreview, setVideoPreview] = useState(null);
   const [reactions, setReactions] = useState({});
   const [myReactions, setMyReactions] = useState({});
   const [openComments, setOpenComments] = useState(null);
@@ -25,6 +26,7 @@ export default function PostFeed() {
   const [postCooldown, setPostCooldown] = useState(30); // seconds, admin can change
   const [cooldownLeft, setCooldownLeft] = useState(0);
   const fileRef = useRef(null);
+  const videoFileRef = useRef(null);
   const qc = useQueryClient();
   const cooldownRef = useRef(null);
 
@@ -53,12 +55,14 @@ export default function PostFeed() {
         author_role: user.role === "admin" ? "admin" : "user",
         content: text.trim(),
         image_url: imagePreview || undefined,
+        video_url: videoPreview || undefined,
         likes: 0,
         comments_count: 0,
       }),
     onSuccess: () => {
       setText("");
       setImagePreview(null);
+      setVideoPreview(null);
       setLastPostTime(Date.now());
       qc.invalidateQueries({ queryKey: ["posts"] });
     },
@@ -80,6 +84,19 @@ export default function PostFeed() {
       setImagePreview(canvas.toDataURL("image/jpeg", 0.8));
     };
     img.src = objUrl;
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const handleVideoSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 50 * 1024 * 1024) { toast.error("Vidéo trop lourde (max 50MB)"); return; }
+    toast.info("Import vidéo...");
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setVideoPreview(file_url);
+      toast.success("Vidéo importée !");
+    } catch (err) { toast.error("Erreur d'import vidéo"); }
     if (fileRef.current) fileRef.current.value = "";
   };
 
@@ -174,11 +191,25 @@ export default function PostFeed() {
               </button>
             </div>
           )}
+          {videoPreview && (
+            <div className="relative">
+              <video src={videoPreview} controls className="rounded-xl max-h-64 w-full" />
+              <button onClick={() => setVideoPreview(null)} className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center">
+                <X className="w-3.5 h-3.5 text-white" />
+              </button>
+            </div>
+          )}
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
           <div className="flex items-center justify-between">
-            <button onClick={() => fileRef.current?.click()} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition">
-              <ImagePlus className="w-4 h-4" /> Photo
-            </button>
+            <div className="flex items-center gap-3">
+              <button onClick={() => fileRef.current?.click()} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition">
+                <ImagePlus className="w-4 h-4" /> Photo
+              </button>
+              <button onClick={() => videoFileRef.current?.click()} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition">
+                <VideoIcon className="w-4 h-4" /> Vidéo
+              </button>
+              <input ref={videoFileRef} type="file" accept="video/*" className="hidden" onChange={handleVideoSelect} />
+            </div>
             {isAdmin && (
               <select value={postCooldown} onChange={(e) => setPostCooldown(parseInt(e.target.value))}
                 className="text-xs rounded-lg bg-secondary/60 border-border px-2 py-1 outline-none text-muted-foreground">
@@ -269,6 +300,9 @@ export default function PostFeed() {
 
                 {post.image_url && !post.image_url.startsWith("__") && (
                   <img src={post.image_url} alt="" className="mt-3 rounded-xl w-full max-h-[500px] object-contain bg-black/20" onError={(e) => e.target.style.display = "none"} />
+                )}
+                {post.video_url && (
+                  <video src={post.video_url} controls className="mt-3 rounded-xl w-full max-h-[500px] bg-black/40" />
                 )}
               </div>
 

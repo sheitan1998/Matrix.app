@@ -6,6 +6,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Film, Upload, Play, Clock, ArrowLeft, Trash2, X, Type, Music, Save, Layers, Video, Volume2, Undo2, Redo2 } from "lucide-react";
 import { toast } from "sonner";
 import SpaceBackground from "@/components/SpaceBackground";
+import ClipProperties from "@/components/video/ClipProperties";
+import VideoExporter from "@/components/video/VideoExporter";
 
 export default function VideoStudio() {
   const nav = useNavigate();
@@ -262,6 +264,45 @@ function ProjectEditor({ project, user, onClose, onUpdate }) {
     setTimeline(newTimeline);
   };
 
+  const updateClip = (id, updates) => {
+    const clips = timeline.clips.map(c => c.id === id ? { ...c, ...updates } : c);
+    const newTimeline = { ...timeline, clips };
+    setTimeline(newTimeline);
+    setSelectedClip(prev => prev ? { ...prev, ...updates } : prev);
+    pushHistory(newTimeline);
+  };
+
+  const splitClip = (id) => {
+    const clip = timeline.clips.find(c => c.id === id);
+    if (!clip) return;
+    const halfDur = (clip.duration || 5) / 2;
+    const first = { ...clip, id: `${clip.id}_a`, duration: halfDur };
+    const second = { ...clip, id: `${clip.id}_b`, duration: halfDur };
+    const idx = timeline.clips.findIndex(c => c.id === id);
+    const clips = [...timeline.clips];
+    clips.splice(idx, 1, first, second);
+    const newTimeline = { ...timeline, clips };
+    setTimeline(newTimeline);
+    pushHistory(newTimeline);
+    setSelectedClip(first);
+    toast.success("Clip coupé en deux");
+  };
+
+  const mergeClip = (id) => {
+    const idx = timeline.clips.findIndex(c => c.id === id);
+    if (idx < 0 || idx >= timeline.clips.length - 1) return;
+    const current = timeline.clips[idx];
+    const next = timeline.clips[idx + 1];
+    const merged = { ...current, id: `${current.id}_m`, duration: (current.duration || 5) + (next.duration || 5) };
+    const clips = [...timeline.clips];
+    clips.splice(idx, 2, merged);
+    const newTimeline = { ...timeline, clips };
+    setTimeline(newTimeline);
+    pushHistory(newTimeline);
+    setSelectedClip(merged);
+    toast.success("Clips fusionnés");
+  };
+
   const removeText = (id) => {
     const newTimeline = { ...timeline, textOverlays: timeline.textOverlays.filter(t => t.id !== id) };
     setTimeline(newTimeline);
@@ -282,6 +323,17 @@ function ProjectEditor({ project, user, onClose, onUpdate }) {
   function formatDuration(sec) {
     return `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, "0")}`;
   }
+
+  const getClipFilter = (clip) => {
+    if (!clip?.effects) return "none";
+    const e = clip.effects;
+    return [
+      `brightness(${e.brightness ?? 100}%)`,
+      `contrast(${e.contrast ?? 100}%)`,
+      `saturate(${e.saturation ?? 100}%)`,
+      e.blur ? `blur(${e.blur}px)` : "",
+    ].filter(Boolean).join(" ") || "none";
+  };
 
   const uploadFile = async (file) => {
     setUploading(true);
@@ -305,15 +357,17 @@ function ProjectEditor({ project, user, onClose, onUpdate }) {
         <button onClick={undo} disabled={historyIdx <= 0} className="w-8 h-8 rounded-lg flex items-center justify-center text-white/50 hover:text-white disabled:opacity-30 transition"><Undo2 className="w-4 h-4" /></button>
         <button onClick={redo} disabled={historyIdx >= history.length - 1} className="w-8 h-8 rounded-lg flex items-center justify-center text-white/50 hover:text-white disabled:opacity-30 transition"><Redo2 className="w-4 h-4" /></button>
         <button onClick={() => saveProject(false)} disabled={saving} className="flex items-center gap-2 h-9 px-4 rounded-xl text-sm font-bold text-white" style={{ background: "linear-gradient(135deg, #8b5cf6, #6d28d9)" }}>
-          <Save className="w-4 h-4" /> Sauvegarder
+          <Save className="w-4 h-4" /> {saving ? "..." : "Sauvegarder"}
         </button>
+        <VideoExporter timeline={timeline} projectName={project.name} resolution={project.resolution} />
       </div>
 
       {/* Preview */}
       <div className="shrink-0 flex items-center justify-center p-4" style={{ background: "#000" }}>
         <div className="relative w-full max-w-3xl aspect-video rounded-xl overflow-hidden" style={{ background: "#111" }}>
           {(timeline.clips || []).length > 0 ? (
-            <video ref={videoRef} src={timeline.clips[0]?.url} className="w-full h-full object-contain" controls />
+            <video ref={videoRef} src={timeline.clips[0]?.url} className="w-full h-full object-contain" controls
+              style={{ filter: getClipFilter(timeline.clips[0]) }} />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <div className="text-center">
@@ -410,13 +464,17 @@ function ProjectEditor({ project, user, onClose, onUpdate }) {
               )}
             </div>
             {selectedClip && (
-              <div className="mt-2 p-3 rounded-xl flex flex-wrap items-center gap-3" style={{ background: "rgba(18,18,20,0.8)", border: "1px solid rgba(139,92,246,0.2)" }}>
-                <p className="text-[10px] font-bold text-white/60">Clip sélectionné</p>
-                <button onClick={() => moveClip(selectedClip.id, -1)} className="w-7 h-7 rounded-lg bg-secondary text-white/60 hover:text-white flex items-center justify-center text-xs">←</button>
-                <button onClick={() => moveClip(selectedClip.id, 1)} className="w-7 h-7 rounded-lg bg-secondary text-white/60 hover:text-white flex items-center justify-center text-xs">→</button>
-                <label className="flex items-center gap-1 text-[10px] text-white/50">Durée: <input type="number" value={selectedClip.duration} onChange={e => { const v = parseInt(e.target.value) || 1; trimClip(selectedClip.id, "duration", v); setSelectedClip({ ...selectedClip, duration: v }); }} className="w-12 px-1 py-0.5 rounded bg-secondary text-white text-[10px]" />s</label>
-                <button onClick={() => removeClip(selectedClip.id)} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold text-red-400 hover:bg-red-500/10 transition"><Trash2 className="w-3 h-3" /> Supprimer</button>
-              </div>
+              <ClipProperties
+                clip={selectedClip}
+                onUpdate={(updates) => updateClip(selectedClip.id, updates)}
+                onSplit={() => splitClip(selectedClip.id)}
+                onMerge={() => mergeClip(selectedClip.id)}
+                onMoveLeft={() => moveClip(selectedClip.id, -1)}
+                onMoveRight={() => moveClip(selectedClip.id, 1)}
+                onDelete={() => removeClip(selectedClip.id)}
+                hasNext={timeline.clips.findIndex(c => c.id === selectedClip.id) < timeline.clips.length - 1}
+                hasPrev={timeline.clips.findIndex(c => c.id === selectedClip.id) > 0}
+              />
             )}
           </div>
 
