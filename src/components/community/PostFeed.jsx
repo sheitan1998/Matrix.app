@@ -8,6 +8,7 @@ import { formatTimeAgo } from "@/lib/format";
 import PostComments from "./PostComments";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useProgression } from "@/context/ProgressionContext";
 
 const REACTIONS = ["❤️", "😂", "🔥", "👏", "😮", "😢"];
 
@@ -17,7 +18,9 @@ export default function PostFeed() {
   const [imagePreview, setImagePreview] = useState(null); // base64
   const [videoPreview, setVideoPreview] = useState(null);
   const [reactions, setReactions] = useState({});
-  const [myReactions, setMyReactions] = useState({});
+  const [myReactions, setMyReactions] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("matrix_my_reactions") || "{}"); } catch { return {}; }
+  });
   const [openComments, setOpenComments] = useState(null);
   const [contextMenu, setContextMenu] = useState(null); // { postId, x, y }
   const [editingPost, setEditingPost] = useState(null);
@@ -29,6 +32,7 @@ export default function PostFeed() {
   const videoFileRef = useRef(null);
   const qc = useQueryClient();
   const cooldownRef = useRef(null);
+  const { trackActivity } = useProgression();
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => null);
@@ -45,6 +49,15 @@ export default function PostFeed() {
     queryKey: ["posts"],
     queryFn: () => base44.entities.Post.list("-created_date", 40),
   });
+
+  // Sync reactions from server data
+  useEffect(() => {
+    if (posts.length > 0) {
+      const serverReactions = {};
+      posts.forEach(p => { if (p.reactions) serverReactions[p.id] = p.reactions; });
+      setReactions(prev => ({ ...serverReactions, ...prev }));
+    }
+  }, [posts]);
 
   const createPost = useMutation({
     mutationFn: () =>
@@ -65,6 +78,7 @@ export default function PostFeed() {
       setVideoPreview(null);
       setLastPostTime(Date.now());
       qc.invalidateQueries({ queryKey: ["posts"] });
+      trackActivity("send_message");
     },
   });
 
@@ -116,23 +130,28 @@ export default function PostFeed() {
   };
 
   const toggleReaction = (postId, emoji) => {
-    const current = myReactions[postId];
+    const currentReactions = myReactions[postId] || [];
     const postReactions = reactions[postId] || {};
-    if (current === emoji) {
-      const updated = { ...postReactions, [emoji]: Math.max(0, (postReactions[emoji] || 0) - 1) };
-      setReactions((r) => ({ ...r, [postId]: updated }));
-      setMyReactions((m) => { const n = { ...m }; delete n[postId]; return n; });
+    const hasEmoji = currentReactions.includes(emoji);
+
+    let newMyReactions;
+    let updatedReactions;
+    if (hasEmoji) {
+      newMyReactions = currentReactions.filter(e => e !== emoji);
+      updatedReactions = { ...postReactions, [emoji]: Math.max(0, (postReactions[emoji] || 0) - 1) };
     } else {
-      const updated = { ...postReactions };
-      if (current) updated[current] = Math.max(0, (updated[current] || 0) - 1);
-      updated[emoji] = (updated[emoji] || 0) + 1;
-      setReactions((r) => ({ ...r, [postId]: updated }));
-      setMyReactions((m) => ({ ...m, [postId]: emoji }));
+      newMyReactions = [...currentReactions, emoji];
+      updatedReactions = { ...postReactions, [emoji]: (postReactions[emoji] || 0) + 1 };
     }
-    const post = posts.find((p) => p.id === postId);
-    if (post && !myReactions[postId] && emoji === "❤️") {
-      base44.entities.Post.update(postId, { likes: (post.likes || 0) + 1 }).catch(() => {});
-    }
+
+    setReactions((r) => ({ ...r, [postId]: updatedReactions }));
+    const newMyAll = { ...myReactions, [postId]: newMyReactions };
+    setMyReactions(newMyAll);
+    localStorage.setItem("matrix_my_reactions", JSON.stringify(newMyAll));
+
+    // Persist to entity
+    base44.entities.Post.update(postId, { reactions: updatedReactions }).catch(() => {});
+    if (!hasEmoji) trackActivity("like");
     setEmojiPickerPost(null);
     setContextMenu(null);
   };
@@ -310,7 +329,7 @@ export default function PostFeed() {
               <div className="px-4 pb-2 flex gap-1 flex-wrap">
                 {REACTIONS.map((emoji) => {
                   const count = getReactionCount(post.id, emoji);
-                  const active = myReactions[post.id] === emoji;
+                  const active = (myReactions[post.id] || []).includes(emoji);
                   return (
                     <button key={emoji}
                       onClick={() => user && toggleReaction(post.id, emoji)}

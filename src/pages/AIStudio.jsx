@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
+import { useProgression } from "@/context/ProgressionContext";
 
 const AI_MODELS = [
   { key: "auto", label: "Auto (MATRIX)", icon: "🤖", desc: "Meilleur modèle automatique", model: "automatic" },
@@ -53,6 +54,7 @@ export default function AIStudio() {
   const [showVideo, setShowVideo] = useState(false);
   const [videoUsage, setVideoUsage] = useState(0);
   const bottomRef = useRef(null);
+  const { trackActivity } = useProgression();
 
   const currentMode = MODES.find((m) => m.key === mode);
   const currentAI = AI_MODELS.find((m) => m.key === selectedModel);
@@ -75,6 +77,7 @@ export default function AIStudio() {
     setLoading(true);
     incrementUsage();
     setUsage(getUsage());
+    trackActivity("use_ai");
 
     const history = newMessages.slice(-6).map((m) => `${m.role === "user" ? "User" : "AI"}: ${m.content}`).join("\n");
     const prompt = `${currentMode.prompt}\n\n${history}\n\nRéponds concisément à la dernière question.`;

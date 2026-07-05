@@ -35,6 +35,11 @@
     "comments_count": {
       "type": "number",
       "default": 0
+    },
+    "reactions": {
+      "type": "object",
+      "properties": {},
+      "default": {}
     }
   },
   "required": [

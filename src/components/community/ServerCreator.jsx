@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useProgression } from "@/context/ProgressionContext";
 
 const EMOJIS = ["🎮","🎵","💻","⚽","🎨","🎬","😂","📰","🚀","🔥","💎","👑","🌍","🎯","🏆"];
 const COLORS = ["#7c3aed","#2563eb","#059669","#dc2626","#d97706","#db2777","#0891b2","#65a30d"];
@@ -32,6 +33,7 @@ export default function ServerCreator({ onClose, onCreated }) {
     theme: "autre",
     is_public: true,
   });
+  const { trackActivity } = useProgression();
 
   const create = async () => {
     if (!form.name.trim()) { toast.error("Donne un nom à ton serveur"); return; }
@@ -47,6 +49,7 @@ export default function ServerCreator({ onClose, onCreated }) {
     });
     toast.success(`Serveur "${form.name}" créé ! 🎉`);
     setSaving(false);
+    trackActivity("create_server");
     onCreated?.();
     onClose();
   };

@@ -92,9 +92,11 @@ export default function Topbar() {
               <Upload className="w-5 h-5" />
             </Button>
           </Link>
-          <Button size="icon" variant="ghost" className="rounded-full">
-            <Bell className="w-5 h-5" />
-          </Button>
+          <Link to="/notifications">
+            <Button size="icon" variant="ghost" className="rounded-full">
+              <Bell className="w-5 h-5" />
+            </Button>
+          </Link>
 
           <Link to="/profile">
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-sm ml-1">

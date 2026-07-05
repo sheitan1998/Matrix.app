@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { Tv2, Users, Cpu, Dices, Gem, Star, MessageCircle, Radio, Play, Music, Camera, ChevronDown, User, Clapperboard, ListMusic } from "lucide-react";
+import { Tv2, Users, Cpu, Dices, Gem, Star, MessageCircle, Radio, Play, Music, Camera, ChevronDown, User, Clapperboard } from "lucide-react";
 import UniverseCard from "@/components/landing/UniverseCard";
 import DiscoverSection from "@/components/landing/DiscoverSection";
 import LiveNowSection from "@/components/landing/LiveNowSection";
@@ -13,7 +13,6 @@ const UNIVERSES = [
   { path: "/ai", label: "AI Studio", desc: "Chat, création, code, histoires. Exploite l'IA sans limites.", icon: Cpu, color: "#06b6d4" },
   { path: "/casino", label: "Casino", desc: "Roulette, machines à sous, blackjack. Jeux fictifs uniquement.", icon: Dices, color: "#eab308", badge: "18+" },
   { path: "/video-studio", label: "Video Studio", desc: "Édite, assemble, partage. Un studio vidéo complet intégré.", icon: Clapperboard, color: "#8b5cf6", badge: "NEW" },
-  { path: "/playlists", label: "Playlists", desc: "Crée, organise, partage tes playlists musicales.", icon: ListMusic, color: "#ec4899", badge: "NEW" },
   { path: "/progression", label: "Progression", desc: "Niveaux, XP, badges, missions, classements et boutique.", icon: Star, color: "#fbbf24", badge: "NEW" },
 ];
 

@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { NitroAvatar } from "@/components/NitroAvatarPicker";
+import { useProgression } from "@/context/ProgressionContext";
 
 export default function ServerChat({ server, channel, theme, user }) {
   const [input, setInput] = useState("");
@@ -16,6 +17,7 @@ export default function ServerChat({ server, channel, theme, user }) {
   const fileInputRef = useRef(null);
   const bottomRef = useRef(null);
   const qc = useQueryClient();
+  const { trackActivity } = useProgression();
 
   const REACTIONS = ["❤️", "😂", "🔥", "👏", "😮", "😢"];
 
@@ -111,6 +113,7 @@ export default function ServerChat({ server, channel, theme, user }) {
 
     setInput("");
     setSending(false);
+    trackActivity("send_message");
     qc.invalidateQueries({ queryKey });
   };
 

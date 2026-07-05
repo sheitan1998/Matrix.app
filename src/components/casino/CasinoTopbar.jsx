@@ -1,7 +1,7 @@
 import React from "react";
-import { Search, Bell, Settings, ArrowDownToLine, ArrowUpFromLine, Users } from "lucide-react";
+import { Search, Bell, Settings, Users, Crown } from "lucide-react";
 
-export default function CasinoTopbar({ balance, onDeposit, onWithdraw, onSettings, playersOnline }) {
+export default function CasinoTopbar({ balance, onVipClub, onSettings, playersOnline }) {
   const online = playersOnline || 18432;
   return (
     <header
@@ -49,27 +49,16 @@ export default function CasinoTopbar({ balance, onDeposit, onWithdraw, onSetting
       </div>
 
       <button
-        onClick={onDeposit}
-        className="h-9 px-3 rounded-xl flex items-center gap-1.5 text-xs font-bold text-white shrink-0"
+        onClick={onVipClub}
+        className="h-9 px-3 rounded-xl flex items-center gap-1.5 text-xs font-bold shrink-0"
         style={{
-          background: "linear-gradient(135deg, #8b5cf6, #6d28d9)",
-          boxShadow: "0 0 15px rgba(139,92,246,0.2)",
+          background: "linear-gradient(135deg, #fbbf24, #f59e0b)",
+          color: "#1a1505",
+          boxShadow: "0 0 15px rgba(251,191,36,0.3)",
         }}
       >
-        <ArrowDownToLine className="w-3.5 h-3.5" />
-        <span className="hidden sm:inline">Déposer</span>
-      </button>
-
-      <button
-        onClick={onWithdraw}
-        className="h-9 px-3 rounded-xl flex items-center gap-1.5 text-xs font-bold text-white/60 shrink-0"
-        style={{
-          border: "1px solid rgba(255,255,255,0.1)",
-          background: "rgba(255,255,255,0.03)",
-        }}
-      >
-        <ArrowUpFromLine className="w-3.5 h-3.5" />
-        <span className="hidden sm:inline">Retirer</span>
+        <Crown className="w-3.5 h-3.5" />
+        <span className="hidden sm:inline">VIP Club</span>
       </button>
 
       <button className="relative w-9 h-9 rounded-xl flex items-center justify-center text-white/50 shrink-0">

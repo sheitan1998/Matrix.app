@@ -42,8 +42,8 @@ import Casino from '@/pages/Casino';
 import CommunitySubscription from '@/pages/community/CommunitySubscription';
 import Wallet from '@/pages/Wallet';
 import VideoStudio from '@/pages/VideoStudio';
-import Playlists from '@/pages/Playlists';
 import Progression from '@/pages/Progression';
+import Notifications from '@/pages/Notifications';
 import { ProgressionProvider } from '@/context/ProgressionContext';
 
 const AuthenticatedApp = () => {
@@ -79,8 +79,8 @@ const AuthenticatedApp = () => {
       <Route path="/community/subscription" element={<CommunitySubscription />} />
         <Route path="/wallet" element={<Wallet />} />
         <Route path="/video-studio" element={<VideoStudio />} />
-        <Route path="/playlists" element={<Playlists />} />
         <Route path="/progression" element={<Progression />} />
+        <Route path="/notifications" element={<Notifications />} />
         <Route element={<MainLayout />}>
           <Route path="/stream" element={<Home />} />
         <Route path="/trending" element={<Trending />} />

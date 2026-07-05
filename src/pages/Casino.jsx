@@ -14,6 +14,7 @@ import PokerGame from "@/components/casino/PokerGame";
 import BaccaratGame from "@/components/casino/BaccaratGame";
 import CasinoShop from "@/pages/casino/CasinoShop";
 import CasinoProfile from "@/pages/casino/CasinoProfile";
+import VIPClubPage from "@/pages/casino/VIPClubPage";
 
 import CasinoBackground from "@/components/casino/CasinoBackground";
 import CasinoSidebar from "@/components/casino/CasinoSidebar";
@@ -31,6 +32,7 @@ import CasinoQuests from "@/components/casino/CasinoQuests";
 import CasinoAchievements from "@/components/casino/CasinoAchievements";
 import CasinoSettings from "@/components/casino/CasinoSettings";
 import CasinoSecurityBar from "@/components/casino/CasinoSecurityBar";
+import CasinoNavPanel from "@/components/casino/CasinoNavPanel";
 import { GAMES, VIP_TIERS } from "@/components/casino/casinoData";
 
 const GAME_META = {
@@ -118,6 +120,8 @@ export default function Casino() {
   const [showShop, setShowShop] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showVipClub, setShowVipClub] = useState(false);
+  const [navPanel, setNavPanel] = useState(null); // "favorites" | "history" | null
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeSidebar, setActiveSidebar] = useState("home");
   const [category, setCategory] = useState("all");
@@ -130,6 +134,9 @@ export default function Casino() {
 
   // Profile screen
   if (showProfile) return <CasinoProfile onBack={() => setShowProfile(false)} />;
+
+  // VIP Club screen
+  if (showVipClub) return <VIPClubPage coins={casinoCoins} onBack={() => setShowVipClub(false)} />;
 
   // Game screen — premium wrapper around existing game components
   const meta = GAME_META[screen];
@@ -212,6 +219,10 @@ export default function Casino() {
 
   const handleSidebarSelect = (target, gameKey) => {
     setActiveSidebar(target);
+    if (target === "home") { setScreen("home"); return; }
+    if (target === "favorites") { setNavPanel("favorites"); return; }
+    if (target === "history") { setNavPanel("history"); return; }
+    if (target === "vip") { setShowVipClub(true); return; }
     if (gameKey && GAME_META[gameKey]) { setScreen(gameKey); }
     else if (gameKey && !GAME_META[gameKey]) {
       if (gameKey === "crash" || gameKey === "mines" || gameKey === "dice") setScreen("slots");
@@ -237,8 +248,7 @@ export default function Casino() {
         <div className="flex-1 min-w-0 flex flex-col">
           <CasinoTopbar
             balance={casinoCoins}
-            onDeposit={() => setShowShop(true)}
-            onWithdraw={() => setShowShop(true)}
+            onVipClub={() => setShowVipClub(true)}
             onSettings={() => setShowSettings(true)}
           />
 
@@ -307,6 +317,7 @@ export default function Casino() {
 
       {/* Modals */}
       {showShop && <CasinoShop balance={casinoCoins} setBalance={setCasinoCoins} onClose={() => setShowShop(false)} />}
+      {navPanel && <CasinoNavPanel type={navPanel} onClose={() => setNavPanel(null)} onPlayGame={(key) => { if (GAME_META[key]) setScreen(key); }} />}
       <CasinoSettings open={showSettings} onClose={() => setShowSettings(false)} settings={settings} onChange={setSettings} />
     </div>
   );

@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Coins, Crown, LogOut, Radio, History, LayoutDashboard, Upload, Trash2, AlertTriangle, Wallet, Sparkles, Check, X, Edit3, Heart, Users, Film, ListMusic, Clapperboard, ArrowLeft } from "lucide-react";
+import { Coins, Crown, LogOut, Radio, History, LayoutDashboard, Upload, Trash2, AlertTriangle, Wallet, Sparkles, Check, X, Edit3, Heart, Users, Film, Clapperboard, ArrowLeft } from "lucide-react";
 import { formatTrix, formatTimeAgo } from "@/lib/format";
 import NitroAvatarPicker, { NitroAvatar } from "@/components/NitroAvatarPicker";
 import FriendsList from "@/components/profile/FriendsList";
@@ -14,7 +14,6 @@ import { useProgression } from "@/context/ProgressionContext";
 const TABS = [
   { key: "overview", label: "Vue d'ensemble", icon: LayoutDashboard },
   { key: "videos", label: "Vidéos", icon: Film },
-  { key: "playlists", label: "Playlists", icon: ListMusic },
   { key: "projects", label: "Projets Studio", icon: Clapperboard },
   { key: "subs", label: "Abonnements", icon: Heart },
   { key: "friends", label: "Amis", icon: Users },
@@ -31,7 +30,6 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [videos, setVideos] = useState([]);
-  const [playlists, setPlaylists] = useState([]);
   const [projects, setProjects] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
   const { progress } = useProgression();
@@ -52,14 +50,12 @@ export default function Profile() {
 
   const loadTabData = async (u) => {
     try {
-      const [vids, pls, projs, subs] = await Promise.all([
+      const [vids, projs, subs] = await Promise.all([
         base44.entities.Video.filter({ channel_id: u.email }, "-created_date", 50).catch(() => []),
-        base44.entities.Playlist.filter({ owner_email: u.email }, "-created_date", 50).catch(() => []),
         base44.entities.VideoProject.filter({ owner_email: u.email }, "-created_date", 50).catch(() => []),
         base44.entities.Subscription.filter({ user_email: u.email }, "-created_date", 50).catch(() => []),
       ]);
       setVideos(vids);
-      setPlaylists(pls);
       setProjects(projs);
       setSubscriptions(subs);
     } catch (e) { /* ignore */ }
@@ -157,9 +153,9 @@ export default function Profile() {
           <p className="text-xl font-black mt-0.5">{videos.length}</p>
         </div>
         <div className="p-5 rounded-2xl bg-card border border-border">
-          <ListMusic className="w-5 h-5 text-purple-400" />
-          <p className="text-xs text-muted-foreground mt-2">Playlists</p>
-          <p className="text-xl font-black mt-0.5">{playlists.length}</p>
+          <Clapperboard className="w-5 h-5 text-violet-400" />
+          <p className="text-xs text-muted-foreground mt-2">Projets</p>
+          <p className="text-xl font-black mt-0.5">{projects.length}</p>
         </div>
         <div className="p-5 rounded-2xl bg-card border border-border">
           <Heart className="w-5 h-5 text-red-400" />
@@ -245,32 +241,6 @@ export default function Profile() {
                   <div className="p-3">
                     <p className="text-sm font-bold truncate">{v.title}</p>
                     <p className="text-xs text-muted-foreground mt-1">{v.views || 0} vues · {formatTimeAgo(v.created_date)}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {activeTab === "playlists" && (
-        <div className="space-y-3">
-          {playlists.length === 0 ? (
-            <div className="text-center py-12 rounded-2xl bg-card border border-border">
-              <ListMusic className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground text-sm">Aucune playlist créée</p>
-              <Link to="/playlists"><Button variant="outline" size="sm" className="mt-4 rounded-full">Créer une playlist</Button></Link>
-            </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {playlists.map((p) => (
-                <Link key={p.id} to="/playlists" className="rounded-2xl overflow-hidden bg-card border border-border hover:border-primary/40 transition group">
-                  <div className="relative aspect-square">
-                    {p.cover_url ? <img src={p.cover_url} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center"><ListMusic className="w-10 h-10 text-purple-400" /></div>}
-                  </div>
-                  <div className="p-3">
-                    <p className="text-sm font-bold truncate">{p.name}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{p.track_count || 0} titres</p>
                   </div>
                 </Link>
               ))}

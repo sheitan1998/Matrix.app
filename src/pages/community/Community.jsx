@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Sparkles, Plus, Hash, Volume2, Megaphone, Settings, Trash2, Search, UserPlus, Link2, MessageCircle, X } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import PostFeed from "@/components/community/PostFeed";
 import ServerCreator from "@/components/community/ServerCreator";
 import ServerChat from "@/components/community/ServerChat";
 import VoiceChannel from "@/components/community/VoiceChannel";
@@ -16,7 +15,6 @@ import { VISUAL_THEMES, getTheme } from "@/lib/visualThemes";
 import NotificationBell from "@/components/NotificationBell";
 import PrivateChat from "@/components/community/PrivateChat";
 import DmList from "@/components/community/DmList";
-import CommunityRightSidebar from "@/components/community/CommunityRightSidebar";
 import { useProgression } from "@/context/ProgressionContext";
 import { getRank } from "@/lib/progressionData";
 import { Gamepad2, Cpu, Music, Palette, Film, Newspaper } from "lucide-react";
@@ -181,15 +179,15 @@ export default function Community() {
           </>
         ) : (
           <>
+            <button onClick={() => setShowDmList(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-border hover:bg-secondary transition"
+              title="Messages privés">
+              <MessageCircle className="w-3.5 h-3.5" /> MP
+            </button>
             <Link to="/" className="text-muted-foreground hover:text-foreground transition"><ArrowLeft className="w-5 h-5" /></Link>
             <span className="font-black text-lg"><span className="text-premium">M</span>ATRIX Community</span>
             <div className="ml-auto flex items-center gap-2">
               {user && <NotificationBell user={user} />}
-              <button onClick={() => setShowDmList(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-border hover:bg-secondary transition"
-                title="Messages privés">
-                <MessageCircle className="w-3.5 h-3.5" /> MP
-              </button>
               <button onClick={() => setShowInviteJoin(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-border hover:bg-secondary transition">
                 <UserPlus className="w-3.5 h-3.5" /> Rejoindre
@@ -261,14 +259,6 @@ export default function Community() {
                 </button>
               );
             })}
-
-            <div className="px-3 mt-2 border-t border-border pt-3">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">Général</p>
-              <button onClick={() => selectServer({ id: "__feed__", name: "Fil communautaire", icon_emoji: "📰", is_public: true })}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl hover:bg-secondary transition text-sm font-semibold">
-                📰 Fil d'actualité
-              </button>
-            </div>
 
             {/* Categories */}
             <div className="px-3 mt-2 border-t border-border pt-3">
@@ -376,13 +366,27 @@ export default function Community() {
             />
           )}
 
-          {/* Community feed — 3-column layout */}
-          {(!selectedServer || selectedServer.id === "__feed__") && (
-            <div className="flex-1 overflow-hidden flex">
-              <div className="flex-1 overflow-y-auto p-4 max-w-2xl mx-auto w-full">
-                <PostFeed theme="all" />
+          {/* Welcome screen when no server selected */}
+          {!selectedServer && (
+            <div className="flex-1 flex items-center justify-center flex-col gap-4 text-center p-6">
+              <div className="w-20 h-20 rounded-3xl flex items-center justify-center" style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.2)" }}>
+                <MessageCircle className="w-10 h-10" style={{ color: "#a855f7" }} />
               </div>
-              <CommunityRightSidebar />
+              <div>
+                <p className="font-black text-2xl text-white">Bienvenue sur MATRIX Community</p>
+                <p className="text-sm text-muted-foreground max-w-sm mt-2">Sélectionne un serveur à gauche ou crée le tien pour commencer à discuter avec la communauté.</p>
+              </div>
+              <div className="flex gap-2 mt-2">
+                <button onClick={() => setShowSearch(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-2xl border border-border text-sm font-bold text-white hover:bg-secondary transition">
+                  <Search className="w-4 h-4" /> Explorer les serveurs
+                </button>
+                <button onClick={() => setShowCreator(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-bold text-white transition"
+                  style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
+                  <Plus className="w-4 h-4" /> Créer un serveur
+                </button>
+              </div>
             </div>
           )}
 

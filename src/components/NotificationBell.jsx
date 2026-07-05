@@ -49,9 +49,12 @@ export default function NotificationBell({ user }) {
                   Tout lu
                 </button>
               )}
-              <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground">
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                <a href="/notifications" className="text-[10px] text-primary hover:underline font-semibold">Voir tout</a>
+                <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
 
