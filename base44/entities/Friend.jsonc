@@ -70,7 +70,14 @@
       ]
     },
     "delete": {
-      "data.user_email": "{{user.email}}"
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "data.friend_email": "{{user.email}}"
+        }
+      ]
     }
   }
 }
