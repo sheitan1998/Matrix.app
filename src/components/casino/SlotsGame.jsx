@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import WinEffect from "./WinEffect";
 import CasinoWinEffect from "./CasinoWinEffect";
+import { casinoPlaceBet } from "@/hooks/useCasinoJackpot";
 
 // ---- SYMBOLS ----
 const SYMBOLS = [
@@ -134,19 +135,13 @@ export default function SlotsGame({ balance, setBalance, accentColor, addTransac
   useEffect(() => { autoSpinningRef.current = autoSpinning; }, [autoSpinning]);
   const [result, setResult] = useState(null);
   const [bet, setBet] = useState(100);
-  const [jackpot, setJackpot] = useState(1_250_203_560);
-  const [majorJackpot, setMajorJackpot] = useState(539_373_037_000);
   const [lastWin, setLastWin] = useState(0);
   const [lightPhase, setLightPhase] = useState(0);
   const [showWin, setShowWin] = useState(false);
   const [winData, setWinData] = useState(null);
 
   useEffect(() => {
-    const t1 = setInterval(() => {
-      setJackpot(j => j + Math.floor(Math.random() * 317 + 43));
-      setMajorJackpot(m => m + Math.floor(Math.random() * 8000 + 2000));
-      setLightPhase(p => (p + 1) % 10);
-    }, 180);
+    const t1 = setInterval(() => setLightPhase(p => (p + 1) % 10), 180);
     return () => clearInterval(t1);
   }, []);
 
@@ -156,39 +151,65 @@ export default function SlotsGame({ balance, setBalance, accentColor, addTransac
     return () => { if (autoRef.current) clearTimeout(autoRef.current); };
   }, []);
 
-  const doSpin = () => {
+  const doSpin = async () => {
     const currentBalance = balanceRef.current;
     if (bet > currentBalance || bet <= 0) { stopAutoSpin(); return; }
     setSpinning(true);
     setResult(null);
     setBalance(b => b - bet);
-    const selected = [pickSymbol(), pickSymbol(), pickSymbol()];
+
+    let serverResult;
+    try {
+      serverResult = await casinoPlaceBet("slots", bet);
+    } catch {
+      setSpinning(false);
+      setBalance(b => b + bet);
+      toast.error("Erreur de connexion");
+      stopAutoSpin();
+      return;
+    }
+    if (serverResult.error) {
+      setSpinning(false);
+      setBalance(b => b + bet);
+      toast.error(serverResult.error);
+      stopAutoSpin();
+      return;
+    }
+
+    // Generate symbols matching the server-determined outcome
+    let selected;
+    if (serverResult.win && serverResult.slotsSymbol) {
+      const winSym = SYMBOLS.find(s => s.s === serverResult.slotsSymbol) || SYMBOLS[4];
+      selected = [winSym, winSym, winSym];
+    } else {
+      selected = [pickSymbol(), pickSymbol(), pickSymbol()];
+      let attempts = 0;
+      while (getMultiplier(selected) > 0 && attempts < 20) {
+        selected = [pickSymbol(), pickSymbol(), pickSymbol()];
+        attempts++;
+      }
+    }
     setFinalReels(selected);
+
+    const mult = serverResult.win ? serverResult.multiplier : 0;
+    const winAmount = serverResult.payout || 0;
+    const jpHit = serverResult.jackpot;
+
     setTimeout(() => {
       setSpinning(false);
-      const mult = getMultiplier(selected);
-      const jp3x7 = selected[0].s === "7" && selected[1].s === "7" && selected[2].s === "7";
-      const jp3D = selected[0].s === "💎" && selected[1].s === "💎" && selected[2].s === "💎";
-      const jpHit = jp3x7 || jp3D;
-      // 0.0001% jackpot chance on any losing spin too
-      const randomJp = !jpHit && mult === 0 && Math.random() < 0.000001 && winJackpot && globalJackpot > 0;
-      let winAmount = mult > 0 ? Math.round(bet * mult) : 0;
-      if (jpHit || randomJp) {
-        const jpAmount = randomJp ? winJackpot() : globalJackpot;
-        winAmount += jpAmount;
-      }
+      setBalance(serverResult.newBalance);
+      balanceRef.current = serverResult.newBalance;
       setLastWin(winAmount);
       const netGain = winAmount - bet;
-      if (winAmount > 0) setBalance(b => b + winAmount);
       setResult({ gain: netGain, mult, symbols: selected, win: winAmount > 0, jackpot: jpHit });
       if (addTransaction) {
-        addTransaction(netGain > 0 ? "casino_win" : "casino_loss", netGain > 0 ? netGain : -bet, netGain > 0 ? `Slots: +${netGain}` : `Slots: -${bet}`, "casino");
+        addTransaction(netGain >= 0 ? "casino_win" : "casino_loss", netGain >= 0 ? netGain : -bet, netGain >= 0 ? `Slots: +${netGain}` : `Slots: -${bet}`, "casino");
       }
       if (winAmount > 0) {
         setWinData({ amount: winAmount, multiplier: mult, isJackpot: jpHit });
         setShowWin(true);
       }
-      if (autoSpinningRef.current && balanceRef.current - bet >= 0) {
+      if (autoSpinningRef.current && serverResult.newBalance - bet >= 0) {
         setAutoCount(c => c + 1);
         autoRef.current = setTimeout(() => doSpin(), 800);
       } else if (autoSpinningRef.current) {
@@ -236,7 +257,7 @@ export default function SlotsGame({ balance, setBalance, accentColor, addTransac
           style={{ background: "linear-gradient(90deg, #1a0030, #2a0060, #1a0030)", border: "1px solid #aa00ff50" }}>
           <span className="text-xs font-black" style={{ color: "#cc44ff" }}>GRAND ×2</span>
           <span className="font-mono font-black text-base" style={{ color: "#ffffff", textShadow: "0 0 8px #ffffff60" }}>
-            {majorJackpot.toLocaleString()}
+            {(globalJackpot ? globalJackpot * 2 : 2000000).toLocaleString()}
           </span>
         </div>
         {/* Jackpot bar */}
@@ -245,7 +266,7 @@ export default function SlotsGame({ balance, setBalance, accentColor, addTransac
           <span className="text-xs font-black" style={{ color: "#ffd700" }}>✨ JACKPOT</span>
           <motion.span animate={{ scale: [1, 1.03, 1] }} transition={{ duration: 0.5, repeat: Infinity }}
             className="font-mono font-black text-xl" style={{ color: "#ffd700", textShadow: "0 0 12px #ffaa00" }}>
-            {(globalJackpot || jackpot).toLocaleString()}
+            {(globalJackpot || 1000000).toLocaleString()}
           </motion.span>
           <span className="text-xs font-black" style={{ color: "#ffd700" }}>MAJOR ×2</span>
         </div>

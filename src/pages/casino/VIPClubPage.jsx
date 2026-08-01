@@ -1,7 +1,8 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Crown, Gem, Star, Gift, TrendingUp, Shield, Sparkles, Coins, Zap, Check } from "lucide-react";
+import { ArrowLeft, Crown, Gem, Star, Gift, TrendingUp, Shield, Sparkles, Coins, Zap, Check, Home } from "lucide-react";
 import { VIP_TIERS } from "@/components/casino/casinoData";
+import { Link } from "react-router-dom";
 
 const VIP_BENEFITS = [
   { icon: Coins, title: "Bonus de bienvenue VIP", desc: "Recevez un bonus de coins exclusif à chaque niveau atteint", color: "#fbbf24" },
@@ -37,10 +38,14 @@ export default function VIPClubPage({ coins, onBack }) {
         {/* Header */}
         <div className="sticky top-0 z-40 flex items-center gap-3 px-4 py-3"
           style={{ background: "rgba(10,10,10,0.85)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(251,191,36,0.15)" }}>
-          <button onClick={onBack} className="flex items-center gap-2 text-white/60 hover:text-white transition">
+          <button onClick={onBack} className="flex items-center gap-2 text-white/60 hover:text-white transition tap-sm">
             <ArrowLeft className="w-5 h-5" />
             <span className="text-xs font-bold hidden sm:inline">Retour</span>
           </button>
+          <Link to="/" className="flex items-center gap-2 text-white/60 hover:text-white transition ml-1 tap-sm">
+            <Home className="w-4 h-4" />
+            <span className="text-xs font-bold hidden sm:inline">Hub</span>
+          </Link>
           <div className="flex items-center gap-2">
             <Crown className="w-5 h-5" style={{ color: "#fbbf24", filter: "drop-shadow(0 0 8px #fbbf24)" }} />
             <h1 className="font-black text-lg tracking-wider" style={{

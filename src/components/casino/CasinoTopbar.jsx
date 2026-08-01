@@ -1,5 +1,6 @@
 import React from "react";
-import { Search, Bell, Settings, Users, Crown } from "lucide-react";
+import { Search, Bell, Settings, Users, Crown, Home } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function CasinoTopbar({ balance, onVipClub, onSettings, playersOnline }) {
   const online = playersOnline || 18432;
@@ -12,6 +13,12 @@ export default function CasinoTopbar({ balance, onVipClub, onSettings, playersOn
         borderBottom: "1px solid rgba(255,255,255,0.05)",
       }}
     >
+      <Link to="/" className="flex items-center gap-1.5 h-9 px-3 rounded-xl shrink-0 transition"
+        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+        <Home className="w-4 h-4 text-white/60" />
+        <span className="text-xs font-bold text-white/60 hidden sm:inline">Hub</span>
+      </Link>
+
       <div className="flex-1 max-w-sm relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30" />
         <input

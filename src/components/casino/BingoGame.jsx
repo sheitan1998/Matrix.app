@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import CasinoWinEffect from "./CasinoWinEffect";
+import { casinoPlaceBet } from "@/hooks/useCasinoJackpot";
 
 function generateCard() {
   const cols = [
@@ -22,7 +23,7 @@ function generateCard() {
 
 const BALL_COLORS = ["#e53e3e","#dd6b20","#d69e2e","#38a169","#3182ce","#805ad5","#d53f8c"];
 
-export default function BingoGame({ balance, setBalance, accentColor = "#ffd700", jackpot = 0, winJackpot }) {
+export default function BingoGame({ balance, setBalance, accentColor = "#ffd700", jackpot = 0 }) {
   const [card, setCard] = useState(generateCard());
   const [marked, setMarked] = useState(new Set());
   const [calledBalls, setCalledBalls] = useState([]);
@@ -35,6 +36,9 @@ export default function BingoGame({ balance, setBalance, accentColor = "#ffd700"
   const [showLast, setShowLast] = useState(false);
   const intervalRef = useRef(null);
   const stakeRef = useRef(0);
+  const ballOrderRef = useRef([]);
+  const serverResultRef = useRef(null);
+  const wonRef = useRef(false);
 
   const allNums = new Set(card.flat());
 
@@ -56,31 +60,71 @@ export default function BingoGame({ balance, setBalance, accentColor = "#ffd700"
     return false;
   };
 
-  const start = () => {
+  const start = async () => {
     const stake = parseInt(amount);
     if (!stake || stake <= 0 || stake > balance) { toast.error("Mise invalide"); return; }
+
+    let serverResult;
+    try {
+      serverResult = await casinoPlaceBet("bingo", stake);
+    } catch { toast.error("Erreur de connexion"); return; }
+    if (serverResult.error) { toast.error(serverResult.error); return; }
+
     stakeRef.current = stake;
+    serverResultRef.current = serverResult;
+    wonRef.current = false;
     setBalance((b) => b - stake);
-    setCard(generateCard());
+
+    const newCard = generateCard();
+    setCard(newCard);
     setMarked(new Set());
     setCalledBalls([]);
     setWon(false);
     setRunning(true);
+
+    // Pre-generate ball order based on server outcome
+    const cardNums = new Set(newCard.flat());
+    const nonCardNums = [];
+    for (let i = 1; i <= 75; i++) { if (!cardNums.has(i)) nonCardNums.push(i); }
+    nonCardNums.sort(() => Math.random() - 0.5);
+
+    let ballOrder;
+    if (serverResult.win) {
+      // Win: call ~10 fillers, then the 4 numbers of middle row (row 2 has free center)
+      const winLine = [newCard[0][2], newCard[1][2], newCard[3][2], newCard[4][2]];
+      const filler = nonCardNums.slice(0, 10);
+      ballOrder = [...filler, ...winLine];
+      const used = new Set(ballOrder);
+      const rest = [];
+      for (let i = 1; i <= 75; i++) { if (!used.has(i)) rest.push(i); }
+      rest.sort(() => Math.random() - 0.5);
+      ballOrder = [...ballOrder, ...rest];
+    } else {
+      // Lose: call 30 non-card numbers — no bingo possible
+      ballOrder = nonCardNums.slice(0, 30);
+    }
+    ballOrderRef.current = ballOrder;
   };
 
   useEffect(() => {
     if (!running) return;
-    const called = new Set();
+    let ballIdx = 0;
+    const ballOrder = ballOrderRef.current;
 
     intervalRef.current = setInterval(() => {
-      let ball;
-      do { ball = Math.floor(Math.random() * 75) + 1; } while (called.has(ball));
-      called.add(ball);
-      setCalledBalls((prev) => {
-        const next = [...prev, ball];
-        if (next.length >= 75) { clearInterval(intervalRef.current); setRunning(false); }
-        return next;
-      });
+      if (ballIdx >= ballOrder.length) {
+        clearInterval(intervalRef.current);
+        setRunning(false);
+        if (!wonRef.current) {
+          const sr = serverResultRef.current;
+          setBalance(sr.newBalance);
+          toast.error("Pas de bingo ! Réessayez !");
+        }
+        return;
+      }
+      const ball = ballOrder[ballIdx];
+      ballIdx++;
+      setCalledBalls((prev) => [...prev, ball]);
       setLastBall(ball);
       setShowLast(true);
       setTimeout(() => setShowLast(false), 800);
@@ -92,13 +136,14 @@ export default function BingoGame({ balance, setBalance, accentColor = "#ffd700"
           clearInterval(intervalRef.current);
           setRunning(false);
           setWon(true);
-          // 0.0001% jackpot chance on bingo
-          const isJackpot = Math.random() < 0.000001 && winJackpot && jackpot > 0;
-          const prize = isJackpot ? winJackpot() : stakeRef.current * 10;
-          setBalance((b) => b + prize);
-          setWinData({ amount: prize, multiplier: isJackpot ? Math.round(prize / stakeRef.current) : 10, isJackpot });
+          wonRef.current = true;
+          const sr = serverResultRef.current;
+          setBalance(sr.newBalance);
+          const prize = sr.payout || 0;
+          const isJp = sr.jackpot;
+          setWinData({ amount: prize, multiplier: Math.round(prize / stakeRef.current) || 10, isJackpot: isJp });
           setShowWin(true);
-          toast.success(isJackpot ? `🎰 JACKPOT BINGO ! +${prize.toLocaleString()} 🪙` : `🎉 BINGO ! +${prize} 🪙`);
+          toast.success(isJp ? `🎰 JACKPOT BINGO ! +${prize.toLocaleString()} 🪙` : `🎉 BINGO ! +${prize} 🪙`);
         }
         return next;
       });

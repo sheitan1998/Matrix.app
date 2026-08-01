@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Trophy, Zap, TrendingUp, Crown, Star, Target, Flame, Upload } from "lucide-react";
+import { ArrowLeft, Trophy, Zap, TrendingUp, Crown, Star, Target, Flame, Upload, Home } from "lucide-react";
 import { useWallet } from "@/hooks/useWallet";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
 
 const BADGES = [
   { id: "first_spin",   label: "Premier Spin",    emoji: "🎰", desc: "Joue pour la premiere fois",      threshold: 0,       },
@@ -123,10 +124,14 @@ export default function CasinoProfile({ onBack }) {
           })}
         </div>
         <div className="px-4 py-3 flex items-center gap-3">
-          <button onClick={onBack} className="w-9 h-9 rounded-xl flex items-center justify-center"
+          <button onClick={onBack} className="w-9 h-9 rounded-xl flex items-center justify-center tap-sm"
             style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}>
             <ArrowLeft className="w-4 h-4 text-white/60" />
           </button>
+          <Link to="/" className="w-9 h-9 rounded-xl flex items-center justify-center tap-sm"
+            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}>
+            <Home className="w-4 h-4 text-white/60" />
+          </Link>
           <span className="font-black text-white text-base tracking-wide">MON PROFIL CASINO</span>
           <span className="ml-auto text-xl" style={{ filter: `drop-shadow(0 0 6px ${rank.color})` }}>{rank.emoji}</span>
         </div>

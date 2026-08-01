@@ -1,11 +1,42 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import CasinoWinEffect from "./CasinoWinEffect";
+import { casinoPlaceBet } from "@/hooks/useCasinoJackpot";
 
 const SUITS = ["♠","♥","♦","♣"];
 const VALUES = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+
+// Generate a biased deck so the card outcome matches the server-determined result.
+// pop() order: player1, dealer1, player2, dealer2, hitCard, ...
+function makeBiasedDeck(isWin) {
+  const biased = isWin
+    ? [
+        { suit: "♠", value: "10" }, // player1
+        { suit: "♥", value: "10" }, // dealer1
+        { suit: "♦", value: "A" },  // player2 → 21 natural
+        { suit: "♣", value: "5" },  // dealer2 → 15, draws and busts/stands
+        { suit: "♠", value: "2" },  // hit card (unused — natural ends game)
+      ]
+    : [
+        { suit: "♠", value: "10" }, // player1
+        { suit: "♥", value: "10" }, // dealer1
+        { suit: "♦", value: "6" },  // player2 → 16
+        { suit: "♣", value: "10" }, // dealer2 → 20 stands
+        { suit: "♠", value: "K" },  // hit → 10 value → bust 26
+      ];
+  const usedKeys = new Set(biased.map(c => c.suit + c.value));
+  const rest = [];
+  for (const s of SUITS) for (const v of VALUES) {
+    if (!usedKeys.has(s + v)) rest.push({ suit: s, value: v });
+  }
+  rest.sort(() => Math.random() - 0.5);
+  // Deck ends with biased cards in reverse so pop() gives them in order
+  const deck = [...rest];
+  for (let i = biased.length - 1; i >= 0; i--) deck.push(biased[i]);
+  return deck;
+}
 
 function newDeck() {
   const deck = [];
@@ -71,7 +102,7 @@ function Card({ card, hidden, delay = 0 }) {
 
 const BETS_PRESET = [100, 250, 500, 1000, 2500];
 
-export default function BlackjackGame({ balance, setBalance, accentColor = "#ffd700", jackpot = 0, winJackpot }) {
+export default function BlackjackGame({ balance, setBalance, accentColor = "#ffd700", jackpot = 0 }) {
   const [deck, setDeck] = useState([]);
   const [playerHand, setPlayerHand] = useState([]);
   const [dealerHand, setDealerHand] = useState([]);
@@ -83,17 +114,28 @@ export default function BlackjackGame({ balance, setBalance, accentColor = "#ffd
   const [chipAnim, setChipAnim] = useState(false);
   const [showWin, setShowWin] = useState(false);
   const [winData, setWinData] = useState(null);
+  const serverResultRef = useRef(null);
 
-  const deal = () => {
+  const deal = async () => {
     if (bet <= 0 || bet > balance) { toast.error("Mise invalide"); return; }
+
+    let serverResult;
+    try {
+      serverResult = await casinoPlaceBet("blackjack", bet);
+    } catch { toast.error("Erreur de connexion"); return; }
+    if (serverResult.error) { toast.error(serverResult.error); return; }
+
+    serverResultRef.current = serverResult;
     setChipAnim(true);
     setTimeout(() => setChipAnim(false), 600);
-    const d = newDeck();
+
+    const d = makeBiasedDeck(serverResult.win);
     const p = [d.pop(), d.pop()];
     const dl = [d.pop(), d.pop()];
     setDeck(d); setPlayerHand(p); setDealerHand(dl); setStake(bet);
     setHideDealer(true); setMessage(""); setPhase("playing");
-    setBalance(b => b - bet);
+    // Show balance after bet deduction (before payout)
+    setBalance(serverResult.newBalance - (serverResult.payout || 0));
     if (handTotal(p) === 21) endGame(p, dl, d, true, bet);
   };
 
@@ -104,32 +146,31 @@ export default function BlackjackGame({ balance, setBalance, accentColor = "#ffd
     while (handTotal(dl) < 17) { dl.push(dk.pop()); }
     setDealerHand(dl);
     const pt = natural ? 21 : handTotal(ph);
-    const dt = handTotal(dl);
-    let gain = 0, msg = "";
-    if (pt > 21) { gain = 0; msg = "💸 Bust ! Perdu"; }
-    else if (dt > 21 || pt > dt) {
-      gain = natural ? Math.round(s * 2.5) : s * 2;
+
+    const sr = serverResultRef.current;
+    if (!sr) return;
+
+    const gain = sr.payout || 0;
+    const jpHit = sr.jackpot;
+    let msg;
+    if (jpHit) {
+      msg = `🎰 JACKPOT ! +${gain.toLocaleString()} 🪙`;
+    } else if (sr.win) {
       msg = natural ? `🃏 BLACKJACK ! +${gain} 🪙` : `🎉 Gagné ! +${gain} 🪙`;
+    } else {
+      msg = pt > 21 ? `💸 Bust ! -${s} 🪙` : `💸 Croupier gagne. -${s} 🪙`;
     }
-    else if (pt === dt) { gain = s; msg = "🤝 Égalité — remboursé"; }
-    else { gain = 0; msg = `💸 Croupier gagne. -${s} 🪙`; }
-    // 0.0001% jackpot chance on win
-    let isJackpotWin = false;
-    if (gain > s && Math.random() < 0.000001 && winJackpot && jackpot > 0) {
-      const jpAmount = winJackpot();
-      isJackpotWin = true;
-      gain = jpAmount;
-      msg = `🎰 JACKPOT ! +${jpAmount.toLocaleString()} 🪙`;
-    }
-    if (gain > 0) setBalance(b => b + gain);
+
+    setBalance(sr.newBalance);
     setMessage(msg);
     setPhase("done");
-    if (gain > s || isJackpotWin) {
-      setWinData({ amount: gain, multiplier: Math.round(gain / s), isJackpot: isJackpotWin });
+    if (gain > 0) {
+      setWinData({ amount: gain, multiplier: Math.round(gain / s) || 1, isJackpot: jpHit });
       setShowWin(true);
       toast.success(msg);
-    } else if (gain === s) { setWinData({ amount: s, multiplier: 1 }); setShowWin(true); toast.success(msg); }
-    else if (gain === 0) toast.error(msg);
+    } else {
+      toast.error(msg);
+    }
   };
 
   const hit = () => {

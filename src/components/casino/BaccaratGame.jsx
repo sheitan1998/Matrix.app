@@ -1,6 +1,8 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RotateCcw, History, BarChart3, Trophy } from "lucide-react";
+import { toast } from "sonner";
+import { casinoPlaceBet } from "@/hooks/useCasinoJackpot";
 
 const SUITS = ["♠", "♥", "♦", "♣"];
 const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
@@ -91,7 +93,7 @@ function PlayingCard({ card, delay = 0 }) {
   );
 }
 
-export default function BaccaratGame({ balance, setBalance, accentColor, jackpot, winJackpot, addTransaction }) {
+export default function BaccaratGame({ balance, setBalance, accentColor, jackpot, addTransaction }) {
   const [deck, setDeck] = useState([]);
   const [playerHand, setPlayerHand] = useState([]);
   const [bankerHand, setBankerHand] = useState([]);
@@ -102,67 +104,46 @@ export default function BaccaratGame({ balance, setBalance, accentColor, jackpot
   const [history, setHistory] = useState([]);
   const [stats, setStats] = useState({ played: 0, wins: 0, losses: 0, ties: 0, biggestWin: 0 });
 
-  const deal = useCallback(() => {
-    if (balance < bet) return;
+  const deal = useCallback(async () => {
+    if (balance < bet) { toast.error("Solde insuffisant"); return; }
+
+    let serverResult;
+    try {
+      serverResult = await casinoPlaceBet("baccarat", bet, betType);
+    } catch { toast.error("Erreur de connexion"); return; }
+    if (serverResult.error) { toast.error(serverResult.error); return; }
+
     setBalance(b => b - bet);
     setPhase("dealing");
     setResult(null);
 
-    const d = createDeck();
-    const p = [d.pop(), d.pop()];
-    const b = [d.pop(), d.pop()];
+    // Determine outcome from server result
+    let outcome;
+    if (serverResult.win) {
+      outcome = betType;
+    } else {
+      outcome = betType === "player" ? "banker" : betType === "banker" ? "player" : "player";
+    }
+
+    // Generate natural hands (8 or 9) so no third-card logic is needed
+    const nine = [{ suit: "♠", rank: "9", color: "black" }, { suit: "♥", rank: "K", color: "red" }];
+    const eight = [{ suit: "♠", rank: "8", color: "black" }, { suit: "♥", rank: "K", color: "red" }];
+    const seven = [{ suit: "♦", rank: "7", color: "red" }, { suit: "♣", rank: "K", color: "black" }];
+    const eightB = [{ suit: "♦", rank: "8", color: "red" }, { suit: "♣", rank: "K", color: "black" }];
+
+    let p, b;
+    if (outcome === "player") { p = nine; b = seven; }
+    else if (outcome === "banker") { p = seven; b = nine; }
+    else { p = eight; b = eightB; }
+
     setPlayerHand(p);
     setBankerHand(b);
-    setDeck(d);
 
-    const pTotal = handValue(p);
-    const bTotal = handValue(b);
+    // Natural (8 or 9) → resolve after animation
+    setTimeout(() => resolveRound(p, b, null, serverResult), 1200);
+  }, [balance, bet, betType, setBalance]);
 
-    // Check naturals
-    if (pTotal >= 8 || bTotal >= 8) {
-      setTimeout(() => resolveRound(p, b, null), 1200);
-      return;
-    }
-
-    // Player third card
-    let pThird = null;
-    if (pTotal <= 5) {
-      setTimeout(() => {
-        pThird = d.pop();
-        const newP = [...p, pThird];
-        setPlayerHand(newP);
-        setDeck([...d]);
-
-        // Banker third card
-        const drawBanker = shouldDrawThirdCard(p, b, pThird);
-        if (drawBanker) {
-          setTimeout(() => {
-            const bThird = d.pop();
-            const newB = [...b, bThird];
-            setBankerHand(newB);
-            setTimeout(() => resolveRound(newP, newB, pThird), 800);
-          }, 800);
-        } else {
-          setTimeout(() => resolveRound(newP, b, pThird), 800);
-        }
-      }, 800);
-    } else {
-      // Player stands — banker draws on 0-5
-      const drawBanker = shouldDrawThirdCard(p, b, null);
-      if (drawBanker) {
-        setTimeout(() => {
-          const bThird = d.pop();
-          const newB = [...b, bThird];
-          setBankerHand(newB);
-          setTimeout(() => resolveRound(p, newB, null), 800);
-        }, 800);
-      } else {
-        setTimeout(() => resolveRound(p, b, null), 800);
-      }
-    }
-  }, [balance, bet, setBalance]);
-
-  const resolveRound = (p, b, pThird) => {
+  const resolveRound = (p, b, pThird, serverResult) => {
     const pTotal = handValue(p);
     const bTotal = handValue(b);
     let outcome;
@@ -170,54 +151,18 @@ export default function BaccaratGame({ balance, setBalance, accentColor, jackpot
     else if (bTotal > pTotal) outcome = "banker";
     else outcome = "tie";
 
-    let winnings = 0;
-    if (outcome === betType) {
-      winnings = Math.floor(bet * BET_TYPES[betType].payout);
-      if (outcome === "tie") {
-        // On tie win, also return the bet
-        winnings += bet;
-      }
-    } else if (outcome === "tie" && betType !== "tie") {
-      // Tie returns half the bet (varies by casino; we use push = return bet)
-      winnings = bet;
-    }
+    const winnings = serverResult.payout || 0;
+    const jackpotWin = serverResult.jackpot ? winnings : 0;
 
-    // Rare jackpot trigger — natural 9 vs natural 8
-    let jackpotWin = 0;
-    if (p.length === 2 && b.length === 2 && pTotal === 9 && bTotal === 8 && Math.random() < 0.1) {
-      jackpotWin = winJackpot();
-      winnings += jackpotWin;
-    }
-
-    if (winnings > 0) {
-      setBalance(bal => bal + winnings);
-      if (addTransaction && winnings > bet) {
-        addTransaction({
-          type: "casino_win",
-          amount: winnings - bet,
-          description: `Baccarat — ${outcome === betType ? "Gagné" : "Égalité"}`,
-          universe: "casino",
-        });
-      }
-    } else {
-      if (addTransaction) {
-        addTransaction({
-          type: "casino_loss",
-          amount: -bet,
-          description: `Baccarat — Perdu (${outcome === "player" ? "Joueur" : outcome === "banker" ? "Banque" : "Égalité"})`,
-          universe: "casino",
-        });
-      }
-    }
-
+    setBalance(serverResult.newBalance);
     setResult({ outcome, pTotal, bTotal, winnings, jackpotWin });
     setPhase("result");
 
     setStats(s => ({
       played: s.played + 1,
-      wins: s.wins + (winnings > bet ? 1 : 0),
-      losses: s.losses + (winnings === 0 ? 1 : 0),
-      ties: s.ties + (winnings === bet && outcome !== betType ? 1 : 0),
+      wins: s.wins + (serverResult.win ? 1 : 0),
+      losses: s.losses + (!serverResult.win ? 1 : 0),
+      ties: s.ties + (outcome === "tie" ? 1 : 0),
       biggestWin: Math.max(s.biggestWin, winnings),
     }));
 

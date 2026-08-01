@@ -2,7 +2,9 @@ import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { useWallet } from "@/hooks/useWallet";
-import { ArrowLeft, Trophy } from "lucide-react";
+import { ArrowLeft, Trophy, Home } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useCasinoJackpot, casinoGetBalance } from "@/hooks/useCasinoJackpot";
 
 import RouletteGame from "@/components/casino/RouletteGame";
 import SlotsGame from "@/components/casino/SlotsGame";
@@ -52,6 +54,17 @@ function useCasinoCoins() {
     const s = localStorage.getItem(CASINO_BALANCE_KEY);
     return s ? parseInt(s, 10) : 5000;
   });
+
+  // Sync from server on mount
+  useEffect(() => {
+    casinoGetBalance()
+      .then(serverBalance => {
+        setCoinsState(serverBalance);
+        localStorage.setItem(CASINO_BALANCE_KEY, String(serverBalance));
+      })
+      .catch(() => {});
+  }, []);
+
   const setCoins = useCallback((valOrFn) => {
     setCoinsState(prev => {
       const next = typeof valOrFn === "function" ? valOrFn(prev) : valOrFn;
@@ -60,59 +73,6 @@ function useCasinoCoins() {
     });
   }, []);
   return [coins, setCoins];
-}
-
-function useJackpot() {
-  const [jackpot, setJackpotState] = useState(1000000);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    base44.entities.ServerMessage.filter({ server_id: "casino_jackpot", channel_id: "global" }, "-created_date", 1)
-      .then(msgs => {
-        if (msgs.length > 0) {
-          try { setJackpotState(JSON.parse(msgs[0].content).amount || 1000000); }
-          catch { setJackpotState(1000000); }
-        } else {
-          base44.entities.ServerMessage.create({
-            server_id: "casino_jackpot", channel_id: "global",
-            author_email: "system", author_name: "System",
-            content: JSON.stringify({ amount: 1000000 }), type: "system"
-          }).catch(() => {});
-        }
-        setLoaded(true);
-      }).catch(() => setLoaded(true));
-  }, []);
-
-  const saveJackpot = useCallback(async (amount) => {
-    const msgs = await base44.entities.ServerMessage.filter({ server_id: "casino_jackpot", channel_id: "global" }, "-created_date", 1);
-    if (msgs.length > 0) await base44.entities.ServerMessage.update(msgs[0].id, { content: JSON.stringify({ amount }) });
-    else await base44.entities.ServerMessage.create({
-      server_id: "casino_jackpot", channel_id: "global",
-      author_email: "system", author_name: "System",
-      content: JSON.stringify({ amount }), type: "system"
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!loaded) return;
-    const t = setInterval(() => setJackpotState(j => j + Math.floor(Math.random() * 500 + 100)), 500);
-    return () => clearInterval(t);
-  }, [loaded]);
-
-  useEffect(() => {
-    if (!loaded) return;
-    const t = setInterval(() => { setJackpotState(j => { saveJackpot(j).catch(() => {}); return j; }); }, 5000);
-    return () => clearInterval(t);
-  }, [loaded, saveJackpot]);
-
-  const winJackpot = useCallback(() => {
-    let amount = 0;
-    setJackpotState(j => { amount = j; return 0; });
-    saveJackpot(0).catch(() => {});
-    return amount;
-  }, [saveJackpot]);
-
-  return [jackpot, winJackpot];
 }
 
 export default function Casino() {
@@ -127,7 +87,7 @@ export default function Casino() {
   const [category, setCategory] = useState("all");
   const { addTransaction } = useWallet();
   const [casinoCoins, setCasinoCoins] = useCasinoCoins();
-  const [jackpot, winJackpot] = useJackpot();
+  const { jackpot } = useCasinoJackpot();
   const [settings, setSettings] = useState({ bgVariant: "space", accent: "#a855f7", glow: true, particles: true, animations: true });
 
   const vipTier = [...VIP_TIERS].reverse().find(t => casinoCoins >= t.min) || VIP_TIERS[0];
@@ -148,10 +108,14 @@ export default function Casino() {
           {/* Game header */}
           <div className="sticky top-0 z-40 flex items-center gap-3 px-4 py-3"
             style={{ background: "rgba(8,8,12,0.85)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-            <button onClick={() => setScreen("home")} className="flex items-center gap-2 text-white/60 hover:text-white transition">
+            <button onClick={() => setScreen("home")} className="flex items-center gap-2 text-white/60 hover:text-white transition tap-sm">
               <ArrowLeft className="w-4 h-4" />
               <span className="text-xs font-bold hidden sm:inline">Retour</span>
             </button>
+            <Link to="/" className="flex items-center gap-2 text-white/60 hover:text-white transition ml-1 px-2 py-1 rounded-lg hover:bg-white/5 tap-sm">
+              <Home className="w-4 h-4" />
+              <span className="text-xs font-bold hidden sm:inline">Hub</span>
+            </Link>
             <div className="flex items-center gap-2">
               <span className="text-lg" style={{ filter: `drop-shadow(0 0 6px ${meta.color})` }}>{meta.emoji}</span>
               <span className="font-black text-sm tracking-wider" style={{ color: meta.color, textShadow: `0 0 10px ${meta.color}80` }}>
@@ -183,13 +147,13 @@ export default function Casino() {
                 className="rounded-3xl overflow-hidden"
                 style={{ background: "linear-gradient(160deg, rgba(14,0,30,0.6), rgba(18,0,40,0.4), rgba(14,0,30,0.6))", border: `1px solid ${meta.color}20`, boxShadow: `0 0 40px rgba(0,0,0,0.5)` }}>
                 <div className="p-4 sm:p-6">
-                  {screen === "slots" && <SlotsGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} addTransaction={addTransaction} jackpot={jackpot} winJackpot={winJackpot} />}
-                  {screen === "blackjack" && <BlackjackGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} winJackpot={winJackpot} />}
-                  {screen === "roulette" && <RouletteGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} winJackpot={winJackpot} />}
-                  {screen === "bingo" && <BingoGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} winJackpot={winJackpot} />}
+                  {screen === "slots" && <SlotsGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} addTransaction={addTransaction} jackpot={jackpot} />}
+                  {screen === "blackjack" && <BlackjackGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} />}
+                  {screen === "roulette" && <RouletteGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} />}
+                  {screen === "bingo" && <BingoGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} />}
                   {screen === "lotto" && <LottoGame balance={casinoCoins} setBalance={setCasinoCoins} addTransaction={addTransaction} />}
                   {screen === "poker" && <PokerGame balance={casinoCoins} setBalance={setCasinoCoins} addTransaction={addTransaction} />}
-                  {screen === "baccarat" && <BaccaratGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} winJackpot={winJackpot} addTransaction={addTransaction} />}
+                  {screen === "baccarat" && <BaccaratGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} addTransaction={addTransaction} />}
                   {screen === "leaderboard" && <CasinoLeaderboard accentColor={meta.color} currentUserBalance={casinoCoins} />}
                 </div>
               </motion.div>

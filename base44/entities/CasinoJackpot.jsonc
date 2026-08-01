@@ -1,0 +1,65 @@
+{
+  "name": "CasinoJackpot",
+  "type": "object",
+  "properties": {
+    "amount": {
+      "type": "number",
+      "default": 1000000,
+      "description": "Committed jackpot amount (base + contributions + time-growth up to last_updated)"
+    },
+    "base_amount": {
+      "type": "number",
+      "default": 1000000
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "total_contributions": {
+      "type": "number",
+      "default": 0
+    },
+    "total_bets": {
+      "type": "number",
+      "default": 0
+    },
+    "win_count": {
+      "type": "number",
+      "default": 0
+    },
+    "last_winner_email": {
+      "type": "string"
+    },
+    "last_winner_name": {
+      "type": "string"
+    },
+    "last_winner_amount": {
+      "type": "number"
+    },
+    "last_won_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "amount"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {},
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

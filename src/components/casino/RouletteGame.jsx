@@ -5,9 +5,41 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import CasinoWinEffect from "./CasinoWinEffect";
+import { casinoPlaceBet } from "@/hooks/useCasinoJackpot";
 
 const RED_NUMBERS = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
 const WHEEL_NUMBERS = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
+
+function matchesBetType(num, betType) {
+  const isRed = RED_NUMBERS.includes(num);
+  if (betType === "red" && isRed) return true;
+  if (betType === "black" && !isRed && num !== 0) return true;
+  if (betType === "even" && num !== 0 && num % 2 === 0) return true;
+  if (betType === "odd" && num % 2 !== 0) return true;
+  if (betType === "1-18" && num >= 1 && num <= 18) return true;
+  if (betType === "19-36" && num >= 19 && num <= 36) return true;
+  return false;
+}
+
+function generateRouletteNumber(isWin, betType) {
+  if (isWin) {
+    switch (betType) {
+      case "red": return RED_NUMBERS[Math.floor(Math.random() * RED_NUMBERS.length)];
+      case "black": {
+        const blackNums = Array.from({ length: 37 }, (_, i) => i).filter(n => n !== 0 && !RED_NUMBERS.includes(n));
+        return blackNums[Math.floor(Math.random() * blackNums.length)];
+      }
+      case "even": return 2 * (1 + Math.floor(Math.random() * 18));
+      case "odd": return 1 + 2 * Math.floor(Math.random() * 18);
+      case "1-18": return 1 + Math.floor(Math.random() * 18);
+      case "19-36": return 19 + Math.floor(Math.random() * 18);
+      default: return Math.floor(Math.random() * 37);
+    }
+  }
+  let num, attempts = 0;
+  do { num = Math.floor(Math.random() * 37); attempts++; } while (matchesBetType(num, betType) && attempts < 50);
+  return num;
+}
 
 const BETS = [
   { key: "red", label: "🔴 Rouge", payout: 2, color: "#c0392b" },
@@ -18,7 +50,7 @@ const BETS = [
   { key: "19-36", label: "19–36", payout: 2, color: "#d97706" },
 ];
 
-export default function RouletteGame({ balance, setBalance, accentColor = "hsl(45 100% 55%)", jackpot = 0, winJackpot }) {
+export default function RouletteGame({ balance, setBalance, accentColor = "hsl(45 100% 55%)", jackpot = 0 }) {
   const [bet, setBet] = useState("red");
   const [amount, setAmount] = useState("50");
   const [result, setResult] = useState(null);
@@ -193,14 +225,22 @@ export default function RouletteGame({ balance, setBalance, accentColor = "hsl(4
     }
   };
 
-  const spin = () => {
+  const spin = async () => {
     const stake = parseInt(amount);
     if (!stake || stake <= 0 || stake > balance) { toast.error("Mise invalide"); return; }
+
+    let serverResult;
+    try {
+      serverResult = await casinoPlaceBet("roulette", stake, bet);
+    } catch { toast.error("Erreur de connexion"); return; }
+    if (serverResult.error) { toast.error(serverResult.error); return; }
+
+    setBalance(b => b - stake);
     setSpinning(true);
     setBallVisible(true);
     setResult(null);
 
-    const num = Math.floor(Math.random() * 37);
+    const num = generateRouletteNumber(serverResult.win, bet);
     const numIdx = WHEEL_NUMBERS.indexOf(num);
     const sliceAngle = (Math.PI * 2) / 37;
     const currentAngle = stateRef.current.angle || 0;
@@ -215,34 +255,25 @@ export default function RouletteGame({ balance, setBalance, accentColor = "hsl(4
     setTimeout(() => {
       const isRed = RED_NUMBERS.includes(num);
       const color = num === 0 ? "green" : isRed ? "red" : "black";
-      let win = false;
-      if (bet === "red" && color === "red") win = true;
-      if (bet === "black" && color === "black") win = true;
-      if (bet === "even" && num !== 0 && num % 2 === 0) win = true;
-      if (bet === "odd" && num % 2 !== 0) win = true;
-      if (bet === "1-18" && num >= 1 && num <= 18) win = true;
-      if (bet === "19-36" && num >= 19 && num <= 36) win = true;
+      const win = serverResult.win;
+      const winAmount = serverResult.payout || 0;
+      const jpHit = serverResult.jackpot;
 
-      // 0.0001% jackpot chance on any spin
-      const isJackpot = Math.random() < 0.000001;
-      let gain;
-      if (isJackpot && winJackpot && jackpot > 0) {
-        const jpAmount = winJackpot();
-        gain = jpAmount;
-        setBalance((b) => b + jpAmount);
-        setResult({ num, color, win: true, gain: jpAmount, jackpot: true });
-        setWinData({ amount: jpAmount, multiplier: Math.round(jpAmount / stake), isJackpot: true });
+      setBalance(serverResult.newBalance);
+
+      if (jpHit) {
+        setResult({ num, color, win: true, gain: winAmount, jackpot: true });
+        setWinData({ amount: winAmount, multiplier: Math.round(winAmount / stake), isJackpot: true });
         setShowWin(true);
-        toast.success(`🎰 JACKPOT ! ${num} — +${jpAmount.toLocaleString()} 🪙`);
+        toast.success(`🎰 JACKPOT ! ${num} — +${winAmount.toLocaleString()} 🪙`);
+      } else if (win) {
+        setResult({ num, color, win: true, gain: winAmount });
+        setWinData({ amount: winAmount, multiplier: 2 });
+        setShowWin(true);
+        toast.success(`🎉 ${num} — +${winAmount} 🪙`);
       } else {
-        gain = win ? stake : -stake;
-        setBalance((b) => b + gain);
-        setResult({ num, color, win, gain });
-        if (win) {
-          setWinData({ amount: stake, multiplier: 2 });
-          setShowWin(true);
-          toast.success(`🎉 ${num} — +${stake} 🪙`);
-        } else toast.error(`💸 ${num} — -${stake} 🪙`);
+        setResult({ num, color, win: false, gain: -stake });
+        toast.error(`💸 ${num} — -${stake} 🪙`);
       }
     }, duration);
   };
