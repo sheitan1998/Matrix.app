@@ -19,7 +19,7 @@ const LEFT_CARDS = [
 ];
 
 const RIGHT_TOP = [
-  { path: "/video-studio", label: "Outils", desc: "Accède à des outils utiles pour t'aider au quotidien.", icon: Wrench },
+  { path: "/outils", label: "Outils", desc: "Accède à des outils utiles pour t'aider au quotidien.", icon: Wrench },
   { path: "/community", label: "Sondage", desc: "Participe aux sondages et donne ton avis.", icon: BarChart3 },
 ];
 
@@ -27,14 +27,6 @@ const RIGHT_FULL = [
   { path: "/video-studio", label: "Montage Videos", desc: "Édite, assemble, partage. Crée des vidéos incroyables.", icon: Clapperboard },
   { path: "/progression", label: "Niveaux/Progressions", desc: "Monte en niveau, débloque des badges et des avantages.", icon: TrendingUp },
 ];
-
-// Pre-generate star positions so they don't jump on re-render
-const STARS = Array.from({ length: 60 }).map(() => ({
-  size: Math.random() > 0.8 ? 2 : 1,
-  top: Math.random() * 100,
-  left: Math.random() * 100,
-  opacity: Math.random() * 0.5 + 0.1,
-}));
 
 export default function Landing() {
   const nav = useNavigate();
@@ -45,15 +37,10 @@ export default function Landing() {
   }, []);
 
   return (
-    <div className="min-h-screen relative overflow-y-auto overflow-x-hidden" style={{ backgroundColor: "#050508" }}>
-      {/* Space background */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full" style={{ background: "radial-gradient(circle, rgba(168,85,247,0.08), transparent 70%)" }} />
-        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] rounded-full" style={{ background: "radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)" }} />
-        {STARS.map((s, i) => (
-          <div key={i} className="absolute rounded-full bg-white" style={{ width: s.size, height: s.size, top: `${s.top}%`, left: `${s.left}%`, opacity: s.opacity }} />
-        ))}
-      </div>
+    <div className="min-h-screen relative overflow-y-auto overflow-x-hidden" style={{ backgroundColor: "#0a050f" }}>
+      {/* Space background image */}
+      <div className="fixed inset-0 pointer-events-none" style={{ backgroundImage: "url(https://media.base44.com/images/public/69e14a987a927963a9924d5a/891f5968b_Gemini_Generated_Image_vsevw4vsevw4vsev.png)", backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed" }} />
+      <div className="fixed inset-0 pointer-events-none" style={{ background: "rgba(10,5,15,0.5)" }} />
 
       <div className="relative z-10 min-h-screen flex flex-col px-4 sm:px-6 lg:px-10 py-4">
         {/* Header */}
