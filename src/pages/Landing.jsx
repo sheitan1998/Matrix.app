@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
+import AuthModal from "@/components/landing/AuthModal";
+import ProfileMenu from "@/components/landing/ProfileMenu";
 import {
   Youtube, Radio, MessageCircle, Cpu, Dices, Search, GraduationCap,
   Wrench, BarChart3, Clapperboard, TrendingUp,
@@ -31,10 +33,24 @@ const RIGHT_FULL = [
 export default function Landing() {
   const nav = useNavigate();
   const [user, setUser] = useState(null);
+  const [showAuth, setShowAuth] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
+
+  const handleProfileClick = () => {
+    if (user) {
+      setShowMenu(!showMenu);
+    } else {
+      setShowAuth(true);
+    }
+  };
+
+  const handleLogout = async () => {
+    await base44.auth.logout("/");
+  };
 
   return (
     <div className="min-h-screen relative overflow-y-auto overflow-x-hidden" style={{ backgroundColor: "#0a050f" }}>
@@ -59,17 +75,27 @@ export default function Landing() {
             <p className="text-[10px] md:text-xs tracking-[0.3em] uppercase text-white/40 mt-1.5 font-mono">Choisissez votre univers</p>
           </motion.div>
 
-          <motion.button
-            initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}
-            onClick={() => (user ? nav("/profile") : base44.auth.redirectToLogin())}
-            className="flex items-center gap-2 px-3 py-2 rounded-full tap-sm"
-            style={{ border: "1.5px solid rgba(168,85,247,0.4)", background: "rgba(168,85,247,0.05)" }}>
-            <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(168,85,247,0.2)" }}>
-              <User className="w-3.5 h-3.5" style={{ color: "#a855f7" }} />
-            </div>
-            <span className="text-xs font-bold text-white">{user?.pseudo || user?.full_name || user?.email?.split("@")[0] || "Se connecter"}</span>
-            <ChevronDown className="w-3.5 h-3.5 text-white/40" />
-          </motion.button>
+          <div className="relative">
+            <motion.button
+              initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}
+              onClick={handleProfileClick}
+              className="flex items-center gap-2 px-3 py-2 rounded-full tap-sm"
+              style={{ border: "1.5px solid rgba(168,85,247,0.4)", background: "rgba(168,85,247,0.05)" }}>
+              <div className="w-6 h-6 rounded-full flex items-center justify-center overflow-hidden" style={{ background: "rgba(168,85,247,0.2)" }}>
+                <User className="w-3.5 h-3.5" style={{ color: "#a855f7" }} />
+              </div>
+              <span className="text-xs font-bold text-white">{user?.pseudo || user?.full_name || user?.email?.split("@")[0] || "Se connecter"}</span>
+              <ChevronDown className="w-3.5 h-3.5 text-white/40" />
+            </motion.button>
+
+            <AnimatePresence>
+              {showMenu && user && (
+                <ProfileMenu user={user} onClose={() => setShowMenu(false)} onLogout={handleLogout} />
+              )}
+            </AnimatePresence>
+          </div>
+
+          <AuthModal open={showAuth} onClose={() => setShowAuth(false)} />
         </header>
 
         {/* Main content */}
