@@ -1,14 +1,7 @@
-import React, { useState } from "react";
-import { ChevronDown, Plus, Minus, Gamepad2, Medal } from "lucide-react";
+import React from "react";
+import { Gamepad2, Users, Clock, ExternalLink, Plus } from "lucide-react";
 
-const GAMES = ["Valorant", "League of Legends", "Fortnite", "CS2", "Apex Legends", "Minecraft", "Rocket League", "Autre"];
-const RANKS = ["Fer", "Bronze", "Argent", "Or", "Platine", "Diamant", "Master", "Predator", "Peu importe"];
-
-export default function PlayerSearch({ onPostClick }) {
-  const [game, setGame] = useState("");
-  const [rank, setRank] = useState("");
-  const [availability, setAvailability] = useState(1);
-
+export default function PlayerSearch({ players, loading, onPostClick }) {
   return (
     <div
       className="rounded-2xl p-4 sm:p-5"
@@ -17,109 +10,106 @@ export default function PlayerSearch({ onPostClick }) {
         border: "1px solid rgba(138, 79, 255, 0.25)",
       }}
     >
-      <h2 className="text-xs font-black tracking-wider uppercase text-white mb-4">
-        Recherche Joueur
-      </h2>
-
-      <div className="space-y-3">
-        {/* Game dropdown */}
-        <div>
-          <label className="text-[9px] font-bold uppercase tracking-wider text-white/40 mb-1 flex items-center gap-1">
-            <Gamepad2 className="w-3 h-3" />
-            Sélectionner le jeu
-          </label>
-          <div className="relative">
-            <select
-              value={game}
-              onChange={(e) => setGame(e.target.value)}
-              className="w-full h-10 pl-3 pr-8 rounded-lg text-xs font-medium text-white appearance-none cursor-pointer outline-none"
-              style={{
-                background: "rgba(138, 79, 255, 0.05)",
-                border: "1px solid rgba(138, 79, 255, 0.2)",
-              }}
-            >
-              <option value="" style={{ background: "#12091c" }}>Tous les jeux</option>
-              {GAMES.map((g) => (
-                <option key={g} value={g} style={{ background: "#12091c" }}>{g}</option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
-          </div>
-        </div>
-
-        {/* Rank dropdown */}
-        <div>
-          <label className="text-[9px] font-bold uppercase tracking-wider text-white/40 mb-1 flex items-center gap-1">
-            <Medal className="w-3 h-3" />
-            Sélectionner le rank
-          </label>
-          <div className="relative">
-            <select
-              value={rank}
-              onChange={(e) => setRank(e.target.value)}
-              className="w-full h-10 pl-3 pr-8 rounded-lg text-xs font-medium text-white appearance-none cursor-pointer outline-none"
-              style={{
-                background: "rgba(138, 79, 255, 0.05)",
-                border: "1px solid rgba(138, 79, 255, 0.2)",
-              }}
-            >
-              <option value="" style={{ background: "#12091c" }}>Tous les ranks</option>
-              {RANKS.map((r) => (
-                <option key={r} value={r} style={{ background: "#12091c" }}>{r}</option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
-          </div>
-        </div>
-
-        {/* Availability slider */}
-        <div>
-          <label className="text-[9px] font-bold uppercase tracking-wider text-white/40 mb-1 block">
-            Sélectionner la disponibilité
-          </label>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setAvailability((v) => Math.max(1, v - 1))}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-white transition tap-sm"
-              style={{ background: "rgba(138, 79, 255, 0.1)", border: "1px solid rgba(138, 79, 255, 0.2)" }}
-            >
-              <Minus className="w-3.5 h-3.5" />
-            </button>
-            <div className="flex-1 relative h-8 rounded-lg overflow-hidden" style={{ background: "rgba(138, 79, 255, 0.05)", border: "1px solid rgba(138, 79, 255, 0.2)" }}>
-              <div
-                className="h-full transition-all duration-300"
-                style={{
-                  width: `${(availability / 5) * 100}%`,
-                  background: "linear-gradient(90deg, #8a4fff, #5b21b6)",
-                }}
-              />
-              <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">
-                {availability} / 5
-              </span>
-            </div>
-            <button
-              onClick={() => setAvailability((v) => Math.min(5, v + 1))}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-white transition tap-sm"
-              style={{ background: "rgba(138, 79, 255, 0.1)", border: "1px solid rgba(138, 79, 255, 0.2)" }}
-            >
-              <Plus className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Post button */}
-        <button
-          onClick={onPostClick}
-          className="w-full h-10 rounded-lg text-xs font-black tracking-wider uppercase transition tap-sm"
-          style={{
-            background: "linear-gradient(135deg, #8a4fff, #5b21b6)",
-            color: "#fff",
-            boxShadow: "0 0 15px rgba(138, 79, 255, 0.3)",
-          }}
-        >
-          Poster votre annonce
-        </button>
+      <div className="flex items-center gap-2 mb-4">
+        <Gamepad2 className="w-4 h-4" style={{ color: "#8a4fff" }} />
+        <h2 className="text-xs font-black tracking-wider uppercase text-white">
+          Recherche Joueur
+        </h2>
+        <span className="text-[9px] text-white/40 ml-auto">
+          {players.length} annonce{players.length > 1 ? "s" : ""}
+        </span>
       </div>
+
+      {loading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-16 rounded-lg animate-pulse"
+              style={{ background: "rgba(138, 79, 255, 0.05)" }}
+            />
+          ))}
+        </div>
+      ) : players.length === 0 ? (
+        <div className="text-center py-6">
+          <p className="text-xs text-white/40 mb-3">Aucune recherche de joueur publiée</p>
+        </div>
+      ) : (
+        <div className="space-y-2 max-h-[280px] overflow-y-auto scrollbar-thin pr-1">
+          {players.map((p) => (
+            <div
+              key={p.id}
+              className="rounded-lg p-3 transition"
+              style={{
+                background: "rgba(138, 79, 255, 0.05)",
+                border: "1px solid rgba(138, 79, 255, 0.1)",
+              }}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <div
+                  className="w-8 h-8 rounded-full overflow-hidden shrink-0 flex items-center justify-center text-[10px] font-black text-white"
+                  style={{ background: "linear-gradient(135deg, #8a4fff, #5b21b6)" }}
+                >
+                  {p.author_avatar ? (
+                    <img src={p.author_avatar} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    p.author_name?.[0]?.toUpperCase() || "J"
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-white truncate">
+                    {p.author_name || "Joueur"}
+                  </p>
+                  {p.game && (
+                    <p className="text-[9px] text-white/40">{p.game}</p>
+                  )}
+                </div>
+                {p.discord_link && (
+                  <a
+                    href={p.discord_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-6 h-6 rounded-md flex items-center justify-center transition tap-sm"
+                    style={{ background: "rgba(88, 101, 242, 0.15)", color: "#5865F2" }}
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+              </div>
+              <p className="text-[10px] text-white/50 leading-relaxed line-clamp-2 mb-2">
+                {p.description}
+              </p>
+              <div className="flex items-center gap-3 text-[9px] text-white/40">
+                {p.player_count_needed > 0 && (
+                  <span className="flex items-center gap-0.5">
+                    <Users className="w-2.5 h-2.5" />
+                    {p.player_count_needed} joueur{p.player_count_needed > 1 ? "s" : ""}
+                  </span>
+                )}
+                {p.availability_hours && (
+                  <span className="flex items-center gap-0.5">
+                    <Clock className="w-2.5 h-2.5" />
+                    {p.availability_hours}
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <button
+        onClick={onPostClick}
+        className="w-full mt-4 h-9 rounded-lg text-xs font-black tracking-wider uppercase transition flex items-center justify-center gap-1.5 tap-sm"
+        style={{
+          background: "linear-gradient(135deg, #8a4fff, #5b21b6)",
+          color: "#fff",
+          boxShadow: "0 0 15px rgba(138, 79, 255, 0.3)",
+        }}
+      >
+        <Plus className="w-3.5 h-3.5" />
+        Poster votre recherche
+      </button>
     </div>
   );
 }

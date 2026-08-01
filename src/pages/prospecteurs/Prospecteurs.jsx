@@ -15,6 +15,7 @@ export default function Prospecteurs() {
   const [ads, setAds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createType, setCreateType] = useState("server");
 
   const fetchData = useCallback(async () => {
     try {
@@ -50,7 +51,9 @@ export default function Prospecteurs() {
     return bScore - aScore;
   });
 
-  const topServers = sortedAds.slice(0, 10);
+  const serverAds = sortedAds.filter((a) => !a.type || a.type === "server");
+  const playerAds = sortedAds.filter((a) => a.type === "player");
+  const topServers = serverAds.slice(0, 10);
 
   const handleVote = (adId, newVotes) => {
     setAds((prev) =>
@@ -132,14 +135,18 @@ export default function Prospecteurs() {
           <TopServers
             servers={topServers}
             loading={loading}
-            onCreateClick={() => setShowCreateModal(true)}
+            onCreateClick={() => { setCreateType("server"); setShowCreateModal(true); }}
           />
-          <PlayerSearch onPostClick={() => setShowCreateModal(true)} />
+          <PlayerSearch
+            players={playerAds}
+            loading={loading}
+            onPostClick={() => { setCreateType("player"); setShowCreateModal(true); }}
+          />
         </div>
 
         {/* Lower section: server cards grid */}
         <ServerCardGrid
-          servers={sortedAds}
+          servers={serverAds}
           loading={loading}
           onVote={handleVote}
           onBoost={handleBoost}
@@ -149,6 +156,7 @@ export default function Prospecteurs() {
 
       {showCreateModal && (
         <CreateAdModal
+          initialType={createType}
           onClose={() => setShowCreateModal(false)}
           onSubmit={handleCreateAd}
         />

@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 const VOTE_COOLDOWN_MS = 2 * 60 * 60 * 1000; // 2 hours
-const BOOST_COST = 100; // 100 Trix per boost
+const BOOST_COST = 500; // 500 Trix minimum per boost
 const BOOST_DURATION_HOURS = 24;
 
 export default async function(req: Request): Promise<Response> {

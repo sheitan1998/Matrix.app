@@ -8,11 +8,11 @@
     },
     "description": {
       "type": "string",
-      "description": "Description du serveur"
+      "description": "Description"
     },
     "discord_link": {
       "type": "string",
-      "description": "Lien du serveur Discord"
+      "description": "Lien Discord"
     },
     "author_email": {
       "type": "string"
@@ -23,20 +23,55 @@
     "author_avatar": {
       "type": "string"
     },
+    "type": {
+      "type": "string",
+      "enum": [
+        "server",
+        "player"
+      ],
+      "default": "server",
+      "description": "Type d'annonce: serveur ou recherche joueur"
+    },
+    "profile_image": {
+      "type": "string",
+      "description": "Photo de profil de l'annonce"
+    },
+    "cover_image": {
+      "type": "string",
+      "description": "Image de couverture de l'annonce"
+    },
+    "category": {
+      "type": "string",
+      "default": "",
+      "description": "Categorie du serveur"
+    },
+    "additional_info": {
+      "type": "string",
+      "description": "Informations supplementaires du serveur"
+    },
     "game": {
       "type": "string",
       "default": "",
-      "description": "Jeu associ\u00e9 au serveur"
+      "description": "Jeu associe"
     },
     "rank_tier": {
       "type": "string",
       "default": "",
-      "description": "Rank/niveau recherch\u00e9"
+      "description": "Rank/niveau recherche"
     },
     "availability": {
       "type": "number",
       "default": 1,
-      "description": "Niveau de disponibilit\u00e9 (1-5)"
+      "description": "Niveau de disponibilite (1-5)"
+    },
+    "availability_hours": {
+      "type": "string",
+      "description": "Disponibilite en heures (ex: 18h-22h, 20h/semaine)"
+    },
+    "player_count_needed": {
+      "type": "number",
+      "default": 0,
+      "description": "Nombre de joueurs recherches"
     },
     "votes": {
       "type": "number",
@@ -69,7 +104,6 @@
   "required": [
     "title",
     "description",
-    "discord_link",
     "author_email"
   ],
   "rls": {

@@ -3,7 +3,7 @@ import { ArrowUp, Flame, ExternalLink, Users, Clock } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 
-const BOOST_COST = 100;
+const BOOST_COST = 500;
 
 export default function ServerCard({ server, onVote, onBoost, trixBalance }) {
   const [voteStatus, setVoteStatus] = useState({ canVote: true, remaining: null });
@@ -31,7 +31,6 @@ export default function ServerCard({ server, onVote, onBoost, trixBalance }) {
     return () => { active = false; };
   }, [server.id]);
 
-  // Countdown timer
   useEffect(() => {
     if (voteStatus.canVote) return;
     const timer = setInterval(() => {
@@ -97,10 +96,12 @@ export default function ServerCard({ server, onVote, onBoost, trixBalance }) {
 
   const fmt = (n) => String(n).padStart(2, "0");
   const initial = server.title?.[0]?.toUpperCase() || "S";
+  const hasCover = !!server.cover_image;
+  const hasProfile = !!server.profile_image || !!server.server_icon;
 
   return (
     <div
-      className="rounded-xl overflow-hidden transition group"
+      className="rounded-xl overflow-hidden transition group flex flex-col"
       style={{
         background: "rgba(18, 9, 28, 0.6)",
         border: server.is_boosted
@@ -108,36 +109,70 @@ export default function ServerCard({ server, onVote, onBoost, trixBalance }) {
           : "1px solid rgba(138, 79, 255, 0.15)",
       }}
     >
-      {/* Icon + boost badge */}
-      <div className="relative p-3 flex items-center gap-2.5">
+      {/* Cover image */}
+      {hasCover ? (
+        <div className="relative h-16 w-full overflow-hidden">
+          <img src={server.cover_image} alt="" className="w-full h-full object-cover" />
+          {server.is_boosted && (
+            <span
+              className="absolute top-1.5 right-1.5 text-[7px] font-black px-1.5 py-0.5 rounded flex items-center gap-0.5"
+              style={{ background: "rgba(251, 191, 36, 0.2)", color: "#fbbf24", backdropFilter: "blur(4px)" }}
+            >
+              <Flame className="w-2 h-2" />
+              BOOSTÉ
+            </span>
+          )}
+        </div>
+      ) : (
+        server.is_boosted && (
+          <div className="px-3 pt-2">
+            <span
+              className="text-[7px] font-black px-1.5 py-0.5 rounded inline-flex items-center gap-0.5"
+              style={{ background: "rgba(251, 191, 36, 0.15)", color: "#fbbf24" }}
+            >
+              <Flame className="w-2 h-2" />
+              BOOSTÉ
+            </span>
+          </div>
+        )
+      )}
+
+      {/* Profile + title */}
+      <div className="p-3 flex items-center gap-2.5">
         <div
-          className="w-10 h-10 rounded-lg flex items-center justify-center text-sm font-black text-white shrink-0"
+          className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center text-sm font-black text-white shrink-0"
           style={{ background: "linear-gradient(135deg, #8a4fff, #5b21b6)" }}
         >
-          {initial}
+          {hasProfile ? (
+            <img src={server.profile_image || server.server_icon} alt="" className="w-full h-full object-cover" />
+          ) : (
+            initial
+          )}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1">
-            <p className="text-xs font-bold text-white truncate">{server.title}</p>
-            {server.is_boosted && (
+          <p className="text-xs font-bold text-white truncate">{server.title}</p>
+          <div className="flex items-center gap-1 flex-wrap">
+            {server.game && (
+              <span className="text-[9px] text-white/40 truncate">{server.game}</span>
+            )}
+            {server.category && (
               <span
-                className="text-[7px] font-black px-1 py-0.5 rounded shrink-0 flex items-center gap-0.5"
-                style={{ background: "rgba(251, 191, 36, 0.15)", color: "#fbbf24" }}
+                className="text-[7px] font-bold px-1 py-0.5 rounded"
+                style={{ background: "rgba(138, 79, 255, 0.1)", color: "#8a4fff" }}
               >
-                <Flame className="w-2 h-2" />
-                BOOSTÉ
+                {server.category}
               </span>
             )}
           </div>
-          {server.game && (
-            <p className="text-[9px] text-white/40 truncate">{server.game}</p>
-          )}
         </div>
       </div>
 
       {/* Description */}
-      <div className="px-3 pb-2">
+      <div className="px-3 pb-2 flex-1">
         <p className="text-[10px] text-white/50 leading-relaxed line-clamp-2">{server.description}</p>
+        {server.additional_info && (
+          <p className="text-[9px] text-white/30 leading-relaxed line-clamp-1 mt-1">{server.additional_info}</p>
+        )}
       </div>
 
       {/* Stats */}
