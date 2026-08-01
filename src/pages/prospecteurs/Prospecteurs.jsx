@@ -89,18 +89,29 @@ export default function Prospecteurs() {
     <div
       className="min-h-screen relative"
       style={{
-        background: "linear-gradient(180deg, #12091c 0%, #1a0e2e 40%, #12091c 100%)",
+        background:
+          "linear-gradient(180deg, rgba(18,9,28,0.85) 0%, rgba(26,14,46,0.82) 40%, rgba(18,9,28,0.88) 100%)",
       }}
     >
-      {/* Background circuit lines */}
+      {/* Background image */}
       <div
-        className="fixed inset-0 pointer-events-none opacity-[0.07]"
+        className="fixed inset-0 pointer-events-none"
         style={{
-          backgroundImage: `
-            linear-gradient(rgba(138, 79, 255, 0.3) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(138, 79, 255, 0.3) 1px, transparent 1px)
-          `,
-          backgroundSize: "50px 50px",
+          backgroundImage:
+            "url(https://media.base44.com/images/public/69e14a987a927963a9924d5a/3215bd138_Gemini_Generated_Image_fjt2ptfjt2ptfjt2.png)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundAttachment: "fixed",
+          zIndex: 0,
+        }}
+      />
+      {/* Dark overlay for readability */}
+      <div
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(18,9,28,0.55) 0%, rgba(18,9,28,0.4) 50%, rgba(18,9,28,0.7) 100%)",
+          zIndex: 1,
         }}
       />
 
