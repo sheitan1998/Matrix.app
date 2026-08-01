@@ -1,0 +1,49 @@
+{
+  "name": "AdMessage",
+  "type": "object",
+  "properties": {
+    "ad_id": {
+      "type": "string",
+      "description": "ID de l'annonce associee"
+    },
+    "author_email": {
+      "type": "string"
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "author_avatar": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string",
+      "description": "Contenu du message"
+    }
+  },
+  "required": [
+    "ad_id",
+    "author_email",
+    "content"
+  ],
+  "rls": {
+    "create": {
+      "data.author_email": "{{user.email}}"
+    },
+    "read": {},
+    "update": {
+      "data.author_email": "{{user.email}}"
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.author_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

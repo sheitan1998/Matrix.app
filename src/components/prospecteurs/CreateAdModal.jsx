@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { X, Gamepad2, Image as ImageIcon, Upload, Users, Clock } from "lucide-react";
+import { X, Gamepad2, Image as ImageIcon, Upload, Users, Clock, User } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 
@@ -18,6 +18,7 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
     max_players: 0,
     player_count_needed: 1,
     availability_hours: "",
+    player_pseudo: "",
   });
   const [profileImage, setProfileImage] = useState("");
   const [coverImage, setCoverImage] = useState("");
@@ -60,7 +61,8 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
       ...form,
       type: adType,
       profile_image: profileImage,
-      cover_image: coverImage,
+      cover_image: adType === "server" ? coverImage : "",
+      discord_link: adType === "server" ? form.discord_link : "",
     };
     await onSubmit(data);
     setSubmitting(false);
@@ -70,7 +72,6 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
     background: "rgba(138, 79, 255, 0.05)",
     border: "1px solid rgba(138, 79, 255, 0.2)",
   };
-
   const labelClass = "text-[9px] font-bold uppercase tracking-wider text-white/40 mb-1 block";
 
   return (
@@ -123,69 +124,87 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          {/* Profile image (server only) */}
-          {adType === "server" && (
-            <>
-              <div>
-                <label className={labelClass}>Photo de profil (optionnel)</label>
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-lg overflow-hidden flex items-center justify-center shrink-0" style={{ background: "rgba(138, 79, 255, 0.1)", border: "1px solid rgba(138, 79, 255, 0.2)" }}>
-                    {profileImage ? (
-                      <img src={profileImage} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <ImageIcon className="w-5 h-5 text-white/20" />
-                    )}
-                  </div>
-                  <input
-                    ref={profileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => handleFileUpload(e.target.files?.[0], "profile")}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => profileInputRef.current?.click()}
-                    disabled={uploadingField === "profile"}
-                    className="h-8 px-3 rounded-lg text-[10px] font-bold transition flex items-center gap-1 tap-sm"
-                    style={inputStyle}
-                  >
-                    <Upload className="w-3 h-3" />
-                    {uploadingField === "profile" ? "Upload..." : "Choisir"}
-                  </button>
-                </div>
+          {/* Profile image (both types) */}
+          <div>
+            <label className={labelClass}>Photo de profil (optionnel)</label>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-lg overflow-hidden flex items-center justify-center shrink-0" style={{ background: "rgba(138, 79, 255, 0.1)", border: "1px solid rgba(138, 79, 255, 0.2)" }}>
+                {profileImage ? (
+                  <img src={profileImage} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <ImageIcon className="w-5 h-5 text-white/20" />
+                )}
               </div>
+              <input
+                ref={profileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleFileUpload(e.target.files?.[0], "profile")}
+              />
+              <button
+                type="button"
+                onClick={() => profileInputRef.current?.click()}
+                disabled={uploadingField === "profile"}
+                className="h-8 px-3 rounded-lg text-[10px] font-bold transition flex items-center gap-1 tap-sm"
+                style={inputStyle}
+              >
+                <Upload className="w-3 h-3" />
+                {uploadingField === "profile" ? "Upload..." : "Choisir"}
+              </button>
+            </div>
+          </div>
 
-              <div>
-                <label className={labelClass}>Image de couverture (optionnel)</label>
-                <div className="flex items-center gap-3">
-                  <div className="w-20 h-10 rounded-lg overflow-hidden flex items-center justify-center shrink-0" style={{ background: "rgba(138, 79, 255, 0.1)", border: "1px solid rgba(138, 79, 255, 0.2)" }}>
-                    {coverImage ? (
-                      <img src={coverImage} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <ImageIcon className="w-5 h-5 text-white/20" />
-                    )}
-                  </div>
-                  <input
-                    ref={coverInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => handleFileUpload(e.target.files?.[0], "cover")}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => coverInputRef.current?.click()}
-                    disabled={uploadingField === "cover"}
-                    className="h-8 px-3 rounded-lg text-[10px] font-bold transition flex items-center gap-1 tap-sm"
-                    style={inputStyle}
-                  >
-                    <Upload className="w-3 h-3" />
-                    {uploadingField === "cover" ? "Upload..." : "Choisir"}
-                  </button>
+          {/* Cover image (server only) */}
+          {adType === "server" && (
+            <div>
+              <label className={labelClass}>Image de couverture (optionnel)</label>
+              <div className="flex items-center gap-3">
+                <div className="w-20 h-10 rounded-lg overflow-hidden flex items-center justify-center shrink-0" style={{ background: "rgba(138, 79, 255, 0.1)", border: "1px solid rgba(138, 79, 255, 0.2)" }}>
+                  {coverImage ? (
+                    <img src={coverImage} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <ImageIcon className="w-5 h-5 text-white/20" />
+                  )}
                 </div>
+                <input
+                  ref={coverInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleFileUpload(e.target.files?.[0], "cover")}
+                />
+                <button
+                  type="button"
+                  onClick={() => coverInputRef.current?.click()}
+                  disabled={uploadingField === "cover"}
+                  className="h-8 px-3 rounded-lg text-[10px] font-bold transition flex items-center gap-1 tap-sm"
+                  style={inputStyle}
+                >
+                  <Upload className="w-3 h-3" />
+                  {uploadingField === "cover" ? "Upload..." : "Choisir"}
+                </button>
               </div>
-            </>
+            </div>
+          )}
+
+          {/* Player pseudo (player only) */}
+          {adType === "player" && (
+            <div>
+              <label className="text-[9px] font-bold uppercase tracking-wider text-white/40 mb-1 flex items-center gap-1">
+                <User className="w-3 h-3" />
+                Nom ou pseudo (optionnel)
+              </label>
+              <input
+                type="text"
+                maxLength={30}
+                value={form.player_pseudo}
+                onChange={(e) => handleChange("player_pseudo", e.target.value)}
+                placeholder="Ex: ProGamer123"
+                className="w-full h-10 px-3 rounded-lg text-sm text-white placeholder:text-white/30 outline-none"
+                style={inputStyle}
+              />
+            </div>
           )}
 
           {/* Title */}
@@ -337,21 +356,21 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
             </div>
           )}
 
-          {/* Discord link */}
-          <div>
-            <label className={labelClass}>
-              Lien Discord {adType === "server" ? "*" : "(optionnel)"}
-            </label>
-            <input
-              type="url"
-              required={adType === "server"}
-              value={form.discord_link}
-              onChange={(e) => handleChange("discord_link", e.target.value)}
-              placeholder="https://discord.gg/..."
-              className="w-full h-10 px-3 rounded-lg text-sm text-white placeholder:text-white/30 outline-none"
-              style={inputStyle}
-            />
-          </div>
+          {/* Discord link (server only - forbidden for player) */}
+          {adType === "server" && (
+            <div>
+              <label className={labelClass}>Lien du serveur Discord *</label>
+              <input
+                type="url"
+                required
+                value={form.discord_link}
+                onChange={(e) => handleChange("discord_link", e.target.value)}
+                placeholder="https://discord.gg/..."
+                className="w-full h-10 px-3 rounded-lg text-sm text-white placeholder:text-white/30 outline-none"
+                style={inputStyle}
+              />
+            </div>
+          )}
 
           {/* Submit */}
           <button

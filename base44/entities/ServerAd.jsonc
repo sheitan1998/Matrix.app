@@ -12,7 +12,7 @@
     },
     "discord_link": {
       "type": "string",
-      "description": "Lien Discord"
+      "description": "Lien Discord (serveur uniquement)"
     },
     "author_email": {
       "type": "string"
@@ -72,6 +72,15 @@
       "type": "number",
       "default": 0,
       "description": "Nombre de joueurs recherches"
+    },
+    "player_pseudo": {
+      "type": "string",
+      "description": "Nom ou pseudo du joueur (optionnel)"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date d'expiration de l'annonce (1 heure apres creation)"
     },
     "votes": {
       "type": "number",

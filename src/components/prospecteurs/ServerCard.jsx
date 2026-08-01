@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { ArrowUp, Flame, ExternalLink, Users, Clock } from "lucide-react";
+import { ArrowUp, Flame, ExternalLink, Users, Clock, Trash2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
+import AdMessages from "./AdMessages";
 
 const BOOST_COST = 500;
 
-export default function ServerCard({ server, onVote, onBoost, trixBalance }) {
+export default function ServerCard({ server, onVote, onBoost, onDelete, currentUser, trixBalance }) {
   const [voteStatus, setVoteStatus] = useState({ canVote: true, remaining: null });
   const [loading, setLoading] = useState(false);
+  const [remainingMin, setRemainingMin] = useState(60);
 
   useEffect(() => {
     let active = true;
@@ -46,6 +48,18 @@ export default function ServerCard({ server, onVote, onBoost, trixBalance }) {
     }, 1000);
     return () => clearInterval(timer);
   }, [voteStatus.canVote]);
+
+  // Expiry countdown
+  useEffect(() => {
+    if (!server.expires_at) return;
+    const update = () => {
+      const remaining = Math.max(0, Math.floor((new Date(server.expires_at).getTime() - Date.now()) / 60000));
+      setRemainingMin(remaining);
+    };
+    update();
+    const timer = setInterval(update, 30000);
+    return () => clearInterval(timer);
+  }, [server.expires_at]);
 
   const handleVote = async () => {
     if (!voteStatus.canVote) return;
@@ -94,10 +108,28 @@ export default function ServerCard({ server, onVote, onBoost, trixBalance }) {
     }
   };
 
+  const handleDelete = async () => {
+    try {
+      const res = await base44.functions.invoke("serverSearch", {
+        action: "deleteAd",
+        serverAdId: server.id,
+      });
+      if (res.data?.success) {
+        onDelete(server.id);
+        toast.success("Annonce supprimée");
+      } else {
+        toast.error(res.data?.error || "Erreur");
+      }
+    } catch {
+      toast.error("Erreur lors de la suppression");
+    }
+  };
+
   const fmt = (n) => String(n).padStart(2, "0");
   const initial = server.title?.[0]?.toUpperCase() || "S";
   const hasCover = !!server.cover_image;
   const hasProfile = !!server.profile_image || !!server.server_icon;
+  const isOwner = currentUser?.email === server.author_email;
 
   return (
     <div
@@ -122,17 +154,39 @@ export default function ServerCard({ server, onVote, onBoost, trixBalance }) {
               BOOSTÉ
             </span>
           )}
+          {isOwner && (
+            <button
+              onClick={handleDelete}
+              className="absolute top-1.5 left-1.5 w-6 h-6 rounded flex items-center justify-center transition tap-sm"
+              style={{ background: "rgba(239, 68, 68, 0.3)", color: "#ef4444", backdropFilter: "blur(4px)" }}
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          )}
         </div>
       ) : (
-        server.is_boosted && (
-          <div className="px-3 pt-2">
-            <span
-              className="text-[7px] font-black px-1.5 py-0.5 rounded inline-flex items-center gap-0.5"
-              style={{ background: "rgba(251, 191, 36, 0.15)", color: "#fbbf24" }}
-            >
-              <Flame className="w-2 h-2" />
-              BOOSTÉ
-            </span>
+        (server.is_boosted || isOwner) && (
+          <div className="px-3 pt-2 flex items-center justify-between">
+            {server.is_boosted ? (
+              <span
+                className="text-[7px] font-black px-1.5 py-0.5 rounded inline-flex items-center gap-0.5"
+                style={{ background: "rgba(251, 191, 36, 0.15)", color: "#fbbf24" }}
+              >
+                <Flame className="w-2 h-2" />
+                BOOSTÉ
+              </span>
+            ) : (
+              <span />
+            )}
+            {isOwner && (
+              <button
+                onClick={handleDelete}
+                className="w-6 h-6 rounded flex items-center justify-center transition tap-sm"
+                style={{ background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)" }}
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            )}
           </div>
         )
       )}
@@ -191,10 +245,19 @@ export default function ServerCard({ server, onVote, onBoost, trixBalance }) {
             {server.players_count || 0}/{server.max_players}
           </span>
         )}
+        {server.expires_at && (
+          <span
+            className="flex items-center gap-0.5 ml-auto"
+            style={{ color: remainingMin < 10 ? "#ef4444" : undefined }}
+          >
+            <Clock className="w-2.5 h-2.5" />
+            {remainingMin}min
+          </span>
+        )}
       </div>
 
       {/* Actions */}
-      <div className="px-3 pb-3 flex items-center gap-1.5">
+      <div className="px-3 pb-2 flex items-center gap-1.5">
         <button
           onClick={handleVote}
           disabled={!voteStatus.canVote || loading}
@@ -236,6 +299,11 @@ export default function ServerCard({ server, onVote, onBoost, trixBalance }) {
             <ExternalLink className="w-3 h-3" />
           </a>
         )}
+      </div>
+
+      {/* Messages */}
+      <div className="px-3 pb-3">
+        <AdMessages adId={server.id} currentUser={currentUser} />
       </div>
     </div>
   );

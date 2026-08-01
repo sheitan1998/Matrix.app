@@ -29,8 +29,14 @@ export default function Prospecteurs() {
         setTrixBalance(progressRecords[0].coins || 0);
       }
 
+      // Cleanup expired ads from database
+      await base44.functions.invoke("serverSearch", { action: "cleanupExpired" }).catch(() => {});
+
       const allAds = await base44.entities.ServerAd.list("-created_date", 100);
-      setAds(allAds);
+      // Filter out expired ads (1 hour lifetime)
+      const now = Date.now();
+      const activeAds = allAds.filter((a) => !a.expires_at || new Date(a.expires_at).getTime() > now);
+      setAds(activeAds);
     } catch {
       /* silent */
     } finally {
@@ -41,6 +47,15 @@ export default function Prospecteurs() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Periodic check to remove expired ads from view
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = Date.now();
+      setAds((prev) => prev.filter((a) => !a.expires_at || new Date(a.expires_at).getTime() > now));
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Sort: boosted first, then by (votes + boosts) descending
   const sortedAds = [...ads].sort((a, b) => {
@@ -72,6 +87,10 @@ export default function Prospecteurs() {
     setTrixBalance(newBalance);
   };
 
+  const handleDeleteAd = (adId) => {
+    setAds((prev) => prev.filter((a) => a.id !== adId));
+  };
+
   const handleCreateAd = async (data) => {
     try {
       const newAd = await base44.entities.ServerAd.create({
@@ -79,6 +98,7 @@ export default function Prospecteurs() {
         author_email: user.email,
         author_name: user.full_name || user.email.split("@")[0],
         author_avatar: user.avatar_url || "",
+        expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
       });
       setAds((prev) => [newAd, ...prev]);
       setShowCreateModal(false);
@@ -140,6 +160,8 @@ export default function Prospecteurs() {
           <PlayerSearch
             players={playerAds}
             loading={loading}
+            currentUser={user}
+            onDelete={handleDeleteAd}
             onPostClick={() => { setCreateType("player"); setShowCreateModal(true); }}
           />
         </div>
@@ -150,6 +172,8 @@ export default function Prospecteurs() {
           loading={loading}
           onVote={handleVote}
           onBoost={handleBoost}
+          onDelete={handleDeleteAd}
+          currentUser={user}
           trixBalance={trixBalance}
         />
       </div>

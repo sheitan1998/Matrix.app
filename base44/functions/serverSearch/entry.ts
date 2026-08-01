@@ -157,6 +157,46 @@ export default async function(req: Request): Promise<Response> {
         });
       }
 
+      // ---- Delete an ad (creator only) + associated messages and votes ----
+      case 'deleteAd': {
+        const { serverAdId } = params;
+        if (!serverAdId) return Response.json({ error: 'Missing serverAdId' }, { status: 400 });
+
+        const ad = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
+        if (!ad) return Response.json({ error: 'Ad not found' }, { status: 404 });
+
+        if (ad.author_email !== user.email) {
+          return Response.json({ error: 'Not authorized' }, { status: 403 });
+        }
+
+        // Delete associated messages
+        await base44.asServiceRole.entities.AdMessage.deleteMany({ ad_id: serverAdId });
+
+        // Delete associated votes
+        await base44.asServiceRole.entities.ServerVote.deleteMany({ server_ad_id: serverAdId });
+
+        // Delete the ad
+        await base44.asServiceRole.entities.ServerAd.delete(serverAdId);
+
+        return Response.json({ success: true });
+      }
+
+      // ---- Cleanup expired ads (1 hour lifetime) + associated data ----
+      case 'cleanupExpired': {
+        const now = new Date().toISOString();
+        const expiredAds = await base44.asServiceRole.entities.ServerAd.filter({
+          expires_at: { $lt: now }
+        });
+
+        for (const ad of expiredAds) {
+          await base44.asServiceRole.entities.AdMessage.deleteMany({ ad_id: ad.id });
+          await base44.asServiceRole.entities.ServerVote.deleteMany({ server_ad_id: ad.id });
+          await base44.asServiceRole.entities.ServerAd.delete(ad.id);
+        }
+
+        return Response.json({ success: true, deleted: expiredAds.length });
+      }
+
       default:
         return Response.json({ error: `Unknown action: ${action}` }, { status: 400 });
     }
