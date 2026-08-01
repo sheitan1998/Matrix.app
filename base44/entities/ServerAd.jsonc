@@ -1,0 +1,105 @@
+{
+  "name": "ServerAd",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Titre de l'annonce"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description du serveur"
+    },
+    "discord_link": {
+      "type": "string",
+      "description": "Lien du serveur Discord"
+    },
+    "author_email": {
+      "type": "string"
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "author_avatar": {
+      "type": "string"
+    },
+    "game": {
+      "type": "string",
+      "default": "",
+      "description": "Jeu associ\u00e9 au serveur"
+    },
+    "rank_tier": {
+      "type": "string",
+      "default": "",
+      "description": "Rank/niveau recherch\u00e9"
+    },
+    "availability": {
+      "type": "number",
+      "default": 1,
+      "description": "Niveau de disponibilit\u00e9 (1-5)"
+    },
+    "votes": {
+      "type": "number",
+      "default": 0
+    },
+    "boosts": {
+      "type": "number",
+      "default": 0
+    },
+    "is_boosted": {
+      "type": "boolean",
+      "default": false
+    },
+    "boost_until": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "server_icon": {
+      "type": "string"
+    },
+    "players_count": {
+      "type": "number",
+      "default": 0
+    },
+    "max_players": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "title",
+    "description",
+    "discord_link",
+    "author_email"
+  ],
+  "rls": {
+    "create": {
+      "data.author_email": "{{user.email}}"
+    },
+    "read": {},
+    "update": {
+      "$or": [
+        {
+          "data.author_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.author_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

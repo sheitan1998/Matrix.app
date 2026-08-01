@@ -1,0 +1,35 @@
+{
+  "name": "ServerVote",
+  "type": "object",
+  "properties": {
+    "server_ad_id": {
+      "type": "string",
+      "description": "ID de l'annonce de serveur"
+    },
+    "user_email": {
+      "type": "string"
+    },
+    "last_voted_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "server_ad_id",
+    "user_email"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {},
+    "update": {
+      "data.user_email": "{{user.email}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

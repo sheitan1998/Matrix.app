@@ -1,0 +1,207 @@
+import React, { useState, useEffect } from "react";
+import { ArrowUp, Flame, ExternalLink, Users, Clock } from "lucide-react";
+import { base44 } from "@/api/base44Client";
+import { toast } from "sonner";
+
+const BOOST_COST = 100;
+
+export default function ServerCard({ server, onVote, onBoost, trixBalance }) {
+  const [voteStatus, setVoteStatus] = useState({ canVote: true, remaining: null });
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const checkStatus = async () => {
+      try {
+        const res = await base44.functions.invoke("serverSearch", {
+          action: "getVoteStatus",
+          serverAdId: server.id,
+        });
+        if (active && res.data) {
+          setVoteStatus({
+            canVote: res.data.canVote,
+            remaining: res.data.remainingTime,
+          });
+        }
+      } catch {
+        /* silent */
+      }
+    };
+    checkStatus();
+    return () => { active = false; };
+  }, [server.id]);
+
+  // Countdown timer
+  useEffect(() => {
+    if (voteStatus.canVote) return;
+    const timer = setInterval(() => {
+      setVoteStatus((prev) => {
+        if (prev.canVote) return prev;
+        let { h, m, s } = prev.remaining;
+        s--;
+        if (s < 0) { s = 59; m--; }
+        if (m < 0) { m = 59; h--; }
+        if (h < 0) return { canVote: true, remaining: null };
+        return { canVote: false, remaining: { h, m, s } };
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [voteStatus.canVote]);
+
+  const handleVote = async () => {
+    if (!voteStatus.canVote) return;
+    setLoading(true);
+    try {
+      const res = await base44.functions.invoke("serverSearch", {
+        action: "vote",
+        serverAdId: server.id,
+      });
+      if (res.data?.success) {
+        setVoteStatus({ canVote: false, remaining: { h: 2, m: 0, s: 0 } });
+        onVote(server.id, res.data.votes);
+        toast.success("Vote enregistré !");
+      } else if (res.data?.error === "cooldown") {
+        setVoteStatus({ canVote: false, remaining: res.data.remainingTime });
+        toast.error(`Encore ${res.data.remainingTime.h}h ${res.data.remainingTime.m}m`);
+      }
+    } catch {
+      toast.error("Erreur lors du vote");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBoost = async () => {
+    if ((trixBalance || 0) < BOOST_COST) {
+      toast.error(`Il faut ${BOOST_COST} Trix pour booster`);
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await base44.functions.invoke("serverSearch", {
+        action: "boost",
+        serverAdId: server.id,
+      });
+      if (res.data?.success) {
+        onBoost(server.id, res.data.boosts, res.data.newBalance);
+        toast.success("Serveur boosté !");
+      } else {
+        toast.error(res.data?.error || "Erreur lors du boost");
+      }
+    } catch {
+      toast.error("Erreur lors du boost");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fmt = (n) => String(n).padStart(2, "0");
+  const initial = server.title?.[0]?.toUpperCase() || "S";
+
+  return (
+    <div
+      className="rounded-xl overflow-hidden transition group"
+      style={{
+        background: "rgba(18, 9, 28, 0.6)",
+        border: server.is_boosted
+          ? "1px solid rgba(251, 191, 36, 0.3)"
+          : "1px solid rgba(138, 79, 255, 0.15)",
+      }}
+    >
+      {/* Icon + boost badge */}
+      <div className="relative p-3 flex items-center gap-2.5">
+        <div
+          className="w-10 h-10 rounded-lg flex items-center justify-center text-sm font-black text-white shrink-0"
+          style={{ background: "linear-gradient(135deg, #8a4fff, #5b21b6)" }}
+        >
+          {initial}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1">
+            <p className="text-xs font-bold text-white truncate">{server.title}</p>
+            {server.is_boosted && (
+              <span
+                className="text-[7px] font-black px-1 py-0.5 rounded shrink-0 flex items-center gap-0.5"
+                style={{ background: "rgba(251, 191, 36, 0.15)", color: "#fbbf24" }}
+              >
+                <Flame className="w-2 h-2" />
+                BOOSTÉ
+              </span>
+            )}
+          </div>
+          {server.game && (
+            <p className="text-[9px] text-white/40 truncate">{server.game}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Description */}
+      <div className="px-3 pb-2">
+        <p className="text-[10px] text-white/50 leading-relaxed line-clamp-2">{server.description}</p>
+      </div>
+
+      {/* Stats */}
+      <div className="px-3 pb-2 flex items-center gap-2 text-[9px] text-white/40">
+        <span className="flex items-center gap-0.5">
+          <ArrowUp className="w-2.5 h-2.5" style={{ color: "#8a4fff" }} />
+          {server.votes || 0}
+        </span>
+        <span className="flex items-center gap-0.5">
+          <Flame className="w-2.5 h-2.5" style={{ color: "#fbbf24" }} />
+          {server.boosts || 0}
+        </span>
+        {server.max_players > 0 && (
+          <span className="flex items-center gap-0.5">
+            <Users className="w-2.5 h-2.5" />
+            {server.players_count || 0}/{server.max_players}
+          </span>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="px-3 pb-3 flex items-center gap-1.5">
+        <button
+          onClick={handleVote}
+          disabled={!voteStatus.canVote || loading}
+          className="flex-1 h-7 rounded-md text-[10px] font-bold transition flex items-center justify-center gap-1 tap-sm"
+          style={
+            voteStatus.canVote
+              ? { background: "rgba(138, 79, 255, 0.15)", color: "#8a4fff", border: "1px solid rgba(138, 79, 255, 0.2)" }
+              : { background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.3)", border: "1px solid rgba(255,255,255,0.05)" }
+          }
+        >
+          {voteStatus.canVote ? (
+            <>
+              <ArrowUp className="w-3 h-3" /> Voter
+            </>
+          ) : (
+            <>
+              <Clock className="w-3 h-3" />
+              {fmt(voteStatus.remaining.h)}:{fmt(voteStatus.remaining.m)}:{fmt(voteStatus.remaining.s)}
+            </>
+          )}
+        </button>
+        <button
+          onClick={handleBoost}
+          disabled={loading}
+          className="h-7 px-2 rounded-md text-[10px] font-bold transition flex items-center gap-0.5 tap-sm"
+          style={{ background: "rgba(251, 191, 36, 0.1)", color: "#fbbf24", border: "1px solid rgba(251, 191, 36, 0.2)" }}
+        >
+          <Flame className="w-3 h-3" />
+          {BOOST_COST}
+        </button>
+        {server.discord_link && (
+          <a
+            href={server.discord_link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="h-7 w-7 rounded-md flex items-center justify-center transition tap-sm"
+            style={{ background: "rgba(88, 101, 242, 0.15)", color: "#5865F2", border: "1px solid rgba(88, 101, 242, 0.2)" }}
+          >
+            <ExternalLink className="w-3 h-3" />
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}

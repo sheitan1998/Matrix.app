@@ -39,6 +39,7 @@ import ListingDetail from '@/pages/marketplace/ListingDetail';
 import AIStudio from '@/pages/AIStudio';
 import AISubscription from '@/pages/AISubscription';
 import Casino from '@/pages/Casino';
+import Prospecteurs from '@/pages/prospecteurs/Prospecteurs';
 import CommunitySubscription from '@/pages/community/CommunitySubscription';
 import Wallet from '@/pages/Wallet';
 import VideoStudio from '@/pages/VideoStudio';
@@ -84,6 +85,7 @@ const AuthenticatedApp = () => {
       <Route path="/ai" element={<AIStudio />} />
       <Route path="/ai/subscription" element={<AISubscription />} />
       <Route path="/casino" element={<Casino />} />
+      <Route path="/prospecteurs" element={<Prospecteurs />} />
       <Route path="/community/subscription" element={<CommunitySubscription />} />
         <Route path="/wallet" element={<Wallet />} />
         <Route path="/video-studio" element={<VideoStudio />} />
