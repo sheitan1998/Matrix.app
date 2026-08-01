@@ -1,0 +1,46 @@
+{
+  "name": "CommentVote",
+  "type": "object",
+  "properties": {
+    "comment_id": {
+      "type": "string",
+      "description": "ID du commentaire vote/signale"
+    },
+    "quest_id": {
+      "type": "string",
+      "description": "Pour filtrage rapide"
+    },
+    "wiki_entry_id": {
+      "type": "string",
+      "description": "Pour filtrage rapide"
+    },
+    "user_email": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "upvote",
+        "report"
+      ],
+      "default": "upvote"
+    }
+  },
+  "required": [
+    "comment_id",
+    "user_email",
+    "type"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {},
+    "update": {
+      "data.user_email": "{{user.email}}"
+    },
+    "delete": {
+      "data.user_email": "{{user.email}}"
+    }
+  }
+}

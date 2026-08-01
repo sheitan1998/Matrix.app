@@ -1,0 +1,108 @@
+{
+  "name": "WikiEntry",
+  "type": "object",
+  "properties": {
+    "game_id": {
+      "type": "string"
+    },
+    "game_slug": {
+      "type": "string"
+    },
+    "entry_type": {
+      "type": "string",
+      "enum": [
+        "monstre",
+        "equipement",
+        "ressource",
+        "pnj",
+        "zone",
+        "succes",
+        "carte",
+        "astuce"
+      ],
+      "description": "Type d'entree wiki"
+    },
+    "title": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string",
+      "description": "Contenu enrichi de la fiche"
+    },
+    "level": {
+      "type": "string",
+      "description": "Niveau ou gamme de niveau"
+    },
+    "location": {
+      "type": "string",
+      "description": "Localisation"
+    },
+    "coordinates": {
+      "type": "string"
+    },
+    "rarity": {
+      "type": "string",
+      "description": "Raret\u00e9 (pour \u00e9quipements/ressources)"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Emplacement pour image (droits requis)"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "related_entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "entry_id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
+    },
+    "sort_order": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "game_id",
+    "game_slug",
+    "entry_type",
+    "title"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {},
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

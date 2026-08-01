@@ -16,6 +16,41 @@ export const DIFFICULTY = {
   difficile: { label: "Difficile", color: "#F87171" },
 };
 
+export const ENTRY_TYPE_META = {
+  monstre: { label: "Monstre", color: "#F87171" },
+  equipement: { label: "Équipement", color: "#60A5FA" },
+  ressource: { label: "Ressource", color: "#FBBF24" },
+  pnj: { label: "PNJ", color: "#22D3EE" },
+  zone: { label: "Zone", color: "#4ADE80" },
+  succes: { label: "Succès", color: "#FFD700" },
+  carte: { label: "Carte", color: "#A78BFA" },
+  astuce: { label: "Astuce", color: "#BF5AF2" },
+};
+
+export const WIKI_SECTIONS = [
+  { id: "quetes", label: "Quêtes", entity: "quest", group: "guides" },
+  { id: "classes", label: "Classes", entity: "quest", questCategory: "classe", group: "guides" },
+  { id: "metiers", label: "Métiers", entity: "quest", questCategory: "metier", group: "guides" },
+  { id: "donjons", label: "Donjons", entity: "quest", questCategory: "donjon", group: "guides" },
+  { id: "progression", label: "Progression", entity: "quest", questCategory: "progression", group: "guides" },
+  { id: "monstres", label: "Monstres", entity: "wiki", entryType: "monstre", group: "encyclopedie" },
+  { id: "equipements", label: "Équipements", entity: "wiki", entryType: "equipement", group: "encyclopedie" },
+  { id: "ressources", label: "Ressources", entity: "wiki", entryType: "ressource", group: "encyclopedie" },
+  { id: "pnj", label: "PNJ", entity: "wiki", entryType: "pnj", group: "encyclopedie" },
+  { id: "zones", label: "Zones", entity: "wiki", entryType: "zone", group: "encyclopedie" },
+  { id: "succes", label: "Succès", entity: "wiki", entryType: "succes", group: "divers" },
+  { id: "cartes", label: "Cartes", entity: "wiki", entryType: "carte", group: "divers" },
+  { id: "astuces", label: "Astuces", entity: "wiki", entryType: "astuce", group: "divers" },
+  { id: "connaissances", label: "Connaissances", entity: "quest", questCategory: "connaissance", group: "divers" },
+  { id: "faq", label: "FAQ", entity: "quest", questCategory: "faq", group: "divers" },
+];
+
+export const SECTION_GROUPS = [
+  { id: "guides", label: "Guides" },
+  { id: "encyclopedie", label: "Encyclopédie" },
+  { id: "divers", label: "Divers" },
+];
+
 export const COMING_SOON_GAMES = [
   { name: "Minecraft", slug: "minecraft", card_gradient: "linear-gradient(135deg, #0D2818 0%, #1A5C3A 50%, #0D2818 100%)" },
   { name: "World of Warcraft", slug: "wow", card_gradient: "linear-gradient(135deg, #1A0A0A 0%, #4A1A0A 50%, #1A0A0A 100%)" },
@@ -30,4 +65,12 @@ export function getCategoryMeta(categoryId) {
 
 export function getDifficultyMeta(diff) {
   return DIFFICULTY[diff] || { label: diff, color: "#94A3B8" };
+}
+
+export function getEntryTypeMeta(type) {
+  return ENTRY_TYPE_META[type] || { label: type, color: "#BF5AF2" };
+}
+
+export function getSectionMeta(sectionId) {
+  return WIKI_SECTIONS.find(s => s.id === sectionId);
 }

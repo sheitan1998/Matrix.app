@@ -1,12 +1,11 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ChevronRight, MapPin, Layers, User } from "lucide-react";
-import { getCategoryMeta, getDifficultyMeta } from "./tutoGamingData";
+import { ChevronRight, MapPin, Star, Tag } from "lucide-react";
+import { getEntryTypeMeta } from "./tutoGamingData";
 
-export default function QuestListItem({ quest, gameSlug, index = 0 }) {
-  const cat = getCategoryMeta(quest.category);
-  const diff = getDifficultyMeta(quest.difficulty);
+export default function WikiEntryListItem({ entry, gameSlug, index = 0 }) {
+  const typeMeta = getEntryTypeMeta(entry.entry_type);
 
   return (
     <motion.div
@@ -15,7 +14,7 @@ export default function QuestListItem({ quest, gameSlug, index = 0 }) {
       transition={{ delay: index * 0.04, duration: 0.3 }}
     >
       <Link
-        to={`/tuto-gaming/${gameSlug}/quest/${quest.id}`}
+        to={`/tuto-gaming/${gameSlug}/wiki/${entry.id}`}
         className="block rounded-xl overflow-hidden transition group"
         style={{
           background: "rgba(13,5,24,0.6)",
@@ -23,61 +22,48 @@ export default function QuestListItem({ quest, gameSlug, index = 0 }) {
         }}
       >
         <div className="p-4 flex items-start gap-3">
-          {/* Category badge */}
+          {/* Type badge */}
           <div
             className="px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-wider shrink-0 mt-0.5"
             style={{
-              background: `${cat.color}1a`,
-              color: cat.color,
-              border: `1px solid ${cat.color}30`,
+              background: `${typeMeta.color}1a`,
+              color: typeMeta.color,
+              border: `1px solid ${typeMeta.color}30`,
             }}
           >
-            {cat.label}
+            {typeMeta.label}
           </div>
 
           {/* Content */}
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-bold text-white group-hover:text-[#BF5AF2] transition-colors truncate">
-              {quest.title}
+              {entry.title}
             </h3>
             <p className="text-[11px] text-white/40 leading-relaxed line-clamp-2 mt-0.5">
-              {quest.description}
+              {entry.description}
             </p>
             <div className="flex items-center gap-3 mt-2 flex-wrap">
-              <span
-                className="flex items-center gap-1 text-[9px] font-bold"
-                style={{ color: diff.color }}
-              >
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: diff.color }} />
-                {diff.label}
-              </span>
-              {(quest.level_min > 0 || quest.level_max > 0) && (
+              {entry.level && (
                 <span className="text-[9px] text-white/30">
-                  Niv. {quest.level_min > 0 ? quest.level_min : "?"}
-                  {quest.level_max > 0 ? `-${quest.level_max}` : "+"}
+                  Niv. {entry.level}
                 </span>
               )}
-              {quest.zone && (
+              {entry.location && (
                 <span className="flex items-center gap-0.5 text-[9px] text-white/30">
                   <MapPin className="w-2.5 h-2.5" />
-                  {quest.zone}
+                  {entry.location}
                 </span>
               )}
-              {quest.extension && (
+              {entry.rarity && (
                 <span className="flex items-center gap-0.5 text-[9px] text-white/30">
-                  <Layers className="w-2.5 h-2.5" />
-                  {quest.extension}
+                  <Star className="w-2.5 h-2.5" />
+                  {entry.rarity}
                 </span>
               )}
-              {quest.npc_name && (
+              {entry.tags?.length > 0 && (
                 <span className="flex items-center gap-0.5 text-[9px] text-white/30">
-                  <User className="w-2.5 h-2.5" />
-                  {quest.npc_name}
-                </span>
-              )}
-              {quest.steps?.length > 0 && (
-                <span className="text-[9px] text-white/30">
-                  {quest.steps.length} étape{quest.steps.length > 1 ? "s" : ""}
+                  <Tag className="w-2.5 h-2.5" />
+                  {entry.tags[0]}
                 </span>
               )}
             </div>

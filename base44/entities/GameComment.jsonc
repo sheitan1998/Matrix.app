@@ -4,11 +4,15 @@
   "properties": {
     "quest_id": {
       "type": "string",
-      "description": "ID de la quete associee"
+      "description": "ID de la quete (optionnel)"
+    },
+    "wiki_entry_id": {
+      "type": "string",
+      "description": "ID de l'entree wiki (optionnel)"
     },
     "parent_id": {
       "type": "string",
-      "description": "ID du commentaire parent pour les reponses (null = commentaire principal)"
+      "description": "ID du commentaire parent pour les reponses"
     },
     "author_email": {
       "type": "string"
@@ -20,12 +24,10 @@
       "type": "string"
     },
     "content": {
-      "type": "string",
-      "description": "Contenu du commentaire"
+      "type": "string"
     }
   },
   "required": [
-    "quest_id",
     "author_email",
     "content"
   ],

@@ -3,20 +3,16 @@
   "type": "object",
   "properties": {
     "game_id": {
-      "type": "string",
-      "description": "ID du jeu associe"
+      "type": "string"
     },
     "game_slug": {
-      "type": "string",
-      "description": "Slug du jeu pour le routage"
+      "type": "string"
     },
     "title": {
-      "type": "string",
-      "description": "Titre de la quete ou du guide"
+      "type": "string"
     },
     "slug": {
-      "type": "string",
-      "description": "Slug URL"
+      "type": "string"
     },
     "category": {
       "type": "string",
@@ -32,13 +28,39 @@
       ],
       "default": "quete"
     },
-    "description": {
+    "extension": {
       "type": "string",
-      "description": "Description courte"
+      "description": "Extension ou version du jeu"
+    },
+    "zone": {
+      "type": "string",
+      "description": "Zone geographique"
+    },
+    "level_min": {
+      "type": "number",
+      "default": 0
+    },
+    "level_max": {
+      "type": "number",
+      "default": 0
+    },
+    "description": {
+      "type": "string"
     },
     "prerequisites": {
+      "type": "string"
+    },
+    "npc_name": {
       "type": "string",
-      "description": "Prerequis pour la quete"
+      "description": "Nom du PNJ donneur de quete"
+    },
+    "npc_location": {
+      "type": "string",
+      "description": "Localisation du PNJ"
+    },
+    "coordinates": {
+      "type": "string",
+      "description": "Coordonnees de position"
     },
     "steps": {
       "type": "array",
@@ -55,17 +77,52 @@
       },
       "default": []
     },
-    "rewards": {
+    "dialogues": {
       "type": "string",
-      "description": "Recompenses"
+      "description": "Dialogues utiles avec les PNJ"
+    },
+    "objectives": {
+      "type": "string",
+      "description": "Objectifs de la quete"
+    },
+    "combats": {
+      "type": "string",
+      "description": "Informations sur les combats eventuels"
+    },
+    "rewards": {
+      "type": "string"
     },
     "tips": {
-      "type": "string",
-      "description": "Astuces"
+      "type": "string"
     },
     "map_info": {
+      "type": "string"
+    },
+    "linked_quests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "quest_id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "image_url": {
       "type": "string",
-      "description": "Informations de carte et position"
+      "description": "Emplacement pour image (droits requis)"
     },
     "difficulty": {
       "type": "string",
