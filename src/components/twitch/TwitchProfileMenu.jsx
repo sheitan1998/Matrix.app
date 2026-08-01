@@ -25,10 +25,11 @@ export default function TwitchProfileMenu() {
     return (
       <button
         onClick={login}
-        className="h-9 px-3 rounded-full bg-[#9146FF] hover:bg-[#9146FF]/80 text-white text-sm font-semibold flex items-center gap-1.5 tap-sm transition-colors shrink-0"
+        className="h-9 px-3 sm:px-4 rounded-full bg-[#9146FF] hover:bg-[#7c2dda] text-white text-xs sm:text-sm font-bold flex items-center gap-1.5 tap-sm transition-colors shrink-0 shadow-lg shadow-[#9146FF]/30"
+        title="Se connecter avec Twitch"
       >
-        <TwitchIcon className="w-4 h-4" />
-        <span className="hidden sm:block">Connexion Twitch</span>
+        <TwitchIcon className="w-4 h-4 shrink-0" />
+        <span className="block">Connexion Twitch</span>
       </button>
     );
   }

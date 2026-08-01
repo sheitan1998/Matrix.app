@@ -84,7 +84,10 @@ export function TwitchAuthProvider({ children }) {
   }, [userToken]);
 
   const login = useCallback(() => {
-    if (!clientId) return;
+    if (!clientId) {
+      alert("Configuration Twitch manquante. Ajoutez TWITCH_CLIENT_ID et TWITCH_CLIENT_SECRET dans Dashboard → Settings → Environment Variables pour activer la connexion Twitch.");
+      return;
+    }
     const redirectUri = `${window.location.origin}/twitch`;
     const scope = "user:read:email user:read:follows";
     window.location.href = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(scope)}`;
