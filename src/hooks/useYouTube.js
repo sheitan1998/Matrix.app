@@ -23,8 +23,11 @@ export function useYouTube(action, params = {}, options = {}) {
 export async function fetchYouTube(action, params = {}) {
   try {
     const res = await base44.functions.invoke("youtubeApi", { action, ...params });
-    return res.data?.data || [];
-  } catch {
+    const result = res.data?.data || [];
+    console.log(`[fetchYouTube] ${action}: ${Array.isArray(result) ? result.length : 1} items`);
+    return result;
+  } catch (e) {
+    console.error(`[fetchYouTube] ${action} failed:`, e?.response?.data || e?.message || e);
     return [];
   }
 }

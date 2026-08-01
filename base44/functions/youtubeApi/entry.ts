@@ -115,18 +115,30 @@ export default async function(req: Request): Promise<Response> {
 
       // ─── search.list — live streams ───
       case 'liveStreams': {
-        const data = await youtubeFetch('search', {
+        const searchParams: Record<string, string> = {
           part: 'snippet',
           eventType: 'live',
           type: 'video',
-          maxResults: params.maxResults || 50,
+          maxResults: String(params.maxResults || 50),
           regionCode: params.regionCode || 'FR',
           hl: params.hl || 'fr',
-          q: params.q,
-        }, apiKey);
+        };
+        if (params.q) searchParams.q = params.q;
+
+        let data = await youtubeFetch('search', searchParams, apiKey);
         if (data._error) return Response.json(data, { status: data.status });
+
+        // Fallback: YouTube search with eventType=live and no q often returns 0 results.
+        // Retry with a broad query term to surface actual live streams.
+        if (!data.items?.length && !params.q) {
+          console.log('[liveStreams] 0 results without q — retrying with q=" "');
+          data = await youtubeFetch('search', { ...searchParams, q: ' ' }, apiKey);
+        }
+
         const ids = (data.items || []).map(i => i.id?.videoId).filter(Boolean);
+        console.log(`[liveStreams] search returned ${data.items?.length || 0} items, ${ids.length} video IDs`);
         result = await fetchVideoStats(ids, apiKey);
+        console.log(`[liveStreams] fetchVideoStats returned ${result.length} videos`);
         break;
       }
 

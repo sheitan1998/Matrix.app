@@ -9,11 +9,17 @@ export default function LiveHub() {
   const { data: lives, isLoading } = useQuery({
     queryKey: ["videos", "live"],
     queryFn: async () => {
-      const [local, yt] = await Promise.all([
-        base44.entities.Video.filter({ is_live: true }, "-viewers_count", 50),
-        fetchYouTube("liveStreams", { maxResults: 50 }),
-      ]);
-      return mergeYouTubeLocal(yt, local);
+      // Local lives (may throw if none — must not block YouTube results)
+      let local = [];
+      try {
+        local = await base44.entities.Video.filter({ is_live: true }, "-viewers_count", 50);
+      } catch (e) {
+        console.warn("[LiveHub] local Video.filter failed:", e?.message);
+      }
+      const yt = await fetchYouTube("liveStreams", { maxResults: 50 });
+      const merged = mergeYouTubeLocal(yt, local);
+      console.log(`[LiveHub] local=${local.length} yt=${yt.length} merged=${merged.length}`);
+      return merged;
     },
     initialData: [],
   });
