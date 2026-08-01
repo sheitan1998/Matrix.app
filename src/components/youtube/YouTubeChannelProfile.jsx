@@ -33,7 +33,7 @@ export default function YouTubeChannelProfile() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Still loading the OAuth config from the backend
+  // Still loading the OAuth config from the backend — brief skeleton
   if (clientIdLoading) {
     return (
       <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center">
@@ -42,29 +42,25 @@ export default function YouTubeChannelProfile() {
     );
   }
 
-  // Not configured — show a muted placeholder
-  if (!clientIdConfigured) {
-    return (
-      <div
-        className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center"
-        title="Google OAuth non configuré (voir src/lib/googleConfig.js)"
-      >
-        <Youtube className="w-4 h-4 text-muted-foreground" />
-      </div>
-    );
-  }
-
-  // Not connected — show the connect button
+  // Not connected — always show the connect button (even if config is loading/missing,
+  // so the user sees it; clicking surfaces the actual error inline)
   if (!token || !selectedChannel) {
     return (
-      <button
-        onClick={login}
-        disabled={loading}
-        className="flex items-center gap-2 px-3 h-9 rounded-full bg-[#FF0000] hover:bg-[#FF0000]/90 text-white text-sm font-semibold transition tap-sm disabled:opacity-50"
-      >
-        <Youtube className="w-4 h-4" />
-        <span className="hidden sm:inline">{loading ? "…" : "Connecter YouTube"}</span>
-      </button>
+      <div className="flex flex-col items-end gap-1">
+        <button
+          onClick={login}
+          disabled={loading}
+          className="flex items-center gap-2 px-3 h-9 rounded-full bg-[#FF0000] hover:bg-[#FF0000]/90 text-white text-sm font-semibold transition tap-sm disabled:opacity-50"
+        >
+          <Youtube className="w-4 h-4" />
+          <span className="hidden sm:inline">{loading ? "…" : "Connecter YouTube"}</span>
+        </button>
+        {(error || !clientIdConfigured) && (
+          <span className="text-[10px] text-destructive/80 max-w-[180px] text-right leading-tight">
+            {error || "OAuth en attente de configuration"}
+          </span>
+        )}
+      </div>
     );
   }
 

@@ -71,8 +71,16 @@ export function useYouTubeAuth() {
   useEffect(() => {
     base44.functions
       .invoke("youtubeApi", { action: "getOAuthConfig" })
-      .then((res) => setClientId(res.data?.data?.client_id || null))
-      .catch(() => setClientId(null))
+      .then((res) => {
+        const id = res.data?.data?.client_id || null;
+        setClientId(id);
+        if (!id) setError("Client ID OAuth introuvable côté serveur.");
+      })
+      .catch((e) => {
+        console.error("[useYouTubeAuth] getOAuthConfig failed:", e?.response?.data || e);
+        setError(e?.response?.data?.error || "Impossible de charger la configuration OAuth.");
+        setClientId(null);
+      })
       .finally(() => setClientIdLoaded(true));
   }, []);
 
@@ -193,13 +201,17 @@ export function useYouTubeAuth() {
   }, []);
 
   const login = useCallback(() => {
+    if (!clientId) {
+      setError("Configuration OAuth manquante. Vérifiez le secret GOOGLE_CLIENT_ID.");
+      return;
+    }
     if (!tokenClientRef.current) {
-      setError("Google OAuth non initialisé. Vérifiez la configuration du Client ID.");
+      setError("Google OAuth non initialisé. Vérifiez l'origine JavaScript autorisée dans Google Cloud Console.");
       return;
     }
     setError(null);
     tokenClientRef.current.requestAccessToken({ prompt: "consent" });
-  }, []);
+  }, [clientId]);
 
   const logout = useCallback(async () => {
     if (token) {
