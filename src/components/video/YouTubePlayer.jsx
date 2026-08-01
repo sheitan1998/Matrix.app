@@ -23,10 +23,19 @@ function loadYouTubeAPI() {
 /**
  * YouTube IFrame Player — embeds a YouTube video using the official
  * IFrame Player API. Pass the video ID returned by the YouTube Data API v3.
+ *
+ * Callbacks (onReady, onStateChange) are stored in refs so the player
+ * is only re-created when `videoId` changes — never on parent re-render.
  */
 export default function YouTubePlayer({ videoId, autoplay = true, onReady, onStateChange }) {
   const wrapperRef = useRef(null);
   const playerRef = useRef(null);
+  const onReadyRef = useRef(onReady);
+  const onStateChangeRef = useRef(onStateChange);
+
+  // Keep callback refs current without triggering player re-creation
+  onReadyRef.current = onReady;
+  onStateChangeRef.current = onStateChange;
 
   useEffect(() => {
     let active = true;
@@ -50,8 +59,8 @@ export default function YouTubePlayer({ videoId, autoplay = true, onReady, onSta
           playsinline: 1,
         },
         events: {
-          onReady: (e) => onReady?.(e.target),
-          onStateChange: (e) => onStateChange?.(e.data),
+          onReady: (e) => onReadyRef.current?.(e.target),
+          onStateChange: (e) => onStateChangeRef.current?.(e.data),
         },
       });
     });
@@ -62,7 +71,8 @@ export default function YouTubePlayer({ videoId, autoplay = true, onReady, onSta
         playerRef.current = null;
       }
     };
-  }, [videoId, autoplay, onReady, onStateChange]);
+    // Only re-create when videoId changes — callbacks are in refs
+  }, [videoId]);
 
   return <div ref={wrapperRef} className="w-full h-full" />;
 }

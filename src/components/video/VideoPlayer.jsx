@@ -34,6 +34,14 @@ export default function VideoPlayer({ video, showPreAd = false, onAdEnd }) {
     return () => document.removeEventListener("fullscreenchange", onFsChange);
   }, []);
 
+  // Ensure single audio source: stop mini-player when a new video plays inline
+  useEffect(() => {
+    if (mini.mode === "mini") {
+      mini.close();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [video.id]);
+
   const toggleFullscreen = () => {
     if (document.fullscreenElement) {
       document.exitFullscreen();

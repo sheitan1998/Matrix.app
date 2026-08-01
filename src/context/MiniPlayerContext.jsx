@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import React, { createContext, useContext, useState, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { Play, Pause, X, Maximize2 } from "lucide-react";
 import YouTubePlayer from "@/components/video/YouTubePlayer";
 
@@ -26,17 +26,7 @@ export function MiniPlayerProvider({ children }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const playerRef = useRef(null);
   const seekToTimeRef = useRef(0);
-  const location = useLocation();
   const navigate = useNavigate();
-
-  // Auto-hide mini when navigating back to the video's page (inline player takes over)
-  useEffect(() => {
-    if (mode !== "mini" || !currentVideo) return;
-    const path = currentVideo.is_live ? `/live/${currentVideo.id}` : `/watch/${currentVideo.id}`;
-    if (location.pathname === path) {
-      setMode("hidden");
-    }
-  }, [location.pathname, mode, currentVideo]);
 
   const minimize = useCallback((video, seekTo = 0) => {
     seekToTimeRef.current = seekTo;

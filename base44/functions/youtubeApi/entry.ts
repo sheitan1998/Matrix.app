@@ -46,23 +46,46 @@ export default async function(req: Request): Promise<Response> {
         break;
       }
 
-      // ─── search.list — keyword search (videos with full stats) ───
+      // ─── search.list — keyword search (videos / channels / playlists) ───
       case 'search': {
-        const data = await youtubeFetch('search', {
+        const searchType = params.type || 'video';
+        const searchParams: Record<string, string> = {
           part: 'snippet',
           q: params.q,
-          type: 'video',
-          maxResults: params.maxResults || 25,
+          type: searchType,
+          maxResults: String(params.maxResults || 25),
           regionCode: params.regionCode || 'FR',
           hl: params.hl || 'fr',
           order: params.order || 'relevance',
-          publishedAfter: params.publishedAfter,
-          videoDuration: params.videoDuration,
-          videoCategoryId: params.videoCategoryId,
-        }, apiKey);
+        };
+        if (params.publishedAfter && searchType === 'video') searchParams.publishedAfter = params.publishedAfter;
+        if (params.videoDuration && searchType === 'video') searchParams.videoDuration = params.videoDuration;
+        if (params.videoCategoryId && searchType === 'video') searchParams.videoCategoryId = params.videoCategoryId;
+        if (params.eventType && searchType === 'video') searchParams.eventType = params.eventType;
+
+        const data = await youtubeFetch('search', searchParams, apiKey);
         if (data._error) return Response.json(data, { status: data.status });
-        const ids = (data.items || []).map(i => i.id?.videoId).filter(Boolean);
-        result = await fetchVideoStats(ids, apiKey);
+
+        if (searchType === 'video') {
+          const ids = (data.items || []).map(i => i.id?.videoId).filter(Boolean);
+          result = await fetchVideoStats(ids, apiKey);
+        } else if (searchType === 'channel') {
+          const ids = (data.items || []).map(i => i.id?.channelId).filter(Boolean);
+          if (ids.length > 0) {
+            const chData = await youtubeFetch('channels', { part: 'snippet,statistics', id: ids.join(',') }, apiKey);
+            if (!chData._error) result = (chData.items || []).map(mapChannel);
+          }
+        } else if (searchType === 'playlist') {
+          result = (data.items || []).map(item => ({
+            id: item.id?.playlistId,
+            title: item.snippet?.title || "",
+            description: item.snippet?.description || "",
+            thumbnail_url: item.snippet?.thumbnails?.high?.url || item.snippet?.thumbnails?.medium?.url || "",
+            channel_id: item.snippet?.channelId,
+            channel_name: item.snippet?.channelTitle,
+            _source: "youtube",
+          }));
+        }
         break;
       }
 

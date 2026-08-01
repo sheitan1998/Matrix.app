@@ -71,7 +71,7 @@ export default function Live() {
 
   return (
     <div className="px-4 lg:px-6 py-4 max-w-[1800px] mx-auto">
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-5">
+      <div className={video.is_live ? "grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-5" : "grid grid-cols-1 gap-5"}>
         <div className="space-y-4 min-w-0">
           <VideoPlayer video={video} />
 
@@ -88,10 +88,12 @@ export default function Live() {
 
         </div>
 
-        {/* Chat — below video on mobile, right column on desktop */}
-        <div className="h-[500px] xl:h-[calc(100vh-96px)] xl:sticky xl:top-20 xl:row-span-2">
-          <LiveChat video={video} channel={channel} user={user} onUserUpdate={loadUser} />
-        </div>
+        {/* Chat — only for active lives; beside video on desktop, below on mobile */}
+        {video.is_live && (
+          <div className="h-[500px] xl:h-[calc(100vh-96px)] xl:sticky xl:top-20 xl:row-span-2">
+            <LiveChat video={video} channel={channel} user={user} onUserUpdate={loadUser} />
+          </div>
+        )}
 
         <div className="space-y-4 min-w-0">
           {/* Title (editable by owner) */}

@@ -54,7 +54,13 @@ function ShortItem({ short, isActive }) {
   return (
     <div className="relative w-full h-full bg-black flex items-center justify-center">
       {isYouTube ? (
-        <YouTubePlayer videoId={short.id} autoplay={false} onReady={handleYTReady} />
+        isActive ? (
+          <YouTubePlayer videoId={short.id} autoplay={false} onReady={handleYTReady} />
+        ) : short.thumbnail_url ? (
+          <img src={short.thumbnail_url} alt={short.title} className="h-full w-full object-cover" />
+        ) : (
+          <div className="h-full w-full grid-bg" />
+        )
       ) : short.video_url ? (
         <video
           ref={videoRef}
