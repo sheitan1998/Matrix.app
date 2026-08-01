@@ -3,7 +3,7 @@ import { useTwitchAuth } from "@/context/TwitchAuthContext";
 import { useTwitch } from "@/hooks/useTwitch";
 import TwitchStreamCard from "@/components/twitch/TwitchStreamCard";
 import TwitchCategoryCard from "@/components/twitch/TwitchCategoryCard";
-import { Twitch as TwitchIcon, Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { useState } from "react";
 
 const SUB_TABS = [
@@ -134,7 +134,7 @@ export default function TwitchHome() {
                   <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#a0a0b0]" /></div>
                 ) : (
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-                    {categories.map((c) => <TwitchCategoryCard key={c.id} category={c} />)}
+                    {categories.map((c) => <TwitchCategoryCard key={c.id} category={c} square />)}
                   </div>
                 )}
               </section>

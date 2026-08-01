@@ -4,7 +4,7 @@
  * parameter must match the page hostname.
  */
 export default function TwitchChat({ channel, className = "" }) {
-  if (!channel) return <div className={`w-full h-full bg-[#0e0e10] ${className}`} />;
+  if (!channel) return <div className={`w-full h-full bg-[#0a0714] ${className}`} />;
 
   const parent = window.location.hostname;
   const src = `https://www.twitch.tv/embed/${channel}/chat?parent=${parent}&darkpopout=true`;

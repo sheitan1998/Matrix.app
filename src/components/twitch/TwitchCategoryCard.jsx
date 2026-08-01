@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
  * TwitchCategoryCard — square card for a Twitch category (game).
  * Shows box art image + game name.
  */
-export default function TwitchCategoryCard({ category }) {
+export default function TwitchCategoryCard({ category, square = false }) {
   if (!category) return null;
 
   return (
@@ -12,7 +12,7 @@ export default function TwitchCategoryCard({ category }) {
       to={`/twitch/search?q=${encodeURIComponent(category.name)}&filter=categories`}
       className="group block w-full"
     >
-      <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-[#161321] hover:ring-2 hover:ring-[#db2777] transition-all">
+      <div className={`relative ${square ? "aspect-square" : "aspect-[3/4]"} rounded-xl overflow-hidden bg-[#161321] hover:ring-2 hover:ring-[#db2777] transition-all`}>
         {category.box_art_url ? (
           <img
             src={category.box_art_url}

@@ -30,9 +30,7 @@ export default function TwitchStreamCard({ stream }) {
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-[#a0a0b0] text-xs">
-            Pas de miniature
-          </div>
+          <div className="w-full h-full bg-[#161321]" />
         )}
 
         {/* LIVE badge */}

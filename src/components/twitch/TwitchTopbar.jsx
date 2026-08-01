@@ -15,7 +15,7 @@ export default function TwitchTopbar({ activeTab = "suivis", onTabChange }) {
   };
 
   return (
-    <header className="sticky top-0 z-50 flex items-center gap-3 px-4 h-14 bg-[#0e0e10] border-b border-[#2a2a3e]">
+    <header className="sticky top-0 z-50 flex items-center gap-3 px-4 h-14 bg-[#0a0714] border-b border-[#1f1f2e]">
       {/* Back button */}
       <button
         onClick={() => navigate("/")}

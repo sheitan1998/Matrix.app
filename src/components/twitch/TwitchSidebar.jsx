@@ -73,19 +73,21 @@ export default function TwitchSidebar() {
   const visibleLive = showAllLive ? liveChannels : liveChannels.slice(0, 8);
 
   return (
-    <aside className="hidden lg:flex flex-col w-60 shrink-0 bg-[#0e0e10] border-r border-[#1f1f2e] overflow-y-auto scrollbar-thin h-[calc(100vh-3.5rem)] sticky top-14">
+    <aside className="hidden lg:flex flex-col w-64 shrink-0 bg-[#0a0714] border-r border-[#1f1f2e] overflow-y-auto scrollbar-thin h-[calc(100vh-3.5rem)] sticky top-14">
       {/* Pour vous — followed channels */}
-      {isAuthenticated && (
-        <SidebarSection title="Pour vous">
-          {followed.length > 0 ? (
-            followed.slice(0, 5).map((s) => <FollowedItem key={s.id} stream={s} />)
-          ) : (
-            <p className="text-xs text-[#a0a0b0] px-1.5 py-2">
-              {followedStreams.isLoading ? "Chargement..." : "Aucune chaîne suivie en direct"}
-            </p>
-          )}
-        </SidebarSection>
-      )}
+      <SidebarSection title="Pour vous">
+        {!isAuthenticated ? (
+          <p className="text-xs text-[#a0a0b0] px-1.5 py-2">
+            Connectez-vous pour voir vos chaînes suivies
+          </p>
+        ) : followed.length > 0 ? (
+          followed.slice(0, 5).map((s) => <FollowedItem key={s.id} stream={s} />)
+        ) : (
+          <p className="text-xs text-[#a0a0b0] px-1.5 py-2">
+            {followedStreams.isLoading ? "Chargement..." : "Aucune chaîne suivie en direct"}
+          </p>
+        )}
+      </SidebarSection>
 
       {/* Chaînes live */}
       <SidebarSection title="Chaînes live">
@@ -114,11 +116,8 @@ export default function TwitchSidebar() {
           <Link
             key={c.id}
             to={`/twitch/search?q=${encodeURIComponent(c.name)}&filter=categories`}
-            className="flex items-center gap-2 px-1.5 py-1.5 rounded-md hover:bg-white/5 transition-colors"
+            className="block px-1.5 py-1.5 rounded-md hover:bg-white/5 transition-colors"
           >
-            <div className="w-7 h-9 rounded overflow-hidden bg-[#1f1f2e] shrink-0">
-              {c.box_art_url && <img src={c.box_art_url} alt="" className="w-full h-full object-cover" loading="lazy" />}
-            </div>
             <span className="text-sm text-white truncate">{c.name}</span>
           </Link>
         ))}

@@ -140,7 +140,7 @@ export default function TwitchWatch() {
         </div>
 
         {/* Stream info */}
-        <div className="p-4 bg-[#0e0e10] border-t border-[#1f1f2e] shrink-0">
+        <div className="p-4 bg-[#161321] border-t border-[#1f1f2e] shrink-0">
           <div className="flex items-start gap-3">
             <div className="w-12 h-12 rounded-full overflow-hidden bg-[#1f1f2e] shrink-0">
               {user.profile_image_url && <img src={user.profile_image_url} alt="" className="w-full h-full object-cover" />}
@@ -183,7 +183,7 @@ export default function TwitchWatch() {
       </div>
 
       {/* Chat sidebar (desktop) */}
-      <aside className="hidden lg:flex w-80 xl:w-96 shrink-0 flex-col bg-[#0e0e10] border-l border-[#1f1f2e]">
+      <aside className="hidden lg:flex w-80 xl:w-96 shrink-0 flex-col bg-[#0a0714] border-l border-[#1f1f2e]">
         <div className="px-4 py-3 border-b border-[#1f1f2e] shrink-0">
           <h3 className="text-white font-semibold text-sm">Chat du stream</h3>
         </div>
@@ -195,7 +195,7 @@ export default function TwitchWatch() {
       {/* Mobile chat overlay */}
       {showChatMobile && (
         <div className="lg:hidden fixed inset-0 z-50 bg-black flex flex-col">
-          <div className="flex items-center justify-between px-4 py-3 bg-[#0e0e10] border-b border-[#1f1f2e] shrink-0">
+          <div className="flex items-center justify-between px-4 py-3 bg-[#0a0714] border-b border-[#1f1f2e] shrink-0">
             <h3 className="text-white font-semibold text-sm">Chat du stream</h3>
             <button onClick={() => setShowChatMobile(false)} className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center tap-sm">
               <X className="w-4 h-4 text-white" />
