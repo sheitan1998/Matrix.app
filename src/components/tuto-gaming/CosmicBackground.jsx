@@ -3,12 +3,24 @@ import React from "react";
 export default function CosmicBackground() {
   return (
     <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
-      {/* Deep space base */}
+      {/* Cosmic portal image */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: "url(https://media.base44.com/images/public/69e14a987a927963a9924d5a/36cb13e5a_Gemini_Generated_Image_vhl52mvhl52mvhl5.png)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundAttachment: "fixed",
+          opacity: 0.55,
+        }}
+      />
+
+      {/* Dark gradient overlay for readability */}
       <div
         className="absolute inset-0"
         style={{
           background:
-            "linear-gradient(180deg, #0D0518 0%, #1A0B2E 30%, #2D1B4E 60%, #1A0B2E 100%)",
+            "linear-gradient(180deg, rgba(13,5,24,0.5) 0%, rgba(13,5,24,0.35) 40%, rgba(13,5,24,0.6) 100%)",
         }}
       />
 
