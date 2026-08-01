@@ -3,20 +3,19 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import {
-  Youtube, Radio, MessageCircle, Cpu, Dices, Search, GraduationCap, Server,
+  Youtube, Radio, MessageCircle, Cpu, Dices, Search, GraduationCap,
   Wrench, BarChart3, Clapperboard, TrendingUp,
   Gem, Shield, Star, ChevronDown, User, ArrowRight,
 } from "lucide-react";
 
 const LEFT_CARDS = [
-  { path: "/youtube", label: "Youtube", desc: "Recherche vidéos, chaînes, créateurs. Contenu gaming en avant.", icon: Youtube, color: "#FF0000" },
-  { path: "/twitch", label: "Twitch", desc: "Streams en direct, streamers, clips et catégories de jeux.", icon: Radio, color: "#A855F7" },
+  { path: "/stream", label: "Youtube", desc: "Vidéos, lives, shorts. Crée ta chaîne et partage ton contenu.", icon: Youtube, color: "#FF0000" },
+  { path: "/live", label: "Twitch", desc: "Streams en direct, clips, discussions et rencontres.", icon: Radio, color: "#A855F7" },
   { path: "/community", label: "Discord", desc: "Discute, réagis, commente. Rejoins ou crée des salons vocaux.", icon: MessageCircle, color: "#3B82F6" },
   { path: "/ai", label: "AI Studio", desc: "Chat, création, code, histoires. Exploite l'IA sans limites.", icon: Cpu, color: "#06B6D4" },
   { path: "/casino", label: "Casino", desc: "Roulette, machines à sous, blackjack. Jeux fictifs uniquement.", icon: Dices, color: "#F59E0B", badge: "18+" },
-  { path: "/recherche-joueur", label: "Recherche Joueur", desc: "Trouve des coéquipiers, poste ton annonce, filtre par jeu.", icon: Search, color: "#22C55E" },
-  { path: "/recherche-serveur", label: "Recherche Serveur", desc: "Découvre et rejoins des serveurs gaming. Top 10 et classement.", icon: Server, color: "#8B5CF6" },
-  { path: "/tuto-gaming", label: "Tuto Gaming/Entraide", desc: "Guides, astuces, entraide et solutions pour tous les jeux.", icon: GraduationCap, color: "#3B82F6" },
+  { path: "/community", label: "Recherche Joueur/Serveur", desc: "Trouve des joueurs, recrute ou explore des serveurs de jeu.", icon: Search, color: "#22C55E" },
+  { path: "/category/gaming", label: "Tuto Gaming/Entraide", desc: "Guides, astuces, entraide et solutions pour tous les jeux.", icon: GraduationCap, color: "#3B82F6" },
 ];
 
 const RIGHT_TOP = [
