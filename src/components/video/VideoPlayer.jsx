@@ -48,7 +48,7 @@ export default function VideoPlayer({ video, showPreAd = false, onAdEnd }) {
   return (
     <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-black group">
       {isEmbeddable ? (
-        <div ref={(el) => mini.registerSlot?.(el)} className="relative w-full h-full bg-black">
+        <div ref={mini.registerSlot} className="relative w-full h-full bg-black">
           {video.thumbnail_url && (
             <img src={video.thumbnail_url} alt={video.title} className="w-full h-full object-cover" />
           )}
