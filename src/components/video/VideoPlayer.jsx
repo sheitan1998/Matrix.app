@@ -1,12 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { Radio, Youtube, ExternalLink } from "lucide-react";
 import QualitySelector from "./QualitySelector";
-import YouTubePlayer from "./YouTubePlayer";
+import { useMiniPlayer } from "@/context/MiniPlayerContext";
 
 export default function VideoPlayer({ video, showPreAd = false, onAdEnd }) {
   const [adSeconds, setAdSeconds] = useState(5);
   const [showingAd, setShowingAd] = useState(showPreAd);
   const [quality, setQuality] = useState("Auto");
+  const mini = useMiniPlayer();
+
+  const isYouTube = video._source === "youtube" && !!video.id;
+  const isEmbeddable = isYouTube && video.embeddable !== false;
+
+  useEffect(() => {
+    if (isEmbeddable && !showingAd) {
+      mini.playVideo?.(video);
+    }
+  }, [isEmbeddable, video?.id, showingAd]);
 
   useEffect(() => {
     if (!showingAd) return;
@@ -35,13 +45,14 @@ export default function VideoPlayer({ video, showPreAd = false, onAdEnd }) {
     );
   }
 
-  const isYouTube = video._source === "youtube" && !!video.id;
-  const isEmbeddable = isYouTube && video.embeddable !== false;
-
   return (
     <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-black group">
       {isEmbeddable ? (
-        <YouTubePlayer videoId={video.id} autoplay={!showPreAd} />
+        <div ref={(el) => mini.registerSlot?.(el)} className="relative w-full h-full bg-black">
+          {video.thumbnail_url && (
+            <img src={video.thumbnail_url} alt={video.title} className="w-full h-full object-cover" />
+          )}
+        </div>
       ) : isYouTube && video.embeddable === false ? (
         <a
           href={`https://www.youtube.com/watch?v=${video.id}`}

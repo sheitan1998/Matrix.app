@@ -24,7 +24,7 @@ function loadYouTubeAPI() {
  * YouTube IFrame Player — embeds a YouTube video using the official
  * IFrame Player API. Pass the video ID returned by the YouTube Data API v3.
  */
-export default function YouTubePlayer({ videoId, autoplay = true }) {
+export default function YouTubePlayer({ videoId, autoplay = true, onReady, onStateChange }) {
   const wrapperRef = useRef(null);
   const playerRef = useRef(null);
 
@@ -49,6 +49,10 @@ export default function YouTubePlayer({ videoId, autoplay = true }) {
           modestbranding: 1,
           playsinline: 1,
         },
+        events: {
+          onReady: (e) => onReady?.(e.target),
+          onStateChange: (e) => onStateChange?.(e.data),
+        },
       });
     });
     return () => {
@@ -58,7 +62,7 @@ export default function YouTubePlayer({ videoId, autoplay = true }) {
         playerRef.current = null;
       }
     };
-  }, [videoId, autoplay]);
+  }, [videoId, autoplay, onReady, onStateChange]);
 
   return <div ref={wrapperRef} className="w-full h-full" />;
 }

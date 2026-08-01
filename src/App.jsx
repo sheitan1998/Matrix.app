@@ -46,6 +46,7 @@ import Progression from '@/pages/Progression';
 import Notifications from '@/pages/Notifications';
 import Outils from '@/pages/Outils';
 import { ProgressionProvider } from '@/context/ProgressionContext';
+import { MiniPlayerProvider } from '@/context/MiniPlayerContext';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings } = useAuth();
@@ -60,6 +61,7 @@ const AuthenticatedApp = () => {
 
   return (
     <ProgressionProvider>
+    <MiniPlayerProvider>
     <AnimatedRoutes>
     <Routes>
       <Route path="/login" element={<Login />} />
@@ -104,6 +106,7 @@ const AuthenticatedApp = () => {
       <Route path="*" element={<PageNotFound />} />
     </Routes>
     </AnimatedRoutes>
+    </MiniPlayerProvider>
     </ProgressionProvider>
   );
 };
