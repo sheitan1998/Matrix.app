@@ -68,7 +68,7 @@ export default function Watch() {
   });
 
   useEffect(() => {
-    if (video?.id) {
+    if (video?.id && video._source !== "youtube") {
       base44.entities.Video.update(video.id, { views: (video.views || 0) + 1 });
     }
   }, [video?.id]);
@@ -115,9 +115,11 @@ export default function Watch() {
                     setOptimisticLikes(newLikes);
                     setLiked(true);
                     if (disliked) { setDisliked(false); setOptimisticDislikes((video.dislikes || 0)); }
-                    base44.entities.Video.update(video.id, { likes: newLikes }).catch(() => {
-                      setOptimisticLikes(null); setLiked(false);
-                    });
+                    if (video._source !== "youtube") {
+                      base44.entities.Video.update(video.id, { likes: newLikes }).catch(() => {
+                        setOptimisticLikes(null); setLiked(false);
+                      });
+                    }
                   }}
                   className={cn("flex items-center gap-1.5 px-4 h-11 hover:bg-secondary/70 transition border-r border-border select-none", liked && "text-primary")}
                 >
@@ -131,9 +133,11 @@ export default function Watch() {
                     setOptimisticDislikes(newDislikes);
                     setDisliked(true);
                     if (liked) { setLiked(false); setOptimisticLikes((video.likes || 0)); }
-                    base44.entities.Video.update(video.id, { dislikes: newDislikes }).catch(() => {
-                      setOptimisticDislikes(null); setDisliked(false);
-                    });
+                    if (video._source !== "youtube") {
+                      base44.entities.Video.update(video.id, { dislikes: newDislikes }).catch(() => {
+                        setOptimisticDislikes(null); setDisliked(false);
+                      });
+                    }
                   }}
                   className={cn("px-4 h-11 hover:bg-secondary/70 transition select-none", disliked && "text-destructive")}
                 >
