@@ -38,14 +38,14 @@ export default function VIPClubPage({ coins, onBack }) {
         {/* Header */}
         <div className="sticky top-0 z-40 flex items-center gap-3 px-4 py-3"
           style={{ background: "rgba(10,10,10,0.85)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(251,191,36,0.15)" }}>
-          <button onClick={onBack} className="flex items-center gap-2 text-white/60 hover:text-white transition tap-sm">
+          <Link to="/" className="flex items-center gap-2 text-white/60 hover:text-white transition tap-sm">
             <ArrowLeft className="w-5 h-5" />
             <span className="text-xs font-bold hidden sm:inline">Retour</span>
-          </button>
-          <Link to="/" className="flex items-center gap-2 text-white/60 hover:text-white transition ml-1 tap-sm">
-            <Home className="w-4 h-4" />
-            <span className="text-xs font-bold hidden sm:inline">Hub</span>
           </Link>
+          <button onClick={onBack} className="flex items-center gap-2 text-white/60 hover:text-white transition ml-1 tap-sm">
+            <Home className="w-4 h-4" />
+            <span className="text-xs font-bold hidden sm:inline">Accueil</span>
+          </button>
           <div className="flex items-center gap-2">
             <Crown className="w-5 h-5" style={{ color: "#fbbf24", filter: "drop-shadow(0 0 8px #fbbf24)" }} />
             <h1 className="font-black text-lg tracking-wider" style={{

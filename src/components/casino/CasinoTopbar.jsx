@@ -16,7 +16,7 @@ export default function CasinoTopbar({ balance, onVipClub, onSettings, playersOn
       <Link to="/" className="flex items-center gap-1.5 h-9 px-3 rounded-xl shrink-0 transition"
         style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
         <Home className="w-4 h-4 text-white/60" />
-        <span className="text-xs font-bold text-white/60 hidden sm:inline">Hub</span>
+        <span className="text-xs font-bold text-white/60 hidden sm:inline">Retour</span>
       </Link>
 
       <div className="flex-1 max-w-sm relative">

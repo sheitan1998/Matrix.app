@@ -31,7 +31,9 @@ export default function CasinoGameCard({ game, onPlay, delay = 0 }) {
       {/* Image */}
       <div className="relative aspect-[4/3] overflow-hidden">
         <img src={game.img} alt={game.name} className="w-full h-full object-cover transition-transform duration-500"
-          style={{ transform: hovered ? "scale(1.08)" : "scale(1)" }} />
+          style={{ transform: hovered ? "scale(1.08)" : "scale(1)" }}
+          onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=400&h=300&fit=crop"; }}
+          loading="lazy" />
         <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, transparent 40%, rgba(8,8,12,0.95) 100%)" }} />
 
         {/* Badges */}

@@ -108,14 +108,14 @@ export default function Casino() {
           {/* Game header */}
           <div className="sticky top-0 z-40 flex items-center gap-3 px-4 py-3"
             style={{ background: "rgba(8,8,12,0.85)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-            <button onClick={() => setScreen("home")} className="flex items-center gap-2 text-white/60 hover:text-white transition tap-sm">
+            <Link to="/" className="flex items-center gap-2 text-white/60 hover:text-white transition tap-sm">
               <ArrowLeft className="w-4 h-4" />
               <span className="text-xs font-bold hidden sm:inline">Retour</span>
-            </button>
-            <Link to="/" className="flex items-center gap-2 text-white/60 hover:text-white transition ml-1 px-2 py-1 rounded-lg hover:bg-white/5 tap-sm">
-              <Home className="w-4 h-4" />
-              <span className="text-xs font-bold hidden sm:inline">Hub</span>
             </Link>
+            <button onClick={() => setScreen("home")} className="flex items-center gap-2 text-white/60 hover:text-white transition ml-1 px-2 py-1 rounded-lg hover:bg-white/5 tap-sm">
+              <Home className="w-4 h-4" />
+              <span className="text-xs font-bold hidden sm:inline">Accueil</span>
+            </button>
             <div className="flex items-center gap-2">
               <span className="text-lg" style={{ filter: `drop-shadow(0 0 6px ${meta.color})` }}>{meta.emoji}</span>
               <span className="font-black text-sm tracking-wider" style={{ color: meta.color, textShadow: `0 0 10px ${meta.color}80` }}>
