@@ -86,6 +86,14 @@ export default function Live() {
             </div>
           </div>
 
+        </div>
+
+        {/* Chat — below video on mobile, right column on desktop */}
+        <div className="h-[500px] xl:h-[calc(100vh-96px)] xl:sticky xl:top-20 xl:row-span-2">
+          <LiveChat video={video} channel={channel} user={user} onUserUpdate={loadUser} />
+        </div>
+
+        <div className="space-y-4 min-w-0">
           {/* Title (editable by owner) */}
           {editingTitle ? (
             <div className="flex gap-2">
@@ -153,9 +161,6 @@ export default function Live() {
           )}
         </div>
 
-        <div className="xl:h-[calc(100vh-96px)] h-[600px] xl:sticky xl:top-20">
-          <LiveChat video={video} channel={channel} user={user} onUserUpdate={loadUser} />
-        </div>
       </div>
 
       <ShareDialog open={shareOpen} onOpenChange={setShareOpen} url={window.location.href} title={video.title} />

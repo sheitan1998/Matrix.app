@@ -2,7 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from 'base44:runtime';
 import {
   youtubeFetch, fetchVideoStats, mapVideoWithStats, mapChannel,
-  mapComment, mapSearchChannel,
+  mapComment, mapSearchChannel, mapLiveChatMessage,
 } from '../../shared/youtube.ts';
 
 export default async function(req: Request): Promise<Response> {
@@ -410,6 +410,52 @@ export default async function(req: Request): Promise<Response> {
         const clientId = secrets.get("GOOGLE_CLIENT_ID");
         if (!clientId) return Response.json({ error: 'GOOGLE_CLIENT_ID not configured. Add it in Dashboard → Settings → Environment Variables.' }, { status: 500 });
         result = { client_id: clientId };
+        break;
+      }
+
+      // ─── liveStreamingDetails — get activeLiveChatId for a live video ───
+      case 'getLiveChatId': {
+        const data = await youtubeFetch('videos', {
+          part: 'liveStreamingDetails',
+          id: params.id,
+        }, apiKey);
+        if (data._error) return Response.json(data, { status: data.status });
+        const item = data.items?.[0];
+        result = { live_chat_id: item?.liveStreamingDetails?.activeLiveChatId || null };
+        break;
+      }
+
+      // ─── liveChatMessages.list — real-time live chat messages (requires OAuth) ───
+      case 'liveChatMessages': {
+        const chatUrl = new URL(`https://www.googleapis.com/youtube/v3/liveChatMessages`);
+        chatUrl.searchParams.set('part', 'snippet,authorDetails');
+        chatUrl.searchParams.set('liveChatId', String(params.liveChatId));
+        chatUrl.searchParams.set('maxResults', String(params.maxResults || 200));
+        if (params.pageToken) chatUrl.searchParams.set('pageToken', params.pageToken);
+
+        const fetchOpts: Record<string, any> = {};
+        if (params.oauthToken) {
+          fetchOpts.headers = { Authorization: `Bearer ${params.oauthToken}` };
+        } else {
+          chatUrl.searchParams.set('key', apiKey);
+        }
+
+        const chatRes = await fetch(chatUrl.toString(), fetchOpts);
+        if (!chatRes.ok) {
+          const errBody = await chatRes.json().catch(() => ({}));
+          return Response.json({
+            _error: true,
+            status: chatRes.status,
+            message: errBody.error?.message || `YouTube API ${chatRes.status}`,
+          }, { status: chatRes.status });
+        }
+        const chatData = await chatRes.json();
+        result = {
+          messages: (chatData.items || []).map(mapLiveChatMessage),
+          nextPageToken: chatData.nextPageToken || null,
+          pollingIntervalMillis: chatData.pollingIntervalMillis || 5000,
+          _source: 'youtube',
+        };
         break;
       }
 

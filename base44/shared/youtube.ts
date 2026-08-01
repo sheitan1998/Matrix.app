@@ -60,6 +60,7 @@ export function mapVideoWithStats(item) {
     duration: parseDuration(cd.duration || ""),
     is_live: sn.liveBroadcastContent === "live",
     viewers_count: parseInt(lsd.concurrentViewers || "0"),
+    live_chat_id: lsd.activeLiveChatId || "",
     category: sn.categoryId || "other",
     tags: sn.tags || [],
     video_url: "",
@@ -102,6 +103,22 @@ export function mapComment(item) {
     likes: parseInt(top.likeCount || "0"),
     is_premium: false,
     created_date: top.publishedAt || new Date().toISOString(),
+    _source: "youtube",
+  };
+}
+
+/** liveChatMessages.list item → ChatMessage entity shape */
+export function mapLiveChatMessage(item) {
+  const ad = item.authorDetails || {};
+  const sn = item.snippet || {};
+  return {
+    id: item.id,
+    author_name: ad.displayName || "",
+    author_avatar: ad.profileImageUrl || "",
+    content: sn.textMessageDetails?.textMessage || sn.superChatDetails?.userComment || "",
+    created_date: sn.publishedAt || new Date().toISOString(),
+    is_premium: ad.isChatSponsor || ad.isChatModerator || false,
+    type: "message",
     _source: "youtube",
   };
 }

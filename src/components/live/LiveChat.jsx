@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
+import { fetchYouTube } from "@/hooks/useYouTube";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Crown, Star, Send, MessageCircle, Euro, Smile } from "lucide-react";
+import { Crown, Star, Send, MessageCircle, Euro, Smile, Youtube } from "lucide-react";
 import { cn } from "@/lib/utils";
 import TrixDonationDialog from "./TrixDonationDialog";
 import EuroDonationDialog from "./EuroDonationDialog";
@@ -36,46 +37,64 @@ function MessageItem({ m }) {
   }
 
   return (
-    <div className="text-sm leading-snug">
-      <span className="inline-flex items-center gap-1 mr-1.5 align-middle">
-        {m.sub_tier === "vip" && <Crown className="w-3.5 h-3.5 text-trix" />}
-        {m.sub_tier === "supporter" && <Star className="w-3.5 h-3.5 text-primary" />}
-        {m.is_premium && <Crown className="w-3.5 h-3.5 text-premium" />}
-        <span className={cn("font-semibold",
-          m.sub_tier === "vip" ? "text-trix" :
-          m.sub_tier === "supporter" ? "text-primary" :
-          m.is_premium ? "text-premium" : "text-foreground"
-        )}>
-          {m.author_name || "Anon"}
+    <div className="text-sm leading-snug flex items-start gap-1.5">
+      {m.author_avatar && (
+        <img src={m.author_avatar} alt="" className="w-5 h-5 rounded-full mt-0.5 shrink-0" />
+      )}
+      <span className="flex-1">
+        <span className="inline-flex items-center gap-1 mr-1.5 align-middle">
+          {m.sub_tier === "vip" && <Crown className="w-3.5 h-3.5 text-trix" />}
+          {m.sub_tier === "supporter" && <Star className="w-3.5 h-3.5 text-primary" />}
+          {m.is_premium && <Crown className="w-3.5 h-3.5 text-premium" />}
+          {m._source === "youtube" && <Youtube className="w-3 h-3 text-[#FF0000]" />}
+          <span className={cn("font-semibold",
+            m.sub_tier === "vip" ? "text-trix" :
+            m.sub_tier === "supporter" ? "text-primary" :
+            m.is_premium ? "text-premium" : "text-foreground"
+          )}>
+            {m.author_name || "Anon"}
+          </span>
         </span>
+        <span className="text-muted-foreground">: </span>
+        <span>{m.content}</span>
       </span>
-      <span className="text-muted-foreground">: </span>
-      <span>{m.content}</span>
     </div>
   );
 }
 
 export default function LiveChat({ video, channel, user, onUserUpdate }) {
-  const [messages, setMessages] = useState([]);
+  const [localMsgs, setLocalMsgs] = useState([]);
+  const [ytMsgs, setYtMsgs] = useState([]);
   const [text, setText] = useState("");
   const [donateOpen, setDonateOpen] = useState(false);
   const [euroOpen, setEuroOpen] = useState(false);
   const [showEmojis, setShowEmojis] = useState(false);
+  const [ytChatState, setYtChatState] = useState("idle");
   const scrollRef = useRef(null);
 
+  const isYouTubeLive = video?._source === "youtube" && video?.is_live;
+
+  // Merge local + YouTube messages, sorted by date
+  const messages = useMemo(() => {
+    return [...localMsgs, ...ytMsgs]
+      .sort((a, b) => new Date(a.created_date || 0) - new Date(b.created_date || 0))
+      .slice(-200);
+  }, [localMsgs, ytMsgs]);
+
+  // Local chat messages (donations + platform messages)
   useEffect(() => {
     if (!video?.id) return;
     let active = true;
     const load = async () => {
       const list = await base44.entities.ChatMessage.filter({ video_id: video.id }, "-created_date", 80);
-      if (active) setMessages(list.reverse());
+      if (!active) return;
+      setLocalMsgs(list.reverse());
     };
     load();
-    // Real-time subscription for instant updates
     const unsubscribe = base44.entities.ChatMessage.subscribe((event) => {
       if (!active || event.data?.video_id !== video.id) return;
       if (event.type === "create" && event.data?.type !== "reaction") {
-        setMessages((prev) => {
+        setLocalMsgs((prev) => {
           if (prev.some((m) => m.id === event.data.id)) return prev;
           return [...prev, event.data];
         });
@@ -84,6 +103,67 @@ export default function LiveChat({ video, channel, user, onUserUpdate }) {
     return () => { active = false; unsubscribe(); };
   }, [video?.id]);
 
+  // YouTube Live Chat polling (requires YouTube OAuth token)
+  useEffect(() => {
+    if (!isYouTubeLive) return;
+    const oauthToken = localStorage.getItem("yt_oauth_token");
+    if (!oauthToken) {
+      setYtChatState("no_token");
+      return;
+    }
+
+    let active = true;
+    let pollTimer;
+    let pageToken;
+    setYtChatState("loading");
+
+    const poll = async () => {
+      let chatId = video.live_chat_id;
+      if (!chatId) {
+        const config = await fetchYouTube("getLiveChatId", { id: video.id });
+        chatId = config?.live_chat_id;
+      }
+      if (!chatId || !active) return;
+
+      const res = await fetchYouTube("liveChatMessages", { liveChatId: chatId, pageToken, oauthToken });
+      if (!active) return;
+      if (res?._error) {
+        setYtChatState("error");
+        console.warn("[LiveChat] YouTube live chat error:", res.message);
+        return;
+      }
+      if (!res?.messages) return;
+
+      setYtChatState("connected");
+      const newMsgs = res.messages;
+      if (!pageToken) {
+        setYtMsgs(newMsgs);
+      } else {
+        setYtMsgs((prev) => {
+          const existing = new Set(prev.map((m) => m.id));
+          return [...prev, ...newMsgs.filter((m) => !existing.has(m.id))];
+        });
+      }
+
+      pageToken = res.nextPageToken;
+      if (pageToken) {
+        const interval = Math.max(res.pollingIntervalMillis || 5000, 3000);
+        pollTimer = setTimeout(poll, interval);
+      }
+    };
+
+    poll().catch((e) => {
+      console.warn("[LiveChat] YouTube live chat error:", e?.message);
+      if (active) setYtChatState("error");
+    });
+
+    return () => {
+      active = false;
+      clearTimeout(pollTimer);
+    };
+  }, [isYouTubeLive, video?.id, video?.live_chat_id]);
+
+  // Auto-scroll on new messages
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages]);
@@ -107,15 +187,13 @@ export default function LiveChat({ video, channel, user, onUserUpdate }) {
       is_premium: !!user.is_premium,
       is_subscriber: !!userSub,
       sub_tier: userSub?.tier,
+      created_date: new Date().toISOString(),
     };
-    // Optimistic: add instantly
-    setMessages((prev) => [...prev, optimistic]);
+    setLocalMsgs((prev) => [...prev, optimistic]);
     setText("");
     setShowEmojis(false);
-    // Persist in background
     const saved = await base44.entities.ChatMessage.create(optimistic);
-    // Replace optimistic entry with real one
-    setMessages((prev) => prev.map((m) => (m.id === optimistic.id ? saved : m)));
+    setLocalMsgs((prev) => prev.map((m) => (m.id === optimistic.id ? saved : m)));
   };
 
   const addEmoji = (e) => {
@@ -129,6 +207,20 @@ export default function LiveChat({ video, channel, user, onUserUpdate }) {
         <div className="px-4 py-3 border-b border-border flex items-center gap-2">
           <MessageCircle className="w-4 h-4 text-muted-foreground" />
           <span className="font-semibold text-sm">Chat en direct</span>
+          {isYouTubeLive && (
+            <span className={cn("flex items-center gap-1 text-[10px] font-bold",
+              ytChatState === "connected" ? "text-green-400" :
+              ytChatState === "no_token" ? "text-amber-400" :
+              ytChatState === "error" ? "text-red-400" :
+              "text-[#FF0000]"
+            )}>
+              <Youtube className="w-3 h-3" /> YouTube
+              {ytChatState === "no_token" && " · Connectez-vous"}
+              {ytChatState === "loading" && " · ..."}
+              {ytChatState === "connected" && " · Connecté"}
+              {ytChatState === "error" && " · Erreur"}
+            </span>
+          )}
           <span className="ml-auto flex items-center gap-1 text-[10px] text-green-400 font-bold">
             <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" /> LIVE
           </span>
@@ -140,6 +232,11 @@ export default function LiveChat({ video, channel, user, onUserUpdate }) {
         </div>
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto scrollbar-thin px-3 py-3 space-y-2 min-h-0">
+          {isYouTubeLive && ytChatState === "no_token" && (
+            <div className="rounded-lg p-3 bg-amber-500/10 border border-amber-500/30 text-xs text-amber-400 mb-2">
+              Connectez votre compte YouTube (icône YouTube en haut) pour voir le chat YouTube Live en temps réel.
+            </div>
+          )}
           {messages.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">Sois le premier à écrire 🎬</p>
           ) : (
