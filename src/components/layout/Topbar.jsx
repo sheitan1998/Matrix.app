@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { base44 } from "@/api/base44Client";
 import { formatTrix } from "@/lib/format";
+import YouTubeChannelProfile from "@/components/youtube/YouTubeChannelProfile";
 
 const ROOT_ROUTES = ["/stream", "/trending", "/shorts", "/profile", "/"];
 
@@ -98,11 +99,7 @@ export default function Topbar() {
             </Button>
           </Link>
 
-          <Link to="/profile">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-sm ml-1">
-              {user?.full_name?.[0]?.toUpperCase() || "?"}
-            </div>
-          </Link>
+          <YouTubeChannelProfile />
         </div>
       </div>
     </header>
