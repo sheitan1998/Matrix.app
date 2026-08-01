@@ -17,7 +17,7 @@ const LEFT_CARDS = [
   { path: "/ai", label: "AI Studio", desc: "Chat, création, code, histoires. Exploite l'IA sans limites.", icon: Cpu, color: "#06B6D4" },
   { path: "/casino", label: "Casino", desc: "Roulette, machines à sous, blackjack. Jeux fictifs uniquement.", icon: Dices, color: "#F59E0B", badge: "18+" },
   { path: "/prospecteurs", label: "Recherche Joueur/Serveur", desc: "Trouve des joueurs, recrute ou explore des serveurs de jeu.", icon: Search, color: "#8a4fff" },
-  { path: "/category/gaming", label: "Tuto Gaming/Entraide", desc: "Guides, astuces, entraide et solutions pour tous les jeux.", icon: GraduationCap, color: "#3B82F6" },
+  { path: "/tuto-gaming", label: "Tuto Gaming Entraide", desc: "Guides, astuces, entraide et base de connaissances pour tous les jeux.", icon: GraduationCap, color: "#BF5AF2" },
 ];
 
 const RIGHT_TOP = [

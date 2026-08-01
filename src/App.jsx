@@ -49,6 +49,10 @@ import Outils from '@/pages/Outils';
 import { ProgressionProvider } from '@/context/ProgressionContext';
 import { MiniPlayerProvider } from '@/context/MiniPlayerContext';
 import TwitchLayout from '@/components/twitch/TwitchLayout';
+import TutoGamingLayout from '@/components/tuto-gaming/TutoGamingLayout';
+import TutoGamingHub from '@/pages/tuto-gaming/TutoGamingHub';
+import GameDetailPage from '@/pages/tuto-gaming/GameDetailPage';
+import QuestDetailPage from '@/pages/tuto-gaming/QuestDetailPage';
 import TwitchHome from '@/pages/twitch/TwitchHome';
 import TwitchWatch from '@/pages/twitch/TwitchWatch';
 import TwitchSearch from '@/pages/twitch/TwitchSearch';
@@ -75,6 +79,11 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/" element={<Landing />} />
+      <Route element={<TutoGamingLayout />}>
+        <Route path="/tuto-gaming" element={<TutoGamingHub />} />
+        <Route path="/tuto-gaming/:gameSlug" element={<GameDetailPage />} />
+        <Route path="/tuto-gaming/:gameSlug/quest/:questId" element={<QuestDetailPage />} />
+      </Route>
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route path="/community" element={<Community />} />
       <Route path="/shorts" element={<Shorts />} />

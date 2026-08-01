@@ -1,0 +1,53 @@
+{
+  "name": "GameComment",
+  "type": "object",
+  "properties": {
+    "quest_id": {
+      "type": "string",
+      "description": "ID de la quete associee"
+    },
+    "parent_id": {
+      "type": "string",
+      "description": "ID du commentaire parent pour les reponses (null = commentaire principal)"
+    },
+    "author_email": {
+      "type": "string"
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "author_avatar": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string",
+      "description": "Contenu du commentaire"
+    }
+  },
+  "required": [
+    "quest_id",
+    "author_email",
+    "content"
+  ],
+  "rls": {
+    "create": {
+      "data.author_email": "{{user.email}}"
+    },
+    "read": {},
+    "update": {
+      "data.author_email": "{{user.email}}"
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.author_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "name": "Quest",
+  "type": "object",
+  "properties": {
+    "game_id": {
+      "type": "string",
+      "description": "ID du jeu associe"
+    },
+    "game_slug": {
+      "type": "string",
+      "description": "Slug du jeu pour le routage"
+    },
+    "title": {
+      "type": "string",
+      "description": "Titre de la quete ou du guide"
+    },
+    "slug": {
+      "type": "string",
+      "description": "Slug URL"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "quete",
+        "debutant",
+        "classe",
+        "metier",
+        "progression",
+        "donjon",
+        "connaissance",
+        "faq"
+      ],
+      "default": "quete"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description courte"
+    },
+    "prerequisites": {
+      "type": "string",
+      "description": "Prerequis pour la quete"
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
+    },
+    "rewards": {
+      "type": "string",
+      "description": "Recompenses"
+    },
+    "tips": {
+      "type": "string",
+      "description": "Astuces"
+    },
+    "map_info": {
+      "type": "string",
+      "description": "Informations de carte et position"
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": [
+        "facile",
+        "moyen",
+        "difficile"
+      ],
+      "default": "facile"
+    },
+    "sort_order": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "game_id",
+    "game_slug",
+    "title",
+    "category"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {},
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
