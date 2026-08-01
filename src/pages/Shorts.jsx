@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { fetchYouTube, mergeYouTubeLocal } from "@/hooks/useYouTube";
 import { Heart, MessageCircle, Share2, ArrowLeft, Volume2, VolumeX } from "lucide-react";
 import { Link } from "react-router-dom";
 import { formatViews } from "@/lib/format";
@@ -82,7 +83,13 @@ export default function Shorts() {
 
   const { data: shorts = [], isLoading } = useQuery({
     queryKey: ["shorts"],
-    queryFn: () => base44.entities.Short.list("-created_date", 20),
+    queryFn: async () => {
+      const [local, yt] = await Promise.all([
+        base44.entities.Short.list("-created_date", 20),
+        fetchYouTube("shorts", { maxResults: 20 }),
+      ]);
+      return mergeYouTubeLocal(yt, local);
+    },
   });
 
   useEffect(() => {

@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { base44 } from "@/api/base44Client";
+import { fetchYouTube, mergeYouTubeLocal } from "@/hooks/useYouTube";
 import VideoPlayer from "@/components/video/VideoPlayer";
 import VideoCard from "@/components/video/VideoCard";
 import CommentSection from "@/components/video/CommentSection";
@@ -32,6 +33,8 @@ export default function Watch() {
   const { data: video } = useQuery({
     queryKey: ["video", id],
     queryFn: async () => {
+      const yt = await fetchYouTube("videoDetails", { id });
+      if (yt && yt.length > 0) return yt[0];
       const v = await base44.entities.Video.filter({ id });
       return v[0];
     },
@@ -39,9 +42,13 @@ export default function Watch() {
   });
 
   const { data: channel } = useQuery({
-    queryKey: ["channel", video?.channel_id],
+    queryKey: ["channel", video?.channel_id, video?._source],
     queryFn: async () => {
       if (!video?.channel_id) return null;
+      if (video._source === "youtube") {
+        const yt = await fetchYouTube("channelDetails", { id: video.channel_id });
+        if (yt && yt.length > 0) return yt[0];
+      }
       const c = await base44.entities.Channel.filter({ id: video.channel_id });
       return c[0];
     },
@@ -49,8 +56,13 @@ export default function Watch() {
   });
 
   const { data: related } = useQuery({
-    queryKey: ["related", video?.category],
-    queryFn: () => base44.entities.Video.filter({ category: video?.category || "other" }, "-views", 15),
+    queryKey: ["related", video?.id, video?.category],
+    queryFn: async () => {
+      if (video._source === "youtube" && video.id) {
+        return fetchYouTube("relatedVideos", { videoId: video.id, maxResults: 15 });
+      }
+      return base44.entities.Video.filter({ category: video?.category || "other" }, "-views", 15);
+    },
     initialData: [],
     enabled: !!video,
   });

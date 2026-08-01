@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { fetchYouTube, mergeYouTubeLocal } from "@/hooks/useYouTube";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { formatTimeAgo } from "@/lib/format";
@@ -12,7 +13,13 @@ export default function CommentSection({ videoId, user }) {
 
   const { data: comments } = useQuery({
     queryKey: ["comments", videoId],
-    queryFn: () => base44.entities.Comment.filter({ video_id: videoId }, "-created_date", 100),
+    queryFn: async () => {
+      const [local, yt] = await Promise.all([
+        base44.entities.Comment.filter({ video_id: videoId }, "-created_date", 100),
+        fetchYouTube("comments", { videoId, maxResults: 100 }),
+      ]);
+      return mergeYouTubeLocal(yt, local);
+    },
     initialData: [],
     enabled: !!videoId,
   });

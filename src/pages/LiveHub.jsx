@@ -1,13 +1,20 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { fetchYouTube, mergeYouTubeLocal } from "@/hooks/useYouTube";
 import VideoGrid from "@/components/video/VideoGrid";
 import { Radio } from "lucide-react";
 
 export default function LiveHub() {
   const { data: lives, isLoading } = useQuery({
     queryKey: ["videos", "live"],
-    queryFn: () => base44.entities.Video.filter({ is_live: true }, "-viewers_count", 50),
+    queryFn: async () => {
+      const [local, yt] = await Promise.all([
+        base44.entities.Video.filter({ is_live: true }, "-viewers_count", 50),
+        fetchYouTube("liveStreams", { maxResults: 50 }),
+      ]);
+      return mergeYouTubeLocal(yt, local);
+    },
     initialData: [],
   });
 

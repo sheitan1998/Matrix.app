@@ -1,6 +1,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { fetchYouTube, mergeYouTubeLocal } from "@/hooks/useYouTube";
 import VideoGrid from "@/components/video/VideoGrid";
 import { Flame } from "lucide-react";
 import usePullToRefresh from "@/hooks/usePullToRefresh";
@@ -9,7 +10,13 @@ import PullToRefreshIndicator from "@/components/ui/PullToRefreshIndicator";
 export default function Trending() {
   const { data: videos, isLoading, refetch } = useQuery({
     queryKey: ["videos", "trending"],
-    queryFn: () => base44.entities.Video.list("-views", 50),
+    queryFn: async () => {
+      const [local, yt] = await Promise.all([
+        base44.entities.Video.list("-views", 50),
+        fetchYouTube("trending", { maxResults: 50 }),
+      ]);
+      return mergeYouTubeLocal(yt, local);
+    },
     initialData: [],
   });
 

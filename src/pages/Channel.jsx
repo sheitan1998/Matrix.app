@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { fetchYouTube, mergeYouTubeLocal } from "@/hooks/useYouTube";
 import VideoGrid from "@/components/video/VideoGrid";
 import SubscribeButton from "@/components/channel/SubscribeButton";
 import { CheckCircle2, Users, Eye, Coins, Pencil, Save, X, Radio } from "lucide-react";
@@ -31,6 +32,8 @@ export default function Channel() {
   const { data: channel } = useQuery({
     queryKey: ["channel", id],
     queryFn: async () => {
+      const yt = await fetchYouTube("channelDetails", { id });
+      if (yt && yt.length > 0) return yt[0];
       const c = await base44.entities.Channel.filter({ id });
       return c[0];
     },
@@ -39,7 +42,13 @@ export default function Channel() {
 
   const { data: videos, isLoading } = useQuery({
     queryKey: ["channel-videos", id],
-    queryFn: () => base44.entities.Video.filter({ channel_id: id }, "-created_date", 60),
+    queryFn: async () => {
+      const [local, yt] = await Promise.all([
+        base44.entities.Video.filter({ channel_id: id }, "-created_date", 60),
+        fetchYouTube("channelVideos", { channelId: id, maxResults: 50 }),
+      ]);
+      return mergeYouTubeLocal(yt, local);
+    },
     initialData: [],
     enabled: !!id,
   });
