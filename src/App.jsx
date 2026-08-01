@@ -51,6 +51,7 @@ import TwitchLayout from '@/components/twitch/TwitchLayout';
 import TwitchHome from '@/pages/twitch/TwitchHome';
 import TwitchWatch from '@/pages/twitch/TwitchWatch';
 import TwitchSearch from '@/pages/twitch/TwitchSearch';
+import TwitchCategoryPage from '@/pages/twitch/TwitchCategoryPage';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings } = useAuth();
@@ -92,6 +93,7 @@ const AuthenticatedApp = () => {
         <Route element={<TwitchLayout />}>
           <Route path="/twitch" element={<TwitchHome />} />
           <Route path="/twitch/search" element={<TwitchSearch />} />
+          <Route path="/twitch/category/:gameId" element={<TwitchCategoryPage />} />
           <Route path="/twitch/watch/:channelLogin" element={<TwitchWatch />} />
         </Route>
         <Route element={<MainLayout />}>

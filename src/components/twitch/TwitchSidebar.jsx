@@ -64,7 +64,7 @@ export default function TwitchSidebar() {
     enabled: !!userToken,
   });
   const topStreams = useTwitch("getStreams", { first: 12 });
-  const topCategories = useTwitch("getTopGames", { first: 8 });
+  const topCategories = useTwitch("getTopGames", { first: 12 });
 
   const followed = followedStreams.data?.streams || [];
   const liveChannels = topStreams.data?.streams || [];
@@ -115,9 +115,12 @@ export default function TwitchSidebar() {
         {categories.slice(0, 6).map((c) => (
           <Link
             key={c.id}
-            to={`/twitch/search?q=${encodeURIComponent(c.name)}&filter=categories`}
-            className="block px-1.5 py-1.5 rounded-md hover:bg-white/5 transition-colors"
+            to={`/twitch/category/${c.id}?name=${encodeURIComponent(c.name)}`}
+            className="flex items-center gap-2 px-1.5 py-1.5 rounded-md hover:bg-white/5 transition-colors"
           >
+            {c.box_art_url ? (
+              <img src={c.box_art_url} alt={c.name} className="w-7 h-9 rounded object-cover shrink-0" />
+            ) : null}
             <span className="text-sm text-white truncate">{c.name}</span>
           </Link>
         ))}

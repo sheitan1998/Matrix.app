@@ -82,7 +82,7 @@ export function mapCategory(game) {
   return {
     id: game.id,
     name: game.name,
-    box_art_url: (game.box_art_url || "").replace("{width}", "285").replace("{height}", "380"),
+    box_art_url: (game.box_art_url || "").replace("{width}", "363").replace("{height}", "484"),
     igdb_id: game.igdb_id || "",
     _source: "twitch",
   };

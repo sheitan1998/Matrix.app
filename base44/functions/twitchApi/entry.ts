@@ -121,6 +121,18 @@ export default async function(req: Request): Promise<Response> {
         break;
       }
 
+      // Get game details by ID (for category browse page)
+      case 'getGameDetails': {
+        if (!clientSecret) return Response.json({ error: 'TWITCH_CLIENT_SECRET not configured.' }, { status: 500 });
+        const token = await getAppToken(clientId, clientSecret);
+        if (token?._error) return Response.json(token, { status: token.status });
+        const data = await twitchFetch('games', { id: params.gameId }, token, clientId);
+        if (data._error) return Response.json(data, { status: data.status });
+        const game = data.data?.[0];
+        result = game ? mapCategory(game) : null;
+        break;
+      }
+
       // Get channel details (user + stream + channel info) by login
       case 'getChannelDetails': {
         if (!clientSecret) return Response.json({ error: 'TWITCH_CLIENT_SECRET not configured.' }, { status: 500 });

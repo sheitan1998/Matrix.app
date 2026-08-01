@@ -48,7 +48,7 @@ export default function TwitchHome() {
   const allStreams = useTwitch("getStreams", { first: 20 });
 
   // Top categories
-  const topCategories = useTwitch("getTopGames", { first: 3 });
+  const topCategories = useTwitch("getTopGames", { first: 30 });
 
   const followed = followedStreams.data?.streams || [];
   const recommended = topStreams.data?.streams || [];

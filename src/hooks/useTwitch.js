@@ -11,7 +11,7 @@ export function useTwitch(action, params = {}, options = {}) {
     queryKey: ["twitch", action, JSON.stringify(params)],
     queryFn: async () => {
       const res = await base44.functions.invoke("twitchApi", { action, ...params });
-      return res.data?.data || [];
+      return res.data?.data ?? null;
     },
     staleTime: 5 * 60 * 1000, // 5 min cache
     retry: 1,
@@ -23,7 +23,7 @@ export function useTwitch(action, params = {}, options = {}) {
 export async function fetchTwitch(action, params = {}) {
   try {
     const res = await base44.functions.invoke("twitchApi", { action, ...params });
-    return res.data?.data || [];
+    return res.data?.data ?? null;
   } catch (e) {
     console.error(`[fetchTwitch] ${action} failed:`, e?.response?.data || e?.message || e);
     return [];
