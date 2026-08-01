@@ -47,6 +47,10 @@ import Notifications from '@/pages/Notifications';
 import Outils from '@/pages/Outils';
 import { ProgressionProvider } from '@/context/ProgressionContext';
 import { MiniPlayerProvider } from '@/context/MiniPlayerContext';
+import TwitchLayout from '@/components/twitch/TwitchLayout';
+import TwitchHome from '@/pages/twitch/TwitchHome';
+import TwitchWatch from '@/pages/twitch/TwitchWatch';
+import TwitchSearch from '@/pages/twitch/TwitchSearch';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings } = useAuth();
@@ -85,6 +89,11 @@ const AuthenticatedApp = () => {
         <Route path="/progression" element={<Progression />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/outils" element={<Outils />} />
+        <Route element={<TwitchLayout />}>
+          <Route path="/twitch" element={<TwitchHome />} />
+          <Route path="/twitch/search" element={<TwitchSearch />} />
+          <Route path="/twitch/watch/:channelLogin" element={<TwitchWatch />} />
+        </Route>
         <Route element={<MainLayout />}>
           <Route path="/stream" element={<Home />} />
         <Route path="/trending" element={<Trending />} />
