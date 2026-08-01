@@ -10,7 +10,7 @@ import {
 
 const LEFT_CARDS = [
   { path: "/stream", label: "Youtube", desc: "Vidéos, lives, shorts. Crée ta chaîne et partage ton contenu.", icon: Youtube, color: "#FF0000" },
-  { path: "/live", label: "Twitch", desc: "Streams en direct, clips, discussions et rencontres.", icon: Radio, color: "#A855F7" },
+  { path: "/twitch", label: "Twitch", desc: "Streams en direct, clips, discussions et rencontres.", icon: Radio, color: "#9146FF" },
   { path: "/community", label: "Discord", desc: "Discute, réagis, commente. Rejoins ou crée des salons vocaux.", icon: MessageCircle, color: "#3B82F6" },
   { path: "/ai", label: "AI Studio", desc: "Chat, création, code, histoires. Exploite l'IA sans limites.", icon: Cpu, color: "#06B6D4" },
   { path: "/casino", label: "Casino", desc: "Roulette, machines à sous, blackjack. Jeux fictifs uniquement.", icon: Dices, color: "#F59E0B", badge: "18+" },
