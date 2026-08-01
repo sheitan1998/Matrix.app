@@ -1,29 +1,61 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { fetchYouTube, mergeYouTubeLocal } from "@/hooks/useYouTube";
 import { Heart, MessageCircle, Share2, ArrowLeft, Volume2, VolumeX } from "lucide-react";
 import { Link } from "react-router-dom";
 import { formatViews } from "@/lib/format";
+import YouTubePlayer from "@/components/video/YouTubePlayer";
 
 function ShortItem({ short, isActive }) {
   const videoRef = useRef(null);
+  const ytPlayerRef = useRef(null);
+  const isActiveRef = useRef(isActive);
   const [liked, setLiked] = useState(false);
   const [muted, setMuted] = useState(true);
 
+  const isYouTube = short._source === "youtube" || (!short.video_url && !!short.id);
+
+  isActiveRef.current = isActive;
+
+  // Native <video> play/pause
   useEffect(() => {
-    if (!videoRef.current) return;
+    if (isYouTube || !videoRef.current) return;
     if (isActive) {
       videoRef.current.play().catch(() => {});
     } else {
       videoRef.current.pause();
       videoRef.current.currentTime = 0;
     }
+  }, [isActive, isYouTube]);
+
+  // YouTube IFrame API play/pause
+  useEffect(() => {
+    const p = ytPlayerRef.current;
+    if (!p) return;
+    if (isActive) p.playVideo?.();
+    else { p.pauseVideo?.(); p.seekTo?.(0); }
   }, [isActive]);
+
+  // YouTube mute/unmute
+  useEffect(() => {
+    const p = ytPlayerRef.current;
+    if (!p) return;
+    if (muted) p.mute?.(); else p.unMute?.();
+  }, [muted]);
+
+  // Stable onReady — keeps YouTubePlayer from recreating the iframe
+  const handleYTReady = useCallback((player) => {
+    ytPlayerRef.current = player;
+    player.mute?.();
+    if (isActiveRef.current) player.playVideo?.();
+  }, []);
 
   return (
     <div className="relative w-full h-full bg-black flex items-center justify-center">
-      {short.video_url ? (
+      {isYouTube ? (
+        <YouTubePlayer videoId={short.id} autoplay={false} onReady={handleYTReady} />
+      ) : short.video_url ? (
         <video
           ref={videoRef}
           src={short.video_url}

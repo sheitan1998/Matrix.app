@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { fetchYouTube } from "@/hooks/useYouTube";
 import VideoPlayer from "@/components/video/VideoPlayer";
 import LiveChat from "@/components/live/LiveChat";
 import SubscribeButton from "@/components/channel/SubscribeButton";
@@ -27,6 +28,8 @@ export default function Live() {
   const { data: video } = useQuery({
     queryKey: ["video", id],
     queryFn: async () => {
+      const yt = await fetchYouTube("videoDetails", { id });
+      if (yt && yt.length > 0) return yt[0];
       const v = await base44.entities.Video.filter({ id });
       return v[0];
     },
@@ -35,9 +38,13 @@ export default function Live() {
   });
 
   const { data: channel } = useQuery({
-    queryKey: ["channel", video?.channel_id],
+    queryKey: ["channel", video?.channel_id, video?._source],
     queryFn: async () => {
       if (!video?.channel_id) return null;
+      if (video._source === "youtube") {
+        const yt = await fetchYouTube("channelDetails", { id: video.channel_id });
+        if (yt && yt.length > 0) return yt[0];
+      }
       const c = await base44.entities.Channel.filter({ id: video.channel_id });
       return c[0];
     },
@@ -46,7 +53,7 @@ export default function Live() {
 
   if (!video) return <div className="p-8 text-muted-foreground">Chargement...</div>;
 
-  const isOwner = user && channel && user.email === channel.owner_email;
+  const isOwner = video?._source !== "youtube" && user && channel && user.email === channel.owner_email;
 
   const endLive = async () => {
     await base44.entities.Video.update(id, { is_live: false, viewers_count: 0 });
