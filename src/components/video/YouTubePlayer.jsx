@@ -41,9 +41,10 @@ export default function YouTubePlayer({ videoId, autoplay = true, onReady, onSta
     let active = true;
     loadYouTubeAPI().then((YT) => {
       if (!active || !wrapperRef.current) return;
-      // Destroy previous player instance if any
-      if (playerRef.current?.destroy) {
-        try { playerRef.current.destroy(); } catch {}
+      // Destroy previous player instance if any (stopVideo first to kill audio immediately)
+      if (playerRef.current) {
+        try { playerRef.current.stopVideo?.(); } catch {}
+        try { playerRef.current.destroy?.(); } catch {}
         playerRef.current = null;
       }
       wrapperRef.current.innerHTML = "";
@@ -66,8 +67,9 @@ export default function YouTubePlayer({ videoId, autoplay = true, onReady, onSta
     });
     return () => {
       active = false;
-      if (playerRef.current?.destroy) {
-        try { playerRef.current.destroy(); } catch {}
+      if (playerRef.current) {
+        try { playerRef.current.stopVideo?.(); } catch {}
+        try { playerRef.current.destroy?.(); } catch {}
         playerRef.current = null;
       }
     };

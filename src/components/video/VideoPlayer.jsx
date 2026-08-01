@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { Radio, Youtube, ExternalLink, Maximize, Minimize2, Play } from "lucide-react";
 import YouTubePlayer from "./YouTubePlayer";
 import QualitySelector from "./QualitySelector";
@@ -34,8 +34,10 @@ export default function VideoPlayer({ video, showPreAd = false, onAdEnd }) {
     return () => document.removeEventListener("fullscreenchange", onFsChange);
   }, []);
 
-  // Ensure single audio source: stop mini-player when a new video plays inline
-  useEffect(() => {
+  // Ensure single audio source: stop mini-player BEFORE the inline YouTubePlayer
+  // creates its iframe. useLayoutEffect runs synchronously before passive effects,
+  // so the mini-player is destroyed before the new player's async creation begins.
+  useLayoutEffect(() => {
     if (mini.mode === "mini") {
       mini.close();
     }
