@@ -393,6 +393,14 @@ export default async function(req: Request): Promise<Response> {
         break;
       }
 
+      // ─── OAuth config — returns the Google OAuth Client ID (public, client-side GIS) ───
+      case 'getOAuthConfig': {
+        const clientId = secrets.get("GOOGLE_CLIENT_ID");
+        if (!clientId) return Response.json({ error: 'GOOGLE_CLIENT_ID not configured. Add it in Dashboard → Settings → Environment Variables.' }, { status: 500 });
+        result = { client_id: clientId };
+        break;
+      }
+
       default:
         return Response.json({ error: `Unknown action: ${action}` }, { status: 400 });
     }

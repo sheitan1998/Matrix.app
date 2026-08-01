@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { GOOGLE_CLIENT_ID } from "@/lib/googleConfig";
+import { base44 } from "@/api/base44Client";
 
 const YOUTUBE_SCOPE = "https://www.googleapis.com/auth/youtube.readonly";
 const TOKEN_KEY = "yt_oauth_token";
@@ -43,11 +43,14 @@ function mapChannelOAuth(item) {
 }
 
 /**
- * Hook to manage Google OAuth for the YouTube universe.
+ * Hook to manage Google OAuth for the YouTube universe only.
+ * The Google OAuth Client ID is fetched from the backend (stored as a secret).
  * Uses Google Identity Services (GIS) token client with the official
  * youtube.readonly scope. Fetches the user's channel(s) via YouTube Data API v3.
  */
 export function useYouTubeAuth() {
+  const [clientId, setClientId] = useState(null);
+  const [clientIdLoaded, setClientIdLoaded] = useState(false);
   const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY));
   const [channels, setChannels] = useState(() => {
     try {
@@ -63,6 +66,15 @@ export function useYouTubeAuth() {
 
   const selectedChannel =
     channels.find((c) => c.id === selectedId) || channels[0] || null;
+
+  // Fetch the Google OAuth Client ID from the backend (stored as GOOGLE_CLIENT_ID secret)
+  useEffect(() => {
+    base44.functions
+      .invoke("youtubeApi", { action: "getOAuthConfig" })
+      .then((res) => setClientId(res.data?.data?.client_id || null))
+      .catch(() => setClientId(null))
+      .finally(() => setClientIdLoaded(true));
+  }, []);
 
   // Persist token / channels / selected
   useEffect(() => {
@@ -107,15 +119,15 @@ export function useYouTubeAuth() {
     });
   }, []);
 
-  // Initialize the GIS token client once
+  // Initialize the GIS token client once the Client ID is available
   useEffect(() => {
-    if (!GOOGLE_CLIENT_ID) return;
+    if (!clientId) return;
     let mounted = true;
     loadGIS()
       .then((google) => {
         if (!mounted) return;
         tokenClientRef.current = google.accounts.oauth2.initTokenClient({
-          client_id: GOOGLE_CLIENT_ID,
+          client_id: clientId,
           scope: YOUTUBE_SCOPE,
           callback: async (response) => {
             if (response.error) {
@@ -146,7 +158,7 @@ export function useYouTubeAuth() {
     return () => {
       mounted = false;
     };
-  }, [fetchChannels]);
+  }, [clientId, fetchChannels]);
 
   // Validate the stored token on mount — refresh channels or clear if expired
   useEffect(() => {
@@ -168,7 +180,6 @@ export function useYouTubeAuth() {
       })
       .catch(() => {
         if (!mounted) return;
-        // Token expired or revoked
         setToken(null);
         setChannels([]);
       })
@@ -183,11 +194,10 @@ export function useYouTubeAuth() {
 
   const login = useCallback(() => {
     if (!tokenClientRef.current) {
-      setError("Google OAuth non initialisé. Configurez GOOGLE_CLIENT_ID.");
+      setError("Google OAuth non initialisé. Vérifiez la configuration du Client ID.");
       return;
     }
     setError(null);
-    // prompt=consent shows the account picker so the user can choose a Google account / channel
     tokenClientRef.current.requestAccessToken({ prompt: "consent" });
   }, []);
 
@@ -218,6 +228,7 @@ export function useYouTubeAuth() {
     login,
     logout,
     switchChannel,
-    clientIdConfigured: !!GOOGLE_CLIENT_ID,
+    clientIdConfigured: !!clientId,
+    clientIdLoading: !clientIdLoaded,
   };
 }

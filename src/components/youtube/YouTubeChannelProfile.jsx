@@ -20,6 +20,7 @@ export default function YouTubeChannelProfile() {
     logout,
     switchChannel,
     clientIdConfigured,
+    clientIdLoading,
   } = useYouTubeAuth();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -31,6 +32,15 @@ export default function YouTubeChannelProfile() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  // Still loading the OAuth config from the backend
+  if (clientIdLoading) {
+    return (
+      <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center">
+        <Youtube className="w-4 h-4 text-muted-foreground animate-pulse" />
+      </div>
+    );
+  }
 
   // Not configured — show a muted placeholder
   if (!clientIdConfigured) {
