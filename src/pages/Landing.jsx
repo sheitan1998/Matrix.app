@@ -2,27 +2,39 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { Tv2, Users, Cpu, Dices, Gem, Star, MessageCircle, Radio, Play, Music, Camera, ChevronDown, User, Clapperboard } from "lucide-react";
-import UniverseCard from "@/components/landing/UniverseCard";
-import DiscoverSection from "@/components/landing/DiscoverSection";
-import LiveNowSection from "@/components/landing/LiveNowSection";
+import {
+  Youtube, Radio, MessageCircle, Cpu, Dices, Search, GraduationCap,
+  Wrench, BarChart3, Clapperboard, TrendingUp,
+  Gem, Shield, Star, ChevronDown, User, ArrowRight,
+} from "lucide-react";
 
-const UNIVERSES = [
-  { path: "/stream", label: "Streaming", desc: "Vidéos, lives, shorts. Crée ta chaîne et partage ton contenu.", icon: Tv2, color: "#22c55e" },
-  { path: "/community", label: "Communauté", desc: "Discute, réagis, commente. Rejoins ou crée des salons vocaux.", icon: Users, color: "#a855f7" },
-  { path: "/ai", label: "AI Studio", desc: "Chat, création, code, histoires. Exploite l'IA sans limites.", icon: Cpu, color: "#06b6d4" },
-  { path: "/casino", label: "Casino", desc: "Roulette, machines à sous, blackjack. Jeux fictifs uniquement.", icon: Dices, color: "#eab308", badge: "18+" },
-  { path: "/video-studio", label: "Video Studio", desc: "Édite, assemble, partage. Un studio vidéo complet intégré.", icon: Clapperboard, color: "#8b5cf6", badge: "NEW" },
-  { path: "/progression", label: "Progression", desc: "Niveaux, XP, badges, missions, classements et boutique.", icon: Star, color: "#fbbf24", badge: "NEW" },
+const LEFT_CARDS = [
+  { path: "/stream", label: "Youtube", desc: "Vidéos, lives, shorts. Crée ta chaîne et partage ton contenu.", icon: Youtube, color: "#FF0000" },
+  { path: "/live", label: "Twitch", desc: "Streams en direct, clips, discussions et rencontres.", icon: Radio, color: "#A855F7" },
+  { path: "/community", label: "Discord", desc: "Discute, réagis, commente. Rejoins ou crée des salons vocaux.", icon: MessageCircle, color: "#3B82F6" },
+  { path: "/ai", label: "AI Studio", desc: "Chat, création, code, histoires. Exploite l'IA sans limites.", icon: Cpu, color: "#06B6D4" },
+  { path: "/casino", label: "Casino", desc: "Roulette, machines à sous, blackjack. Jeux fictifs uniquement.", icon: Dices, color: "#F59E0B", badge: "18+" },
+  { path: "/community", label: "Recherche Joueur/Serveur", desc: "Trouve des joueurs, recrute ou explore des serveurs de jeu.", icon: Search, color: "#22C55E" },
+  { path: "/category/gaming", label: "Tuto Gaming/Entraide", desc: "Guides, astuces, entraide et solutions pour tous les jeux.", icon: GraduationCap, color: "#3B82F6" },
 ];
 
-const SOCIALS = [
-  { icon: MessageCircle, label: "Discord" },
-  { icon: Radio, label: "Twitch" },
-  { icon: Play, label: "YouTube" },
-  { icon: Music, label: "TikTok" },
-  { icon: Camera, label: "Instagram" },
+const RIGHT_TOP = [
+  { path: "/video-studio", label: "Outils", desc: "Accède à des outils utiles pour t'aider au quotidien.", icon: Wrench },
+  { path: "/community", label: "Sondage", desc: "Participe aux sondages et donne ton avis.", icon: BarChart3 },
 ];
+
+const RIGHT_FULL = [
+  { path: "/video-studio", label: "Montage Videos", desc: "Édite, assemble, partage. Crée des vidéos incroyables.", icon: Clapperboard },
+  { path: "/progression", label: "Niveaux/Progressions", desc: "Monte en niveau, débloque des badges et des avantages.", icon: TrendingUp },
+];
+
+// Pre-generate star positions so they don't jump on re-render
+const STARS = Array.from({ length: 60 }).map(() => ({
+  size: Math.random() > 0.8 ? 2 : 1,
+  top: Math.random() * 100,
+  left: Math.random() * 100,
+  opacity: Math.random() * 0.5 + 0.1,
+}));
 
 export default function Landing() {
   const nav = useNavigate();
@@ -33,33 +45,26 @@ export default function Landing() {
   }, []);
 
   return (
-    <div className="min-h-screen relative overflow-y-auto overflow-x-hidden"
-      style={{
-        backgroundImage: `url(https://media.base44.com/images/public/69e14a987a927963a9924d5a/e20a0d5be_ChatGPTImage2juil202604_45_31.png)`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundAttachment: "fixed",
-        backgroundColor: "#050505",
-      }}>
-      <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.4)" }} />
+    <div className="min-h-screen relative overflow-y-auto overflow-x-hidden" style={{ backgroundColor: "#050508" }}>
+      {/* Space background */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full" style={{ background: "radial-gradient(circle, rgba(168,85,247,0.08), transparent 70%)" }} />
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] rounded-full" style={{ background: "radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)" }} />
+        {STARS.map((s, i) => (
+          <div key={i} className="absolute rounded-full bg-white" style={{ width: s.size, height: s.size, top: `${s.top}%`, left: `${s.left}%`, opacity: s.opacity }} />
+        ))}
+      </div>
 
       <div className="relative z-10 min-h-screen flex flex-col px-4 sm:px-6 lg:px-10 py-4">
         {/* Header */}
         <header className="flex items-center justify-between mb-8 lg:mb-12">
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white">
-              <span style={{
-                background: "linear-gradient(135deg, #a855f7, #3b82f6)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                filter: "drop-shadow(0 0 20px rgba(168,85,247,0.6))",
-              }}>M</span>ATRIX
-            </h1>
+            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white">MATRIX</h1>
             <div className="flex items-center gap-2 mt-1">
               <div className="h-px w-8" style={{ background: "linear-gradient(to right, transparent, #a855f7)" }} />
               <div className="flex items-center gap-1.5">
-                <Cpu className="w-3 h-3" style={{ color: "#a855f7" }} />
                 <Gem className="w-3 h-3" style={{ color: "#a855f7" }} />
+                <Shield className="w-3 h-3" style={{ color: "#a855f7" }} />
                 <Star className="w-3 h-3" style={{ color: "#a855f7" }} />
               </div>
               <div className="h-px w-8" style={{ background: "linear-gradient(to left, transparent, #a855f7)" }} />
@@ -69,7 +74,7 @@ export default function Landing() {
 
           <motion.button
             initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}
-            onClick={() => user ? nav("/profile") : base44.auth.redirectToLogin()}
+            onClick={() => (user ? nav("/profile") : base44.auth.redirectToLogin())}
             className="flex items-center gap-2 px-3 py-2 rounded-full tap-sm"
             style={{ border: "1.5px solid rgba(168,85,247,0.4)", background: "rgba(168,85,247,0.05)" }}>
             <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(168,85,247,0.2)" }}>
@@ -82,37 +87,89 @@ export default function Landing() {
 
         {/* Main content */}
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6 lg:gap-8">
+          {/* Left column */}
           <div className="space-y-3">
-            {UNIVERSES.map((u, i) => (
-              <UniverseCard key={u.path} {...u} delay={0.3 + i * 0.1} onClick={() => nav(u.path)} />
+            {LEFT_CARDS.map((u, i) => (
+              <motion.button
+                key={i}
+                initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 + i * 0.08, duration: 0.5 }}
+                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                onClick={() => nav(u.path)}
+                className="relative w-full rounded-2xl overflow-hidden text-left group flex items-center gap-4 p-4"
+                style={{ background: "#101015", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ background: u.color }} />
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${u.color}1a` }}>
+                  <u.icon className="w-5 h-5" style={{ color: u.color }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <h2 className="text-base font-black text-white">{u.label}</h2>
+                    {u.badge && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(239,68,68,0.2)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)" }}>{u.badge}</span>
+                    )}
+                  </div>
+                  <p className="text-xs leading-relaxed text-white/50">{u.desc}</p>
+                </div>
+                <ArrowRight className="w-5 h-5 shrink-0 transition-transform group-hover:translate-x-1" style={{ color: u.color }} />
+              </motion.button>
             ))}
           </div>
-          <div className="space-y-5">
-            <DiscoverSection />
-            <LiveNowSection />
+
+          {/* Right column */}
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              {RIGHT_TOP.map((u, i) => (
+                <motion.button
+                  key={i}
+                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 + i * 0.08, duration: 0.5 }}
+                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                  onClick={() => nav(u.path)}
+                  className="rounded-2xl p-4 text-left flex flex-col gap-2"
+                  style={{ background: "#101015", border: "1px solid rgba(168,85,247,0.15)" }}>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(168,85,247,0.1)" }}>
+                    <u.icon className="w-5 h-5" style={{ color: "#a855f7" }} />
+                  </div>
+                  <h3 className="text-sm font-black text-white">{u.label}</h3>
+                  <p className="text-[11px] leading-relaxed text-white/40">{u.desc}</p>
+                </motion.button>
+              ))}
+            </div>
+
+            {RIGHT_FULL.map((u, i) => (
+              <motion.button
+                key={i}
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 + i * 0.08, duration: 0.5 }}
+                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                onClick={() => nav(u.path)}
+                className="w-full rounded-2xl p-4 text-left flex items-center gap-4"
+                style={{ background: "#101015", border: "1px solid rgba(168,85,247,0.15)" }}>
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(168,85,247,0.1)" }}>
+                  <u.icon className="w-5 h-5" style={{ color: "#a855f7" }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-black text-white">{u.label}</h3>
+                  <p className="text-xs leading-relaxed text-white/40">{u.desc}</p>
+                </div>
+                <ArrowRight className="w-5 h-5 shrink-0" style={{ color: "#a855f7" }} />
+              </motion.button>
+            ))}
           </div>
         </div>
 
         {/* Footer */}
-        <footer className="mt-8 lg:mt-12 flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-white/5">
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] font-bold tracking-widest text-white/30">CONNECTÉ AVEC</span>
-            <div className="flex items-center gap-2">
-              {SOCIALS.map((s, i) => (
-                <div key={i} className="w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer hover:bg-white/5 transition" title={s.label}>
-                  <s.icon className="w-3.5 h-3.5 text-white/40 hover:text-white transition" />
-                </div>
-              ))}
+        <footer className="mt-8 lg:mt-12 flex flex-col items-center gap-4 pt-4">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "#5865F2" }}>
+              <MessageCircle className="w-5 h-5 text-white" />
+            </div>
+            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "#FF0000" }}>
+              <Youtube className="w-5 h-5 text-white" />
             </div>
           </div>
           <p className="text-[10px] text-white/30 font-mono">© 2025 MATRIX. TOUS DROITS RÉSERVÉS.</p>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
-            style={{ border: "1px solid rgba(34,197,94,0.2)", background: "rgba(34,197,94,0.05)" }}>
-            <motion.div className="w-2 h-2 rounded-full bg-green-500"
-              animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 2, repeat: Infinity }} />
-            <span className="text-[10px] font-bold text-green-400">SYSTÈME EN LIGNE</span>
-            <span className="text-[9px] text-white/30 hidden sm:inline">· TOUT EST OPÉRATIONNEL</span>
-          </div>
         </footer>
       </div>
     </div>
