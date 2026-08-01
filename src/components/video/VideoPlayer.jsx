@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Radio } from "lucide-react";
+import { Radio, Youtube, ExternalLink } from "lucide-react";
 import QualitySelector from "./QualitySelector";
+import YouTubePlayer from "./YouTubePlayer";
 
 export default function VideoPlayer({ video, showPreAd = false, onAdEnd }) {
   const [adSeconds, setAdSeconds] = useState(5);
@@ -34,9 +35,34 @@ export default function VideoPlayer({ video, showPreAd = false, onAdEnd }) {
     );
   }
 
+  const isYouTube = video._source === "youtube" && !!video.id;
+  const isEmbeddable = isYouTube && video.embeddable !== false;
+
   return (
     <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-black group">
-      {video.video_url ? (
+      {isEmbeddable ? (
+        <YouTubePlayer videoId={video.id} autoplay={!showPreAd} />
+      ) : isYouTube && video.embeddable === false ? (
+        <a
+          href={`https://www.youtube.com/watch?v=${video.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="relative block w-full h-full"
+        >
+          {video.thumbnail_url && (
+            <img src={video.thumbnail_url} alt={video.title} className="w-full h-full object-cover opacity-60" />
+          )}
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/50">
+            <div className="w-16 h-16 rounded-full bg-[#FF0000] flex items-center justify-center">
+              <Youtube className="w-8 h-8 text-white" />
+            </div>
+            <p className="text-sm font-semibold text-white flex items-center gap-1.5">
+              Lecture non autorisée <ExternalLink className="w-3.5 h-3.5" />
+            </p>
+            <p className="text-xs text-white/70">Ouvrir sur YouTube</p>
+          </div>
+        </a>
+      ) : video.video_url ? (
         <video
           src={video.video_url}
           poster={video.thumbnail_url}
@@ -50,19 +76,22 @@ export default function VideoPlayer({ video, showPreAd = false, onAdEnd }) {
         <div className="w-full h-full grid-bg" />
       )}
       {video.is_live && (
-        <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 bg-live text-white rounded-md text-xs font-bold">
+        <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 bg-live text-white rounded-md text-xs font-bold z-10">
           <Radio className="w-3 h-3 animate-live-pulse" /> LIVE
         </div>
       )}
-      {/* Quality selector overlay */}
-      <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition">
-        <QualitySelector current={quality} onSelect={setQuality} />
-      </div>
-      {/* Quality badge when not hovering */}
-      {quality !== "Auto" && (
-        <div className="absolute top-3 right-3 px-2 py-0.5 rounded bg-black/70 text-white text-xs font-mono font-bold group-hover:opacity-0 transition">
-          {quality}
-        </div>
+      {/* Quality selector overlay — local videos only */}
+      {!isYouTube && (
+        <>
+          <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition">
+            <QualitySelector current={quality} onSelect={setQuality} />
+          </div>
+          {quality !== "Auto" && (
+            <div className="absolute top-3 right-3 px-2 py-0.5 rounded bg-black/70 text-white text-xs font-mono font-bold group-hover:opacity-0 transition">
+              {quality}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

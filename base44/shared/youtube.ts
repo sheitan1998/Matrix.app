@@ -63,6 +63,7 @@ export function mapVideoWithStats(item) {
     category: sn.categoryId || "other",
     tags: sn.tags || [],
     video_url: "",
+    embeddable: cd.embeddable !== false,
     _source: "youtube",
   };
 }
