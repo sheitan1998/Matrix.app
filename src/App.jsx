@@ -45,6 +45,11 @@ import VideoStudio from '@/pages/VideoStudio';
 import Progression from '@/pages/Progression';
 import Notifications from '@/pages/Notifications';
 import Outils from '@/pages/Outils';
+import YoutubePage from '@/pages/Youtube';
+import TwitchPage from '@/pages/Twitch';
+import RechercheJoueur from '@/pages/RechercheJoueur';
+import RechercheServeur from '@/pages/RechercheServeur';
+import TutoGaming from '@/pages/TutoGaming';
 import { ProgressionProvider } from '@/context/ProgressionContext';
 
 const AuthenticatedApp = () => {
@@ -83,6 +88,11 @@ const AuthenticatedApp = () => {
         <Route path="/progression" element={<Progression />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/outils" element={<Outils />} />
+        <Route path="/youtube" element={<YoutubePage />} />
+        <Route path="/twitch" element={<TwitchPage />} />
+        <Route path="/recherche-joueur" element={<RechercheJoueur />} />
+        <Route path="/recherche-serveur" element={<RechercheServeur />} />
+        <Route path="/tuto-gaming" element={<TutoGaming />} />
         <Route element={<MainLayout />}>
           <Route path="/stream" element={<Home />} />
         <Route path="/trending" element={<Trending />} />

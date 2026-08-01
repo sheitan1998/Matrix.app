@@ -1,0 +1,87 @@
+{
+  "name": "PlayerProfile",
+  "type": "object",
+  "properties": {
+    "pseudo": {
+      "type": "string"
+    },
+    "user_email": {
+      "type": "string"
+    },
+    "avatar": {
+      "type": "string"
+    },
+    "game": {
+      "type": "string"
+    },
+    "rank": {
+      "type": "string"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "pc",
+        "playstation",
+        "xbox",
+        "mobile",
+        "switch"
+      ],
+      "default": "pc"
+    },
+    "availability": {
+      "type": "string",
+      "enum": [
+        "available",
+        "busy",
+        "offline"
+      ],
+      "default": "available"
+    },
+    "description": {
+      "type": "string"
+    },
+    "level": {
+      "type": "number",
+      "default": 1
+    },
+    "stats": {
+      "type": "object",
+      "properties": {},
+      "default": {}
+    }
+  },
+  "required": [
+    "pseudo",
+    "user_email"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {},
+    "update": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
