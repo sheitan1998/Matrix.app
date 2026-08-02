@@ -1,0 +1,81 @@
+{
+  "name": "DirectMessage",
+  "type": "object",
+  "properties": {
+    "sender_email": {
+      "type": "string",
+      "description": "Email de l'expediteur"
+    },
+    "sender_name": {
+      "type": "string",
+      "description": "Nom de l'expediteur"
+    },
+    "sender_avatar": {
+      "type": "string",
+      "description": "Avatar de l'expediteur"
+    },
+    "recipient_email": {
+      "type": "string",
+      "description": "Email du destinataire"
+    },
+    "recipient_name": {
+      "type": "string",
+      "description": "Nom du destinataire"
+    },
+    "recipient_avatar": {
+      "type": "string",
+      "description": "Avatar du destinataire"
+    },
+    "content": {
+      "type": "string",
+      "description": "Contenu du message"
+    },
+    "is_read": {
+      "type": "boolean",
+      "default": false,
+      "description": "Statut de lecture"
+    }
+  },
+  "required": [
+    "sender_email",
+    "recipient_email",
+    "content"
+  ],
+  "rls": {
+    "create": {
+      "data.sender_email": "{{user.email}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "data.sender_email": "{{user.email}}"
+        },
+        {
+          "data.recipient_email": "{{user.email}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.sender_email": "{{user.email}}"
+        },
+        {
+          "data.recipient_email": "{{user.email}}"
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.sender_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
