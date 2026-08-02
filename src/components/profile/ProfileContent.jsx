@@ -10,6 +10,7 @@ import FriendsPanel from "@/components/profile/FriendsPanel";
 import CosmeticsPanel from "@/components/profile/CosmeticsPanel";
 import TransactionHistory from "@/components/profile/TransactionHistory";
 import PrivacyPanel from "@/components/profile/PrivacyPanel";
+import ProfileAnimationLayer from "@/components/profile/ProfileAnimationLayer";
 
 const TABS = [
   { key: "overview", label: "Vue d'ensemble", icon: Zap },
@@ -156,14 +157,7 @@ export default function ProfileContent({ onClose }) {
                   )}
                 </div>
               </div>
-              {equippedAnimation && equippedAnimation.video_url && (
-                <video
-                  src={equippedAnimation.video_url}
-                  autoPlay loop muted playsInline
-                  className="absolute top-1/2 left-1/2 w-24 h-24 object-cover pointer-events-none"
-                  style={{ mixBlendMode: "screen", filter: "contrast(2.5) brightness(1.3)", transform: "translate(-50%, -50%) scale(1.6)", zIndex: 5 }}
-                />
-              )}
+              <ProfileAnimationLayer cosmetic={equippedAnimation} size={96} />
               <label className="absolute bottom-0 right-0 z-20 w-7 h-7 rounded-full flex items-center justify-center cursor-pointer" style={{ background: "#6d28d9", border: "2px solid #0a050f" }}>
                 {uploading === "avatar_url" ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Camera className="w-3.5 h-3.5 text-white" />}
                 <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files[0] && uploadImage(e.target.files[0], "avatar_url")} />
