@@ -109,7 +109,7 @@ export default function NotepadManager({ onClose }) {
           className="flex-1 w-full bg-transparent text-white/90 placeholder-white/20 outline-none resize-none p-5 text-sm leading-relaxed font-mono scrollbar-thin"
           style={{ caretColor: editing.color }}
         />
-        <div className="px-4 py-2 flex items-center justify-between text-[10px] text-white/30 shrink-0" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="px-4 py-2 flex items-center justify-between text-[10px] text-white/50 shrink-0" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
           <span>Créé le {new Date(editing.created_at).toLocaleDateString("fr-FR")}</span>
           <span>Modifié le {new Date(editing.updated_at).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
         </div>
@@ -134,7 +134,7 @@ export default function NotepadManager({ onClose }) {
 
       <div className="flex gap-2 mb-4">
         <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: "rgba(255,255,255,0.04)" }}>
-          <Search className="w-3.5 h-3.5 text-white/30" />
+          <Search className="w-3.5 h-3.5 text-white/50" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher..." className="flex-1 bg-transparent text-xs text-white placeholder-white/30 outline-none" />
         </div>
         <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="px-3 py-2 rounded-lg text-xs text-white outline-none cursor-pointer" style={{ background: "rgba(255,255,255,0.04)", colorScheme: "dark" }}>
@@ -146,7 +146,7 @@ export default function NotepadManager({ onClose }) {
       </div>
 
       {sortedNotepads.length === 0 ? (
-        <div className="text-center py-12 text-white/30 text-sm">
+        <div className="text-center py-12 text-white/50 text-sm">
           {search ? "Aucun résultat" : "Aucun bloc-notes. Cliquez sur 'Nouveau' pour en créer un."}
         </div>
       ) : (
@@ -200,7 +200,7 @@ export default function NotepadManager({ onClose }) {
                           <p className="text-xs font-bold text-white truncate" style={{ cursor: "pointer" }} onClick={() => setEditingId(np.id)}>{np.name}</p>
                         )}
 
-                        <p className="text-[9px] text-white/30 mt-1">
+                        <p className="text-[10px] text-white/50 mt-1">
                           {new Date(np.updated_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
                         </p>
 
@@ -226,7 +226,7 @@ export default function NotepadManager({ onClose }) {
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.8)" }} onClick={() => setCustomizingId(null)}>
           <div className="rounded-2xl p-5 w-full max-w-xs" style={{ background: "#13101a", border: "1px solid rgba(255,255,255,0.1)" }} onClick={e => e.stopPropagation()}>
             <h4 className="text-sm font-bold text-white mb-3">Personnaliser</h4>
-            <p className="text-[10px] text-white/40 mb-1">Icône</p>
+            <p className="text-[10px] text-white/60 mb-1">Icône</p>
             <div className="grid grid-cols-8 gap-1 mb-3">
               {ICONS.map(ic => (
                 <button key={ic} onClick={() => updateNotepad(customizing.id, { icon: ic })} className="w-7 h-7 rounded-lg flex items-center justify-center text-base transition" style={{ background: customizing.icon === ic ? `${customizing.color}30` : "rgba(255,255,255,0.05)", outline: customizing.icon === ic ? `2px solid ${customizing.color}` : "none" }}>
@@ -234,7 +234,7 @@ export default function NotepadManager({ onClose }) {
                 </button>
               ))}
             </div>
-            <p className="text-[10px] text-white/40 mb-1">Couleur</p>
+            <p className="text-[10px] text-white/60 mb-1">Couleur</p>
             <div className="flex gap-2 mb-4">
               {COLORS.map(c => (
                 <button key={c} onClick={() => updateNotepad(customizing.id, { color: c })} className="w-6 h-6 rounded-full transition" style={{ background: c, outline: customizing.color === c ? "2px solid white" : "none", outlineOffset: 1 }} />

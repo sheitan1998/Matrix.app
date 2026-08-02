@@ -2,16 +2,14 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { Calculator, StickyNote, Coins, ChevronRight, MessageCircle, Youtube, Home, FileText } from "lucide-react";
+import { Calculator, Coins, ChevronRight, MessageCircle, Youtube, Home, FileText } from "lucide-react";
 import CalculatorTool from "@/components/tools/Calculator";
-import Notepad from "@/components/tools/Notepad";
 import NotepadManager from "@/components/tools/NotepadManager";
 import UnitConverterTool from "@/components/tools/UnitConverter";
 import TrixWalletBar from "@/components/TrixWalletBar";
 
 const TOOLS = [
   { id: "calc", label: "Calculatrice de Bureau", desc: "Opérations basiques, scientifiques et financières.", icon: Calculator, color: "#FF4D4D" },
-  { id: "notes", label: "Bloc-notes", desc: "Véritable bloc-notes déplaçable et redimensionnable.", icon: StickyNote, color: "#4D79FF" },
   { id: "convert", label: "Convertisseur d'Unités", desc: "Convertissez distances, poids, volumes, et devises.", icon: Coins, color: "#FFD700" },
   { id: "notepad-mgr", label: "Gestionnaire de Blocs-notes", desc: "Créez et gérez plusieurs blocs-notes personnels.", icon: FileText, color: "#22C55E" },
 ];
@@ -109,7 +107,7 @@ export default function Outils() {
 
       {/* Tool modals */}
       <AnimatePresence>
-        {activeTool && activeTool !== "notes" && (
+        {activeTool && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -129,7 +127,6 @@ export default function Outils() {
         )}
       </AnimatePresence>
 
-      {activeTool === "notes" && <Notepad onClose={() => setActiveTool(null)} />}
     </div>
   );
 }
