@@ -76,9 +76,6 @@ export default function CasinoTopbar({ balance, onVipClub, onSettings, playersOn
         <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style={{ background: "#a855f7" }} />
       </button>
 
-      <button className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0">
-        <div className="w-6 h-6 rounded-full" style={{ background: "linear-gradient(135deg, #8b5cf6, #3b82f6)" }} />
-      </button>
 
       <button
         onClick={onSettings}

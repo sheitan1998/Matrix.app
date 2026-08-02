@@ -1,33 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { Outlet, Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { ChevronDown, User } from "lucide-react";
+import { User } from "lucide-react";
 import AuthModal from "@/components/landing/AuthModal";
-import ProfileMenu from "@/components/landing/ProfileMenu";
 import CosmicBackground from "./CosmicBackground";
 import TrixWalletBar from "@/components/TrixWalletBar";
 
 export default function TutoGamingLayout() {
   const [user, setUser] = useState(null);
   const [showAuth, setShowAuth] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
-
-  const handleProfileClick = () => {
-    if (user) setShowMenu(!showMenu);
-    else setShowAuth(true);
-  };
-
-  const handleLogout = async () => {
-    await base44.auth.logout("/");
-  };
-
-  const displayName =
-    user?.pseudo || user?.full_name || user?.email?.split("@")[0] || "Se connecter";
 
   return (
     <div className="min-h-screen relative">
@@ -66,9 +51,9 @@ export default function TutoGamingLayout() {
         <div className="flex items-center gap-3 ml-auto">
           <TrixWalletBar />
         </div>
-        <div className="relative">
+        {!user && (
           <button
-            onClick={handleProfileClick}
+            onClick={() => setShowAuth(true)}
             className="flex items-center gap-2 px-3 py-1.5 rounded-full tap-sm"
             style={{
               border: "1.5px solid rgba(191,90,242,0.4)",
@@ -76,29 +61,14 @@ export default function TutoGamingLayout() {
             }}
           >
             <div
-              className="w-6 h-6 rounded-full flex items-center justify-center overflow-hidden"
+              className="w-6 h-6 rounded-full flex items-center justify-center"
               style={{ background: "rgba(191,90,242,0.2)" }}
             >
-              {user?.avatar_url ? (
-                <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <User className="w-3.5 h-3.5" style={{ color: "#BF5AF2" }} />
-              )}
+              <User className="w-3.5 h-3.5" style={{ color: "#BF5AF2" }} />
             </div>
-            <span className="text-xs font-bold text-white hidden sm:inline">{displayName}</span>
-            <ChevronDown className="w-3.5 h-3.5 text-white/40" />
+            <span className="text-xs font-bold text-white hidden sm:inline">Se connecter</span>
           </button>
-
-          <AnimatePresence>
-            {showMenu && user && (
-              <ProfileMenu
-                user={user}
-                onClose={() => setShowMenu(false)}
-                onLogout={handleLogout}
-              />
-            )}
-          </AnimatePresence>
-        </div>
+        )}
 
         <AuthModal open={showAuth} onClose={() => setShowAuth(false)} />
       </header>

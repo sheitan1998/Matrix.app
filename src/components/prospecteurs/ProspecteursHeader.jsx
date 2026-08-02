@@ -4,8 +4,6 @@ import { Gem } from "lucide-react";
 import TrixWalletBar from "@/components/TrixWalletBar";
 
 export default function ProspecteursHeader({ user, trixBalance }) {
-  const pseudo = user?.pseudo || user?.full_name || user?.email?.split("@")[0] || "Joueur";
-
   return (
     <header
       className="sticky top-0 z-40 flex items-center justify-between px-4 sm:px-6 py-3"
@@ -38,28 +36,7 @@ export default function ProspecteursHeader({ user, trixBalance }) {
       {/* Right: Trix Wallet + User profile */}
       <div className="flex items-center gap-2">
         <TrixWalletBar />
-        <div
-          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 overflow-hidden"
-          style={{ background: "linear-gradient(135deg, #8a4fff, #5b21b6)" }}
-        >
-          {user?.avatar_url ? (
-            <img src={user.avatar_url} alt={pseudo} className="w-full h-full object-cover" />
-          ) : (
-            pseudo[0]?.toUpperCase()
-          )}
-        </div>
-        <div className="hidden sm:flex flex-col items-end gap-0.5">
-          <span className="text-xs font-bold text-white">{pseudo}</span>
-          <div className="flex items-center gap-1.5">
-            <span
-              className="text-[8px] font-black px-1.5 py-0.5 rounded"
-              style={{ background: "linear-gradient(135deg, #fbbf24, #f59e0b)", color: "#1a1505" }}
-            >
-              PREMIUM
-            </span>
 
-          </div>
-        </div>
       </div>
     </header>
   );

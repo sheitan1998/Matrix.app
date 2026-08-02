@@ -38,12 +38,7 @@ export default function Outils() {
             <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white">MATRIX</h1>
           </button>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-full" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.1)" }}>
-                <span className="text-[10px] font-bold text-white">{user?.full_name?.[0]?.toUpperCase() || "U"}</span>
-              </div>
-              <span className="text-xs font-bold text-white/80">{user?.pseudo || user?.full_name || "Utilisateur"}</span>
-            </div>
+
             <TrixWalletBar />
           </div>
         </header>
