@@ -7,7 +7,7 @@ import { base44 } from "@/api/base44Client";
 import { formatTrix } from "@/lib/format";
 import YouTubeChannelProfile from "@/components/youtube/YouTubeChannelProfile";
 
-const ROOT_ROUTES = ["/stream", "/trending", "/shorts", "/profile", "/"];
+const ROOT_ROUTES = ["/stream", "/trending", "/shorts", "/"];
 
 export default function Topbar() {
   const [user, setUser] = useState(null);

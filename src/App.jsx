@@ -27,7 +27,6 @@ import Channel from '@/pages/Channel';
 import Premium from '@/pages/Premium';
 import TrixStore from '@/pages/TrixStore';
 import Upload from '@/pages/Upload';
-import Profile from '@/pages/Profile';
 import StudioSetup from '@/pages/StudioSetup';
 import Dashboard from '@/pages/Dashboard';
 import Community from '@/pages/community/Community';
@@ -129,7 +128,6 @@ const AuthenticatedApp = () => {
         <Route path="/channel/:id" element={<Channel />} />
         <Route path="/premium" element={<Premium />} />
         <Route path="/upload" element={<Upload />} />
-        <Route path="/profile" element={<Profile />} />
         <Route path="/studio" element={<StudioSetup />} />
           <Route path="/dashboard" element={<Dashboard />} />
         </Route>

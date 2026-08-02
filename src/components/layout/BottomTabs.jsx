@@ -1,13 +1,12 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, TrendingUp, Clapperboard, User } from "lucide-react";
+import { Home, TrendingUp, Clapperboard } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TABS = [
   { to: "/stream", icon: Home, label: "Accueil" },
   { to: "/trending", icon: TrendingUp, label: "Tendances" },
   { to: "/shorts", icon: Clapperboard, label: "Shorts" },
-  { to: "/profile", icon: User, label: "Profil" },
 ];
 
 // Per-tab last visited path memory (persists across tab switches in memory)
@@ -15,7 +14,6 @@ const tabMemory = {
   "/stream": "/stream",
   "/trending": "/trending",
   "/shorts": "/shorts",
-  "/profile": "/profile",
 };
 
 export function updateTabMemory(pathname) {
