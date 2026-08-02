@@ -77,31 +77,20 @@ export default async function(req: Request): Promise<Response> {
         const { serverAdId } = params;
         if (!serverAdId) return Response.json({ error: 'Missing serverAdId' }, { status: 400 });
 
-        // Get user's Trix balance
-        const progressRecords = await base44.asServiceRole.entities.UserProgress.filter({
-          user_email: user.email,
-        });
+        // Get user's Trix balance (single wallet: user.trix_balance)
+        const currentTrix = user.trix_balance || 0;
 
-        if (progressRecords.length === 0) {
-          return Response.json({ error: 'Insufficient Trix', balance: 0 }, { status: 400 });
-        }
-
-        const progress = progressRecords[0];
-        const currentCoins = progress.coins || 0;
-
-        if (currentCoins < BOOST_COST) {
+        if (currentTrix < BOOST_COST) {
           return Response.json({
             error: 'Insufficient Trix',
-            balance: currentCoins,
+            balance: currentTrix,
             cost: BOOST_COST,
           }, { status: 400 });
         }
 
-        // Deduct Trix from user
-        const newBalance = currentCoins - BOOST_COST;
-        await base44.asServiceRole.entities.UserProgress.update(progress.id, {
-          coins: newBalance,
-        });
+        // Deduct Trix from user's wallet
+        const newBalance = currentTrix - BOOST_COST;
+        await base44.auth.updateMe({ trix_balance: newBalance });
 
         // Boost the ad
         const ad = await base44.asServiceRole.entities.ServerAd.get(serverAdId);

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/AuthContext";
 import ProspecteursHeader from "@/components/prospecteurs/ProspecteursHeader";
 import TopServers from "@/components/prospecteurs/TopServers";
 import PlayerSearch from "@/components/prospecteurs/PlayerSearch";
@@ -10,6 +11,7 @@ import ServerCardGrid from "@/components/prospecteurs/ServerCardGrid";
 import CreateAdModal from "@/components/prospecteurs/CreateAdModal";
 
 export default function Prospecteurs() {
+  const { checkUserAuth } = useAuth();
   const [user, setUser] = useState(null);
   const [trixBalance, setTrixBalance] = useState(0);
   const [ads, setAds] = useState([]);
@@ -22,12 +24,7 @@ export default function Prospecteurs() {
       const me = await base44.auth.me();
       setUser(me);
 
-      const progressRecords = await base44.entities.UserProgress.filter({
-        user_email: me.email,
-      });
-      if (progressRecords.length > 0) {
-        setTrixBalance(progressRecords[0].coins || 0);
-      }
+      setTrixBalance(me.trix_balance || 0);
 
       // Cleanup expired ads from database
       await base44.functions.invoke("serverSearch", { action: "cleanupExpired" }).catch(() => {});
@@ -85,6 +82,7 @@ export default function Prospecteurs() {
       )
     );
     setTrixBalance(newBalance);
+    checkUserAuth();
   };
 
   const handleDeleteAd = (adId) => {
