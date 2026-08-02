@@ -117,6 +117,8 @@ export default function BoutiqueMatrix() {
                   <div className="w-full aspect-square rounded-xl flex items-center justify-center mb-3 overflow-hidden relative" style={{ background: `${rarityColor}10` }}>
                     {item.category === "avatar_animation" && item.video_url ? (
                       <video src={item.video_url} autoPlay loop muted playsInline className="w-full h-full object-cover" style={{ mixBlendMode: "screen" }} />
+                    ) : item.category === "profile_cover" && item.video_url ? (
+                      <video src={item.video_url} autoPlay loop muted playsInline className="w-full h-full object-cover" />
                     ) : item.category === "profile_cover" && item.preview_image ? (
                       <img src={item.preview_image} alt="" className="w-full h-full object-cover" />
                     ) : (

@@ -82,6 +82,10 @@ export default function CosmeticsPanel({ user }) {
                       <div className="w-full aspect-square rounded-xl mb-2 overflow-hidden" style={{ background: "rgba(0,0,0,0.3)" }}>
                         <video src={c.video_url} autoPlay loop muted playsInline className="w-full h-full object-cover" style={{ mixBlendMode: "screen" }} />
                       </div>
+                    ) : c.category === "profile_cover" && c.video_url ? (
+                      <div className="w-full aspect-video rounded-xl mb-2 overflow-hidden" style={{ background: "rgba(0,0,0,0.3)" }}>
+                        <video src={c.video_url} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+                      </div>
                     ) : c.category === "profile_cover" && c.preview_image ? (
                       <div className="w-full aspect-video rounded-xl mb-2 overflow-hidden" style={{ background: "rgba(0,0,0,0.3)" }}>
                         <img src={c.preview_image} alt="" className="w-full h-full object-cover" />
