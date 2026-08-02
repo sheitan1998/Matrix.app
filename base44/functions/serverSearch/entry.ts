@@ -2,16 +2,27 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 const VOTE_COOLDOWN_MS = 2 * 60 * 60 * 1000; // 2 hours
 const BOOST_COST = 500; // 500 Trix minimum per boost
+const PLAYER_BOOST_COST = 50; // 50 Trix for player ad boost
 const BOOST_DURATION_HOURS = 24;
 
 export default async function(req: Request): Promise<Response> {
   try {
+    const body = await req.json().catch(() => ({}));
+    const { action, ...params } = body;
+
+    // System action: monthly boost reset (no user auth required)
+    if (action === 'resetBoosts') {
+      const base44 = createClientFromRequest(req);
+      await base44.asServiceRole.entities.ServerAd.updateMany(
+        {},
+        { $set: { boosts: 0, is_boosted: false, boost_until: null } }
+      );
+      return Response.json({ success: true });
+    }
+
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-    const body = await req.json().catch(() => ({}));
-    const { action, ...params } = body;
 
     switch (action) {
 
@@ -77,6 +88,10 @@ export default async function(req: Request): Promise<Response> {
         const { serverAdId } = params;
         if (!serverAdId) return Response.json({ error: 'Missing serverAdId' }, { status: 400 });
 
+        // Verify the ad exists first
+        const ad = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
+        if (!ad) return Response.json({ error: 'Server not found' }, { status: 404 });
+
         // Get user's Trix balance (single wallet: user.trix_balance)
         const currentTrix = user.trix_balance || 0;
 
@@ -92,10 +107,6 @@ export default async function(req: Request): Promise<Response> {
         const newBalance = currentTrix - BOOST_COST;
         await base44.auth.updateMe({ trix_balance: newBalance });
 
-        // Boost the ad
-        const ad = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
-        if (!ad) return Response.json({ error: 'Server not found' }, { status: 404 });
-
         const boostUntil = new Date(Date.now() + BOOST_DURATION_HOURS * 60 * 60 * 1000).toISOString();
         const newBoosts = (ad.boosts || 0) + 1;
         await base44.asServiceRole.entities.ServerAd.update(serverAdId, {
@@ -108,6 +119,42 @@ export default async function(req: Request): Promise<Response> {
           success: true,
           boosts: newBoosts,
           newBalance,
+        });
+      }
+
+      // ---- Boost a player search ad with Trix tokens (50 Trix) ----
+      case 'boostPlayer': {
+        const { serverAdId } = params;
+        if (!serverAdId) return Response.json({ error: 'Missing serverAdId' }, { status: 400 });
+
+        const playerAd = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
+        if (!playerAd) return Response.json({ error: 'Ad not found' }, { status: 404 });
+
+        const playerTrix = user.trix_balance || 0;
+
+        if (playerTrix < PLAYER_BOOST_COST) {
+          return Response.json({
+            error: 'Insufficient Trix',
+            balance: playerTrix,
+            cost: PLAYER_BOOST_COST,
+          }, { status: 400 });
+        }
+
+        const playerNewBalance = playerTrix - PLAYER_BOOST_COST;
+        await base44.auth.updateMe({ trix_balance: playerNewBalance });
+
+        const playerBoostUntil = new Date(Date.now() + BOOST_DURATION_HOURS * 60 * 60 * 1000).toISOString();
+        const playerNewBoosts = (playerAd.boosts || 0) + 1;
+        await base44.asServiceRole.entities.ServerAd.update(serverAdId, {
+          boosts: playerNewBoosts,
+          is_boosted: true,
+          boost_until: playerBoostUntil,
+        });
+
+        return Response.json({
+          success: true,
+          boosts: playerNewBoosts,
+          newBalance: playerNewBalance,
         });
       }
 

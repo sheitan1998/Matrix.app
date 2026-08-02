@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { Users, Clock, Trash2 } from "lucide-react";
+import { Users, Clock, Trash2, Flame } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import AdMessages from "./AdMessages";
 
-export default function PlayerAdCard({ player, currentUser, onDelete }) {
+const PLAYER_BOOST_COST = 50;
+
+export default function PlayerAdCard({ player, currentUser, onDelete, onBoost, trixBalance }) {
   const [remainingMin, setRemainingMin] = useState(60);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!player.expires_at) return;
@@ -35,6 +38,30 @@ export default function PlayerAdCard({ player, currentUser, onDelete }) {
     }
   };
 
+  const handleBoost = async () => {
+    if ((trixBalance || 0) < PLAYER_BOOST_COST) {
+      toast.error(`Il faut ${PLAYER_BOOST_COST} Trix pour booster`);
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await base44.functions.invoke("serverSearch", {
+        action: "boostPlayer",
+        serverAdId: player.id,
+      });
+      if (res.data?.success) {
+        onBoost?.(player.id, res.data.boosts, res.data.newBalance);
+        toast.success("Annonce boostée !");
+      } else {
+        toast.error(res.data?.error || "Erreur lors du boost");
+      }
+    } catch {
+      toast.error("Erreur lors du boost");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const hasProfile = !!player.profile_image;
   const isOwner = currentUser?.email === player.author_email;
   const displayName = player.player_pseudo || player.author_name || "Joueur";
@@ -43,8 +70,10 @@ export default function PlayerAdCard({ player, currentUser, onDelete }) {
     <div
       className="rounded-lg p-3 transition"
       style={{
-        background: "rgba(138, 79, 255, 0.05)",
-        border: "1px solid rgba(138, 79, 255, 0.1)",
+        background: player.is_boosted ? "rgba(251,191,36,0.06)" : "rgba(138, 79, 255, 0.05)",
+        border: player.is_boosted
+          ? "1px solid rgba(251,191,36,0.3)"
+          : "1px solid rgba(138, 79, 255, 0.1)",
       }}
     >
       <div className="flex items-center gap-2 mb-2">
@@ -61,6 +90,14 @@ export default function PlayerAdCard({ player, currentUser, onDelete }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1">
             <p className="text-xs font-bold text-white truncate">{displayName}</p>
+            {player.is_boosted && (
+              <span
+                className="text-[7px] font-black px-1 py-0.5 rounded inline-flex items-center gap-0.5 shrink-0"
+                style={{ background: "rgba(251,191,36,0.15)", color: "#fbbf24" }}
+              >
+                <Flame className="w-2 h-2" /> BOOSTÉ
+              </span>
+            )}
             {player.expires_at && (
               <span
                 className="text-[8px] flex items-center gap-0.5 ml-auto shrink-0"
@@ -101,7 +138,25 @@ export default function PlayerAdCard({ player, currentUser, onDelete }) {
             {player.availability_hours}
           </span>
         )}
+        {player.boosts > 0 && (
+          <span className="flex items-center gap-0.5">
+            <Flame className="w-2.5 h-2.5" style={{ color: "#fbbf24" }} />
+            {player.boosts}
+          </span>
+        )}
       </div>
+
+      {isOwner && (
+        <button
+          onClick={handleBoost}
+          disabled={loading}
+          className="w-full h-7 rounded-md text-[10px] font-bold transition flex items-center justify-center gap-1 mb-2 tap-sm"
+          style={{ background: "rgba(251,191,36,0.1)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.2)" }}
+        >
+          <Flame className="w-3 h-3" />
+          Booster ({PLAYER_BOOST_COST} Trix)
+        </button>
+      )}
 
       <AdMessages adId={player.id} currentUser={currentUser} />
     </div>

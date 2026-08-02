@@ -160,6 +160,8 @@ export default function Prospecteurs() {
             loading={loading}
             currentUser={user}
             onDelete={handleDeleteAd}
+            onBoost={handleBoost}
+            trixBalance={trixBalance}
             onPostClick={() => { setCreateType("player"); setShowCreateModal(true); }}
           />
         </div>

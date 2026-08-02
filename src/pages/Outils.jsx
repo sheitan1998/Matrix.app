@@ -4,13 +4,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Calculator, StickyNote, Coins, ChevronRight, MessageCircle, Youtube, Home } from "lucide-react";
 import CalculatorTool from "@/components/tools/Calculator";
-import StickyNotesTool from "@/components/tools/StickyNotes";
+import Notepad from "@/components/tools/Notepad";
 import UnitConverterTool from "@/components/tools/UnitConverter";
 import TrixWalletBar from "@/components/TrixWalletBar";
 
 const TOOLS = [
   { id: "calc", label: "Calculatrice de Bureau", desc: "Opérations basiques, scientifiques et financières.", icon: Calculator, color: "#FF4D4D" },
-  { id: "notes", label: "Bloc-notes Adhésifs", desc: "Prenez des notes rapides directement sur la page.", icon: StickyNote, color: "#4D79FF" },
+  { id: "notes", label: "Bloc-notes", desc: "Véritable bloc-notes déplaçable et redimensionnable.", icon: StickyNote, color: "#4D79FF" },
   { id: "convert", label: "Convertisseur d'Unités", desc: "Convertissez distances, poids, volumes, et devises.", icon: Coins, color: "#FFD700" },
 ];
 
@@ -107,7 +107,7 @@ export default function Outils() {
 
       {/* Tool modals */}
       <AnimatePresence>
-        {activeTool && (
+        {activeTool && activeTool !== "notes" && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -120,12 +120,13 @@ export default function Outils() {
               style={{ background: "#13101a", border: "1px solid rgba(255,255,255,0.08)" }}
               onClick={(e) => e.stopPropagation()}>
               {activeTool === "calc" && <CalculatorTool onClose={() => setActiveTool(null)} />}
-              {activeTool === "notes" && <StickyNotesTool onClose={() => setActiveTool(null)} />}
               {activeTool === "convert" && <UnitConverterTool onClose={() => setActiveTool(null)} />}
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {activeTool === "notes" && <Notepad onClose={() => setActiveTool(null)} />}
     </div>
   );
 }

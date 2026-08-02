@@ -1,0 +1,47 @@
+{
+  "description": "R\u00e9initialise les boosts de toutes les annonces de serveurs le 1er de chaque mois \u00e0 00:00",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 0 1 * *",
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "name": "Monthly Boost Reset",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "monthly_boost_reset",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "reset_boosts": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "serverSearch",
+            "args": {
+              "action": "resetBoosts"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "R\u00e9initialiser les boosts",
+            "description": "Remise \u00e0 z\u00e9ro mensuelle"
+          }
+        }
+      }
+    ]
+  }
+}
