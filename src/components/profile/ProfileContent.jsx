@@ -59,6 +59,7 @@ export default function ProfileContent({ onClose }) {
   const equippedTitle = cosmetics.find(c => c.is_equipped && (c.category === "title" || c.category === "animated_title"));
   const equippedFrame = cosmetics.find(c => c.is_equipped && (c.category === "frame" || c.category === "animated_frame"));
   const equippedBadge = cosmetics.find(c => c.is_equipped && c.category === "badge");
+  const equippedAnimation = cosmetics.find(c => c.is_equipped && c.category === "avatar_animation");
   const equippedCount = cosmetics.filter(c => c.is_equipped).length;
 
   const goTo = (path) => {
@@ -155,7 +156,15 @@ export default function ProfileContent({ onClose }) {
                   )}
                 </div>
               </div>
-              <label className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center cursor-pointer" style={{ background: "#6d28d9", border: "2px solid #0a050f" }}>
+              {equippedAnimation && equippedAnimation.video_url && (
+                <video
+                  src={equippedAnimation.video_url}
+                  autoPlay loop muted playsInline
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[145%] h-[145%] object-cover pointer-events-none"
+                  style={{ mixBlendMode: "screen" }}
+                />
+              )}
+              <label className="absolute bottom-0 right-0 z-10 w-7 h-7 rounded-full flex items-center justify-center cursor-pointer" style={{ background: "#6d28d9", border: "2px solid #0a050f" }}>
                 {uploading === "avatar_url" ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Camera className="w-3.5 h-3.5 text-white" />}
                 <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files[0] && uploadImage(e.target.files[0], "avatar_url")} />
               </label>

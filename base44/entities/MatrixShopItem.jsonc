@@ -38,6 +38,10 @@
     "preview_image": {
       "type": "string"
     },
+    "video_url": {
+      "type": "string",
+      "description": "URL de la video d'animation (pour avatar_animation, format MP4/WebM sur fond noir)"
+    },
     "rarity": {
       "type": "string",
       "enum": [

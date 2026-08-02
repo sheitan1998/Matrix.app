@@ -59,6 +59,7 @@ export default function BoutiqueMatrix() {
       await base44.entities.UserCosmetic.create({
         user_email: user.email, item_id: item.id, item_name: item.name,
         category: item.category, icon: item.icon, rarity: item.rarity, is_equipped: false,
+        video_url: item.video_url || "",
       });
       await base44.entities.TrixTransaction.create({
         user_email: user.email, type: "purchase", amount: -item.price_trix,
@@ -120,8 +121,12 @@ export default function BoutiqueMatrix() {
                   backdropFilter: "blur(8px)",
                 }}>
                   {/* Preview */}
-                  <div className="w-full aspect-square rounded-xl flex items-center justify-center mb-3" style={{ background: `${rarityColor}10` }}>
-                    <span className="text-4xl">{item.icon || "✨"}</span>
+                  <div className="w-full aspect-square rounded-xl flex items-center justify-center mb-3 overflow-hidden relative" style={{ background: `${rarityColor}10` }}>
+                    {item.category === "avatar_animation" && item.video_url ? (
+                      <video src={item.video_url} autoPlay loop muted playsInline className="w-full h-full object-cover" style={{ mixBlendMode: "screen" }} />
+                    ) : (
+                      <span className="text-4xl">{item.icon || "✨"}</span>
+                    )}
                   </div>
 
                   {/* Rarity */}

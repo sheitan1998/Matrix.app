@@ -79,7 +79,13 @@ export default function CosmeticsPanel({ user }) {
                     background: c.is_equipped ? `${rarityColor}15` : "rgba(15,10,25,0.6)",
                     border: `1.5px solid ${c.is_equipped ? rarityColor : "rgba(255,255,255,0.06)"}`,
                   }}>
-                    <div className="text-3xl mb-2">{c.icon || "✨"}</div>
+                    {c.category === "avatar_animation" && c.video_url ? (
+                      <div className="w-full aspect-square rounded-xl mb-2 overflow-hidden" style={{ background: "rgba(0,0,0,0.3)" }}>
+                        <video src={c.video_url} autoPlay loop muted playsInline className="w-full h-full object-cover" style={{ mixBlendMode: "screen" }} />
+                      </div>
+                    ) : (
+                      <div className="text-3xl mb-2">{c.icon || "✨"}</div>
+                    )}
                     <p className="text-xs font-bold text-white truncate mb-1">{c.item_name}</p>
                     <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded" style={{ background: `${rarityColor}20`, color: rarityColor }}>{c.rarity}</span>
                     {c.is_equipped ? (

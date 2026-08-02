@@ -23,6 +23,10 @@
     "is_equipped": {
       "type": "boolean",
       "default": false
+    },
+    "video_url": {
+      "type": "string",
+      "description": "URL de la video d'animation (copiee depuis l'item a l'achat)"
     }
   },
   "required": [
