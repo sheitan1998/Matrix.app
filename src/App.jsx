@@ -49,6 +49,7 @@ import Outils from '@/pages/Outils';
 import Sondages from '@/pages/Sondages';
 import MonProfil from '@/pages/MonProfil';
 import BoutiqueMatrix from '@/pages/BoutiqueMatrix';
+import GlobalProfileButton from '@/components/profile/GlobalProfileButton';
 import { ProgressionProvider } from '@/context/ProgressionContext';
 import { MiniPlayerProvider } from '@/context/MiniPlayerContext';
 import TwitchLayout from '@/components/twitch/TwitchLayout';
@@ -136,6 +137,7 @@ const AuthenticatedApp = () => {
       <Route path="*" element={<PageNotFound />} />
     </Routes>
     </AnimatedRoutes>
+    <GlobalProfileButton />
     </MiniPlayerProvider>
     </ProgressionProvider>
   );
