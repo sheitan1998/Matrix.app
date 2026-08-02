@@ -18,6 +18,19 @@ export default function GlobalMessageButton() {
   const { user, isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [preselectedEmail, setPreselectedEmail] = useState(null);
+
+  // Listen for "open chat with friend" events (e.g. from FriendsPanel)
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.detail?.friendEmail) {
+        setPreselectedEmail(e.detail.friendEmail);
+        setOpen(true);
+      }
+    };
+    window.addEventListener("matrix-open-chat", handler);
+    return () => window.removeEventListener("matrix-open-chat", handler);
+  }, []);
 
   const isExcluded = useMemo(() => {
     const p = location.pathname;
@@ -83,7 +96,8 @@ export default function GlobalMessageButton() {
         <div className="fixed inset-0 z-[80]" style={{ background: "#0a050f" }}>
           <MessageOverlay
             user={user}
-            onClose={() => setOpen(false)}
+            preselectedEmail={preselectedEmail}
+            onClose={() => { setOpen(false); setPreselectedEmail(null); }}
             onMessagesRead={(count) => setUnreadCount(prev => Math.max(0, prev - count))}
           />
         </div>

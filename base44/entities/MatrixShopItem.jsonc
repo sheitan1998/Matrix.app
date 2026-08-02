@@ -13,16 +13,8 @@
       "type": "string",
       "enum": [
         "badge",
-        "frame",
-        "animated_frame",
-        "title",
-        "animated_title",
-        "pseudo_effect",
-        "title_effect",
-        "light_effect",
         "avatar_animation",
-        "decoration",
-        "exclusive"
+        "profile_cover"
       ],
       "default": "badge",
       "description": "Categorie du cosmetique"

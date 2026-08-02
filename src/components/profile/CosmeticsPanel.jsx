@@ -5,10 +5,9 @@ import { Check, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 const CATEGORY_LABELS = {
-  badge: "Badges", frame: "Cadres", animated_frame: "Cadres animés",
-  title: "Titres", animated_title: "Titres animés", pseudo_effect: "Effets pseudo",
-  title_effect: "Effets titre", light_effect: "Effets lumineux",
-  avatar_animation: "Animations photo", decoration: "Décorations", exclusive: "Exclusifs",
+  badge: "Badges",
+  avatar_animation: "Animations",
+  profile_cover: "Couvertures de profil",
 };
 
 const RARITY_COLORS = {
@@ -82,6 +81,10 @@ export default function CosmeticsPanel({ user }) {
                     {c.category === "avatar_animation" && c.video_url ? (
                       <div className="w-full aspect-square rounded-xl mb-2 overflow-hidden" style={{ background: "rgba(0,0,0,0.3)" }}>
                         <video src={c.video_url} autoPlay loop muted playsInline className="w-full h-full object-cover" style={{ mixBlendMode: "screen" }} />
+                      </div>
+                    ) : c.category === "profile_cover" && c.preview_image ? (
+                      <div className="w-full aspect-video rounded-xl mb-2 overflow-hidden" style={{ background: "rgba(0,0,0,0.3)" }}>
+                        <img src={c.preview_image} alt="" className="w-full h-full object-cover" />
                       </div>
                     ) : (
                       <div className="text-3xl mb-2">{c.icon || "✨"}</div>

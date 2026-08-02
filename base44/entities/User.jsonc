@@ -25,6 +25,14 @@
     "channel_id": {
       "type": "string",
       "description": "Associated channel if creator"
+    },
+    "pseudo": {
+      "type": "string",
+      "description": "Pseudo de l'utilisateur (partie avant le #)"
+    },
+    "pseudo_tag": {
+      "type": "string",
+      "description": "Tag unique a 4 chiffres (partie apres le #)"
     }
   },
   "required": [

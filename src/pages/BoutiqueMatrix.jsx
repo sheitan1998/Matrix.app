@@ -11,16 +11,8 @@ import TrixWalletBar from "@/components/TrixWalletBar";
 const CATEGORIES = [
   { key: "all", label: "Tout" },
   { key: "badge", label: "Badges" },
-  { key: "frame", label: "Cadres" },
-  { key: "animated_frame", label: "Cadres animés" },
-  { key: "title", label: "Titres" },
-  { key: "animated_title", label: "Titres animés" },
-  { key: "pseudo_effect", label: "Effets pseudo" },
-  { key: "title_effect", label: "Effets titre" },
-  { key: "light_effect", label: "Effets lumineux" },
   { key: "avatar_animation", label: "Animations" },
-  { key: "decoration", label: "Décorations" },
-  { key: "exclusive", label: "Exclusifs" },
+  { key: "profile_cover", label: "Couvertures de profil" },
 ];
 
 const RARITY_COLORS = {
@@ -60,6 +52,7 @@ export default function BoutiqueMatrix() {
         user_email: user.email, item_id: item.id, item_name: item.name,
         category: item.category, icon: item.icon, rarity: item.rarity, is_equipped: false,
         video_url: item.video_url || "",
+        preview_image: item.preview_image || "",
       });
       await base44.entities.TrixTransaction.create({
         user_email: user.email, type: "purchase", amount: -item.price_trix,
@@ -124,6 +117,8 @@ export default function BoutiqueMatrix() {
                   <div className="w-full aspect-square rounded-xl flex items-center justify-center mb-3 overflow-hidden relative" style={{ background: `${rarityColor}10` }}>
                     {item.category === "avatar_animation" && item.video_url ? (
                       <video src={item.video_url} autoPlay loop muted playsInline className="w-full h-full object-cover" style={{ mixBlendMode: "screen" }} />
+                    ) : item.category === "profile_cover" && item.preview_image ? (
+                      <img src={item.preview_image} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <span className="text-4xl">{item.icon || "✨"}</span>
                     )}

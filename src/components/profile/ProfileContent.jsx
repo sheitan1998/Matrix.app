@@ -22,7 +22,7 @@ const TABS = [
 
 export default function ProfileContent({ onClose }) {
   const nav = useNavigate();
-  const { progress } = useProgression();
+  const { progress, rank, xpNeeded, xpPercent } = useProgression();
   const [user, setUser] = useState(null);
   const [tab, setTab] = useState("overview");
   const [editing, setEditing] = useState(false);
@@ -30,12 +30,14 @@ export default function ProfileContent({ onClose }) {
   const [editBio, setEditBio] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(null);
+  const [editPseudo, setEditPseudo] = useState("");
 
   useEffect(() => {
     base44.auth.me().then(me => {
       setUser(me);
       setEditName(me?.full_name || "");
       setEditBio(me?.bio || "");
+      setEditPseudo(me?.pseudo || "");
     }).catch(() => {});
   }, []);
 
@@ -61,6 +63,7 @@ export default function ProfileContent({ onClose }) {
   const equippedFrame = cosmetics.find(c => c.is_equipped && (c.category === "frame" || c.category === "animated_frame"));
   const equippedBadge = cosmetics.find(c => c.is_equipped && c.category === "badge");
   const equippedAnimation = cosmetics.find(c => c.is_equipped && c.category === "avatar_animation");
+  const equippedCover = cosmetics.find(c => c.is_equipped && c.category === "profile_cover");
   const equippedCount = cosmetics.filter(c => c.is_equipped).length;
 
   const goTo = (path) => {
@@ -71,8 +74,10 @@ export default function ProfileContent({ onClose }) {
   const saveProfile = async () => {
     setSaving(true);
     try {
-      await base44.auth.updateMe({ full_name: editName.trim(), bio: editBio.trim() });
-      setUser(u => ({ ...u, full_name: editName.trim(), bio: editBio.trim() }));
+      const updates = { full_name: editName.trim(), bio: editBio.trim(), pseudo: editPseudo.trim() };
+      if (!user.pseudo_tag) updates.pseudo_tag = String(Math.floor(1000 + Math.random() * 9000));
+      await base44.auth.updateMe(updates);
+      setUser(u => ({ ...u, ...updates }));
       setEditing(false);
       toast.success("Profil mis à jour");
     } catch { toast.error("Erreur"); }
@@ -127,9 +132,11 @@ export default function ProfileContent({ onClose }) {
           </button>
         </header>
 
-        {/* Banner */}
+        {/* Banner / Profile cover */}
         <div className="relative h-32 sm:h-40 mx-4 sm:mx-6 rounded-2xl overflow-hidden" style={{ background: "rgba(168,85,247,0.1)" }}>
-          {user.banner_url ? (
+          {equippedCover?.preview_image ? (
+            <img src={equippedCover.preview_image} alt="" className="w-full h-full object-cover" />
+          ) : user.banner_url ? (
             <img src={user.banner_url} alt="" className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full" style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.15), rgba(109,40,217,0.1))" }} />
@@ -171,9 +178,15 @@ export default function ProfileContent({ onClose }) {
             <div className="flex-1 min-w-0 pb-2">
               {editing ? (
                 <div className="space-y-2">
-                  <input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Pseudo"
+                  <input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Nom affiché"
                     className="w-full px-3 py-1.5 rounded-lg text-sm text-white outline-none"
                     style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(168,85,247,0.3)" }} />
+                  <div className="flex items-center gap-2">
+                    <input value={editPseudo} onChange={e => setEditPseudo(e.target.value)} placeholder="Pseudo"
+                      className="flex-1 px-3 py-1.5 rounded-lg text-sm text-white outline-none"
+                      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(168,85,247,0.3)" }} />
+                    <span className="text-sm font-mono font-bold text-white/40 shrink-0">#{user.pseudo_tag || "????"}</span>
+                  </div>
                   <textarea value={editBio} onChange={e => setEditBio(e.target.value)} placeholder="Bio..." rows={2}
                     className="w-full px-3 py-1.5 rounded-lg text-xs text-white outline-none resize-none"
                     style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(168,85,247,0.3)" }} />
@@ -181,33 +194,36 @@ export default function ProfileContent({ onClose }) {
                     <button onClick={saveProfile} disabled={saving} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white flex items-center gap-1" style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
                       <Check className="w-3 h-3" /> {saving ? "..." : "OK"}
                     </button>
-                    <button onClick={() => { setEditing(false); setEditName(user.full_name || ""); setEditBio(user.bio || ""); }} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white/60" style={{ background: "rgba(255,255,255,0.05)" }}>
+                    <button onClick={() => { setEditing(false); setEditName(user.full_name || ""); setEditBio(user.bio || ""); setEditPseudo(user.pseudo || ""); }} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white/60" style={{ background: "rgba(255,255,255,0.05)" }}>
                       <X className="w-3 h-3" />
                     </button>
                   </div>
                 </div>
               ) : (
-                <>
+                <div className="space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-xl font-black text-white">{user.full_name || user.email?.split("@")[0]}</h2>
+                    <h2 className="text-xl font-black text-white leading-tight">{user.full_name || user.email?.split("@")[0]}</h2>
                     <button onClick={() => setEditing(true)} className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(255,255,255,0.05)" }}>
                       <Edit3 className="w-3.5 h-3.5 text-white/50" />
                     </button>
                   </div>
                   {equippedTitle && (
-                    <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-black" style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.2), rgba(109,40,217,0.15))", border: "1px solid rgba(168,85,247,0.3)", color: "#c084fc" }}>
+                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black" style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.2), rgba(109,40,217,0.15))", border: "1px solid rgba(168,85,247,0.3)", color: "#c084fc" }}>
                       {equippedTitle.icon || "✨"} {equippedTitle.item_name}
                     </span>
                   )}
-                  <p className="text-xs text-white/40 mt-1.5 leading-relaxed">{user.bio || "Aucune bio. Cliquez sur le crayon pour en ajouter une."}</p>
-                  <p className="text-[10px] text-white/30 font-mono mt-1">{user.pseudo || "—"}</p>
-                </>
+                  <p className="text-xs text-white/50 leading-relaxed">{user.bio || "Aucune bio. Cliquez sur le crayon pour en ajouter une."}</p>
+                  <p className="text-xs font-mono text-white/40">
+                    {user.pseudo || "Pseudo non défini"}
+                    <span className="text-white/30">#{user.pseudo_tag || "????"}</span>
+                  </p>
+                </div>
               )}
             </div>
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
             {stats.map((s, i) => {
               const content = (
                 <div className="p-4 rounded-2xl" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(255,255,255,0.06)" }}>
@@ -219,6 +235,35 @@ export default function ProfileContent({ onClose }) {
               return s.link ? <button key={i} onClick={() => goTo(s.link)} className="text-left">{content}</button> : <div key={i}>{content}</div>;
             })}
           </div>
+
+          {/* XP / Level progress bar */}
+          {progress && (
+            <div className="p-4 rounded-2xl mb-6" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(168,85,247,0.15)" }}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-black text-white">Niveau {progress.level || 1}</span>
+                  {rank && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${rank.color}20`, color: rank.color }}>
+                      {rank.icon} {rank.name}
+                    </span>
+                  )}
+                </div>
+                <span className="text-[10px] text-white/40 font-mono">
+                  {progress.xp || 0} / {xpNeeded} XP
+                </span>
+              </div>
+              <div className="w-full h-2.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+                <div
+                  className="h-full rounded-full transition-all duration-700 ease-out"
+                  style={{
+                    width: `${xpPercent}%`,
+                    background: "linear-gradient(90deg, #a855f7, #6d28d9)",
+                    boxShadow: "0 0 10px rgba(168,85,247,0.5)",
+                  }}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Tabs */}
           <div className="flex gap-1 mb-4 overflow-x-auto no-scrollbar border-b border-white/5 pb-1">
@@ -276,7 +321,7 @@ export default function ProfileContent({ onClose }) {
                 </div>
               </div>
             )}
-            {tab === "friends" && <FriendsPanel user={user} />}
+            {tab === "friends" && <FriendsPanel user={user} onClose={onClose} />}
             {tab === "cosmetics" && <CosmeticsPanel user={user} />}
             {tab === "wallet" && <TransactionHistory user={user} />}
             {tab === "privacy" && <PrivacyPanel user={user} onUpdate={setUser} />}

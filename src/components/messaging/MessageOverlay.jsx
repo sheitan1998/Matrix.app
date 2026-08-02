@@ -4,7 +4,7 @@ import { ArrowLeft, Send, Search, X, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { playMessageSound } from "@/lib/messageSound";
 
-export default function MessageOverlay({ user, onClose, onMessagesRead }) {
+export default function MessageOverlay({ user, preselectedEmail, onClose, onMessagesRead }) {
   const [contacts, setContacts] = useState([]);
   const [selectedContact, setSelectedContact] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -16,10 +16,17 @@ export default function MessageOverlay({ user, onClose, onMessagesRead }) {
   // Fetch contacts (accepted friends)
   useEffect(() => {
     base44.entities.Friend.filter({ user_email: user.email, status: "accepted" })
-      .then(data => setContacts(data || []))
+      .then(data => {
+        setContacts(data || []);
+        // Auto-select preselected contact if provided
+        if (preselectedEmail) {
+          const preselected = (data || []).find(c => c.friend_email === preselectedEmail);
+          if (preselected) setSelectedContact(preselected);
+        }
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [user]);
+  }, [user, preselectedEmail]);
 
   // Fetch messages when a contact is selected
   useEffect(() => {

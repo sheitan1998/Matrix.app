@@ -27,6 +27,10 @@
     "video_url": {
       "type": "string",
       "description": "URL de la video d'animation (copiee depuis l'item a l'achat)"
+    },
+    "preview_image": {
+      "type": "string",
+      "description": "URL de l'image de preview (pour profile_cover)"
     }
   },
   "required": [

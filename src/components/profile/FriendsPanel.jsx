@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { UserPlus, UserCheck, Clock, Users, X, Search, Send } from "lucide-react";
+import { UserPlus, UserCheck, Clock, Users, X, Search, Send, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 
-export default function FriendsPanel({ user }) {
+export default function FriendsPanel({ user, onClose }) {
   const [addPseudo, setAddPseudo] = useState("");
   const [searching, setSearching] = useState(false);
   const qc = useQueryClient();
@@ -22,24 +22,44 @@ export default function FriendsPanel({ user }) {
   const pendingReceived = friends.filter(f => f.status === "pending_received");
   const accepted = friends.filter(f => f.status === "accepted");
 
+  // Parse "Pseudo#1234" into { pseudo, tag }
+  const parsePseudoTag = (input) => {
+    const trimmed = input.trim();
+    const hashIdx = trimmed.indexOf("#");
+    if (hashIdx === -1) return { pseudo: trimmed, tag: null };
+    return { pseudo: trimmed.slice(0, hashIdx).trim(), tag: trimmed.slice(hashIdx + 1).trim() };
+  };
+
   const sendFriendRequest = async () => {
     if (!addPseudo.trim()) return;
-    if (addPseudo.trim() === user.pseudo) { toast.error("Tu ne peux pas t'ajouter toi-même !"); return; }
+    const { pseudo, tag } = parsePseudoTag(addPseudo);
+    if (!pseudo) { toast.error("Pseudo invalide"); return; }
+    if (pseudo === user.pseudo && (!tag || tag === user.pseudo_tag)) {
+      toast.error("Tu ne peux pas t'ajouter toi-même !");
+      return;
+    }
     setSearching(true);
     try {
       const allUsers = await base44.entities.User.list();
-      const target = allUsers.find(u => u.pseudo === addPseudo.trim());
-      if (!target) { toast.error("Pseudo introuvable !"); return; }
+      // Match by pseudo + tag (if tag provided) for precise identification
+      const target = allUsers.find(u => {
+        if (u.pseudo !== pseudo) return false;
+        if (tag && u.pseudo_tag !== tag) return false;
+        return true;
+      });
+      if (!target) { toast.error("Utilisateur introuvable. Vérifiez le format Pseudo#1234"); return; }
       const existing = friends.find(f => f.friend_email === target.email);
       if (existing) { toast.error("Déjà ami ou demande en cours."); return; }
       await base44.entities.Friend.create({
         user_email: user.email, friend_email: target.email,
-        friend_name: target.full_name, friend_pseudo: target.pseudo || addPseudo.trim(),
+        friend_name: target.full_name,
+        friend_pseudo: target.pseudo ? (target.pseudo_tag ? `${target.pseudo}#${target.pseudo_tag}` : target.pseudo) : addPseudo.trim(),
         friend_avatar: target.avatar_url || "", status: "pending_sent",
       });
       await base44.entities.Friend.create({
         user_email: target.email, friend_email: user.email,
-        friend_name: user.full_name, friend_pseudo: user.pseudo,
+        friend_name: user.full_name,
+        friend_pseudo: user.pseudo ? (user.pseudo_tag ? `${user.pseudo}#${user.pseudo_tag}` : user.pseudo) : "",
         friend_avatar: user.avatar_url || "", status: "pending_received",
       });
       qc.invalidateQueries({ queryKey: ["mp-friends"] });
@@ -65,6 +85,11 @@ export default function FriendsPanel({ user }) {
     toast.success("Ami retiré.");
   };
 
+  const openConversation = (friend) => {
+    window.dispatchEvent(new CustomEvent("matrix-open-chat", { detail: { friendEmail: friend.friend_email } }));
+    if (onClose) onClose();
+  };
+
   const Avatar = ({ f }) => (
     <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white overflow-hidden shrink-0" style={{ background: "rgba(168,85,247,0.2)" }}>
       {f.friend_avatar ? <img src={f.friend_avatar} alt="" className="w-full h-full object-cover" /> : f.friend_name?.[0]?.toUpperCase() || "?"}
@@ -87,6 +112,7 @@ export default function FriendsPanel({ user }) {
             <Send className="w-3.5 h-3.5" /> Ajouter
           </button>
         </div>
+        <p className="text-[10px] text-white/30 mt-2">Format requis : Pseudo#1234 (le tag identifie de manière unique l'utilisateur)</p>
       </div>
 
       {/* Pending received */}
@@ -149,7 +175,10 @@ export default function FriendsPanel({ user }) {
                   <p className="text-sm font-semibold text-white truncate">{f.friend_name}</p>
                   <p className="text-[10px] text-white/40 font-mono">{f.friend_pseudo}</p>
                 </div>
-                <button onClick={() => removeFriend(f)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-white/40 hover:text-red-400 transition">
+                <button onClick={() => openConversation(f)} className="p-1.5 rounded-lg text-white/40 hover:text-purple-400 transition" title="Envoyer un message">
+                  <MessageCircle className="w-4 h-4" />
+                </button>
+                <button onClick={() => removeFriend(f)} className="p-1.5 rounded-lg text-white/40 hover:text-red-400 transition" title="Retirer">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
