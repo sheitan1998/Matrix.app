@@ -160,7 +160,7 @@ export default function ProfileContent({ onClose }) {
                 <video
                   src={equippedAnimation.video_url}
                   autoPlay loop muted playsInline
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[145%] h-[145%] object-cover pointer-events-none"
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] object-cover pointer-events-none"
                   style={{ mixBlendMode: "screen" }}
                 />
               )}
