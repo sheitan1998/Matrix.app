@@ -6,7 +6,7 @@ import AuthModal from "@/components/landing/AuthModal";
 import ProfileMenu from "@/components/landing/ProfileMenu";
 import {
   Youtube, Radio, MessageCircle, Cpu, Dices, Search, GraduationCap,
-  Wrench, BarChart3, Clapperboard, TrendingUp,
+  Wrench, BarChart3, Clapperboard, TrendingUp, ShoppingBag,
   Gem, Shield, Star, ChevronDown, User, ArrowRight,
 } from "lucide-react";
 
@@ -23,6 +23,7 @@ const LEFT_CARDS = [
 const RIGHT_TOP = [
   { path: "/outils", label: "Outils", desc: "Accède à des outils utiles pour t'aider au quotidien.", icon: Wrench },
   { path: "/sondages", label: "Sondage", desc: "Participe aux sondages et donne ton avis.", icon: BarChart3 },
+  { path: "/boutique-matrix", label: "Boutique Matrix", desc: "Personnalise ton profil avec des cosmétiques exclusifs.", icon: ShoppingBag },
 ];
 
 const RIGHT_FULL = [
@@ -131,7 +132,7 @@ export default function Landing() {
 
           {/* Right column */}
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {RIGHT_TOP.map((u, i) => (
                 <motion.button
                   key={i}

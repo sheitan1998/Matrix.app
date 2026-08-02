@@ -83,19 +83,37 @@ export default function AuthModal({ open, onClose }) {
                 </div>
               )}
 
-              {/* Google */}
+              {/* Social login buttons */}
               <button
                 onClick={handleGoogle}
                 disabled={loading}
                 className="w-full h-10 rounded-lg flex items-center justify-center gap-2 text-sm font-bold text-white transition disabled:opacity-50 tap-sm"
-                style={{
-                  background: "rgba(255,255,255,0.08)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                }}
+                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
               >
                 <GoogleIcon className="w-4 h-4" />
                 Continuer avec Google
               </button>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => base44.auth.loginWithProvider("facebook", "/")}
+                  disabled={loading}
+                  className="w-full h-10 rounded-lg flex items-center justify-center gap-2 text-xs font-bold text-white transition disabled:opacity-50 tap-sm"
+                  style={{ background: "rgba(24,119,242,0.15)", border: "1px solid rgba(24,119,242,0.3)" }}
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                  Facebook
+                </button>
+                <button
+                  onClick={() => base44.auth.loginWithProvider("microsoft", "/")}
+                  disabled={loading}
+                  className="w-full h-10 rounded-lg flex items-center justify-center gap-2 text-xs font-bold text-white transition disabled:opacity-50 tap-sm"
+                  style={{ background: "rgba(0,120,212,0.15)", border: "1px solid rgba(0,120,212,0.3)" }}
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M0 0v11.37h11.37V0H0zm12.63 0v11.37H24V0H12.63zM0 12.63V24h11.37V12.63H0zm12.63 0V24H24V12.63H12.63z"/></svg>
+                  Microsoft
+                </button>
+              </div>
 
               {/* Divider */}
               <div className="flex items-center gap-3">
