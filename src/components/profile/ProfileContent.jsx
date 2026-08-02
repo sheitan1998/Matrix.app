@@ -135,7 +135,7 @@ export default function ProfileContent({ onClose }) {
         {/* Banner / Profile cover */}
         <div className="relative h-32 sm:h-40 mx-4 sm:mx-6 rounded-2xl overflow-hidden" style={{ background: "rgba(168,85,247,0.1)" }}>
           {equippedCover?.video_url ? (
-            <video src={equippedCover.video_url} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+            <video src={equippedCover.video_url} autoPlay loop muted playsInline className="w-full h-full object-cover object-center" style={{ objectPosition: "center" }} />
           ) : equippedCover?.preview_image ? (
             <img src={equippedCover.preview_image} alt="" className="w-full h-full object-cover" />
           ) : user.banner_url ? (
