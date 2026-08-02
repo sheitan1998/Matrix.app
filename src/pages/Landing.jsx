@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import AuthModal from "@/components/landing/AuthModal";
+import ProjectSupportBlock from "@/components/progression/ProjectSupportBlock";
 import {
   Youtube, Radio, MessageCircle, Cpu, Dices, Search, GraduationCap,
   Wrench, BarChart3, Clapperboard, TrendingUp, ShoppingBag,
@@ -150,6 +151,11 @@ export default function Landing() {
               </motion.button>
             ))}
           </div>
+        </div>
+
+        {/* Support block */}
+        <div className="mt-6 lg:mt-8">
+          <ProjectSupportBlock />
         </div>
 
         {/* Footer */}
