@@ -161,7 +161,7 @@ export default function ProfileContent({ onClose }) {
                   src={equippedAnimation.video_url}
                   autoPlay loop muted playsInline
                   className="absolute top-1/2 left-1/2 w-24 h-24 object-cover pointer-events-none"
-                  style={{ mixBlendMode: "screen", transform: "translate(-50%, -50%) scale(1.6)", zIndex: 5 }}
+                  style={{ mixBlendMode: "screen", filter: "contrast(2.5) brightness(1.3)", transform: "translate(-50%, -50%) scale(1.6)", zIndex: 5 }}
                 />
               )}
               <label className="absolute bottom-0 right-0 z-20 w-7 h-7 rounded-full flex items-center justify-center cursor-pointer" style={{ background: "#6d28d9", border: "2px solid #0a050f" }}>
