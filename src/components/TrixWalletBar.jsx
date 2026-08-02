@@ -1,20 +1,20 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { useProgression } from "@/context/ProgressionContext";
+import { useAuth } from "@/lib/AuthContext";
 import { formatTrix } from "@/lib/format";
 import { ShoppingBag } from "lucide-react";
 import TrixIcon from "@/components/TrixIcon";
 
 /**
  * Unified Trix balance + token shop button.
- * Uses ProgressionContext for real-time balance updates.
+ * Uses AuthContext (user.trix_balance) — the single Trix wallet shared with the shop.
  * Shown only in specific universes (Casino, Prospecteurs, Tuto Gaming,
  * Video Studio, Progression, Outils, Sondages, Discord).
  */
 export default function TrixWalletBar() {
   const nav = useNavigate();
-  const { progress, loading } = useProgression();
-  const balance = progress?.coins ?? 0;
+  const { user } = useAuth();
+  const balance = user?.trix_balance ?? 0;
 
   return (
     <div className="flex items-center gap-2 shrink-0">
@@ -29,7 +29,7 @@ export default function TrixWalletBar() {
       >
         <TrixIcon size={18} />
         <span className="font-mono text-sm font-bold text-white">
-          {loading ? "…" : formatTrix(balance)}
+          {formatTrix(balance)}
         </span>
       </div>
 

@@ -5,6 +5,9 @@ import { Coins, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { formatTrix } from "@/lib/format";
+import { useAuth } from "@/lib/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
 const PACKS = [
   { trix: 500, price: "4,99€", bonus: 0, tag: null },
@@ -16,11 +19,9 @@ const PACKS = [
 ];
 
 export default function TrixStore() {
-  const [user, setUser] = useState(null);
+  const nav = useNavigate();
+  const { user, checkUserAuth } = useAuth();
   const [loading, setLoading] = useState(null);
-
-  const load = () => base44.auth.me().then(setUser).catch(() => setUser(null));
-  useEffect(() => { load(); }, []);
 
   const buy = async (pack) => {
     if (!user) return;
@@ -35,11 +36,20 @@ export default function TrixStore() {
     });
     setLoading(null);
     toast.success(`+${formatTrix(total)} TRIX !`, { description: "Ton solde est mis à jour 🪙" });
-    load();
+    checkUserAuth();
   };
 
   return (
-    <div className="px-4 lg:px-6 py-10 max-w-6xl mx-auto">
+    <div className="min-h-screen bg-background">
+      <div className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-xl px-4 py-3">
+        <div className="max-w-6xl mx-auto flex items-center gap-3">
+          <button onClick={() => nav(-1)} className="text-muted-foreground hover:text-foreground transition">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <span className="font-black text-lg">💎 Boutique de jetons</span>
+        </div>
+      </div>
+      <div className="px-4 lg:px-6 py-10 max-w-6xl mx-auto">
       <div className="relative overflow-hidden rounded-3xl p-8 md:p-12 gradient-trix text-background">
         <div className="absolute inset-0 grid-bg opacity-20" />
         <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-5">
@@ -91,6 +101,7 @@ export default function TrixStore() {
             </Button>
           </div>
         ))}
+      </div>
       </div>
     </div>
   );

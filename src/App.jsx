@@ -99,6 +99,7 @@ const AuthenticatedApp = () => {
       <Route path="/prospecteurs" element={<Prospecteurs />} />
       <Route path="/community/subscription" element={<CommunitySubscription />} />
         <Route path="/wallet" element={<Wallet />} />
+        <Route path="/trix-store" element={<TrixStore />} />
         <Route path="/video-studio" element={<VideoStudio />} />
         <Route path="/progression" element={<Progression />} />
         <Route path="/notifications" element={<Notifications />} />
@@ -120,7 +121,6 @@ const AuthenticatedApp = () => {
         <Route path="/live/:id" element={<Live />} />
         <Route path="/channel/:id" element={<Channel />} />
         <Route path="/premium" element={<Premium />} />
-        <Route path="/trix-store" element={<TrixStore />} />
         <Route path="/upload" element={<Upload />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/studio" element={<StudioSetup />} />
