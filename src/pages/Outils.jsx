@@ -2,9 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { Calculator, StickyNote, Coins, ChevronRight, MessageCircle, Youtube, Home } from "lucide-react";
+import { Calculator, StickyNote, Coins, ChevronRight, MessageCircle, Youtube, Home, FileText } from "lucide-react";
 import CalculatorTool from "@/components/tools/Calculator";
 import Notepad from "@/components/tools/Notepad";
+import NotepadManager from "@/components/tools/NotepadManager";
 import UnitConverterTool from "@/components/tools/UnitConverter";
 import TrixWalletBar from "@/components/TrixWalletBar";
 
@@ -12,6 +13,7 @@ const TOOLS = [
   { id: "calc", label: "Calculatrice de Bureau", desc: "Opérations basiques, scientifiques et financières.", icon: Calculator, color: "#FF4D4D" },
   { id: "notes", label: "Bloc-notes", desc: "Véritable bloc-notes déplaçable et redimensionnable.", icon: StickyNote, color: "#4D79FF" },
   { id: "convert", label: "Convertisseur d'Unités", desc: "Convertissez distances, poids, volumes, et devises.", icon: Coins, color: "#FFD700" },
+  { id: "notepad-mgr", label: "Gestionnaire de Blocs-notes", desc: "Créez et gérez plusieurs blocs-notes personnels.", icon: FileText, color: "#22C55E" },
 ];
 
 const BG_URL = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/891f5968b_Gemini_Generated_Image_vsevw4vsevw4vsev.png";
@@ -116,10 +118,11 @@ export default function Outils() {
             <motion.div
               initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
               transition={{ type: "spring", damping: 25 }}
-              className="w-full max-w-md max-h-[85vh] overflow-y-auto scrollbar-thin rounded-2xl"
+              className={`w-full max-h-[85vh] overflow-y-auto scrollbar-thin rounded-2xl ${activeTool === "notepad-mgr" ? "max-w-2xl" : "max-w-md"}`}
               style={{ background: "#13101a", border: "1px solid rgba(255,255,255,0.08)" }}
               onClick={(e) => e.stopPropagation()}>
               {activeTool === "calc" && <CalculatorTool onClose={() => setActiveTool(null)} />}
+              {activeTool === "notepad-mgr" && <NotepadManager onClose={() => setActiveTool(null)} />}
               {activeTool === "convert" && <UnitConverterTool onClose={() => setActiveTool(null)} />}
             </motion.div>
           </motion.div>
