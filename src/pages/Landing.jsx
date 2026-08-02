@@ -22,7 +22,7 @@ const LEFT_CARDS = [
 
 const RIGHT_TOP = [
   { path: "/outils", label: "Outils", desc: "Accède à des outils utiles pour t'aider au quotidien.", icon: Wrench },
-  { path: "/community", label: "Sondage", desc: "Participe aux sondages et donne ton avis.", icon: BarChart3 },
+  { path: "/sondages", label: "Sondage", desc: "Participe aux sondages et donne ton avis.", icon: BarChart3 },
 ];
 
 const RIGHT_FULL = [

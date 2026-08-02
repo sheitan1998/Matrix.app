@@ -1,0 +1,34 @@
+{
+  "name": "SondageReaction",
+  "type": "object",
+  "properties": {
+    "sondage_id": {
+      "type": "string",
+      "description": "ID du sondage"
+    },
+    "user_email": {
+      "type": "string"
+    },
+    "emoji": {
+      "type": "string",
+      "description": "Emoji de reaction"
+    }
+  },
+  "required": [
+    "sondage_id",
+    "user_email",
+    "emoji"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {},
+    "update": {
+      "data.user_email": "{{user.email}}"
+    },
+    "delete": {
+      "data.user_email": "{{user.email}}"
+    }
+  }
+}

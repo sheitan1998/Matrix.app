@@ -1,0 +1,48 @@
+{
+  "name": "SondageComment",
+  "type": "object",
+  "properties": {
+    "sondage_id": {
+      "type": "string",
+      "description": "ID du sondage"
+    },
+    "author_email": {
+      "type": "string"
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "author_avatar": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "sondage_id",
+    "author_email",
+    "content"
+  ],
+  "rls": {
+    "create": {
+      "data.author_email": "{{user.email}}"
+    },
+    "read": {},
+    "update": {
+      "data.author_email": "{{user.email}}"
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.author_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

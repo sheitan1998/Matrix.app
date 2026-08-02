@@ -46,6 +46,7 @@ import VideoStudio from '@/pages/VideoStudio';
 import Progression from '@/pages/Progression';
 import Notifications from '@/pages/Notifications';
 import Outils from '@/pages/Outils';
+import Sondages from '@/pages/Sondages';
 import { ProgressionProvider } from '@/context/ProgressionContext';
 import { MiniPlayerProvider } from '@/context/MiniPlayerContext';
 import TwitchLayout from '@/components/twitch/TwitchLayout';
@@ -104,6 +105,7 @@ const AuthenticatedApp = () => {
         <Route path="/progression" element={<Progression />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/outils" element={<Outils />} />
+        <Route path="/sondages" element={<Sondages />} />
         <Route element={<TwitchLayout />}>
           <Route path="/twitch" element={<TwitchHome />} />
           <Route path="/twitch/search" element={<TwitchSearch />} />

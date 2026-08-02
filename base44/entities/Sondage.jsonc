@@ -1,0 +1,68 @@
+{
+  "name": "Sondage",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Titre du sondage"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description ou question"
+    },
+    "choices": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "default": [],
+      "description": "Choix de reponses"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "closed"
+      ],
+      "default": "active",
+      "description": "Statut du sondage"
+    },
+    "created_by_name": {
+      "type": "string",
+      "description": "Nom de l'administrateur createur"
+    },
+    "created_by_email": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "title",
+    "description"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {},
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

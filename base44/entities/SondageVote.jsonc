@@ -1,0 +1,34 @@
+{
+  "name": "SondageVote",
+  "type": "object",
+  "properties": {
+    "sondage_id": {
+      "type": "string",
+      "description": "ID du sondage"
+    },
+    "choice_id": {
+      "type": "string",
+      "description": "ID du choix vote"
+    },
+    "user_email": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "sondage_id",
+    "choice_id",
+    "user_email"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {},
+    "update": {
+      "data.user_email": "{{user.email}}"
+    },
+    "delete": {
+      "data.user_email": "{{user.email}}"
+    }
+  }
+}
