@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import SpaceBackground from "@/components/SpaceBackground";
 import ClipProperties from "@/components/video/ClipProperties";
 import VideoExporter from "@/components/video/VideoExporter";
+import TrixWalletBar from "@/components/TrixWalletBar";
 
 export default function VideoStudio() {
   const nav = useNavigate();
@@ -68,9 +69,12 @@ export default function VideoStudio() {
             <Film className="w-5 h-5 text-purple-400" />
             <span className="font-black text-white">Video Studio</span>
           </div>
-          <button onClick={() => setShowCreate(true)} className="ml-auto flex items-center gap-2 h-9 px-4 rounded-xl text-sm font-bold text-white" style={{ background: "linear-gradient(135deg, #8b5cf6, #6d28d9)" }}>
-            <Plus className="w-4 h-4" /> Nouveau projet
-          </button>
+          <div className="ml-auto flex items-center gap-2">
+            <TrixWalletBar />
+            <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 h-9 px-4 rounded-xl text-sm font-bold text-white" style={{ background: "linear-gradient(135deg, #8b5cf6, #6d28d9)" }}>
+              <Plus className="w-4 h-4" /> Nouveau projet
+            </button>
+          </div>
         </div>
 
         <div className="px-4 lg:px-6 py-6 max-w-5xl mx-auto space-y-8">

@@ -10,6 +10,7 @@ import AchievementsList from '@/components/progression/AchievementsList';
 import MissionsBoard from '@/components/progression/MissionsBoard';
 import ProgressionShop from '@/components/progression/ProgressionShop';
 import ProgressionLeaderboards from '@/components/progression/ProgressionLeaderboards';
+import TrixWalletBar from '@/components/TrixWalletBar';
 
 const TABS = [
   { id: 'overview',     label: "Vue d'ensemble" },
@@ -50,10 +51,7 @@ export default function Progression() {
               {prestigeInfo && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: `${prestigeInfo.color}20`, color: prestigeInfo.color }}>{prestigeInfo.name}</span>}
             </h1>
           </div>
-          <div className="flex items-center gap-1.5 px-3 h-9 rounded-full" style={{ background: 'rgba(255,159,28,0.06)', border: '1px solid rgba(255,159,28,0.15)' }}>
-            <Coins className="w-4 h-4" style={{ color: '#ff9f1c' }} />
-            <span className="text-sm font-black" style={{ color: '#ff9f1c' }}>{(progress.coins || 0).toLocaleString()}</span>
-          </div>
+          <TrixWalletBar />
         </div>
 
         {/* Level / XP panel */}

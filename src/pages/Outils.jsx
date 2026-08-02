@@ -6,6 +6,7 @@ import { Calculator, StickyNote, Coins, ChevronRight, MessageCircle, Youtube, Ho
 import CalculatorTool from "@/components/tools/Calculator";
 import StickyNotesTool from "@/components/tools/StickyNotes";
 import UnitConverterTool from "@/components/tools/UnitConverter";
+import TrixWalletBar from "@/components/TrixWalletBar";
 
 const TOOLS = [
   { id: "calc", label: "Calculatrice de Bureau", desc: "Opérations basiques, scientifiques et financières.", icon: Calculator, color: "#FF4D4D" },
@@ -43,10 +44,7 @@ export default function Outils() {
               </div>
               <span className="text-xs font-bold text-white/80">{user?.pseudo || user?.full_name || "Utilisateur"}</span>
             </div>
-            <div className="flex items-center gap-1.5 px-3 py-2 rounded-full" style={{ background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)" }}>
-              <Coins className="w-4 h-4" style={{ color: "#FFD700" }} />
-              <span className="text-xs font-black" style={{ color: "#FFD700" }}>{(user?.trix_balance || 0).toLocaleString()}</span>
-            </div>
+            <TrixWalletBar />
           </div>
         </header>
 

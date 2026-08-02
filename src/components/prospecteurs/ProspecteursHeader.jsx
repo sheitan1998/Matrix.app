@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Gem } from "lucide-react";
+import TrixWalletBar from "@/components/TrixWalletBar";
 
 export default function ProspecteursHeader({ user, trixBalance }) {
   const pseudo = user?.pseudo || user?.full_name || user?.email?.split("@")[0] || "Joueur";
@@ -34,21 +35,9 @@ export default function ProspecteursHeader({ user, trixBalance }) {
         </span>
       </div>
 
-      {/* Right: Trix Store + User profile */}
+      {/* Right: Trix Wallet + User profile */}
       <div className="flex items-center gap-2">
-        <Link
-          to="/trix-store"
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition tap-sm"
-          style={{
-            background: "linear-gradient(135deg, rgba(251,191,36,0.15), rgba(245,158,11,0.1))",
-            border: "1px solid rgba(251,191,36,0.3)",
-          }}
-        >
-          <Gem className="w-3.5 h-3.5" style={{ color: "#fbbf24" }} />
-          <span className="text-[10px] font-black tracking-wider uppercase hidden sm:inline" style={{ color: "#fbbf24" }}>
-            Boutique
-          </span>
-        </Link>
+        <TrixWalletBar />
         <div
           className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 overflow-hidden"
           style={{ background: "linear-gradient(135deg, #8a4fff, #5b21b6)" }}
@@ -68,12 +57,7 @@ export default function ProspecteursHeader({ user, trixBalance }) {
             >
               PREMIUM
             </span>
-            <div className="flex items-center gap-0.5">
-              <Gem className="w-3 h-3" style={{ color: "#8a4fff" }} />
-              <span className="text-xs font-mono font-bold" style={{ color: "#8a4fff" }}>
-                {(trixBalance || 0).toLocaleString()}
-              </span>
-            </div>
+
           </div>
         </div>
       </div>

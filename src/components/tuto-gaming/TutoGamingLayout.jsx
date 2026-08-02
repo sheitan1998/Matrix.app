@@ -6,6 +6,7 @@ import { ChevronDown, User } from "lucide-react";
 import AuthModal from "@/components/landing/AuthModal";
 import ProfileMenu from "@/components/landing/ProfileMenu";
 import CosmicBackground from "./CosmicBackground";
+import TrixWalletBar from "@/components/TrixWalletBar";
 
 export default function TutoGamingLayout() {
   const [user, setUser] = useState(null);
@@ -61,7 +62,10 @@ export default function TutoGamingLayout() {
           </span>
         </div>
 
-        {/* Right: Profile */}
+        {/* Right: Trix balance + Boutique + Profile */}
+        <div className="flex items-center gap-3 ml-auto">
+          <TrixWalletBar />
+        </div>
         <div className="relative">
           <button
             onClick={handleProfileClick}

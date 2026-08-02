@@ -62,18 +62,6 @@ export default function Topbar() {
 
         {/* Right */}
         <div className="flex items-center gap-2 shrink-0">
-          {user && (
-            <Link
-              to="/trix-store"
-              className="hidden md:flex items-center gap-1.5 px-3 h-9 rounded-full bg-secondary hover:bg-secondary/80 transition border border-border"
-            >
-              <Coins className="w-4 h-4 text-trix" />
-              <span className="font-mono text-sm font-semibold">
-                {formatTrix(user.trix_balance || 0)}
-              </span>
-            </Link>
-          )}
-
           {user?.is_premium ? (
             <div className="hidden md:flex items-center gap-1.5 px-3 h-9 rounded-full gradient-premium">
               <Crown className="w-4 h-4 text-white" />

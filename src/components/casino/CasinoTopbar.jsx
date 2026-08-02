@@ -1,6 +1,7 @@
 import React from "react";
 import { Search, Bell, Settings, Users, Crown, Home } from "lucide-react";
 import { Link } from "react-router-dom";
+import TrixWalletBar from "@/components/TrixWalletBar";
 
 export default function CasinoTopbar({ balance, onVipClub, onSettings, playersOnline }) {
   const online = playersOnline || 18432;
@@ -54,6 +55,8 @@ export default function CasinoTopbar({ balance, onVipClub, onSettings, playersOn
         </span>
         <span className="text-[10px] font-bold" style={{ color: "#fbbf24" }}>MC</span>
       </div>
+
+      <TrixWalletBar />
 
       <button
         onClick={onVipClub}

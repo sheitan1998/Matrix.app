@@ -18,6 +18,7 @@ import DmList from "@/components/community/DmList";
 import { useProgression } from "@/context/ProgressionContext";
 import { getRank } from "@/lib/progressionData";
 import { Gamepad2, Cpu, Music, Palette, Film, Newspaper } from "lucide-react";
+import TrixWalletBar from "@/components/TrixWalletBar";
 
 const CATEGORIES = [
   { id: "gaming", label: "Jeux Vidéo", icon: Gamepad2 },
@@ -187,6 +188,7 @@ export default function Community() {
             <Link to="/" className="text-muted-foreground hover:text-foreground transition"><ArrowLeft className="w-5 h-5" /></Link>
             <span className="font-black text-lg"><span className="text-premium">M</span>ATRIX Community</span>
             <div className="ml-auto flex items-center gap-2">
+              <TrixWalletBar />
               {user && <NotificationBell user={user} />}
               <button onClick={() => setShowInviteJoin(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-border hover:bg-secondary transition">
