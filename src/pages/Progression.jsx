@@ -10,6 +10,7 @@ import AchievementsList from '@/components/progression/AchievementsList';
 import MissionsBoard from '@/components/progression/MissionsBoard';
 import ProgressionShop from '@/components/progression/ProgressionShop';
 import ProgressionLeaderboards from '@/components/progression/ProgressionLeaderboards';
+import ProjectSupportBlock from '@/components/progression/ProjectSupportBlock';
 import TrixWalletBar from '@/components/TrixWalletBar';
 
 const TABS = [
@@ -96,6 +97,9 @@ export default function Progression() {
             {tab === 'leaderboards' && <ProgressionLeaderboards />}
           </motion.div>
         </AnimatePresence>
+
+        {/* Support block */}
+        <ProjectSupportBlock />
       </div>
     </div>
   );
