@@ -12,6 +12,7 @@ import CosmeticsPanel from "@/components/profile/CosmeticsPanel";
 import TransactionHistory from "@/components/profile/TransactionHistory";
 import PrivacyPanel from "@/components/profile/PrivacyPanel";
 import ProfileAnimationLayer from "@/components/profile/ProfileAnimationLayer";
+import TrixIcon from "@/components/TrixIcon";
 
 const TABS = [
   { key: "overview", label: "Vue d'ensemble", icon: Zap },
@@ -131,9 +132,14 @@ export default function ProfileContent({ onClose }) {
               <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white">MATRIX</h1>
             </button>
           </div>
-          <button onClick={() => goTo("/boutique-matrix")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white transition" style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
-            <ShoppingBag className="w-3.5 h-3.5" /> Boutique
-          </button>
+          <div className="flex items-center gap-2.5">
+            <button onClick={() => goTo("/boutique-matrix")} className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-xs font-bold text-white transition hover:opacity-90 tap-sm" style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)", boxShadow: "0 0 12px rgba(168,85,247,0.25)" }}>
+              <ShoppingBag className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Boutique Cosmétiques</span><span className="sm:hidden">Cosmétiques</span>
+            </button>
+            <button onClick={() => goTo("/trix-store")} className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-xs font-bold text-white transition hover:opacity-90 tap-sm" style={{ background: "linear-gradient(135deg, #fbbf24, #f59e0b)", boxShadow: "0 0 12px rgba(251,191,36,0.25)" }}>
+              <TrixIcon size={16} /> <span className="hidden sm:inline">Boutique Trix</span><span className="sm:hidden">Trix</span>
+            </button>
+          </div>
         </header>
 
         {/* Banner / Profile cover */}
