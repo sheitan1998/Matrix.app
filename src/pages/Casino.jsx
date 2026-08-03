@@ -90,6 +90,7 @@ export default function Casino() {
   const [category, setCategory] = useState("all");
   const [slotView, setSlotView] = useState(null); // null | "worlds" | "machines"
   const [selectedWorld, setSelectedWorld] = useState(null);
+  const [slotThemeId, setSlotThemeId] = useState(null);
   const { addTransaction } = useWallet();
   const [casinoCoins, setCasinoCoins] = useCasinoCoins();
   const { jackpot } = useCasinoJackpot();
@@ -121,7 +122,7 @@ export default function Casino() {
         world={selectedWorld}
         balance={casinoCoins}
         onBack={() => setSlotView("worlds")}
-        onSelectMachine={() => { setSlotView(null); setSelectedWorld(null); setScreen("slots"); }}
+        onSelectMachine={() => { setSlotView(null); setSelectedWorld(null); setSlotThemeId(selectedWorld.themeId || null); setScreen("slots"); }}
       />
     );
   }
@@ -175,7 +176,7 @@ export default function Casino() {
                 className="rounded-3xl overflow-hidden"
                 style={{ background: "linear-gradient(160deg, rgba(14,0,30,0.6), rgba(18,0,40,0.4), rgba(14,0,30,0.6))", border: `1px solid ${meta.color}20`, boxShadow: `0 0 40px rgba(0,0,0,0.5)` }}>
                 <div className="p-4 sm:p-6">
-                  {screen === "slots" && <SlotsGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} addTransaction={addTransaction} jackpot={jackpot} />}
+                  {screen === "slots" && <SlotsGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} addTransaction={addTransaction} jackpot={jackpot} themeId={slotThemeId} />}
                   {screen === "blackjack" && <BlackjackGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} />}
                   {screen === "roulette" && <RouletteGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} />}
                   {screen === "bingo" && <BingoGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} />}

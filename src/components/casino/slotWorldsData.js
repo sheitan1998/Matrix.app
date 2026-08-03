@@ -1,4 +1,5 @@
 // Slot worlds data — each world has 3 machine tiers (Beginner, High Limit, High Roller)
+// Each world is mapped to a visual theme: "nature", "adventure", or "cyber"
 
 export const SLOT_WORLDS = [
   {
@@ -9,6 +10,7 @@ export const SLOT_WORLDS = [
     bgGradient: "linear-gradient(160deg, #8b1a0e 0%, #ff4500 50%, #b22222 100%)",
     themeColor: "#ff4500",
     machineName: "Incredibulls",
+    themeId: "adventure",
   },
   {
     id: "god_of_sky",
@@ -18,6 +20,7 @@ export const SLOT_WORLDS = [
     bgGradient: "linear-gradient(160deg, #1a0a4a 0%, #4169e1 50%, #2a1a6b 100%)",
     themeColor: "#4169e1",
     machineName: "God of Sky",
+    themeId: "nature",
   },
   {
     id: "classic_hot_40",
@@ -27,6 +30,7 @@ export const SLOT_WORLDS = [
     bgGradient: "linear-gradient(160deg, #4a0a0a 0%, #cc0000 50%, #660000 100%)",
     themeColor: "#cc0000",
     machineName: "Classic Hot 40",
+    themeId: "adventure",
   },
   {
     id: "charming_beasts",
@@ -36,6 +40,7 @@ export const SLOT_WORLDS = [
     bgGradient: "linear-gradient(160deg, #2a0a4a 0%, #9370db 50%, #4b0082 100%)",
     themeColor: "#9370db",
     machineName: "Charming Beasts",
+    themeId: "nature",
   },
   {
     id: "diamonds_pearls",
@@ -45,6 +50,7 @@ export const SLOT_WORLDS = [
     bgGradient: "linear-gradient(160deg, #1a0a4a 0%, #4169e1 50%, #2a1a6b 100%)",
     themeColor: "#4169e1",
     machineName: "Diamonds & Pearls",
+    themeId: "cyber",
   },
   {
     id: "camelot_cash",
@@ -54,6 +60,7 @@ export const SLOT_WORLDS = [
     bgGradient: "linear-gradient(160deg, #0a1a3a 0%, #4682b4 50%, #1a2a5a 100%)",
     themeColor: "#4682b4",
     machineName: "Camelot Cash",
+    themeId: "nature",
   },
   {
     id: "radiant_rainbows",
@@ -63,6 +70,7 @@ export const SLOT_WORLDS = [
     bgGradient: "linear-gradient(160deg, #0a4a1a 0%, #32cd32 50%, #228b22 100%)",
     themeColor: "#32cd32",
     machineName: "Radiant Rainbows",
+    themeId: "nature",
   },
   {
     id: "super_classic",
@@ -72,6 +80,7 @@ export const SLOT_WORLDS = [
     bgGradient: "linear-gradient(160deg, #0a1a4a 0%, #1e90ff 50%, #0a0a6a 100%)",
     themeColor: "#1e90ff",
     machineName: "Super Classic",
+    themeId: "adventure",
   },
   // Page 2
   {
@@ -82,6 +91,7 @@ export const SLOT_WORLDS = [
     bgGradient: "linear-gradient(160deg, #4a3a0a 0%, #daa520 50%, #8b6914 100%)",
     themeColor: "#daa520",
     machineName: "King of Kings",
+    themeId: "adventure",
   },
   {
     id: "phoenix_garden",
@@ -91,6 +101,7 @@ export const SLOT_WORLDS = [
     bgGradient: "linear-gradient(160deg, #4a1a0a 0%, #ff8c00 50%, #cc4400 100%)",
     themeColor: "#ff8c00",
     machineName: "Phoenix Garden",
+    themeId: "nature",
   },
   {
     id: "buffalo_rush",
@@ -100,6 +111,7 @@ export const SLOT_WORLDS = [
     bgGradient: "linear-gradient(160deg, #4a0a0a 0%, #cd5c5c 50%, #8b1a1a 100%)",
     themeColor: "#cd5c5c",
     machineName: "Buffalo Rush",
+    themeId: "adventure",
   },
   {
     id: "call_of_the_wild",
@@ -109,6 +121,7 @@ export const SLOT_WORLDS = [
     bgGradient: "linear-gradient(160deg, #0a2a0a 0%, #228b22 50%, #0a1a0a 100%)",
     themeColor: "#228b22",
     machineName: "Call of the Wild",
+    themeId: "nature",
   },
 ];
 
