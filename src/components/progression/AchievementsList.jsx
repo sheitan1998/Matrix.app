@@ -56,9 +56,9 @@ export default function AchievementsList() {
                 border: `1px solid ${completed ? 'rgba(0,242,255,0.2)' : 'rgba(255,255,255,0.04)'}`,
               }}>
               {/* Trophy image */}
-              <div className="w-12 h-12 shrink-0 flex items-center justify-center"
-                style={{ filter: completed ? 'drop-shadow(0 0 6px rgba(0,242,255,0.4))' : 'grayscale(1) opacity(0.35)' }}>
-                <img src={a.icon} alt="Trophée" className="w-11 h-11 object-contain" />
+              <div className="w-16 h-16 shrink-0 flex items-center justify-center"
+                style={{ filter: completed ? 'drop-shadow(0 0 8px rgba(0,242,255,0.5))' : 'opacity(0.9)' }}>
+                <img src={a.icon} alt="Trophée" className="w-16 h-16 object-contain" />
               </div>
 
               {/* Name + progress */}

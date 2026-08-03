@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Edit3, Check, X, Camera, Zap, Coins, Clapperboard, Award, Users, ShoppingBag, Lock, ChevronRight, ArrowLeft } from "lucide-react";
+import { Edit3, Check, X, Camera, Zap, Coins, Clapperboard, Award, Users, ShoppingBag, Lock, ChevronRight, ArrowLeft, Trophy } from "lucide-react";
+import { ACHIEVEMENTS as ALL_ACHIEVEMENTS } from "@/lib/achievementsData";
 import { toast } from "sonner";
 import { formatTrix } from "@/lib/format";
 import { useProgression } from "@/context/ProgressionContext";
@@ -102,8 +103,12 @@ export default function ProfileContent({ onClose }) {
     );
   }
 
+  const ownedAchievements = (progress?.achievements || []);
+  const totalTrophies = ALL_ACHIEVEMENTS.filter(a => ownedAchievements.includes(a.id)).reduce((s, a) => s + (a.trophies || 0), 0);
+
   const stats = [
     { icon: Zap, label: "Niveau", value: progress?.level || 1, color: "#a855f7", link: "/progression" },
+    { icon: Trophy, label: "Trophées", value: totalTrophies, color: "#00F2FF", link: "/progression" },
     { icon: Coins, label: "TRIX", value: formatTrix(user.trix_balance || 0), color: "#f59e0b", link: "/wallet" },
     { icon: Clapperboard, label: "Projets", value: projects.length, color: "#3b82f6" },
     { icon: Award, label: "Cosmétiques", value: cosmetics.length, color: "#22C55E" },
@@ -227,7 +232,7 @@ export default function ProfileContent({ onClose }) {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
             {stats.map((s, i) => {
               const content = (
                 <div className="p-4 rounded-2xl" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(255,255,255,0.06)" }}>
