@@ -289,6 +289,71 @@ export default async function(req: Request): Promise<Response> {
         });
       }
 
+      // ---- Send a friend request (creates both pending_sent + pending_received atomically) ----
+      case 'sendFriendRequest': {
+        const { target_email } = params;
+        if (!target_email) return Response.json({ error: 'Missing target_email' }, { status: 400 });
+
+        const senderEmail = user.email;
+
+        // Prevent self-request
+        if (senderEmail === target_email) {
+          return Response.json({ error: 'Tu ne peux pas t\'ajouter toi-même !' }, { status: 400 });
+        }
+
+        // Check if a relationship already exists in either direction
+        const existing = await base44.asServiceRole.entities.Friend.filter({
+          $or: [
+            { user_email: senderEmail, friend_email: target_email },
+            { user_email: target_email, friend_email: senderEmail },
+          ],
+        });
+
+        if (existing.length > 0) {
+          const rel = existing[0];
+          let msg = 'Une relation existe déjà.';
+          if (rel.status === 'accepted') msg = 'Vous êtes déjà amis.';
+          else if (rel.status === 'pending_sent') msg = 'Une demande a déjà été envoyée.';
+          else if (rel.status === 'pending_received') msg = 'Cet utilisateur t\'a déjà envoyé une demande.';
+          return Response.json({ error: msg }, { status: 409 });
+        }
+
+        // Fetch both user profiles for display data
+        const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
+        const sender = allUsers.find(u => u.email === senderEmail);
+        const target = allUsers.find(u => u.email === target_email);
+
+        if (!target) return Response.json({ error: 'Utilisateur introuvable.' }, { status: 404 });
+
+        const senderPseudo = sender?.pseudo
+          ? (sender.pseudo.includes('#') ? sender.pseudo : (sender.pseudo_tag ? `${sender.pseudo}#${sender.pseudo_tag}` : sender.pseudo))
+          : '';
+        const targetPseudo = target.pseudo
+          ? (target.pseudo.includes('#') ? target.pseudo : (target.pseudo_tag ? `${target.pseudo}#${target.pseudo_tag}` : target.pseudo))
+          : '';
+
+        // Create both records using service role (bypasses RLS)
+        await base44.asServiceRole.entities.Friend.create({
+          user_email: senderEmail,
+          friend_email: target_email,
+          friend_name: target.full_name || '',
+          friend_pseudo: targetPseudo,
+          friend_avatar: target.avatar_url || '',
+          status: 'pending_sent',
+        });
+
+        await base44.asServiceRole.entities.Friend.create({
+          user_email: target_email,
+          friend_email: senderEmail,
+          friend_name: sender?.full_name || '',
+          friend_pseudo: senderPseudo,
+          friend_avatar: sender?.avatar_url || '',
+          status: 'pending_received',
+        });
+
+        return Response.json({ success: true });
+      }
+
       default:
         return Response.json({ error: `Unknown action: ${action}` }, { status: 400 });
     }

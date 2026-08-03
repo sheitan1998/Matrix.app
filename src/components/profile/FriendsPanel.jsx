@@ -56,42 +56,26 @@ export default function FriendsPanel({ user, onClose }) {
     if (!user?.email) { toast.error("Session expirée, reconnecte-toi."); return; }
     setSearching(true);
     try {
-      const payload = isEmail
+      // Step 1: search for the target user
+      const searchPayload = isEmail
         ? { action: "searchUser", email: input }
         : { action: "searchUser", pseudo, tag };
-      const res = await base44.functions.invoke("serverSearch", payload);
-      const target = res?.user;
-      if (!target?.email) { toast.error(res?.error || "Aucun utilisateur trouvé. Vérifiez le pseudo#tag ou l'email saisi."); return; }
-
-      // Check both directions for existing friendship
-      const existing = friends.find(f => f.friend_email === target.email);
-      if (existing) {
-        const msg = existing.status === "accepted"
-          ? "Vous êtes déjà amis."
-          : existing.status === "pending_sent"
-            ? "Une demande a déjà été envoyée."
-            : existing.status === "pending_received"
-              ? "Cet utilisateur t'a déjà envoyé une demande."
-              : "Une relation existe déjà.";
-        toast.error(msg);
+      const searchRes = await base44.functions.invoke("serverSearch", searchPayload);
+      const target = searchRes?.user;
+      if (!target?.email) {
+        toast.error(searchRes?.error || "Aucun utilisateur trouvé. Vérifiez le pseudo#tag ou l'email saisi.");
         return;
       }
 
-      const myPseudo = user.pseudo ? (user.pseudo_tag ? `${user.pseudo}#${user.pseudo_tag}` : user.pseudo) : "";
-      const targetPseudo = target.pseudo ? (target.pseudo_tag ? `${target.pseudo}#${target.pseudo_tag}` : target.pseudo) : addPseudo.trim();
-
-      await base44.entities.Friend.create({
-        user_email: user.email, friend_email: target.email,
-        friend_name: target.full_name || "",
-        friend_pseudo: targetPseudo,
-        friend_avatar: target.avatar_url || "", status: "pending_sent",
+      // Step 2: send friend request via backend (creates both records atomically, anti-duplicate)
+      const sendRes = await base44.functions.invoke("serverSearch", {
+        action: "sendFriendRequest",
+        target_email: target.email,
       });
-      await base44.entities.Friend.create({
-        user_email: target.email, friend_email: user.email,
-        friend_name: user.full_name || "",
-        friend_pseudo: myPseudo,
-        friend_avatar: user.avatar_url || "", status: "pending_received",
-      });
+      if (!sendRes?.success) {
+        toast.error(sendRes?.error || "Erreur lors de l'envoi");
+        return;
+      }
       qc.invalidateQueries({ queryKey: ["mp-friends"] });
       setAddPseudo("");
       toast.success("Demande envoyée !");
