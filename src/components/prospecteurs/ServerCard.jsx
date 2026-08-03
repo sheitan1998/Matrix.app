@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { ArrowUp, Flame, ExternalLink, Users, Clock, Trash2 } from "lucide-react";
+import { ArrowUp, Flame, ExternalLink, Users, Clock, Trash2, Pencil } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import AdMessages from "./AdMessages";
 
 const BOOST_COST = 500;
 
-export default function ServerCard({ server, onVote, onBoost, onDelete, currentUser, trixBalance }) {
+export default function ServerCard({ server, onVote, onBoost, onDelete, onEdit, currentUser, trixBalance }) {
   const [voteStatus, setVoteStatus] = useState({ canVote: true, remaining: null });
   const [loading, setLoading] = useState(false);
   const [remainingMin, setRemainingMin] = useState(60);
@@ -155,13 +155,22 @@ export default function ServerCard({ server, onVote, onBoost, onDelete, currentU
             </span>
           )}
           {isOwner && (
-            <button
-              onClick={handleDelete}
-              className="absolute top-1.5 left-1.5 w-6 h-6 rounded flex items-center justify-center transition tap-sm"
-              style={{ background: "rgba(239, 68, 68, 0.3)", color: "#ef4444", backdropFilter: "blur(4px)" }}
-            >
-              <Trash2 className="w-3 h-3" />
-            </button>
+            <div className="absolute top-1.5 left-1.5 flex items-center gap-1">
+              <button
+                onClick={() => onEdit?.(server)}
+                className="w-6 h-6 rounded flex items-center justify-center transition tap-sm"
+                style={{ background: "rgba(138, 79, 255, 0.3)", color: "#a855f7", backdropFilter: "blur(4px)" }}
+              >
+                <Pencil className="w-3 h-3" />
+              </button>
+              <button
+                onClick={handleDelete}
+                className="w-6 h-6 rounded flex items-center justify-center transition tap-sm"
+                style={{ background: "rgba(239, 68, 68, 0.3)", color: "#ef4444", backdropFilter: "blur(4px)" }}
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            </div>
           )}
         </div>
       ) : (
@@ -179,13 +188,22 @@ export default function ServerCard({ server, onVote, onBoost, onDelete, currentU
               <span />
             )}
             {isOwner && (
-              <button
-                onClick={handleDelete}
-                className="w-6 h-6 rounded flex items-center justify-center transition tap-sm"
-                style={{ background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)" }}
-              >
-                <Trash2 className="w-3 h-3" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => onEdit?.(server)}
+                  className="w-6 h-6 rounded flex items-center justify-center transition tap-sm"
+                  style={{ background: "rgba(138, 79, 255, 0.1)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}
+                >
+                  <Pencil className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="w-6 h-6 rounded flex items-center justify-center transition tap-sm"
+                  style={{ background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)" }}
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
             )}
           </div>
         )

@@ -2,7 +2,7 @@ import React from "react";
 import ServerCard from "./ServerCard";
 import { Server } from "lucide-react";
 
-export default function ServerCardGrid({ servers, loading, onVote, onBoost, onDelete, currentUser, trixBalance }) {
+export default function ServerCardGrid({ servers, loading, onVote, onBoost, onDelete, onEdit, currentUser, trixBalance }) {
   return (
     <div>
       <div className="flex items-center gap-2 mb-4">
@@ -43,6 +43,7 @@ export default function ServerCardGrid({ servers, loading, onVote, onBoost, onDe
               onVote={onVote}
               onBoost={onBoost}
               onDelete={onDelete}
+              onEdit={onEdit}
               currentUser={currentUser}
               trixBalance={trixBalance}
             />

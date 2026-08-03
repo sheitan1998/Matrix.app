@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Users, Clock, Trash2, Flame } from "lucide-react";
+import { Users, Clock, Trash2, Flame, Pencil } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import AdMessages from "./AdMessages";
 
 const PLAYER_BOOST_COST = 50;
 
-export default function PlayerAdCard({ player, currentUser, onDelete, onBoost, trixBalance }) {
+export default function PlayerAdCard({ player, currentUser, onDelete, onBoost, onEdit, trixBalance }) {
   const [remainingMin, setRemainingMin] = useState(60);
   const [loading, setLoading] = useState(false);
 
@@ -111,13 +111,22 @@ export default function PlayerAdCard({ player, currentUser, onDelete, onBoost, t
           {player.game && <p className="text-[9px] text-white/40">{player.game}</p>}
         </div>
         {isOwner && (
-          <button
-            onClick={handleDelete}
-            className="w-6 h-6 rounded flex items-center justify-center transition tap-sm shrink-0"
-            style={{ background: "rgba(239, 68, 68, 0.1)", color: "#ef4444" }}
-          >
-            <Trash2 className="w-3 h-3" />
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={() => onEdit?.(player)}
+              className="w-6 h-6 rounded flex items-center justify-center transition tap-sm"
+              style={{ background: "rgba(138, 79, 255, 0.1)", color: "#a855f7" }}
+            >
+              <Pencil className="w-3 h-3" />
+            </button>
+            <button
+              onClick={handleDelete}
+              className="w-6 h-6 rounded flex items-center justify-center transition tap-sm"
+              style={{ background: "rgba(239, 68, 68, 0.1)", color: "#ef4444" }}
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          </div>
         )}
       </div>
 

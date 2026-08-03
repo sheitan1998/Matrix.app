@@ -6,7 +6,6 @@ import { Zap, Coins, CheckCircle2, Clock } from 'lucide-react';
 const PERIODS = [
   { id: 'daily',   label: 'Quotidiennes', icon: '☀️', color: '#fbbf24' },
   { id: 'weekly',  label: 'Hebdomadaires', icon: '📅', color: '#3b82f6' },
-  { id: 'monthly', label: 'Mensuelles', icon: '🗓', color: '#a855f7' },
 ];
 
 export default function MissionsBoard() {
@@ -15,7 +14,7 @@ export default function MissionsBoard() {
   const missions = progress.missions || {};
 
   return (
-    <div className="grid md:grid-cols-3 gap-4">
+    <div className="grid md:grid-cols-2 gap-4">
       {PERIODS.map(period => {
         const list = missions[period.id] || [];
         const completed = list.filter(m => m.completed).length;

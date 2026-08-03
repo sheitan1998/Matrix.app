@@ -61,7 +61,7 @@ export default function TopServers({ servers, loading, onCreateClick }) {
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1">
-                  <p className="text-xs font-bold text-white truncate">{server.title}</p>
+                  <p className="text-xs font-bold text-white break-words">{server.title}</p>
                   {server.is_boosted && (
                     <Flame className="w-3 h-3 shrink-0" style={{ color: "#fbbf24" }} />
                   )}
@@ -76,6 +76,9 @@ export default function TopServers({ servers, loading, onCreateClick }) {
                     </span>
                   )}
                 </div>
+                {server.description && (
+                  <p className="text-[9px] text-white/50 leading-relaxed mt-0.5 break-words">{server.description}</p>
+                )}
               </div>
             </div>
           ))}

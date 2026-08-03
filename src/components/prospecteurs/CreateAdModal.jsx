@@ -6,22 +6,22 @@ import { toast } from "sonner";
 const GAMES = ["Valorant", "League of Legends", "Fortnite", "CS2", "Apex Legends", "Minecraft", "Rocket League", "Autre"];
 const CATEGORIES = ["Gaming", "RP", "Communauté", "Compétitif", "Casual", "Créatif", "Autre"];
 
-export default function CreateAdModal({ onClose, onSubmit, initialType = "server" }) {
-  const [adType, setAdType] = useState(initialType);
+export default function CreateAdModal({ onClose, onSubmit, initialType = "server", editAd = null }) {
+  const [adType, setAdType] = useState(editAd?.type || initialType);
   const [form, setForm] = useState({
-    title: "",
-    description: "",
-    discord_link: "",
-    game: "",
-    category: "",
-    additional_info: "",
-    max_players: 0,
-    player_count_needed: 1,
-    availability_hours: "",
-    player_pseudo: "",
+    title: editAd?.title || "",
+    description: editAd?.description || "",
+    discord_link: editAd?.discord_link || "",
+    game: editAd?.game || "",
+    category: editAd?.category || "",
+    additional_info: editAd?.additional_info || "",
+    max_players: editAd?.max_players || 0,
+    player_count_needed: editAd?.player_count_needed || 1,
+    availability_hours: editAd?.availability_hours || "",
+    player_pseudo: editAd?.player_pseudo || "",
   });
-  const [profileImage, setProfileImage] = useState("");
-  const [coverImage, setCoverImage] = useState("");
+  const [profileImage, setProfileImage] = useState(editAd?.profile_image || "");
+  const [coverImage, setCoverImage] = useState(editAd?.cover_image || "");
   const [uploadingField, setUploadingField] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const profileInputRef = useRef(null);
@@ -90,7 +90,7 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
           style={{ background: "#12091c", borderBottom: "1px solid rgba(138, 79, 255, 0.2)" }}
         >
           <h2 className="text-sm font-black tracking-wider uppercase text-white">
-            {adType === "server" ? "Publier un serveur" : "Recherche joueur"}
+            {editAd ? "Modifier l'annonce" : adType === "server" ? "Publier un serveur" : "Recherche joueur"}
           </h2>
           <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white transition tap-sm">
             <X className="w-4 h-4" />
@@ -383,7 +383,7 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
               boxShadow: "0 0 15px rgba(138, 79, 255, 0.3)",
             }}
           >
-            {submitting ? "Publication..." : adType === "server" ? "Publier le serveur" : "Publier la recherche"}
+            {submitting ? "Enregistrement..." : editAd ? "Enregistrer les modifications" : adType === "server" ? "Publier le serveur" : "Publier la recherche"}
           </button>
         </form>
       </div>

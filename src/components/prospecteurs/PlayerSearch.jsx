@@ -2,7 +2,7 @@ import React from "react";
 import { Gamepad2, Plus } from "lucide-react";
 import PlayerAdCard from "./PlayerAdCard";
 
-export default function PlayerSearch({ players, loading, currentUser, onDelete, onBoost, trixBalance, onPostClick }) {
+export default function PlayerSearch({ players, loading, currentUser, onDelete, onBoost, onEdit, trixBalance, onPostClick }) {
   return (
     <div
       className="rounded-2xl p-4 sm:p-5"
@@ -44,6 +44,7 @@ export default function PlayerSearch({ players, loading, currentUser, onDelete, 
               currentUser={currentUser}
               onDelete={onDelete}
               onBoost={onBoost}
+              onEdit={onEdit}
               trixBalance={trixBalance}
             />
           ))}

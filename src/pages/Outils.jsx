@@ -6,12 +6,17 @@ import { Calculator, Coins, ChevronRight, MessageCircle, Youtube, Home, FileText
 import CalculatorTool from "@/components/tools/Calculator";
 import NotepadManager from "@/components/tools/NotepadManager";
 import UnitConverterTool from "@/components/tools/UnitConverter";
+import Spreadsheet from "@/components/tools/Spreadsheet";
+import PaintTool from "@/components/tools/PaintTool";
 import TrixWalletBar from "@/components/TrixWalletBar";
+import { Table, Palette } from "lucide-react";
 
 const TOOLS = [
   { id: "calc", label: "Calculatrice de Bureau", desc: "Opérations basiques, scientifiques et financières.", icon: Calculator, color: "#FF4D4D" },
   { id: "convert", label: "Convertisseur d'Unités", desc: "Convertissez distances, poids, volumes, et devises.", icon: Coins, color: "#FFD700" },
   { id: "notepad-mgr", label: "Gestionnaire de Blocs-notes", desc: "Créez et gérez plusieurs blocs-notes personnels.", icon: FileText, color: "#22C55E" },
+  { id: "spreadsheet", label: "Tableur Matrix", desc: "Tableur fonctionnel avec formules SUM, AVG, MIN, MAX et export CSV.", icon: Table, color: "#3b82f6" },
+  { id: "paint", label: "Paint Matrix", desc: "Outil de dessin avec pinceau, gomme, couleurs et export PNG.", icon: Palette, color: "#ec4899" },
 ];
 
 const BG_URL = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/891f5968b_Gemini_Generated_Image_vsevw4vsevw4vsev.png";
@@ -111,12 +116,14 @@ export default function Outils() {
             <motion.div
               initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
               transition={{ type: "spring", damping: 25 }}
-              className={`w-full max-h-[85vh] overflow-y-auto scrollbar-thin rounded-2xl ${activeTool === "notepad-mgr" ? "max-w-2xl" : "max-w-md"}`}
+              className={`w-full max-h-[85vh] overflow-y-auto scrollbar-thin rounded-2xl ${activeTool === "notepad-mgr" || activeTool === "spreadsheet" || activeTool === "paint" ? "max-w-3xl" : "max-w-md"}`}
               style={{ background: "#13101a", border: "1px solid rgba(255,255,255,0.08)" }}
               onClick={(e) => e.stopPropagation()}>
               {activeTool === "calc" && <CalculatorTool onClose={() => setActiveTool(null)} />}
               {activeTool === "notepad-mgr" && <NotepadManager onClose={() => setActiveTool(null)} />}
               {activeTool === "convert" && <UnitConverterTool onClose={() => setActiveTool(null)} />}
+              {activeTool === "spreadsheet" && <Spreadsheet onClose={() => setActiveTool(null)} />}
+              {activeTool === "paint" && <PaintTool onClose={() => setActiveTool(null)} />}
             </motion.div>
           </motion.div>
         )}

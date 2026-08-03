@@ -18,26 +18,20 @@ function generateMissions(type, count) {
 
 function ensureMissions(progress) {
   const today = new Date().toDateString();
-  const monday = new Date();
-  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
-  const weekKey = monday.toDateString();
   const monthKey = `${new Date().getFullYear()}-${new Date().getMonth()}`;
   const missions = { ...(progress.missions || {}) };
   let changed = false;
 
+  // Daily missions: renew every 24h
   if (missions.daily_date !== today) {
     missions.daily = generateMissions('daily', 4);
     missions.daily_date = today;
     changed = true;
   }
-  if (missions.weekly_date !== weekKey) {
+  // Weekly missions: renew every month
+  if (missions.weekly_date !== monthKey) {
     missions.weekly = generateMissions('weekly', 3);
-    missions.weekly_date = weekKey;
-    changed = true;
-  }
-  if (missions.monthly_date !== monthKey) {
-    missions.monthly = generateMissions('monthly', 2);
-    missions.monthly_date = monthKey;
+    missions.weekly_date = monthKey;
     changed = true;
   }
   return { missions, changed };
@@ -94,7 +88,7 @@ function applyActivity(progress, action, count = 1) {
   stats.total_actions = (stats.total_actions || 0) + 1;
 
   const missions = JSON.parse(JSON.stringify(progress.missions || {}));
-  ['daily', 'weekly', 'monthly'].forEach(period => {
+  ['daily', 'weekly'].forEach(period => {
     (missions[period] || []).forEach(m => {
       if (m.action === action && !m.completed) {
         m.progress = Math.min((m.progress || 0) + count, m.target);

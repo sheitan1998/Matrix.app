@@ -18,6 +18,7 @@ export default function Prospecteurs() {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createType, setCreateType] = useState("server");
+  const [editingAd, setEditingAd] = useState(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -87,6 +88,25 @@ export default function Prospecteurs() {
 
   const handleDeleteAd = (adId) => {
     setAds((prev) => prev.filter((a) => a.id !== adId));
+  };
+
+  const handleEditAd = (ad) => {
+    setEditingAd(ad);
+    setCreateType(ad.type || "server");
+    setShowCreateModal(true);
+  };
+
+  const handleUpdateAd = async (data) => {
+    if (!editingAd) return;
+    try {
+      const updated = await base44.entities.ServerAd.update(editingAd.id, data);
+      setAds((prev) => prev.map((a) => (a.id === editingAd.id ? { ...a, ...updated } : a)));
+      setShowCreateModal(false);
+      setEditingAd(null);
+      toast.success("Annonce modifiée !");
+    } catch {
+      toast.error("Erreur lors de la modification");
+    }
   };
 
   const handleCreateAd = async (data) => {
@@ -161,6 +181,7 @@ export default function Prospecteurs() {
             currentUser={user}
             onDelete={handleDeleteAd}
             onBoost={handleBoost}
+            onEdit={handleEditAd}
             trixBalance={trixBalance}
             onPostClick={() => { setCreateType("player"); setShowCreateModal(true); }}
           />
@@ -173,6 +194,7 @@ export default function Prospecteurs() {
           onVote={handleVote}
           onBoost={handleBoost}
           onDelete={handleDeleteAd}
+          onEdit={handleEditAd}
           currentUser={user}
           trixBalance={trixBalance}
         />
@@ -181,8 +203,9 @@ export default function Prospecteurs() {
       {showCreateModal && (
         <CreateAdModal
           initialType={createType}
-          onClose={() => setShowCreateModal(false)}
-          onSubmit={handleCreateAd}
+          editAd={editingAd}
+          onClose={() => { setShowCreateModal(false); setEditingAd(null); }}
+          onSubmit={editingAd ? handleUpdateAd : handleCreateAd}
         />
       )}
     </div>
