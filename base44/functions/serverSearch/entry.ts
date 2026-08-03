@@ -313,6 +313,7 @@ export default async function(req: Request): Promise<Response> {
               full_name: u.full_name || '',
               pseudo: displayPseudo,
               avatar_url: u.avatar_url || '',
+              last_seen: u.last_seen || '',
             };
           });
         console.log('[getUsersByIds] requested:', ids.length, '| found:', users.length);

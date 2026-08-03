@@ -53,6 +53,7 @@ import GlobalMessageButton from '@/components/messaging/GlobalMessageButton';
 import { ProgressionProvider } from '@/context/ProgressionContext';
 import { MiniPlayerProvider } from '@/context/MiniPlayerContext';
 import { NotificationProvider } from '@/context/NotificationContext';
+import { usePresence } from '@/hooks/usePresence';
 import TwitchLayout from '@/components/twitch/TwitchLayout';
 import TutoGamingLayout from '@/components/tuto-gaming/TutoGamingLayout';
 import TutoGamingHub from '@/pages/tuto-gaming/TutoGamingHub';
@@ -66,6 +67,7 @@ import TwitchCategoryPage from '@/pages/twitch/TwitchCategoryPage';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings } = useAuth();
+  usePresence();
 
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (

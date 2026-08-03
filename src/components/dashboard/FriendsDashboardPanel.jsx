@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Users, MessageCircle, ExternalLink } from "lucide-react";
+import { isUserOnline } from "@/hooks/usePresence";
 
 export default function FriendsDashboardPanel({ user }) {
   const nav = useNavigate();
@@ -53,17 +54,21 @@ export default function FriendsDashboardPanel({ user }) {
             const pseudo = fresh?.pseudo || "";
             const avatar = fresh?.avatar_url || "";
             const email = fresh?.email || "";
+            const online = isUserOnline(fresh?.last_seen);
             return (
               <div key={f.id} className="flex items-center gap-3 px-5 py-2.5 hover:bg-secondary/30 transition">
                 <div className="relative shrink-0">
                   <div className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center text-sm font-bold text-white bg-secondary">
                     {avatar ? <img src={avatar} alt="" className="w-full h-full object-cover" /> : name?.[0]?.toUpperCase()}
                   </div>
-                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-card" />
+                  <span
+                    className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-card"
+                    style={{ background: online ? "#22C55E" : "#6b7280" }}
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold truncate">{name}</p>
-                  <p className="text-xs text-muted-foreground font-mono truncate">{pseudo}</p>
+                  <p className="text-xs truncate" style={{ color: online ? "#22C55E" : undefined }}>{online ? "En ligne" : pseudo}</p>
                 </div>
                 <button onClick={() => openChat(email)} className="p-1.5 rounded-lg text-muted-foreground hover:text-primary transition" title="Message">
                   <MessageCircle className="w-4 h-4" />

@@ -3,9 +3,11 @@ import { base44 } from "@/api/base44Client";
 import { ArrowLeft, Send, Search, X, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { playMessageSound } from "@/lib/messageSound";
+import { isUserOnline } from "@/hooks/usePresence";
 
 export default function MessageOverlay({ user, preselectedEmail, onClose, onMessagesRead }) {
   const [contacts, setContacts] = useState([]);
+  const [freshUsers, setFreshUsers] = useState({});
   const [selectedContact, setSelectedContact] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -18,20 +20,51 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
     base44.entities.Friend.filter({ user_email: user.email, status: "accepted" })
       .then(data => {
         setContacts(data || []);
-        // Auto-select preselected contact if provided
-        if (preselectedEmail) {
-          const preselected = (data || []).find(c => c.friend_email === preselectedEmail);
-          if (preselected) setSelectedContact(preselected);
-        }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [user, preselectedEmail]);
+  }, [user]);
+
+  // Fetch fresh profile data for all friends by user_id
+  useEffect(() => {
+    if (!contacts || contacts.length === 0) return;
+    const userIds = [...new Set(contacts.map(f => f.friend_user_id).filter(Boolean))];
+    if (userIds.length === 0) return;
+    base44.functions.invoke("serverSearch", { action: "getUsersByIds", ids: userIds })
+      .then(res => {
+        const map = {};
+        (res?.data?.users || []).forEach(u => { map[u.id] = u; });
+        setFreshUsers(map);
+        // Auto-select preselected contact if provided
+        if (preselectedEmail) {
+          const preselected = (res?.data?.users || []).find(u => u.email === preselectedEmail);
+          if (preselected) {
+            const friendRec = contacts.find(f => f.friend_user_id === preselected.id);
+            if (friendRec) setSelectedContact(friendRec);
+          }
+        }
+      })
+      .catch(() => {});
+  }, [contacts, preselectedEmail]);
+
+  // Resolve contact info from fresh user data
+  const resolveContact = (contact) => {
+    const fresh = contact?.friend_user_id ? freshUsers[contact.friend_user_id] : null;
+    return {
+      email: fresh?.email || "",
+      name: fresh?.full_name || "Utilisateur",
+      pseudo: fresh?.pseudo || "",
+      avatar: fresh?.avatar_url || "",
+      online: isUserOnline(fresh?.last_seen),
+    };
+  };
 
   // Fetch messages when a contact is selected
   useEffect(() => {
     if (!selectedContact) return;
-    const contactEmail = selectedContact.friend_email;
+    const info = resolveContact(selectedContact);
+    const contactEmail = info.email;
+    if (!contactEmail) return;
     Promise.all([
       base44.entities.DirectMessage.filter({ sender_email: user.email, recipient_email: contactEmail }, "created_date", 200),
       base44.entities.DirectMessage.filter({ sender_email: contactEmail, recipient_email: user.email }, "created_date", 200),
@@ -44,29 +77,32 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
       const unread = (received || []).filter(m => !m.is_read);
       if (unread.length > 0) {
         unread.forEach(m => base44.entities.DirectMessage.update(m.id, { is_read: true }));
-        onMessagesRead(unread.length);
+        if (onMessagesRead) onMessagesRead(unread.length);
       }
     }).catch(() => {});
-  }, [selectedContact, user]);
+  }, [selectedContact, user, freshUsers]);
 
   // Real-time subscription for new messages in the current conversation
   useEffect(() => {
     if (!selectedContact) return;
+    const info = resolveContact(selectedContact);
+    const contactEmail = info.email;
+    if (!contactEmail) return;
     const unsubscribe = base44.entities.DirectMessage.subscribe((event) => {
       if (event.type === "create") {
         const msg = event.data;
-        if (msg.recipient_email === user.email && msg.sender_email === selectedContact.friend_email) {
+        if (msg.recipient_email === user.email && msg.sender_email === contactEmail) {
           setMessages(prev => [...prev, msg]);
           if (!msg.is_read) {
             base44.entities.DirectMessage.update(msg.id, { is_read: true });
-            onMessagesRead(1);
+            if (onMessagesRead) onMessagesRead(1);
           }
           playMessageSound();
         }
       }
     });
     return unsubscribe;
-  }, [selectedContact, user]);
+  }, [selectedContact, user, freshUsers]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -75,6 +111,12 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
 
   const sendMessage = async () => {
     if (!input.trim() || !selectedContact) return;
+    const info = resolveContact(selectedContact);
+    const contactEmail = info.email;
+    if (!contactEmail) {
+      toast.error("Impossible de résoudre le destinataire");
+      return;
+    }
     const content = input.trim();
     setInput("");
     const tempId = Date.now().toString();
@@ -82,9 +124,9 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
       sender_email: user.email,
       sender_name: user.full_name || user.email,
       sender_avatar: user.avatar_url || "",
-      recipient_email: selectedContact.friend_email,
-      recipient_name: selectedContact.friend_name || selectedContact.friend_pseudo,
-      recipient_avatar: selectedContact.friend_avatar || "",
+      recipient_email: contactEmail,
+      recipient_name: info.name,
+      recipient_avatar: info.avatar,
       content,
       is_read: false,
     };
@@ -96,12 +138,13 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
     }
   };
 
-  const filteredContacts = contacts.filter(c =>
-    !searchQuery ||
-    (c.friend_name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (c.friend_pseudo?.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (c.friend_email?.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredContacts = contacts.filter(c => {
+    const info = resolveContact(c);
+    return !searchQuery ||
+      (info.name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (info.pseudo?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (info.email?.toLowerCase().includes(searchQuery.toLowerCase()));
+  });
 
   return (
     <div className="h-screen flex flex-col" style={{ background: "#0a050f" }}>
@@ -145,30 +188,42 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
                 </p>
               </div>
             ) : (
-              filteredContacts.map(contact => (
-                <button
-                  key={contact.id}
-                  onClick={() => setSelectedContact(contact)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 transition text-left ${selectedContact?.id === contact.id ? "bg-purple-500/10" : "hover:bg-white/5"}`}
-                >
-                  <div
-                    className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center shrink-0"
-                    style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.2)" }}
+              filteredContacts.map(contact => {
+                const info = resolveContact(contact);
+                return (
+                  <button
+                    key={contact.id}
+                    onClick={() => setSelectedContact(contact)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 transition text-left ${selectedContact?.id === contact.id ? "bg-purple-500/10" : "hover:bg-white/5"}`}
                   >
-                    {contact.friend_avatar ? (
-                      <img src={contact.friend_avatar} className="w-full h-full object-cover" alt="" />
-                    ) : (
-                      <span className="text-sm font-bold text-purple-300">
-                        {contact.friend_name?.[0]?.toUpperCase() || "?"}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-white truncate">{contact.friend_name || contact.friend_pseudo}</p>
-                    <p className="text-[10px] text-white/40 truncate">{contact.friend_pseudo || contact.friend_email}</p>
-                  </div>
-                </button>
-              ))
+                    <div className="relative shrink-0">
+                      <div
+                        className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center shrink-0"
+                        style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.2)" }}
+                      >
+                        {info.avatar ? (
+                          <img src={info.avatar} className="w-full h-full object-cover" alt="" />
+                        ) : (
+                          <span className="text-sm font-bold text-purple-300">
+                            {info.name?.[0]?.toUpperCase() || "?"}
+                          </span>
+                        )}
+                      </div>
+                      <span
+                        className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2"
+                        style={{
+                          background: info.online ? "#22C55E" : "#6b7280",
+                          borderColor: "#0a050f",
+                        }}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-white truncate">{info.name}</p>
+                      <p className="text-[10px] text-white/40 truncate">{info.pseudo || info.email}</p>
+                    </div>
+                  </button>
+                );
+              })
             )}
           </div>
         </div>
@@ -184,21 +239,32 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
               >
                 <ArrowLeft className="w-4 h-4 text-white/70" />
               </button>
-              <div
-                className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center shrink-0"
-                style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.2)" }}
-              >
-                {selectedContact.friend_avatar ? (
-                  <img src={selectedContact.friend_avatar} className="w-full h-full object-cover" alt="" />
-                ) : (
-                  <span className="text-sm font-bold text-purple-300">
-                    {selectedContact.friend_name?.[0]?.toUpperCase() || "?"}
-                  </span>
-                )}
+              <div className="relative shrink-0">
+                <div
+                  className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center shrink-0"
+                  style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.2)" }}
+                >
+                  {(() => { const info = resolveContact(selectedContact); return info.avatar ? (
+                    <img src={info.avatar} className="w-full h-full object-cover" alt="" />
+                  ) : (
+                    <span className="text-sm font-bold text-purple-300">
+                      {info.name?.[0]?.toUpperCase() || "?"}
+                    </span>
+                  ); })()}
+                </div>
+                <span
+                  className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2"
+                  style={{
+                    background: resolveContact(selectedContact).online ? "#22C55E" : "#6b7280",
+                    borderColor: "#0a050f",
+                  }}
+                />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-bold text-white truncate">{selectedContact.friend_name || selectedContact.friend_pseudo}</p>
-                <p className="text-[10px] text-white/40 truncate">{selectedContact.friend_email}</p>
+                <p className="text-sm font-bold text-white truncate">{resolveContact(selectedContact).name}</p>
+                <p className="text-[10px] truncate" style={{ color: resolveContact(selectedContact).online ? "#22C55E" : "rgba(255,255,255,0.3)" }}>
+                  {resolveContact(selectedContact).online ? "En ligne" : "Hors ligne"}
+                </p>
               </div>
             </div>
 

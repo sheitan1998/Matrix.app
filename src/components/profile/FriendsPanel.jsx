@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { UserCheck, Clock, Users, X, Search, Send, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
+import { isUserOnline } from "@/hooks/usePresence";
 
 export default function FriendsPanel({ user, onClose }) {
   const [addPseudo, setAddPseudo] = useState("");
@@ -128,14 +129,24 @@ export default function FriendsPanel({ user, onClose }) {
       name: fresh?.full_name || "Utilisateur",
       pseudo: fresh?.pseudo || "",
       avatar: fresh?.avatar_url || "",
+      online: isUserOnline(fresh?.last_seen),
     };
   };
 
   const Avatar = ({ f }) => {
     const data = resolveFriend(f);
     return (
-      <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white overflow-hidden shrink-0" style={{ background: "rgba(168,85,247,0.2)" }}>
-        {data.avatar ? <img src={data.avatar} alt="" className="w-full h-full object-cover" /> : data.name?.[0]?.toUpperCase() || "?"}
+      <div className="relative shrink-0">
+        <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white overflow-hidden" style={{ background: "rgba(168,85,247,0.2)" }}>
+          {data.avatar ? <img src={data.avatar} alt="" className="w-full h-full object-cover" /> : data.name?.[0]?.toUpperCase() || "?"}
+        </div>
+        <span
+          className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2"
+          style={{
+            background: data.online ? "#22C55E" : "#6b7280",
+            borderColor: "#0f0a19",
+          }}
+        />
       </div>
     );
   };

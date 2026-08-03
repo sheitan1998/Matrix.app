@@ -33,6 +33,11 @@
     "pseudo_tag": {
       "type": "string",
       "description": "Tag unique a 4 chiffres (partie apres le #)"
+    },
+    "last_seen": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Derniere fois que l'utilisateur etait actif (pour presence temps reel)"
     }
   },
   "required": [
