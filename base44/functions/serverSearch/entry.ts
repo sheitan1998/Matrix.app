@@ -319,23 +319,31 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ users });
       }
 
-      // ---- Send a friend request (creates both pending_sent + pending_received atomically) ----
+      // ---- Send a friend request (creates both records atomically, linked by user ID) ----
       case 'sendFriendRequest': {
-        const { target_email } = params;
-        if (!target_email) return Response.json({ error: 'Missing target_email' }, { status: 400 });
+        const { target_user_id } = params;
+        if (!target_user_id) return Response.json({ error: 'Missing target_user_id' }, { status: 400 });
 
         const senderEmail = user.email;
+        const senderId = user.id;
 
-        // Prevent self-request
-        if (senderEmail === target_email) {
+        if (senderId === target_user_id) {
           return Response.json({ error: 'Tu ne peux pas t\'ajouter toi-même !' }, { status: 400 });
         }
 
-        // Check if a relationship already exists in either direction
+        // Look up target user to get their email (needed for user_email field on their record)
+        const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
+        const target = allUsers.find(u => u.id === target_user_id);
+
+        if (!target) return Response.json({ error: 'Utilisateur introuvable.' }, { status: 404 });
+
+        const targetEmail = target.email;
+
+        // Check if a relationship already exists in either direction (by user_id)
         const existing = await base44.asServiceRole.entities.Friend.filter({
           $or: [
-            { user_email: senderEmail, friend_email: target_email },
-            { user_email: target_email, friend_email: senderEmail },
+            { user_email: senderEmail, friend_user_id: target_user_id },
+            { user_email: targetEmail, friend_user_id: senderId },
           ],
         });
 
@@ -348,43 +356,92 @@ export default async function(req: Request): Promise<Response> {
           return Response.json({ error: msg }, { status: 409 });
         }
 
-        // Fetch both user profiles for display data
-        const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
-        const sender = allUsers.find(u => u.email === senderEmail);
-        const target = allUsers.find(u => u.email === target_email);
-
-        if (!target) return Response.json({ error: 'Utilisateur introuvable.' }, { status: 404 });
-
-        const senderPseudo = sender?.pseudo
-          ? (sender.pseudo.includes('#') ? sender.pseudo : (sender.pseudo_tag ? `${sender.pseudo}#${sender.pseudo_tag}` : sender.pseudo))
-          : '';
-        const targetPseudo = target.pseudo
-          ? (target.pseudo.includes('#') ? target.pseudo : (target.pseudo_tag ? `${target.pseudo}#${target.pseudo_tag}` : target.pseudo))
-          : '';
-
-        // Create both records using service role (bypasses RLS)
-        // friend_user_id links to the target's unique ID for dynamic profile lookups
+        // Create both records — only user_email (RLS) + friend_user_id (stable link) + status
         await base44.asServiceRole.entities.Friend.create({
           user_email: senderEmail,
-          friend_email: target_email,
-          friend_user_id: target.id,
-          friend_name: target.full_name || '',
-          friend_pseudo: targetPseudo,
-          friend_avatar: target.avatar_url || '',
+          friend_user_id: target_user_id,
           status: 'pending_sent',
         });
 
         await base44.asServiceRole.entities.Friend.create({
-          user_email: target_email,
-          friend_email: senderEmail,
-          friend_user_id: sender?.id || '',
-          friend_name: sender?.full_name || '',
-          friend_pseudo: senderPseudo,
-          friend_avatar: sender?.avatar_url || '',
+          user_email: targetEmail,
+          friend_user_id: senderId,
           status: 'pending_received',
         });
 
-        console.log('[sendFriendRequest] created pair:', senderEmail, '->', target_email);
+        console.log('[sendFriendRequest] created pair: sender', senderId, '-> target', target_user_id);
+        return Response.json({ success: true });
+      }
+
+      // ---- Accept a friend request (updates both records to accepted) ----
+      case 'acceptFriendRequest': {
+        const { friend_user_id } = params;
+        if (!friend_user_id) return Response.json({ error: 'Missing friend_user_id' }, { status: 400 });
+
+        const myEmail = user.email;
+        const myId = user.id;
+
+        // Find the friend's email by their user ID
+        const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
+        const friend = allUsers.find(u => u.id === friend_user_id);
+        if (!friend) return Response.json({ error: 'Utilisateur introuvable.' }, { status: 404 });
+        const friendEmail = friend.email;
+
+        // Update my record (pending_received -> accepted)
+        const myRecords = await base44.asServiceRole.entities.Friend.filter({
+          user_email: myEmail,
+          friend_user_id: friend_user_id,
+        });
+        if (myRecords.length === 0) return Response.json({ error: 'Demande introuvable.' }, { status: 404 });
+        await base44.asServiceRole.entities.Friend.update(myRecords[0].id, { status: 'accepted' });
+
+        // Update reciprocal record (pending_sent -> accepted)
+        const reciprocal = await base44.asServiceRole.entities.Friend.filter({
+          user_email: friendEmail,
+          friend_user_id: myId,
+        });
+        if (reciprocal.length > 0) {
+          await base44.asServiceRole.entities.Friend.update(reciprocal[0].id, { status: 'accepted' });
+        }
+
+        console.log('[acceptFriendRequest] accepted:', myId, '<->', friend_user_id);
+        return Response.json({ success: true });
+      }
+
+      // ---- Remove a friend / cancel a request (deletes both records) ----
+      case 'removeFriend': {
+        const { friend_user_id } = params;
+        if (!friend_user_id) return Response.json({ error: 'Missing friend_user_id' }, { status: 400 });
+
+        const myEmail = user.email;
+        const myId = user.id;
+
+        // Find the friend's email by their user ID
+        const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
+        const friend = allUsers.find(u => u.id === friend_user_id);
+        const friendEmail = friend?.email || '';
+
+        // Delete my record
+        const myRecords = await base44.asServiceRole.entities.Friend.filter({
+          user_email: myEmail,
+          friend_user_id: friend_user_id,
+        });
+        for (const r of myRecords) {
+          await base44.asServiceRole.entities.Friend.delete(r.id);
+        }
+
+        // Delete reciprocal record
+        if (friendEmail) {
+          const reciprocal = await base44.asServiceRole.entities.Friend.filter({
+            user_email: friendEmail,
+            friend_user_id: myId,
+          });
+          for (const r of reciprocal) {
+            await base44.asServiceRole.entities.Friend.delete(r.id);
+          }
+        }
+
+        console.log('[removeFriend] removed:', myId, '<->', friend_user_id);
         return Response.json({ success: true });
       }
 
