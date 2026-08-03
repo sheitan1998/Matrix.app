@@ -26,19 +26,14 @@ export default function ProfileContent({ onClose }) {
   const [user, setUser] = useState(null);
   const [tab, setTab] = useState("overview");
   const [editing, setEditing] = useState(false);
-  const [editName, setEditName] = useState("");
   const [editBio, setEditBio] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(null);
   const [editPseudo, setEditPseudo] = useState("");
-  const [pseudoEditing, setPseudoEditing] = useState(false);
-  const [pseudoValue, setPseudoValue] = useState("");
-  const [savingPseudo, setSavingPseudo] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(me => {
       setUser(me);
-      setEditName(me?.full_name || "");
       setEditBio(me?.bio || "");
       setEditPseudo(me?.pseudo || "");
     }).catch(() => {});
@@ -78,7 +73,7 @@ export default function ProfileContent({ onClose }) {
   const saveProfile = async () => {
     setSaving(true);
     try {
-      const updates = { full_name: editName.trim(), bio: editBio.trim(), pseudo: editPseudo.trim() };
+      const updates = { bio: editBio.trim(), pseudo: editPseudo.trim() };
       if (!user.pseudo_tag) updates.pseudo_tag = String(Math.floor(1000 + Math.random() * 9000));
       await base44.auth.updateMe(updates);
       setUser(u => ({ ...u, ...updates }));
@@ -86,19 +81,6 @@ export default function ProfileContent({ onClose }) {
       toast.success("Profil mis à jour");
     } catch { toast.error("Erreur"); }
     setSaving(false);
-  };
-
-  const savePseudo = async () => {
-    const trimmed = pseudoValue.trim();
-    if (!trimmed) { toast.error("Le pseudo ne peut pas être vide"); return; }
-    setSavingPseudo(true);
-    try {
-      await base44.auth.updateMe({ pseudo: trimmed });
-      setUser(u => ({ ...u, pseudo: trimmed }));
-      setPseudoEditing(false);
-      toast.success("Pseudo mis à jour");
-    } catch { toast.error("Erreur lors de la mise à jour du pseudo"); }
-    setSavingPseudo(false);
   };
 
   const uploadImage = async (file, field) => {
@@ -197,12 +179,9 @@ export default function ProfileContent({ onClose }) {
             <div className="flex-1 min-w-0 pb-2 pl-4 sm:pl-6">
               {editing ? (
                 <div className="space-y-2">
-                  <input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Nom affiché"
-                    className="w-full px-3 py-1.5 rounded-lg text-sm text-white outline-none"
-                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(168,85,247,0.3)" }} />
                   <div className="flex items-center gap-2">
-                    <input value={editPseudo} onChange={e => setEditPseudo(e.target.value)} placeholder="Pseudo"
-                      className="flex-1 px-3 py-1.5 rounded-lg text-sm text-white outline-none"
+                    <input value={editPseudo} onChange={e => setEditPseudo(e.target.value)} placeholder="Pseudo" autoFocus
+                      className="flex-1 px-3 py-1.5 rounded-lg text-sm text-white outline-none font-mono"
                       style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(168,85,247,0.3)" }} />
                     <span className="text-sm font-mono font-bold text-white/40 shrink-0">#{user.pseudo_tag || "????"}</span>
                   </div>
@@ -213,7 +192,7 @@ export default function ProfileContent({ onClose }) {
                     <button onClick={saveProfile} disabled={saving} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white flex items-center gap-1" style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
                       <Check className="w-3 h-3" /> {saving ? "..." : "OK"}
                     </button>
-                    <button onClick={() => { setEditing(false); setEditName(user.full_name || ""); setEditBio(user.bio || ""); setEditPseudo(user.pseudo || ""); }} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white/60" style={{ background: "rgba(255,255,255,0.05)" }}>
+                    <button onClick={() => { setEditing(false); setEditBio(user.bio || ""); setEditPseudo(user.pseudo || ""); }} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white/60" style={{ background: "rgba(255,255,255,0.05)" }}>
                       <X className="w-3 h-3" />
                     </button>
                   </div>
@@ -221,7 +200,9 @@ export default function ProfileContent({ onClose }) {
               ) : (
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-xl font-black text-white leading-tight">{user.full_name || user.email?.split("@")[0]}</h2>
+                    <h2 className="text-xl font-black text-white leading-tight font-mono">
+                      {user.pseudo || "Pseudo non défini"}<span className="text-white/40">#{user.pseudo_tag || "????"}</span>
+                    </h2>
                     <button onClick={() => setEditing(true)} className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(255,255,255,0.05)" }}>
                       <Edit3 className="w-3.5 h-3.5 text-white/50" />
                     </button>
@@ -239,32 +220,6 @@ export default function ProfileContent({ onClose }) {
                         <span key={b.id} className="text-lg leading-none" title={b.item_name}>{b.icon || "🏅"}</span>
                       ))}
                     </div>
-                  )}
-                  {/* Pseudo interactive */}
-                  {pseudoEditing ? (
-                    <div className="flex items-center gap-2">
-                      <input
-                        value={pseudoValue}
-                        onChange={e => setPseudoValue(e.target.value)}
-                        autoFocus
-                        onKeyDown={e => { if (e.key === "Enter") savePseudo(); if (e.key === "Escape") setPseudoEditing(false); }}
-                        className="px-2 py-1 rounded-lg text-xs text-white outline-none font-mono"
-                        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(168,85,247,0.4)" }}
-                      />
-                      <span className="text-xs font-mono font-bold text-white/40 shrink-0">#{user.pseudo_tag || "????"}</span>
-                      <button onClick={savePseudo} disabled={savingPseudo} className="w-6 h-6 rounded-lg flex items-center justify-center text-white" style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
-                        {savingPseudo ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                      </button>
-                      <button onClick={() => setPseudoEditing(false)} className="w-6 h-6 rounded-lg flex items-center justify-center text-white/60" style={{ background: "rgba(255,255,255,0.05)" }}>
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ) : (
-                    <button onClick={() => { setPseudoValue(user.pseudo || ""); setPseudoEditing(true); }} className="text-xs font-mono text-white/50 hover:text-white flex items-center gap-1.5 transition group">
-                      {user.pseudo || "Pseudo non défini"}
-                      <span className="text-white/30">#{user.pseudo_tag || "????"}</span>
-                      <Edit3 className="w-3 h-3 opacity-0 group-hover:opacity-60 transition" />
-                    </button>
                   )}
                 </div>
               )}
