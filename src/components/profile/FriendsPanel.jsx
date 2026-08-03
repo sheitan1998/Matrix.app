@@ -31,29 +31,47 @@ export default function FriendsPanel({ user, onClose }) {
   };
 
   const sendFriendRequest = async () => {
-    if (!addPseudo.trim()) return;
+    if (!addPseudo?.trim()) return;
     const { pseudo, tag } = parsePseudoTag(addPseudo);
     if (!pseudo) { toast.error("Pseudo invalide"); return; }
-    if (pseudo === user.pseudo && (!tag || tag === user.pseudo_tag)) {
+    if (pseudo === user?.pseudo && (!tag || tag === user?.pseudo_tag)) {
       toast.error("Tu ne peux pas t'ajouter toi-même !");
       return;
     }
+    if (!user?.email) { toast.error("Session expirée, reconnecte-toi."); return; }
     setSearching(true);
     try {
       const res = await base44.functions.invoke("serverSearch", { action: "searchUser", pseudo, tag });
-      const target = res.user;
+      const target = res?.user;
+      if (!target?.email) { toast.error(res?.error || "Utilisateur introuvable. Vérifiez le format Pseudo#1234"); return; }
+
+      // Check both directions for existing friendship
       const existing = friends.find(f => f.friend_email === target.email);
-      if (existing) { toast.error("Déjà ami ou demande en cours."); return; }
+      if (existing) {
+        const msg = existing.status === "accepted"
+          ? "Vous êtes déjà amis."
+          : existing.status === "pending_sent"
+            ? "Une demande a déjà été envoyée."
+            : existing.status === "pending_received"
+              ? "Cet utilisateur t'a déjà envoyé une demande."
+              : "Une relation existe déjà.";
+        toast.error(msg);
+        return;
+      }
+
+      const myPseudo = user.pseudo ? (user.pseudo_tag ? `${user.pseudo}#${user.pseudo_tag}` : user.pseudo) : "";
+      const targetPseudo = target.pseudo ? (target.pseudo_tag ? `${target.pseudo}#${target.pseudo_tag}` : target.pseudo) : addPseudo.trim();
+
       await base44.entities.Friend.create({
         user_email: user.email, friend_email: target.email,
-        friend_name: target.full_name,
-        friend_pseudo: target.pseudo ? (target.pseudo_tag ? `${target.pseudo}#${target.pseudo_tag}` : target.pseudo) : addPseudo.trim(),
+        friend_name: target.full_name || "",
+        friend_pseudo: targetPseudo,
         friend_avatar: target.avatar_url || "", status: "pending_sent",
       });
       await base44.entities.Friend.create({
         user_email: target.email, friend_email: user.email,
-        friend_name: user.full_name,
-        friend_pseudo: user.pseudo ? (user.pseudo_tag ? `${user.pseudo}#${user.pseudo_tag}` : user.pseudo) : "",
+        friend_name: user.full_name || "",
+        friend_pseudo: myPseudo,
         friend_avatar: user.avatar_url || "", status: "pending_received",
       });
       qc.invalidateQueries({ queryKey: ["mp-friends"] });
@@ -67,19 +85,29 @@ export default function FriendsPanel({ user, onClose }) {
   };
 
   const acceptRequest = async (friend) => {
-    await base44.entities.Friend.update(friend.id, { status: "accepted" });
-    const theirRecord = await base44.entities.Friend.filter({ user_email: friend.friend_email, friend_email: user.email });
-    if (theirRecord.length > 0) await base44.entities.Friend.update(theirRecord[0].id, { status: "accepted" });
-    qc.invalidateQueries({ queryKey: ["mp-friends"] });
-    toast.success("Ami accepté !");
+    if (!friend?.id || !user?.email) return;
+    try {
+      await base44.entities.Friend.update(friend.id, { status: "accepted" });
+      const theirRecord = await base44.entities.Friend.filter({ user_email: friend.friend_email, friend_email: user.email });
+      if (theirRecord?.length > 0) await base44.entities.Friend.update(theirRecord[0].id, { status: "accepted" });
+      qc.invalidateQueries({ queryKey: ["mp-friends"] });
+      toast.success("Ami accepté !");
+    } catch (err) {
+      toast.error(err?.message || "Erreur lors de l'acceptation");
+    }
   };
 
   const removeFriend = async (friend) => {
-    await base44.entities.Friend.delete(friend.id);
-    const theirRecord = await base44.entities.Friend.filter({ user_email: friend.friend_email, friend_email: user.email });
-    if (theirRecord.length > 0) await base44.entities.Friend.delete(theirRecord[0].id);
-    qc.invalidateQueries({ queryKey: ["mp-friends"] });
-    toast.success("Ami retiré.");
+    if (!friend?.id || !user?.email) return;
+    try {
+      await base44.entities.Friend.delete(friend.id);
+      const theirRecord = await base44.entities.Friend.filter({ user_email: friend.friend_email, friend_email: user.email });
+      if (theirRecord?.length > 0) await base44.entities.Friend.delete(theirRecord[0].id);
+      qc.invalidateQueries({ queryKey: ["mp-friends"] });
+      toast.success("Ami retiré.");
+    } catch (err) {
+      toast.error(err?.message || "Erreur lors de la suppression");
+    }
   };
 
   const openConversation = (friend) => {
