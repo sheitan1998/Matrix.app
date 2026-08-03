@@ -174,6 +174,12 @@ export default function Prospecteurs() {
             servers={topServers}
             loading={loading}
             onCreateClick={() => { setCreateType("server"); setShowCreateModal(true); }}
+            onVote={handleVote}
+            onBoost={handleBoost}
+            onDelete={handleDeleteAd}
+            onEdit={handleEditAd}
+            currentUser={user}
+            trixBalance={trixBalance}
           />
           <PlayerSearch
             players={playerAds}

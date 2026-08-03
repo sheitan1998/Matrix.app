@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Coins, Sparkles } from "lucide-react";
+import TrixIcon from "@/components/TrixIcon";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { formatTrix } from "@/lib/format";
@@ -61,7 +62,7 @@ export default function TrixStore() {
           <div className="px-6 py-4 rounded-2xl bg-background/15 backdrop-blur">
             <p className="text-xs font-semibold opacity-80">Solde actuel</p>
             <p className="text-3xl font-black font-mono flex items-center gap-2">
-              <Coins className="w-6 h-6" />
+              <TrixIcon size={26} />
               {formatTrix(user?.trix_balance || 0)}
             </p>
           </div>
@@ -83,7 +84,7 @@ export default function TrixStore() {
               </div>
             )}
             <div className="flex items-center gap-2">
-              <Coins className="w-6 h-6 text-trix" />
+              <TrixIcon size={24} />
               <span className="text-3xl font-black font-mono">{formatTrix(p.trix)}</span>
             </div>
             {p.bonus > 0 && (
