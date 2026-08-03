@@ -4,19 +4,23 @@
   "properties": {
     "user_email": {
       "type": "string",
-      "description": "Email of the user who sent/owns this friend record"
+      "description": "Email of the user who owns this friend record"
     },
     "friend_email": {
       "type": "string",
-      "description": "Email of the friend"
+      "description": "Email of the friend (stable identifier for RLS)"
+    },
+    "friend_user_id": {
+      "type": "string",
+      "description": "Unique ID of the friend user (for dynamic profile lookups)"
     },
     "friend_name": {
       "type": "string",
-      "description": "Display name of the friend"
+      "description": "Display name snapshot of the friend"
     },
     "friend_pseudo": {
       "type": "string",
-      "description": "Unique pseudo with #NNNN"
+      "description": "Pseudo snapshot (fallback only \u2014 fresh data fetched via getUsersByIds)"
     },
     "friend_avatar": {
       "type": "string"

@@ -277,9 +277,12 @@ export default async function(req: Request): Promise<Response> {
           displayPseudo = `${displayPseudo}#${target.pseudo_tag}`;
         }
 
+        console.log('[searchUser] query:', query, '| inputPseudo:', inputPseudo, '| inputTag:', inputTag, '| found:', target?.email);
+
         return Response.json({
           success: true,
           user: {
+            id: target.id,
             email: target.email,
             full_name: target.full_name,
             pseudo: displayPseudo,
@@ -287,6 +290,33 @@ export default async function(req: Request): Promise<Response> {
             avatar_url: target.avatar_url || '',
           },
         });
+      }
+
+      // ---- Fetch fresh profile data for a list of user IDs (for live display) ----
+      case 'getUsersByIds': {
+        const { ids } = params;
+        if (!ids || !Array.isArray(ids) || ids.length === 0) {
+          return Response.json({ users: [] });
+        }
+        const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
+        const idSet = new Set(ids);
+        const users = allUsers
+          .filter(u => idSet.has(u.id))
+          .map(u => {
+            let displayPseudo = u.pseudo || '';
+            if (!displayPseudo.includes('#') && u.pseudo_tag) {
+              displayPseudo = `${displayPseudo}#${u.pseudo_tag}`;
+            }
+            return {
+              id: u.id,
+              email: u.email,
+              full_name: u.full_name || '',
+              pseudo: displayPseudo,
+              avatar_url: u.avatar_url || '',
+            };
+          });
+        console.log('[getUsersByIds] requested:', ids.length, '| found:', users.length);
+        return Response.json({ users });
       }
 
       // ---- Send a friend request (creates both pending_sent + pending_received atomically) ----
@@ -333,9 +363,11 @@ export default async function(req: Request): Promise<Response> {
           : '';
 
         // Create both records using service role (bypasses RLS)
+        // friend_user_id links to the target's unique ID for dynamic profile lookups
         await base44.asServiceRole.entities.Friend.create({
           user_email: senderEmail,
           friend_email: target_email,
+          friend_user_id: target.id,
           friend_name: target.full_name || '',
           friend_pseudo: targetPseudo,
           friend_avatar: target.avatar_url || '',
@@ -345,12 +377,14 @@ export default async function(req: Request): Promise<Response> {
         await base44.asServiceRole.entities.Friend.create({
           user_email: target_email,
           friend_email: senderEmail,
+          friend_user_id: sender?.id || '',
           friend_name: sender?.full_name || '',
           friend_pseudo: senderPseudo,
           friend_avatar: sender?.avatar_url || '',
           status: 'pending_received',
         });
 
+        console.log('[sendFriendRequest] created pair:', senderEmail, '->', target_email);
         return Response.json({ success: true });
       }
 

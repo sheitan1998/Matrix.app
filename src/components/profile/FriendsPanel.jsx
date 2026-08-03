@@ -7,6 +7,7 @@ import { toast } from "sonner";
 export default function FriendsPanel({ user, onClose }) {
   const [addPseudo, setAddPseudo] = useState("");
   const [searching, setSearching] = useState(false);
+  const [freshUsers, setFreshUsers] = useState({});
   const qc = useQueryClient();
 
   const { data: friends = [] } = useQuery({
@@ -26,6 +27,20 @@ export default function FriendsPanel({ user, onClose }) {
     });
     return unsubscribe;
   }, [user?.email, qc]);
+
+  // Fetch fresh profile data (pseudo, avatar) for all friends by user_id — not stored hard values
+  useEffect(() => {
+    if (!friends || friends.length === 0) return;
+    const userIds = [...new Set(friends.map(f => f.friend_user_id).filter(Boolean))];
+    if (userIds.length === 0) return;
+    base44.functions.invoke("serverSearch", { action: "getUsersByIds", ids: userIds })
+      .then(res => {
+        const map = {};
+        (res?.users || []).forEach(u => { map[u.id] = u; });
+        setFreshUsers(map);
+      })
+      .catch(() => {});
+  }, [friends]);
 
   const pendingSent = friends.filter(f => f.status === "pending_sent");
   const pendingReceived = friends.filter(f => f.status === "pending_received");
@@ -117,11 +132,24 @@ export default function FriendsPanel({ user, onClose }) {
     if (onClose) onClose();
   };
 
-  const Avatar = ({ f }) => (
-    <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white overflow-hidden shrink-0" style={{ background: "rgba(168,85,247,0.2)" }}>
-      {f.friend_avatar ? <img src={f.friend_avatar} alt="" className="w-full h-full object-cover" /> : f.friend_name?.[0]?.toUpperCase() || "?"}
-    </div>
-  );
+  // Resolve fresh display data from live user profiles (falls back to stored snapshot)
+  const resolveFriend = (f) => {
+    const fresh = f.friend_user_id ? freshUsers[f.friend_user_id] : null;
+    return {
+      name: fresh?.full_name || f.friend_name || "?",
+      pseudo: fresh?.pseudo || f.friend_pseudo || "",
+      avatar: fresh?.avatar_url || f.friend_avatar || "",
+    };
+  };
+
+  const Avatar = ({ f }) => {
+    const data = resolveFriend(f);
+    return (
+      <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white overflow-hidden shrink-0" style={{ background: "rgba(168,85,247,0.2)" }}>
+        {data.avatar ? <img src={data.avatar} alt="" className="w-full h-full object-cover" /> : data.name?.[0]?.toUpperCase() || "?"}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -149,18 +177,21 @@ export default function FriendsPanel({ user, onClose }) {
             <Clock className="w-4 h-4 text-yellow-500" /> Demandes reçues ({pendingReceived.length})
           </h3>
           <div className="space-y-2">
-            {pendingReceived.map(f => (
+            {pendingReceived.map(f => {
+              const d = resolveFriend(f);
+              return (
               <div key={f.id} className="flex items-center gap-3 p-2 rounded-xl" style={{ background: "rgba(255,255,255,0.03)" }}>
                 <Avatar f={f} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white truncate">{f.friend_name}</p>
-                  <p className="text-[10px] text-white/40 font-mono">{f.friend_pseudo}</p>
+                  <p className="text-sm font-semibold text-white truncate">{d.name}</p>
+                  <p className="text-[10px] text-white/40 font-mono">{d.pseudo}</p>
                 </div>
                 <button onClick={() => acceptRequest(f)} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white flex items-center gap-1" style={{ background: "rgba(34,197,94,0.2)", border: "1px solid rgba(34,197,94,0.3)" }}>
                   <UserCheck className="w-3 h-3" /> Accepter
                 </button>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -172,16 +203,19 @@ export default function FriendsPanel({ user, onClose }) {
             <Send className="w-4 h-4" /> Demandes envoyées ({pendingSent.length})
           </h3>
           <div className="space-y-2">
-            {pendingSent.map(f => (
+            {pendingSent.map(f => {
+              const d = resolveFriend(f);
+              return (
               <div key={f.id} className="flex items-center gap-3 p-2 rounded-xl" style={{ background: "rgba(255,255,255,0.03)" }}>
                 <Avatar f={f} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white/70 truncate">{f.friend_name}</p>
-                  <p className="text-[10px] text-white/30 font-mono">{f.friend_pseudo}</p>
+                  <p className="text-sm font-semibold text-white/70 truncate">{d.name}</p>
+                  <p className="text-[10px] text-white/30 font-mono">{d.pseudo}</p>
                 </div>
                 <span className="text-[10px] text-white/40 px-2 py-1 rounded" style={{ background: "rgba(255,255,255,0.05)" }}>En attente</span>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -195,12 +229,14 @@ export default function FriendsPanel({ user, onClose }) {
           <p className="text-sm text-white/40 text-center py-4">Aucun ami pour le moment.</p>
         ) : (
           <div className="space-y-1">
-            {accepted.map(f => (
+            {accepted.map(f => {
+              const d = resolveFriend(f);
+              return (
               <div key={f.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition group">
                 <Avatar f={f} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white truncate">{f.friend_name}</p>
-                  <p className="text-[10px] text-white/40 font-mono">{f.friend_pseudo}</p>
+                  <p className="text-sm font-semibold text-white truncate">{d.name}</p>
+                  <p className="text-[10px] text-white/40 font-mono">{d.pseudo}</p>
                 </div>
                 <button onClick={() => openConversation(f)} className="p-1.5 rounded-lg text-white/40 hover:text-purple-400 transition" title="Envoyer un message">
                   <MessageCircle className="w-4 h-4" />
@@ -209,7 +245,8 @@ export default function FriendsPanel({ user, onClose }) {
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
