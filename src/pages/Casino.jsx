@@ -21,6 +21,7 @@ import VIPClubPage from "@/pages/casino/VIPClubPage";
 import CasinoBackground from "@/components/casino/CasinoBackground";
 import CasinoSidebar from "@/components/casino/CasinoSidebar";
 import CasinoTopbar from "@/components/casino/CasinoTopbar";
+import CasinoLobby from "@/components/casino/CasinoLobby";
 import JackpotBanner from "@/components/casino/JackpotBanner";
 import CasinoCategoryFilters from "@/components/casino/CasinoCategoryFilters";
 import CasinoGameCard from "@/components/casino/CasinoGameCard";
@@ -195,89 +196,14 @@ export default function Casino() {
 
   return (
     <div className="min-h-screen relative">
-      <CasinoBackground variant={settings.bgVariant} />
-
-      <div className="relative z-10 flex min-h-screen">
-        {/* Sidebar */}
-        <CasinoSidebar
-          active={activeSidebar}
-          onSelect={handleSidebarSelect}
-          collapsed={sidebarCollapsed}
-          onToggle={() => setSidebarCollapsed(v => !v)}
-          coins={casinoCoins}
-          vipTier={vipTier}
-        />
-
-        {/* Main */}
-        <div className="flex-1 min-w-0 flex flex-col">
-          <CasinoTopbar
-            balance={casinoCoins}
-            onVipClub={() => setShowVipClub(true)}
-            onSettings={() => setShowSettings(true)}
-          />
-
-          {/* Responsible gaming strip */}
-          <div className="px-4 py-1 text-center text-[10px] font-medium"
-            style={{ background: "rgba(251,191,36,0.03)", color: "rgba(251,191,36,0.35)" }}>
-            ⚠️ Jeu fictif — Aucun argent réel — 18+ uniquement
-          </div>
-
-          {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto scrollbar-thin">
-            <div className="p-4 lg:p-6 space-y-8 max-w-7xl mx-auto pb-12">
-
-              {/* Jackpot Banner */}
-              <JackpotBanner jackpot={jackpot} onViewJackpots={() => setScreen("slots")} />
-
-              {/* Category Filters */}
-              <CasinoCategoryFilters active={category} onSelect={setCategory} />
-
-              {/* Game grid */}
-              <section>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-black text-white">Jeux</h3>
-                  <span className="text-xs text-white/40">{filteredGames.length} jeux</span>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                  {filteredGames.map((g, i) => (
-                    <CasinoGameCard key={g.key} game={g} delay={i * 0.04}
-                      onPlay={(key) => { if (GAME_META[key]) setScreen(key); }} />
-                  ))}
-                </div>
-              </section>
-
-              {/* Two-column: Live + Winners */}
-              <div className="grid lg:grid-cols-[2fr_1fr] gap-6">
-                <CasinoLiveSection onJoin={() => setScreen("roulette")} />
-                <CasinoRecentWinners />
-              </div>
-
-              {/* Tournaments + Leaderboards */}
-              <div className="grid lg:grid-cols-[1fr_1fr] gap-6">
-                <CasinoTournaments onParticipate={() => setScreen("leaderboard")} />
-                <div className="rounded-2xl p-5" style={{ background: "rgba(12,12,16,0.7)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                  <CasinoLeaderboards />
-                </div>
-              </div>
-
-              {/* VIP Club */}
-              <CasinoVIPClub coins={casinoCoins} />
-
-              {/* Promotions */}
-              <CasinoPromotions />
-
-              {/* Quests + Achievements */}
-              <div className="grid lg:grid-cols-[1fr_1fr] gap-6">
-                <CasinoQuests />
-                <CasinoAchievements />
-              </div>
-
-              {/* Security bar */}
-              <CasinoSecurityBar />
-            </div>
-          </div>
-        </div>
-      </div>
+      <CasinoLobby
+        balance={casinoCoins}
+        jackpot={jackpot}
+        onPlayGame={(key) => { if (GAME_META[key]) setScreen(key); }}
+        onShop={() => setShowShop(true)}
+        onProfile={() => setShowProfile(true)}
+        onVipClub={() => setShowVipClub(true)}
+      />
 
       {/* Modals */}
       {showShop && <CasinoShop balance={casinoCoins} setBalance={setCasinoCoins} onClose={() => setShowShop(false)} />}
