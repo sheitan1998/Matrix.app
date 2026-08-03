@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from "react";
-import { useLocation } from "react-router-dom";
+import React, { useState, useMemo, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
+import { base44 } from "@/api/base44Client";
 import { User } from "lucide-react";
 import ProfileContent from "@/components/profile/ProfileContent";
 
@@ -13,14 +14,39 @@ const EXCLUDED_PREFIXES = [
 
 export default function GlobalProfileButton() {
   const location = useLocation();
+  const nav = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
 
   const isExcluded = useMemo(() => {
     const p = location.pathname;
     if (p === "/live" || p.startsWith("/live/")) return true;
     return EXCLUDED_PREFIXES.some(prefix => p === prefix || p.startsWith(prefix + "/"));
   }, [location.pathname]);
+
+  // Fetch pending friend requests count
+  useEffect(() => {
+    if (!isAuthenticated || !user || isExcluded) return;
+    base44.entities.Friend.filter({ friend_email: user.email, status: "pending_received" })
+      .then(friends => setPendingCount((friends || []).length))
+      .catch(() => {});
+  }, [isAuthenticated, user, isExcluded]);
+
+  // Real-time subscription for friend request changes
+  useEffect(() => {
+    if (!isAuthenticated || !user || isExcluded) return;
+    const unsubscribe = base44.entities.Friend.subscribe((event) => {
+      if (event.type === "create" && event.data?.friend_email === user.email && event.data?.status === "pending_received") {
+        setPendingCount(prev => prev + 1);
+      } else if (event.type === "update" || event.type === "delete") {
+        base44.entities.Friend.filter({ friend_email: user.email, status: "pending_received" })
+          .then(friends => setPendingCount((friends || []).length))
+          .catch(() => {});
+      }
+    });
+    return unsubscribe;
+  }, [isAuthenticated, user, isExcluded]);
 
   if (!isAuthenticated || !user || isExcluded) return null;
 
@@ -44,6 +70,14 @@ export default function GlobalProfileButton() {
           <span className="text-xs font-bold text-white">{user.full_name[0].toUpperCase()}</span>
         ) : (
           <User className="w-4 h-4 text-white/70" />
+        )}
+        {pendingCount > 0 && (
+          <span
+            className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
+            style={{ background: "#22C55E", boxShadow: "0 0 6px rgba(34,197,94,0.6)" }}
+          >
+            {pendingCount > 99 ? "99+" : pendingCount}
+          </span>
         )}
       </button>
 

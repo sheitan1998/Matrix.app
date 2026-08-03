@@ -65,7 +65,10 @@ export default function FriendsPanel({ user, onClose }) {
       qc.invalidateQueries({ queryKey: ["mp-friends"] });
       setAddPseudo("");
       toast.success("Demande envoyée !");
-    } catch { toast.error("Erreur lors de l'envoi"); }
+    } catch (err) {
+      const msg = err?.response?.data?.detail || err?.detail || err?.message || "Erreur lors de l'envoi";
+      toast.error(msg);
+    }
     setSearching(false);
   };
 
