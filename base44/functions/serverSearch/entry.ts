@@ -240,27 +240,50 @@ export default async function(req: Request): Promise<Response> {
 
         if (!query) return Response.json({ error: 'Veuillez saisir un pseudo ou un email.' }, { status: 400 });
 
-        const allUsers = await base44.asServiceRole.entities.User.list();
+        const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
+        const inputPseudo = (pseudo || '').trim().toLowerCase();
+        const inputTag = (tag || '').trim().toLowerCase();
+
         const target = allUsers.find(u => {
+          if (!u) return false;
+
           // Match by email (case-insensitive)
           if (u.email && u.email.toLowerCase() === query) return true;
-          // Match by pseudo (case-insensitive) + optional tag
-          if (u.pseudo && u.pseudo.toLowerCase() === (pseudo || '').trim().toLowerCase()) {
-            if (!tag) return true;
-            if (u.pseudo_tag && u.pseudo_tag === tag.trim()) return true;
+          if (!u.pseudo) return false;
+
+          const storedPseudo = u.pseudo.toLowerCase();
+
+          // Case 1: stored pseudo contains "#" (e.g. "she#7869" as a single string)
+          if (storedPseudo.includes('#')) {
+            if (inputTag) {
+              return storedPseudo === `${inputPseudo}#${inputTag}`;
+            }
+            return storedPseudo.split('#')[0] === inputPseudo;
+          }
+
+          // Case 2: pseudo and pseudo_tag stored as separate fields
+          if (storedPseudo === inputPseudo) {
+            if (!inputTag) return true;
+            if (u.pseudo_tag && u.pseudo_tag.toLowerCase() === inputTag) return true;
           }
           return false;
         });
 
         if (!target) return Response.json({ error: 'Aucun utilisateur trouvé. Vérifiez le pseudo#tag ou l\'email saisi.' }, { status: 404 });
 
+        // Normalize display pseudo to "name#tag" format
+        let displayPseudo = target.pseudo || '';
+        if (!displayPseudo.includes('#') && target.pseudo_tag) {
+          displayPseudo = `${displayPseudo}#${target.pseudo_tag}`;
+        }
+
         return Response.json({
           success: true,
           user: {
             email: target.email,
             full_name: target.full_name,
-            pseudo: target.pseudo,
-            pseudo_tag: target.pseudo_tag,
+            pseudo: displayPseudo,
+            pseudo_tag: target.pseudo_tag || '',
             avatar_url: target.avatar_url || '',
           },
         });
