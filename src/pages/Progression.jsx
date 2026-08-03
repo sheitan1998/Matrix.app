@@ -5,19 +5,15 @@ import { ArrowLeft, Coins, Crown, Zap } from 'lucide-react';
 import { useProgression } from '@/context/ProgressionContext';
 import XPBar from '@/components/progression/XPBar';
 import ProgressionOverview from '@/components/progression/ProgressionOverview';
-import BadgesGrid from '@/components/progression/BadgesGrid';
 import AchievementsList from '@/components/progression/AchievementsList';
 import MissionsBoard from '@/components/progression/MissionsBoard';
-import ProgressionShop from '@/components/progression/ProgressionShop';
 import ProgressionLeaderboards from '@/components/progression/ProgressionLeaderboards';
 import TrixWalletBar from '@/components/TrixWalletBar';
 
 const TABS = [
   { id: 'overview',     label: "Vue d'ensemble" },
-  { id: 'badges',       label: 'Badges' },
   { id: 'achievements', label: 'Succès' },
   { id: 'missions',     label: 'Missions' },
-  { id: 'shop',         label: 'Boutique' },
   { id: 'leaderboards', label: 'Classements' },
 ];
 
@@ -89,10 +85,8 @@ export default function Progression() {
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}
             transition={{ duration: 0.2 }}>
             {tab === 'overview' && <ProgressionOverview />}
-            {tab === 'badges' && <BadgesGrid />}
             {tab === 'achievements' && <AchievementsList />}
             {tab === 'missions' && <MissionsBoard />}
-            {tab === 'shop' && <ProgressionShop />}
             {tab === 'leaderboards' && <ProgressionLeaderboards />}
           </motion.div>
         </AnimatePresence>
