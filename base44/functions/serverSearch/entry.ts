@@ -233,19 +233,26 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ success: true, deleted: expiredAds.length });
       }
 
-      // ---- Search a user by pseudo#tag for friend requests ----
+      // ---- Search a user by email OR pseudo#tag (case-insensitive) for friend requests ----
       case 'searchUser': {
-        const { pseudo, tag } = params;
-        if (!pseudo) return Response.json({ error: 'Missing pseudo' }, { status: 400 });
+        const { pseudo, tag, email } = params;
+        const query = (pseudo || email || '').trim().toLowerCase();
+
+        if (!query) return Response.json({ error: 'Veuillez saisir un pseudo ou un email.' }, { status: 400 });
 
         const allUsers = await base44.asServiceRole.entities.User.list();
         const target = allUsers.find(u => {
-          if (u.pseudo !== pseudo) return false;
-          if (tag && u.pseudo_tag !== tag) return false;
-          return true;
+          // Match by email (case-insensitive)
+          if (u.email && u.email.toLowerCase() === query) return true;
+          // Match by pseudo (case-insensitive) + optional tag
+          if (u.pseudo && u.pseudo.toLowerCase() === (pseudo || '').trim().toLowerCase()) {
+            if (!tag) return true;
+            if (u.pseudo_tag && u.pseudo_tag === tag.trim()) return true;
+          }
+          return false;
         });
 
-        if (!target) return Response.json({ error: 'Utilisateur introuvable. Vérifiez le format Pseudo#1234' }, { status: 404 });
+        if (!target) return Response.json({ error: 'Aucun utilisateur trouvé. Vérifiez le pseudo#tag ou l\'email saisi.' }, { status: 404 });
 
         return Response.json({
           success: true,

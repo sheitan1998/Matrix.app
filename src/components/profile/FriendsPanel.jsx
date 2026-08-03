@@ -32,18 +32,27 @@ export default function FriendsPanel({ user, onClose }) {
 
   const sendFriendRequest = async () => {
     if (!addPseudo?.trim()) return;
-    const { pseudo, tag } = parsePseudoTag(addPseudo);
+    const input = addPseudo.trim();
+    const isEmail = input.includes("@");
+    const { pseudo, tag } = parsePseudoTag(input);
     if (!pseudo) { toast.error("Pseudo invalide"); return; }
-    if (pseudo === user?.pseudo && (!tag || tag === user?.pseudo_tag)) {
+    if (!isEmail && pseudo === user?.pseudo && (!tag || tag === user?.pseudo_tag)) {
+      toast.error("Tu ne peux pas t'ajouter toi-même !");
+      return;
+    }
+    if (isEmail && input.toLowerCase() === user?.email?.toLowerCase()) {
       toast.error("Tu ne peux pas t'ajouter toi-même !");
       return;
     }
     if (!user?.email) { toast.error("Session expirée, reconnecte-toi."); return; }
     setSearching(true);
     try {
-      const res = await base44.functions.invoke("serverSearch", { action: "searchUser", pseudo, tag });
+      const payload = isEmail
+        ? { action: "searchUser", email: input }
+        : { action: "searchUser", pseudo, tag };
+      const res = await base44.functions.invoke("serverSearch", payload);
       const target = res?.user;
-      if (!target?.email) { toast.error(res?.error || "Utilisateur introuvable. Vérifiez le format Pseudo#1234"); return; }
+      if (!target?.email) { toast.error(res?.error || "Aucun utilisateur trouvé. Vérifiez le pseudo#tag ou l'email saisi."); return; }
 
       // Check both directions for existing friendship
       const existing = friends.find(f => f.friend_email === target.email);
