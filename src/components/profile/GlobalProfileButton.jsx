@@ -26,9 +26,10 @@ export default function GlobalProfileButton() {
   }, [location.pathname]);
 
   // Fetch pending friend requests count
+  // pending_received records have user_email = recipient (current user), friend_email = sender
   useEffect(() => {
     if (!isAuthenticated || !user || isExcluded) return;
-    base44.entities.Friend.filter({ friend_email: user.email, status: "pending_received" })
+    base44.entities.Friend.filter({ user_email: user.email, status: "pending_received" })
       .then(friends => setPendingCount((friends || []).length))
       .catch(() => {});
   }, [isAuthenticated, user, isExcluded]);
@@ -37,10 +38,10 @@ export default function GlobalProfileButton() {
   useEffect(() => {
     if (!isAuthenticated || !user || isExcluded) return;
     const unsubscribe = base44.entities.Friend.subscribe((event) => {
-      if (event.type === "create" && event.data?.friend_email === user.email && event.data?.status === "pending_received") {
+      if (event.type === "create" && event.data?.user_email === user.email && event.data?.status === "pending_received") {
         setPendingCount(prev => prev + 1);
       } else if (event.type === "update" || event.type === "delete") {
-        base44.entities.Friend.filter({ friend_email: user.email, status: "pending_received" })
+        base44.entities.Friend.filter({ user_email: user.email, status: "pending_received" })
           .then(friends => setPendingCount((friends || []).length))
           .catch(() => {});
       }

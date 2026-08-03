@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { UserPlus, UserCheck, Clock, Users, X, Search, Send, MessageCircle } from "lucide-react";
@@ -17,6 +17,15 @@ export default function FriendsPanel({ user, onClose }) {
     },
     enabled: !!user?.email,
   });
+
+  // Real-time: refresh friend list when any Friend record changes (new request, accept, delete)
+  useEffect(() => {
+    if (!user?.email) return;
+    const unsubscribe = base44.entities.Friend.subscribe(() => {
+      qc.invalidateQueries({ queryKey: ["mp-friends"] });
+    });
+    return unsubscribe;
+  }, [user?.email, qc]);
 
   const pendingSent = friends.filter(f => f.status === "pending_sent");
   const pendingReceived = friends.filter(f => f.status === "pending_received");
