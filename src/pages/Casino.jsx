@@ -22,6 +22,8 @@ import CasinoBackground from "@/components/casino/CasinoBackground";
 import CasinoSidebar from "@/components/casino/CasinoSidebar";
 import CasinoTopbar from "@/components/casino/CasinoTopbar";
 import CasinoLobby from "@/components/casino/CasinoLobby";
+import SlotWorldsGrid from "@/components/casino/SlotWorldsGrid";
+import SlotMachineSelect from "@/components/casino/SlotMachineSelect";
 import JackpotBanner from "@/components/casino/JackpotBanner";
 import CasinoCategoryFilters from "@/components/casino/CasinoCategoryFilters";
 import CasinoGameCard from "@/components/casino/CasinoGameCard";
@@ -86,6 +88,8 @@ export default function Casino() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeSidebar, setActiveSidebar] = useState("home");
   const [category, setCategory] = useState("all");
+  const [slotView, setSlotView] = useState(null); // null | "worlds" | "machines"
+  const [selectedWorld, setSelectedWorld] = useState(null);
   const { addTransaction } = useWallet();
   const [casinoCoins, setCasinoCoins] = useCasinoCoins();
   const { jackpot } = useCasinoJackpot();
@@ -98,6 +102,29 @@ export default function Casino() {
 
   // VIP Club screen
   if (showVipClub) return <VIPClubPage coins={casinoCoins} onBack={() => setShowVipClub(false)} />;
+
+  // Slot worlds grid — choosing which slot world to play
+  if (slotView === "worlds") {
+    return (
+      <SlotWorldsGrid
+        balance={casinoCoins}
+        onBack={() => setSlotView(null)}
+        onSelectWorld={(world) => { setSelectedWorld(world); setSlotView("machines"); }}
+      />
+    );
+  }
+
+  // Slot machine select — choosing which tier machine to play
+  if (slotView === "machines" && selectedWorld) {
+    return (
+      <SlotMachineSelect
+        world={selectedWorld}
+        balance={casinoCoins}
+        onBack={() => setSlotView("worlds")}
+        onSelectMachine={() => { setSlotView(null); setSelectedWorld(null); setScreen("slots"); }}
+      />
+    );
+  }
 
   // Game screen — premium wrapper around existing game components
   const meta = GAME_META[screen];
@@ -199,7 +226,10 @@ export default function Casino() {
       <CasinoLobby
         balance={casinoCoins}
         jackpot={jackpot}
-        onPlayGame={(key) => { if (GAME_META[key]) setScreen(key); }}
+        onPlayGame={(key) => {
+          if (key === "slots") { setSlotView("worlds"); return; }
+          if (GAME_META[key]) setScreen(key);
+        }}
         onShop={() => setShowShop(true)}
         onProfile={() => setShowProfile(true)}
         onVipClub={() => setShowVipClub(true)}
