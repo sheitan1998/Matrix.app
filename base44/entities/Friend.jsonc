@@ -4,26 +4,11 @@
   "properties": {
     "user_email": {
       "type": "string",
-      "description": "Email of the user who owns this friend record"
-    },
-    "friend_email": {
-      "type": "string",
-      "description": "Email of the friend (stable identifier for RLS)"
+      "description": "Email of the record owner (used for RLS access control)"
     },
     "friend_user_id": {
       "type": "string",
-      "description": "Unique ID of the friend user (for dynamic profile lookups)"
-    },
-    "friend_name": {
-      "type": "string",
-      "description": "Display name snapshot of the friend"
-    },
-    "friend_pseudo": {
-      "type": "string",
-      "description": "Pseudo snapshot (fallback only \u2014 fresh data fetched via getUsersByIds)"
-    },
-    "friend_avatar": {
-      "type": "string"
+      "description": "Unique ID of the friend user (stable link to profiles table)"
     },
     "status": {
       "type": "string",
@@ -34,61 +19,24 @@
         "blocked"
       ],
       "default": "pending_sent"
-    },
-    "is_online": {
-      "type": "boolean",
-      "default": false
-    },
-    "last_seen": {
-      "type": "string",
-      "format": "date-time"
     }
   },
   "required": [
     "user_email",
-    "friend_email",
-    "friend_pseudo"
+    "friend_user_id"
   ],
   "rls": {
     "create": {
-      "$or": [
-        {
-          "data.user_email": "{{user.email}}"
-        },
-        {
-          "data.friend_email": "{{user.email}}"
-        }
-      ]
+      "data.user_email": "{{user.email}}"
     },
     "read": {
-      "$or": [
-        {
-          "data.user_email": "{{user.email}}"
-        },
-        {
-          "data.friend_email": "{{user.email}}"
-        }
-      ]
+      "data.user_email": "{{user.email}}"
     },
     "update": {
-      "$or": [
-        {
-          "data.user_email": "{{user.email}}"
-        },
-        {
-          "data.friend_email": "{{user.email}}"
-        }
-      ]
+      "data.user_email": "{{user.email}}"
     },
     "delete": {
-      "$or": [
-        {
-          "data.user_email": "{{user.email}}"
-        },
-        {
-          "data.friend_email": "{{user.email}}"
-        }
-      ]
+      "data.user_email": "{{user.email}}"
     }
   }
 }
