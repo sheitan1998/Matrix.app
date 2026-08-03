@@ -36,7 +36,7 @@ export default function FriendsPanel({ user, onClose }) {
     base44.functions.invoke("serverSearch", { action: "getUsersByIds", ids: userIds })
       .then(res => {
         const map = {};
-        (res?.users || []).forEach(u => { map[u.id] = u; });
+        (res?.data?.users || []).forEach(u => { map[u.id] = u; });
         setFreshUsers(map);
       })
       .catch(() => {});
@@ -68,9 +68,9 @@ export default function FriendsPanel({ user, onClose }) {
         ? { action: "searchUser", email: input }
         : { action: "searchUser", pseudo, tag };
       const searchRes = await base44.functions.invoke("serverSearch", searchPayload);
-      const target = searchRes?.user;
+      const target = searchRes?.data?.user;
       if (!target?.id) {
-        toast.error(searchRes?.error || "Aucun utilisateur trouvé.");
+        toast.error(searchRes?.data?.error || "Aucun utilisateur trouvé.");
         return;
       }
 
@@ -79,8 +79,8 @@ export default function FriendsPanel({ user, onClose }) {
         action: "sendFriendRequest",
         target_user_id: target.id,
       });
-      if (!sendRes?.success) {
-        toast.error(sendRes?.error || "Erreur lors de l'envoi");
+      if (!sendRes?.data?.success) {
+        toast.error(sendRes?.data?.error || "Erreur lors de l'envoi");
         return;
       }
       qc.invalidateQueries({ queryKey: ["mp-friends"] });
@@ -100,8 +100,8 @@ export default function FriendsPanel({ user, onClose }) {
         action: "acceptFriendRequest",
         friend_user_id: friend.friend_user_id,
       });
-      if (!res?.success) {
-        toast.error(res?.error || "Erreur lors de l'acceptation");
+      if (!res?.data?.success) {
+        toast.error(res?.data?.error || "Erreur lors de l'acceptation");
         return;
       }
       qc.invalidateQueries({ queryKey: ["mp-friends"] });
@@ -118,8 +118,8 @@ export default function FriendsPanel({ user, onClose }) {
         action: "removeFriend",
         friend_user_id: friend.friend_user_id,
       });
-      if (!res?.success) {
-        toast.error(res?.error || "Erreur lors de la suppression");
+      if (!res?.data?.success) {
+        toast.error(res?.data?.error || "Erreur lors de la suppression");
         return;
       }
       qc.invalidateQueries({ queryKey: ["mp-friends"] });
