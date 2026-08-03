@@ -40,14 +40,8 @@ export default function FriendsPanel({ user, onClose }) {
     }
     setSearching(true);
     try {
-      const allUsers = await base44.entities.User.list();
-      // Match by pseudo + tag (if tag provided) for precise identification
-      const target = allUsers.find(u => {
-        if (u.pseudo !== pseudo) return false;
-        if (tag && u.pseudo_tag !== tag) return false;
-        return true;
-      });
-      if (!target) { toast.error("Utilisateur introuvable. Vérifiez le format Pseudo#1234"); return; }
+      const res = await base44.functions.invoke("serverSearch", { action: "searchUser", pseudo, tag });
+      const target = res.user;
       const existing = friends.find(f => f.friend_email === target.email);
       if (existing) { toast.error("Déjà ami ou demande en cours."); return; }
       await base44.entities.Friend.create({

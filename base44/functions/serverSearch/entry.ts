@@ -233,6 +233,32 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ success: true, deleted: expiredAds.length });
       }
 
+      // ---- Search a user by pseudo#tag for friend requests ----
+      case 'searchUser': {
+        const { pseudo, tag } = params;
+        if (!pseudo) return Response.json({ error: 'Missing pseudo' }, { status: 400 });
+
+        const allUsers = await base44.asServiceRole.entities.User.list();
+        const target = allUsers.find(u => {
+          if (u.pseudo !== pseudo) return false;
+          if (tag && u.pseudo_tag !== tag) return false;
+          return true;
+        });
+
+        if (!target) return Response.json({ error: 'Utilisateur introuvable. Vérifiez le format Pseudo#1234' }, { status: 404 });
+
+        return Response.json({
+          success: true,
+          user: {
+            email: target.email,
+            full_name: target.full_name,
+            pseudo: target.pseudo,
+            pseudo_tag: target.pseudo_tag,
+            avatar_url: target.avatar_url || '',
+          },
+        });
+      }
+
       default:
         return Response.json({ error: `Unknown action: ${action}` }, { status: 400 });
     }
