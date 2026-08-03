@@ -52,6 +52,7 @@ import GlobalProfileButton from '@/components/profile/GlobalProfileButton';
 import GlobalMessageButton from '@/components/messaging/GlobalMessageButton';
 import { ProgressionProvider } from '@/context/ProgressionContext';
 import { MiniPlayerProvider } from '@/context/MiniPlayerContext';
+import { NotificationProvider } from '@/context/NotificationContext';
 import TwitchLayout from '@/components/twitch/TwitchLayout';
 import TutoGamingLayout from '@/components/tuto-gaming/TutoGamingLayout';
 import TutoGamingHub from '@/pages/tuto-gaming/TutoGamingHub';
@@ -76,6 +77,7 @@ const AuthenticatedApp = () => {
 
   return (
     <ProgressionProvider>
+    <NotificationProvider>
     <MiniPlayerProvider>
     <AnimatedRoutes>
     <Routes>
@@ -139,6 +141,7 @@ const AuthenticatedApp = () => {
     <GlobalProfileButton />
     <GlobalMessageButton />
     </MiniPlayerProvider>
+    </NotificationProvider>
     </ProgressionProvider>
   );
 };

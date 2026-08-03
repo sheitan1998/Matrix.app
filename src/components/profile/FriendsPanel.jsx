@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { UserPlus, UserCheck, Clock, Users, X, Search, Send, MessageCircle } from "lucide-react";
+import { UserCheck, Clock, Users, X, Search, Send, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export default function FriendsPanel({ user, onClose }) {
@@ -28,7 +28,7 @@ export default function FriendsPanel({ user, onClose }) {
     return unsubscribe;
   }, [user?.email, qc]);
 
-  // Fetch fresh profile data (pseudo, avatar) for all friends by user_id — never stored hard
+  // Fetch fresh profile data (pseudo, avatar) for all friends by user_id
   useEffect(() => {
     if (!friends || friends.length === 0) return;
     const userIds = [...new Set(friends.map(f => f.friend_user_id).filter(Boolean))];
@@ -46,7 +46,6 @@ export default function FriendsPanel({ user, onClose }) {
   const pendingReceived = friends.filter(f => f.status === "pending_received");
   const accepted = friends.filter(f => f.status === "accepted");
 
-  // Parse "Pseudo#1234" into { pseudo, tag }
   const parsePseudoTag = (input) => {
     const trimmed = input.trim();
     const hashIdx = trimmed.indexOf("#");
@@ -59,35 +58,23 @@ export default function FriendsPanel({ user, onClose }) {
     const input = addPseudo.trim();
     const isEmail = input.includes("@");
     const { pseudo, tag } = parsePseudoTag(input);
-    if (!pseudo) { toast.error("Pseudo invalide"); return; }
+    if (!pseudo && !isEmail) { toast.error("Pseudo invalide"); return; }
     if (!user?.email) { toast.error("Session expirée, reconnecte-toi."); return; }
     setSearching(true);
     try {
-      // Step 1: search for the target user via backend
-      const searchPayload = isEmail
-        ? { action: "searchUser", email: input }
-        : { action: "searchUser", pseudo, tag };
-      const searchRes = await base44.functions.invoke("serverSearch", searchPayload);
-      const target = searchRes?.data?.user;
-      if (!target?.id) {
-        toast.error(searchRes?.data?.error || "Aucun utilisateur trouvé.");
-        return;
-      }
-
-      // Step 2: send friend request via backend (creates both records atomically, linked by user ID)
-      const sendRes = await base44.functions.invoke("serverSearch", {
-        action: "sendFriendRequest",
-        target_user_id: target.id,
-      });
-      if (!sendRes?.data?.success) {
-        toast.error(sendRes?.data?.error || "Erreur lors de l'envoi");
+      const payload = isEmail
+        ? { action: "addFriend", email: input }
+        : { action: "addFriend", pseudo, tag };
+      const res = await base44.functions.invoke("serverSearch", payload);
+      if (!res?.data?.success) {
+        toast.error(res?.data?.error || "Erreur lors de l'envoi");
         return;
       }
       qc.invalidateQueries({ queryKey: ["mp-friends"] });
       setAddPseudo("");
-      toast.success("Demande envoyée !");
+      toast.success(`Demande envoyée à ${res.data.target_name || ""} !`);
     } catch (err) {
-      const msg = err?.response?.data?.detail || err?.detail || err?.message || "Erreur lors de l'envoi";
+      const msg = err?.response?.data?.error || err?.message || "Erreur lors de l'envoi";
       toast.error(msg);
     }
     setSearching(false);
@@ -107,7 +94,7 @@ export default function FriendsPanel({ user, onClose }) {
       qc.invalidateQueries({ queryKey: ["mp-friends"] });
       toast.success("Ami accepté !");
     } catch (err) {
-      toast.error(err?.message || "Erreur lors de l'acceptation");
+      toast.error(err?.response?.data?.error || err?.message || "Erreur");
     }
   };
 
@@ -125,16 +112,16 @@ export default function FriendsPanel({ user, onClose }) {
       qc.invalidateQueries({ queryKey: ["mp-friends"] });
       toast.success("Ami retiré.");
     } catch (err) {
-      toast.error(err?.message || "Erreur lors de la suppression");
+      toast.error(err?.response?.data?.error || err?.message || "Erreur");
     }
   };
 
   const openConversation = (friend) => {
-    window.dispatchEvent(new CustomEvent("matrix-open-chat", { detail: { friendEmail: freshUsers[friend.friend_user_id]?.email } }));
+    const email = freshUsers[friend.friend_user_id]?.email;
+    if (email) window.dispatchEvent(new CustomEvent("matrix-open-chat", { detail: { friendEmail: email } }));
     if (onClose) onClose();
   };
 
-  // Resolve fresh display data from live user profiles
   const resolveFriend = (f) => {
     const fresh = f.friend_user_id ? freshUsers[f.friend_user_id] : null;
     return {
@@ -162,14 +149,14 @@ export default function FriendsPanel({ user, onClose }) {
         </h3>
         <div className="flex gap-2">
           <input value={addPseudo} onChange={e => setAddPseudo(e.target.value)} onKeyDown={e => e.key === "Enter" && sendFriendRequest()}
-            placeholder="Pseudo#1234" className="flex-1 px-3 py-2.5 rounded-xl text-sm text-white placeholder-white/30 outline-none"
+            placeholder="Pseudo#1234 ou email" className="flex-1 px-3 py-2.5 rounded-xl text-sm text-white placeholder-white/30 outline-none"
             style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }} />
           <button onClick={sendFriendRequest} disabled={searching} className="px-4 rounded-xl text-sm font-bold text-white transition disabled:opacity-50 flex items-center gap-1.5"
             style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
             <Send className="w-3.5 h-3.5" /> Ajouter
           </button>
         </div>
-        <p className="text-[10px] text-white/30 mt-2">Format requis : Pseudo#1234 (le tag identifie de manière unique l'utilisateur)</p>
+        <p className="text-[10px] text-white/30 mt-2">Format : Pseudo#1234 (le tag identifie l'utilisateur) ou son email</p>
       </div>
 
       {/* Pending received */}

@@ -319,6 +319,80 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ users });
       }
 
+      // ---- Add a friend in ONE call (search + create both records atomically) ----
+      case 'addFriend': {
+        const { pseudo, tag, email } = params;
+        const senderEmail = user.email;
+        const senderId = user.id;
+
+        // Find the target user
+        const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
+        const inputPseudo = (pseudo || '').trim().toLowerCase();
+        const inputTag = (tag || '').trim().toLowerCase();
+        const query = (pseudo || email || '').trim().toLowerCase();
+
+        if (!query) return Response.json({ error: 'Veuillez saisir un pseudo ou un email.' }, { status: 400 });
+
+        const target = allUsers.find(u => {
+          if (!u) return false;
+          if (u.email && u.email.toLowerCase() === query) return true;
+          if (!u.pseudo) return false;
+          const storedPseudo = u.pseudo.toLowerCase();
+          if (storedPseudo.includes('#')) {
+            if (inputTag) return storedPseudo === `${inputPseudo}#${inputTag}`;
+            return storedPseudo.split('#')[0] === inputPseudo;
+          }
+          if (storedPseudo === inputPseudo) {
+            if (!inputTag) return true;
+            if (u.pseudo_tag && u.pseudo_tag.toLowerCase() === inputTag) return true;
+          }
+          return false;
+        });
+
+        if (!target) return Response.json({ error: 'Aucun utilisateur trouvé. Vérifiez le pseudo#tag ou l\'email saisi.' }, { status: 404 });
+        if (target.id === senderId) return Response.json({ error: 'Tu ne peux pas t\'ajouter toi-même !' }, { status: 400 });
+
+        const targetEmail = target.email;
+        const targetUserId = target.id;
+
+        // Check for existing relationship
+        const existing = await base44.asServiceRole.entities.Friend.filter({
+          $or: [
+            { user_email: senderEmail, friend_user_id: targetUserId },
+            { user_email: targetEmail, friend_user_id: senderId },
+          ],
+        });
+
+        if (existing.length > 0) {
+          const rel = existing[0];
+          let msg = 'Une relation existe déjà.';
+          if (rel.status === 'accepted') msg = 'Vous êtes déjà amis.';
+          else if (rel.status === 'pending_sent') msg = 'Une demande a déjà été envoyée.';
+          else if (rel.status === 'pending_received') msg = 'Cet utilisateur t\'a déjà envoyé une demande.';
+          return Response.json({ error: msg }, { status: 409 });
+        }
+
+        // Create both records atomically
+        await base44.asServiceRole.entities.Friend.create({
+          user_email: senderEmail,
+          friend_user_id: targetUserId,
+          status: 'pending_sent',
+        });
+        await base44.asServiceRole.entities.Friend.create({
+          user_email: targetEmail,
+          friend_user_id: senderId,
+          status: 'pending_received',
+        });
+
+        let displayPseudo = target.pseudo || target.full_name || target.email;
+        if (!displayPseudo.includes('#') && target.pseudo_tag) {
+          displayPseudo = `${displayPseudo}#${target.pseudo_tag}`;
+        }
+
+        console.log('[addFriend] sender', senderId, '-> target', targetUserId);
+        return Response.json({ success: true, target_name: displayPseudo });
+      }
+
       // ---- Send a friend request (creates both records atomically, linked by user ID) ----
       case 'sendFriendRequest': {
         const { target_user_id } = params;

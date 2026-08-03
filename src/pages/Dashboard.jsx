@@ -6,6 +6,7 @@ import { Radio, Eye, ThumbsUp, Users, Coins, Pencil, Trash2, Plus, Tv2, BarChart
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import FriendsDashboardPanel from "@/components/dashboard/FriendsDashboardPanel";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -109,6 +110,9 @@ export default function Dashboard() {
           </Link>
         </div>
       )}
+
+      {/* Friends panel */}
+      <FriendsDashboardPanel user={user} />
 
       {/* Videos table */}
       <div className="rounded-2xl border border-border bg-card overflow-hidden">
