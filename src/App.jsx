@@ -48,6 +48,7 @@ import Outils from '@/pages/Outils';
 import Sondages from '@/pages/Sondages';
 import MonProfil from '@/pages/MonProfil';
 import BoutiqueMatrix from '@/pages/BoutiqueMatrix';
+import Privacy from '@/pages/Privacy';
 import GlobalProfileButton from '@/components/profile/GlobalProfileButton';
 import GlobalMessageButton from '@/components/messaging/GlobalMessageButton';
 import { ProgressionProvider } from '@/context/ProgressionContext';
@@ -83,6 +84,7 @@ const AuthenticatedApp = () => {
     <MiniPlayerProvider>
     <AnimatedRoutes>
     <Routes>
+      <Route path="/privacy" element={<Privacy />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
