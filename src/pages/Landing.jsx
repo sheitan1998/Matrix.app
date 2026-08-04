@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import AuthModal from "@/components/landing/AuthModal";
@@ -168,7 +168,10 @@ export default function Landing() {
               <Youtube className="w-5 h-5 text-white" />
             </div>
           </div>
-          <p className="text-[10px] text-white/30 font-mono">© 2025 MATRIX. TOUS DROITS RÉSERVÉS.</p>
+          <Link to="/privacy" className="text-[11px] text-white/40 hover:text-white/70 transition tap-sm">
+            Politique de Confidentialité
+          </Link>
+          <p className="text-[10px] text-white/30 font-mono">© 2026 MATRIX. TOUS DROITS RÉSERVÉS.</p>
         </footer>
       </div>
     </div>
