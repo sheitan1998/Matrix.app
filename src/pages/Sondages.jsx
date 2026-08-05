@@ -19,6 +19,20 @@ export default function Sondages() {
   }, []);
 
   const isAdmin = user?.role === "admin";
+  const [showProposal, setShowProposal] = useState(false);
+  const [proposalCategory, setProposalCategory] = useState("all");
+
+  const PROPOSAL_CATEGORIES = [
+    { id: "all", label: "Tous" },
+    { id: "general", label: "Général" },
+    { id: "youtube", label: "Youtube" },
+    { id: "twitch", label: "Twitch" },
+    { id: "nexus", label: "Nexus" },
+    { id: "casino", label: "Nexus Game" },
+    { id: "ai", label: "AI Studio" },
+    { id: "outils", label: "Outils" },
+    { id: "tuto-gaming", label: "Tuto Gaming" },
+  ];
 
   const { data: sondages = [] } = useQuery({
     queryKey: ["sondages"],
@@ -117,6 +131,23 @@ export default function Sondages() {
     }
   };
 
+  const handleProposal = async (data) => {
+    try {
+      await base44.entities.Sondage.create({
+        ...data,
+        is_proposal: true,
+        status: "active",
+        created_by_name: user.full_name || user.pseudo || user.email.split("@")[0],
+        created_by_email: user.email,
+      });
+      qc.invalidateQueries({ queryKey: ["sondages"] });
+      toast.success("Proposition envoyée !");
+      setShowProposal(false);
+    } catch {
+      toast.error("Erreur lors de l'envoi");
+    }
+  };
+
   const handleUpdate = async (id, data) => {
     try {
       await base44.entities.Sondage.update(id, data);
@@ -160,8 +191,10 @@ export default function Sondages() {
     }
   };
 
-  const activeSondages = sondages.filter(s => s.status !== "closed");
-  const closedSondages = sondages.filter(s => s.status === "closed");
+  const activeSondages = sondages.filter(s => s.status !== "closed" && !s.is_proposal);
+  const closedSondages = sondages.filter(s => s.status === "closed" && !s.is_proposal);
+  const proposals = sondages.filter(s => s.is_proposal);
+  const filteredProposals = proposalCategory === "all" ? proposals : proposals.filter(p => p.category === proposalCategory);
 
   return (
     <div className="min-h-screen relative overflow-y-auto overflow-x-hidden" style={{ backgroundColor: "#0a050f" }}>
@@ -196,17 +229,45 @@ export default function Sondages() {
               <p className="text-xs text-white/40">Participez et donnez votre avis</p>
             </div>
           </div>
-          {isAdmin && (
-            <button onClick={() => { setEditing(null); setShowCreate(true); }} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white transition" style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
-              <Plus className="w-4 h-4" /> Créer
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {user && (
+              <button onClick={() => setShowProposal(true)} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white transition tap-sm" style={{ background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)" }}>
+                <Plus className="w-4 h-4" /> Proposer une idée
+              </button>
+            )}
+            {isAdmin && (
+              <button onClick={() => { setEditing(null); setShowCreate(true); }} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white transition tap-sm" style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
+                <Plus className="w-4 h-4" /> Créer
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Non-admin notice */}
-        {!isAdmin && user && (
-          <div className="mb-4 px-4 py-2.5 rounded-xl text-xs text-white/60" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-            💡 Seuls les administrateurs peuvent créer des sondages. Vous pouvez voter, réagir et commenter.
+        {/* Proposals section */}
+        {proposals.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-bold text-white/40 uppercase tracking-widest">💡 Propositions de la communauté</p>
+            </div>
+            <div className="flex gap-1.5 flex-wrap mb-3">
+              {PROPOSAL_CATEGORIES.map(c => (
+                <button key={c.id} onClick={() => setProposalCategory(c.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition tap-sm ${proposalCategory === c.id ? "text-white" : "text-white/40"}`}
+                  style={proposalCategory === c.id ? { background: "rgba(34,197,94,0.15)" } : { background: "rgba(255,255,255,0.03)" }}>
+                  {c.label}
+                </button>
+              ))}
+            </div>
+            <div className="space-y-3">
+              {filteredProposals.map(s => (
+                <SondageCard key={s.id} sondage={s} user={user} votes={allVotes} reactions={allReactions} comments={allComments} isAdmin={isAdmin}
+                  onVote={handleVote} onReaction={handleReaction} onComment={handleComment} onDeleteComment={handleDeleteComment}
+                  onEdit={isAdmin ? (sondage) => { setEditing(sondage); setShowCreate(true); } : undefined}
+                  onClose={isAdmin ? handleClose : undefined}
+                  onReopen={isAdmin ? handleReopen : undefined}
+                  onDelete={isAdmin ? handleDelete : (s.is_proposal && s.created_by_email === user?.email) ? handleDelete : undefined} />
+              ))}
+            </div>
           </div>
         )}
 
@@ -247,6 +308,14 @@ export default function Sondages() {
           onClose={() => { setShowCreate(false); setEditing(null); }}
           onSubmit={editing ? (data) => handleUpdate(editing.id, data) : handleCreate}
           editing={editing}
+        />
+      )}
+
+      {showProposal && (
+        <CreateSondageModal
+          onClose={() => setShowProposal(false)}
+          onSubmit={handleProposal}
+          isProposal={true}
         />
       )}
     </div>

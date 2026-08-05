@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Sparkles, Plus, Hash, Volume2, Megaphone, Settings, Trash2, Search, UserPlus, Link2, MessageCircle, X } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -9,6 +9,7 @@ import VoiceChannel from "@/components/community/VoiceChannel";
 import ServerSettings from "@/components/community/ServerSettings";
 import MembersList from "@/components/community/MembersList";
 import ServerSearch from "@/components/community/ServerSearch";
+import NitroModal from "@/components/community/NitroModal";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { VISUAL_THEMES, getTheme } from "@/lib/visualThemes";
@@ -54,9 +55,25 @@ export default function Community() {
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [activeDm, setActiveDm] = useState(null);
   const [showDmList, setShowDmList] = useState(false);
+  const [showNitro, setShowNitro] = useState(false);
+  const [searchParams] = useSearchParams();
   const qc = useQueryClient();
   const { progress } = useProgression();
   const rank = progress ? getRank(progress.level) : null;
+
+  // Handle Nitro Stripe redirect
+  useEffect(() => {
+    const nitroStatus = searchParams.get("nitro");
+    const sessionId = searchParams.get("session_id");
+    if (nitroStatus === "success" && sessionId) {
+      base44.functions.invoke("stripePayment", { action: "verifySession", sessionId })
+        .then(res => {
+          if (res?.data?.success) toast.success("Nitro activé ! Profite de tes avantages 🎉");
+        })
+        .catch(() => {});
+    }
+    if (nitroStatus === "canceled") toast.error("Paiement annulé");
+  }, [searchParams]);
 
   useEffect(() => { base44.auth.me().then(setUser).catch(() => {}); }, []);
 
@@ -111,10 +128,20 @@ export default function Community() {
   const copyInvite = (code) => { navigator.clipboard.writeText(code); toast.success("Code copié !"); };
 
   const joinByInviteCode = async () => {
-    const code = inviteCodeInput.trim();
-    if (!code) return;
+    const input = inviteCodeInput.trim();
+    if (!input) return;
+    // Support Discord invite links (discord.gg/xxx, discord.com/invite/xxx)
+    const discordMatch = input.match(/(?:discord\.gg\/|discord\.com\/invite\/)([a-zA-Z0-9]+)/i);
+    if (discordMatch) {
+      toast.info("Lien Discord détecté — tu seras redirigé vers Discord", { description: "Ouvre le lien dans un nouvel onglet." });
+      window.open(`https://discord.gg/${discordMatch[1]}`, "_blank");
+      setShowInviteJoin(false);
+      setInviteCodeInput("");
+      return;
+    }
+    // Matrix invite code
     const allServers = await base44.entities.Server.list("-created_date", 200);
-    const found = allServers.find((s) => s.invite_code === code);
+    const found = allServers.find((s) => s.invite_code === input);
     if (!found) { toast.error("Code invalide ou expiré"); return; }
     // Check if already a member
     const existing = await base44.entities.ServerMember.filter({ server_id: found.id, user_email: user.email });
@@ -164,7 +191,7 @@ export default function Community() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-black text-sm truncate text-white">{selectedServer.name}</p>
-              <p className="text-[10px] text-muted-foreground">{selectedServer.is_public ? "🌍 Public" : "🔒 Privé"} · {channels.length} salons</p>
+              <p className="text-[10px] text-muted-foreground">{selectedServer.server_type === "discord" ? "🟣 Serveur Discord" : "🟢 Serveur Nexus"} · {selectedServer.is_public ? "🌍 Public" : "🔒 Privé"} · {channels.length} salons</p>
             </div>
             <button onClick={() => inviteToServer(selectedServer)}
               className="p-2 rounded-xl transition text-muted-foreground hover:text-white"
@@ -198,10 +225,10 @@ export default function Community() {
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-border hover:bg-secondary transition">
                 <Search className="w-3.5 h-3.5" /> Explorer
               </button>
-              <Link to="/community/subscription"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-premium/40 bg-premium/10 text-premium">
+              <button onClick={() => setShowNitro(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-premium/40 bg-premium/10 text-premium transition hover:scale-105 tap-sm">
                 <Sparkles className="w-3.5 h-3.5" /> Nitro
-              </Link>
+              </button>
             </div>
           </>
         )}
@@ -256,7 +283,9 @@ export default function Community() {
                   </div>
                   <div className="flex-1 min-w-0 text-left">
                     <p className="font-bold text-sm truncate">{s.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{s.is_public ? "🌍" : "🔒"} {s.members_count || 1} membres</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {s.server_type === "discord" ? "🟣 Discord" : "🟢 Nexus"} · {s.is_public ? "🌍" : "🔒"} {s.members_count || 1}
+                    </p>
                   </div>
                 </button>
               );
@@ -461,6 +490,8 @@ export default function Community() {
         <ServerCreator onClose={() => setShowCreator(false)} onCreated={() => qc.invalidateQueries({ queryKey: ["servers"] })} />
       )}
 
+      {showNitro && <NitroModal open={showNitro} onClose={() => setShowNitro(false)} />}
+
       {showSearch && (
         <div className="fixed inset-0 z-50">
           <ServerSearch
@@ -477,13 +508,13 @@ export default function Community() {
             <div className="text-center">
               <span className="text-4xl">🔗</span>
               <h2 className="font-black text-lg text-white mt-2">Rejoindre un serveur</h2>
-              <p className="text-xs text-muted-foreground">Entre le code d'invitation du serveur</p>
+              <p className="text-xs text-muted-foreground">Code d'invitation Matrix ou lien Discord (discord.gg/...)</p>
             </div>
             <input
               value={inviteCodeInput}
               onChange={(e) => setInviteCodeInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && joinByInviteCode()}
-              placeholder="Code d'invitation..."
+              placeholder="Code Matrix ou lien discord.gg/..."
               className="w-full px-4 py-3 rounded-2xl bg-secondary border border-border text-white placeholder:text-muted-foreground outline-none text-sm"
             />
             <div className="flex gap-3">

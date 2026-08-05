@@ -73,6 +73,28 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ success: true, type, donationAmount: session.amount_total });
       }
 
+      if (type === 'nitro_subscription') {
+        const nitroPlan = session.metadata?.nitro_plan || 'monthly';
+        if (userId) {
+          const target = await base44.asServiceRole.entities.User.get(userId);
+          if (target) {
+            await base44.asServiceRole.entities.User.update(userId, {
+              nitro: true,
+              nitro_plan: nitroPlan,
+              nitro_since: new Date().toISOString(),
+            });
+          }
+        }
+        await base44.asServiceRole.entities.TrixTransaction.create({
+          user_email: userEmail,
+          type: 'nitro',
+          amount: 0,
+          description: `Abonnement Nitro ${nitroPlan} - ${(session.amount_total / 100).toFixed(2)}€ (session ${session.id})`,
+        });
+        console.log('[stripePayment] nitro activated:', nitroPlan, 'for', userEmail);
+        return Response.json({ success: true, type, nitroPlan });
+      }
+
       return Response.json({ error: 'Unknown session type' }, { status: 400 });
     }
 
@@ -151,6 +173,47 @@ export default async function(req: Request): Promise<Response> {
       if (!session.url) return Response.json({ error: 'Erreur Stripe' }, { status: 500 });
 
       console.log('[stripePayment] trix session created:', session.id);
+      return Response.json({ url: session.url, sessionId: session.id });
+    }
+
+    // ---- Create a Nitro subscription checkout session ----
+    if (action === 'createNitroSubscription') {
+      const { plan } = body; // 'monthly' or 'yearly'
+      const plans = {
+        monthly: { priceCents: 499, label: 'Nitro Mensuel' },
+        yearly: { priceCents: 4999, label: 'Nitro Annuel' },
+      };
+      const selected = plans[plan] || plans.monthly;
+
+      const params = new URLSearchParams();
+      params.append('payment_method_types[]', 'card');
+      params.append('mode', 'payment');
+      params.append('customer_email', user.email);
+      params.append('line_items[0][price_data][currency]', 'eur');
+      params.append('line_items[0][price_data][product_data][name]', selected.label);
+      params.append('line_items[0][price_data][unit_amount]', String(selected.priceCents));
+      params.append('line_items[0][quantity]', '1');
+      params.append('success_url', `${origin}/community?nitro=success&session_id={CHECKOUT_SESSION_ID}`);
+      params.append('cancel_url', `${origin}/community?nitro=canceled`);
+      params.append('metadata[type]', 'nitro_subscription');
+      params.append('metadata[user_email]', user.email);
+      params.append('metadata[user_id]', user.id);
+      params.append('metadata[nitro_plan]', plan || 'monthly');
+
+      const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${stripeKey}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: params,
+      });
+
+      const session = await res.json();
+      if (session.error) return Response.json({ error: session.error.message }, { status: 400 });
+      if (!session.url) return Response.json({ error: 'Erreur Stripe' }, { status: 500 });
+
+      console.log('[stripePayment] nitro session created:', session.id);
       return Response.json({ url: session.url, sessionId: session.id });
     }
 

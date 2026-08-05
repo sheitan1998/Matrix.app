@@ -53,6 +53,19 @@
       "type": "boolean",
       "default": true
     },
+    "server_type": {
+      "type": "string",
+      "enum": [
+        "nexus",
+        "discord"
+      ],
+      "default": "nexus",
+      "description": "Type de serveur: Nexus (interne) ou Discord (externe)"
+    },
+    "discord_link": {
+      "type": "string",
+      "description": "Lien d'invitation Discord (si server_type = discord)"
+    },
     "owner_email": {
       "type": "string"
     },
