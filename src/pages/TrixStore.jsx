@@ -7,37 +7,66 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { formatTrix } from "@/lib/format";
 import { useAuth } from "@/lib/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
 const PACKS = [
-  { trix: 500, price: "4,99€", bonus: 0, tag: null },
-  { trix: 1200, price: "9,99€", bonus: 200, tag: "Populaire" },
-  { trix: 3000, price: "24,99€", bonus: 750, tag: null },
-  { trix: 7000, price: "49,99€", bonus: 2000, tag: "Meilleure offre" },
-  { trix: 15000, price: "99,99€", bonus: 5000, tag: null },
-  { trix: 40000, price: "249,99€", bonus: 15000, tag: "Whale 🐋" },
+  { trix: 500, priceCents: 499, price: "4,99€", bonus: 0, tag: null },
+  { trix: 1200, priceCents: 999, price: "9,99€", bonus: 200, tag: "Populaire" },
+  { trix: 3000, priceCents: 2499, price: "24,99€", bonus: 750, tag: null },
+  { trix: 7000, priceCents: 4999, price: "49,99€", bonus: 2000, tag: "Meilleure offre" },
+  { trix: 15000, priceCents: 9999, price: "99,99€", bonus: 5000, tag: null },
+  { trix: 40000, priceCents: 24999, price: "249,99€", bonus: 15000, tag: "Whale 🐋" },
 ];
 
 export default function TrixStore() {
   const nav = useNavigate();
   const { user, checkUserAuth } = useAuth();
   const [loading, setLoading] = useState(null);
+  const [searchParams] = useSearchParams();
+
+  // Handle Stripe redirect: verify session and credit Trix
+  useEffect(() => {
+    const success = searchParams.get("success");
+    const sessionId = searchParams.get("session_id");
+    const canceled = searchParams.get("canceled");
+    if (canceled === "true") {
+      toast.error("Paiement annulé");
+    }
+    if (success === "true" && sessionId) {
+      base44.functions.invoke("stripePayment", { action: "verifySession", sessionId })
+        .then(res => {
+          if (res?.data?.success) {
+            const credited = res.data.credited || 0;
+            toast.success(`+${formatTrix(credited)} TRIX !`, { description: "Ton solde est mis à jour 🪙" });
+            checkUserAuth();
+          }
+        })
+        .catch(() => {});
+    }
+  }, [searchParams]);
 
   const buy = async (pack) => {
     if (!user) return;
     setLoading(pack.trix);
-    const total = pack.trix + pack.bonus;
-    await base44.auth.updateMe({ trix_balance: (user.trix_balance || 0) + total });
-    await base44.entities.TrixTransaction.create({
-      user_email: user.email,
-      type: "purchase",
-      amount: total,
-      description: `Achat pack ${pack.trix} TRIX (+${pack.bonus} bonus)`,
-    });
+    try {
+      const total = pack.trix + pack.bonus;
+      const res = await base44.functions.invoke("stripePayment", {
+        action: "createTrixPurchase",
+        priceCents: pack.priceCents,
+        trixTotal: total,
+        packLabel: `Pack ${formatTrix(pack.trix)} TRIX`,
+      });
+      const url = res?.data?.url;
+      if (!url) {
+        toast.error(res?.data?.error || "Erreur lors de la création du paiement");
+        return;
+      }
+      window.location.href = url;
+    } catch (err) {
+      toast.error(err?.response?.data?.error || err?.message || "Erreur");
+    }
     setLoading(null);
-    toast.success(`+${formatTrix(total)} TRIX !`, { description: "Ton solde est mis à jour 🪙" });
-    checkUserAuth();
   };
 
   return (

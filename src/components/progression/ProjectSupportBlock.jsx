@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { base44 } from '@/api/base44Client';
 import { Heart, Trophy } from 'lucide-react';
+import { toast } from 'sonner';
+import DonationModal from './DonationModal';
 
 const RANK_COLORS = ['#a855f7', '#c084fc', '#9ca3af'];
 
 export default function ProjectSupportBlock() {
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
   const [topDonors, setTopDonors] = useState([]);
+  const [showDonation, setShowDonation] = useState(false);
+  const [verifying, setVerifying] = useState(false);
 
   useEffect(() => {
     // Mock data — remplacé par de vraies données quand la page de dons sera en ligne
@@ -17,8 +23,25 @@ export default function ProjectSupportBlock() {
     ]);
   }, []);
 
+  // Handle Stripe redirect: verify donation session
+  useEffect(() => {
+    const donationStatus = searchParams.get('donation');
+    const sessionId = searchParams.get('session_id');
+    if (donationStatus === 'success' && sessionId && !verifying) {
+      setVerifying(true);
+      base44.functions.invoke('stripePayment', { action: 'verifySession', sessionId })
+        .then(res => {
+          if (res?.data?.success) {
+            toast.success('Merci pour ton don ! 💚', { description: 'Ton soutien compte énormément.' });
+          }
+        })
+        .catch(() => {})
+        .finally(() => setVerifying(false));
+    }
+  }, [searchParams]);
+
   const handleSupport = () => {
-    nav('/donations');
+    setShowDonation(true);
   };
 
   return (
@@ -44,6 +67,8 @@ export default function ProjectSupportBlock() {
           Soutenir
         </button>
       </div>
+
+      <DonationModal open={showDonation} onClose={() => setShowDonation(false)} />
 
       {/* Top 3 Donors */}
       <div className="pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
