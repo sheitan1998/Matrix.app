@@ -35,9 +35,19 @@
       "default": "active",
       "description": "Statut du sondage"
     },
+    "category": {
+      "type": "string",
+      "default": "general",
+      "description": "Categorie d'univers (general, youtube, twitch, nexus, casino, ai, outils, tuto-gaming)"
+    },
+    "is_proposal": {
+      "type": "boolean",
+      "default": false,
+      "description": "Vrai si c'est une proposition d'idee utilisateur (non admin)"
+    },
     "created_by_name": {
       "type": "string",
-      "description": "Nom de l'administrateur createur"
+      "description": "Nom du createur"
     },
     "created_by_email": {
       "type": "string"
@@ -48,21 +58,31 @@
     "description"
   ],
   "rls": {
-    "create": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
+    "create": {},
     "read": {},
     "update": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "data.created_by_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     },
     "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "data.created_by_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     }
   }
 }
