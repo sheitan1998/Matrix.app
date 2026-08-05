@@ -55,6 +55,10 @@ export default function ServerChat({ server, channel, theme, user }) {
     if ((!content && !fileUrl) || sending) return;
     if (!canSendMessages) { toast.error("Envoi de messages désactivé dans ce salon"); return; }
     if (fileUrl && !canSendImages) { toast.error("Les images ne sont pas autorisées dans ce salon"); return; }
+    if (content && content.includes("@everyone") && !canMentionEveryone) {
+      toast.error("Vous n'êtes pas autorisé à mentionner @everyone");
+      return;
+    }
     setSending(true);
     await base44.entities.ServerMessage.create({
       server_id: server.id,
@@ -66,12 +70,6 @@ export default function ServerChat({ server, channel, theme, user }) {
       type: fileUrl ? "file" : "text",
       file_url: fileUrl || "",
     });
-
-    if (content && content.includes("@everyone") && !canMentionEveryone) {
-      toast.error("Vous n'êtes pas autorisé à mentionner @everyone");
-      setSending(false);
-      return;
-    }
 
     if (content && content.includes("@everyone")) {
       toast.info("@everyone envoyé — tous les membres seront notifiés");
