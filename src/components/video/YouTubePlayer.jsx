@@ -20,6 +20,23 @@ function loadYouTubeAPI() {
   return apiPromise;
 }
 
+// Module-level singleton: ensures only ONE YouTube iframe player is active at a time.
+// Before creating a new player, any existing one is stopped + destroyed so no
+// background audio or double audio can occur.
+let activePlayer = null;
+function registerPlayer(player) {
+  if (activePlayer && activePlayer !== player) {
+    try { activePlayer.stopVideo?.(); } catch {}
+    try { activePlayer.destroy?.(); } catch {}
+  }
+  activePlayer = player;
+}
+function unregisterPlayer(player) {
+  if (activePlayer === player) {
+    activePlayer = null;
+  }
+}
+
 /**
  * YouTube IFrame Player — embeds a YouTube video using the official
  * IFrame Player API. Pass the video ID returned by the YouTube Data API v3.
@@ -51,7 +68,7 @@ export default function YouTubePlayer({ videoId, autoplay = true, onReady, onSta
       const div = document.createElement("div");
       div.className = "w-full h-full";
       wrapperRef.current.appendChild(div);
-      playerRef.current = new YT.Player(div, {
+      const player = new YT.Player(div, {
         videoId,
         playerVars: {
           autoplay: autoplay ? 1 : 0,
@@ -64,12 +81,15 @@ export default function YouTubePlayer({ videoId, autoplay = true, onReady, onSta
           onStateChange: (e) => onStateChangeRef.current?.(e.data),
         },
       });
+      playerRef.current = player;
+      registerPlayer(player);
     });
     return () => {
       active = false;
       if (playerRef.current) {
         try { playerRef.current.stopVideo?.(); } catch {}
         try { playerRef.current.destroy?.(); } catch {}
+        unregisterPlayer(playerRef.current);
         playerRef.current = null;
       }
     };

@@ -4,9 +4,7 @@ import YouTubePlayer from "./YouTubePlayer";
 import QualitySelector from "./QualitySelector";
 import { useMiniPlayer } from "@/context/MiniPlayerContext";
 
-export default function VideoPlayer({ video, showPreAd = false, onAdEnd }) {
-  const [adSeconds, setAdSeconds] = useState(5);
-  const [showingAd, setShowingAd] = useState(showPreAd);
+export default function VideoPlayer({ video }) {
   const [quality, setQuality] = useState("Auto");
   const [isFullscreen, setIsFullscreen] = useState(false);
   const mini = useMiniPlayer();
@@ -16,17 +14,6 @@ export default function VideoPlayer({ video, showPreAd = false, onAdEnd }) {
   const isYouTube = video._source === "youtube" && !!video.id;
   const isEmbeddable = isYouTube && video.embeddable !== false;
   const isMinimized = mini.currentVideo?.id === video.id && mini.mode === "mini";
-
-  useEffect(() => {
-    if (!showingAd) return;
-    if (adSeconds <= 0) {
-      setShowingAd(false);
-      onAdEnd?.();
-      return;
-    }
-    const t = setTimeout(() => setAdSeconds((s) => s - 1), 1000);
-    return () => clearTimeout(t);
-  }, [adSeconds, showingAd, onAdEnd]);
 
   useEffect(() => {
     const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
@@ -60,22 +47,6 @@ export default function VideoPlayer({ video, showPreAd = false, onAdEnd }) {
   const handleReady = (player) => {
     playerRef.current = player;
   };
-
-  if (showingAd) {
-    return (
-      <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-black flex items-center justify-center">
-        <div className="absolute inset-0 gradient-matrix opacity-20" />
-        <div className="relative text-center">
-          <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-2">Publicité</p>
-          <p className="text-2xl md:text-4xl font-black text-foreground">Passe à MATRIX PREMIUM</p>
-          <p className="text-sm text-muted-foreground mt-2">Sans pub. Pour toujours.</p>
-        </div>
-        <div className="absolute bottom-3 right-3 px-3 py-1.5 rounded-full bg-background/80 backdrop-blur text-sm font-mono">
-          Passer dans {adSeconds}s
-        </div>
-      </div>
-    );
-  }
 
   // If this video is currently in the floating mini-player, show a placeholder
   if (isMinimized) {

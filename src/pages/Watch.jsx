@@ -20,7 +20,6 @@ export default function Watch() {
   const [user, setUser] = useState(null);
   const [donateOpen, setDonateOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
-  const [adDone, setAdDone] = useState(false);
   const [liked, setLiked] = useState(false);
   const [disliked, setDisliked] = useState(false);
   const [optimisticLikes, setOptimisticLikes] = useState(null);
@@ -77,14 +76,13 @@ export default function Watch() {
     return <div className="p-8 text-muted-foreground">Chargement...</div>;
   }
 
-  const showAd = !user?.is_premium && !adDone;
   const relatedFiltered = (related || []).filter((v) => v.id !== id).slice(0, 10);
 
   return (
     <div className="px-4 lg:px-6 py-4 max-w-[1800px] mx-auto">
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_400px] gap-6">
         <div className="min-w-0 space-y-4">
-          <VideoPlayer video={video} showPreAd={showAd} onAdEnd={() => setAdDone(true)} />
+          <VideoPlayer video={video} />
 
           <h1 className="text-xl md:text-2xl font-bold leading-tight">{video.title}</h1>
 

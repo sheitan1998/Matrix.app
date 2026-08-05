@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Search, Upload, Crown, Coins, Bell, ArrowLeft } from "lucide-react";
+import { Search, Upload, Bell, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { base44 } from "@/api/base44Client";
@@ -62,20 +62,6 @@ export default function Topbar() {
 
         {/* Right */}
         <div className="flex items-center gap-2 shrink-0">
-          {user?.is_premium ? (
-            <div className="hidden md:flex items-center gap-1.5 px-3 h-9 rounded-full gradient-premium">
-              <Crown className="w-4 h-4 text-white" />
-              <span className="text-white text-xs font-bold">PREMIUM</span>
-            </div>
-          ) : (
-            <Link to="/premium" className="hidden md:block">
-              <Button variant="outline" size="sm" className="h-9 rounded-full border-premium/40 text-premium hover:bg-premium/10 hover:text-premium">
-                <Crown className="w-4 h-4 mr-1.5" />
-                Premium
-              </Button>
-            </Link>
-          )}
-
           <Link to="/upload">
             <Button size="icon" variant="ghost" className="rounded-full">
               <Upload className="w-5 h-5" />
