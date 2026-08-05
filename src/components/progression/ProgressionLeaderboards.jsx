@@ -15,29 +15,35 @@ export default function ProgressionLeaderboards() {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      try {
-        const records = await base44.entities.UserProgress.list('-updated_date', 100);
-        const lbType = LEADERBOARD_TYPES.find(t => t.id === type);
-        // Filter by period based on updated_date
-        let filtered = records;
-        if (period !== 'all') {
-          const now = Date.now();
-          const ms = period === 'week' ? 604800000 : period === 'month' ? 2592000000 : 31536000000;
-          filtered = records.filter(r => {
-            const d = new Date(r.updated_date || r.created_date).getTime();
-            return now - d < ms;
-          });
-        }
-        // Sort by the field
-        filtered = [...filtered].sort((a, b) => getNestedValue(b, lbType.field) - getNestedValue(a, lbType.field));
-        setEntries(filtered.slice(0, 50));
-      } catch (e) { console.error(e); }
-      setLoading(false);
-    })();
+  const fetchLeaderboard = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const records = await base44.entities.UserProgress.list('-updated_date', 100);
+      const lbType = LEADERBOARD_TYPES.find(t => t.id === type);
+      let filtered = records;
+      if (period !== 'all') {
+        const now = Date.now();
+        const ms = period === 'week' ? 604800000 : period === 'month' ? 2592000000 : 31536000000;
+        filtered = records.filter(r => {
+          const d = new Date(r.updated_date || r.created_date).getTime();
+          return now - d < ms;
+        });
+      }
+      filtered = [...filtered].sort((a, b) => getNestedValue(b, lbType.field) - getNestedValue(a, lbType.field));
+      setEntries(filtered.slice(0, 50));
+    } catch (e) { console.error(e); }
+    setLoading(false);
   }, [type, period]);
+
+  useEffect(() => { fetchLeaderboard(); }, [fetchLeaderboard]);
+
+  // Real-time: refresh when any UserProgress changes
+  useEffect(() => {
+    const unsubscribe = base44.entities.UserProgress.subscribe(() => {
+      fetchLeaderboard();
+    });
+    return unsubscribe;
+  }, [fetchLeaderboard]);
 
   const myEmail = progress?.user_email;
 
@@ -80,6 +86,9 @@ export default function ProgressionLeaderboards() {
           const value = getNestedValue(entry, lbType.field);
           const rank = getRank(entry.level || 1);
           const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null;
+          // Show pseudo only (no hashtag), fallback to email username
+          const rawPseudo = entry.pseudo || entry.user_email?.split('@')[0] || 'Anonyme';
+          const displayName = rawPseudo.split('#')[0];
 
           return (
             <motion.div key={entry.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }}
@@ -97,9 +106,9 @@ export default function ProgressionLeaderboards() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className={`text-xs font-bold truncate ${isMe ? 'text-white' : 'text-white/70'}`}>
-                  {entry.user_email?.split('@')[0] || 'Anonyme'} {isMe && '(Vous)'}
+                  {displayName} {isMe && '(Vous)'}
                 </div>
-                <div className="text-[9px] text-white/30">Niv. {entry.level || 1} · {rank.name}</div>
+                <div className="text-[9px] text-white/30">Niv. {entry.level || 1}</div>
               </div>
               <div className="text-right shrink-0">
                 <div className="text-sm font-black" style={{ color: '#fbbf24' }}>{Number(value).toLocaleString()}</div>

@@ -13,9 +13,9 @@ import {
 const LEFT_CARDS = [
   { path: "/stream", label: "Youtube", desc: "Vidéos, lives, shorts. Crée ta chaîne et partage ton contenu.", icon: Youtube, color: "#FF0000" },
   { path: "/twitch", label: "Twitch", desc: "Streams en direct, clips, discussions et rencontres.", icon: Radio, color: "#9146FF" },
-  { path: "/community", label: "Discord", desc: "Discute, réagis, commente. Rejoins ou crée des salons vocaux.", icon: MessageCircle, color: "#3B82F6" },
+  { path: "/community", label: "Nexus", desc: "Discute, réagis, commente. Rejoins ou crée des salons vocaux.", icon: MessageCircle, color: "#3B82F6" },
   { path: "/ai", label: "AI Studio", desc: "Chat, création, code, histoires. Exploite l'IA sans limites.", icon: Cpu, color: "#06B6D4" },
-  { path: "/casino", label: "Casino", desc: "Roulette, machines à sous, blackjack. Jeux fictifs uniquement.", icon: Dices, color: "#F59E0B", badge: "18+" },
+  { path: "/casino", label: "Nexus Game", desc: "Roulette, machines à sous, blackjack et plus encore.", icon: Dices, color: "#F59E0B", badge: "18+" },
   { path: "/prospecteurs", label: "Recherche Joueur/Serveur", desc: "Trouve des joueurs, recrute ou explore des serveurs de jeu.", icon: Search, color: "#8a4fff" },
   { path: "/tuto-gaming", label: "Tuto Gaming Entraide", desc: "Guides, astuces, entraide et base de connaissances pour tous les jeux.", icon: GraduationCap, color: "#BF5AF2" },
 ];
@@ -160,14 +160,6 @@ export default function Landing() {
 
         {/* Footer */}
         <footer className="mt-8 lg:mt-12 flex flex-col items-center gap-4 pt-4">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "#5865F2" }}>
-              <MessageCircle className="w-5 h-5 text-white" />
-            </div>
-            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "#FF0000" }}>
-              <Youtube className="w-5 h-5 text-white" />
-            </div>
-          </div>
           <Link to="/privacy" className="text-[11px] text-white/40 hover:text-white/70 transition tap-sm">
             Politique de Confidentialité
           </Link>

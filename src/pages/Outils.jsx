@@ -116,7 +116,7 @@ export default function Outils() {
             <motion.div
               initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
               transition={{ type: "spring", damping: 25 }}
-              className={`w-full max-h-[85vh] overflow-y-auto scrollbar-thin rounded-2xl ${activeTool === "notepad-mgr" || activeTool === "spreadsheet" || activeTool === "paint" ? "max-w-3xl" : "max-w-md"}`}
+              className={`w-full rounded-2xl ${activeTool === "paint" ? "max-w-5xl h-[85vh]" : activeTool === "spreadsheet" ? "max-w-4xl h-[80vh]" : activeTool === "notepad-mgr" ? "max-w-3xl max-h-[85vh] overflow-y-auto scrollbar-thin" : "max-w-md max-h-[85vh] overflow-y-auto scrollbar-thin"}`}
               style={{ background: "#13101a", border: "1px solid rgba(255,255,255,0.08)" }}
               onClick={(e) => e.stopPropagation()}>
               {activeTool === "calc" && <CalculatorTool onClose={() => setActiveTool(null)} />}

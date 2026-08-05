@@ -142,6 +142,7 @@ export function ProgressionProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [levelUpData, setLevelUpData] = useState(null);
   const ref = useRef(null);
+  const unsubRef = useRef(null);
 
   const set = useCallback((data) => { ref.current = data; setProgress(data); }, []);
 
@@ -230,9 +231,14 @@ export function ProgressionProvider({ children }) {
         let p;
         if (records.length > 0) {
           p = records[0];
+          // Sync pseudo if missing or outdated
+          if (!p.pseudo || p.pseudo !== user.pseudo) {
+            await base44.entities.UserProgress.update(p.id, { pseudo: user.pseudo || '' });
+            p = { ...p, pseudo: user.pseudo || '' };
+          }
         } else {
           p = await base44.entities.UserProgress.create({
-            user_email: user.email, level: 1, xp: 0, total_xp: 0, coins: 500,
+            user_email: user.email, pseudo: user.pseudo || '', level: 1, xp: 0, total_xp: 0, coins: 500,
             prestige: 0, badges: [], achievements: [], unlocked_rewards: [],
             stats: {}, missions: {}, last_xp_gains: {}, equipped: {},
           });
@@ -245,6 +251,13 @@ export function ProgressionProvider({ children }) {
         }
         if (!mounted) return;
         set(p);
+        // Real-time: subscribe to own progress changes
+        const unsub = base44.entities.UserProgress.subscribe((event) => {
+          if (event?.data?.id === ref.current?.id) {
+            set({ ...ref.current, ...event.data });
+          }
+        });
+        unsubRef.current = unsub;
         // Daily login bonus
         const today = new Date().toDateString();
         if (p.stats?.last_login_date !== today) {
@@ -259,6 +272,13 @@ export function ProgressionProvider({ children }) {
       if (mounted) setLoading(false);
     })();
     return () => { mounted = false; };
+  }, []);
+
+  // Cleanup subscription on unmount
+  useEffect(() => {
+    return () => {
+      if (unsubRef.current) unsubRef.current();
+    };
   }, []);
 
   const rank = progress ? getRank(progress.level) : null;

@@ -5,6 +5,10 @@
     "user_email": {
       "type": "string"
     },
+    "pseudo": {
+      "type": "string",
+      "description": "Pseudo du joueur pour affichage leaderboard"
+    },
     "level": {
       "type": "number",
       "default": 1
