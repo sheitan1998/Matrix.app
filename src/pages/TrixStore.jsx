@@ -9,6 +9,7 @@ import { formatTrix } from "@/lib/format";
 import { useAuth } from "@/lib/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import HeaderActions from "@/components/layout/HeaderActions";
 
 const PACKS = [
   { trix: 500, priceCents: 499, price: "4,99€", bonus: 0, tag: null },
@@ -72,11 +73,14 @@ export default function TrixStore() {
   return (
     <div className="min-h-screen bg-background">
       <div className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-xl px-4 py-3">
-        <div className="max-w-6xl mx-auto flex items-center gap-3">
-          <button onClick={() => nav(-1)} className="text-muted-foreground hover:text-foreground transition">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <span className="font-black text-lg">💎 Boutique de jetons</span>
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <button onClick={() => nav(-1)} className="text-muted-foreground hover:text-foreground transition">
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <span className="font-black text-lg">💎 Boutique de jetons</span>
+          </div>
+          <HeaderActions />
         </div>
       </div>
       <div className="px-4 lg:px-6 py-10 max-w-6xl mx-auto">

@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Gem } from "lucide-react";
-import TrixWalletBar from "@/components/TrixWalletBar";
+import HeaderActions from "@/components/layout/HeaderActions";
 
 export default function ProspecteursHeader({ user, trixBalance }) {
   return (
@@ -33,11 +33,8 @@ export default function ProspecteursHeader({ user, trixBalance }) {
         </span>
       </div>
 
-      {/* Right: Trix Wallet + User profile */}
-      <div className="flex items-center gap-2">
-        <TrixWalletBar />
-
-      </div>
+      {/* Right: Trix Wallet + Messaging + Profile */}
+      <HeaderActions />
     </header>
   );
 }

@@ -63,6 +63,32 @@ export default function PaintTool({ onClose }) {
     setHistory([]);
   }, [activeId]);
 
+  // Resize canvas on window resize
+  useEffect(() => {
+    const handleResize = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const parent = canvas.parentElement;
+      if (!parent) return;
+      const ctx = ctxRef.current;
+      // Save current image
+      const dataUrl = canvas.toDataURL();
+      canvas.width = parent.offsetWidth;
+      canvas.height = parent.offsetHeight;
+      if (ctx) {
+        ctx.fillStyle = "#0a050f";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        const img = new Image();
+        img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        img.src = dataUrl;
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const saveState = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;

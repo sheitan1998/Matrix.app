@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { Home, Check, ShoppingBag, Sparkles, Coins, X, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { formatTrix } from "@/lib/format";
-import TrixWalletBar from "@/components/TrixWalletBar";
+import HeaderActions from "@/components/layout/HeaderActions";
 import TrixIcon from "@/components/TrixIcon";
 
 const CATEGORIES = [
@@ -80,7 +80,7 @@ export default function BoutiqueMatrix() {
             </Link>
             <h1 className="text-2xl font-black text-white">Boutique Matrix</h1>
           </div>
-          <TrixWalletBar />
+          <HeaderActions />
         </header>
 
         <p className="text-sm text-white/50 mb-4">Personnalisez votre profil avec des cosmétiques exclusifs. Achetez avec vos jetons TRIX.</p>

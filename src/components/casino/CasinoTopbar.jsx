@@ -1,7 +1,7 @@
 import React from "react";
-import { Search, Bell, Settings, Users, Crown, Home } from "lucide-react";
+import { Search, Users, Home } from "lucide-react";
 import { Link } from "react-router-dom";
-import TrixWalletBar from "@/components/TrixWalletBar";
+import HeaderActions from "@/components/layout/HeaderActions";
 
 export default function CasinoTopbar({ balance, onVipClub, onSettings, playersOnline }) {
   const online = playersOnline || 18432;
@@ -56,33 +56,7 @@ export default function CasinoTopbar({ balance, onVipClub, onSettings, playersOn
         <span className="text-[10px] font-bold" style={{ color: "#fbbf24" }}>MC</span>
       </div>
 
-      <TrixWalletBar />
-
-      <button
-        onClick={onVipClub}
-        className="h-9 px-3 rounded-xl flex items-center gap-1.5 text-xs font-bold shrink-0"
-        style={{
-          background: "linear-gradient(135deg, #fbbf24, #f59e0b)",
-          color: "#1a1505",
-          boxShadow: "0 0 15px rgba(251,191,36,0.3)",
-        }}
-      >
-        <Crown className="w-3.5 h-3.5" />
-        <span className="hidden sm:inline">VIP Club</span>
-      </button>
-
-      <button className="relative w-9 h-9 rounded-xl flex items-center justify-center text-white/50 shrink-0">
-        <Bell className="w-4 h-4" />
-        <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style={{ background: "#a855f7" }} />
-      </button>
-
-
-      <button
-        onClick={onSettings}
-        className="w-9 h-9 rounded-xl flex items-center justify-center text-white/50 shrink-0"
-      >
-        <Settings className="w-4 h-4" />
-      </button>
+      <HeaderActions />
     </header>
   );
 }

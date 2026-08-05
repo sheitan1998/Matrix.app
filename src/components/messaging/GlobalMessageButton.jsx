@@ -11,6 +11,9 @@ const EXCLUDED_PREFIXES = [
   "/forgot-password", "/reset-password", "/stream", "/trending",
   "/subscriptions", "/category", "/search", "/watch", "/channel",
   "/premium", "/upload", "/profile", "/studio", "/dashboard",
+  "/outils", "/casino", "/trix-store", "/boutique-matrix",
+  "/sondages", "/prospecteurs", "/progression", "/wallet",
+  "/video-studio", "/ai", "/shorts", "/market",
 ];
 
 export default function GlobalMessageButton() {

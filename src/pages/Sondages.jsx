@@ -6,6 +6,7 @@ import { Plus, Home, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import SondageCard from "@/components/sondages/SondageCard";
 import CreateSondageModal from "@/components/sondages/CreateSondageModal";
+import HeaderActions from "@/components/layout/HeaderActions";
 
 export default function Sondages() {
   const nav = useNavigate();
@@ -206,7 +207,7 @@ export default function Sondages() {
           <button onClick={() => nav("/")} className="flex items-center gap-1">
             <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white">MATRIX</h1>
           </button>
-
+          <HeaderActions />
         </header>
 
         {/* Breadcrumb */}

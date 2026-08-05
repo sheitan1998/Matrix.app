@@ -74,6 +74,23 @@ export function NotificationProvider({ children }) {
     return unsubscribe;
   }, [isAuthenticated, user?.email]);
 
+  // Subscribe to Notification entity — real-time @everyone mentions and server notifications
+  useEffect(() => {
+    if (!isAuthenticated || !user?.email) return;
+
+    const unsubscribe = base44.entities.Notification.subscribe((event) => {
+      if (event.type !== "create") return;
+      const notif = event.data;
+      if (!notif || notif.user_email !== user.email) return;
+
+      setUnreadCount(c => c + 1);
+      setNotifications(n => [{ id: Date.now(), type: notif.type || "mention", message: notif.title || "Nouvelle notification", server_id: notif.server_id, channel_id: notif.channel_id }, ...n].slice(0, 20));
+      toast(notif.title || "Nouvelle notification", { icon: <Bell className="w-4 h-4 text-purple-400" /> });
+    });
+
+    return unsubscribe;
+  }, [isAuthenticated, user?.email]);
+
   const clearNotifications = () => {
     setUnreadCount(0);
     setNotifications([]);

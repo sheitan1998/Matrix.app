@@ -8,7 +8,7 @@ import NotepadManager from "@/components/tools/NotepadManager";
 import UnitConverterTool from "@/components/tools/UnitConverter";
 import Spreadsheet from "@/components/tools/Spreadsheet";
 import PaintTool from "@/components/tools/PaintTool";
-import TrixWalletBar from "@/components/TrixWalletBar";
+import HeaderActions from "@/components/layout/HeaderActions";
 import { Table, Palette } from "lucide-react";
 
 const TOOLS = [
@@ -42,10 +42,7 @@ export default function Outils() {
           <button onClick={() => nav("/")} className="flex items-center gap-1">
             <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white">MATRIX</h1>
           </button>
-          <div className="flex items-center gap-3">
-
-            <TrixWalletBar />
-          </div>
+          <HeaderActions />
         </header>
 
         {/* Breadcrumb */}
