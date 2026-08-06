@@ -112,7 +112,7 @@ export default function ProgressionLeaderboards() {
               </div>
               <div className="text-right shrink-0">
                 <div className="text-sm font-black" style={{ color: '#fbbf24' }}>{Number(value).toLocaleString()}</div>
-                <div className="text-[8px] text-white/30 uppercase">{lbType.id === 'level' ? 'niveau' : lbType.id === 'coins' ? 'pièces' : 'pts'}</div>
+                <div className="text-[8px] text-white/30 uppercase">{lbType.id === 'level' ? 'niveau' : lbType.id === 'coins' ? 'pièces' : lbType.id === 'trophies' ? 'trophées' : 'pts'}</div>
               </div>
             </motion.div>
           );

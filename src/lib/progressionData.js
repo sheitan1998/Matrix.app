@@ -289,6 +289,7 @@ export const SHOP_ITEMS = [
 // ============================================================
 export const LEADERBOARD_TYPES = [
   { id: 'level',       name: 'Top Niveau',      icon: '📈', field: 'level' },
+  { id: 'trophies',    name: 'Top Trophées',    icon: '🏆', field: 'stats.total_trophies' },
   { id: 'xp',          name: 'Top XP',          icon: '⚡', field: 'total_xp' },
   { id: 'coins',       name: 'Top Pièces',      icon: '🪙', field: 'coins' },
   { id: 'streamers',   name: 'Top Streamers',   icon: '📡', field: 'stats.live_stream_minutes' },

@@ -306,17 +306,21 @@ export default function ServerCard({ server, onVote, onBoost, onDelete, onEdit, 
           <Flame className="w-3 h-3" />
           {BOOST_COST}
         </button>
-        {server.discord_link && (
-          <a
-            href={server.discord_link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="h-7 w-7 rounded-md flex items-center justify-center transition tap-sm"
-            style={{ background: "rgba(88, 101, 242, 0.15)", color: "#5865F2", border: "1px solid rgba(88, 101, 242, 0.2)" }}
-          >
-            <ExternalLink className="w-3 h-3" />
-          </a>
-        )}
+        {server.discord_link && (() => {
+          const code = server.discord_link.split("/").filter(Boolean).pop()?.split("?")[0] || server.discord_link;
+          return (
+            <a
+              href={server.discord_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="h-7 px-2 rounded-md flex items-center justify-center transition tap-sm text-[9px] font-bold"
+              style={{ background: "rgba(88, 101, 242, 0.15)", color: "#5865F2", border: "1px solid rgba(88, 101, 242, 0.2)" }}
+              title={`discord.gg/${code}`}
+            >
+              {code}
+            </a>
+          );
+        })()}
       </div>
 
       {/* Messages */}

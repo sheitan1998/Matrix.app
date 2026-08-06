@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Sparkles, Plus, Hash, Volume2, Megaphone, Settings, Trash2, Search, UserPlus, Link2, MessageCircle, X } from "lucide-react";
+import { ArrowLeft, Sparkles, Plus, Hash, Volume2, Megaphone, Settings, Trash2, Search, UserPlus, Link2, MessageCircle, X, Zap } from "lucide-react";
 import HeaderActions from "@/components/layout/HeaderActions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -214,10 +214,11 @@ export default function Community() {
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-border hover:bg-secondary transition">
                 <Search className="w-3.5 h-3.5" /> Explorer
               </button>
-              <button onClick={() => setShowNitro(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-premium/40 bg-premium/10 text-premium transition hover:scale-105 tap-sm">
-                <Sparkles className="w-3.5 h-3.5" /> Nitro
-              </button>
+              <Link to="/boutique-nexus"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition hover:scale-105 tap-sm"
+                style={{ background: "rgba(168,85,247,0.15)", border: "2px solid #fff", color: "#a855f7" }}>
+                <Zap className="w-3.5 h-3.5" fill="currentColor" /> Boutique Nexus
+              </Link>
             </div>
           </>
         )}

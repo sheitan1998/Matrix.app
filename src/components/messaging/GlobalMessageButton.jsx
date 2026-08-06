@@ -7,7 +7,7 @@ import MessageOverlay from "@/components/messaging/MessageOverlay";
 import { playMessageSound } from "@/lib/messageSound";
 
 const EXCLUDED_PREFIXES = [
-  "/twitch", "/mon-profil", "/login", "/register",
+  "/twitch", "/community", "/mon-profil", "/login", "/register",
   "/forgot-password", "/reset-password", "/stream", "/trending",
   "/subscriptions", "/category", "/search", "/watch", "/channel",
   "/premium", "/upload", "/profile", "/studio", "/dashboard",
