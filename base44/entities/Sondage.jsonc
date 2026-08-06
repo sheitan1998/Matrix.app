@@ -58,8 +58,19 @@
     "description"
   ],
   "rls": {
-    "create": {},
-    "read": {},
+    "create": {
+      "$or": [
+        {
+          "data.created_by_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": null,
     "update": {
       "$or": [
         {
