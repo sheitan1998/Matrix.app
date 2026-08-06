@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Edit3, Check, X, Camera, Zap, Coins, Clapperboard, Award, Users, ShoppingBag, Lock, ChevronRight, ArrowLeft, Trophy } from "lucide-react";
+import { Edit3, Check, X, Camera, Zap, Coins, Clapperboard, Award, Users, ShoppingBag, Lock, ChevronRight, ArrowLeft, Trophy, Zap as ZapIcon } from "lucide-react";
 import { ACHIEVEMENTS as ALL_ACHIEVEMENTS } from "@/lib/achievementsData";
 import { toast } from "sonner";
 import { formatTrix } from "@/lib/format";
@@ -136,11 +136,14 @@ export default function ProfileContent({ onClose }) {
             </button>
           </div>
           <div className="flex items-center gap-2.5">
+            <button onClick={() => goTo("/boutique-nexus")} className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-xs font-bold text-white transition hover:opacity-90 tap-sm" style={{ background: "rgba(168,85,247,0.15)", border: "1.5px solid rgba(168,85,247,0.4)", boxShadow: "0 0 12px rgba(168,85,247,0.15)" }}>
+              <Zap className="w-3.5 h-3.5" fill="currentColor" /> <span className="hidden sm:inline">Boutique Nexus</span><span className="sm:hidden">Nexus</span>
+            </button>
             <button onClick={() => goTo("/boutique-matrix")} className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-xs font-bold text-white transition hover:opacity-90 tap-sm" style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)", boxShadow: "0 0 12px rgba(168,85,247,0.25)" }}>
-              <ShoppingBag className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Boutique Cosmétiques</span><span className="sm:hidden">Cosmétiques</span>
+              <ShoppingBag className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Cosmétiques</span><span className="sm:hidden">Cosmétiques</span>
             </button>
             <button onClick={() => goTo("/trix-store")} className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-xs font-bold text-white transition hover:opacity-90 tap-sm" style={{ background: "linear-gradient(135deg, #fbbf24, #f59e0b)", boxShadow: "0 0 12px rgba(251,191,36,0.25)" }}>
-              <TrixIcon size={16} /> <span className="hidden sm:inline">Boutique Trix</span><span className="sm:hidden">Trix</span>
+              <TrixIcon size={16} /> <span className="hidden sm:inline">Trix</span><span className="sm:hidden">Trix</span>
             </button>
           </div>
         </header>

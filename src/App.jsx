@@ -48,6 +48,7 @@ import Outils from '@/pages/Outils';
 import Sondages from '@/pages/Sondages';
 import MonProfil from '@/pages/MonProfil';
 import BoutiqueMatrix from '@/pages/BoutiqueMatrix';
+import BoutiqueNexus from '@/pages/BoutiqueNexus';
 import Privacy from '@/pages/Privacy';
 import GlobalProfileButton from '@/components/profile/GlobalProfileButton';
 import GlobalMessageButton from '@/components/messaging/GlobalMessageButton';
@@ -117,6 +118,7 @@ const AuthenticatedApp = () => {
         <Route path="/sondages" element={<Sondages />} />
         <Route path="/mon-profil" element={<MonProfil />} />
         <Route path="/boutique-matrix" element={<BoutiqueMatrix />} />
+        <Route path="/boutique-nexus" element={<BoutiqueNexus />} />
         <Route element={<TwitchLayout />}>
           <Route path="/twitch" element={<TwitchHome />} />
           <Route path="/twitch/search" element={<TwitchSearch />} />

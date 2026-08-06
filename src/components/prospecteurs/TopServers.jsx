@@ -2,24 +2,31 @@ import React from "react";
 import { Trophy, Plus } from "lucide-react";
 import ServerCard from "./ServerCard";
 
-export default function TopServers({ servers, loading, onCreateClick, onVote, onBoost, onDelete, onEdit, currentUser, trixBalance }) {
+export default function TopServers({ servers, loading, onCreateClick, onVote, onBoost, onDelete, onEdit, currentUser, trixBalance, type = "all" }) {
+  // Filter by type: discord servers have discord_link, nexus servers don't
+  const filtered = type === "all" ? servers : servers.filter(s =>
+    type === "discord" ? !!s.discord_link : !s.discord_link
+  );
   // Sort by combined score (votes + boosts) descending, take top 10
-  const top10 = [...servers]
+  const top10 = [...filtered]
     .sort((a, b) => (b.votes + b.boosts) - (a.votes + a.boosts))
     .slice(0, 10);
+
+  const title = type === "discord" ? "Top 10 Serveurs Discord" : type === "nexus" ? "Top 10 Serveurs Nexus" : "Top 10 Serveurs";
+  const accentColor = type === "discord" ? "#5865F2" : "#22c55e";
 
   return (
     <div
       className="rounded-2xl p-4 sm:p-5"
       style={{
         background: "rgba(18, 9, 28, 0.6)",
-        border: "1px solid rgba(138, 79, 255, 0.25)",
+        border: `1px solid ${accentColor}40`,
       }}
     >
       <div className="flex items-center gap-2 mb-4">
-        <Trophy className="w-4 h-4" style={{ color: "#8a4fff" }} />
+        <Trophy className="w-4 h-4" style={{ color: accentColor }} />
         <h2 className="text-xs font-black tracking-wider uppercase text-white">
-          Top 10 Serveurs
+          {title}
         </h2>
         <span className="text-[9px] text-white/40 ml-auto hidden sm:inline">
           Les mieux votés et boostés

@@ -67,6 +67,8 @@ export default function Prospecteurs() {
   const serverAds = sortedAds.filter((a) => !a.type || a.type === "server");
   const playerAds = sortedAds.filter((a) => a.type === "player");
   const topServers = serverAds.slice(0, 10);
+  const nexusServers = serverAds.filter(s => !s.discord_link);
+  const discordServers = serverAds.filter(s => !!s.discord_link);
 
   const handleVote = (adId, newVotes) => {
     setAds((prev) =>
@@ -168,11 +170,12 @@ export default function Prospecteurs() {
           <span className="text-xs font-bold">Retour au Hub</span>
         </Link>
 
-        {/* Upper section: two columns */}
-        <div className="grid lg:grid-cols-[1.2fr_1fr] gap-5 mb-6">
+        {/* Upper section: Top Nexus + Top Discord rankings */}
+        <div className="grid lg:grid-cols-2 gap-5 mb-6">
           <TopServers
-            servers={topServers}
+            servers={nexusServers}
             loading={loading}
+            type="nexus"
             onCreateClick={() => { setCreateType("server"); setShowCreateModal(true); }}
             onVote={handleVote}
             onBoost={handleBoost}
@@ -181,6 +184,22 @@ export default function Prospecteurs() {
             currentUser={user}
             trixBalance={trixBalance}
           />
+          <TopServers
+            servers={discordServers}
+            loading={loading}
+            type="discord"
+            onCreateClick={() => { setCreateType("server"); setShowCreateModal(true); }}
+            onVote={handleVote}
+            onBoost={handleBoost}
+            onDelete={handleDeleteAd}
+            onEdit={handleEditAd}
+            currentUser={user}
+            trixBalance={trixBalance}
+          />
+        </div>
+
+        {/* Player search section */}
+        <div className="mb-6">
           <PlayerSearch
             players={playerAds}
             loading={loading}

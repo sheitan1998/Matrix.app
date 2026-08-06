@@ -6,13 +6,13 @@ import { User } from "lucide-react";
 import ProfileContent from "@/components/profile/ProfileContent";
 
 const EXCLUDED_PREFIXES = [
-  "/twitch", "/community", "/mon-profil", "/login", "/register",
+  "/twitch", "/mon-profil", "/login", "/register",
   "/forgot-password", "/reset-password", "/stream", "/trending",
   "/subscriptions", "/category", "/search", "/watch", "/channel",
   "/premium", "/upload", "/profile", "/studio", "/dashboard",
   "/outils", "/casino", "/trix-store", "/boutique-matrix",
   "/sondages", "/prospecteurs", "/progression", "/wallet",
-  "/video-studio", "/ai", "/shorts", "/market",
+  "/video-studio", "/ai", "/shorts", "/market", "/boutique-nexus",
 ];
 
 export default function GlobalProfileButton() {
@@ -56,10 +56,10 @@ export default function GlobalProfileButton() {
 
   return (
     <>
-      {/* Fixed profile button - top right */}
+      {/* Fixed profile button - bottom left */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed top-2.5 right-2.5 z-[55] w-9 h-9 rounded-full overflow-hidden flex items-center justify-center transition hover:scale-105 active:scale-95"
+        className="fixed bottom-16 md:bottom-3 left-3 z-[55] w-11 h-11 rounded-full overflow-hidden flex items-center justify-center transition hover:scale-105 active:scale-95"
         style={{
           background: "rgba(18,9,28,0.85)",
           border: "1.5px solid rgba(168,85,247,0.4)",

@@ -7,13 +7,13 @@ import MessageOverlay from "@/components/messaging/MessageOverlay";
 import { playMessageSound } from "@/lib/messageSound";
 
 const EXCLUDED_PREFIXES = [
-  "/twitch", "/community", "/mon-profil", "/login", "/register",
+  "/twitch", "/mon-profil", "/login", "/register",
   "/forgot-password", "/reset-password", "/stream", "/trending",
   "/subscriptions", "/category", "/search", "/watch", "/channel",
   "/premium", "/upload", "/profile", "/studio", "/dashboard",
   "/outils", "/casino", "/trix-store", "/boutique-matrix",
   "/sondages", "/prospecteurs", "/progression", "/wallet",
-  "/video-studio", "/ai", "/shorts", "/market",
+  "/video-studio", "/ai", "/shorts", "/market", "/boutique-nexus",
 ];
 
 export default function GlobalMessageButton() {

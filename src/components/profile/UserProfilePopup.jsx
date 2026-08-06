@@ -5,22 +5,31 @@ import { toast } from "sonner";
 
 export default function UserProfilePopup({ userId, userEmail, open, onClose, onOpenDm }) {
   const [profile, setProfile] = useState(null);
+  const [cosmetics, setCosmetics] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [friendStatus, setFriendStatus] = useState(null);
 
   useEffect(() => {
     if (!open) return;
     setLoading(true);
+    setCosmetics([]);
     const fetchProfile = async () => {
       try {
         const ids = userId ? [userId] : [];
         if (ids.length > 0) {
           const res = await base44.functions.invoke("serverSearch", { action: "getUsersByIds", ids });
           const u = res?.data?.users?.[0];
-          if (u) setProfile(u);
-        } else if (userEmail) {
-          const res = await base44.functions.invoke("serverSearch", { action: "addFriend", email: userEmail });
-          // This won't actually add a friend since the user is just looking up
+          if (u) {
+            setProfile(u);
+            // Fetch equipped cosmetics for this user
+            if (u.email) {
+              try {
+                const userCosmetics = await base44.asServiceRole
+                  ? base44.entities.UserCosmetic.filter({ user_email: u.email, is_equipped: true }, "-created_date", 50)
+                  : [];
+                setCosmetics(userCosmetics || []);
+              } catch { setCosmetics([]); }
+            }
+          }
         }
       } catch {}
       setLoading(false);
@@ -63,8 +72,20 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
               <h3 className="text-base font-black text-white">{displayName}</h3>
               {isAdmin && <Shield className="w-3.5 h-3.5" style={{ color: "#fbbf24" }} />}
             </div>
-            {pseudo && <p className="text-[10px] text-white/40 font-mono">{pseudo}</p>}
+            {/* Pseudo without # identifier */}
+            {pseudo && <p className="text-[10px] text-white/40 font-mono">{pseudo.split("#")[0]}</p>}
           </div>
+
+          {/* Equipped cosmetics */}
+          {cosmetics.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">
+              {cosmetics.map((c) => (
+                <span key={c.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.2)", color: "#c084fc" }}>
+                  {c.icon || "✨"} {c.item_name || c.category}
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* Stats */}
           {profile && (
