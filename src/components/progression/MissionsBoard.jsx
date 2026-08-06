@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useProgression } from '@/context/ProgressionContext';
-import { Zap, Coins, CheckCircle2, Clock } from 'lucide-react';
+import { Zap, Coins, CheckCircle2, Clock, Trophy } from 'lucide-react';
 
 const PERIODS = [
   { id: 'daily',   label: 'Quotidiennes', icon: '☀️', color: '#fbbf24' },
@@ -45,11 +45,16 @@ export default function MissionsBoard() {
                         initial={{ width: 0 }} animate={{ width: `${percent}%` }} transition={{ duration: 0.6 }} />
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[9px] text-white/40 font-mono">{m.progress || 0} / {m.target}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="flex items-center gap-0.5 text-[9px]" style={{ color: '#fbbf24' }}><Zap className="w-2.5 h-2.5" />{m.xp}</span>
-                        <span className="flex items-center gap-0.5 text-[9px]" style={{ color: '#fbbf24' }}><Coins className="w-2.5 h-2.5" />{m.coins}</span>
-                      </div>
+                    <span className="text-[9px] text-white/40 font-mono">{m.progress || 0} / {m.target}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="flex items-center gap-0.5 text-[9px]" style={{ color: '#fbbf24' }}><Zap className="w-2.5 h-2.5" />{m.xp}</span>
+                      <span className="flex items-center gap-0.5 text-[9px]" style={{ color: '#fbbf24' }}><Coins className="w-2.5 h-2.5" />{m.coins}</span>
+                      {m.trophies > 0 && (
+                        <span className="flex items-center gap-0.5 text-[9px]" style={{ color: '#00F2FF' }}>
+                          {Array.from({ length: m.trophies }).map((_, ti) => <Trophy key={ti} className="w-2 h-2" fill="currentColor" />)}
+                        </span>
+                      )}
+                    </div>
                     </div>
                     {m.completed && !m.claimed && (
                       <button onClick={() => claimMission(period.id, m.id)}

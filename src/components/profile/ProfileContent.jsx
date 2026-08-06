@@ -59,6 +59,8 @@ export default function ProfileContent({ onClose }) {
     enabled: !!user?.email,
   });
 
+  const isDonator = transactions.some(t => t.type === "donation");
+
   const equippedTitle = cosmetics.find(c => c.is_equipped && (c.category === "title" || c.category === "animated_title"));
   const equippedFrame = cosmetics.find(c => c.is_equipped && (c.category === "frame" || c.category === "animated_frame"));
   const equippedBadge = cosmetics.find(c => c.is_equipped && c.category === "badge");
@@ -105,7 +107,8 @@ export default function ProfileContent({ onClose }) {
   }
 
   const ownedAchievements = (progress?.achievements || []);
-  const totalTrophies = ALL_ACHIEVEMENTS.filter(a => ownedAchievements.includes(a.id)).reduce((s, a) => s + (a.trophies || 0), 0);
+  const achievementTrophies = ALL_ACHIEVEMENTS.filter(a => ownedAchievements.includes(a.id)).reduce((s, a) => s + (a.trophies || 0), 0);
+  const totalTrophies = achievementTrophies + (progress?.stats?.total_trophies || 0);
 
   const stats = [
     { icon: Zap, label: "Niveau", value: progress?.level || 1, color: "#a855f7", link: "/progression" },
@@ -221,6 +224,11 @@ export default function ProfileContent({ onClose }) {
                   {equippedTitle && (
                     <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black" style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.2), rgba(109,40,217,0.15))", border: "1px solid rgba(168,85,247,0.3)", color: "#c084fc" }}>
                       {equippedTitle.icon || "✨"} {equippedTitle.item_name}
+                    </span>
+                  )}
+                  {isDonator && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black" style={{ background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.35)", color: "#4ade80" }}>
+                      <Trophy className="w-2.5 h-2.5" /> Donateur
                     </span>
                   )}
                   <p className="text-xs text-white/50 leading-relaxed">{user.bio || "Aucune bio. Cliquez sur le crayon pour en ajouter une."}</p>

@@ -177,7 +177,7 @@ export function ProgressionProvider({ children }) {
     xp += mission.xp || 0;
     total_xp += mission.xp || 0;
     coins += mission.coins || 0;
-    stats = { ...stats, missions_completed: (stats.missions_completed || 0) + 1 };
+    stats = { ...stats, missions_completed: (stats.missions_completed || 0) + 1, total_trophies: (stats.total_trophies || 0) + (mission.trophies || 0) };
 
     const levelUps = [];
     while (xp >= XP_FORMULA(level)) {

@@ -144,6 +144,7 @@ const AuthenticatedApp = () => {
     </AnimatedRoutes>
     <GlobalProfileButton />
     <GlobalMessageButton />
+    <BottomTabs />
     </MiniPlayerProvider>
     </NotificationProvider>
     </ProgressionProvider>

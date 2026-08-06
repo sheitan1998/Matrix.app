@@ -1,19 +1,23 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, TrendingUp, Clapperboard } from "lucide-react";
+import { Home, MessageCircle, Dices, Clapperboard, LayoutGrid } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TABS = [
   { to: "/stream", icon: Home, label: "Accueil" },
-  { to: "/trending", icon: TrendingUp, label: "Tendances" },
+  { to: "/community", icon: MessageCircle, label: "Nexus" },
+  { to: "/casino", icon: Dices, label: "Game" },
   { to: "/shorts", icon: Clapperboard, label: "Shorts" },
+  { to: "/", icon: LayoutGrid, label: "Univers" },
 ];
 
 // Per-tab last visited path memory (persists across tab switches in memory)
 const tabMemory = {
   "/stream": "/stream",
-  "/trending": "/trending",
+  "/community": "/community",
+  "/casino": "/casino",
   "/shorts": "/shorts",
+  "/": "/",
 };
 
 export function updateTabMemory(pathname) {
@@ -31,7 +35,7 @@ export default function BottomTabs() {
   const navigate = useNavigate();
 
   const activeTab = TABS.find(
-    (t) => pathname === t.to || pathname.startsWith(t.to + "/")
+    (t) => t.to === "/" ? pathname === "/" : pathname === t.to || pathname.startsWith(t.to + "/")
   );
 
   return (
