@@ -10,19 +10,19 @@ export default async function(req: Request): Promise<Response> {
     const body = await req.json().catch(() => ({}));
     const { action, ...params } = body;
 
-    // System action: monthly boost reset (no user auth required)
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+    // System action: monthly boost reset (admin only)
     if (action === 'resetBoosts') {
-      const base44 = createClientFromRequest(req);
+      if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
       await base44.asServiceRole.entities.ServerAd.updateMany(
         {},
         { $set: { boosts: 0, is_boosted: false, boost_until: null } }
       );
       return Response.json({ success: true });
     }
-
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     switch (action) {
 

@@ -1,6 +1,18 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from 'base44:runtime';
 
+// Server-side catalog of Trix packs — the client sends only a packId;
+// the backend determines the price and trix amount. This prevents price/quantity
+// falsification by the client.
+const TRIX_PACKS: Record<string, { priceCents: number; trixTotal: number; label: string }> = {
+  pack_500:   { priceCents: 499,   trixTotal: 500,   label: 'Pack 500 TRIX' },
+  pack_1400:  { priceCents: 999,   trixTotal: 1400,  label: 'Pack 1 200 TRIX' },
+  pack_3750:  { priceCents: 2499,  trixTotal: 3750,  label: 'Pack 3 000 TRIX' },
+  pack_9000:  { priceCents: 4999,  trixTotal: 9000,  label: 'Pack 7 000 TRIX' },
+  pack_20000: { priceCents: 9999,  trixTotal: 20000, label: 'Pack 15 000 TRIX' },
+  pack_55000: { priceCents: 24999, trixTotal: 55000, label: 'Pack 40 000 TRIX' },
+};
+
 export default async function(req: Request): Promise<Response> {
   try {
     const body = await req.json().catch(() => ({}));
@@ -41,6 +53,13 @@ export default async function(req: Request): Promise<Response> {
       }
 
       if (type === 'trix_purchase' && trixAmount > 0) {
+        // Validate trix_amount against the server-side catalog using pack_id
+        const packId = session.metadata?.pack_id;
+        const pack = packId ? TRIX_PACKS[packId] : null;
+        if (!pack || pack.trixTotal !== trixAmount) {
+          return Response.json({ error: 'Invalid trix amount for pack' }, { status: 400 });
+        }
+
         // Credit Trix balance via service role
         if (userId) {
           const target = await base44.asServiceRole.entities.User.get(userId);
@@ -140,24 +159,25 @@ export default async function(req: Request): Promise<Response> {
 
     // ---- Create a Trix purchase checkout session ----
     if (action === 'createTrixPurchase') {
-      const { priceCents, trixTotal, packLabel } = body;
-      if (!priceCents || !trixTotal) return Response.json({ error: 'Paramètres manquants' }, { status: 400 });
+      const { packId } = body;
+      const pack = packId ? TRIX_PACKS[packId] : null;
+      if (!pack) return Response.json({ error: 'Pack invalide' }, { status: 400 });
 
       const params = new URLSearchParams();
       params.append('payment_method_types[]', 'card');
       params.append('mode', 'payment');
       params.append('customer_email', user.email);
       params.append('line_items[0][price_data][currency]', 'eur');
-      params.append('line_items[0][price_data][product_data][name]', packLabel || 'Pack TRIX');
-      params.append('line_items[0][price_data][unit_amount]', String(priceCents));
+      params.append('line_items[0][price_data][product_data][name]', pack.label);
+      params.append('line_items[0][price_data][unit_amount]', String(pack.priceCents));
       params.append('line_items[0][quantity]', '1');
       params.append('success_url', `${origin}/trix-store?success=true&session_id={CHECKOUT_SESSION_ID}`);
       params.append('cancel_url', `${origin}/trix-store?canceled=true`);
       params.append('metadata[type]', 'trix_purchase');
       params.append('metadata[user_email]', user.email);
       params.append('metadata[user_id]', user.id);
-      params.append('metadata[trix_amount]', String(trixTotal));
-      params.append('metadata[pack_label]', packLabel || '');
+      params.append('metadata[trix_amount]', String(pack.trixTotal));
+      params.append('metadata[pack_id]', packId);
 
       const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
         method: 'POST',

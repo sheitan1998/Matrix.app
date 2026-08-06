@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { X, Coins, Crown, Zap, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { casinoAddCoins } from "@/hooks/useCasinoJackpot";
+// casinoAddCoins removed for security — purchases require verified payment flow
 
 const COIN_PACKS = [
   { id: "starter", label: "Starter", coins: 500, price: "1,99 €", bonus: "" },
@@ -30,25 +30,12 @@ export default function CasinoShop({ balance, setBalance, onClose }) {
   const [tab, setTab] = useState("coins");
   const [activePlan, setActivePlan] = useState(null);
 
-  const buyCoinPack = async (pack) => {
-    try {
-      const newBalance = await casinoAddCoins(pack.coins);
-      setBalance(newBalance);
-      toast.success(`${pack.coins.toLocaleString()} 🪙 ajoutées ! (paiement simulé)`);
-    } catch {
-      toast.error("Erreur lors de l'achat");
-    }
+  const buyCoinPack = (pack) => {
+    toast.info("Les achats de pièces seront bientôt disponibles avec un paiement sécurisé.");
   };
 
-  const subscribePlan = async (plan) => {
-    try {
-      const newBalance = await casinoAddCoins(plan.coins);
-      setBalance(newBalance);
-      setActivePlan(plan.id);
-      toast.success(`Abonnement ${plan.label} activé ! +${plan.coins.toLocaleString()} 🪙`);
-    } catch {
-      toast.error("Erreur lors de l'abonnement");
-    }
+  const subscribePlan = (plan) => {
+    toast.info("Les abonnements seront bientôt disponibles avec un paiement sécurisé.");
   };
 
   return (

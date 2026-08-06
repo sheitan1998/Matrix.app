@@ -12,12 +12,12 @@ import { ArrowLeft } from "lucide-react";
 import HeaderActions from "@/components/layout/HeaderActions";
 
 const PACKS = [
-  { trix: 500, priceCents: 499, price: "4,99€", bonus: 0, tag: null },
-  { trix: 1200, priceCents: 999, price: "9,99€", bonus: 200, tag: "Populaire" },
-  { trix: 3000, priceCents: 2499, price: "24,99€", bonus: 750, tag: null },
-  { trix: 7000, priceCents: 4999, price: "49,99€", bonus: 2000, tag: "Meilleure offre" },
-  { trix: 15000, priceCents: 9999, price: "99,99€", bonus: 5000, tag: null },
-  { trix: 40000, priceCents: 24999, price: "249,99€", bonus: 15000, tag: "Whale 🐋" },
+  { packId: "pack_500",   trix: 500, priceCents: 499, price: "4,99€", bonus: 0, tag: null },
+  { packId: "pack_1400",  trix: 1200, priceCents: 999, price: "9,99€", bonus: 200, tag: "Populaire" },
+  { packId: "pack_3750",  trix: 3000, priceCents: 2499, price: "24,99€", bonus: 750, tag: null },
+  { packId: "pack_9000",  trix: 7000, priceCents: 4999, price: "49,99€", bonus: 2000, tag: "Meilleure offre" },
+  { packId: "pack_20000", trix: 15000, priceCents: 9999, price: "99,99€", bonus: 5000, tag: null },
+  { packId: "pack_55000", trix: 40000, priceCents: 24999, price: "249,99€", bonus: 15000, tag: "Whale 🐋" },
 ];
 
 export default function TrixStore() {
@@ -51,12 +51,9 @@ export default function TrixStore() {
     if (!user) return;
     setLoading(pack.trix);
     try {
-      const total = pack.trix + pack.bonus;
       const res = await base44.functions.invoke("stripePayment", {
         action: "createTrixPurchase",
-        priceCents: pack.priceCents,
-        trixTotal: total,
-        packLabel: `Pack ${formatTrix(pack.trix)} TRIX`,
+        packId: pack.packId,
       });
       const url = res?.data?.url;
       if (!url) {

@@ -100,19 +100,6 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ balance: player.balance || 0 });
       }
 
-      // ---- Add coins (shop purchase) ----
-      case 'addCoins': {
-        const amount = Math.floor(params.amount);
-        if (!amount || amount <= 0) return Response.json({ error: 'Invalid amount' }, { status: 400 });
-        const player = await getPlayer(base44, user);
-        const newBalance = (player.balance || 0) + amount;
-        await base44.asServiceRole.entities.CasinoPlayer.update(player.id, {
-          balance: newBalance,
-          total_won: (player.total_won || 0) + amount,
-        });
-        return Response.json({ balance: newBalance });
-      }
-
       // ---- Place a bet (server-side outcome, 49% win rate) ----
       case 'placeBet': {
         const { game, bet, betType } = params;
