@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Download, X } from "lucide-react";
-import { getDeferredPrompt, isStandalone, onPWAChange } from "@/lib/pwa";
+import { getDeferredPrompt, isStandalone, onPWAChange, trackInstallation } from "@/lib/pwa";
 
 const HELP_TEXT =
   "Sur iPhone : appuyez sur Partager > Sur l'écran d'accueil. Sur PC : cliquez sur le symbole (+) dans la barre d'adresse.";
@@ -31,7 +31,10 @@ export default function PWAInstallButton({ className = "" }) {
     if (prompt) {
       prompt.prompt();
       const { outcome } = await prompt.userChoice;
-      if (outcome === "accepted") setInstalled(true);
+      if (outcome === "accepted") {
+        setInstalled(true);
+        trackInstallation();
+      }
       setDeferredPrompt(null);
     } else {
       setShowHelp(true);

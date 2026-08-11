@@ -1,0 +1,53 @@
+{
+  "name": "PWAInstallations",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID de l'utilisateur ayant installe l'app"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email de l'utilisateur"
+    },
+    "user_pseudo": {
+      "type": "string",
+      "description": "Pseudo de l'utilisateur"
+    },
+    "browser": {
+      "type": "string",
+      "description": "Navigateur detecte"
+    },
+    "os": {
+      "type": "string",
+      "description": "Systeme d'exploitation detecte"
+    },
+    "user_agent": {
+      "type": "string",
+      "description": "User-Agent complet"
+    }
+  },
+  "required": [
+    "user_email"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

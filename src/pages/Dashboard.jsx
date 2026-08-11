@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import FriendsDashboardPanel from "@/components/dashboard/FriendsDashboardPanel";
+import PWAInstallStats from "@/components/dashboard/PWAInstallStats";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -113,6 +114,9 @@ export default function Dashboard() {
 
       {/* Friends panel */}
       <FriendsDashboardPanel user={user} />
+
+      {/* Admin: PWA install stats */}
+      {user?.role === "admin" && <PWAInstallStats />}
 
       {/* Videos table */}
       <div className="rounded-2xl border border-border bg-card overflow-hidden">
