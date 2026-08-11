@@ -1,6 +1,9 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Shield, Youtube, Users, FileText, Mail } from "lucide-react";
+import { ArrowLeft, Shield, Users, FileText, Mail, Database, Cookie, Share2 } from "lucide-react";
+
+// Official YouTube icon
+const YT_ICON_RED = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/64px-YouTube_full-color_icon_%282017%29.svg.png";
 
 const SECTIONS = [
   {
@@ -15,18 +18,34 @@ const SECTIONS = [
   },
   {
     id: "youtube-api",
-    icon: Youtube,
-    title: "2. Services API YouTube",
+    icon: null, // custom YT icon
+    ytIcon: true,
+    title: "2. Services API YouTube — Données collectées et utilisées",
     content: [
       "L'intégration YouTube de MATRIX utilise la YouTube Data API v3 fournie par Google LLC. Cette intégration nous permet d'afficher des vidéos, chaînes et contenus YouTube au sein de l'application.",
-      "Aucune donnée privée issue de votre compte YouTube n'est revendue ni stockée sans votre accord explicite. Les données récupérées via l'API YouTube sont utilisées uniquement pour l'affichage et la navigation au sein de MATRIX.",
-      "L'accès aux fonctionnalités YouTube connectées (abonnements, historique, recommandations personnalisées) nécessite l'acceptation expresse des conditions d'utilisation de YouTube et de Google, ainsi que votre consentement pour le traitement des données associées.",
+      "Données YouTube accédées via l'API : titres, descriptions, miniatures, statistiques (vues, likes, nombre d'abonnés, nombre de vidéos) et métadonnées de chaînes et vidéos publiques. Ces données sont récupérées en lecture seule depuis l'API YouTube Data v3.",
+      "Données collectées auprès de l'utilisateur connecté (avec son consentement OAuth) : identifiant de chaîne YouTube, nom de la chaîne, photo de profil, statistiques agrégées de la chaîne.",
+      "Stockage et durée de conservation : les données récupérées via l'API YouTube sont utilisées uniquement pour l'affichage en temps réel dans l'application. Aucune donnée issue de l'API YouTube n'est conservée en base de données ou en cache local au-delà de 30 jours. Un nettoyage automatique des données expirées est effectué au-delà de cette période.",
+      "Utilisation des données : les données YouTube sont utilisées exclusivement pour afficher du contenu et des statistiques dans MATRIX. Elles ne sont pas revendues, partagées avec des tiers à des fins commerciales, ni utilisées à des fins de profilage publicitaire.",
+      "Partage des données : MATRIX n'envoie aucune donnée issue de l'API YouTube à des tiers autres que Google LLC (dans le cadre de l'utilisation légitime de leur API). Aucun partage commercial n'est effectué.",
+      "Aucune donnée privée issue de votre compte YouTube (messages privés, historique de navigation, informations de paiement) n'est accessible, collectée ni stockée par MATRIX.",
+    ],
+  },
+  {
+    id: "device-storage",
+    icon: Cookie,
+    title: "3. Données d'appareil, Cookies et Stockage local",
+    content: [
+      "MATRIX utilise le stockage local du navigateur (localStorage) et des cookies de session pour maintenir votre connexion, mémoriser vos préférences (thème, langue, dernière vidéo vue) et assurer le bon fonctionnement de l'application.",
+      "Les tokens d'authentification OAuth (accès YouTube) sont stockés dans le localStorage de votre navigateur afin de maintenir votre session sans reconnexion à chaque visite. Ces tokens sont limités aux scopes demandés et peuvent être révoqués à tout moment depuis votre compte Google.",
+      "Des cookies techniques strictement nécessaires sont utilisés pour la gestion de session. Aucun cookie de tracking publicitaire tiers n'est déposé par MATRIX.",
+      "Vous pouvez effacer ces données à tout moment via les paramètres de votre navigateur ou en vous déconnectant de MATRIX.",
     ],
   },
   {
     id: "minors",
     icon: Users,
-    title: "3. Protection des mineurs & Âge",
+    title: "4. Protection des mineurs & Âge",
     content: [
       "MATRIX est accessible à tous les utilisateurs pour les fonctionnalités de base de la plateforme, sans restriction d'âge.",
       "Cependant, l'accès aux fonctions nécessitant une connexion Google / YouTube ou un traitement de données personnelles est réservé aux utilisateurs ayant l'âge légal requis dans leur pays de résidence, ou disposant de l'accord parental d'un titulaire de l'autorité parentale.",
@@ -36,22 +55,22 @@ const SECTIONS = [
   {
     id: "youtube-terms",
     icon: FileText,
-    title: "4. Conditions YouTube & Google",
+    title: "5. Conditions YouTube & Google — Liens obligatoires",
     content: [
       "L'utilisation des fonctionnalités YouTube intégrées dans MATRIX est soumise aux conditions d'utilisation et aux règles de confidentialité de YouTube et de Google. Nous vous invitons à consulter ces documents :",
     ],
     links: [
       { label: "Conditions d'utilisation de YouTube", url: "https://www.youtube.com/t/terms" },
-      { label: "Règles de confidentialité de Google", url: "https://policies.google.com/privacy" },
+      { label: "Politique de confidentialité de Google", url: "http://www.google.com/policies/privacy" },
     ],
   },
   {
     id: "contact",
     icon: Mail,
-    title: "5. Contact",
+    title: "6. Contact — Droits sur vos données",
     content: [
-      "Pour toute demande, question ou préoccupation relative à vos données personnelles ou à la présente politique, vous pouvez nous contacter via le bloc de contact ci-dessous.",
-      "Nous nous engageons à répondre à vos demandes dans les meilleurs délais et à respecter vos droits d'accès, de rectification et de suppression de vos données.",
+      "Conformément au RGPD, vous disposez d'un droit d'accès, de rectification, d'effacement, de portabilité et d'opposition concernant vos données personnelles.",
+      "Pour toute demande, question ou préoccupation relative à vos données personnelles ou à la présente politique, vous pouvez nous contacter via l'adresse e-mail ci-dessous. Nous traiterons votre demande dans un délai de 30 jours.",
     ],
   },
 ];
@@ -99,11 +118,11 @@ export default function Privacy() {
               <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
                 Politique de Confidentialité
               </h1>
-              <p className="text-sm font-mono text-white/40">MATRIX</p>
+              <p className="text-sm font-mono text-white/40">MATRIX — Incluant les mentions légales YouTube API Services</p>
             </div>
           </div>
           <p className="text-xs text-white/40 font-mono">
-            Dernière mise à jour : 4 août 2026
+            Dernière mise à jour : 11 août 2026
           </p>
         </div>
 
@@ -124,9 +143,12 @@ export default function Privacy() {
                 <div className="flex items-center gap-2.5 mb-4">
                   <div
                     className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ background: "rgba(168,85,247,0.15)" }}
+                    style={{ background: section.ytIcon ? "rgba(255,0,0,0.12)" : "rgba(168,85,247,0.15)" }}
                   >
-                    <Icon className="w-4 h-4" style={{ color: "#a855f7" }} />
+                    {section.ytIcon
+                      ? <img src={YT_ICON_RED} alt="YouTube" style={{ height: 20, width: "auto" }} />
+                      : Icon && <Icon className="w-4 h-4" style={{ color: "#a855f7" }} />
+                    }
                   </div>
                   <h2 className="text-base sm:text-lg font-bold text-white">{section.title}</h2>
                 </div>
@@ -153,7 +175,7 @@ export default function Privacy() {
                             color: "#f87171",
                           }}
                         >
-                          <Youtube className="w-4 h-4 shrink-0" />
+                          <img src={YT_ICON_RED} alt="YouTube" style={{ height: 20, width: "auto" }} />
                           <span>{link.label}</span>
                           <span className="ml-auto text-white/30 text-xs">↗</span>
                         </a>
@@ -179,7 +201,7 @@ export default function Privacy() {
             <h3 className="text-base font-bold text-white">Nous contacter</h3>
           </div>
           <p className="text-sm text-white/70 leading-relaxed mb-4">
-            Pour toute question relative à la protection de vos données, vous pouvez nous écrire à l'adresse suivante. Nous traiterons votre demande dans les meilleurs délais.
+            Pour toute question relative à la protection de vos données ou à la conformité YouTube API Services, vous pouvez nous écrire à l'adresse suivante. Nous traiterons votre demande dans un délai maximum de 30 jours.
           </p>
           <a
             href="mailto:privacy@matrix.app"
@@ -189,6 +211,21 @@ export default function Privacy() {
             <Mail className="w-4 h-4" />
             privacy@matrix.app
           </a>
+        </div>
+
+        {/* YouTube compliance footer note */}
+        <div
+          className="rounded-2xl p-4 mt-4 flex items-start gap-3"
+          style={{ background: "rgba(255,0,0,0.05)", border: "1px solid rgba(255,0,0,0.15)" }}
+        >
+          <img src={YT_ICON_RED} alt="YouTube" style={{ height: 24, width: "auto", marginTop: 2 }} />
+          <p className="text-xs text-white/50 leading-relaxed">
+            MATRIX utilise les YouTube API Services conformément aux{" "}
+            <a href="https://developers.google.com/youtube/terms/api-services-terms-of-service" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/80">Conditions d'utilisation des Services API YouTube</a>.
+            En utilisant les fonctionnalités YouTube de MATRIX, vous acceptez également la{" "}
+            <a href="http://www.google.com/policies/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/80">Politique de confidentialité de Google</a> et les{" "}
+            <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/80">Conditions d'utilisation de YouTube</a>.
+          </p>
         </div>
 
         {/* Footer note */}

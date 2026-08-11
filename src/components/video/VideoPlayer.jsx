@@ -108,24 +108,26 @@ export default function VideoPlayer({ video }) {
         </div>
       )}
 
-      {/* Player controls — YouTube embeddable only */}
+      {/* Player controls — YouTube embeddable only
+          Positioned OUTSIDE the 10% safe-zone at top/bottom reserved for YouTube controls.
+          Top controls: stay within top 0–8% → top-2 (8px). Bottom controls: none over player bar. */}
       {isEmbeddable && (
-        <div className="absolute top-3 right-3 flex items-center gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute top-2 right-2 flex items-center gap-1.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
           <button
             onClick={handleMinimize}
-            className="w-9 h-9 rounded-full bg-black/70 hover:bg-black/90 flex items-center justify-center tap-sm transition"
+            className="w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center tap-sm transition"
             aria-label="Réduire en mini-lecteur"
             title="Mini-lecteur"
           >
-            <Minimize2 className="w-4 h-4 text-white" />
+            <Minimize2 className="w-3.5 h-3.5 text-white" />
           </button>
           <button
             onClick={toggleFullscreen}
-            className="w-9 h-9 rounded-full bg-black/70 hover:bg-black/90 flex items-center justify-center tap-sm transition"
+            className="w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center tap-sm transition"
             aria-label="Plein écran"
             title={isFullscreen ? "Quitter plein écran" : "Plein écran"}
           >
-            <Maximize className="w-4 h-4 text-white" />
+            <Maximize className="w-3.5 h-3.5 text-white" />
           </button>
         </div>
       )}

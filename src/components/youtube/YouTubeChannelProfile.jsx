@@ -1,8 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Youtube, LogOut, ChevronDown, Check, RefreshCw } from "lucide-react";
+import { LogOut, ChevronDown, Check, RefreshCw } from "lucide-react";
 import { useYouTubeAuth } from "@/hooks/useYouTubeAuth";
 import { formatViews } from "@/lib/format";
+
+// Official YouTube logo URLs (from YouTube brand guidelines)
+const YT_LOGO_FULL = "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/YouTube_Logo_2017.svg/320px-YouTube_Logo_2017.svg.png";
+const YT_ICON_RED  = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/64px-YouTube_full-color_icon_%282017%29.svg.png";
 
 /**
  * Top-right profile for the YouTube universe only.
@@ -36,23 +40,23 @@ export default function YouTubeChannelProfile() {
   // Still loading the OAuth config from the backend — brief skeleton
   if (clientIdLoading) {
     return (
-      <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center">
-        <Youtube className="w-4 h-4 text-muted-foreground animate-pulse" />
+      <div className="h-9 flex items-center justify-center px-2">
+        <img src={YT_ICON_RED} alt="YouTube" style={{ height: 24, width: "auto" }} className="animate-pulse opacity-60" />
       </div>
     );
   }
 
-  // Not connected — always show the connect button (even if config is loading/missing,
-  // so the user sees it; clicking surfaces the actual error inline)
+  // Not connected — show the connect button with official YouTube logo
   if (!token || !selectedChannel) {
     return (
       <div className="flex flex-col items-end gap-1">
         <button
           onClick={login}
           disabled={loading}
-          className="flex items-center gap-2 px-3 h-9 rounded-full bg-[#FF0000] hover:bg-[#FF0000]/90 text-white text-sm font-semibold transition tap-sm disabled:opacity-50"
+          className="flex items-center gap-2 px-3 h-9 rounded-full bg-[#FF0000] hover:bg-[#CC0000] text-white text-sm font-semibold transition tap-sm disabled:opacity-50"
+          style={{ minHeight: 36 }}
         >
-          <Youtube className="w-4 h-4" />
+          <img src={YT_ICON_RED} alt="YouTube" style={{ height: 20, width: "auto", filter: "brightness(0) invert(1)" }} />
           <span className="hidden sm:inline">{loading ? "…" : "Connecter YouTube"}</span>
         </button>
         {(error || !clientIdConfigured) && (
@@ -126,7 +130,7 @@ export default function YouTubeChannelProfile() {
             onClick={() => setOpen(false)}
             className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-secondary transition"
           >
-            <Youtube className="w-4 h-4 text-[#FF0000]" />
+            <img src={YT_ICON_RED} alt="YouTube" style={{ height: 20, width: "auto" }} />
             Ma chaîne
           </Link>
 
