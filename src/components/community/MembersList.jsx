@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Crown, Shield, MessageCircle } from "lucide-react";
+import UserProfilePopup from "@/components/profile/UserProfilePopup";
+import { stripPseudoTag } from "@/lib/format";
 
 const ROLE_ICONS = {
   admin: { icon: Crown, color: "#f59e0b" },
@@ -10,6 +12,7 @@ const ROLE_ICONS = {
 };
 
 export default function MembersList({ server, theme, currentUserEmail, onOpenDm }) {
+  const [profileEmail, setProfileEmail] = useState(null);
   const { data: members = [] } = useQuery({
     queryKey: ["server-members", server.id],
     queryFn: () => base44.entities.ServerMember.filter({ server_id: server.id }, "-created_date", 100),
@@ -56,26 +59,27 @@ export default function MembersList({ server, theme, currentUserEmail, onOpenDm 
                 return (
                   <div key={m.id}
                     className="flex items-center gap-2 px-1.5 py-1 rounded-lg group hover:bg-white/5 transition cursor-default"
-                    title={!isMe ? `Écrire à ${m.user_name || m.user_email}` : ""}>
-                    {/* Avatar */}
-                    <div className="relative shrink-0">
+                    title={!isMe ? `Voir le profil de ${m.user_name || m.user_email}` : ""}>
+                    {/* Avatar — clickable */}
+                    <button onClick={() => !isMe && setProfileEmail(m.user_email)}
+                      className="relative shrink-0 tap-sm" disabled={isMe}>
                       <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
                         style={{ background: isOwner ? "#f59e0b30" : accent + "30", border: `1px solid ${isOwner ? "#f59e0b" : accent}50` }}>
                         {(m.user_name || "?")[0].toUpperCase()}
                       </div>
-                      {/* Online dot (simulated) */}
                       <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border border-black"
                         style={{ background: "#44ff88" }} />
-                    </div>
+                    </button>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1">
                         {isOwner && <Crown className="w-2.5 h-2.5 shrink-0" style={{ color: "#f59e0b" }} />}
                         {!isOwner && RoleIcon && <RoleIcon className="w-2.5 h-2.5 shrink-0" style={{ color: roleInfo.color }} />}
-                        <span className="text-[10px] font-semibold text-white/80 truncate leading-none">
-                          {m.user_name || m.user_email?.split("@")[0]}
+                        <button onClick={() => !isMe && setProfileEmail(m.user_email)} disabled={isMe}
+                          className="text-[10px] font-semibold text-white/80 truncate leading-none hover:underline disabled:cursor-default">
+                          {stripPseudoTag(m.user_name) || m.user_email?.split("@")[0]}
                           {isMe && " (toi)"}
-                        </span>
+                        </button>
                       </div>
                       {customRole && (
                         <p className="text-[9px] truncate leading-none mt-0.5"
@@ -87,7 +91,7 @@ export default function MembersList({ server, theme, currentUserEmail, onOpenDm 
                     {!isMe && onOpenDm && (
                       <button
                         onClick={() => onOpenDm(m)}
-                        className="opacity-0 group-hover:opacity-100 transition text-muted-foreground hover:text-white shrink-0"
+                        className="opacity-0 group-hover:opacity-100 transition text-muted-foreground hover:text-white shrink-0 tap-sm"
                         title="Message privé">
                         <MessageCircle className="w-3 h-3" />
                       </button>
@@ -103,6 +107,15 @@ export default function MembersList({ server, theme, currentUserEmail, onOpenDm 
           <p className="text-[10px] text-muted-foreground text-center py-4">Aucun membre</p>
         )}
       </div>
+
+      {profileEmail && (
+        <UserProfilePopup
+          userEmail={profileEmail}
+          open={!!profileEmail}
+          onClose={() => setProfileEmail(null)}
+          onOpenDm={(contact) => { if (onOpenDm) onOpenDm({ user_email: contact.friend_email, user_name: contact.friend_name }); setProfileEmail(null); }}
+        />
+      )}
     </div>
   );
 }

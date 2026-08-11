@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft, ChevronLeft, ChevronRight, Info, Star, Lock,
-  MoreVertical, Coins, Gift, Globe
+  MoreVertical, Coins, Globe
 } from "lucide-react";
 
 const GAME_CARDS = [
@@ -197,26 +197,6 @@ export default function CasinoLobby({ balance, jackpot, onPlayGame, onShop, onPr
             style={{ background: "rgba(255,255,255,0.06)" }}>
             <Info className="w-3.5 h-3.5 text-white/50" />
           </button>
-        </div>
-
-        {/* Center: Special offer banner */}
-        <div className="hidden md:flex items-center gap-2">
-          <div className="relative px-4 py-1.5 rounded-lg flex items-center gap-2"
-            style={{
-              background: "linear-gradient(135deg, #FFD700 0%, #FF4500 100%)",
-              clipPath: "polygon(8% 0, 92% 0, 100% 50%, 92% 100%, 8% 100%, 0 50%)",
-              boxShadow: "0 0 15px rgba(255,215,0,0.3)",
-            }}>
-            <Gift className="w-3.5 h-3.5 text-white" />
-            <span className="text-xs font-black text-white tracking-wide">SPECIAL OFFER</span>
-          </div>
-          <button className="px-3 py-1.5 rounded-lg text-xs font-bold text-white"
-            style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)" }}>
-            MORE CHARMS
-          </button>
-          <div className="px-2 py-1 rounded-lg" style={{ background: "rgba(0,0,0,0.3)" }}>
-            <CountdownTimer />
-          </div>
         </div>
 
         {/* Right: progress + safe + menu */}

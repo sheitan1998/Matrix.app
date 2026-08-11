@@ -298,6 +298,17 @@ export default function ServerChat({ server, channel, theme, user }) {
           )}
         </div>
       )}
+
+      {/* User profile popup */}
+      {profileUser && (
+        <UserProfilePopup
+          userId={profileUser.userId}
+          userEmail={profileUser.email}
+          open={!!profileUser}
+          onClose={() => setProfileUser(null)}
+          onOpenDm={() => setProfileUser(null)}
+        />
+      )}
     </div>
   );
 }

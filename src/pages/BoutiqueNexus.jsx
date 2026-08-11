@@ -7,6 +7,7 @@ import HeaderActions from "@/components/layout/HeaderActions";
 import TrixIcon from "@/components/TrixIcon";
 import { formatTrix } from "@/lib/format";
 import { useAuth } from "@/lib/AuthContext";
+import NexusVIPShop from "@/components/nexus/NexusVIPShop";
 
 const TRIX_TO_EURO = (trix) => (trix / 100).toFixed(2).replace(".", ",") + "€";
 
@@ -106,13 +107,14 @@ export default function BoutiqueNexus() {
           <button onClick={() => nav("/")} className="flex items-center gap-1">
             <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white">MATRIX</h1>
           </button>
-          <HeaderActions />
+          <div className="flex items-center gap-2">
+            <button onClick={() => nav(-1)} className="inline-flex items-center gap-1.5 text-white/50 hover:text-white transition tap-sm px-3 py-2 rounded-full" style={{ border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}>
+              <ArrowLeft className="w-4 h-4" />
+              <span className="text-xs font-bold">Retour</span>
+            </button>
+            <HeaderActions />
+          </div>
         </header>
-
-        <button onClick={() => nav(-1)} className="inline-flex items-center gap-1.5 text-white/50 hover:text-white transition mb-5 tap-sm self-start">
-          <ArrowLeft className="w-4 h-4" />
-          <span className="text-xs font-bold">Retour</span>
-        </button>
 
         {/* Hero */}
         <div className="relative overflow-hidden rounded-3xl p-8 md:p-12" style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.15), rgba(109,40,217,0.1))", border: "1px solid rgba(168,85,247,0.2)" }}>
@@ -201,6 +203,11 @@ export default function BoutiqueNexus() {
             <p className="text-xs font-bold text-white">Aperçu du badge Flash</p>
             <p className="text-[10px] text-white/40">Éclair violet avec contour blanc, visible sur tes posts épinglés</p>
           </div>
+        </div>
+
+        {/* VIP Subscriptions */}
+        <div className="mt-10">
+          <NexusVIPShop user={user} />
         </div>
       </div>
     </div>

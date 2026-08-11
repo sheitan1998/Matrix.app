@@ -5,6 +5,7 @@ import { base44 } from "@/api/base44Client";
 import AuthModal from "@/components/landing/AuthModal";
 import ProjectSupportBlock from "@/components/progression/ProjectSupportBlock";
 import AffiliatePartners from "@/components/landing/AffiliatePartners";
+import TranslationButton from "@/components/landing/TranslationButton";
 import {
   Youtube, Radio, MessageCircle, Cpu, Dices, Search, GraduationCap,
   Wrench, BarChart3, Clapperboard, TrendingUp, ShoppingBag,
@@ -64,18 +65,21 @@ export default function Landing() {
             <p className="text-[10px] md:text-xs tracking-[0.3em] uppercase text-white/40 mt-1.5 font-mono">Choisissez votre univers</p>
           </motion.div>
 
-          {!user && (
-            <motion.button
-              initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}
-              onClick={() => setShowAuth(true)}
-              className="flex items-center gap-2 px-3 py-2 rounded-full tap-sm"
-              style={{ border: "1.5px solid rgba(168,85,247,0.4)", background: "rgba(168,85,247,0.05)" }}>
-              <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(168,85,247,0.2)" }}>
-                <User className="w-3.5 h-3.5" style={{ color: "#a855f7" }} />
-              </div>
-              <span className="text-xs font-bold text-white">Se connecter</span>
-            </motion.button>
-          )}
+          <div className="flex items-center gap-2">
+            <TranslationButton />
+            {!user && (
+              <motion.button
+                initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}
+                onClick={() => setShowAuth(true)}
+                className="flex items-center gap-2 px-3 py-2 rounded-full tap-sm"
+                style={{ border: "1.5px solid rgba(168,85,247,0.4)", background: "rgba(168,85,247,0.05)" }}>
+                <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(168,85,247,0.2)" }}>
+                  <User className="w-3.5 h-3.5" style={{ color: "#a855f7" }} />
+                </div>
+                <span className="text-xs font-bold text-white">Se connecter</span>
+              </motion.button>
+            )}
+          </div>
 
           <AuthModal open={showAuth} onClose={() => setShowAuth(false)} />
         </header>

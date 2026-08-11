@@ -17,9 +17,12 @@ const NEXUS_ITEMS: Record<string, { trixPrice: number; euroCents: number; label:
   flash_10: { trixPrice: 800, euroCents: 800, label: 'Post Flash ×10', count: 10, category: 'flash' },
 };
 
-const VIP_PLANS: Record<string, { priceCents: number; label: string }> = {
-  monthly: { priceCents: 499,  label: 'VIP Mensuel' },
-  yearly:  { priceCents: 4999, label: 'VIP Annuel' },
+const VIP_PLANS: Record<string, { priceCents: number; label: string; xpBonus: number; tokens: number; tier: string }> = {
+  vip_bronze: { priceCents: 499,  label: 'VIP Bronze', xpBonus: 10, tokens: 5000,  tier: 'bronze' },
+  vip_silver: { priceCents: 999,  label: 'VIP Silver', xpBonus: 25, tokens: 15000, tier: 'silver' },
+  vip_gold:   { priceCents: 1999, label: 'VIP Gold',   xpBonus: 50, tokens: 40000, tier: 'gold' },
+  monthly:    { priceCents: 499,  label: 'VIP Mensuel', xpBonus: 10, tokens: 5000,  tier: 'bronze' },
+  yearly:     { priceCents: 4999, label: 'VIP Annuel',  xpBonus: 25, tokens: 15000, tier: 'silver' },
 };
 
 // ---- Stripe webhook signature verification (Web Crypto API) ----
@@ -139,6 +142,8 @@ export default async function(req: Request): Promise<Response> {
           if (type === 'vip_subscription') {
             // For subscription checkout, the subscription ID is in data.subscription
             const subscriptionId = data.subscription;
+            const planId = data.metadata?.plan || 'monthly';
+            const plan = VIP_PLANS[planId] || VIP_PLANS.monthly;
             if (subscriptionId && userId) {
               const subRes = await fetch(`https://api.stripe.com/v1/subscriptions/${subscriptionId}`, {
                 headers: { Authorization: `Bearer ${stripeKey}` },
@@ -148,17 +153,37 @@ export default async function(req: Request): Promise<Response> {
                 ? new Date(sub.current_period_end * 1000).toISOString()
                 : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
-              await base44.asServiceRole.entities.User.update(userId, {
-                is_vip: true,
-                vip_until: vipUntil,
-                stripe_customer_id: data.customer || undefined,
-              });
+              // Fetch user to add tokens and XP
+              const target = await base44.asServiceRole.entities.User.get(userId);
+              if (target) {
+                const currentTokens = target.nexus_tokens || 0;
+                const newTokens = currentTokens + plan.tokens;
+                await base44.asServiceRole.entities.User.update(userId, {
+                  is_vip: true,
+                  vip_until: vipUntil,
+                  vip_tier: plan.tier,
+                  nexus_tokens: newTokens,
+                  stripe_customer_id: data.customer || undefined,
+                });
+
+                // Credit XP bonus to UserProgress
+                const progressRecords = await base44.asServiceRole.entities.UserProgress.filter({ user_email: userEmail });
+                if (progressRecords.length > 0) {
+                  const p = progressRecords[0];
+                  const newXp = (p.xp || 0) + (plan.xpBonus * 100);
+                  const newTotalXp = (p.total_xp || 0) + (plan.xpBonus * 100);
+                  await base44.asServiceRole.entities.UserProgress.update(p.id, {
+                    xp: newXp,
+                    total_xp: newTotalXp,
+                  });
+                }
+              }
             }
             await base44.asServiceRole.entities.TrixTransaction.create({
               user_email: userEmail,
               type: 'vip',
-              amount: 0,
-              description: `Abonnement VIP - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
+              amount: plan.tokens,
+              description: `Abonnement ${plan.label} - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
             });
           }
 
@@ -188,17 +213,56 @@ export default async function(req: Request): Promise<Response> {
       if ((eventType === 'customer.subscription.created' || eventType === 'customer.subscription.updated') && data) {
         const userId = data.metadata?.user_id;
         const userEmail = data.metadata?.user_email;
+        const planId = data.metadata?.plan || 'monthly';
+        const plan = VIP_PLANS[planId] || VIP_PLANS.monthly;
         if (userId) {
           const vipUntil = data.current_period_end
             ? new Date(data.current_period_end * 1000).toISOString()
             : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
-          await base44.asServiceRole.entities.User.update(userId, {
-            is_vip: data.status === 'active' || data.status === 'trialing',
-            vip_until: vipUntil,
-            stripe_customer_id: data.customer || undefined,
-          });
-          console.log('[stripePayment] VIP updated:', userId, 'status:', data.status);
+          const isActive = data.status === 'active' || data.status === 'trialing';
+
+          // Credit tokens + XP on renewal (when status transitions to active)
+          if (isActive) {
+            const target = await base44.asServiceRole.entities.User.get(userId);
+            if (target) {
+              const currentTokens = target.nexus_tokens || 0;
+              const newTokens = currentTokens + plan.tokens;
+              await base44.asServiceRole.entities.User.update(userId, {
+                is_vip: true,
+                vip_until: vipUntil,
+                vip_tier: plan.tier,
+                nexus_tokens: newTokens,
+                stripe_customer_id: data.customer || undefined,
+              });
+
+              // Credit XP bonus
+              const progressRecords = await base44.asServiceRole.entities.UserProgress.filter({ user_email: userEmail });
+              if (progressRecords.length > 0) {
+                const p = progressRecords[0];
+                const newXp = (p.xp || 0) + (plan.xpBonus * 100);
+                const newTotalXp = (p.total_xp || 0) + (plan.xpBonus * 100);
+                await base44.asServiceRole.entities.UserProgress.update(p.id, {
+                  xp: newXp,
+                  total_xp: newTotalXp,
+                });
+              }
+
+              await base44.asServiceRole.entities.TrixTransaction.create({
+                user_email: userEmail,
+                type: 'vip_renewal',
+                amount: plan.tokens,
+                description: `Renouvellement ${plan.label} - ${plan.tokens} jetons + ${plan.xpBonus}% XP bonus`,
+              });
+            }
+          } else {
+            await base44.asServiceRole.entities.User.update(userId, {
+              is_vip: isActive,
+              vip_until: vipUntil,
+              stripe_customer_id: data.customer || undefined,
+            });
+          }
+          console.log('[stripePayment] VIP updated:', userId, 'status:', data.status, 'plan:', planId);
         }
         return Response.json({ received: true });
       }
@@ -376,6 +440,8 @@ export default async function(req: Request): Promise<Response> {
 
       if (type === 'vip_subscription') {
         const subscriptionId = session.subscription;
+        const planId = session.metadata?.plan || 'monthly';
+        const plan = VIP_PLANS[planId] || VIP_PLANS.monthly;
         let vipUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
         if (subscriptionId) {
           const subRes = await fetch(`https://api.stripe.com/v1/subscriptions/${subscriptionId}`, {
@@ -387,19 +453,38 @@ export default async function(req: Request): Promise<Response> {
           }
         }
         if (userId) {
-          await base44.asServiceRole.entities.User.update(userId, {
-            is_vip: true,
-            vip_until: vipUntil,
-            stripe_customer_id: session.customer || undefined,
-          });
+          const target = await base44.asServiceRole.entities.User.get(userId);
+          if (target) {
+            const currentTokens = target.nexus_tokens || 0;
+            const newTokens = currentTokens + plan.tokens;
+            await base44.asServiceRole.entities.User.update(userId, {
+              is_vip: true,
+              vip_until: vipUntil,
+              vip_tier: plan.tier,
+              nexus_tokens: newTokens,
+              stripe_customer_id: session.customer || undefined,
+            });
+
+            // Credit XP bonus
+            const progressRecords = await base44.asServiceRole.entities.UserProgress.filter({ user_email: userEmail });
+            if (progressRecords.length > 0) {
+              const p = progressRecords[0];
+              const newXp = (p.xp || 0) + (plan.xpBonus * 100);
+              const newTotalXp = (p.total_xp || 0) + (plan.xpBonus * 100);
+              await base44.asServiceRole.entities.UserProgress.update(p.id, {
+                xp: newXp,
+                total_xp: newTotalXp,
+              });
+            }
+          }
         }
         await base44.asServiceRole.entities.TrixTransaction.create({
           user_email: userEmail,
           type: 'vip',
-          amount: 0,
-          description: `Abonnement VIP - ${(session.amount_total / 100).toFixed(2)}€ (session ${session.id})`,
+          amount: plan.tokens,
+          description: `Abonnement ${plan.label} - ${(session.amount_total / 100).toFixed(2)}€ (session ${session.id})`,
         });
-        return Response.json({ success: true, type, vipUntil });
+        return Response.json({ success: true, type, vipUntil, tokens: plan.tokens });
       }
 
       if (type === 'nitro_subscription') {
@@ -551,10 +636,10 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ url: session.url, sessionId: session.id });
     }
 
-    // ---- createVIPSubscription (NEW) ----
+    // ---- createVIPSubscription ----
     if (action === 'createVIPSubscription') {
       const { plan } = body;
-      const selected = VIP_PLANS[plan] || VIP_PLANS.monthly;
+      const selected = VIP_PLANS[plan] || VIP_PLANS.vip_bronze;
 
       const params = new URLSearchParams();
       params.append('payment_method_types[]', 'card');
@@ -563,14 +648,14 @@ export default async function(req: Request): Promise<Response> {
       params.append('line_items[0][price_data][currency]', 'eur');
       params.append('line_items[0][price_data][product_data][name]', selected.label);
       params.append('line_items[0][price_data][unit_amount]', String(selected.priceCents));
-      params.append('line_items[0][price_data][recurring][interval]', plan === 'yearly' ? 'year' : 'month');
+      params.append('line_items[0][price_data][recurring][interval]', 'month');
       params.append('line_items[0][quantity]', '1');
-      params.append('success_url', `${origin}/trix-store?vip=success&session_id={CHECKOUT_SESSION_ID}`);
-      params.append('cancel_url', `${origin}/trix-store?payment=cancelled`);
+      params.append('success_url', `${origin}/boutique-nexus?payment=success&session_id={CHECKOUT_SESSION_ID}`);
+      params.append('cancel_url', `${origin}/boutique-nexus?payment=cancelled`);
       params.append('metadata[type]', 'vip_subscription');
       params.append('metadata[user_email]', user.email);
       params.append('metadata[user_id]', user.id);
-      params.append('metadata[plan]', plan || 'monthly');
+      params.append('metadata[plan]', plan || 'vip_bronze');
 
       const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
         method: 'POST',
