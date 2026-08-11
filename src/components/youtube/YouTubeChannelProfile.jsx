@@ -5,7 +5,7 @@ import { useYouTubeAuth } from "@/hooks/useYouTubeAuth";
 import { formatViews } from "@/lib/format";
 
 // Official YouTube icon PNG (red rectangle + white triangle — brand guidelines, proportions must not be altered)
-const YT_ICON_RED = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/7e0148d93_generated_image.png";
+const YT_ICON_RED = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/c4e71cf23_yt_icon_red_digital.png";
 
 /**
  * Top-right profile for the YouTube universe only.
@@ -55,7 +55,7 @@ export default function YouTubeChannelProfile() {
           className="flex items-center gap-2 px-3 h-9 rounded-full bg-[#FF0000] hover:bg-[#CC0000] text-white text-sm font-semibold transition tap-sm disabled:opacity-50"
           style={{ minHeight: 36 }}
         >
-          <img src={YT_ICON_RED} alt="YouTube" style={{ height: 20, width: "auto", filter: "brightness(0) invert(1)" }} />
+          <img src={YT_ICON_RED} alt="YouTube" style={{ height: 20, width: "auto" }} />
           <span className="hidden sm:inline">{loading ? "…" : "Connecter YouTube"}</span>
         </button>
         {(error || !clientIdConfigured) && (
