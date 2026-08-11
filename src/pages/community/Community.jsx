@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Sparkles, Plus, Hash, Volume2, Megaphone, Settings, Trash2, Search, UserPlus, Link2, MessageCircle, X, Zap } from "lucide-react";
+import { ArrowLeft, Sparkles, Plus, Hash, Volume2, Megaphone, Settings, Trash2, Search, UserPlus, Link2, MessageCircle, X, Zap, ArrowRight } from "lucide-react";
 import HeaderActions from "@/components/layout/HeaderActions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -11,11 +11,14 @@ import ServerSettings from "@/components/community/ServerSettings";
 import MembersList from "@/components/community/MembersList";
 import ServerSearch from "@/components/community/ServerSearch";
 import NitroModal from "@/components/community/NitroModal";
+import UserProfilePopup from "@/components/profile/UserProfilePopup";
+import ProfileContent from "@/components/profile/ProfileContent";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { VISUAL_THEMES, getTheme } from "@/lib/visualThemes";
 import { useProgression } from "@/context/ProgressionContext";
 import { getRank } from "@/lib/progressionData";
+import { stripPseudoTag } from "@/lib/format";
 import { Gamepad2, Cpu, Music, Palette, Film, Newspaper } from "lucide-react";
 
 const CATEGORIES = [
@@ -51,6 +54,9 @@ export default function Community() {
   const [uploadingIcon, setUploadingIcon] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [showNitro, setShowNitro] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [joinConfirmServer, setJoinConfirmServer] = useState(null);
+  const [joinedServerIds, setJoinedServerIds] = useState(new Set());
   const [searchParams] = useSearchParams();
   const qc = useQueryClient();
   const { progress } = useProgression();
@@ -76,6 +82,19 @@ export default function Community() {
     queryKey: ["servers"],
     queryFn: () => base44.entities.Server.list("-created_date", 50),
   });
+
+  // Fetch joined server IDs
+  useEffect(() => {
+    if (!user?.email) return;
+    base44.entities.ServerMember.filter({ user_email: user.email }, "-created_date", 200)
+      .then(members => {
+        setJoinedServerIds(new Set(members.map(m => m.server_id)));
+      })
+      .catch(() => {});
+  }, [user]);
+
+  const myServers = servers.filter((s) => s.owner_email === user?.email || joinedServerIds.has(s.id));
+  const publicServers = servers.filter((s) => s.is_public && s.owner_email !== user?.email && !joinedServerIds.has(s.id));
 
   const isOwner = selectedServer?.owner_email === user?.email;
   const theme = getTheme(selectedServer?.visual_theme || "default");
@@ -164,9 +183,35 @@ export default function Community() {
   };
 
   const selectServer = (s) => {
+    // If it's not the user's server and they haven't joined, show join confirmation
+    if (s.owner_email !== user?.email && !joinedServerIds.has(s.id)) {
+      setJoinConfirmServer(s);
+      return;
+    }
     setSelectedServer(s);
     setActiveChannel(null);
     setShowSettings(false);
+  };
+
+  const confirmJoinServer = async () => {
+    if (!joinConfirmServer || !user) return;
+    try {
+      await base44.entities.ServerMember.create({
+        server_id: joinConfirmServer.id,
+        user_email: user.email,
+        user_name: user.full_name || user.email.split("@")[0],
+        role: "member",
+      });
+      await base44.entities.Server.update(joinConfirmServer.id, { members_count: (joinConfirmServer.members_count || 1) + 1 });
+      setJoinedServerIds(prev => new Set([...prev, joinConfirmServer.id]));
+      setSelectedServer(joinConfirmServer);
+      setActiveChannel(null);
+      setShowSettings(false);
+      toast.success(`Rejoint "${joinConfirmServer.name}" !`);
+    } catch {
+      toast.error("Erreur lors de la rejointe du serveur");
+    }
+    setJoinConfirmServer(null);
   };
 
   return (
@@ -261,7 +306,7 @@ export default function Community() {
                 <Plus className="w-4 h-4" /> Créer un serveur
               </button>
             </div>
-            {servers.map((s) => {
+            {myServers.map((s) => {
               const t = getTheme(s.visual_theme || "default");
               return (
                 <button key={s.id} onClick={() => selectServer(s)}
@@ -292,15 +337,17 @@ export default function Community() {
               ))}
             </div>
 
-            {/* User widget with XP */}
+            {/* User widget with XP — clickable to open profile */}
             {user && progress && rank && (
-              <div className="mx-2 mt-3 p-3 rounded-2xl" style={{ background: "rgba(18,18,21,0.8)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <button onClick={() => setShowProfile(true)}
+                className="mx-2 mt-3 p-3 rounded-2xl w-[calc(100%-1rem)] text-left transition hover:opacity-80"
+                style={{ background: "rgba(18,18,21,0.8)", border: "1px solid rgba(255,255,255,0.06)" }}>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-9 h-9 rounded-full overflow-hidden shrink-0" style={{ border: `1.5px solid ${rank.color}40` }}>
                     {user.avatar_url ? <img src={user.avatar_url} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full flex items-center justify-center text-xs font-bold bg-secondary">{user.full_name?.[0] || "U"}</div>}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-white truncate">{user.full_name || user.email?.split("@")[0]}</p>
+                    <p className="text-xs font-bold text-white truncate">{stripPseudoTag(user.full_name) || user.email?.split("@")[0]}</p>
                     <p className="text-[10px]" style={{ color: rank.color }}>{rank.icon} Niv. {progress.level}</p>
                   </div>
                 </div>
@@ -308,7 +355,7 @@ export default function Community() {
                   <div className="h-full rounded-full" style={{ width: `${Math.min(100, (progress.xp / (100 * Math.pow(progress.level, 1.4))) * 100)}%`, background: "linear-gradient(90deg, #a855f7, #6d28d9)" }} />
                 </div>
                 <p className="text-[9px] text-white/30 mt-1 font-mono">{progress.xp.toLocaleString()} XP</p>
-              </div>
+              </button>
             )}
           </div>
         )}
@@ -450,8 +497,8 @@ export default function Community() {
           )}
         </div>
 
-        {/* Members list — right panel */}
-        {selectedServer && selectedServer.id !== "__feed__" && activeChannel && (
+        {/* Members list — right panel (always visible when server selected) */}
+        {selectedServer && selectedServer.id !== "__feed__" && (
           <MembersList server={selectedServer} theme={theme} currentUserEmail={user?.email} />
         )}
       </div>
@@ -461,6 +508,42 @@ export default function Community() {
       )}
 
       {showNitro && <NitroModal open={showNitro} onClose={() => setShowNitro(false)} />}
+
+      {/* Profile overlay */}
+      {showProfile && (
+        <div className="fixed inset-0 z-[90] overflow-y-auto" style={{ background: "#0a050f" }}>
+          <ProfileContent onClose={() => setShowProfile(false)} />
+        </div>
+      )}
+
+      {/* Join server confirmation */}
+      {joinConfirmServer && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.8)", backdropFilter: "blur(8px)" }} onClick={() => setJoinConfirmServer(null)}>
+          <div className="w-full max-w-sm rounded-3xl overflow-hidden" style={{ background: "#13101a", border: "1px solid rgba(168,85,247,0.2)" }} onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 rounded-2xl overflow-hidden mx-auto mb-3" style={{ border: "1px solid rgba(255,255,255,0.1)" }}>
+                {joinConfirmServer.icon_url
+                  ? <img src={joinConfirmServer.icon_url} className="w-full h-full object-cover" alt="" />
+                  : <div className="w-full h-full flex items-center justify-center text-3xl" style={{ background: "rgba(168,85,247,0.15)" }}>{joinConfirmServer.icon_emoji || "🏠"}</div>}
+              </div>
+              <h3 className="text-lg font-black text-white">{joinConfirmServer.name}</h3>
+              {joinConfirmServer.description && <p className="text-xs text-white/50 mt-1">{joinConfirmServer.description}</p>}
+              <p className="text-sm text-white/70 mt-4">Veux-tu rejoindre ce serveur ?</p>
+              <div className="flex gap-2 mt-5">
+                <button onClick={() => setJoinConfirmServer(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-white/10 text-sm font-bold text-muted-foreground hover:text-white transition">
+                  Annuler
+                </button>
+                <button onClick={confirmJoinServer}
+                  className="flex-1 py-2.5 rounded-xl font-bold text-sm text-white transition hover:opacity-90"
+                  style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
+                  Rejoindre
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showSearch && (
         <div className="fixed inset-0 z-50">

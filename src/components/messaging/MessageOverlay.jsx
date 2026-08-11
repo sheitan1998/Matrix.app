@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Send, Search, X, Mail } from "lucide-react";
+import { ArrowLeft, Send, Search, X, Mail, User } from "lucide-react";
 import { toast } from "sonner";
 import { playMessageSound } from "@/lib/messageSound";
 import { isUserOnline } from "@/hooks/usePresence";
+import { stripPseudoTag } from "@/lib/format";
+import UserProfilePopup from "@/components/profile/UserProfilePopup";
 
 export default function MessageOverlay({ user, preselectedEmail, onClose, onMessagesRead }) {
   const [contacts, setContacts] = useState([]);
@@ -13,6 +15,7 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
   const [input, setInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [profileUserId, setProfileUserId] = useState(null);
   const messagesEndRef = useRef(null);
 
   // Fetch contacts (accepted friends)
@@ -52,8 +55,9 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
     const fresh = contact?.friend_user_id ? freshUsers[contact.friend_user_id] : null;
     return {
       email: fresh?.email || "",
-      name: fresh?.full_name || "Utilisateur",
-      pseudo: fresh?.pseudo || "",
+      name: stripPseudoTag(fresh?.full_name) || "Utilisateur",
+      pseudo: stripPseudoTag(fresh?.pseudo) || "",
+      rawUserId: contact?.friend_user_id || fresh?.id || "",
       avatar: fresh?.avatar_url || "",
       online: isUserOnline(fresh?.last_seen),
     };
@@ -221,6 +225,14 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
                       <p className="text-sm font-bold text-white truncate">{info.name}</p>
                       <p className="text-[10px] text-white/40 truncate">{info.pseudo || info.email}</p>
                     </div>
+                    {info.rawUserId && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setProfileUserId(info.rawUserId); }}
+                        className="opacity-0 group-hover:opacity-100 transition text-muted-foreground hover:text-white shrink-0"
+                        title="Voir le profil">
+                        <User className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </button>
                 );
               })
@@ -260,8 +272,12 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
                   }}
                 />
               </div>
-              <div className="min-w-0">
-                <p className="text-sm font-bold text-white truncate">{resolveContact(selectedContact).name}</p>
+              <div className="min-w-0 flex-1">
+                <button
+                  onClick={() => resolveContact(selectedContact).rawUserId && setProfileUserId(resolveContact(selectedContact).rawUserId)}
+                  className="text-sm font-bold text-white truncate hover:underline text-left block">
+                  {resolveContact(selectedContact).name}
+                </button>
                 <p className="text-[10px] truncate" style={{ color: resolveContact(selectedContact).online ? "#22C55E" : "rgba(255,255,255,0.3)" }}>
                   {resolveContact(selectedContact).online ? "En ligne" : "Hors ligne"}
                 </p>
@@ -341,6 +357,19 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
           </div>
         )}
       </div>
+
+      {profileUserId && (
+        <UserProfilePopup
+          userId={profileUserId}
+          open={!!profileUserId}
+          onClose={() => setProfileUserId(null)}
+          onOpenDm={(contact) => {
+            const friend = contacts.find(c => c.friend_user_id === profileUserId);
+            if (friend) setSelectedContact(friend);
+            setProfileUserId(null);
+          }}
+        />
+      )}
     </div>
   );
 }

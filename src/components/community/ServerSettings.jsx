@@ -92,6 +92,10 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
     return code;
   };
 
+  const INVITE_BASE_URL = "https://matrix.app/nexus/invite/";
+
+  const buildInviteUrl = (code) => code ? `${INVITE_BASE_URL}${code}` : "";
+
   const handleSaveInvite = async () => {
     const code = inviteInput.trim() || generateInviteCode();
     await onUpdate({ invite_code: code, invite_expires_at: null });
@@ -105,6 +109,13 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
     await onUpdate({ invite_code: code, invite_expires_at: null });
     setInviteInput(code);
     toast.success("Nouveau lien d'invitation généré");
+  };
+
+  const handleNeverExpire = async () => {
+    const code = server.invite_code || generateInviteCode();
+    await onUpdate({ invite_code: code, invite_expires_at: null });
+    setInviteInput(code);
+    toast.success("Lien permanent — n'expire jamais");
   };
 
   const handleTempInvite = async () => {
@@ -151,21 +162,23 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Lien d'invitation</p>
 
-              {/* Current invite code display / edit */}
+              {/* Current invite URL display / edit */}
               {!editingInvite ? (
-                <div className="flex items-center gap-2 p-3 rounded-xl border font-mono text-sm text-white" style={{ borderColor: theme?.border }}>
-                  <span className="flex-1 truncate">{server.invite_code || "—"}</span>
-                  {server.invite_expires_at && (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-400 flex items-center gap-0.5">
+                <div className="flex items-center gap-2 p-3 rounded-xl border font-mono text-xs text-white" style={{ borderColor: theme?.border }}>
+                  <span className="flex-1 truncate">{server.invite_code ? buildInviteUrl(server.invite_code) : "—"}</span>
+                  {server.invite_expires_at ? (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-400 flex items-center gap-0.5 shrink-0">
                       <Clock className="w-2.5 h-2.5" /> Expire
                     </span>
-                  )}
+                  ) : server.invite_code ? (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 shrink-0">∞ Permanent</span>
+                  ) : null}
                   {server.invite_code && (
-                    <button onClick={() => copyInvite(server.invite_code)} className="text-muted-foreground hover:text-white">
+                    <button onClick={() => copyInvite(buildInviteUrl(server.invite_code))} className="text-muted-foreground hover:text-white shrink-0">
                       <Copy className="w-4 h-4" />
                     </button>
                   )}
-                  <button onClick={() => { setEditingInvite(true); setInviteInput(server.invite_code || ""); }} className="text-muted-foreground hover:text-white">
+                  <button onClick={() => { setEditingInvite(true); setInviteInput(server.invite_code || ""); }} className="text-muted-foreground hover:text-white shrink-0">
                     <Edit3 className="w-4 h-4" />
                   </button>
                 </div>
@@ -180,7 +193,7 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
                       style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}
                     />
                     <Button size="sm" onClick={handleSaveInvite} style={{ background: accent }}>
-                      <Copy className="w-3.5 h-3.5 mr-1" /> OK
+                      OK
                     </Button>
                     <button onClick={() => { setEditingInvite(false); setInviteInput(server.invite_code || ""); }} className="text-xs text-muted-foreground hover:text-white px-2">
                       Annuler
@@ -195,6 +208,11 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
                   className="flex items-center justify-center gap-1.5 h-9 rounded-xl text-xs font-bold transition"
                   style={{ background: accent + "15", color: accent, border: `1px solid ${accent}30` }}>
                   <RefreshCw className="w-3.5 h-3.5" /> Régénérer
+                </button>
+                <button onClick={handleNeverExpire}
+                  className="flex items-center justify-center gap-1.5 h-9 rounded-xl text-xs font-bold transition"
+                  style={{ background: "rgba(34,197,94,0.1)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.3)" }}>
+                  <Clock className="w-3.5 h-3.5" /> N'expire jamais
                 </button>
               </div>
 

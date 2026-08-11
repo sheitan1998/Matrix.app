@@ -23,3 +23,8 @@ export function formatTrix(n) {
   if (!n) return "0";
   return n.toLocaleString("fr-FR");
 }
+
+export function stripPseudoTag(name) {
+  if (!name) return "";
+  return String(name).replace(/#\d+$/, "").trim();
+}

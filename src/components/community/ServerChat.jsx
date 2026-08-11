@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { NitroAvatar } from "@/components/NitroAvatarPicker";
 import { useProgression } from "@/context/ProgressionContext";
+import UserProfilePopup from "@/components/profile/UserProfilePopup";
 
 export default function ServerChat({ server, channel, theme, user }) {
   const [input, setInput] = useState("");
@@ -14,6 +15,7 @@ export default function ServerChat({ server, channel, theme, user }) {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [contextMenu, setContextMenu] = useState(null);
   const [editingMsg, setEditingMsg] = useState(null); // { id, content }
+  const [profileUser, setProfileUser] = useState(null); // { userId, email }
   const fileInputRef = useRef(null);
   const bottomRef = useRef(null);
   const qc = useQueryClient();
@@ -201,7 +203,11 @@ export default function ServerChat({ server, channel, theme, user }) {
             <div className="flex-1 min-w-0">
               {!msg.isContinuation && (
                 <div className="flex items-baseline gap-2 mb-0.5">
-                  <span className="text-sm font-bold text-white">{msg.author_name || msg.author_email}</span>
+                  <button
+                    onClick={() => setProfileUser({ email: msg.author_email })}
+                    className="text-sm font-bold text-white hover:underline">
+                    {msg.author_name || msg.author_email}
+                  </button>
                   <span className="text-[10px] text-muted-foreground">
                     {format(new Date(msg.created_date), "HH:mm")}
                   </span>
