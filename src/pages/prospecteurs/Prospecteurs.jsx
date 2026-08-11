@@ -66,9 +66,14 @@ export default function Prospecteurs() {
 
   const serverAds = sortedAds.filter((a) => !a.type || a.type === "server");
   const playerAds = sortedAds.filter((a) => a.type === "player");
-  const topServers = serverAds.slice(0, 10);
-  const nexusServers = serverAds.filter(s => !s.discord_link);
-  const discordServers = serverAds.filter(s => !!s.discord_link);
+  const nexusServers = serverAds.filter(s => {
+    const link = (s.discord_link || "").toLowerCase();
+    return !link.includes("discord.gg") && !link.includes("discord.com") && !link.includes("discordapp.com");
+  });
+  const discordServers = serverAds.filter(s => {
+    const link = (s.discord_link || "").toLowerCase();
+    return link.includes("discord.gg") || link.includes("discord.com") || link.includes("discordapp.com");
+  });
 
   const handleVote = (adId, newVotes) => {
     setAds((prev) =>

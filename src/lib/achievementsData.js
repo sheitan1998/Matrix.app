@@ -47,6 +47,7 @@ SEEDS.forEach((seed) => {
       category: seed.name,
       stat: seed.stat,
       target: val,
+      condition: { stat: seed.stat, op: '>=', val },
       trophies,
       xp,
       total: trophies + xp,

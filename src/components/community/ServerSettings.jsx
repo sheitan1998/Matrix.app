@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Upload, Trash2, Copy, Shield, Ban, MicOff, Crown, Plus, X, Hash, Volume2, Megaphone } from "lucide-react";
+import { ArrowLeft, Upload, Trash2, Copy, Shield, Ban, MicOff, Crown, Plus, X, Hash, Volume2, Megaphone, RefreshCw, Clock, Edit3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { VISUAL_THEMES } from "@/lib/visualThemes";
@@ -38,6 +38,9 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
   const [newRoleColor, setNewRoleColor] = useState("#3b82f6");
   const [customRoles, setCustomRoles] = useState(server.custom_roles || []);
   const [assigningRole, setAssigningRole] = useState(null); // member id
+  const [editingInvite, setEditingInvite] = useState(false);
+  const [inviteInput, setInviteInput] = useState(server.invite_code || "");
+  const [tempDuration, setTempDuration] = useState("24h");
 
   const { data: members = [], refetch: refetchMembers } = useQuery({
     queryKey: ["server-members", server.id],
@@ -82,6 +85,37 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
 
   const accent = theme?.accent || "hsl(var(--primary))";
 
+  const generateInviteCode = () => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let code = "";
+    for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    return code;
+  };
+
+  const handleSaveInvite = async () => {
+    const code = inviteInput.trim() || generateInviteCode();
+    await onUpdate({ invite_code: code, invite_expires_at: null });
+    setInviteInput(code);
+    setEditingInvite(false);
+    toast.success("Lien d'invitation modifié");
+  };
+
+  const handleRegenerateInvite = async () => {
+    const code = generateInviteCode();
+    await onUpdate({ invite_code: code, invite_expires_at: null });
+    setInviteInput(code);
+    toast.success("Nouveau lien d'invitation généré");
+  };
+
+  const handleTempInvite = async () => {
+    const code = generateInviteCode();
+    const ms = { "1h": 3600000, "24h": 86400000, "7d": 604800000 }[tempDuration] || 86400000;
+    const expires = new Date(Date.now() + ms).toISOString();
+    await onUpdate({ invite_code: code, invite_expires_at: expires });
+    setInviteInput(code);
+    toast.success(`Lien temporaire créé (${tempDuration})`);
+  };
+
   return (
     <div className="absolute inset-0 z-30 overflow-hidden flex flex-col" style={{ background: theme?.bg || "hsl(var(--background))" }}>
       {/* Header */}
@@ -115,15 +149,81 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
         {tab === "general" && (
           <>
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Code d'invitation</p>
-              <div className="flex items-center gap-2 p-3 rounded-xl border font-mono text-sm text-white" style={{ borderColor: theme?.border }}>
-                <span className="flex-1">{server.invite_code || "—"}</span>
-                {server.invite_code && (
-                  <button onClick={() => copyInvite(server.invite_code)} className="text-muted-foreground hover:text-white">
-                    <Copy className="w-4 h-4" />
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Lien d'invitation</p>
+
+              {/* Current invite code display / edit */}
+              {!editingInvite ? (
+                <div className="flex items-center gap-2 p-3 rounded-xl border font-mono text-sm text-white" style={{ borderColor: theme?.border }}>
+                  <span className="flex-1 truncate">{server.invite_code || "—"}</span>
+                  {server.invite_expires_at && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-400 flex items-center gap-0.5">
+                      <Clock className="w-2.5 h-2.5" /> Expire
+                    </span>
+                  )}
+                  {server.invite_code && (
+                    <button onClick={() => copyInvite(server.invite_code)} className="text-muted-foreground hover:text-white">
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  )}
+                  <button onClick={() => { setEditingInvite(true); setInviteInput(server.invite_code || ""); }} className="text-muted-foreground hover:text-white">
+                    <Edit3 className="w-4 h-4" />
                   </button>
-                )}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={inviteInput}
+                      onChange={(e) => setInviteInput(e.target.value)}
+                      placeholder="Code d'invitation..."
+                      className="flex-1 h-9 px-3 rounded-xl font-mono text-sm text-white outline-none"
+                      style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}
+                    />
+                    <Button size="sm" onClick={handleSaveInvite} style={{ background: accent }}>
+                      <Copy className="w-3.5 h-3.5 mr-1" /> OK
+                    </Button>
+                    <button onClick={() => { setEditingInvite(false); setInviteInput(server.invite_code || ""); }} className="text-xs text-muted-foreground hover:text-white px-2">
+                      Annuler
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Quick actions */}
+              <div className="grid grid-cols-2 gap-2 mt-3">
+                <button onClick={handleRegenerateInvite}
+                  className="flex items-center justify-center gap-1.5 h-9 rounded-xl text-xs font-bold transition"
+                  style={{ background: accent + "15", color: accent, border: `1px solid ${accent}30` }}>
+                  <RefreshCw className="w-3.5 h-3.5" /> Régénérer
+                </button>
               </div>
+
+              {/* Temporary link */}
+              <div className="mt-3 p-3 rounded-xl border space-y-2" style={{ borderColor: theme?.border, background: "rgba(255,255,255,0.03)" }}>
+                <p className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5" style={{ color: accent }} /> Lien temporaire
+                </p>
+                <div className="flex gap-1.5">
+                  {["1h", "24h", "7d"].map((d) => (
+                    <button key={d} onClick={() => setTempDuration(d)}
+                      className={cn("flex-1 h-7 rounded-lg text-[10px] font-bold transition",
+                        tempDuration === d ? "text-white" : "text-muted-foreground")}
+                      style={tempDuration === d ? { background: accent + "30", border: `1px solid ${accent}` } : { border: "1px solid rgba(255,255,255,0.08)" }}>
+                      {d === "1h" ? "1 heure" : d === "24h" ? "24 heures" : "7 jours"}
+                    </button>
+                  ))}
+                </div>
+                <Button size="sm" variant="outline" onClick={handleTempInvite} className="w-full text-xs">
+                  Créer un lien temporaire
+                </Button>
+              </div>
+
+              {/* Expiration info */}
+              {server.invite_expires_at && (
+                <p className="text-[10px] text-orange-400 mt-2">
+                  ⏳ Ce lien expire le {new Date(server.invite_expires_at).toLocaleString("fr-FR")}
+                </p>
+              )}
             </div>
             <Button onClick={onDelete} variant="destructive" className="w-full font-bold">
               <Trash2 className="w-4 h-4 mr-2" /> Supprimer ce serveur

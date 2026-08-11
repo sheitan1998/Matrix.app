@@ -79,6 +79,11 @@
     "invite_code": {
       "type": "string"
     },
+    "invite_expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date d'expiration du lien d'invitation (null = permanent)"
+    },
     "channels": {
       "type": "array",
       "items": {

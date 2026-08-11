@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import {
-  XP_FORMULA, XP_REWARDS, ANTI_SPAM, BADGES, ACHIEVEMENTS, LEVEL_REWARDS,
+  XP_FORMULA, XP_REWARDS, ANTI_SPAM, BADGES, LEVEL_REWARDS,
   MISSION_TEMPLATES, SHOP_ITEMS, RANKS, PRESTIGE_TIERS, checkCondition, getRank,
 } from '@/lib/progressionData';
+import { ACHIEVEMENTS } from '@/lib/achievementsData';
 import LevelUpAnimation from '@/components/progression/LevelUpAnimation';
 
 const ProgressionContext = createContext(null);

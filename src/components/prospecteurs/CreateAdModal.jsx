@@ -8,6 +8,7 @@ const CATEGORIES = ["Gaming", "RP", "Communauté", "Compétitif", "Casual", "Cr�
 
 export default function CreateAdModal({ onClose, onSubmit, initialType = "server", editAd = null }) {
   const [adType, setAdType] = useState(editAd?.type || initialType);
+  const [serverSubType, setServerSubType] = useState(editAd?.server_type || "nexus");
   const [form, setForm] = useState({
     title: editAd?.title || "",
     description: editAd?.description || "",
@@ -53,11 +54,17 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
     e.preventDefault();
     if (adType === "server") {
       if (!form.title.trim() || !form.description.trim() || !form.discord_link.trim()) return;
-      // Block Discord links — only Nexus links allowed
       const link = form.discord_link.trim().toLowerCase();
-      if (link.includes("discord.gg") || link.includes("discord.com") || link.includes("discordapp.com")) {
-        toast.error("Les liens Discord ne sont pas acceptés. Utilisez un lien de serveur Nexus.");
-        return;
+      if (serverSubType === "nexus") {
+        if (link.includes("discord.gg") || link.includes("discord.com") || link.includes("discordapp.com")) {
+          toast.error("Les liens Discord ne sont pas acceptés dans la catégorie Nexus. Utilisez un lien de serveur Nexus.");
+          return;
+        }
+      } else {
+        if (!link.includes("discord.gg") && !link.includes("discord.com") && !link.includes("discordapp.com")) {
+          toast.error("Un lien Discord est requis pour la catégorie Serveurs Discord.");
+          return;
+        }
       }
     } else {
       if (!form.title.trim() || !form.description.trim() || !form.game.trim() || !form.availability_hours.trim()) return;
@@ -66,6 +73,7 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
     const data = {
       ...form,
       type: adType,
+      server_type: adType === "server" ? serverSubType : undefined,
       profile_image: profileImage,
       cover_image: adType === "server" ? coverImage : "",
       discord_link: adType === "server" ? form.discord_link : "",
@@ -127,6 +135,31 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
               Recherche Joueur
             </button>
           </div>
+          {/* Server sub-type: Nexus vs Discord */}
+          {adType === "server" && (
+            <div className="flex gap-1 mt-2">
+              <button
+                type="button"
+                onClick={() => setServerSubType("nexus")}
+                className="flex-1 h-7 rounded-md text-[9px] font-bold tracking-wider uppercase transition tap-sm"
+                style={serverSubType === "nexus"
+                  ? { background: "rgba(0, 242, 255, 0.15)", color: "#00F2FF", border: "1px solid rgba(0, 242, 255, 0.3)" }
+                  : { color: "rgba(255,255,255,0.3)", border: "1px solid rgba(255,255,255,0.05)" }}
+              >
+                Nexus
+              </button>
+              <button
+                type="button"
+                onClick={() => setServerSubType("discord")}
+                className="flex-1 h-7 rounded-md text-[9px] font-bold tracking-wider uppercase transition tap-sm"
+                style={serverSubType === "discord"
+                  ? { background: "rgba(88, 101, 242, 0.15)", color: "#5865F2", border: "1px solid rgba(88, 101, 242, 0.3)" }
+                  : { color: "rgba(255,255,255,0.3)", border: "1px solid rgba(255,255,255,0.05)" }}
+              >
+                Discord
+              </button>
+            </div>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
@@ -362,20 +395,26 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
             </div>
           )}
 
-          {/* Nexus server link (server only - Discord links blocked) */}
+          {/* Server link (Nexus or Discord based on sub-type) */}
           {adType === "server" && (
             <div>
-              <label className={labelClass}>Lien du serveur Nexus *</label>
+              <label className={labelClass}>
+                {serverSubType === "nexus" ? "Lien du serveur Nexus *" : "Lien d'invitation Discord *"}
+              </label>
               <input
                 type="url"
                 required
                 value={form.discord_link}
                 onChange={(e) => handleChange("discord_link", e.target.value)}
-                placeholder="https://matrix.app/serveur/..."
+                placeholder={serverSubType === "nexus" ? "https://matrix.app/serveur/..." : "https://discord.gg/..."}
                 className="w-full h-10 px-3 rounded-lg text-sm text-white placeholder:text-white/30 outline-none"
                 style={inputStyle}
               />
-              <p className="text-[9px] text-white/30 mt-1">⚠️ Les liens Discord ne sont pas acceptés.</p>
+              <p className="text-[9px] text-white/30 mt-1">
+                {serverSubType === "nexus"
+                  ? "⚠️ Seuls les liens de serveurs Nexus sont acceptés."
+                  : "⚠️ Un lien Discord valide est requis."}
+              </p>
             </div>
           )}
 
