@@ -7,6 +7,12 @@ import DonationModal from './DonationModal';
 
 const RANK_COLORS = ['#a855f7', '#c084fc', '#9ca3af'];
 
+// Extract pseudo without hashtag and numbers (e.g. "Pseudo#1234" -> "Pseudo")
+function cleanPseudo(raw) {
+  if (!raw) return 'Anonyme';
+  return String(raw).split('#')[0];
+}
+
 export default function ProjectSupportBlock() {
   const nav = useNavigate();
   const [searchParams] = useSearchParams();
@@ -14,13 +20,30 @@ export default function ProjectSupportBlock() {
   const [showDonation, setShowDonation] = useState(false);
   const [verifying, setVerifying] = useState(false);
 
+  // Fetch real donation transactions from the database
   useEffect(() => {
-    // Mock data — remplacé par de vraies données quand la page de dons sera en ligne
-    setTopDonors([
-      { pseudo: 'NeoMatrix#1234', amount: 150 },
-      { pseudo: 'CyberWolf#5678', amount: 75 },
-      { pseudo: 'VoidRunner#9012', amount: 30 },
-    ]);
+    base44.entities.WalletTransaction.filter({ type: 'donation' })
+      .then((transactions) => {
+        // Aggregate by user_email, sum amounts, get latest pseudo
+        const donorMap = {};
+        (transactions || []).forEach((t) => {
+          const key = t.user_email || 'unknown';
+          if (!donorMap[key]) {
+            donorMap[key] = { amount: 0, pseudo: t.description || t.user_email?.split('@')[0] || 'Anonyme' };
+          }
+          donorMap[key].amount += Math.abs(t.amount || 0);
+          if (t.created_date > (donorMap[key].date || '')) {
+            donorMap[key].date = t.created_date;
+            if (t.description) donorMap[key].pseudo = t.description;
+          }
+        });
+        // Sort by amount descending, take top 3
+        const sorted = Object.values(donorMap)
+          .sort((a, b) => b.amount - a.amount)
+          .slice(0, 3);
+        setTopDonors(sorted);
+      })
+      .catch(() => setTopDonors([]));
   }, []);
 
   // Handle Stripe redirect: verify donation session
@@ -94,7 +117,7 @@ export default function ProjectSupportBlock() {
                   style={{ background: `${RANK_COLORS[i]}20`, color: RANK_COLORS[i] }}>
                   {i + 1}
                 </span>
-                <span className="flex-1 text-sm font-bold text-white truncate">{donor.pseudo}</span>
+                <span className="flex-1 text-sm font-bold text-white truncate">{cleanPseudo(donor.pseudo)}</span>
                 <span className="text-xs font-mono font-bold shrink-0" style={{ color: RANK_COLORS[i] }}>
                   {donor.amount}€
                 </span>

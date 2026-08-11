@@ -51,7 +51,7 @@
     },
     "is_public": {
       "type": "boolean",
-      "default": true
+      "default": false
     },
     "server_type": {
       "type": "string",

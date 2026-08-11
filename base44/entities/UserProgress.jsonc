@@ -43,6 +43,13 @@
       },
       "default": []
     },
+    "claimed_achievements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
     "unlocked_rewards": {
       "type": "array",
       "items": {

@@ -35,8 +35,7 @@ import Marketplace from '@/pages/marketplace/Marketplace';
 import MarketHome from '@/pages/marketplace/MarketHome';
 import MarketSubscription from '@/pages/marketplace/MarketSubscription';
 import ListingDetail from '@/pages/marketplace/ListingDetail';
-import AIStudio from '@/pages/AIStudio';
-import AISubscription from '@/pages/AISubscription';
+
 import Casino from '@/pages/Casino';
 import Prospecteurs from '@/pages/prospecteurs/Prospecteurs';
 import CommunitySubscription from '@/pages/community/CommunitySubscription';
@@ -105,8 +104,7 @@ const AuthenticatedApp = () => {
       <Route path="/market/browse" element={<Marketplace />} />
       <Route path="/market/subscription" element={<MarketSubscription />} />
       <Route path="/market/:id" element={<ListingDetail />} />
-      <Route path="/ai" element={<AIStudio />} />
-      <Route path="/ai/subscription" element={<AISubscription />} />
+
       <Route path="/casino" element={<Casino />} />
       <Route path="/prospecteurs" element={<Prospecteurs />} />
       <Route path="/community/subscription" element={<CommunitySubscription />} />

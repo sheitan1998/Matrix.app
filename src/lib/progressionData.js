@@ -199,14 +199,14 @@ export const PRESTIGE_TIERS = [
 // Achievements
 // ============================================================
 export const ACHIEVEMENTS = [
-  { id: 'create_100_videos',     name: 'Créer 100 vidéos',           icon: '🎬', xp: 500,  coins: 250,  condition: { stat: 'publish_video', op: '>=', val: 100 } },
-  { id: 'create_100_lives',      name: 'Créer 100 lives',            icon: '🔴', xp: 500,  coins: 250,  condition: { stat: 'create_live', op: '>=', val: 100 } },
-  { id: '1000_subscribers',      name: 'Obtenir 1000 abonnés',       icon: '📊', xp: 1000, coins: 500,  condition: { stat: 'receive_subscriber', op: '>=', val: 1000 } },
-  { id: 'watch_500h',            name: 'Regarder 500h de contenu',   icon: '👁',  xp: 750,  coins: 400,  condition: { stat: 'watch_minutes', op: '>=', val: 30000 } },
-  { id: 'create_50_servers',     name: 'Créer 50 serveurs',          icon: '🏰', xp: 1000, coins: 500,  condition: { stat: 'create_server', op: '>=', val: 50 } },
-  { id: 'use_ai_1000',           name: 'Utiliser MATRIX AI 1000×',   icon: '🤖', xp: 800,  coins: 400,  condition: { stat: 'use_ai', op: '>=', val: 1000 } },
-  { id: 'participate_100_events',name: 'Participer à 100 événements',icon: '🏆', xp: 1000, coins: 500,  condition: { stat: 'participate_event', op: '>=', val: 100 } },
-  { id: 'complete_100_missions', name: 'Compléter 100 missions',     icon: '✅', xp: 1200, coins: 600,  badge_reward: 'matrix_legend', condition: { stat: 'missions_completed', op: '>=', val: 100 } },
+  { id: 'create_100_videos',     name: 'Créer 100 vidéos',           icon: '🎬', xp: 500,  trophies: 3, condition: { stat: 'publish_video', op: '>=', val: 100 } },
+  { id: 'create_100_lives',      name: 'Créer 100 lives',            icon: '🔴', xp: 500,  trophies: 3, condition: { stat: 'create_live', op: '>=', val: 100 } },
+  { id: '1000_subscribers',      name: 'Obtenir 1000 abonnés',       icon: '📊', xp: 1000, trophies: 5, condition: { stat: 'receive_subscriber', op: '>=', val: 1000 } },
+  { id: 'watch_500h',            name: 'Regarder 500h de contenu',   icon: '👁',  xp: 750,  trophies: 4, condition: { stat: 'watch_minutes', op: '>=', val: 30000 } },
+  { id: 'create_50_servers',     name: 'Créer 50 serveurs',          icon: '🏰', xp: 1000, trophies: 5, condition: { stat: 'create_server', op: '>=', val: 50 } },
+  { id: 'use_ai_1000',           name: 'Utiliser MATRIX AI 1000×',   icon: '🤖', xp: 800,  trophies: 4, condition: { stat: 'use_ai', op: '>=', val: 1000 } },
+  { id: 'participate_100_events',name: 'Participer à 100 événements',icon: '🏆', xp: 1000, trophies: 5, condition: { stat: 'participate_event', op: '>=', val: 100 } },
+  { id: 'complete_100_missions', name: 'Compléter 100 missions',     icon: '✅', xp: 1200, trophies: 6, badge_reward: 'matrix_legend', condition: { stat: 'missions_completed', op: '>=', val: 100 } },
 ];
 
 // ============================================================
@@ -214,27 +214,27 @@ export const ACHIEVEMENTS = [
 // ============================================================
 export const MISSION_TEMPLATES = {
   daily: [
-    { id: 'd_watch_live',     name: 'Regarder un live',       action: 'watch_live',      target: 1,  xp: 50,  coins: 20,  trophies: 1 },
-    { id: 'd_comment',        name: 'Poster un commentaire',  action: 'comment',         target: 1,  xp: 30,  coins: 10,  trophies: 1 },
-    { id: 'd_use_ai',         name: 'Utiliser MATRIX AI',     action: 'use_ai',          target: 1,  xp: 40,  coins: 15,  trophies: 1 },
-    { id: 'd_publish_video',  name: 'Publier une vidéo',      action: 'publish_video',   target: 1,  xp: 100, coins: 50,  trophies: 2 },
-    { id: 'd_invite_friend',  name: 'Inviter un ami',         action: 'invite_friend',   target: 1,  xp: 200, coins: 100, trophies: 3 },
-    { id: 'd_send_message',   name: 'Envoyer 5 messages',     action: 'send_message',    target: 5,  xp: 25,  coins: 10,  trophies: 1 },
-    { id: 'd_like',           name: 'Réagir à 10 contenus',   action: 'like',            target: 10, xp: 20,  coins: 10,  trophies: 1 },
+    { id: 'd_watch_live',     name: 'Regarder un live',       action: 'watch_live',      target: 1,  xp: 50,  trophies: 1 },
+    { id: 'd_comment',        name: 'Poster un commentaire',  action: 'comment',         target: 1,  xp: 30,  trophies: 1 },
+    { id: 'd_use_ai',         name: 'Utiliser MATRIX AI',     action: 'use_ai',          target: 1,  xp: 40,  trophies: 1 },
+    { id: 'd_publish_video',  name: 'Publier une vidéo',      action: 'publish_video',   target: 1,  xp: 100, trophies: 2 },
+    { id: 'd_invite_friend',  name: 'Inviter un ami',         action: 'invite_friend',   target: 1,  xp: 200, trophies: 3 },
+    { id: 'd_send_message',   name: 'Envoyer 5 messages',     action: 'send_message',    target: 5,  xp: 25,  trophies: 1 },
+    { id: 'd_like',           name: 'Réagir à 10 contenus',   action: 'like',            target: 10, xp: 20,  trophies: 1 },
   ],
   weekly: [
-    { id: 'w_create_3',       name: 'Créer 3 contenus',       action: 'publish_video',   target: 3,  xp: 300, coins: 150, trophies: 3 },
-    { id: 'w_lives_5',        name: 'Participer à 5 lives',   action: 'watch_live',      target: 5,  xp: 250, coins: 100, trophies: 2 },
-    { id: 'w_subscribers_10', name: 'Gagner 10 abonnés',      action: 'receive_subscriber', target: 10, xp: 500, coins: 200, trophies: 4 },
-    { id: 'w_event',          name: 'Participer à un événement', action: 'participate_event', target: 1, xp: 400, coins: 200, trophies: 3 },
-    { id: 'w_ai_10',          name: 'Utiliser MATRIX AI 10×',  action: 'use_ai',         target: 10, xp: 200, coins: 100, trophies: 2 },
-    { id: 'w_comments_15',    name: 'Poster 15 commentaires',  action: 'comment',        target: 15, xp: 200, coins: 100, trophies: 2 },
+    { id: 'w_create_3',       name: 'Créer 3 contenus',       action: 'publish_video',   target: 3,  xp: 300, trophies: 3 },
+    { id: 'w_lives_5',        name: 'Participer à 5 lives',   action: 'watch_live',      target: 5,  xp: 250, trophies: 2 },
+    { id: 'w_subscribers_10', name: 'Gagner 10 abonnés',      action: 'receive_subscriber', target: 10, xp: 500, trophies: 4 },
+    { id: 'w_event',          name: 'Participer à un événement', action: 'participate_event', target: 1, xp: 400, trophies: 3 },
+    { id: 'w_ai_10',          name: 'Utiliser MATRIX AI 10×',  action: 'use_ai',         target: 10, xp: 200, trophies: 2 },
+    { id: 'w_comments_15',    name: 'Poster 15 commentaires',  action: 'comment',        target: 15, xp: 200, trophies: 2 },
   ],
   monthly: [
-    { id: 'm_create_20',      name: 'Créer 20 contenus',       action: 'publish_video',   target: 20,  xp: 2000, coins: 1000, trophies: 5 },
-    { id: 'm_help_50',        name: 'Défi communautaire (50)', action: 'help_community',  target: 50,  xp: 3000, coins: 1500, trophies: 5 },
-    { id: 'm_ai_50',          name: 'Défi IA (50 utilisations)',action: 'use_ai',         target: 50,  xp: 1500, coins: 800,  trophies: 4 },
-    { id: 'm_live_20',        name: 'Défi streaming (20 lives)',action: 'create_live',    target: 20,  xp: 2500, coins: 1200, trophies: 5 },
+    { id: 'm_create_20',      name: 'Créer 20 contenus',       action: 'publish_video',   target: 20,  xp: 2000, trophies: 5 },
+    { id: 'm_help_50',        name: 'Défi communautaire (50)', action: 'help_community',  target: 50,  xp: 3000, trophies: 5 },
+    { id: 'm_ai_50',          name: 'Défi IA (50 utilisations)',action: 'use_ai',         target: 50,  xp: 1500, trophies: 4 },
+    { id: 'm_live_20',        name: 'Défi streaming (20 lives)',action: 'create_live',    target: 20,  xp: 2500, trophies: 5 },
   ],
 };
 
@@ -291,12 +291,7 @@ export const LEADERBOARD_TYPES = [
   { id: 'level',       name: 'Top Niveau',      icon: '📈', field: 'level' },
   { id: 'trophies',    name: 'Top Trophées',    icon: '🏆', field: 'stats.total_trophies' },
   { id: 'xp',          name: 'Top XP',          icon: '⚡', field: 'total_xp' },
-  { id: 'coins',       name: 'Top Pièces',      icon: '🪙', field: 'coins' },
-  { id: 'streamers',   name: 'Top Streamers',   icon: '📡', field: 'stats.live_stream_minutes' },
-  { id: 'creators',    name: 'Top Créateurs',   icon: '🎬', field: 'stats.publish_video' },
-  { id: 'ai',          name: 'Top IA',          icon: '🤖', field: 'stats.use_ai' },
-  { id: 'community',   name: 'Top Communauté',  icon: '👥', field: 'stats.help_community' },
-  { id: 'servers',     name: 'Top Serveurs',    icon: '🏰', field: 'stats.create_server' },
+  { id: 'coins',       name: 'Top Jetons',      icon: '🪙', field: 'coins' },
 ];
 
 // ============================================================

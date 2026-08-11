@@ -24,6 +24,18 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ success: true });
     }
 
+    // System action: monthly purge of all server ads (1st of each month)
+    if (action === 'monthlyPurge') {
+      if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
+      const allAds = await base44.asServiceRole.entities.ServerAd.list('-created_date', 500);
+      for (const ad of allAds) {
+        await base44.asServiceRole.entities.AdMessage.deleteMany({ ad_id: ad.id });
+        await base44.asServiceRole.entities.ServerVote.deleteMany({ server_ad_id: ad.id });
+        await base44.asServiceRole.entities.ServerAd.delete(ad.id);
+      }
+      return Response.json({ success: true, deleted: allAds.length });
+    }
+
     switch (action) {
 
       // ---- Vote for a server (2h cooldown per user per server) ----

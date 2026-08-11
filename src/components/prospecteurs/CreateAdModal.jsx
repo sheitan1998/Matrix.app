@@ -53,6 +53,12 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
     e.preventDefault();
     if (adType === "server") {
       if (!form.title.trim() || !form.description.trim() || !form.discord_link.trim()) return;
+      // Block Discord links — only Nexus links allowed
+      const link = form.discord_link.trim().toLowerCase();
+      if (link.includes("discord.gg") || link.includes("discord.com") || link.includes("discordapp.com")) {
+        toast.error("Les liens Discord ne sont pas acceptés. Utilisez un lien de serveur Nexus.");
+        return;
+      }
     } else {
       if (!form.title.trim() || !form.description.trim() || !form.game.trim() || !form.availability_hours.trim()) return;
     }
@@ -356,19 +362,20 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
             </div>
           )}
 
-          {/* Discord link (server only - forbidden for player) */}
+          {/* Nexus server link (server only - Discord links blocked) */}
           {adType === "server" && (
             <div>
-              <label className={labelClass}>Lien du serveur Discord *</label>
+              <label className={labelClass}>Lien du serveur Nexus *</label>
               <input
                 type="url"
                 required
                 value={form.discord_link}
                 onChange={(e) => handleChange("discord_link", e.target.value)}
-                placeholder="https://discord.gg/..."
+                placeholder="https://matrix.app/serveur/..."
                 className="w-full h-10 px-3 rounded-lg text-sm text-white placeholder:text-white/30 outline-none"
                 style={inputStyle}
               />
+              <p className="text-[9px] text-white/30 mt-1">⚠️ Les liens Discord ne sont pas acceptés.</p>
             </div>
           )}
 

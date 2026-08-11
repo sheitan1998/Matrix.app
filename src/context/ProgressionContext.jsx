@@ -67,9 +67,6 @@ function applyXP(progress, xpAmount, action) {
     if (achievements.includes(a.id)) return;
     if (checkCondition(a.condition, stats)) {
       achievements.push(a.id);
-      xp += a.xp || 0;
-      total_xp += a.xp || 0;
-      coins += a.coins || 0;
       if (a.badge_reward && !badges.includes(a.badge_reward)) badges.push(a.badge_reward);
     }
   });
@@ -121,9 +118,6 @@ function applyActivity(progress, action, count = 1) {
     if (achievements.includes(a.id)) return;
     if (checkCondition(a.condition, stats)) {
       achievements.push(a.id);
-      xp += a.xp || 0;
-      total_xp += a.xp || 0;
-      coins += a.coins || 0;
       if (a.badge_reward && !badges.includes(a.badge_reward)) badges.push(a.badge_reward);
     }
   });
@@ -166,6 +160,33 @@ export function ProgressionProvider({ children }) {
     await save(data, levelUps);
   }, [save]);
 
+  const claimAchievement = useCallback(async (achievementId) => {
+    if (!ref.current) return;
+    const claimed = ref.current.claimed_achievements || [];
+    if (claimed.includes(achievementId)) return;
+    const ach = ACHIEVEMENTS.find(a => a.id === achievementId);
+    if (!ach) return;
+    const owned = ref.current.achievements || [];
+    if (!owned.includes(achievementId)) return;
+
+    const newClaimed = [...claimed, achievementId];
+    let { xp = 0, total_xp = 0, level = 1, unlocked_rewards = [], stats = {} } = ref.current;
+    xp += ach.xp || 0;
+    total_xp += ach.xp || 0;
+    const trophies = (stats.total_trophies || 0) + (ach.trophies || 0);
+    stats = { ...stats, total_trophies: trophies, achievements_claimed: (stats.achievements_claimed || 0) + 1 };
+
+    const levelUps = [];
+    while (xp >= XP_FORMULA(level)) {
+      xp -= XP_FORMULA(level);
+      level += 1;
+      levelUps.push(level);
+      const r = LEVEL_REWARDS.find(r => r.level === level);
+      if (r && !unlocked_rewards.includes(r.id)) unlocked_rewards.push(r.id);
+    }
+    await save({ claimed_achievements: newClaimed, xp, total_xp, level, unlocked_rewards, stats }, levelUps);
+  }, [save]);
+
   const claimMission = useCallback(async (period, missionId) => {
     if (!ref.current) return;
     const missions = JSON.parse(JSON.stringify(ref.current.missions || {}));
@@ -173,10 +194,9 @@ export function ProgressionProvider({ children }) {
     if (!mission || !mission.completed || mission.claimed) return;
 
     mission.claimed = true;
-    let { xp = 0, total_xp = 0, coins = 0, level = 1, unlocked_rewards = [], stats = {} } = ref.current;
+    let { xp = 0, total_xp = 0, level = 1, unlocked_rewards = [], stats = {} } = ref.current;
     xp += mission.xp || 0;
     total_xp += mission.xp || 0;
-    coins += mission.coins || 0;
     stats = { ...stats, missions_completed: (stats.missions_completed || 0) + 1, total_trophies: (stats.total_trophies || 0) + (mission.trophies || 0) };
 
     const levelUps = [];
@@ -187,13 +207,13 @@ export function ProgressionProvider({ children }) {
       const r = LEVEL_REWARDS.find(r => r.level === level);
       if (r && !unlocked_rewards.includes(r.id)) unlocked_rewards.push(r.id);
     }
-    await save({ missions, xp, total_xp, coins, level, unlocked_rewards, stats }, levelUps);
+    await save({ missions, xp, total_xp, level, unlocked_rewards, stats }, levelUps);
   }, [save]);
 
   const buyItem = useCallback(async (itemId) => {
     if (!ref.current) return;
     const item = SHOP_ITEMS.find(i => i.id === itemId);
-    if (!item || ref.current.coins < item.price) return;
+    if (!item || (ref.current.coins || 0) < item.price) return;
     const owned = ref.current.unlocked_rewards || [];
     if (owned.includes(`shop_${itemId}`)) return;
     await save({
@@ -239,7 +259,7 @@ export function ProgressionProvider({ children }) {
         } else {
           p = await base44.entities.UserProgress.create({
             user_email: user.email, pseudo: user.pseudo || '', level: 1, xp: 0, total_xp: 0, coins: 500,
-            prestige: 0, badges: [], achievements: [], unlocked_rewards: [],
+            prestige: 0, badges: [], achievements: [], claimed_achievements: [], unlocked_rewards: [],
             stats: {}, missions: {}, last_xp_gains: {}, equipped: {},
           });
         }
@@ -288,7 +308,7 @@ export function ProgressionProvider({ children }) {
 
   const value = {
     progress, loading, rank, xpNeeded, xpPercent, prestigeInfo,
-    trackActivity, claimMission, buyItem, equipItem, prestige,
+    trackActivity, claimMission, claimAchievement, buyItem, equipItem, prestige,
     levelUpData, setLevelUpData,
   };
 

@@ -5,17 +5,18 @@ import { ACHIEVEMENTS } from '@/lib/achievementsData';
 import { Trophy } from 'lucide-react';
 
 export default function AchievementsList() {
-  const { progress } = useProgression();
+  const { progress, claimAchievement } = useProgression();
   const [filter, setFilter] = useState('all');
   if (!progress) return null;
 
   const owned = progress.achievements || [];
+  const claimed = progress.claimed_achievements || [];
   const stats = progress.stats || {};
 
   const categories = ['all', ...Array.from(new Set(ACHIEVEMENTS.map(a => a.category)))];
   const filtered = filter === 'all' ? ACHIEVEMENTS : ACHIEVEMENTS.filter(a => a.category === filter);
   const completedCount = ACHIEVEMENTS.filter(a => owned.includes(a.id)).length;
-  const totalTrophies = ACHIEVEMENTS.filter(a => owned.includes(a.id)).reduce((s, a) => s + a.trophies, 0);
+  const totalTrophies = ACHIEVEMENTS.filter(a => claimed.includes(a.id)).reduce((s, a) => s + (a.trophies || 0), 0);
 
   return (
     <div className="space-y-4">
@@ -45,6 +46,7 @@ export default function AchievementsList() {
       <div className="space-y-2">
         {filtered.map((a, i) => {
           const completed = owned.includes(a.id);
+          const isClaimed = claimed.includes(a.id);
           const current = stats[a.stat] || 0;
           const percent = Math.min(100, (current / a.target) * 100);
 
@@ -52,12 +54,12 @@ export default function AchievementsList() {
             <motion.div key={a.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: Math.min(i * 0.01, 0.4) }}
               className="p-3 rounded-xl flex items-center gap-3"
               style={{
-                background: completed ? 'rgba(0,242,255,0.04)' : 'rgba(255,255,255,0.02)',
-                border: `1px solid ${completed ? 'rgba(0,242,255,0.2)' : 'rgba(255,255,255,0.04)'}`,
+                background: isClaimed ? 'rgba(0,242,255,0.04)' : 'rgba(255,255,255,0.02)',
+                border: `1px solid ${isClaimed ? 'rgba(0,242,255,0.2)' : 'rgba(255,255,255,0.04)'}`,
               }}>
               {/* Trophy image */}
               <div className="w-16 h-16 shrink-0 flex items-center justify-center"
-                style={{ filter: completed ? 'drop-shadow(0 0 8px rgba(0,242,255,0.5))' : 'opacity(0.9)' }}>
+                style={{ filter: isClaimed ? 'drop-shadow(0 0 8px rgba(0,242,255,0.5))' : 'opacity(0.9)' }}>
                 <img src={a.icon} alt="Trophée" className="w-16 h-16 object-contain" />
               </div>
 
@@ -73,19 +75,29 @@ export default function AchievementsList() {
                     <div className="text-[9px] text-white/30 mt-0.5 font-mono">{Math.min(current, a.target).toLocaleString()} / {a.target.toLocaleString()}</div>
                   </div>
                 )}
-                {completed && <div className="text-[10px] mt-0.5" style={{ color: '#22c55e' }}>✓ Complété</div>}
+                {completed && !isClaimed && <div className="text-[10px] mt-0.5" style={{ color: '#fbbf24' }}>⚡ Récompense disponible !</div>}
+                {isClaimed && <div className="text-[10px] mt-0.5" style={{ color: '#22c55e' }}>✓ Réclamé</div>}
               </div>
 
-              {/* Total points (Trophies + XP) */}
+              {/* Total points (Trophées + XP) */}
               <div className="flex flex-col items-end gap-0.5 shrink-0 min-w-[64px]">
                 <div className="text-[9px] text-white/40 font-mono uppercase">Total</div>
-                <div className="text-base font-black" style={{ color: completed ? '#00F2FF' : 'rgba(255,255,255,0.5)' }}>
+                <div className="text-base font-black" style={{ color: isClaimed ? '#00F2FF' : 'rgba(255,255,255,0.5)' }}>
                   {a.total.toLocaleString()}
                 </div>
                 <div className="text-[8px] font-mono text-white/40">
                   🏆{a.trophies} + ⚡{a.xp}
                 </div>
               </div>
+
+              {/* Claim button */}
+              {completed && !isClaimed && (
+                <button onClick={() => claimAchievement(a.id)}
+                  className="px-3 py-1.5 rounded-lg text-[10px] font-bold text-white transition hover:opacity-80 tap-sm shrink-0"
+                  style={{ background: 'linear-gradient(135deg, #00F2FF, #9D00FF)' }}>
+                  Récupérer
+                </button>
+              )}
             </motion.div>
           );
         })}
