@@ -12,9 +12,9 @@ const TRIX_PACKS: Record<string, { priceCents: number; trixTotal: number; label:
 };
 
 const NEXUS_ITEMS: Record<string, { trixPrice: number; euroCents: number; label: string; count: number; category: string }> = {
-  flash_1:  { trixPrice: 100, euroCents: 99,  label: 'Post Flash ×1',  count: 1,  category: 'flash' },
-  flash_3:  { trixPrice: 250, euroCents: 199, label: 'Post Flash ×3',  count: 3,  category: 'flash' },
-  flash_10: { trixPrice: 800, euroCents: 499, label: 'Post Flash ×10', count: 10, category: 'flash' },
+  flash_1:  { trixPrice: 100, euroCents: 100, label: 'Post Flash ×1',  count: 1,  category: 'flash' },
+  flash_3:  { trixPrice: 250, euroCents: 250, label: 'Post Flash ×3',  count: 3,  category: 'flash' },
+  flash_10: { trixPrice: 800, euroCents: 800, label: 'Post Flash ×10', count: 10, category: 'flash' },
 };
 
 const VIP_PLANS: Record<string, { priceCents: number; label: string }> = {
@@ -305,6 +305,65 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ success: true, type, itemId });
       }
 
+      if (type === 'cosmetic_purchase') {
+        const itemId = session.metadata?.item_id;
+        if (itemId && userId) {
+          const shopItem = await base44.asServiceRole.entities.MatrixShopItem.get(itemId);
+          if (shopItem) {
+            // Check if already owned
+            const existingCosm = await base44.asServiceRole.entities.UserCosmetic.filter({
+              user_email: userEmail, item_id: itemId,
+            });
+            if (existingCosm.length === 0) {
+              await base44.asServiceRole.entities.UserCosmetic.create({
+                user_email: userEmail, item_id: itemId, item_name: shopItem.name,
+                category: shopItem.category, icon: shopItem.icon || "",
+                rarity: shopItem.rarity || "common", is_equipped: false,
+                video_url: shopItem.video_url || "",
+                preview_image: shopItem.preview_image || "",
+              });
+            }
+            await base44.asServiceRole.entities.User.update(userId, {
+              stripe_customer_id: session.customer || undefined,
+            });
+          }
+        }
+        await base44.asServiceRole.entities.TrixTransaction.create({
+          user_email: userEmail, type: 'cosmetic', amount: 0,
+          description: `Achat cosmétique ${itemId} - ${(session.amount_total / 100).toFixed(2)}€ (session ${session.id})`,
+        });
+        return Response.json({ success: true, type, itemId });
+      }
+
+      if (type === 'cosmetic_purchase') {
+        const itemId = session.metadata?.item_id;
+        if (itemId && userId) {
+          const shopItem = await base44.asServiceRole.entities.MatrixShopItem.get(itemId);
+          if (shopItem) {
+            const existingCosm = await base44.asServiceRole.entities.UserCosmetic.filter({
+              user_email: userEmail, item_id: itemId,
+            });
+            if (existingCosm.length === 0) {
+              await base44.asServiceRole.entities.UserCosmetic.create({
+                user_email: userEmail, item_id: itemId, item_name: shopItem.name,
+                category: shopItem.category, icon: shopItem.icon || "",
+                rarity: shopItem.rarity || "common", is_equipped: false,
+                video_url: shopItem.video_url || "",
+                preview_image: shopItem.preview_image || "",
+              });
+            }
+            await base44.asServiceRole.entities.User.update(userId, {
+              stripe_customer_id: session.customer || undefined,
+            });
+          }
+        }
+        await base44.asServiceRole.entities.TrixTransaction.create({
+          user_email: userEmail, type: 'cosmetic', amount: 0,
+          description: `Achat cosmétique ${itemId} - ${(session.amount_total / 100).toFixed(2)}€ (session ${session.id})`,
+        });
+        return Response.json({ success: true, type, itemId });
+      }
+
       if (type === 'donation') {
         await base44.asServiceRole.entities.TrixTransaction.create({
           user_email: userEmail,
@@ -410,8 +469,8 @@ export default async function(req: Request): Promise<Response> {
       params.append('line_items[0][price_data][product_data][name]', pack.label);
       params.append('line_items[0][price_data][unit_amount]', String(pack.priceCents));
       params.append('line_items[0][quantity]', '1');
-      params.append('success_url', `${origin}/trix-store?success=true&session_id={CHECKOUT_SESSION_ID}`);
-      params.append('cancel_url', `${origin}/trix-store?canceled=true`);
+      params.append('success_url', `${origin}/trix-store?payment=success&session_id={CHECKOUT_SESSION_ID}`);
+      params.append('cancel_url', `${origin}/trix-store?payment=cancelled`);
       params.append('metadata[type]', 'trix_purchase');
       params.append('metadata[user_email]', user.email);
       params.append('metadata[user_id]', user.id);
@@ -442,9 +501,42 @@ export default async function(req: Request): Promise<Response> {
       params.append('line_items[0][price_data][product_data][name]', item.label);
       params.append('line_items[0][price_data][unit_amount]', String(item.euroCents));
       params.append('line_items[0][quantity]', '1');
-      params.append('success_url', `${origin}/boutique-nexus?success=true&session_id={CHECKOUT_SESSION_ID}`);
-      params.append('cancel_url', `${origin}/boutique-nexus?canceled=true`);
+      params.append('success_url', `${origin}/boutique-nexus?payment=success&session_id={CHECKOUT_SESSION_ID}`);
+      params.append('cancel_url', `${origin}/boutique-nexus?payment=cancelled`);
       params.append('metadata[type]', 'nexus_item_purchase');
+      params.append('metadata[user_email]', user.email);
+      params.append('metadata[user_id]', user.id);
+      params.append('metadata[item_id]', itemId);
+
+      const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${stripeKey}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params,
+      });
+      const session = await res.json();
+      if (session.error) return Response.json({ error: session.error.message }, { status: 400 });
+      return Response.json({ url: session.url, sessionId: session.id });
+    }
+
+    // ---- createCosmeticPurchase (NEW) ----
+    if (action === 'createCosmeticPurchase') {
+      const { itemId } = body;
+      if (!itemId) return Response.json({ error: 'Article manquant' }, { status: 400 });
+      const shopItem = await base44.asServiceRole.entities.MatrixShopItem.get(itemId);
+      if (!shopItem || !shopItem.is_active) return Response.json({ error: 'Article invalide' }, { status: 400 });
+      const euroCents = Math.round(shopItem.price_trix); // 1 Trix = 0.01€ = 1 cent
+
+      const params = new URLSearchParams();
+      params.append('payment_method_types[]', 'card');
+      params.append('mode', 'payment');
+      params.append('customer_email', user.email);
+      params.append('line_items[0][price_data][currency]', 'eur');
+      params.append('line_items[0][price_data][product_data][name]', shopItem.name);
+      params.append('line_items[0][price_data][unit_amount]', String(euroCents));
+      params.append('line_items[0][quantity]', '1');
+      params.append('success_url', `${origin}/boutique-matrix?payment=success&session_id={CHECKOUT_SESSION_ID}`);
+      params.append('cancel_url', `${origin}/boutique-matrix?payment=cancelled`);
+      params.append('metadata[type]', 'cosmetic_purchase');
       params.append('metadata[user_email]', user.email);
       params.append('metadata[user_id]', user.id);
       params.append('metadata[item_id]', itemId);
@@ -474,7 +566,7 @@ export default async function(req: Request): Promise<Response> {
       params.append('line_items[0][price_data][recurring][interval]', plan === 'yearly' ? 'year' : 'month');
       params.append('line_items[0][quantity]', '1');
       params.append('success_url', `${origin}/trix-store?vip=success&session_id={CHECKOUT_SESSION_ID}`);
-      params.append('cancel_url', `${origin}/trix-store?vip=canceled`);
+      params.append('cancel_url', `${origin}/trix-store?payment=cancelled`);
       params.append('metadata[type]', 'vip_subscription');
       params.append('metadata[user_email]', user.email);
       params.append('metadata[user_id]', user.id);

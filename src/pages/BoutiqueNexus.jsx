@@ -8,10 +8,12 @@ import TrixIcon from "@/components/TrixIcon";
 import { formatTrix } from "@/lib/format";
 import { useAuth } from "@/lib/AuthContext";
 
+const TRIX_TO_EURO = (trix) => (trix / 100).toFixed(2).replace(".", ",") + "€";
+
 const FLASH_PACKS = [
-  { id: "flash_1", label: "Post Flash ×1", desc: "Épingle un message en haut d'un salon Nexus pendant 1 heure", trixPrice: 100, euroPrice: "0,99€", count: 1 },
-  { id: "flash_3", label: "Post Flash ×3", desc: "3 posts Flash pour booster ta visibilité", trixPrice: 250, euroPrice: "1,99€", count: 3, bonus: true },
-  { id: "flash_10", label: "Post Flash ×10", desc: "Pack premium — 10 posts Flash", trixPrice: 800, euroPrice: "4,99€", count: 10, bonus: true },
+  { id: "flash_1", label: "Post Flash ×1", desc: "Épingle un message en haut d'un salon Nexus pendant 1 heure", trixPrice: 100, count: 1 },
+  { id: "flash_3", label: "Post Flash ×3", desc: "3 posts Flash pour booster ta visibilité", trixPrice: 250, count: 3, bonus: true },
+  { id: "flash_10", label: "Post Flash ×10", desc: "Pack premium — 10 posts Flash", trixPrice: 800, count: 10, bonus: true },
 ];
 
 export default function BoutiqueNexus() {
@@ -21,21 +23,24 @@ export default function BoutiqueNexus() {
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    const success = searchParams.get("success");
+    const payment = searchParams.get("payment");
     const sessionId = searchParams.get("session_id");
-    const canceled = searchParams.get("canceled");
-    if (canceled === "true") {
+    if (payment === "cancelled") {
       toast.error("Paiement annulé");
+      window.history.replaceState({}, "", "/boutique-nexus");
     }
-    if (success === "true" && sessionId) {
+    if (payment === "success" && sessionId) {
       base44.functions.invoke("stripePayment", { action: "verifySession", sessionId })
         .then(res => {
           if (res?.data?.success) {
             toast.success("Article acheté ! 🎉", { description: "Ajouté à votre inventaire" });
             checkUserAuth();
           }
+          window.history.replaceState({}, "", "/boutique-nexus");
         })
-        .catch(() => {});
+        .catch(() => {
+          window.history.replaceState({}, "", "/boutique-nexus");
+        });
     }
   }, [searchParams]);
 
@@ -178,7 +183,7 @@ export default function BoutiqueNexus() {
                   {loading === `euro_${p.id}` ? "..." : (
                     <>
                       <CreditCard className="w-4 h-4 text-white/60" />
-                      {p.euroPrice}
+                      {TRIX_TO_EURO(p.trixPrice)}
                     </>
                   )}
                 </button>

@@ -33,17 +33,20 @@ export default function TrixStore() {
   const [portalLoading, setPortalLoading] = useState(false);
   const [searchParams] = useSearchParams();
 
-  // Handle Stripe redirect: verify session and credit Trix or activate VIP
+  // Handle Stripe redirect: verify session, credit Trix or activate VIP, then clean URL
   useEffect(() => {
-    const success = searchParams.get("success");
+    const payment = searchParams.get("payment");
     const vipSuccess = searchParams.get("vip");
     const sessionId = searchParams.get("session_id");
-    const canceled = searchParams.get("canceled");
-    if (canceled === "true") {
+    const cleanUrl = () => window.history.replaceState({}, "", "/trix-store");
+
+    if (payment === "cancelled") {
       toast.error("Paiement annulé");
+      cleanUrl();
     }
     if (vipSuccess === "canceled") {
       toast.error("Abonnement VIP annulé");
+      cleanUrl();
     }
     if (vipSuccess === "success" && sessionId) {
       base44.functions.invoke("stripePayment", { action: "verifySession", sessionId })
@@ -52,10 +55,11 @@ export default function TrixStore() {
             toast.success("Abonnement VIP activé ! 👑", { description: "Profite de tes avantages exclusifs" });
             checkUserAuth();
           }
+          cleanUrl();
         })
-        .catch(() => {});
+        .catch(() => cleanUrl());
     }
-    if (success === "true" && sessionId) {
+    if (payment === "success" && sessionId) {
       base44.functions.invoke("stripePayment", { action: "verifySession", sessionId })
         .then(res => {
           if (res?.data?.success) {
@@ -63,8 +67,9 @@ export default function TrixStore() {
             toast.success(`+${formatTrix(credited)} TRIX !`, { description: "Ton solde est mis à jour 🪙" });
             checkUserAuth();
           }
+          cleanUrl();
         })
-        .catch(() => {});
+        .catch(() => cleanUrl());
     }
   }, [searchParams]);
 

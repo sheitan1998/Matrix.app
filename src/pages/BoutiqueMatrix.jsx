@@ -1,9 +1,9 @@
-import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
-import { Home, Check, ShoppingBag, Sparkles, Coins, X, AlertCircle } from "lucide-react";
+import { Home, Check, ShoppingBag, Sparkles, Coins, X, AlertCircle, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { formatTrix } from "@/lib/format";
 import HeaderActions from "@/components/layout/HeaderActions";
@@ -20,13 +20,18 @@ const RARITY_COLORS = {
   common: "#9ca3af", rare: "#3b82f6", epic: "#a855f7", legendary: "#f59e0b",
 };
 
+// Conversion fixe: 1€ = 100 Trix (1 Trix = 0,01€)
+const trixToEuro = (trix) => (trix / 100).toFixed(2).replace(".", ",") + "€";
+
 export default function BoutiqueMatrix() {
   const nav = useNavigate();
   const qc = useQueryClient();
   const { user, checkUserAuth } = useAuth();
   const [cat, setCat] = useState("all");
-  const [buying, setBuying] = useState(null);
+  const [buyingTrix, setBuyingTrix] = useState(null);
+  const [buyingEuro, setBuyingEuro] = useState(null);
   const [detailItem, setDetailItem] = useState(null);
+  const [searchParams] = useSearchParams();
 
   const { data: items = [] } = useQuery({
     queryKey: ["matrix-shop-items"],
@@ -40,14 +45,37 @@ export default function BoutiqueMatrix() {
   });
 
   const filtered = cat === "all" ? items : items.filter(i => i.category === cat);
-
   const isOwned = (itemId) => owned.some(o => o.item_id === itemId);
 
-  const buy = async (item) => {
+  // Handle Stripe redirect with URL cleanup
+  useEffect(() => {
+    const payment = searchParams.get("payment");
+    const sessionId = searchParams.get("session_id");
+    if (payment === "cancelled") {
+      toast.error("Paiement annulé");
+      window.history.replaceState({}, "", "/boutique-matrix");
+    }
+    if (payment === "success" && sessionId) {
+      base44.functions.invoke("stripePayment", { action: "verifySession", sessionId })
+        .then(res => {
+          if (res?.data?.success) {
+            toast.success("Cosmétique débloqué ! 🎉", { description: "Équipez-le depuis votre profil" });
+            qc.invalidateQueries({ queryKey: ["user-cosmetics"] });
+            checkUserAuth();
+          }
+          window.history.replaceState({}, "", "/boutique-matrix");
+        })
+        .catch(() => {
+          window.history.replaceState({}, "", "/boutique-matrix");
+        });
+    }
+  }, [searchParams]);
+
+  const buyWithTrix = async (item) => {
     const balance = user?.trix_balance || 0;
     if (balance < item.price_trix) { toast.error("Solde TRIX insuffisant"); return; }
     if (isOwned(item.id)) { toast.info("Vous possédez déjà cet objet"); return; }
-    setBuying(item.id);
+    setBuyingTrix(item.id);
     try {
       await base44.auth.updateMe({ trix_balance: balance - item.price_trix });
       await base44.entities.UserCosmetic.create({
@@ -58,14 +86,48 @@ export default function BoutiqueMatrix() {
       });
       await base44.entities.TrixTransaction.create({
         user_email: user.email, type: "purchase", amount: -item.price_trix,
-        description: `Achat: ${item.name}`,
+        description: `Achat cosmétique: ${item.name} (-${item.price_trix} Trix)`,
       });
       qc.invalidateQueries({ queryKey: ["user-cosmetics"] });
       checkUserAuth();
       toast.success(`${item.name} acheté ! Équipez-le depuis votre profil.`);
+      setDetailItem(null);
     } catch { toast.error("Erreur lors de l'achat"); }
-    setBuying(null);
+    setBuyingTrix(null);
   };
+
+  const buyWithEuro = async (item) => {
+    if (!user) return;
+    if (isOwned(item.id)) { toast.info("Vous possédez déjà cet objet"); return; }
+    setBuyingEuro(item.id);
+    try {
+      const res = await base44.functions.invoke("stripePayment", {
+        action: "createCosmeticPurchase",
+        itemId: item.id,
+      });
+      const url = res?.data?.url;
+      if (!url) {
+        toast.error(res?.data?.error || "Erreur lors de la création du paiement");
+        return;
+      }
+      window.location.href = url;
+    } catch (err) {
+      toast.error(err?.response?.data?.error || err?.message || "Erreur");
+    }
+    setBuyingEuro(null);
+  };
+
+  const renderPreview = (item, size = "text-4xl") => (
+    item.category === "avatar_animation" && item.video_url ? (
+      <video src={item.video_url} autoPlay loop muted playsInline className="w-full h-full object-cover" style={{ mixBlendMode: "screen" }} />
+    ) : item.category === "profile_cover" && item.video_url ? (
+      <video src={item.video_url} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+    ) : item.category === "profile_cover" && item.preview_image ? (
+      <img src={item.preview_image} alt="" className="w-full h-full object-cover" />
+    ) : (
+      <span className={size}>{item.icon || "✨"}</span>
+    )
+  );
 
   return (
     <div className="min-h-screen relative overflow-y-auto overflow-x-hidden" style={{ backgroundColor: "#0a050f" }}>
@@ -83,7 +145,7 @@ export default function BoutiqueMatrix() {
           <HeaderActions />
         </header>
 
-        <p className="text-sm text-white/50 mb-4">Personnalisez votre profil avec des cosmétiques exclusifs. Achetez avec vos jetons TRIX.</p>
+        <p className="text-sm text-white/50 mb-4">Personnalisez votre profil avec des cosmétiques exclusifs. Achetez avec vos Trix ou en €.</p>
 
         {/* Category filter */}
         <div className="flex gap-1.5 mb-6 overflow-x-auto no-scrollbar pb-1">
@@ -117,15 +179,7 @@ export default function BoutiqueMatrix() {
                 }}>
                   {/* Preview */}
                   <div className="w-full aspect-square rounded-xl flex items-center justify-center mb-3 overflow-hidden relative" style={{ background: `${rarityColor}10` }}>
-                    {item.category === "avatar_animation" && item.video_url ? (
-                      <video src={item.video_url} autoPlay loop muted playsInline className="w-full h-full object-cover" style={{ mixBlendMode: "screen" }} />
-                    ) : item.category === "profile_cover" && item.video_url ? (
-                      <video src={item.video_url} autoPlay loop muted playsInline className="w-full h-full object-cover" />
-                    ) : item.category === "profile_cover" && item.preview_image ? (
-                      <img src={item.preview_image} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-4xl">{item.icon || "✨"}</span>
-                    )}
+                    {renderPreview(item)}
                   </div>
 
                   {/* Rarity */}
@@ -136,26 +190,25 @@ export default function BoutiqueMatrix() {
                   <h3 className="text-sm font-bold text-white truncate">{item.name}</h3>
                   <p className="text-[10px] text-white/40 mb-3 line-clamp-2">{item.description || item.category}</p>
 
-                  {/* Price + Buy / Owned */}
-                  <div className="mt-auto flex items-center justify-between gap-2">
-                    {/* Price always shown */}
-                    <div className="flex items-center gap-1 text-xs font-bold" style={{ color: "#fbbf24" }}>
-                      <TrixIcon size={14} />
-                      {formatTrix(item.price_trix)}
+                  {/* Dual price */}
+                  <div className="mt-auto space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1 text-xs font-bold" style={{ color: "#fbbf24" }}>
+                        <TrixIcon size={14} />
+                        {formatTrix(item.price_trix)}
+                      </div>
+                      <span className="text-[10px] text-white/30">ou</span>
+                      <span className="text-xs font-bold text-white/70">{trixToEuro(item.price_trix)}</span>
                     </div>
                     {ownedItem ? (
-                      <span className="text-[10px] font-bold text-green-400 flex items-center gap-1 px-2 py-1 rounded-lg" style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)" }}>
+                      <span className="w-full text-center text-[10px] font-bold text-green-400 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg" style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)" }}>
                         <Check className="w-3 h-3" /> Possédé
                       </span>
                     ) : (
-                      <button onClick={(e) => { e.stopPropagation(); buy(item); }} disabled={buying === item.id}
-                        className="px-3 py-1.5 rounded-lg text-xs font-bold text-white transition disabled:opacity-50 flex items-center gap-1"
+                      <button onClick={(e) => { e.stopPropagation(); setDetailItem(item); }}
+                        className="w-full px-3 py-1.5 rounded-lg text-xs font-bold text-white transition"
                         style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
-                        {buying === item.id ? (
-                          <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        ) : (
-                          "Acheter"
-                        )}
+                        Acheter
                       </button>
                     )}
                   </div>
@@ -173,7 +226,7 @@ export default function BoutiqueMatrix() {
         </div>
       </div>
 
-      {/* Detail modal */}
+      {/* Detail modal with dual payment */}
       {detailItem && (() => {
         const rarityColor = RARITY_COLORS[detailItem.rarity] || RARITY_COLORS.common;
         const ownedItem = isOwned(detailItem.id);
@@ -188,34 +241,52 @@ export default function BoutiqueMatrix() {
               </div>
               <div className="p-5">
                 <div className="w-full aspect-square rounded-xl flex items-center justify-center mb-4 overflow-hidden" style={{ background: `${rarityColor}10` }}>
-                  {detailItem.category === "avatar_animation" && detailItem.video_url ? (
-                    <video src={detailItem.video_url} autoPlay loop muted playsInline className="w-full h-full object-cover" style={{ mixBlendMode: "screen" }} />
-                  ) : detailItem.category === "profile_cover" && detailItem.video_url ? (
-                    <video src={detailItem.video_url} autoPlay loop muted playsInline className="w-full h-full object-cover" />
-                  ) : detailItem.category === "profile_cover" && detailItem.preview_image ? (
-                    <img src={detailItem.preview_image} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-5xl">{detailItem.icon || "✨"}</span>
-                  )}
+                  {renderPreview(detailItem, "text-5xl")}
                 </div>
                 <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded mb-2 inline-block" style={{ background: `${rarityColor}20`, color: rarityColor }}>
                   {detailItem.rarity}
                 </span>
                 {detailItem.description && <p className="text-xs text-white/60 leading-relaxed mb-4">{detailItem.description}</p>}
-                <div className="flex items-center gap-1 text-lg font-bold mb-4" style={{ color: "#fbbf24" }}>
-                  <TrixIcon size={20} />
-                  {formatTrix(detailItem.price_trix)}
+
+                {/* Dual price display */}
+                <div className="flex items-center justify-center gap-3 mb-4">
+                  <div className="flex items-center gap-1.5 text-base font-bold" style={{ color: "#fbbf24" }}>
+                    <TrixIcon size={18} />
+                    {formatTrix(detailItem.price_trix)}
+                  </div>
+                  <span className="text-xs text-white/30">ou</span>
+                  <span className="text-base font-bold text-white">{trixToEuro(detailItem.price_trix)}</span>
                 </div>
+
                 {ownedItem ? (
                   <div className="py-2.5 rounded-xl text-sm font-bold text-green-400 flex items-center justify-center gap-1.5" style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)" }}>
                     <Check className="w-4 h-4" /> Possédé
                   </div>
                 ) : (
-                  <button onClick={() => { buy(detailItem); setDetailItem(null); }} disabled={buying === detailItem.id}
-                    className="w-full py-2.5 rounded-xl text-sm font-bold text-white transition disabled:opacity-50 flex items-center justify-center gap-1.5"
-                    style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
-                    {buying === detailItem.id ? "..." : "Acheter"}
-                  </button>
+                  <div className="space-y-2">
+                    {/* Pay with Trix */}
+                    <button onClick={() => buyWithTrix(detailItem)} disabled={buyingTrix === detailItem.id}
+                      className="w-full py-2.5 rounded-xl text-sm font-bold text-white transition disabled:opacity-50 flex items-center justify-center gap-1.5"
+                      style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
+                      {buyingTrix === detailItem.id ? "Traitement..." : (
+                        <>
+                          <TrixIcon size={16} />
+                          Payer {formatTrix(detailItem.price_trix)} Trix
+                        </>
+                      )}
+                    </button>
+                    {/* Pay with Euro */}
+                    <button onClick={() => buyWithEuro(detailItem)} disabled={buyingEuro === detailItem.id}
+                      className="w-full py-2.5 rounded-xl text-sm font-bold text-white transition disabled:opacity-50 flex items-center justify-center gap-1.5"
+                      style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)" }}>
+                      {buyingEuro === detailItem.id ? "Redirection..." : (
+                        <>
+                          <CreditCard className="w-4 h-4 text-white/60" />
+                          Payer {trixToEuro(detailItem.price_trix)}
+                        </>
+                      )}
+                    </button>
+                  </div>
                 )}
                 <p className="text-[10px] text-white/30 text-center mt-3 flex items-center justify-center gap-1">
                   <AlertCircle className="w-3 h-3" /> Non remboursable après achat
