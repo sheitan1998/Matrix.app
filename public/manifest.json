@@ -1,0 +1,39 @@
+{
+  "name": "Matrix",
+  "short_name": "Matrix",
+  "description": "Plateforme de streaming vidéo, communauté, casino et outils créatifs.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0a050f",
+  "theme_color": "#0a050f",
+  "categories": ["entertainment", "social", "games"],
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "https://media.base44.com/images/public/69e14a987a927963a9924d5a/d423a042e_Code_Generated_Image1.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://media.base44.com/images/public/69e14a987a927963a9924d5a/d423a042e_Code_Generated_Image1.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "https://media.base44.com/images/public/69e14a987a927963a9924d5a/ea9b5db0f_Code_Generated_Image.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://media.base44.com/images/public/69e14a987a927963a9924d5a/ea9b5db0f_Code_Generated_Image.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

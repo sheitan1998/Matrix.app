@@ -13,6 +13,7 @@ import TransactionHistory from "@/components/profile/TransactionHistory";
 import PrivacyPanel from "@/components/profile/PrivacyPanel";
 import ProfileAnimationLayer from "@/components/profile/ProfileAnimationLayer";
 import TrixIcon from "@/components/TrixIcon";
+import PWAInstallButton from "@/components/PWAInstallButton";
 
 const TABS = [
   { key: "overview", label: "Vue d'ensemble", icon: Zap },
@@ -260,6 +261,11 @@ export default function ProfileContent({ onClose }) {
               );
               return s.link ? <button key={i} onClick={() => goTo(s.link)} className="text-left">{content}</button> : <div key={i}>{content}</div>;
             })}
+          </div>
+
+          {/* PWA Install */}
+          <div className="mb-4">
+            <PWAInstallButton />
           </div>
 
           {/* XP / Level progress bar */}
