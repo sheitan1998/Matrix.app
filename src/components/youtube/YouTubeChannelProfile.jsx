@@ -52,10 +52,10 @@ export default function YouTubeChannelProfile() {
         <button
           onClick={login}
           disabled={loading}
-          className="flex items-center gap-2 px-3 h-9 rounded-full bg-[#FF0000] hover:bg-[#CC0000] text-white text-sm font-semibold transition tap-sm disabled:opacity-50"
+          className="flex items-center gap-2 px-3 h-9 rounded-full bg-[#1f1f1f] hover:bg-[#2a2a2a] text-white text-sm font-semibold transition tap-sm disabled:opacity-50"
           style={{ minHeight: 36 }}
         >
-          <img src={YT_ICON_RED} alt="YouTube" style={{ height: 20, width: "auto" }} />
+          <img src={YT_ICON_RED} alt="YouTube" style={{ height: 22, width: "auto" }} />
           <span className="hidden sm:inline">{loading ? "…" : "Connecter YouTube"}</span>
         </button>
         {(error || !clientIdConfigured) && (
