@@ -16,6 +16,47 @@
       "type": "string",
       "format": "date-time"
     },
+    "is_vip": {
+      "type": "boolean",
+      "default": false,
+      "description": "VIP subscription status"
+    },
+    "vip_until": {
+      "type": "string",
+      "format": "date-time",
+      "description": "VIP subscription expiration date"
+    },
+    "stripe_customer_id": {
+      "type": "string",
+      "description": "Stripe customer ID for billing portal"
+    },
+    "inventory": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "item_id": {
+            "type": "string"
+          },
+          "item_name": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "count": {
+            "type": "number",
+            "default": 1
+          },
+          "purchased_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "default": [],
+      "description": "User inventory of purchased items"
+    },
     "avatar_url": {
       "type": "string"
     },

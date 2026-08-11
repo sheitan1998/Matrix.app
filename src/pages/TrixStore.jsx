@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Coins, Sparkles } from "lucide-react";
+import { Coins, Sparkles, Crown, CreditCard } from "lucide-react";
 import TrixIcon from "@/components/TrixIcon";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -10,6 +10,11 @@ import { useAuth } from "@/lib/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import HeaderActions from "@/components/layout/HeaderActions";
+
+const VIP_PLANS = [
+  { plan: "monthly", label: "VIP Mensuel", price: "4,99€", perks: ["Badge VIP exclusif", "Couleur pseudo dorée", "Accès prioritaire aux salons", "2× XP sur tous les jeux"] },
+  { plan: "yearly", label: "VIP Annuel", price: "49,99€", perks: ["Tout le VIP Mensuel", "2 mois offerts", "Frame animée exclusive", "Accès anticipé aux nouveautés"], tag: "Meilleure offre" },
+];
 
 const PACKS = [
   { packId: "pack_500",   trix: 500, priceCents: 499, price: "4,99€", bonus: 0, tag: null },
@@ -24,15 +29,31 @@ export default function TrixStore() {
   const nav = useNavigate();
   const { user, checkUserAuth } = useAuth();
   const [loading, setLoading] = useState(null);
+  const [vipLoading, setVipLoading] = useState(null);
+  const [portalLoading, setPortalLoading] = useState(false);
   const [searchParams] = useSearchParams();
 
-  // Handle Stripe redirect: verify session and credit Trix
+  // Handle Stripe redirect: verify session and credit Trix or activate VIP
   useEffect(() => {
     const success = searchParams.get("success");
+    const vipSuccess = searchParams.get("vip");
     const sessionId = searchParams.get("session_id");
     const canceled = searchParams.get("canceled");
     if (canceled === "true") {
       toast.error("Paiement annulé");
+    }
+    if (vipSuccess === "canceled") {
+      toast.error("Abonnement VIP annulé");
+    }
+    if (vipSuccess === "success" && sessionId) {
+      base44.functions.invoke("stripePayment", { action: "verifySession", sessionId })
+        .then(res => {
+          if (res?.data?.success) {
+            toast.success("Abonnement VIP activé ! 👑", { description: "Profite de tes avantages exclusifs" });
+            checkUserAuth();
+          }
+        })
+        .catch(() => {});
     }
     if (success === "true" && sessionId) {
       base44.functions.invoke("stripePayment", { action: "verifySession", sessionId })
@@ -46,6 +67,43 @@ export default function TrixStore() {
         .catch(() => {});
     }
   }, [searchParams]);
+
+  const buyVIP = async (plan) => {
+    if (!user) return;
+    setVipLoading(plan.plan);
+    try {
+      const res = await base44.functions.invoke("stripePayment", {
+        action: "createVIPSubscription",
+        plan: plan.plan,
+      });
+      const url = res?.data?.url;
+      if (!url) {
+        toast.error(res?.data?.error || "Erreur lors de la création de l'abonnement");
+        return;
+      }
+      window.location.href = url;
+    } catch (err) {
+      toast.error(err?.response?.data?.error || err?.message || "Erreur");
+    }
+    setVipLoading(null);
+  };
+
+  const openCustomerPortal = async () => {
+    if (!user) return;
+    setPortalLoading(true);
+    try {
+      const res = await base44.functions.invoke("stripePayment", { action: "createCustomerPortal" });
+      const url = res?.data?.url;
+      if (!url) {
+        toast.error(res?.data?.error || "Aucun abonnement actif trouvé");
+        return;
+      }
+      window.location.href = url;
+    } catch (err) {
+      toast.error(err?.response?.data?.error || err?.message || "Erreur");
+    }
+    setPortalLoading(false);
+  };
 
   const buy = async (pack) => {
     if (!user) return;
@@ -132,6 +190,76 @@ export default function TrixStore() {
             </Button>
           </div>
         ))}
+      </div>
+
+      {/* VIP Subscription Section */}
+      <div className="mt-12">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #fbbf24, #f59e0b)" }}>
+            <Crown className="w-5 h-5 text-black" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black text-white">Abonnement VIP</h2>
+            <p className="text-sm text-white/50">Débloque des avantages exclusifs sur toute la plateforme</p>
+          </div>
+          {user?.is_vip && (
+            <span className="ml-auto px-3 py-1 rounded-full text-xs font-bold text-black" style={{ background: "linear-gradient(135deg, #fbbf24, #f59e0b)" }}>
+              VIP actif
+            </span>
+          )}
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          {VIP_PLANS.map((plan) => (
+            <div
+              key={plan.plan}
+              className={cn(
+                "relative rounded-2xl border-2 p-6 bg-card transition hover:scale-[1.02]",
+                plan.tag ? "border-trix/60 shadow-glow" : "border-border"
+              )}
+            >
+              {plan.tag && (
+                <div className="absolute -top-3 left-6 px-2.5 py-0.5 rounded-full gradient-trix text-background text-xs font-bold">
+                  {plan.tag}
+                </div>
+              )}
+              <h3 className="text-xl font-black text-white">{plan.label}</h3>
+              <p className="text-3xl font-black mt-3 text-white">{plan.price}</p>
+              <ul className="mt-4 space-y-2">
+                {plan.perks.map((perk, idx) => (
+                  <li key={idx} className="flex items-center gap-2 text-sm text-white/70">
+                    <Sparkles className="w-3.5 h-3.5 text-trix shrink-0" />
+                    {perk}
+                  </li>
+                ))}
+              </ul>
+              <Button
+                onClick={() => buyVIP(plan)}
+                disabled={vipLoading === plan.plan || !user}
+                className="w-full mt-5 h-11 rounded-full bg-foreground text-background hover:bg-foreground/90 font-semibold"
+              >
+                {vipLoading === plan.plan ? "Traitement..." : `S'abonner — ${plan.price}`}
+              </Button>
+            </div>
+          ))}
+        </div>
+
+        {/* Customer Portal */}
+        <div className="mt-6 p-4 rounded-2xl flex items-center gap-3" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <CreditCard className="w-5 h-5 text-white/50 shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-bold text-white">Gérer mon abonnement</p>
+            <p className="text-xs text-white/50">Modifier, annuler ou télécharger vos factures via le portail Stripe</p>
+          </div>
+          <Button
+            onClick={openCustomerPortal}
+            disabled={portalLoading || !user}
+            variant="outline"
+            className="shrink-0"
+          >
+            {portalLoading ? "..." : "Portail Client"}
+          </Button>
+        </div>
       </div>
       </div>
     </div>
