@@ -4,8 +4,8 @@ import { LogOut, ChevronDown, Check, RefreshCw } from "lucide-react";
 import { useYouTubeAuth } from "@/hooks/useYouTubeAuth";
 import { formatViews } from "@/lib/format";
 
-// Official YouTube icon (brand guidelines — proportions must not be altered)
-const YT_ICON_RED = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/64px-YouTube_full-color_icon_%282017%29.svg.png";
+// Official YouTube icon PNG (red rectangle + white triangle — brand guidelines, proportions must not be altered)
+const YT_ICON_RED = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/7e0148d93_generated_image.png";
 
 /**
  * Top-right profile for the YouTube universe only.

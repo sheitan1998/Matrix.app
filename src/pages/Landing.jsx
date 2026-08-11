@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 const LEFT_CARDS = [
-  { path: "/stream", label: "Youtube", desc: "Vidéos, lives, shorts. Crée ta chaîne et partage ton contenu.", icon: Youtube, color: "#FF0000" },
+  { path: "/stream", label: "Youtube", desc: "Vidéos, lives, shorts. Crée ta chaîne et partage ton contenu.", icon: Youtube, iconUrl: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/7e0148d93_generated_image.png", color: "#FF0000" },
   { path: "/twitch", label: "Twitch", desc: "Streams en direct, clips, discussions et rencontres.", icon: Radio, color: "#9146FF" },
   { path: "/community", label: "Nexus", desc: "Discute, réagis, commente. Rejoins ou crée des salons vocaux.", icon: MessageCircle, color: "#3B82F6" },
   { path: "/ai", label: "AI Studio", desc: "Chat, création, code, histoires. Exploite l'IA sans limites.", icon: Cpu, color: "#06B6D4" },
@@ -94,7 +94,11 @@ export default function Landing() {
                 style={{ background: "#101015", border: "1px solid rgba(255,255,255,0.06)" }}>
                 <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ background: u.color }} />
                 <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${u.color}1a` }}>
-                  <u.icon className="w-5 h-5" style={{ color: u.color }} />
+                  {u.iconUrl ? (
+                    <img src={u.iconUrl} alt="YouTube" style={{ height: 22, width: "auto" }} />
+                  ) : (
+                    <u.icon className="w-5 h-5" style={{ color: u.color }} />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
