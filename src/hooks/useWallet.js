@@ -1,26 +1,33 @@
 import { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 
-const WALLET_KEY = "matrix_wallet_balance";
-
 export function useWallet() {
-  const [balance, setBalanceState] = useState(() => {
-    const saved = localStorage.getItem(WALLET_KEY);
-    return saved ? parseInt(saved, 10) : 1000;
-  });
+  const [balance, setBalanceState] = useState(0);
   const [user, setUser] = useState(null);
 
+  // Load balance from server (user.trix_balance), not localStorage
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
+    let mounted = true;
+    base44.auth.me()
+      .then((u) => {
+        if (!mounted) return;
+        setUser(u);
+        setBalanceState(u?.trix_balance ?? 0);
+      })
+      .catch(() => {});
+    return () => { mounted = false; };
   }, []);
 
+  // Update balance: persists to the User entity via auth.updateMe so it's in the DB
   const setBalance = useCallback((valOrFn) => {
     setBalanceState((prev) => {
       const next = typeof valOrFn === "function" ? valOrFn(prev) : valOrFn;
-      localStorage.setItem(WALLET_KEY, String(next));
+      if (user) {
+        base44.auth.updateMe({ trix_balance: next }).catch(() => {});
+      }
       return next;
     });
-  }, []);
+  }, [user]);
 
   const addTransaction = useCallback(async (type, amount, description, universe = "general") => {
     if (!user) return;
