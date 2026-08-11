@@ -1,41 +1,36 @@
 import React, { useState, useEffect } from "react";
 import { Download, X } from "lucide-react";
+import { getDeferredPrompt, isStandalone, onPWAChange } from "@/lib/pwa";
 
 const HELP_TEXT =
   "Sur iPhone : appuyez sur Partager > Sur l'écran d'accueil. Sur PC : cliquez sur le symbole (+) dans la barre d'adresse.";
 
 export default function PWAInstallButton({ className = "" }) {
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [installed, setInstalled] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(getDeferredPrompt());
+  const [installed, setInstalled] = useState(isStandalone());
   const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
-    const handler = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-    window.addEventListener("beforeinstallprompt", handler);
+    // Sync immediately in case event fired before mount
+    setDeferredPrompt(getDeferredPrompt());
+    setInstalled(isStandalone());
 
-    const installedHandler = () => setInstalled(true);
-    window.addEventListener("appinstalled", installedHandler);
-
-    if (
-      window.matchMedia("(display-mode: standalone)").matches ||
-      window.navigator.standalone === true
-    ) {
-      setInstalled(true);
-    }
-
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handler);
-      window.removeEventListener("appinstalled", installedHandler);
-    };
+    const unsubscribe = onPWAChange((prompt, appInstalled) => {
+      if (appInstalled) {
+        setInstalled(true);
+        setDeferredPrompt(null);
+      } else {
+        setDeferredPrompt(prompt);
+      }
+    });
+    return unsubscribe;
   }, []);
 
   const handleInstall = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
+    const prompt = getDeferredPrompt();
+    if (prompt) {
+      prompt.prompt();
+      const { outcome } = await prompt.userChoice;
       if (outcome === "accepted") setInstalled(true);
       setDeferredPrompt(null);
     } else {
