@@ -155,11 +155,13 @@ export default function Landing() {
                 <ArrowRight className="w-5 h-5 shrink-0" style={{ color: "#a855f7" }} />
               </motion.button>
             ))}
+
+            {/* Affiliate partners — directly below Niveaux/Progression */}
+            <div className="lg:col-span-1">
+              <AffiliatePartners />
+            </div>
           </div>
         </div>
-
-        {/* Affiliate partners */}
-        <AffiliatePartners />
 
         {/* Support block */}
         <div className="mt-6 lg:mt-8">
