@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
-import { Radio, Youtube, ExternalLink, Maximize, Minimize2, Play } from "lucide-react";
+import React, { useLayoutEffect, useRef } from "react";
+import { Radio, Youtube, ExternalLink, Play } from "lucide-react";
 import YouTubePlayer from "./YouTubePlayer";
 import QualitySelector from "./QualitySelector";
 import { useMiniPlayer } from "@/context/MiniPlayerContext";
 
 export default function VideoPlayer({ video }) {
-  const [quality, setQuality] = useState("Auto");
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [quality, setQuality] = React.useState("Auto");
   const mini = useMiniPlayer();
   const containerRef = useRef(null);
   const playerRef = useRef(null);
@@ -14,12 +13,6 @@ export default function VideoPlayer({ video }) {
   const isYouTube = video._source === "youtube" && !!video.id;
   const isEmbeddable = isYouTube && video.embeddable !== false;
   const isMinimized = mini.currentVideo?.id === video.id && mini.mode === "mini";
-
-  useEffect(() => {
-    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener("fullscreenchange", onFsChange);
-    return () => document.removeEventListener("fullscreenchange", onFsChange);
-  }, []);
 
   // Ensure single audio source: stop mini-player BEFORE the inline YouTubePlayer
   // creates its iframe. useLayoutEffect runs synchronously before passive effects,
@@ -30,19 +23,6 @@ export default function VideoPlayer({ video }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [video.id]);
-
-  const toggleFullscreen = () => {
-    if (document.fullscreenElement) {
-      document.exitFullscreen();
-    } else {
-      containerRef.current?.requestFullscreen?.();
-    }
-  };
-
-  const handleMinimize = () => {
-    const t = playerRef.current?.getCurrentTime?.() || 0;
-    mini.minimize(video, t);
-  };
 
   const handleReady = (player) => {
     playerRef.current = player;
@@ -70,7 +50,7 @@ export default function VideoPlayer({ video }) {
   }
 
   return (
-    <div ref={containerRef} className="relative aspect-video w-full rounded-xl overflow-hidden bg-black group">
+    <div ref={containerRef} className="relative aspect-video w-full rounded-xl overflow-hidden bg-black">
       {isEmbeddable ? (
         <YouTubePlayer videoId={video.id} autoplay onReady={handleReady} />
       ) : isYouTube && video.embeddable === false ? (
@@ -108,29 +88,7 @@ export default function VideoPlayer({ video }) {
         </div>
       )}
 
-      {/* Player controls — YouTube embeddable only
-          Positioned OUTSIDE the 10% safe-zone at top/bottom reserved for YouTube controls.
-          Top controls: stay within top 0–8% → top-2 (8px). Bottom controls: none over player bar. */}
-      {isEmbeddable && (
-        <div className="absolute top-2 right-2 flex items-center gap-1.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
-          <button
-            onClick={handleMinimize}
-            className="w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center tap-sm transition"
-            aria-label="Réduire en mini-lecteur"
-            title="Mini-lecteur"
-          >
-            <Minimize2 className="w-3.5 h-3.5 text-white" />
-          </button>
-          <button
-            onClick={toggleFullscreen}
-            className="w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center tap-sm transition"
-            aria-label="Plein écran"
-            title={isFullscreen ? "Quitter plein écran" : "Plein écran"}
-          >
-            <Maximize className="w-3.5 h-3.5 text-white" />
-          </button>
-        </div>
-      )}
+      {/* No custom overlay controls on YouTube embeds — YouTube native controls must remain fully visible and accessible */}
 
       {/* Quality selector — local videos only */}
       {!isYouTube && (

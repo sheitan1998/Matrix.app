@@ -4,9 +4,8 @@ import { LogOut, ChevronDown, Check, RefreshCw } from "lucide-react";
 import { useYouTubeAuth } from "@/hooks/useYouTubeAuth";
 import { formatViews } from "@/lib/format";
 
-// Official YouTube logo URLs (from YouTube brand guidelines)
-const YT_LOGO_FULL = "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/YouTube_Logo_2017.svg/320px-YouTube_Logo_2017.svg.png";
-const YT_ICON_RED  = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/64px-YouTube_full-color_icon_%282017%29.svg.png";
+// Official YouTube icon (brand guidelines — proportions must not be altered)
+const YT_ICON_RED = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/64px-YouTube_full-color_icon_%282017%29.svg.png";
 
 /**
  * Top-right profile for the YouTube universe only.
