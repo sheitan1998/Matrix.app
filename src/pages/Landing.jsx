@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import AuthModal from "@/components/landing/AuthModal";
 import ProjectSupportBlock from "@/components/progression/ProjectSupportBlock";
+import AffiliatePartners from "@/components/landing/AffiliatePartners";
 import {
   Youtube, Radio, MessageCircle, Cpu, Dices, Search, GraduationCap,
   Wrench, BarChart3, Clapperboard, TrendingUp, ShoppingBag,
@@ -156,6 +157,9 @@ export default function Landing() {
             ))}
           </div>
         </div>
+
+        {/* Affiliate partners */}
+        <AffiliatePartners />
 
         {/* Support block */}
         <div className="mt-6 lg:mt-8">
