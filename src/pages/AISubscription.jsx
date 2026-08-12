@@ -39,11 +39,38 @@ export default function AISubscription() {
     }).catch(() => {});
   }, []);
 
+  const [loadingPlan, setLoadingPlan] = useState(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const payment = params.get("payment");
+    const sessionId = params.get("session_id");
+    if (payment === "success" && sessionId) {
+      base44.functions.invoke("stripePayment", { action: "verifySession", sessionId }).then(() => {
+        base44.auth.me().then((u) => { setUser(u); setActivePlan(u?.ai_plan || "free"); });
+        toast.success("Abonnement activé !");
+        window.history.replaceState({}, "", "/ai/subscription");
+      }).catch(() => toast.error("Erreur de vérification du paiement"));
+    } else if (payment === "cancelled") {
+      toast.error("Paiement annulé");
+      window.history.replaceState({}, "", "/ai/subscription");
+    }
+  }, []);
+
   const subscribe = async (plan) => {
-    if (!user) return;
-    await base44.auth.updateMe({ ai_plan: plan.id });
-    setActivePlan(plan.id);
-    toast.success(`Abonnement ${plan.label} activé !`);
+    if (!user || plan.id === "free") return;
+    setLoadingPlan(plan.id);
+    try {
+      const res = await base44.functions.invoke("stripePayment", {
+        action: "createAISubscription",
+        planId: plan.id,
+      });
+      if (res.data?.url) window.location.href = res.data.url;
+    } catch {
+      toast.error("Erreur lors de la création du paiement");
+    } finally {
+      setLoadingPlan(null);
+    }
   };
 
   return (
@@ -91,8 +118,8 @@ export default function AISubscription() {
                   <Check className="w-3.5 h-3.5" /> Plan actuel
                 </div>
               ) : (
-                <Button onClick={() => subscribe(plan)} size="sm" className="w-full font-bold rounded-full" style={{ background: plan.color, color: plan.id === "free" ? "#fff" : "#000" }}>
-                  {plan.id === "free" ? "Plan actuel" : "Choisir"}
+                <Button onClick={() => subscribe(plan)} disabled={loadingPlan === plan.id} size="sm" className="w-full font-bold rounded-full" style={{ background: plan.color, color: plan.id === "free" ? "#fff" : "#000" }}>
+                  {loadingPlan === plan.id ? "Redirection..." : plan.id === "free" ? "Plan actuel" : "Choisir"}
                 </Button>
               )}
             </div>

@@ -21,25 +21,36 @@ export default function Premium() {
     base44.auth.me().then((u) => { setUser(u); setLoadingUser(false); }).catch(() => setLoadingUser(false));
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const payment = params.get("payment");
+    const sessionId = params.get("session_id");
+    if (payment === "success" && sessionId) {
+      base44.functions.invoke("stripePayment", { action: "verifySession", sessionId }).then(() => {
+        base44.auth.me().then((u) => { setUser(u); setLoadingUser(false); });
+        toast.success("Bienvenue dans MATRIX Premium !", { description: "+500 TRIX ajoutés à ton solde 💎" });
+        window.history.replaceState({}, "", "/premium");
+      }).catch(() => toast.error("Erreur de vérification du paiement"));
+    } else if (payment === "cancelled") {
+      toast.error("Paiement annulé");
+      window.history.replaceState({}, "", "/premium");
+    }
+  }, []);
+
   const activate = async () => {
     if (!user) return;
     setLoading(true);
-    const until = new Date();
-    until.setMonth(until.getMonth() + 1);
-    await base44.auth.updateMe({
-      is_premium: true,
-      premium_until: until.toISOString(),
-      trix_balance: (user.trix_balance || 0) + 500,
-    });
-    await base44.entities.TrixTransaction.create({
-      user_email: user.email,
-      type: "purchase",
-      amount: 500,
-      description: "Bonus abonnement Premium",
-    });
-    setLoading(false);
-    toast.success("Bienvenue dans MATRIX Premium !", { description: "+500 TRIX ajoutés à ton solde 💎" });
-    base44.auth.me().then(setUser);
+    try {
+      const res = await base44.functions.invoke("stripePayment", {
+        action: "createPremiumSubscription",
+        planId: "monthly",
+      });
+      if (res.data?.url) window.location.href = res.data.url;
+    } catch {
+      toast.error("Erreur lors de la création du paiement");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const cancel = async () => {

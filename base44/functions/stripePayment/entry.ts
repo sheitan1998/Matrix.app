@@ -25,6 +25,21 @@ const VIP_PLANS: Record<string, { priceCents: number; label: string; xpBonus: nu
   yearly:     { priceCents: 4999, label: 'VIP Annuel',  xpBonus: 25, tokens: 15000, tier: 'silver', flashBoosts: 5 },
 };
 
+const AI_PLANS: Record<string, { priceCents: number; label: string }> = {
+  explorer: { priceCents: 499, label: 'AI Explorer' },
+  creator: { priceCents: 999, label: 'AI Creator' },
+  pro: { priceCents: 1999, label: 'AI Pro' },
+};
+
+const COMMUNITY_PLANS: Record<string, { priceCents: number; label: string; boosts: number }> = {
+  booster: { priceCents: 1000, label: 'Community Booster', boosts: 2 },
+  vip: { priceCents: 2500, label: 'Community VIP', boosts: 8 },
+};
+
+const PREMIUM_PLANS: Record<string, { priceCents: number; label: string; trixBonus: number }> = {
+  monthly: { priceCents: 999, label: 'MATRIX Premium Mensuel', trixBonus: 500 },
+};
+
 // ---- Stripe webhook signature verification (Web Crypto API) ----
 async function verifyStripeSignature(payload: string, signatureHeader: string, secret: string): Promise<boolean> {
   const parts = signatureHeader.split(',');
@@ -198,6 +213,49 @@ export default async function(req: Request): Promise<Response> {
               type: 'nitro',
               amount: 0,
               description: `Abonnement Nitro ${nitroPlan} - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
+            });
+          }
+
+          if (type === 'ai_subscription') {
+            const aiPlanId = data.metadata?.plan_id;
+            const aiPlan = aiPlanId ? AI_PLANS[aiPlanId] : null;
+            if (aiPlan && userId) {
+              await base44.asServiceRole.entities.User.update(userId, { ai_plan: aiPlanId });
+            }
+            await base44.asServiceRole.entities.TrixTransaction.create({
+              user_email: userEmail, type: 'ai_sub', amount: 0,
+              description: `Abonnement AI ${aiPlanId} - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
+            });
+          }
+
+          if (type === 'community_subscription') {
+            const commPlanId = data.metadata?.plan_id;
+            const commPlan = commPlanId ? COMMUNITY_PLANS[commPlanId] : null;
+            if (commPlan && userId) {
+              await base44.asServiceRole.entities.User.update(userId, { community_plan: commPlanId, community_boosts_remaining: commPlan.boosts });
+            }
+            await base44.asServiceRole.entities.TrixTransaction.create({
+              user_email: userEmail, type: 'community_sub', amount: 0,
+              description: `Abonnement Communauté ${commPlanId} - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
+            });
+          }
+
+          if (type === 'premium_subscription') {
+            const premiumPlan = PREMIUM_PLANS[data.metadata?.plan_id || 'monthly'] || PREMIUM_PLANS.monthly;
+            if (userId) {
+              const target = await base44.asServiceRole.entities.User.get(userId);
+              if (target) {
+                const newBalance = (target.trix_balance || 0) + premiumPlan.trixBonus;
+                await base44.asServiceRole.entities.User.update(userId, {
+                  is_premium: true,
+                  premium_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                  trix_balance: newBalance,
+                });
+              }
+            }
+            await base44.asServiceRole.entities.TrixTransaction.create({
+              user_email: userEmail, type: 'premium', amount: premiumPlan.trixBonus,
+              description: `Abonnement MATRIX Premium - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
             });
           }
         }
@@ -496,6 +554,52 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ success: true, type, nitroPlan });
       }
 
+      if (type === 'ai_subscription') {
+        const aiPlanId = session.metadata?.plan_id;
+        const aiPlan = aiPlanId ? AI_PLANS[aiPlanId] : null;
+        if (aiPlan && userId) {
+          await base44.asServiceRole.entities.User.update(userId, { ai_plan: aiPlanId });
+        }
+        await base44.asServiceRole.entities.TrixTransaction.create({
+          user_email: userEmail, type: 'ai_sub', amount: 0,
+          description: `Abonnement AI ${aiPlanId} - ${(session.amount_total / 100).toFixed(2)}€ (session ${session.id})`,
+        });
+        return Response.json({ success: true, type, aiPlanId });
+      }
+
+      if (type === 'community_subscription') {
+        const commPlanId = session.metadata?.plan_id;
+        const commPlan = commPlanId ? COMMUNITY_PLANS[commPlanId] : null;
+        if (commPlan && userId) {
+          await base44.asServiceRole.entities.User.update(userId, { community_plan: commPlanId, community_boosts_remaining: commPlan.boosts });
+        }
+        await base44.asServiceRole.entities.TrixTransaction.create({
+          user_email: userEmail, type: 'community_sub', amount: 0,
+          description: `Abonnement Communauté ${commPlanId} - ${(session.amount_total / 100).toFixed(2)}€ (session ${session.id})`,
+        });
+        return Response.json({ success: true, type, commPlanId });
+      }
+
+      if (type === 'premium_subscription') {
+        const premiumPlan = PREMIUM_PLANS[session.metadata?.plan_id || 'monthly'] || PREMIUM_PLANS.monthly;
+        if (userId) {
+          const target = await base44.asServiceRole.entities.User.get(userId);
+          if (target) {
+            const newBalance = (target.trix_balance || 0) + premiumPlan.trixBonus;
+            await base44.asServiceRole.entities.User.update(userId, {
+              is_premium: true,
+              premium_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+              trix_balance: newBalance,
+            });
+          }
+        }
+        await base44.asServiceRole.entities.TrixTransaction.create({
+          user_email: userEmail, type: 'premium', amount: premiumPlan.trixBonus,
+          description: `Abonnement MATRIX Premium - ${(session.amount_total / 100).toFixed(2)}€ (session ${session.id})`,
+        });
+        return Response.json({ success: true, type });
+      }
+
       return Response.json({ error: 'Unknown session type' }, { status: 400 });
     }
 
@@ -716,6 +820,98 @@ export default async function(req: Request): Promise<Response> {
       params.append('metadata[user_email]', user.email);
       params.append('metadata[user_id]', user.id);
       params.append('metadata[nitro_plan]', plan || 'monthly');
+
+      const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${stripeKey}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params,
+      });
+      const session = await res.json();
+      if (session.error) return Response.json({ error: session.error.message }, { status: 400 });
+      return Response.json({ url: session.url, sessionId: session.id });
+    }
+
+    // ---- createAISubscription ----
+    if (action === 'createAISubscription') {
+      const { planId } = body;
+      const plan = planId ? AI_PLANS[planId] : null;
+      if (!plan) return Response.json({ error: 'Plan IA invalide' }, { status: 400 });
+
+      const params = new URLSearchParams();
+      params.append('payment_method_types[]', 'card');
+      params.append('mode', 'payment');
+      params.append('customer_email', user.email);
+      params.append('line_items[0][price_data][currency]', 'eur');
+      params.append('line_items[0][price_data][product_data][name]', plan.label);
+      params.append('line_items[0][price_data][unit_amount]', String(plan.priceCents));
+      params.append('line_items[0][quantity]', '1');
+      params.append('success_url', `${origin}/ai/subscription?payment=success&session_id={CHECKOUT_SESSION_ID}`);
+      params.append('cancel_url', `${origin}/ai/subscription?payment=cancelled`);
+      params.append('metadata[type]', 'ai_subscription');
+      params.append('metadata[user_email]', user.email);
+      params.append('metadata[user_id]', user.id);
+      params.append('metadata[plan_id]', planId);
+
+      const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${stripeKey}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params,
+      });
+      const session = await res.json();
+      if (session.error) return Response.json({ error: session.error.message }, { status: 400 });
+      return Response.json({ url: session.url, sessionId: session.id });
+    }
+
+    // ---- createCommunitySubscription ----
+    if (action === 'createCommunitySubscription') {
+      const { planId } = body;
+      const plan = planId ? COMMUNITY_PLANS[planId] : null;
+      if (!plan) return Response.json({ error: 'Plan communauté invalide' }, { status: 400 });
+
+      const params = new URLSearchParams();
+      params.append('payment_method_types[]', 'card');
+      params.append('mode', 'payment');
+      params.append('customer_email', user.email);
+      params.append('line_items[0][price_data][currency]', 'eur');
+      params.append('line_items[0][price_data][product_data][name]', plan.label);
+      params.append('line_items[0][price_data][unit_amount]', String(plan.priceCents));
+      params.append('line_items[0][quantity]', '1');
+      params.append('success_url', `${origin}/community/subscription?payment=success&session_id={CHECKOUT_SESSION_ID}`);
+      params.append('cancel_url', `${origin}/community/subscription?payment=cancelled`);
+      params.append('metadata[type]', 'community_subscription');
+      params.append('metadata[user_email]', user.email);
+      params.append('metadata[user_id]', user.id);
+      params.append('metadata[plan_id]', planId);
+
+      const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${stripeKey}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params,
+      });
+      const session = await res.json();
+      if (session.error) return Response.json({ error: session.error.message }, { status: 400 });
+      return Response.json({ url: session.url, sessionId: session.id });
+    }
+
+    // ---- createPremiumSubscription ----
+    if (action === 'createPremiumSubscription') {
+      const { planId } = body;
+      const plan = PREMIUM_PLANS[planId || 'monthly'] || PREMIUM_PLANS.monthly;
+
+      const params = new URLSearchParams();
+      params.append('payment_method_types[]', 'card');
+      params.append('mode', 'payment');
+      params.append('customer_email', user.email);
+      params.append('line_items[0][price_data][currency]', 'eur');
+      params.append('line_items[0][price_data][product_data][name]', plan.label);
+      params.append('line_items[0][price_data][unit_amount]', String(plan.priceCents));
+      params.append('line_items[0][quantity]', '1');
+      params.append('success_url', `${origin}/premium?payment=success&session_id={CHECKOUT_SESSION_ID}`);
+      params.append('cancel_url', `${origin}/premium?payment=cancelled`);
+      params.append('metadata[type]', 'premium_subscription');
+      params.append('metadata[user_email]', user.email);
+      params.append('metadata[user_id]', user.id);
+      params.append('metadata[plan_id]', planId || 'monthly');
 
       const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
         method: 'POST',
