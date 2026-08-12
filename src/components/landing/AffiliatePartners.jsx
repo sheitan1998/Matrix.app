@@ -11,11 +11,11 @@ const PARTNERS = [
     image: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/3ea092b99_Gemini_Generated_Image_dwz0m2dwz0m2dwz0.png",
   },
   {
-    name: "Decathlon",
-    title: "Nos offres chez Decathlon",
-    btn: "Découvrir Decathlon",
-    href: null,
-    image: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/86c0fef7e_Gemini_Generated_Image_4x2tdt4x2tdt4x2t.png",
+    name: "Instant Gaming",
+    title: "Nos offres chez Instant Gaming",
+    btn: "Découvrir Instant Gaming",
+    href: "https://www.instant-gaming.com/?igr=gamer-45b9bd",
+    image: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/cf05661b3_Gemini_Generated_Image_38wgo938wgo938wg.png",
   },
   {
     name: "Intersport",
