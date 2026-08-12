@@ -48,6 +48,7 @@ import Sondages from '@/pages/Sondages';
 import MonProfil from '@/pages/MonProfil';
 import BoutiqueMatrix from '@/pages/BoutiqueMatrix';
 import BoutiqueNexus from '@/pages/BoutiqueNexus';
+import NexusInvite from '@/pages/NexusInvite';
 import RechercheJoueur from '@/pages/prospecteurs/RechercheJoueur';
 import Privacy from '@/pages/Privacy';
 import GlobalProfileButton from '@/components/profile/GlobalProfileButton';
@@ -90,6 +91,7 @@ const AuthenticatedApp = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/nexus/invite/:code" element={<NexusInvite />} />
       <Route path="/" element={<Landing />} />
       <Route element={<TutoGamingLayout />}>
         <Route path="/tuto-gaming" element={<TutoGamingHub />} />

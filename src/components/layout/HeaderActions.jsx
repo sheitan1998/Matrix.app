@@ -9,6 +9,7 @@ import TrixIcon from "@/components/TrixIcon";
 import ShopSelectionModal from "@/components/ShopSelectionModal";
 import MessageOverlay from "@/components/messaging/MessageOverlay";
 import ProfileContent from "@/components/profile/ProfileContent";
+import TranslationButton from "@/components/landing/TranslationButton";
 import { playMessageSound } from "@/lib/messageSound";
 
 export default function HeaderActions() {
@@ -109,6 +110,9 @@ export default function HeaderActions() {
           <ShoppingBag className="w-4 h-4" />
           <span className="hidden sm:inline">Boutique</span>
         </button>
+
+        {/* Translation button */}
+        <TranslationButton />
 
         {/* Messaging button */}
         <button

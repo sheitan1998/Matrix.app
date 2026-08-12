@@ -331,17 +331,36 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
               {/* Transitions */}
               {navTab === "transitions" && (
                 <div className="grid grid-cols-2 gap-1.5">
-                  {["Fondu", "Glisser", "Zoom", "Rotation", "Volet", "Flash"].map(t => (
-                    <button key={t} className="aspect-video rounded-lg flex items-center justify-center text-[10px] font-bold text-white/50 hover:text-white hover:bg-white/5 transition" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>{t}</button>
+                  {[
+                    { label: "Fondu", value: "fade" },
+                    { label: "Glisser", value: "slide" },
+                    { label: "Zoom", value: "zoom" },
+                    { label: "Rotation", value: "rotate" },
+                    { label: "Volet", value: "wipe" },
+                    { label: "Flash", value: "flash" },
+                  ].map(t => (
+                    <button key={t.value} onClick={() => { if (!selectedClip) { toast.error("Sélectionne un clip d'abord"); return; } updateClip(selectedClip.id, { transition: t.value }); toast.success(`Transition "${t.label}" appliquée`); }}
+                      className={`aspect-video rounded-lg flex items-center justify-center text-[10px] font-bold transition ${selectedClip?.transition === t.value ? "text-white" : "text-white/50 hover:text-white hover:bg-white/5"}`}
+                      style={{ background: selectedClip?.transition === t.value ? "rgba(124,58,237,0.2)" : "rgba(255,255,255,0.03)", border: `1px solid ${selectedClip?.transition === t.value ? "rgba(124,58,237,0.5)" : "rgba(255,255,255,0.05)"}` }}>{t.label}</button>
                   ))}
                 </div>
               )}
               {/* FX */}
               {navTab === "fx" && (
                 <div className="grid grid-cols-2 gap-1.5">
-                  {["Néon", "Glitch", "VHS", "Flou", "Glow", "Chrome", "Rétro", "HDR"].map(t => (
-                    <button key={t} className="aspect-video rounded-lg flex items-center justify-center text-[10px] font-bold text-white/50 hover:text-white hover:bg-white/5 transition" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                      <Sparkles className="w-3 h-3 mr-1" /> {t}
+                  {[
+                    { label: "Néon", fx: { brightness: 120, contrast: 140, saturation: 200 } },
+                    { label: "Glitch", fx: { brightness: 90, contrast: 130, saturation: 150 } },
+                    { label: "VHS", fx: { brightness: 110, contrast: 80, saturation: 60, blur: 1 } },
+                    { label: "Flou", fx: { blur: 5 } },
+                    { label: "Glow", fx: { brightness: 130, contrast: 110, saturation: 130 } },
+                    { label: "Chrome", fx: { brightness: 100, contrast: 150, saturation: 0 } },
+                    { label: "Rétro", fx: { brightness: 95, contrast: 120, saturation: 80 } },
+                    { label: "HDR", fx: { brightness: 110, contrast: 160, saturation: 140 } },
+                  ].map(t => (
+                    <button key={t.label} onClick={() => { if (!selectedClip) { toast.error("Sélectionne un clip d'abord"); return; } updateClip(selectedClip.id, { effects: { ...selectedClip.effects, ...t.fx } }); toast.success(`Effet "${t.label}" appliqué`); }}
+                      className="aspect-video rounded-lg flex items-center justify-center text-[10px] font-bold text-white/50 hover:text-white hover:bg-white/5 transition" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                      <Sparkles className="w-3 h-3 mr-1" /> {t.label}
                     </button>
                   ))}
                 </div>
@@ -391,16 +410,16 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
                   <button onClick={togglePlay} className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: "#7c3aed" }}>
                     {isPlaying ? <Pause className="w-4 h-4 text-white fill-white" /> : <Play className="w-4 h-4 text-white fill-white ml-0.5" />}
                   </button>
-                  <button className="w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:text-white shrink-0"><SkipBack className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => setPlayhead(Math.max(0, playhead - 5))} className="w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:text-white shrink-0"><SkipBack className="w-3.5 h-3.5" /></button>
                   <div className="flex-1 relative">
                     <div className="h-1 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }}>
                       <div className="h-full rounded-full" style={{ width: `${(playhead / 30) * 100}%`, background: "#7c3aed" }} />
                     </div>
                     <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full" style={{ left: `${(playhead / 30) * 100}%`, transform: "translate(-50%, -50%)", background: "#a855f7", boxShadow: "0 0 8px rgba(124,58,237,0.6)" }} />
                   </div>
-                  <button className="w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:text-white shrink-0"><SkipForward className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => setPlayhead(Math.min(30, playhead + 5))} className="w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:text-white shrink-0"><SkipForward className="w-3.5 h-3.5" /></button>
                   <span className="text-[10px] font-mono text-white/60 tabular-nums shrink-0">00:{String(playhead).padStart(2, "0")}</span>
-                  <button className="w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:text-white shrink-0"><Maximize2 className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => videoRef.current?.requestFullscreen?.()} className="w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:text-white shrink-0"><Maximize2 className="w-3.5 h-3.5" /></button>
                 </div>
               </div>
             </div>
@@ -410,8 +429,8 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
           <div className="flex-1 flex flex-col overflow-hidden" style={{ background: "#121214", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
             {/* Toolbar */}
             <div className="flex items-center gap-1 px-3 py-1.5" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-              <button className="w-7 h-7 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/5 transition tap-sm" title="Razor"><Scissors className="w-3.5 h-3.5" /></button>
-              <button className="w-7 h-7 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/5 transition tap-sm" title="Link"><Link2 className="w-3.5 h-3.5" /></button>
+              <button onClick={() => selectedClip && splitClip(selectedClip.id)} disabled={!selectedClip} className="w-7 h-7 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/5 transition disabled:opacity-30 tap-sm" title="Couper"><Scissors className="w-3.5 h-3.5" /></button>
+              <button onClick={() => selectedClip && mergeClip(selectedClip.id)} disabled={!selectedClip} className="w-7 h-7 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/5 transition disabled:opacity-30 tap-sm" title="Fusionner"><Link2 className="w-3.5 h-3.5" /></button>
               <button onClick={() => setMagnet(!magnet)} className="w-7 h-7 rounded-lg flex items-center justify-center transition tap-sm" style={magnet ? { background: "rgba(124,58,237,0.2)", color: "#a855f7" } : { color: "rgba(255,255,255,0.5)" }} title="Magnet"><Magnet className="w-3.5 h-3.5" /></button>
               <div className="w-px h-4 mx-1" style={{ background: "rgba(255,255,255,0.06)" }} />
               <button onClick={() => setZoom(Math.max(0.5, zoom - 0.25))} className="w-7 h-7 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/5 transition tap-sm" title="Zoom out"><ZoomIn className="w-3.5 h-3.5" /></button>

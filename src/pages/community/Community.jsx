@@ -139,24 +139,28 @@ export default function Community() {
     toast.success("Bannière mise à jour !");
   };
 
-  const copyInvite = (code) => { navigator.clipboard.writeText(code); toast.success("Code copié !"); };
+  const copyInvite = (code) => {
+    const url = `https://matrix.app/nexus/invite/${code}`;
+    navigator.clipboard.writeText(url);
+    toast.success("Lien copié !");
+  };
 
   const joinByInviteCode = async () => {
     const input = inviteCodeInput.trim();
     if (!input) return;
-    // Support Discord invite links (discord.gg/xxx, discord.com/invite/xxx)
-    const discordMatch = input.match(/(?:discord\.gg\/|discord\.com\/invite\/)([a-zA-Z0-9]+)/i);
-    if (discordMatch) {
-      toast.info("Lien Discord détecté — tu seras redirigé vers Discord", { description: "Ouvre le lien dans un nouvel onglet." });
-      window.open(`https://discord.gg/${discordMatch[1]}`, "_blank");
-      setShowInviteJoin(false);
-      setInviteCodeInput("");
-      return;
-    }
-    // Matrix invite code
+    // Extract code from URL or accept raw code
+    let code = input;
+    const urlMatch = input.match(/\/nexus\/invite\/([a-zA-Z0-9]+)/i);
+    if (urlMatch) code = urlMatch[1];
+    // Search server by invite code
     const allServers = await base44.entities.Server.list("-created_date", 200);
-    const found = allServers.find((s) => s.invite_code === input);
-    if (!found) { toast.error("Code invalide ou expiré"); return; }
+    const found = allServers.find((s) => s.invite_code === code);
+    if (!found) { toast.error("Lien invalide ou expiré"); return; }
+    // Check expiration
+    if (found.invite_expires_at) {
+      const exp = new Date(found.invite_expires_at);
+      if (exp < new Date()) { toast.error("Ce lien d'invitation a expiré"); return; }
+    }
     // Check if already a member
     const existing = await base44.entities.ServerMember.filter({ server_id: found.id, user_email: user.email });
     if (existing.length === 0) {
@@ -176,9 +180,9 @@ export default function Community() {
   };
 
   const inviteToServer = (server) => {
-    if (!server.invite_code) { toast.error("Ce serveur n'a pas de code d'invitation"); return; }
-    const link = `Rejoins mon serveur "${server.name}" sur MATRIX ! Code: ${server.invite_code}`;
-    navigator.clipboard.writeText(link);
+    if (!server.invite_code) { toast.error("Ce serveur n'a pas de lien d'invitation"); return; }
+    const url = `https://matrix.app/nexus/invite/${server.invite_code}`;
+    navigator.clipboard.writeText(url);
     toast.success("Lien d'invitation copié !");
   };
 
@@ -561,13 +565,13 @@ export default function Community() {
             <div className="text-center">
               <span className="text-4xl">🔗</span>
               <h2 className="font-black text-lg text-white mt-2">Rejoindre un serveur</h2>
-              <p className="text-xs text-muted-foreground">Code d'invitation Matrix ou lien Discord (discord.gg/...)</p>
+              <p className="text-xs text-muted-foreground">Colle le lien d'invitation Nexus reçu</p>
             </div>
             <input
               value={inviteCodeInput}
               onChange={(e) => setInviteCodeInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && joinByInviteCode()}
-              placeholder="Code Matrix ou lien discord.gg/..."
+              placeholder="https://matrix.app/nexus/invite/..."
               className="w-full px-4 py-3 rounded-2xl bg-secondary border border-border text-white placeholder:text-muted-foreground outline-none text-sm"
             />
             <div className="flex gap-3">
