@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
@@ -159,15 +160,18 @@ export default function HeaderActions() {
         </button>
       </div>
 
-      {/* Overlays */}
-      <ShopSelectionModal
-        open={showShopModal}
-        onClose={() => setShowShopModal(false)}
-        onSelectTrix={() => nav("/trix-store")}
-        onSelectCosmetics={() => nav("/boutique-matrix")}
-      />
+      {/* Overlays — rendered via portal to avoid backdrop-filter containing block */}
+      {createPortal(
+        <ShopSelectionModal
+          open={showShopModal}
+          onClose={() => setShowShopModal(false)}
+          onSelectTrix={() => nav("/trix-store")}
+          onSelectCosmetics={() => nav("/boutique-matrix")}
+        />,
+        document.body
+      )}
 
-      {showMessages && (
+      {showMessages && createPortal(
         <div className="fixed inset-0 z-[80]" style={{ background: "#0a050f" }}>
           <MessageOverlay
             user={user}
@@ -175,13 +179,15 @@ export default function HeaderActions() {
             onClose={() => { setShowMessages(false); setPreselectedEmail(null); }}
             onMessagesRead={(count) => setUnreadCount(prev => Math.max(0, prev - count))}
           />
-        </div>
+        </div>,
+        document.body
       )}
 
-      {showProfile && (
+      {showProfile && createPortal(
         <div className="fixed inset-0 z-[80] overflow-y-auto" style={{ background: "#0a050f" }}>
           <ProfileContent onClose={() => setShowProfile(false)} />
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
