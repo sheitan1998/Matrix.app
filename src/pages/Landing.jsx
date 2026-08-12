@@ -48,9 +48,9 @@ export default function Landing() {
       <div className="fixed inset-0 pointer-events-none" style={{ backgroundImage: "url(https://media.base44.com/images/public/69e14a987a927963a9924d5a/891f5968b_Gemini_Generated_Image_vsevw4vsevw4vsev.png)", backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed" }} />
       <div className="fixed inset-0 pointer-events-none" style={{ background: "rgba(10,5,15,0.5)" }} />
 
-      <div className="relative z-10 min-h-screen flex flex-col px-4 sm:px-6 lg:px-10 pt-16 sm:pt-4 pb-20 sm:pb-4">
+      <div className="relative z-10 min-h-screen flex flex-col px-4 sm:px-6 lg:px-10 py-4">
         {/* Header */}
-        <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 sm:px-6 lg:px-10 py-3" style={{ background: "rgba(10,5,15,0.9)", backdropFilter: "blur(12px)" }}>
+        <header className="sticky top-0 z-50 flex items-center justify-between mb-4 sm:mb-8 lg:mb-12 px-4 sm:px-0 py-3 sm:py-0 -mx-4 sm:-mx-0" style={{ background: "rgba(10,5,15,0.9)", backdropFilter: "blur(12px)" }}>
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white">MATRIX</h1>
             <div className="flex items-center gap-2 mt-1">

@@ -13,7 +13,7 @@ export default function MatrixTopbar({ title, searchPlaceholder = "Rechercher da
   }, []);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 flex items-center gap-4 px-6 py-3"
+    <header className="sticky top-0 z-30 flex items-center gap-4 px-6 py-3"
       style={{ background: "rgba(10,10,12,0.8)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
       <h2 className="text-lg font-black text-white hidden sm:block">{title}</h2>
 
