@@ -9,24 +9,24 @@
     },
     "do": [
       {
-        "purge_ads": {
+        "reset_monthly": {
           "call": "invoke_backend_function",
           "with": {
             "function_name": "serverSearch",
             "args": {
-              "action": "monthlyPurge"
+              "action": "resetMonthly"
             }
           },
           "then": "end",
           "x-base44": {
-            "title": "Purge mensuelle des annonces",
-            "description": "Supprime toutes les annonces de serveurs"
+            "title": "Reset mensuel des votes et boosts",
+            "description": "Remet a zero les votes et boosts de tous les serveurs"
           }
         }
       }
     ]
   },
-  "description": "Supprime automatiquement toutes les annonces de serveurs le 1er de chaque mois",
+  "description": "Remet a zero les votes et boosts de tous les serveurs le 1er de chaque mois",
   "trigger": {
     "condition": null,
     "config": {

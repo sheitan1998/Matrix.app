@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ArrowUp, Flame, ExternalLink, Users, Clock, Trash2, Pencil } from "lucide-react";
+import { ArrowUp, Flame, ExternalLink, Users, Trash2, Pencil } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import AdMessages from "./AdMessages";
@@ -9,7 +9,10 @@ const BOOST_COST = 500;
 export default function ServerCard({ server, onVote, onBoost, onDelete, onEdit, currentUser, trixBalance }) {
   const [voteStatus, setVoteStatus] = useState({ canVote: true, remaining: null });
   const [loading, setLoading] = useState(false);
-  const [remainingMin, setRemainingMin] = useState(60);
+
+  const isDiscord = server.server_type === "discord";
+  const typeColor = isDiscord ? "#5865F2" : "#22c55e";
+  const typeLabel = isDiscord ? "Discord" : "Nexus";
 
   useEffect(() => {
     let active = true;
@@ -48,18 +51,6 @@ export default function ServerCard({ server, onVote, onBoost, onDelete, onEdit, 
     }, 1000);
     return () => clearInterval(timer);
   }, [voteStatus.canVote]);
-
-  // Expiry countdown
-  useEffect(() => {
-    if (!server.expires_at) return;
-    const update = () => {
-      const remaining = Math.max(0, Math.floor((new Date(server.expires_at).getTime() - Date.now()) / 60000));
-      setRemainingMin(remaining);
-    };
-    update();
-    const timer = setInterval(update, 30000);
-    return () => clearInterval(timer);
-  }, [server.expires_at]);
 
   const handleVote = async () => {
     if (!voteStatus.canVote) return;
@@ -145,6 +136,13 @@ export default function ServerCard({ server, onVote, onBoost, onDelete, onEdit, 
       {hasCover ? (
         <div className="relative h-16 w-full overflow-hidden">
           <img src={server.cover_image} alt="" className="w-full h-full object-cover" />
+          {/* Server type badge */}
+          <span
+            className="absolute top-1.5 left-1.5 text-[7px] font-black px-1.5 py-0.5 rounded"
+            style={{ background: `${typeColor}30`, color: typeColor, backdropFilter: "blur(4px)" }}
+          >
+            {typeLabel}
+          </span>
           {server.is_boosted && (
             <span
               className="absolute top-1.5 right-1.5 text-[7px] font-black px-1.5 py-0.5 rounded flex items-center gap-0.5"
@@ -155,7 +153,7 @@ export default function ServerCard({ server, onVote, onBoost, onDelete, onEdit, 
             </span>
           )}
           {isOwner && (
-            <div className="absolute top-1.5 left-1.5 flex items-center gap-1">
+            <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1">
               <button
                 onClick={() => onEdit?.(server)}
                 className="w-6 h-6 rounded flex items-center justify-center transition tap-sm"
@@ -174,39 +172,42 @@ export default function ServerCard({ server, onVote, onBoost, onDelete, onEdit, 
           )}
         </div>
       ) : (
-        (server.is_boosted || isOwner) && (
-          <div className="px-3 pt-2 flex items-center justify-between">
-            {server.is_boosted ? (
-              <span
-                className="text-[7px] font-black px-1.5 py-0.5 rounded inline-flex items-center gap-0.5"
-                style={{ background: "rgba(251, 191, 36, 0.15)", color: "#fbbf24" }}
+        <div className="px-3 pt-2 flex items-center justify-between">
+          <span
+            className="text-[7px] font-black px-1.5 py-0.5 rounded inline-flex items-center gap-0.5"
+            style={{ background: `${typeColor}20`, color: typeColor }}
+          >
+            {typeLabel}
+          </span>
+          {server.is_boosted ? (
+            <span
+              className="text-[7px] font-black px-1.5 py-0.5 rounded inline-flex items-center gap-0.5"
+              style={{ background: "rgba(251, 191, 36, 0.15)", color: "#fbbf24" }}
+            >
+              <Flame className="w-2 h-2" />
+              BOOSTÉ
+            </span>
+          ) : isOwner ? (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => onEdit?.(server)}
+                className="w-6 h-6 rounded flex items-center justify-center transition tap-sm"
+                style={{ background: "rgba(138, 79, 255, 0.1)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}
               >
-                <Flame className="w-2 h-2" />
-                BOOSTÉ
-              </span>
-            ) : (
-              <span />
-            )}
-            {isOwner && (
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => onEdit?.(server)}
-                  className="w-6 h-6 rounded flex items-center justify-center transition tap-sm"
-                  style={{ background: "rgba(138, 79, 255, 0.1)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}
-                >
-                  <Pencil className="w-3 h-3" />
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="w-6 h-6 rounded flex items-center justify-center transition tap-sm"
-                  style={{ background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)" }}
-                >
-                  <Trash2 className="w-3 h-3" />
-                </button>
-              </div>
-            )}
-          </div>
-        )
+                <Pencil className="w-3 h-3" />
+              </button>
+              <button
+                onClick={handleDelete}
+                className="w-6 h-6 rounded flex items-center justify-center transition tap-sm"
+                style={{ background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)" }}
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            </div>
+          ) : (
+            <span />
+          )}
+        </div>
       )}
 
       {/* Profile + title */}
@@ -263,15 +264,6 @@ export default function ServerCard({ server, onVote, onBoost, onDelete, onEdit, 
             {server.players_count || 0}/{server.max_players}
           </span>
         )}
-        {server.expires_at && (
-          <span
-            className="flex items-center gap-0.5 ml-auto"
-            style={{ color: remainingMin < 10 ? "#ef4444" : undefined }}
-          >
-            <Clock className="w-2.5 h-2.5" />
-            {remainingMin}min
-          </span>
-        )}
       </div>
 
       {/* Actions */}
@@ -292,7 +284,7 @@ export default function ServerCard({ server, onVote, onBoost, onDelete, onEdit, 
             </>
           ) : (
             <>
-              <Clock className="w-3 h-3" />
+              <Flame className="w-3 h-3" />
               {fmt(voteStatus.remaining.h)}:{fmt(voteStatus.remaining.m)}:{fmt(voteStatus.remaining.s)}
             </>
           )}
@@ -306,21 +298,18 @@ export default function ServerCard({ server, onVote, onBoost, onDelete, onEdit, 
           <Flame className="w-3 h-3" />
           {BOOST_COST}
         </button>
-        {server.discord_link && (() => {
-          const code = server.discord_link.split("/").filter(Boolean).pop()?.split("?")[0] || server.discord_link;
-          return (
-            <a
-              href={server.discord_link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="h-7 px-2 rounded-md flex items-center justify-center transition tap-sm text-[9px] font-bold"
-              style={{ background: "rgba(88, 101, 242, 0.15)", color: "#5865F2", border: "1px solid rgba(88, 101, 242, 0.2)" }}
-              title={`discord.gg/${code}`}
-            >
-              {code}
-            </a>
-          );
-        })()}
+        {server.discord_link && (
+          <a
+            href={server.discord_link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="h-7 px-2 rounded-md flex items-center justify-center transition tap-sm text-[9px] font-bold"
+            style={{ background: `${typeColor}20`, color: typeColor, border: `1px solid ${typeColor}30` }}
+            title={server.discord_link}
+          >
+            <ExternalLink className="w-3 h-3" />
+          </a>
+        )}
       </div>
 
       {/* Messages */}

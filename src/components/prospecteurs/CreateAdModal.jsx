@@ -6,9 +6,9 @@ import { toast } from "sonner";
 const GAMES = ["Valorant", "League of Legends", "Fortnite", "CS2", "Apex Legends", "Minecraft", "Rocket League", "Autre"];
 const CATEGORIES = ["Gaming", "RP", "Communauté", "Compétitif", "Casual", "Créatif", "Autre"];
 
-export default function CreateAdModal({ onClose, onSubmit, initialType = "server", editAd = null }) {
+export default function CreateAdModal({ onClose, onSubmit, initialType = "server", initialServerType = "nexus", editAd = null }) {
   const [adType, setAdType] = useState(editAd?.type || initialType);
-  const [serverSubType, setServerSubType] = useState(editAd?.server_type || "nexus");
+  const [serverSubType, setServerSubType] = useState(editAd?.server_type || initialServerType);
   const [form, setForm] = useState({
     title: editAd?.title || "",
     description: editAd?.description || "",

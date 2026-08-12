@@ -14,13 +14,15 @@ export default async function(req: Request): Promise<Response> {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // System action: monthly boost reset (admin only)
-    if (action === 'resetBoosts') {
+    // System action: monthly reset of votes AND boosts (admin only, 1st of each month)
+    if (action === 'resetMonthly') {
       if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
       await base44.asServiceRole.entities.ServerAd.updateMany(
         {},
-        { $set: { boosts: 0, is_boosted: false, boost_until: null } }
+        { $set: { votes: 0, boosts: 0, is_boosted: false, boost_until: null } }
       );
+      // Also clear all vote records so users can vote again
+      await base44.asServiceRole.entities.ServerVote.deleteMany({});
       return Response.json({ success: true });
     }
 

@@ -18,23 +18,17 @@ export default function Prospecteurs() {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createType, setCreateType] = useState("server");
+  const [createServerType, setCreateServerType] = useState("nexus");
   const [editingAd, setEditingAd] = useState(null);
 
   const fetchData = useCallback(async () => {
     try {
       const me = await base44.auth.me();
       setUser(me);
-
       setTrixBalance(me.trix_balance || 0);
 
-      // Cleanup expired ads from database
-      await base44.functions.invoke("serverSearch", { action: "cleanupExpired" }).catch(() => {});
-
-      const allAds = await base44.entities.ServerAd.list("-created_date", 100);
-      // Filter out expired ads (1 hour lifetime)
-      const now = Date.now();
-      const activeAds = allAds.filter((a) => !a.expires_at || new Date(a.expires_at).getTime() > now);
-      setAds(activeAds);
+      const allAds = await base44.entities.ServerAd.list("-created_date", 200);
+      setAds(allAds);
     } catch {
       /* silent */
     } finally {
@@ -45,15 +39,6 @@ export default function Prospecteurs() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
-  // Periodic check to remove expired ads from view
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const now = Date.now();
-      setAds((prev) => prev.filter((a) => !a.expires_at || new Date(a.expires_at).getTime() > now));
-    }, 60000);
-    return () => clearInterval(timer);
-  }, []);
 
   // Sort: boosted first, then by (votes + boosts) descending
   const sortedAds = [...ads].sort((a, b) => {
@@ -66,14 +51,8 @@ export default function Prospecteurs() {
 
   const serverAds = sortedAds.filter((a) => !a.type || a.type === "server");
   const playerAds = sortedAds.filter((a) => a.type === "player");
-  const nexusServers = serverAds.filter(s => {
-    const link = (s.discord_link || "").toLowerCase();
-    return !link.includes("discord.gg") && !link.includes("discord.com") && !link.includes("discordapp.com");
-  });
-  const discordServers = serverAds.filter(s => {
-    const link = (s.discord_link || "").toLowerCase();
-    return link.includes("discord.gg") || link.includes("discord.com") || link.includes("discordapp.com");
-  });
+  const nexusServers = serverAds.filter(s => s.server_type !== "discord");
+  const discordServers = serverAds.filter(s => s.server_type === "discord");
 
   const handleVote = (adId, newVotes) => {
     setAds((prev) =>
@@ -100,6 +79,7 @@ export default function Prospecteurs() {
   const handleEditAd = (ad) => {
     setEditingAd(ad);
     setCreateType(ad.type || "server");
+    setCreateServerType(ad.server_type || "nexus");
     setShowCreateModal(true);
   };
 
@@ -123,7 +103,6 @@ export default function Prospecteurs() {
         author_email: user.email,
         author_name: user.full_name || user.email.split("@")[0],
         author_avatar: user.avatar_url || "",
-        expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
       });
       setAds((prev) => [newAd, ...prev]);
       setShowCreateModal(false);
@@ -131,6 +110,13 @@ export default function Prospecteurs() {
     } catch {
       toast.error("Erreur lors de la création de l'annonce");
     }
+  };
+
+  const openCreateModal = (serverType = "nexus") => {
+    setCreateType("server");
+    setCreateServerType(serverType);
+    setEditingAd(null);
+    setShowCreateModal(true);
   };
 
   return (
@@ -184,7 +170,7 @@ export default function Prospecteurs() {
               servers={nexusServers}
               loading={loading}
               type="nexus"
-              onCreateClick={() => { setCreateType("server"); setShowCreateModal(true); }}
+              onCreateClick={() => openCreateModal("nexus")}
               onVote={handleVote}
               onBoost={handleBoost}
               onDelete={handleDeleteAd}
@@ -196,7 +182,7 @@ export default function Prospecteurs() {
               servers={discordServers}
               loading={loading}
               type="discord"
-              onCreateClick={() => { setCreateType("server"); setShowCreateModal(true); }}
+              onCreateClick={() => openCreateModal("discord")}
               onVote={handleVote}
               onBoost={handleBoost}
               onDelete={handleDeleteAd}
@@ -206,23 +192,40 @@ export default function Prospecteurs() {
             />
           </div>
 
-          {/* Lower section: server cards grid */}
-          <ServerCardGrid
-            servers={serverAds}
-            loading={loading}
-            onVote={handleVote}
-            onBoost={handleBoost}
-            onDelete={handleDeleteAd}
-            onEdit={handleEditAd}
-            currentUser={user}
-            trixBalance={trixBalance}
-          />
+          {/* Lower section: separate scrollable panels for Nexus and Discord */}
+          <div className="grid lg:grid-cols-2 gap-5">
+            <ServerCardGrid
+              servers={nexusServers}
+              loading={loading}
+              type="nexus"
+              onVote={handleVote}
+              onBoost={handleBoost}
+              onDelete={handleDeleteAd}
+              onEdit={handleEditAd}
+              currentUser={user}
+              trixBalance={trixBalance}
+              onCreateClick={() => openCreateModal("nexus")}
+            />
+            <ServerCardGrid
+              servers={discordServers}
+              loading={loading}
+              type="discord"
+              onVote={handleVote}
+              onBoost={handleBoost}
+              onDelete={handleDeleteAd}
+              onEdit={handleEditAd}
+              currentUser={user}
+              trixBalance={trixBalance}
+              onCreateClick={() => openCreateModal("discord")}
+            />
+          </div>
         </div>
       </div>
 
       {showCreateModal && (
         <CreateAdModal
           initialType={createType}
+          initialServerType={createServerType}
           editAd={editingAd}
           onClose={() => { setShowCreateModal(false); setEditingAd(null); }}
           onSubmit={editingAd ? handleUpdateAd : handleCreateAd}
