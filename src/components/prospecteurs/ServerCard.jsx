@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { ArrowUp, Flame, ExternalLink, Users, Trash2, Pencil, Zap } from "lucide-react";
+import { ArrowUp, Flame, ExternalLink, Users, Trash2, Pencil } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import AdMessages from "./AdMessages";
 
-export default function ServerCard({ server, onVote, onBoost, onDelete, onEdit, currentUser, flashBoosts }) {
+export default function ServerCard({ server, onVote, onDelete, onEdit, currentUser }) {
   const [voteStatus, setVoteStatus] = useState({ canVote: true, remaining: null });
   const [loading, setLoading] = useState(false);
 
@@ -68,30 +68,6 @@ export default function ServerCard({ server, onVote, onBoost, onDelete, onEdit, 
       }
     } catch {
       toast.error("Erreur lors du vote");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleBoost = async () => {
-    if ((flashBoosts || 0) < 1) {
-      toast.error("Tu n'as pas de boost Flash. Achète-en dans la Boutique Nexus.");
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await base44.functions.invoke("serverSearch", {
-        action: "boost",
-        serverAdId: server.id,
-      });
-      if (res.data?.success) {
-        onBoost(server.id, res.data.boosts, res.data.newFlashBoosts);
-        toast.success("Serveur boosté avec un Flash !");
-      } else {
-        toast.error(res.data?.error || "Erreur lors du boost");
-      }
-    } catch {
-      toast.error("Erreur lors du boost");
     } finally {
       setLoading(false);
     }
@@ -286,16 +262,6 @@ export default function ServerCard({ server, onVote, onBoost, onDelete, onEdit, 
               {fmt(voteStatus.remaining.h)}:{fmt(voteStatus.remaining.m)}:{fmt(voteStatus.remaining.s)}
             </>
           )}
-        </button>
-        <button
-          onClick={handleBoost}
-          disabled={loading || !flashBoosts}
-          className="h-7 px-2 rounded-md text-[10px] font-bold transition flex items-center gap-0.5 tap-sm"
-          style={{ background: "rgba(168,85,247,0.1)", color: "#a855f7", border: "1px solid rgba(168,85,247,0.2)" }}
-          title="Booster avec un Flash"
-        >
-          <Zap className="w-3 h-3" fill="currentColor" />
-          {flashBoosts || 0}
         </button>
         {server.discord_link && (
           <a

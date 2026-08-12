@@ -11,6 +11,17 @@ export default async function(req: Request): Promise<Response> {
     const { action, ...params } = body;
 
     const base44 = createClientFromRequest(req);
+
+    // ---- Public action: get server by invite code (no auth required) ----
+    if (action === 'getServerByInviteCode') {
+      const { inviteCode } = params;
+      if (!inviteCode) return Response.json({ error: 'Missing inviteCode' }, { status: 400 });
+      const servers = await base44.asServiceRole.entities.Server.list('-created_date', 200);
+      const found = servers.find(s => s.invite_code === inviteCode);
+      if (!found) return Response.json({ error: 'Not found' }, { status: 404 });
+      return Response.json(found);
+    }
+
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 

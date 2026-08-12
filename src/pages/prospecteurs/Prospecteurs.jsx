@@ -1,20 +1,16 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Zap } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "@/lib/AuthContext";
 import ProspecteursHeader from "@/components/prospecteurs/ProspecteursHeader";
 import ProspecteursSidebar from "@/components/prospecteurs/ProspecteursSidebar";
 import TopServers from "@/components/prospecteurs/TopServers";
 import ServerCardGrid from "@/components/prospecteurs/ServerCardGrid";
 import CreateAdModal from "@/components/prospecteurs/CreateAdModal";
-import ServerBoostLevels from "@/components/prospecteurs/ServerBoostLevels";
 
 export default function Prospecteurs() {
-  const { checkUserAuth } = useAuth();
   const [user, setUser] = useState(null);
-  const [flashBoosts, setFlashBoosts] = useState(0);
   const [ads, setAds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -26,7 +22,6 @@ export default function Prospecteurs() {
     try {
       const me = await base44.auth.me();
       setUser(me);
-      setFlashBoosts(me.flash_boosts || 0);
 
       const allAds = await base44.entities.ServerAd.list("-created_date", 200);
       setAds(allAds);
@@ -59,18 +54,6 @@ export default function Prospecteurs() {
     setAds((prev) =>
       prev.map((a) => (a.id === adId ? { ...a, votes: newVotes } : a))
     );
-  };
-
-  const handleBoost = (adId, newBoosts, newFlashBoosts) => {
-    setAds((prev) =>
-      prev.map((a) =>
-        a.id === adId
-          ? { ...a, boosts: newBoosts, is_boosted: true }
-          : a
-      )
-    );
-    setFlashBoosts(newFlashBoosts);
-    checkUserAuth();
   };
 
   const handleDeleteAd = (adId) => {
@@ -173,11 +156,9 @@ export default function Prospecteurs() {
               type="nexus"
               onCreateClick={() => openCreateModal("nexus")}
               onVote={handleVote}
-              onBoost={handleBoost}
               onDelete={handleDeleteAd}
               onEdit={handleEditAd}
               currentUser={user}
-              flashBoosts={flashBoosts}
             />
             <TopServers
               servers={discordServers}
@@ -185,11 +166,9 @@ export default function Prospecteurs() {
               type="discord"
               onCreateClick={() => openCreateModal("discord")}
               onVote={handleVote}
-              onBoost={handleBoost}
               onDelete={handleDeleteAd}
               onEdit={handleEditAd}
               currentUser={user}
-              flashBoosts={flashBoosts}
             />
           </div>
 
@@ -200,11 +179,9 @@ export default function Prospecteurs() {
               loading={loading}
               type="nexus"
               onVote={handleVote}
-              onBoost={handleBoost}
               onDelete={handleDeleteAd}
               onEdit={handleEditAd}
               currentUser={user}
-              flashBoosts={flashBoosts}
               onCreateClick={() => openCreateModal("nexus")}
             />
             <ServerCardGrid
@@ -212,27 +189,11 @@ export default function Prospecteurs() {
               loading={loading}
               type="discord"
               onVote={handleVote}
-              onBoost={handleBoost}
               onDelete={handleDeleteAd}
               onEdit={handleEditAd}
               currentUser={user}
-              flashBoosts={flashBoosts}
               onCreateClick={() => openCreateModal("discord")}
             />
-          </div>
-
-          {/* Boost levels info */}
-          <div className="mt-6">
-            <div className="rounded-2xl p-4 sm:p-5" style={{ background: "rgba(18, 9, 28, 0.6)", border: "1px solid rgba(168,85,247,0.15)" }}>
-              <div className="flex items-center gap-2 mb-4">
-                <Zap className="w-4 h-4" style={{ color: "#a855f7" }} fill="#a855f7" />
-                <h2 className="text-xs font-black tracking-wider uppercase text-white">Niveaux de Boost Serveur</h2>
-                <span className="text-[9px] text-white/40 ml-auto hidden sm:inline">
-                  Boosts Flash disponibles : {flashBoosts}
-                </span>
-              </div>
-              <ServerBoostLevels currentBoosts={Math.max(...nexusServers.concat(discordServers).map(s => s.boosts || 0), 0)} />
-            </div>
           </div>
         </div>
       </div>

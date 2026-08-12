@@ -87,7 +87,7 @@ export default function NexusVIPShop({ user }) {
         toast.error(res?.data?.error || "Erreur lors de la création du paiement");
         return;
       }
-      window.location.href = url;
+      window.location.replace(url);
     } catch (err) {
       toast.error(err?.message || "Erreur");
     }

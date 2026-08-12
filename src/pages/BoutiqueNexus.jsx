@@ -84,7 +84,7 @@ export default function BoutiqueNexus() {
         toast.error(res?.data?.error || "Erreur lors de la création du paiement");
         return;
       }
-      window.location.href = url;
+      window.location.replace(url);
     } catch (err) {
       toast.error(err?.response?.data?.error || err?.message || "Erreur");
     }
@@ -101,7 +101,7 @@ export default function BoutiqueNexus() {
             <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white">MATRIX</h1>
           </button>
           <div className="flex items-center gap-2">
-            <button onClick={() => nav(-1)} className="inline-flex items-center gap-1.5 text-white/50 hover:text-white transition tap-sm px-3 py-2 rounded-full" style={{ border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}>
+            <button onClick={() => nav("/")} className="inline-flex items-center gap-1.5 text-white/50 hover:text-white transition tap-sm px-3 py-2 rounded-full" style={{ border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}>
               <ArrowLeft className="w-4 h-4" />
               <span className="text-xs font-bold">Retour</span>
             </button>
@@ -143,7 +143,11 @@ export default function BoutiqueNexus() {
         </div>
 
         {/* Packs */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-8 pb-8">
+        <div className="mt-8 pb-4">
+          <h2 className="text-xl font-black text-white mb-1">Boosts Flash</h2>
+          <p className="text-xs text-white/50 mb-4">Achète des boosts Flash pour booster tes serveurs Nexus préférés.</p>
+        </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-8">
           {FLASH_PACKS.map((p) => (
             <div key={p.id} className="relative rounded-2xl border-2 p-6 bg-card transition hover:scale-[1.02]" style={{ borderColor: p.bonus ? "rgba(168,85,247,0.5)" : "rgba(255,255,255,0.06)" }}>
               {p.bonus && (

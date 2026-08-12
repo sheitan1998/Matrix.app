@@ -148,7 +148,7 @@ export default function Community() {
   };
 
   const copyInvite = (code) => {
-    const url = `https://matrix.app/nexus/invite/${code}`;
+    const url = `${window.location.origin}/nexus/invite/${code}`;
     navigator.clipboard.writeText(url);
     toast.success("Lien copié !");
   };
@@ -189,7 +189,7 @@ export default function Community() {
 
   const inviteToServer = (server) => {
     if (!server.invite_code) { toast.error("Ce serveur n'a pas de lien d'invitation"); return; }
-    const url = `https://matrix.app/nexus/invite/${server.invite_code}`;
+    const url = `${window.location.origin}/nexus/invite/${server.invite_code}`;
     navigator.clipboard.writeText(url);
     toast.success("Lien d'invitation copié !");
   };

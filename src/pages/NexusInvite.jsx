@@ -20,11 +20,10 @@ export default function NexusInvite() {
 
   useEffect(() => {
     if (!code) { setError("Code d'invitation manquant"); setLoading(false); return; }
-    base44.entities.Server.list("-created_date", 200)
-      .then(servers => {
-        const found = servers.find(s => s.invite_code === code);
-        if (!found) { setError("Ce lien d'invitation est invalide ou a expiré"); setLoading(false); return; }
-        // Check expiration
+    base44.functions.invoke("serverSearch", { action: "getServerByInviteCode", inviteCode: code })
+      .then(res => {
+        const found = res?.data;
+        if (!found || !found.id) { setError("Ce lien d'invitation est invalide ou a expiré"); setLoading(false); return; }
         if (found.invite_expires_at) {
           const exp = new Date(found.invite_expires_at);
           if (exp < new Date()) { setError("Ce lien d'invitation a expiré"); setLoading(false); return; }

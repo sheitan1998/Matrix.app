@@ -2,7 +2,7 @@ import React from "react";
 import ServerCard from "./ServerCard";
 import { Server, Plus } from "lucide-react";
 
-export default function ServerCardGrid({ servers, loading, onVote, onBoost, onDelete, onEdit, currentUser, flashBoosts, type = "all", onCreateClick }) {
+export default function ServerCardGrid({ servers, loading, onVote, onDelete, onEdit, currentUser, type = "all", onCreateClick }) {
   const title = type === "discord" ? "Tous les serveurs Discord" : type === "nexus" ? "Tous les serveurs Nexus" : "Serveurs récents";
   const accentColor = type === "discord" ? "#5865F2" : "#22c55e";
   const Icon = type === "discord" ? Server : Server;
@@ -50,11 +50,9 @@ export default function ServerCardGrid({ servers, loading, onVote, onBoost, onDe
               key={server.id}
               server={server}
               onVote={onVote}
-              onBoost={onBoost}
               onDelete={onDelete}
               onEdit={onEdit}
               currentUser={currentUser}
-              flashBoosts={flashBoosts}
             />
           ))}
         </div>
