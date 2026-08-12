@@ -87,23 +87,23 @@ export default function HeaderActions() {
 
   return (
     <>
-      <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+      <div className="flex items-center gap-1.5 sm:gap-3 overflow-hidden">
         {/* Trix balance */}
         <div
-          className="flex items-center gap-2 h-9 px-3 rounded-full shrink-0"
+          className="flex items-center gap-1.5 sm:gap-2 h-8 sm:h-9 px-2 sm:px-3 rounded-full shrink-0"
           style={{ background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.2)" }}
           title="Votre solde de Trix"
         >
-          <TrixIcon size={22} />
-          <span className="font-mono text-xs sm:text-sm font-bold text-white whitespace-nowrap">
-            {formatTrix(balance)} <span className="text-trix/70 text-[10px]">TRIX</span>
+          <TrixIcon size={18} />
+          <span className="font-mono text-[11px] sm:text-sm font-bold text-white whitespace-nowrap">
+            {formatTrix(balance)} <span className="text-trix/70 text-[9px] sm:text-[10px]">TRIX</span>
           </span>
         </div>
 
-        {/* Boutique button */}
+        {/* Boutique button — hidden on mobile */}
         <button
           onClick={() => setShowShopModal(true)}
-          className="flex items-center gap-1.5 h-9 px-3 sm:px-4 rounded-full text-xs sm:text-sm font-bold text-white transition hover:opacity-90 tap-sm shrink-0"
+          className="hidden sm:flex items-center gap-1.5 h-9 px-4 rounded-full text-sm font-bold text-white transition hover:opacity-90 tap-sm shrink-0"
           style={{ background: "linear-gradient(135deg, #8b5cf6, #6d28d9)", boxShadow: "0 0 15px rgba(139,92,246,0.3)" }}
           title="Boutique"
         >
@@ -111,13 +111,15 @@ export default function HeaderActions() {
           <span className="hidden sm:inline">Boutique</span>
         </button>
 
-        {/* Translation button */}
-        <TranslationButton />
+        {/* Translation button — hidden on mobile */}
+        <div className="hidden sm:flex">
+          <TranslationButton />
+        </div>
 
-        {/* Messaging button */}
+        {/* Messaging button — hidden on mobile */}
         <button
           onClick={() => setShowMessages(true)}
-          className="relative w-9 h-9 rounded-full flex items-center justify-center transition hover:scale-105 tap-sm shrink-0"
+          className="hidden sm:flex relative w-9 h-9 rounded-full items-center justify-center transition hover:scale-105 tap-sm shrink-0"
           style={{ background: "rgba(18,9,28,0.85)", border: "1.5px solid rgba(168,85,247,0.4)" }}
           title="Messagerie"
         >
@@ -135,16 +137,16 @@ export default function HeaderActions() {
         {/* Profile button */}
         <button
           onClick={() => setShowProfile(true)}
-          className="relative w-9 h-9 rounded-full overflow-hidden flex items-center justify-center transition hover:scale-105 tap-sm shrink-0"
+          className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden flex items-center justify-center transition hover:scale-105 tap-sm shrink-0"
           style={{ background: "rgba(18,9,28,0.85)", border: "1.5px solid rgba(168,85,247,0.4)" }}
           title="Mon Profil"
         >
           {user?.avatar_url ? (
             <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
           ) : user?.full_name?.[0] ? (
-            <span className="text-xs font-bold text-white">{user.full_name[0].toUpperCase()}</span>
+            <span className="text-[11px] sm:text-xs font-bold text-white">{user.full_name[0].toUpperCase()}</span>
           ) : (
-            <User className="w-4 h-4 text-white/70" />
+            <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/70" />
           )}
           {pendingCount > 0 && (
             <span

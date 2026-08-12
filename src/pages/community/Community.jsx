@@ -57,6 +57,7 @@ export default function Community() {
   const [showProfile, setShowProfile] = useState(false);
   const [joinConfirmServer, setJoinConfirmServer] = useState(null);
   const [joinedServerIds, setJoinedServerIds] = useState(new Set());
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [searchParams] = useSearchParams();
   const qc = useQueryClient();
   const { progress } = useProgression();
@@ -253,18 +254,18 @@ export default function Community() {
           <>
             <Link to="/" className="text-muted-foreground hover:text-foreground transition"><ArrowLeft className="w-5 h-5" /></Link>
             <span className="font-black text-lg"><span className="text-premium">M</span>ATRIX Community</span>
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex items-center gap-2 overflow-hidden">
               <HeaderActions />
               <button onClick={() => setShowInviteJoin(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-border hover:bg-secondary transition">
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-border hover:bg-secondary transition">
                 <UserPlus className="w-3.5 h-3.5" /> Rejoindre
               </button>
               <button onClick={() => setShowSearch(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-border hover:bg-secondary transition">
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-border hover:bg-secondary transition">
                 <Search className="w-3.5 h-3.5" /> Explorer
               </button>
               <Link to="/boutique-nexus"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition hover:scale-105 tap-sm"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition hover:scale-105 tap-sm"
                 style={{ background: "rgba(168,85,247,0.15)", border: "2px solid #fff", color: "#a855f7" }}>
                 <Zap className="w-3.5 h-3.5" fill="currentColor" /> Boutique Nexus
               </Link>
@@ -304,7 +305,7 @@ export default function Community() {
         {!selectedServer && (
           <div className="w-full sm:w-72 md:w-80 shrink-0 border-r flex flex-col overflow-y-auto no-scrollbar"
             style={{ borderColor: "hsl(var(--border))", background: "hsl(var(--card)/0.6)" }}>
-            <div className="p-3">
+            <div className="p-3 pt-16 sm:pt-3">
               <button onClick={() => setShowCreator(true)}
                 className="w-full flex items-center justify-center gap-2 p-3 rounded-2xl border-2 border-dashed border-primary/30 text-primary hover:border-primary/60 transition font-bold text-sm">
                 <Plus className="w-4 h-4" /> Créer un serveur
@@ -333,12 +334,20 @@ export default function Community() {
             {/* Categories */}
             <div className="px-3 mt-2 border-t border-border pt-3">
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">Catégories</p>
-              {CATEGORIES.map((c) => (
-                <button key={c.id} className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-secondary/50 transition text-sm font-medium text-muted-foreground hover:text-white">
-                  <c.icon className="w-4 h-4 shrink-0" style={{ color: "#a855f7" }} />
-                  {c.label}
-                </button>
-              ))}
+              {CATEGORIES.map((c) => {
+                const active = selectedCategory === c.id;
+                return (
+                  <button key={c.id} onClick={() => setSelectedCategory(active ? null : c.id)}
+                    className={cn("w-full flex items-center gap-3 px-3 py-2 rounded-xl transition text-sm font-medium",
+                      active
+                        ? "text-white sm:text-purple-900"
+                        : "text-muted-foreground hover:text-white")}
+                    style={active ? { background: "rgba(168,85,247,0.15)" } : {}}>
+                    <c.icon className="w-4 h-4 shrink-0" style={{ color: "#a855f7" }} />
+                    {c.label}
+                  </button>
+                );
+              })}
             </div>
 
             {/* User widget with XP — clickable to open profile */}
