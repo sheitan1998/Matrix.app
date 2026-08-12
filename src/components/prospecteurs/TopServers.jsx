@@ -2,7 +2,7 @@ import React from "react";
 import { Trophy, Plus } from "lucide-react";
 import ServerCard from "./ServerCard";
 
-export default function TopServers({ servers, loading, onCreateClick, onVote, onBoost, onDelete, onEdit, currentUser, trixBalance, type = "all" }) {
+export default function TopServers({ servers, loading, onCreateClick, onVote, onBoost, onDelete, onEdit, currentUser, flashBoosts, type = "all" }) {
   // Filter by type: discord servers have discord_link, nexus servers don't
   const filtered = type === "all" ? servers : servers.filter(s =>
     type === "discord" ? !!s.discord_link : !s.discord_link
@@ -70,7 +70,7 @@ export default function TopServers({ servers, loading, onCreateClick, onVote, on
                 onDelete={onDelete}
                 onEdit={onEdit}
                 currentUser={currentUser}
-                trixBalance={trixBalance}
+                flashBoosts={flashBoosts}
               />
             </div>
           ))}

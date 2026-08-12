@@ -16,12 +16,13 @@ const VIP_PLANS = [
     badge: "🥉",
     perks: [
       { label: "Badge VIP Bronze", detail: "Affiché sur ton profil" },
-      { label: "Titre personnalisé", detail: "Choisis ton titre" },
+      { label: "2 Boosts Flash", detail: "Pour booster des serveurs Nexus" },
       { label: "+10% XP", detail: "Sur toutes tes activités" },
       { label: "5 000 jetons Nexus Game", detail: "Crédités immédiatement" },
     ],
     xpBonus: 10,
     tokens: 5000,
+    flashBoosts: 2,
   },
   {
     id: "vip_silver",
@@ -35,13 +36,14 @@ const VIP_PLANS = [
     popular: true,
     perks: [
       { label: "Badge VIP Silver", detail: "Affiché sur ton profil" },
-      { label: "Titre personnalisé", detail: "Choisis ton titre" },
+      { label: "5 Boosts Flash", detail: "Pour booster des serveurs Nexus" },
       { label: "+25% XP", detail: "Sur toutes tes activités" },
       { label: "15 000 jetons Nexus Game", detail: "Crédités immédiatement" },
       { label: "Accès prioritaire", detail: "Salons et événements VIP" },
     ],
     xpBonus: 25,
     tokens: 15000,
+    flashBoosts: 5,
   },
   {
     id: "vip_gold",
@@ -54,7 +56,7 @@ const VIP_PLANS = [
     badge: "🥇",
     perks: [
       { label: "Badge VIP Gold", detail: "Affiché sur ton profil" },
-      { label: "Titre personnalisé", detail: "Choisis ton titre" },
+      { label: "15 Boosts Flash", detail: "Pour booster des serveurs Nexus" },
       { label: "+50% XP", detail: "Sur toutes tes activités" },
       { label: "40 000 jetons Nexus Game", detail: "Crédités immédiatement" },
       { label: "Accès prioritaire", detail: "Salons et événements VIP" },
@@ -62,6 +64,7 @@ const VIP_PLANS = [
     ],
     xpBonus: 50,
     tokens: 40000,
+    flashBoosts: 15,
   },
 ];
 
@@ -102,7 +105,7 @@ export default function NexusVIPShop({ user }) {
         </div>
         <h2 className="text-2xl md:text-3xl font-black text-white">Abonnements VIP Nexus Game</h2>
         <p className="text-sm text-white/50 mt-2 max-w-lg mx-auto">
-          Booste ton expérience avec un abonnement VIP. Badge exclusif, titre personnalisé, bonus d'XP et jetons Nexus Game crédités dès le premier paiement.
+          Booste ton expérience avec un abonnement VIP. Badge exclusif, boosts Flash, bonus d'XP et jetons Nexus Game crédités dès le premier paiement.
         </p>
       </div>
 
@@ -180,7 +183,7 @@ export default function NexusVIPShop({ user }) {
 
       <p className="text-center text-[10px] text-white/30">
         🔒 Paiement sécurisé via Stripe. Renouvellement mensuel automatique. Résiliable à tout moment.
-        Les jetons et l'XP sont recrédités à chaque renouvellement.
+        Les jetons, boosts Flash et l'XP sont recrédités à chaque renouvellement.
       </p>
     </div>
   );

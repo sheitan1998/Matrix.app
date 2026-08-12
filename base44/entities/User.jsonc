@@ -7,6 +7,11 @@
       "default": 0,
       "description": "Current TRIX coin balance"
     },
+    "flash_boosts": {
+      "type": "number",
+      "default": 0,
+      "description": "Flash boosts available for boosting servers"
+    },
     "is_premium": {
       "type": "boolean",
       "default": false,

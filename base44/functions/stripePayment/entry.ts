@@ -12,17 +12,17 @@ const TRIX_PACKS: Record<string, { priceCents: number; trixTotal: number; label:
 };
 
 const NEXUS_ITEMS: Record<string, { trixPrice: number; euroCents: number; label: string; count: number; category: string }> = {
-  flash_1:  { trixPrice: 100, euroCents: 100, label: 'Post Flash ×1',  count: 1,  category: 'flash' },
-  flash_3:  { trixPrice: 250, euroCents: 250, label: 'Post Flash ×3',  count: 3,  category: 'flash' },
-  flash_10: { trixPrice: 800, euroCents: 800, label: 'Post Flash ×10', count: 10, category: 'flash' },
+  flash_1:  { trixPrice: 250,  euroCents: 250,  label: 'Boost Flash ×1',  count: 1,  category: 'flash' },
+  flash_3:  { trixPrice: 750,  euroCents: 750,  label: 'Boost Flash ×3',  count: 3,  category: 'flash' },
+  flash_10: { trixPrice: 2000, euroCents: 2000, label: 'Boost Flash ×10', count: 10, category: 'flash' },
 };
 
-const VIP_PLANS: Record<string, { priceCents: number; label: string; xpBonus: number; tokens: number; tier: string }> = {
-  vip_bronze: { priceCents: 499,  label: 'VIP Bronze', xpBonus: 10, tokens: 5000,  tier: 'bronze' },
-  vip_silver: { priceCents: 999,  label: 'VIP Silver', xpBonus: 25, tokens: 15000, tier: 'silver' },
-  vip_gold:   { priceCents: 1999, label: 'VIP Gold',   xpBonus: 50, tokens: 40000, tier: 'gold' },
-  monthly:    { priceCents: 499,  label: 'VIP Mensuel', xpBonus: 10, tokens: 5000,  tier: 'bronze' },
-  yearly:     { priceCents: 4999, label: 'VIP Annuel',  xpBonus: 25, tokens: 15000, tier: 'silver' },
+const VIP_PLANS: Record<string, { priceCents: number; label: string; xpBonus: number; tokens: number; tier: string; flashBoosts: number }> = {
+  vip_bronze: { priceCents: 499,  label: 'VIP Bronze', xpBonus: 10, tokens: 5000,  tier: 'bronze', flashBoosts: 2 },
+  vip_silver: { priceCents: 999,  label: 'VIP Silver', xpBonus: 25, tokens: 15000, tier: 'silver', flashBoosts: 5 },
+  vip_gold:   { priceCents: 1999, label: 'VIP Gold',   xpBonus: 50, tokens: 40000, tier: 'gold',   flashBoosts: 15 },
+  monthly:    { priceCents: 499,  label: 'VIP Mensuel', xpBonus: 10, tokens: 5000,  tier: 'bronze', flashBoosts: 2 },
+  yearly:     { priceCents: 4999, label: 'VIP Annuel',  xpBonus: 25, tokens: 15000, tier: 'silver', flashBoosts: 5 },
 };
 
 // ---- Stripe webhook signature verification (Web Crypto API) ----
@@ -111,15 +111,8 @@ export default async function(req: Request): Promise<Response> {
             if (item && userId) {
               const target = await base44.asServiceRole.entities.User.get(userId);
               if (target) {
-                const inventory = target.inventory || [];
-                inventory.push({
-                  item_id: itemId,
-                  item_name: item.label,
-                  category: item.category,
-                  count: item.count,
-                  purchased_at: new Date().toISOString(),
-                });
-                await base44.asServiceRole.entities.User.update(userId, { inventory, stripe_customer_id: data.customer || undefined });
+                const newFlashBoosts = (target.flash_boosts || 0) + item.count;
+                await base44.asServiceRole.entities.User.update(userId, { flash_boosts: newFlashBoosts, stripe_customer_id: data.customer || undefined });
               }
             }
             await base44.asServiceRole.entities.TrixTransaction.create({
@@ -158,11 +151,13 @@ export default async function(req: Request): Promise<Response> {
               if (target) {
                 const currentTokens = target.nexus_tokens || 0;
                 const newTokens = currentTokens + plan.tokens;
+                const newFlashBoosts = (target.flash_boosts || 0) + (plan.flashBoosts || 0);
                 await base44.asServiceRole.entities.User.update(userId, {
                   is_vip: true,
                   vip_until: vipUntil,
                   vip_tier: plan.tier,
                   nexus_tokens: newTokens,
+                  flash_boosts: newFlashBoosts,
                   stripe_customer_id: data.customer || undefined,
                 });
 
@@ -228,11 +223,13 @@ export default async function(req: Request): Promise<Response> {
             if (target) {
               const currentTokens = target.nexus_tokens || 0;
               const newTokens = currentTokens + plan.tokens;
+              const newFlashBoosts = (target.flash_boosts || 0) + (plan.flashBoosts || 0);
               await base44.asServiceRole.entities.User.update(userId, {
                 is_vip: true,
                 vip_until: vipUntil,
                 vip_tier: plan.tier,
                 nexus_tokens: newTokens,
+                flash_boosts: newFlashBoosts,
                 stripe_customer_id: data.customer || undefined,
               });
 
@@ -252,7 +249,7 @@ export default async function(req: Request): Promise<Response> {
                 user_email: userEmail,
                 type: 'vip_renewal',
                 amount: plan.tokens,
-                description: `Renouvellement ${plan.label} - ${plan.tokens} jetons + ${plan.xpBonus}% XP bonus`,
+                description: `Renouvellement ${plan.label} - ${plan.tokens} jetons + ${plan.flashBoosts} boosts Flash + ${plan.xpBonus}% XP bonus`,
               });
             }
           } else {
@@ -349,15 +346,8 @@ export default async function(req: Request): Promise<Response> {
         if (item && userId) {
           const target = await base44.asServiceRole.entities.User.get(userId);
           if (target) {
-            const inventory = target.inventory || [];
-            inventory.push({
-              item_id: itemId,
-              item_name: item.label,
-              category: item.category,
-              count: item.count,
-              purchased_at: new Date().toISOString(),
-            });
-            await base44.asServiceRole.entities.User.update(userId, { inventory });
+            const newFlashBoosts = (target.flash_boosts || 0) + item.count;
+            await base44.asServiceRole.entities.User.update(userId, { flash_boosts: newFlashBoosts });
           }
         }
         await base44.asServiceRole.entities.TrixTransaction.create({
@@ -457,11 +447,13 @@ export default async function(req: Request): Promise<Response> {
           if (target) {
             const currentTokens = target.nexus_tokens || 0;
             const newTokens = currentTokens + plan.tokens;
+            const newFlashBoosts = (target.flash_boosts || 0) + (plan.flashBoosts || 0);
             await base44.asServiceRole.entities.User.update(userId, {
               is_vip: true,
               vip_until: vipUntil,
               vip_tier: plan.tier,
               nexus_tokens: newTokens,
+              flash_boosts: newFlashBoosts,
               stripe_customer_id: session.customer || undefined,
             });
 

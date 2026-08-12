@@ -97,7 +97,7 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ success: true, votes: newVotes });
       }
 
-      // ---- Boost a server with Trix tokens ----
+      // ---- Boost a server with Flash Boosts ----
       case 'boost': {
         const { serverAdId } = params;
         if (!serverAdId) return Response.json({ error: 'Missing serverAdId' }, { status: 400 });
@@ -106,20 +106,19 @@ export default async function(req: Request): Promise<Response> {
         const ad = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
         if (!ad) return Response.json({ error: 'Server not found' }, { status: 404 });
 
-        // Get user's Trix balance (single wallet: user.trix_balance)
-        const currentTrix = user.trix_balance || 0;
+        // Get user's flash boosts count
+        const currentFlashBoosts = user.flash_boosts || 0;
 
-        if (currentTrix < BOOST_COST) {
+        if (currentFlashBoosts < 1) {
           return Response.json({
-            error: 'Insufficient Trix',
-            balance: currentTrix,
-            cost: BOOST_COST,
+            error: 'Insufficient Flash Boosts',
+            balance: currentFlashBoosts,
           }, { status: 400 });
         }
 
-        // Deduct Trix from user's wallet
-        const newBalance = currentTrix - BOOST_COST;
-        await base44.auth.updateMe({ trix_balance: newBalance });
+        // Deduct 1 flash boost from user
+        const newFlashBoosts = currentFlashBoosts - 1;
+        await base44.auth.updateMe({ flash_boosts: newFlashBoosts });
 
         const boostUntil = new Date(Date.now() + BOOST_DURATION_HOURS * 60 * 60 * 1000).toISOString();
         const newBoosts = (ad.boosts || 0) + 1;
@@ -132,7 +131,7 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({
           success: true,
           boosts: newBoosts,
-          newBalance,
+          newFlashBoosts,
         });
       }
 

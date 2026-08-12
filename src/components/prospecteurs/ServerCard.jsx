@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { ArrowUp, Flame, ExternalLink, Users, Trash2, Pencil } from "lucide-react";
+import { ArrowUp, Flame, ExternalLink, Users, Trash2, Pencil, Zap } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import AdMessages from "./AdMessages";
 
-const BOOST_COST = 500;
-
-export default function ServerCard({ server, onVote, onBoost, onDelete, onEdit, currentUser, trixBalance }) {
+export default function ServerCard({ server, onVote, onBoost, onDelete, onEdit, currentUser, flashBoosts }) {
   const [voteStatus, setVoteStatus] = useState({ canVote: true, remaining: null });
   const [loading, setLoading] = useState(false);
 
@@ -76,8 +74,8 @@ export default function ServerCard({ server, onVote, onBoost, onDelete, onEdit, 
   };
 
   const handleBoost = async () => {
-    if ((trixBalance || 0) < BOOST_COST) {
-      toast.error(`Il faut ${BOOST_COST} Trix pour booster`);
+    if ((flashBoosts || 0) < 1) {
+      toast.error("Tu n'as pas de boost Flash. Achète-en dans la Boutique Nexus.");
       return;
     }
     setLoading(true);
@@ -87,8 +85,8 @@ export default function ServerCard({ server, onVote, onBoost, onDelete, onEdit, 
         serverAdId: server.id,
       });
       if (res.data?.success) {
-        onBoost(server.id, res.data.boosts, res.data.newBalance);
-        toast.success("Serveur boosté !");
+        onBoost(server.id, res.data.boosts, res.data.newFlashBoosts);
+        toast.success("Serveur boosté avec un Flash !");
       } else {
         toast.error(res.data?.error || "Erreur lors du boost");
       }
@@ -291,12 +289,13 @@ export default function ServerCard({ server, onVote, onBoost, onDelete, onEdit, 
         </button>
         <button
           onClick={handleBoost}
-          disabled={loading}
+          disabled={loading || !flashBoosts}
           className="h-7 px-2 rounded-md text-[10px] font-bold transition flex items-center gap-0.5 tap-sm"
-          style={{ background: "rgba(251, 191, 36, 0.1)", color: "#fbbf24", border: "1px solid rgba(251, 191, 36, 0.2)" }}
+          style={{ background: "rgba(168,85,247,0.1)", color: "#a855f7", border: "1px solid rgba(168,85,247,0.2)" }}
+          title="Booster avec un Flash"
         >
-          <Flame className="w-3 h-3" />
-          {BOOST_COST}
+          <Zap className="w-3 h-3" fill="currentColor" />
+          {flashBoosts || 0}
         </button>
         {server.discord_link && (
           <a

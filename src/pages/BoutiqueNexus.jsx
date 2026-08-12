@@ -12,9 +12,9 @@ import NexusVIPShop from "@/components/nexus/NexusVIPShop";
 const TRIX_TO_EURO = (trix) => (trix / 100).toFixed(2).replace(".", ",") + "€";
 
 const FLASH_PACKS = [
-  { id: "flash_1", label: "Post Flash ×1", desc: "Épingle un message en haut d'un salon Nexus pendant 1 heure", trixPrice: 100, count: 1 },
-  { id: "flash_3", label: "Post Flash ×3", desc: "3 posts Flash pour booster ta visibilité", trixPrice: 250, count: 3, bonus: true },
-  { id: "flash_10", label: "Post Flash ×10", desc: "Pack premium — 10 posts Flash", trixPrice: 800, count: 10, bonus: true },
+  { id: "flash_1", label: "Boost Flash ×1", desc: "1 boost Flash pour booster un serveur Nexus", trixPrice: 250, count: 1 },
+  { id: "flash_3", label: "Boost Flash ×3", desc: "3 boosts Flash pour booster ta visibilité", trixPrice: 750, count: 3, bonus: true },
+  { id: "flash_10", label: "Boost Flash ×10", desc: "Pack premium — 10 boosts Flash", trixPrice: 2000, count: 10, bonus: true },
 ];
 
 export default function BoutiqueNexus() {
@@ -55,15 +55,8 @@ export default function BoutiqueNexus() {
         return;
       }
       const newBalance = balance - pack.trixPrice;
-      const inventory = [...(user.inventory || [])];
-      inventory.push({
-        item_id: pack.id,
-        item_name: pack.label,
-        category: "flash",
-        count: pack.count,
-        purchased_at: new Date().toISOString(),
-      });
-      await base44.auth.updateMe({ trix_balance: newBalance, inventory });
+      const newFlashBoosts = (user.flash_boosts || 0) + pack.count;
+      await base44.auth.updateMe({ trix_balance: newBalance, flash_boosts: newFlashBoosts });
       await base44.entities.TrixTransaction.create({
         user_email: user.email,
         type: "flash_purchase",
@@ -71,7 +64,7 @@ export default function BoutiqueNexus() {
         description: `Achat ${pack.label} (-${pack.trixPrice} Trix)`,
       });
       checkUserAuth();
-      toast.success(`${pack.label} acheté ! (${pack.count} posts Flash)`);
+      toast.success(`${pack.label} acheté ! (${pack.count} boosts Flash)`);
     } catch {
       toast.error("Erreur lors de l'achat");
     }
@@ -127,15 +120,24 @@ export default function BoutiqueNexus() {
                 </div>
                 <p className="text-xs font-bold uppercase tracking-widest text-white/60">Boutique Nexus</p>
               </div>
-              <h1 className="text-3xl md:text-4xl font-black text-white">Posts Flash</h1>
-              <p className="mt-3 max-w-md text-sm text-white/60">Booste ta visibilité sur Nexus. Les posts Flash apparaissent en haut des salons pendant 1 heure. Achete avec tes Trix ou directement en €.</p>
+              <h1 className="text-3xl md:text-4xl font-black text-white">Boosts Flash</h1>
+              <p className="mt-3 max-w-md text-sm text-white/60">Booste tes serveurs Nexus préférés. Chaque boost Flash augmente le niveau du serveur et débloque des exclusivités. Achète avec tes Trix ou directement en €.</p>
             </div>
-            <div className="px-6 py-4 rounded-2xl" style={{ background: "rgba(0,0,0,0.3)" }}>
-              <p className="text-xs font-semibold text-white/60">Solde actuel</p>
-              <p className="text-3xl font-black font-mono flex items-center gap-2 text-white">
-                <TrixIcon size={26} />
-                {formatTrix(user?.trix_balance || 0)}
-              </p>
+            <div className="px-6 py-4 rounded-2xl flex flex-col gap-2" style={{ background: "rgba(0,0,0,0.3)" }}>
+              <div>
+                <p className="text-xs font-semibold text-white/60">Solde Trix</p>
+                <p className="text-2xl font-black font-mono flex items-center gap-2 text-white">
+                  <TrixIcon size={22} />
+                  {formatTrix(user?.trix_balance || 0)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-white/60">Boosts Flash</p>
+                <p className="text-2xl font-black font-mono flex items-center gap-2" style={{ color: "#a855f7" }}>
+                  <Zap className="w-5 h-5" fill="#a855f7" />
+                  {user?.flash_boosts || 0}
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -201,7 +203,7 @@ export default function BoutiqueNexus() {
           </div>
           <div>
             <p className="text-xs font-bold text-white">Aperçu du badge Flash</p>
-            <p className="text-[10px] text-white/40">Éclair violet avec contour blanc, visible sur tes posts épinglés</p>
+            <p className="text-[10px] text-white/40">Éclair violet avec contour blanc, visible sur les serveurs boostés</p>
           </div>
         </div>
 
