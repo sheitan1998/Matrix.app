@@ -242,7 +242,14 @@ export default async function(req: Request): Promise<Response> {
       }
 
       // ---- Cleanup expired ads (1 hour lifetime) + associated data ----
+      // Secured: requires either a valid API key (for automated tasks) or an admin user
       case 'cleanupExpired': {
+        const apiKey = req.headers.get('x-api-key');
+        const isAuthorized = (apiKey && apiKey === process.env.CLEANUP_API_KEY) || user.role === 'admin';
+        if (!isAuthorized) {
+          return Response.json({ error: 'Forbidden' }, { status: 403 });
+        }
+
         const now = new Date().toISOString();
         const expiredAds = await base44.asServiceRole.entities.ServerAd.filter({
           expires_at: { $lt: now }
