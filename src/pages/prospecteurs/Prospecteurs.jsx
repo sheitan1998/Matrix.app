@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { toast } from "sonner";
 import ProspecteursHeader from "@/components/prospecteurs/ProspecteursHeader";
 import ProspecteursSidebar from "@/components/prospecteurs/ProspecteursSidebar";
@@ -139,14 +139,25 @@ export default function Prospecteurs() {
         <ProspecteursSidebar active="servers" />
 
         <div className="flex-1 px-4 sm:px-6 py-5">
-          {/* Back to Hub */}
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 text-white/50 hover:text-white transition mb-5 tap-sm"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-xs font-bold">Retour au Hub</span>
-          </Link>
+          {/* Back to Hub + Publish button */}
+          <div className="flex items-center justify-between mb-5">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 text-white/50 hover:text-white transition tap-sm"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="text-xs font-bold">Retour au Hub</span>
+            </Link>
+            <button
+              onClick={() => openCreateModal("nexus")}
+              className="flex items-center gap-1.5 h-9 px-4 rounded-xl text-xs font-bold text-white transition hover:opacity-90 tap-sm"
+              style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)", boxShadow: "0 0 12px rgba(168,85,247,0.25)" }}
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Publier un serveur</span>
+              <span className="sm:hidden">Publier</span>
+            </button>
+          </div>
 
           {/* Upper section: Top Nexus + Top Discord rankings */}
           <div className="grid lg:grid-cols-2 gap-5 mb-6">
