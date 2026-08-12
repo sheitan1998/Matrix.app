@@ -3,10 +3,12 @@ import { Trophy } from "lucide-react";
 import ServerCard from "./ServerCard";
 
 export default function TopServers({ servers, loading, onVote, onDelete, onEdit, currentUser, type = "all" }) {
-  // Filter by server_type field (consistent with Prospecteurs filtering)
-  const filtered = type === "all" ? servers : servers.filter(s =>
-    type === "discord" ? s.server_type === "discord" : s.server_type !== "discord"
-  );
+  // Filter by link content: discord links → discord panel, everything else → nexus panel
+  const filtered = type === "all" ? servers : servers.filter(s => {
+    const link = (s.discord_link || "").toLowerCase();
+    const isDiscord = link.includes("discord.gg") || link.includes("discord.com") || link.includes("discordapp.com");
+    return type === "discord" ? isDiscord : !isDiscord;
+  });
   // Sort by combined score (votes + boosts*2) descending, take top 10
   const top10 = [...filtered]
     .sort((a, b) => ((b.votes || 0) + (b.boosts || 0) * 2) - ((a.votes || 0) + (a.boosts || 0) * 2))
