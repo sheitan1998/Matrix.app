@@ -10,7 +10,8 @@ import VoiceChannel from "@/components/community/VoiceChannel";
 import ServerSettings from "@/components/community/ServerSettings";
 import MembersList from "@/components/community/MembersList";
 import ServerSearch from "@/components/community/ServerSearch";
-import NitroModal from "@/components/community/NitroModal";
+import NexusVIPShop from "@/components/nexus/NexusVIPShop";
+import ServerBoostButton from "@/components/community/ServerBoostButton";
 import UserProfilePopup from "@/components/profile/UserProfilePopup";
 import ProfileContent from "@/components/profile/ProfileContent";
 import { cn } from "@/lib/utils";
@@ -53,8 +54,9 @@ export default function Community() {
   const [inviteCodeInput, setInviteCodeInput] = useState("");
   const [uploadingIcon, setUploadingIcon] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
-  const [showNitro, setShowNitro] = useState(false);
+  const [showVIPShop, setShowVIPShop] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [flashBoosts, setFlashBoosts] = useState(0);
   const [joinConfirmServer, setJoinConfirmServer] = useState(null);
   const [joinedServerIds, setJoinedServerIds] = useState(new Set());
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -77,7 +79,12 @@ export default function Community() {
     if (nitroStatus === "canceled") toast.error("Paiement annulé");
   }, [searchParams]);
 
-  useEffect(() => { base44.auth.me().then(setUser).catch(() => {}); }, []);
+  useEffect(() => {
+    base44.auth.me().then(u => {
+      setUser(u);
+      setFlashBoosts(u?.flash_boosts || 0);
+    }).catch(() => {});
+  }, []);
 
   const { data: servers = [] } = useQuery({
     queryKey: ["servers"],
@@ -238,6 +245,16 @@ export default function Community() {
               <p className="font-black text-sm truncate text-white">{selectedServer.name}</p>
               <p className="text-[10px] text-muted-foreground">{selectedServer.server_type === "discord" ? "🟣 Serveur Discord" : "🟢 Serveur Nexus"} · {selectedServer.is_public ? "🌍 Public" : "🔒 Privé"} · {channels.length} salons</p>
             </div>
+            <ServerBoostButton
+              server={selectedServer}
+              user={user}
+              flashBoosts={flashBoosts}
+              onBoosted={(newBoosts, newFlashBoosts) => {
+                setFlashBoosts(newFlashBoosts);
+                qc.invalidateQueries({ queryKey: ["servers"] });
+                setSelectedServer(s => ({ ...s, boosts: newBoosts }));
+              }}
+            />
             <button onClick={() => inviteToServer(selectedServer)}
               className="p-2 rounded-xl transition text-muted-foreground hover:text-white"
               title="Copier le lien d'invitation">
@@ -264,11 +281,11 @@ export default function Community() {
                 className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-border hover:bg-secondary transition">
                 <Search className="w-3.5 h-3.5" /> Explorer
               </button>
-              <Link to="/boutique-nexus"
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition hover:scale-105 tap-sm"
-                style={{ background: "rgba(168,85,247,0.15)", border: "2px solid #fff", color: "#a855f7" }}>
-                <Zap className="w-3.5 h-3.5" fill="currentColor" /> Boutique Nexus
-              </Link>
+              <button onClick={() => setShowVIPShop(true)}
+                 className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition hover:scale-105 tap-sm"
+                 style={{ background: "rgba(168,85,247,0.15)", border: "2px solid #fff", color: "#a855f7" }}>
+                <Zap className="w-3.5 h-3.5" fill="currentColor" /> Boutique VIP
+              </button>
             </div>
           </>
         )}
@@ -325,6 +342,9 @@ export default function Community() {
                     <p className="font-bold text-sm truncate">{s.name}</p>
                     <p className="text-[10px] text-muted-foreground">
                       {s.server_type === "discord" ? "🟣 Discord" : "🟢 Nexus"} · {s.is_public ? "🌍" : "🔒"} {s.members_count || 1}
+                      {(s.boosts || 0) > 0 && (
+                        <span className="ml-1 text-purple-400 font-bold">⚡{s.boosts}</span>
+                      )}
                     </p>
                   </div>
                 </button>
@@ -520,7 +540,22 @@ export default function Community() {
         <ServerCreator onClose={() => setShowCreator(false)} onCreated={() => qc.invalidateQueries({ queryKey: ["servers"] })} />
       )}
 
-      {showNitro && <NitroModal open={showNitro} onClose={() => setShowNitro(false)} />}
+      {/* VIP Shop modal */}
+      {showVIPShop && (
+        <div className="fixed inset-0 z-[90] overflow-y-auto" style={{ background: "#0a050f" }}>
+          <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3" style={{ background: "#0a050f", borderBottom: "1px solid rgba(168,85,247,0.15)" }}>
+            <span className="font-black text-white">Boutique VIP Nexus</span>
+            <button onClick={() => setShowVIPShop(false)}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold text-white/60 hover:text-white transition tap-sm"
+              style={{ border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}>
+              Fermer
+            </button>
+          </div>
+          <div className="p-4">
+            <NexusVIPShop user={user} />
+          </div>
+        </div>
+      )}
 
       {/* Profile overlay */}
       {showProfile && (

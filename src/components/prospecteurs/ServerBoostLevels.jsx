@@ -1,5 +1,5 @@
 import React from "react";
-import { Zap } from "lucide-react";
+import { Zap, Crown, Check } from "lucide-react";
 
 const BOOST_LEVELS = [
   {
@@ -41,7 +41,22 @@ const BOOST_LEVELS = [
       { icon: "✨", text: "... et bien plus !" },
     ],
   },
+  {
+    level: 4,
+    requiredBoosts: 30,
+    color: "#FFD700",
+    crystalColor: "#FBBF24",
+    perks: [
+      { icon: "👑", text: "Badge serveur légendaire" },
+      { icon: "🚀", text: "Boost d'XP maximal pour les membres" },
+      { icon: "🎨", text: "Thème de serveur exclusif" },
+      { icon: "💎", text: "Statut Premium affiché" },
+      { icon: "✨", text: "... et bien plus !" },
+    ],
+  },
 ];
+
+const MAX_BOOSTS = 30;
 
 export default function ServerBoostLevels({ currentBoosts = 0 }) {
   return (

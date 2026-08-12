@@ -76,6 +76,11 @@
       "type": "number",
       "default": 1
     },
+    "boosts": {
+      "type": "number",
+      "default": 0,
+      "description": "Nombre de boosts Flash appliques au serveur (max 30)"
+    },
     "invite_code": {
       "type": "string"
     },

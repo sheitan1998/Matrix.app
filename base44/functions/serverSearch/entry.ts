@@ -589,6 +589,53 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ success: true });
       }
 
+      // ---- Boost a community Server (not ServerAd) with Flash Boosts ----
+      case 'boostServer': {
+        const { serverId } = params;
+        if (!serverId) return Response.json({ error: 'Missing serverId' }, { status: 400 });
+
+        const srv = await base44.asServiceRole.entities.Server.get(serverId);
+        if (!srv) return Response.json({ error: 'Serveur introuvable' }, { status: 404 });
+
+        // Check user is a member or owner
+        const isOwner = srv.owner_email === user.email;
+        if (!isOwner) {
+          const members = await base44.asServiceRole.entities.ServerMember.filter({
+            server_id: serverId,
+            user_email: user.email,
+          });
+          if (members.length === 0) {
+            return Response.json({ error: 'Tu dois être membre du serveur pour le booster' }, { status: 403 });
+          }
+        }
+
+        const currentBoosts = srv.boosts || 0;
+        if (currentBoosts >= 30) {
+          return Response.json({ error: 'Ce serveur a atteint le niveau maximum de boosts (30)' }, { status: 400 });
+        }
+
+        const currentFlashBoosts = user.flash_boosts || 0;
+        if (currentFlashBoosts < 1) {
+          return Response.json({
+            error: 'Tu n\'as pas de boost Flash. Va à la Boutique Nexus pour en acheter.',
+            balance: currentFlashBoosts,
+          }, { status: 400 });
+        }
+
+        // Deduct 1 flash boost from user
+        const newFlashBoosts = currentFlashBoosts - 1;
+        await base44.auth.updateMe({ flash_boosts: newFlashBoosts });
+
+        // Increment server boost count
+        const newBoosts = currentBoosts + 1;
+        await base44.asServiceRole.entities.Server.update(serverId, {
+          boosts: newBoosts,
+        });
+
+        console.log('[boostServer] server', serverId, 'boosts:', newBoosts, 'by', user.email);
+        return Response.json({ success: true, boosts: newBoosts, newFlashBoosts });
+      }
+
       default:
         return Response.json({ error: `Unknown action: ${action}` }, { status: 400 });
     }
