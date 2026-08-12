@@ -1,15 +1,15 @@
 import React from "react";
-import { Trophy, Plus } from "lucide-react";
+import { Trophy } from "lucide-react";
 import ServerCard from "./ServerCard";
 
-export default function TopServers({ servers, loading, onCreateClick, onVote, onDelete, onEdit, currentUser, type = "all" }) {
-  // Filter by type: discord servers have discord_link, nexus servers don't
+export default function TopServers({ servers, loading, onVote, onDelete, onEdit, currentUser, type = "all" }) {
+  // Filter by server_type field (consistent with Prospecteurs filtering)
   const filtered = type === "all" ? servers : servers.filter(s =>
-    type === "discord" ? !!s.discord_link : !s.discord_link
+    type === "discord" ? s.server_type === "discord" : s.server_type !== "discord"
   );
-  // Sort by combined score (votes + boosts) descending, take top 10
+  // Sort by combined score (votes + boosts*2) descending, take top 10
   const top10 = [...filtered]
-    .sort((a, b) => (b.votes + b.boosts) - (a.votes + a.boosts))
+    .sort((a, b) => ((b.votes || 0) + (b.boosts || 0) * 2) - ((a.votes || 0) + (a.boosts || 0) * 2))
     .slice(0, 10);
 
   const title = type === "discord" ? "Top 10 Serveurs Discord" : type === "nexus" ? "Top 10 Serveurs Nexus" : "Top 10 Serveurs";
@@ -75,18 +75,6 @@ export default function TopServers({ servers, loading, onCreateClick, onVote, on
         </div>
       )}
 
-      <button
-        onClick={onCreateClick}
-        className="w-full mt-4 h-9 rounded-lg text-xs font-black tracking-wider uppercase transition flex items-center justify-center gap-1.5 tap-sm"
-        style={{
-          background: "transparent",
-          border: "1.5px solid rgba(138, 79, 255, 0.4)",
-          color: "#8a4fff",
-        }}
-      >
-        <Plus className="w-3.5 h-3.5" />
-        Publier votre serveur
-      </button>
     </div>
   );
 }

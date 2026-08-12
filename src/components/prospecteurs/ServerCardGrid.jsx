@@ -1,8 +1,8 @@
 import React from "react";
 import ServerCard from "./ServerCard";
-import { Server, Plus } from "lucide-react";
+import { Server } from "lucide-react";
 
-export default function ServerCardGrid({ servers, loading, onVote, onDelete, onEdit, currentUser, type = "all", onCreateClick }) {
+export default function ServerCardGrid({ servers, loading, onVote, onDelete, onEdit, currentUser, type = "all" }) {
   const title = type === "discord" ? "Tous les serveurs Discord" : type === "nexus" ? "Tous les serveurs Nexus" : "Serveurs récents";
   const accentColor = type === "discord" ? "#5865F2" : "#22c55e";
   const Icon = type === "discord" ? Server : Server;
@@ -58,20 +58,6 @@ export default function ServerCardGrid({ servers, loading, onVote, onDelete, onE
         </div>
       )}
 
-      {onCreateClick && (
-        <button
-          onClick={onCreateClick}
-          className="w-full mt-3 h-9 rounded-lg text-xs font-black tracking-wider uppercase transition flex items-center justify-center gap-1.5 tap-sm shrink-0"
-          style={{
-            background: "transparent",
-            border: `1.5px solid ${accentColor}40`,
-            color: accentColor,
-          }}
-        >
-          <Plus className="w-3.5 h-3.5" />
-          Publier
-        </button>
-      )}
     </div>
   );
 }

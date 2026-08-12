@@ -154,7 +154,6 @@ export default function Prospecteurs() {
               servers={nexusServers}
               loading={loading}
               type="nexus"
-              onCreateClick={() => openCreateModal("nexus")}
               onVote={handleVote}
               onDelete={handleDeleteAd}
               onEdit={handleEditAd}
@@ -164,7 +163,6 @@ export default function Prospecteurs() {
               servers={discordServers}
               loading={loading}
               type="discord"
-              onCreateClick={() => openCreateModal("discord")}
               onVote={handleVote}
               onDelete={handleDeleteAd}
               onEdit={handleEditAd}
@@ -182,7 +180,6 @@ export default function Prospecteurs() {
               onDelete={handleDeleteAd}
               onEdit={handleEditAd}
               currentUser={user}
-              onCreateClick={() => openCreateModal("nexus")}
             />
             <ServerCardGrid
               servers={discordServers}
@@ -192,7 +189,6 @@ export default function Prospecteurs() {
               onDelete={handleDeleteAd}
               onEdit={handleEditAd}
               currentUser={user}
-              onCreateClick={() => openCreateModal("discord")}
             />
           </div>
         </div>
