@@ -143,14 +143,32 @@
 
 /* Mobile scroll fix — ensure page content scrolls freely between fixed header and bottom nav */
 @media (max-width: 640px) {
+  html {
+    overflow-y: auto !important;
+    height: auto !important;
+  }
   body {
     overflow-y: auto !important;
     height: auto !important;
     position: static !important;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
   }
   main {
     overflow-y: visible !important;
+    overflow-x: hidden !important;
     height: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* Ensure all page-level containers can scroll */
+  [class*="overflow-hidden"]:not([class*="sm:overflow-hidden"]):not([role="dialog"]):not([data-radix-popper-content-wrapper]) {
+    overflow-y: auto !important;
+  }
+  /* Dropdown menus and sidebars — scrollable internally if they exceed viewport */
+  [class*="max-h-"]:not([role="dialog"]),
+  .scrollbar-thin,
+  .no-scrollbar {
+    -webkit-overflow-scrolling: touch;
   }
 }
 
