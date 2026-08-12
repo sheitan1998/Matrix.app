@@ -141,6 +141,19 @@
   }
 }
 
+/* Mobile scroll fix — ensure page content scrolls freely between fixed header and bottom nav */
+@media (max-width: 640px) {
+  body {
+    overflow-y: auto !important;
+    height: auto !important;
+    position: static !important;
+  }
+  main {
+    overflow-y: visible !important;
+    height: auto !important;
+  }
+}
+
 /* Prevent background scroll-through on modals/sheets on touch devices */
 [role="dialog"] > div,
 [data-radix-popper-content-wrapper],

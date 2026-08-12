@@ -220,9 +220,9 @@ export default function Community() {
   };
 
   return (
-    <div className="fixed inset-0 flex flex-col" style={{ background: selectedServer ? theme.bg : "hsl(var(--background))" }}>
+    <div className="min-h-screen flex flex-col overflow-y-auto sm:fixed sm:inset-0 sm:overflow-hidden" style={{ background: selectedServer ? theme.bg : "hsl(var(--background))" }}>
       {/* Top header */}
-      <div className="shrink-0 border-b px-4 py-3 flex items-center gap-3 z-40 backdrop-blur-xl"
+      <div className="sticky top-0 z-50 shrink-0 border-b px-4 py-3 flex items-center gap-3 backdrop-blur-xl"
         style={{ borderColor: selectedServer ? theme.border : "hsl(var(--border))", background: selectedServer ? theme.card : "hsl(var(--background)/0.9)" }}>
         {selectedServer ? (
           <>
@@ -275,7 +275,7 @@ export default function Community() {
       </div>
 
       {/* Main layout */}
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="flex flex-1 flex-col overflow-visible sm:flex-row sm:overflow-hidden relative">
         {/* Server icon sidebar (always visible when server selected) */}
         {selectedServer && (
           <div className="w-14 shrink-0 border-r flex flex-col items-center py-3 gap-2 overflow-y-auto no-scrollbar"
