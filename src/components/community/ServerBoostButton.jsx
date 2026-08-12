@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { Zap, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
@@ -74,10 +75,10 @@ export default function ServerBoostButton({ server, user, flashBoosts, onBoosted
         )}
       </button>
 
-      {/* Boost levels modal */}
-      {showLevels && (
+      {/* Boost levels modal — rendered via portal for proper centering */}
+      {showLevels && createPortal(
         <div
-          className="fixed inset-0 z-[90] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
           style={{ background: "rgba(0,0,0,0.85)", backdropFilter: "blur(10px)" }}
           onClick={() => setShowLevels(false)}
         >
@@ -140,7 +141,8 @@ export default function ServerBoostButton({ server, user, flashBoosts, onBoosted
             {/* Levels */}
             <ServerBoostLevels currentBoosts={currentBoosts} />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

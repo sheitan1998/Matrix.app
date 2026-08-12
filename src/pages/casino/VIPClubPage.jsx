@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, Crown, Gem, Star, Gift, TrendingUp, Shield, Sparkles, Coins, Zap, Check, Home } from "lucide-react";
 import { VIP_TIERS } from "@/components/casino/casinoData";
 import { Link } from "react-router-dom";
+import { base44 } from "@/api/base44Client";
+import NexusVIPShop from "@/components/nexus/NexusVIPShop";
 
 const VIP_BENEFITS = [
   { icon: Coins, title: "Bonus de bienvenue VIP", desc: "Recevez un bonus de coins exclusif à chaque niveau atteint", color: "#fbbf24" },
@@ -23,6 +25,8 @@ const EXCLUSIVE_REWARDS = [
 ];
 
 export default function VIPClubPage({ coins, onBack }) {
+  const [user, setUser] = useState(null);
+  useEffect(() => { base44.auth.me().then(setUser).catch(() => {}); }, []);
   const currentTier = [...VIP_TIERS].reverse().find(t => (coins || 0) >= t.min) || VIP_TIERS[0];
   const nextTier = VIP_TIERS.find(t => t.min > (coins || 0));
 
@@ -204,6 +208,11 @@ export default function VIPClubPage({ coins, onBack }) {
                 </div>
               ))}
             </div>
+          </section>
+
+          {/* Nexus VIP Subscriptions */}
+          <section>
+            <NexusVIPShop user={user} />
           </section>
         </div>
       </div>
