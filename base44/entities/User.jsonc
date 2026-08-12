@@ -83,7 +83,35 @@
     "last_seen": {
       "type": "string",
       "format": "date-time",
-      "description": "Derniere fois que l'utilisateur etait actif (pour presence temps reel)"
+      "description": "Derniere fois que l'utilisateur etait actif"
+    },
+    "is_muted": {
+      "type": "boolean",
+      "default": false,
+      "description": "User is muted (cannot send messages)"
+    },
+    "is_banned": {
+      "type": "boolean",
+      "default": false,
+      "description": "User is banned (cannot access app)"
+    },
+    "mute_reason": {
+      "type": "string",
+      "description": "Reason for muting"
+    },
+    "ban_reason": {
+      "type": "string",
+      "description": "Reason for banning"
+    },
+    "muted_until": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Mute expiration date"
+    },
+    "banned_until": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Ban expiration date"
     }
   },
   "required": [

@@ -1,0 +1,109 @@
+{
+  "name": "SupportTicket",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email de l'utilisateur"
+    },
+    "user_name": {
+      "type": "string",
+      "description": "Pseudo de l'utilisateur"
+    },
+    "user_avatar": {
+      "type": "string",
+      "description": "Avatar de l'utilisateur"
+    },
+    "subject": {
+      "type": "string",
+      "description": "Sujet du ticket"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "bug",
+        "account",
+        "payment",
+        "harassment",
+        "other"
+      ],
+      "default": "other",
+      "description": "Categorie du ticket"
+    },
+    "message": {
+      "type": "string",
+      "description": "Message detaille de l'utilisateur"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "in_progress",
+        "resolved",
+        "closed"
+      ],
+      "default": "open",
+      "description": "Statut du ticket"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "urgent"
+      ],
+      "default": "medium",
+      "description": "Priorite du ticket"
+    },
+    "admin_response": {
+      "type": "string",
+      "description": "Reponse de l'admin"
+    },
+    "responded_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date de reponse"
+    }
+  },
+  "required": [
+    "user_email",
+    "subject",
+    "message",
+    "category"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Edit3, Check, X, Camera, Zap, Coins, Clapperboard, Award, Users, ShoppingBag, Lock, ChevronRight, ArrowLeft, Trophy, Zap as ZapIcon } from "lucide-react";
+import { Edit3, Check, X, Camera, Zap, Coins, Clapperboard, Award, Users, ShoppingBag, Lock, ChevronRight, ArrowLeft, Trophy, Zap as ZapIcon, LifeBuoy } from "lucide-react";
 import { ACHIEVEMENTS as ALL_ACHIEVEMENTS } from "@/lib/achievementsData";
 import { toast } from "sonner";
 import { formatTrix } from "@/lib/format";
@@ -14,6 +14,7 @@ import PrivacyPanel from "@/components/profile/PrivacyPanel";
 import ProfileAnimationLayer from "@/components/profile/ProfileAnimationLayer";
 import TrixIcon from "@/components/TrixIcon";
 import PWAInstallButton from "@/components/PWAInstallButton";
+import SupportTicketModal from "@/components/profile/SupportTicketModal";
 
 const TABS = [
   { key: "overview", label: "Vue d'ensemble", icon: Zap },
@@ -33,6 +34,7 @@ export default function ProfileContent({ onClose }) {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(null);
   const [editPseudo, setEditPseudo] = useState("");
+  const [showSupport, setShowSupport] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(me => {
@@ -268,6 +270,24 @@ export default function ProfileContent({ onClose }) {
             <PWAInstallButton />
           </div>
 
+          {/* Contact Support */}
+          <div className="mb-4">
+            <button
+              onClick={() => setShowSupport(true)}
+              className="w-full flex items-center gap-3 p-4 rounded-2xl transition hover:opacity-90"
+              style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(168,85,247,0.15)" }}
+            >
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(168,85,247,0.15)" }}>
+                <LifeBuoy className="w-4 h-4" style={{ color: "#a855f7" }} />
+              </div>
+              <div className="flex-1 text-left">
+                <p className="text-sm font-bold text-white">Contacter le Support</p>
+                <p className="text-[10px] text-white/40">Un bug, un problème de paiement, un signalement ? Écrivez-nous.</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-white/30 shrink-0" />
+            </button>
+          </div>
+
           {/* XP / Level progress bar */}
           {progress && (
             <div className="p-4 rounded-2xl mb-6" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(168,85,247,0.15)" }}>
@@ -360,6 +380,8 @@ export default function ProfileContent({ onClose }) {
           </div>
         </div>
       </div>
+
+      {showSupport && <SupportTicketModal user={user} onClose={() => setShowSupport(false)} />}
     </div>
   );
 }
