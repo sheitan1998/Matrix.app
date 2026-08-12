@@ -14,6 +14,18 @@
     <title>Matrix</title>
   </head>
   <body>
+    <script>
+      // Patch: ensure unhandled rejection reasons have a stack property
+      // Prevents vite plugin's error handler from crashing on "Cannot read properties of undefined (reading 'match')"
+      window.addEventListener('unhandledrejection', (event) => {
+        try {
+          if (!event.reason || typeof event.reason !== 'object') return;
+          if (!event.reason.stack) {
+            event.reason.stack = event.reason.message ? event.reason.message : String(event.reason);
+          }
+        } catch (e) {}
+      });
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
