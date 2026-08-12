@@ -497,6 +497,62 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ success: true });
       }
 
+      // ---- Block a user (sets status to blocked, removes friendship) ----
+      case 'blockFriend': {
+        const { friend_user_id } = params;
+        if (!friend_user_id) return Response.json({ error: 'Missing friend_user_id' }, { status: 400 });
+
+        const myEmail = user.email;
+        const myId = user.id;
+
+        const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
+        const friend = allUsers.find(u => u.id === friend_user_id);
+        const friendEmail = friend?.email || '';
+
+        // Update or create my record as blocked
+        const myRecords = await base44.asServiceRole.entities.Friend.filter({
+          user_email: myEmail,
+          friend_user_id: friend_user_id,
+        });
+        if (myRecords.length > 0) {
+          await base44.asServiceRole.entities.Friend.update(myRecords[0].id, { status: 'blocked' });
+        } else {
+          await base44.asServiceRole.entities.Friend.create({
+            user_email: myEmail,
+            friend_user_id: friend_user_id,
+            status: 'blocked',
+          });
+        }
+
+        // Delete the reciprocal record so they can't message me
+        if (friendEmail) {
+          const reciprocal = await base44.asServiceRole.entities.Friend.filter({
+            user_email: friendEmail,
+            friend_user_id: myId,
+          });
+          for (const r of reciprocal) {
+            await base44.asServiceRole.entities.Friend.delete(r.id);
+          }
+        }
+
+        console.log('[blockFriend] blocked:', myId, '<->', friend_user_id);
+        return Response.json({ success: true });
+      }
+
+      // ---- Check friendship status with a user ----
+      case 'getFriendStatus': {
+        const { friend_user_id } = params;
+        if (!friend_user_id) return Response.json({ status: 'none' });
+
+        const myEmail = user.email;
+        const records = await base44.asServiceRole.entities.Friend.filter({
+          user_email: myEmail,
+          friend_user_id,
+        });
+        if (records.length === 0) return Response.json({ status: 'none' });
+        return Response.json({ status: records[0].status });
+      }
+
       // ---- Remove a friend / cancel a request (deletes both records) ----
       case 'removeFriend': {
         const { friend_user_id } = params;
