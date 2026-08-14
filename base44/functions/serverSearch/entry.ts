@@ -497,6 +497,7 @@ export default async function(req: Request): Promise<Response> {
         const myRecords = await base44.asServiceRole.entities.Friend.filter({
           user_email: myEmail,
           friend_user_id: friend_user_id,
+          status: 'pending_received',
         });
         if (myRecords.length === 0) return Response.json({ error: 'Demande introuvable.' }, { status: 404 });
         await base44.asServiceRole.entities.Friend.update(myRecords[0].id, { status: 'accepted' });

@@ -69,7 +69,9 @@ export default async function(req: Request): Promise<Response> {
     const rawBody = await req.text();
     const stripeKey = secrets.get('STRIPE_SECRET_KEY');
     const webhookSecret = secrets.get('STRIPE_WEBHOOK_SECRET');
-    const origin = req.headers.get('origin') || 'https://matrix-hub.base44.app';
+    const ALLOWED_ORIGINS = ['https://matrix-hub.base44.app', 'https://www.matrix-hub.base44.app'];
+    const requestOrigin = req.headers.get('origin') || '';
+    const origin = ALLOWED_ORIGINS.includes(requestOrigin) ? requestOrigin : 'https://matrix-hub.base44.app';
 
     // ================================================================
     // WEBHOOK HANDLER — Stripe sends events here (no user auth)
