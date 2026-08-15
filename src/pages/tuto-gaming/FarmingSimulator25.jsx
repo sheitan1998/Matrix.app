@@ -10,8 +10,8 @@ export default function FarmingSimulator25() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 pt-4">
         <Link
           to="/tuto-gaming"
-          className="inline-flex items-center gap-1.5 text-white/50 hover:text-white transition tap-sm"
-        >
+          className="inline-flex items-center gap-1.5 text-white/50 hover:text-white transition tap-sm">
+          
           <ArrowLeft className="w-4 h-4" />
           <span className="text-xs font-bold">Retour au Hub</span>
         </Link>
@@ -23,15 +23,15 @@ export default function FarmingSimulator25() {
           <img
             src={FARMING_SIM_POSTER}
             alt="Farming Simulator 25"
-            className="w-full h-32 sm:h-48 object-cover object-center"
-          />
+            className="w-full h-32 sm:h-48 object-cover object-center" />
+          
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
               background:
-                "linear-gradient(180deg, transparent 30%, rgba(26,26,26,0.95) 100%)",
-            }}
-          />
+              "linear-gradient(180deg, transparent 30%, rgba(26,26,26,0.95) 100%)"
+            }} />
+          
         </div>
       </div>
 
@@ -41,38 +41,38 @@ export default function FarmingSimulator25() {
           Catégories
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          {FARMING_SIM_SECTIONS.map((section) => (
-            <Link
-              key={section.id}
-              to={`/tuto-gaming/farming-simulator-25/${section.id}`}
-              className="group relative overflow-hidden rounded-lg border border-white/5 hover:border-[#a3d633] transition-all duration-200"
-              style={{ background: "#262626" }}
-            >
+          {FARMING_SIM_SECTIONS.map((section) =>
+          <Link
+            key={section.id}
+            to={`/tuto-gaming/farming-simulator-25/${section.id}`}
+            className="group relative overflow-hidden rounded-lg border border-white/5 hover:border-[#a3d633] transition-all duration-200"
+            style={{ background: "#262626" }}>
+            
               <div className="relative h-28 sm:h-32 overflow-hidden">
                 <img
-                  src={section.img}
-                  alt={section.title}
-                  className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
-                  loading="lazy"
-                />
+                src={section.img}
+                alt={section.title}
+                className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300 hidden"
+                loading="lazy" />
+              
                 <div
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                    background:
-                      "linear-gradient(180deg, transparent 30%, rgba(38,38,38,0.95) 100%)",
-                  }}
-                />
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background:
+                  "linear-gradient(180deg, transparent 30%, rgba(38,38,38,0.95) 100%)"
+                }} />
+              
                 {/* Green active tab on hover */}
                 <div
-                  className="absolute bottom-0 left-0 right-0 h-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  style={{ background: "#a3d633" }}
-                />
+                className="absolute bottom-0 left-0 right-0 h-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                style={{ background: "#a3d633" }} />
+              
               </div>
               <div className="p-2.5">
                 <span
-                  className="block text-[10px] font-bold uppercase tracking-wider mb-0.5"
-                  style={{ color: "#a3d633" }}
-                >
+                className="block text-[10px] font-bold uppercase tracking-wider mb-0.5"
+                style={{ color: "#a3d633" }}>
+                
                   Catégorie
                 </span>
                 <span className="block text-xs font-bold text-white uppercase tracking-tight line-clamp-2">
@@ -80,9 +80,9 @@ export default function FarmingSimulator25() {
                 </span>
               </div>
             </Link>
-          ))}
+          )}
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
