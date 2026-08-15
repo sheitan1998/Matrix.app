@@ -51,6 +51,15 @@ export const SECTION_GROUPS = [
   { id: "divers", label: "Divers" },
 ];
 
+export const FEATURED_GAMES = [
+  {
+    name: "Farming Simulator 25",
+    slug: "farming-simulator-25",
+    image_url: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/5a7d6231a_Farming-Simulator-25.jpg",
+    is_active: true,
+  },
+];
+
 export const COMING_SOON_GAMES = [
   { name: "Minecraft", slug: "minecraft", card_gradient: "linear-gradient(135deg, #0D2818 0%, #1A5C3A 50%, #0D2818 100%)" },
   { name: "World of Warcraft", slug: "wow", card_gradient: "linear-gradient(135deg, #1A0A0A 0%, #4A1A0A 50%, #1A0A0A 100%)" },

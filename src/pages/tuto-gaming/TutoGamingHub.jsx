@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Search, Loader2, ArrowLeft, Gamepad2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import GameCard from "@/components/tuto-gaming/GameCard";
-import { COMING_SOON_GAMES } from "@/components/tuto-gaming/tutoGamingData";
+import { COMING_SOON_GAMES, FEATURED_GAMES } from "@/components/tuto-gaming/tutoGamingData";
 
 export default function TutoGamingHub() {
   const [games, setGames] = useState([]);
@@ -43,6 +43,7 @@ export default function TutoGamingHub() {
   // Filter by search
   const allDisplayGames = [
     ...games,
+    ...FEATURED_GAMES,
     ...COMING_SOON_GAMES.map((g) => ({ ...g, is_active: false })),
   ];
   const filteredGames = allDisplayGames.filter((g) =>

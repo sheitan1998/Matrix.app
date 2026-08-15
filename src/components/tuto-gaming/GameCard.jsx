@@ -24,6 +24,13 @@ export default function GameCard({ game, guideCount = 0, index = 0 }) {
     >
       {/* Visual area */}
       <div className="relative h-40 sm:h-48 overflow-hidden" style={{ background: gradient }}>
+        {game.image_url && (
+          <img
+            src={game.image_url}
+            alt={game.name}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        )}
         {/* Decorative pattern overlay */}
         <div
           className="absolute inset-0 opacity-20"
