@@ -49,11 +49,11 @@ export default function FarmingSimulator25() {
             style={{ background: "#262626" }}>
             
               <div className="relative h-28 sm:h-32 overflow-hidden py-3 mt-5 mb-5 opacity-100">
-                <img
-                src={section.img}
-                alt={section.title}
-                className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300 hidden"
-                loading="lazy" />
+                
+
+
+
+              
               
                 <div
                 className="absolute inset-0 pointer-events-none"
