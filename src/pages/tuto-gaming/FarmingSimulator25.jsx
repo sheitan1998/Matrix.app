@@ -45,7 +45,7 @@ export default function FarmingSimulator25() {
           <Link
             key={section.id}
             to={`/tuto-gaming/farming-simulator-25/${section.id}`}
-            className="group relative overflow-hidden rounded-lg border border-white/5 hover:border-[#a3d633] transition-all duration-200"
+            className="group relative overflow-hidden rounded-lg border border-white/5 hover:border-[#a3d633] transition-all duration-200 hidden"
             style={{ background: "#262626" }}>
             
               <div className="relative h-28 sm:h-32 overflow-hidden py-3 mt-5 mb-5 opacity-100">
