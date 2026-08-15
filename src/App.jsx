@@ -64,6 +64,7 @@ import TutoGamingHub from '@/pages/tuto-gaming/TutoGamingHub';
 import GameDetailPage from '@/pages/tuto-gaming/GameDetailPage';
 import QuestDetailPage from '@/pages/tuto-gaming/QuestDetailPage';
 import WikiEntryDetailPage from '@/pages/tuto-gaming/WikiEntryDetailPage';
+import FarmingSimulator25 from '@/pages/tuto-gaming/FarmingSimulator25';
 import TwitchHome from '@/pages/twitch/TwitchHome';
 import TwitchWatch from '@/pages/twitch/TwitchWatch';
 import TwitchSearch from '@/pages/twitch/TwitchSearch';
@@ -99,6 +100,7 @@ const AuthenticatedApp = () => {
         <Route path="/tuto-gaming/:gameSlug" element={<GameDetailPage />} />
         <Route path="/tuto-gaming/:gameSlug/quest/:questId" element={<QuestDetailPage />} />
         <Route path="/tuto-gaming/:gameSlug/wiki/:entryId" element={<WikiEntryDetailPage />} />
+        <Route path="/tuto-gaming/farming-simulator-25" element={<FarmingSimulator25 />} />
       </Route>
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route path="/community" element={<Community />} />
