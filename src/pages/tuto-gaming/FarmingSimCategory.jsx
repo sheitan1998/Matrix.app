@@ -28,10 +28,10 @@ export default function FarmingSimCategory() {
   useEffect(() => {
     if (!categoryId) return;
     setLoadingWiki(true);
-    base44.entities.WikiEntry.filter({ sub_category: categoryId, game_slug: "farming-simulator-25" })
-      .then((items) => setWikiItems(items))
-      .catch(() => setWikiItems([]))
-      .finally(() => setLoadingWiki(false));
+    base44.entities.WikiEntry.filter({ sub_category: categoryId, game_slug: "farming-simulator-25" }).
+    then((items) => setWikiItems(items)).
+    catch(() => setWikiItems([])).
+    finally(() => setLoadingWiki(false));
   }, [categoryId]);
 
   if (!foundCard) {
@@ -41,8 +41,8 @@ export default function FarmingSimCategory() {
         <Link to="/tuto-gaming/farming-simulator-25" className="text-xs font-bold text-white/60 hover:text-white">
           Retour au catalogue
         </Link>
-      </div>
-    );
+      </div>);
+
   }
 
   const otherCards = parentCategory.cards.filter((c) => c.id !== foundCard.id);
@@ -52,13 +52,13 @@ export default function FarmingSimCategory() {
       {/* Top bar */}
       <div
         className="sticky top-0 z-40"
-        style={{ background: "rgba(26,26,26,0.95)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}
-      >
+        style={{ background: "rgba(26,26,26,0.95)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
           <Link
             to="/tuto-gaming/farming-simulator-25"
-            className="inline-flex items-center gap-1.5 text-white/60 hover:text-white transition tap-sm"
-          >
+            className="inline-flex items-center gap-1.5 text-white/60 hover:text-white transition tap-sm">
+            
             <ChevronLeft className="w-5 h-5" />
             <span className="text-xs font-bold uppercase tracking-wider">Catalogue</span>
           </Link>
@@ -75,8 +75,8 @@ export default function FarmingSimCategory() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 py-4">
         <span
           className="block text-[10px] font-bold uppercase tracking-wider mb-1"
-          style={{ color: "#7DA627" }}
-        >
+          style={{ color: "#7DA627" }}>
+          
           Catégorie
         </span>
         <h1 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight mb-4">
@@ -85,13 +85,13 @@ export default function FarmingSimCategory() {
 
         <div
           className="overflow-hidden rounded-lg border border-[#3a3a3a]"
-          style={{ background: "#262626" }}
-        >
+          style={{ background: "#262626" }}>
+          
           <img
             src={foundCard.img}
             alt={foundCard.title}
-            className="w-full h-auto object-contain"
-          />
+            className="w-full h-auto object-contain hidden" />
+          
         </div>
       </div>
 
@@ -100,46 +100,46 @@ export default function FarmingSimCategory() {
         <h2 className="text-sm font-black uppercase tracking-wider text-white/60 mb-4">
           Éléments — {foundCard.title}
         </h2>
-        {loadingWiki ? (
-          <div className="flex justify-center py-8">
+        {loadingWiki ?
+        <div className="flex justify-center py-8">
             <Loader2 className="w-5 h-5 animate-spin text-white/30" />
-          </div>
-        ) : wikiItems.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            {wikiItems.map((item) => (
-              <WikiItemCard key={item.id} item={item} onClick={() => setSelectedItem(item)} />
-            ))}
-          </div>
-        ) : (
-          <div
-            className="rounded-lg border border-dashed border-white/10 py-6 text-center"
-            style={{ background: "rgba(38,38,38,0.4)" }}
-          >
+          </div> :
+        wikiItems.length > 0 ?
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            {wikiItems.map((item) =>
+          <WikiItemCard key={item.id} item={item} onClick={() => setSelectedItem(item)} />
+          )}
+          </div> :
+
+        <div
+          className="rounded-lg border border-dashed border-white/10 py-6 text-center"
+          style={{ background: "rgba(38,38,38,0.4)" }}>
+          
             <span className="text-xs text-white/30 uppercase tracking-wider">
               Aucun élément ajouté pour le moment
             </span>
           </div>
-        )}
+        }
       </div>
 
       {/* Other cards in the same category */}
-      {otherCards.length > 0 && (
-        <div className="relative z-10 max-w-7xl mx-auto px-4 pb-12">
+      {otherCards.length > 0 &&
+      <div className="relative z-10 max-w-7xl mx-auto px-4 pb-12">
           <h2 className="text-sm font-black uppercase tracking-wider text-white/60 mb-4">
             Autres modèles — {parentCategory.title}
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            {otherCards.map((card) => (
-              <CategoryCard key={card.id} card={card} />
-            ))}
+            {otherCards.map((card) =>
+          <CategoryCard key={card.id} card={card} />
+          )}
           </div>
         </div>
-      )}
+      }
 
       {/* Wiki item modal */}
-      {selectedItem && (
-        <WikiItemModal item={selectedItem} onClose={() => setSelectedItem(null)} />
-      )}
-    </div>
-  );
+      {selectedItem &&
+      <WikiItemModal item={selectedItem} onClose={() => setSelectedItem(null)} />
+      }
+    </div>);
+
 }
