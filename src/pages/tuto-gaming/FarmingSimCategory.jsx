@@ -1,11 +1,17 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Loader2 } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 import { FARMING_SIM_POSTER, FARMING_SIM_CATEGORIES } from "@/components/tuto-gaming/farmingSimData";
 import CategoryCard from "@/components/tuto-gaming/CategoryCard";
+import WikiItemCard from "@/components/tuto-gaming/WikiItemCard";
+import WikiItemModal from "@/components/tuto-gaming/WikiItemModal";
 
 export default function FarmingSimCategory() {
   const { categoryId } = useParams();
+  const [wikiItems, setWikiItems] = useState([]);
+  const [loadingWiki, setLoadingWiki] = useState(true);
+  const [selectedItem, setSelectedItem] = useState(null);
 
   // Search across all categories for a card matching the param
   let foundCard = null;
@@ -19,6 +25,15 @@ export default function FarmingSimCategory() {
     }
   }
 
+  useEffect(() => {
+    if (!categoryId) return;
+    setLoadingWiki(true);
+    base44.entities.WikiEntry.filter({ sub_category: categoryId, game_slug: "farming-simulator-25" })
+      .then((items) => setWikiItems(items))
+      .catch(() => setWikiItems([]))
+      .finally(() => setLoadingWiki(false));
+  }, [categoryId]);
+
   if (!foundCard) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: "#1a1a1a" }}>
@@ -30,7 +45,6 @@ export default function FarmingSimCategory() {
     );
   }
 
-  // Other cards in the same category
   const otherCards = parentCategory.cards.filter((c) => c.id !== foundCard.id);
 
   return (
@@ -81,6 +95,33 @@ export default function FarmingSimCategory() {
         </div>
       </div>
 
+      {/* Wiki items grid */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 pb-6">
+        <h2 className="text-sm font-black uppercase tracking-wider text-white/60 mb-4">
+          Éléments — {foundCard.title}
+        </h2>
+        {loadingWiki ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="w-5 h-5 animate-spin text-white/30" />
+          </div>
+        ) : wikiItems.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            {wikiItems.map((item) => (
+              <WikiItemCard key={item.id} item={item} onClick={() => setSelectedItem(item)} />
+            ))}
+          </div>
+        ) : (
+          <div
+            className="rounded-lg border border-dashed border-white/10 py-6 text-center"
+            style={{ background: "rgba(38,38,38,0.4)" }}
+          >
+            <span className="text-xs text-white/30 uppercase tracking-wider">
+              Aucun élément ajouté pour le moment
+            </span>
+          </div>
+        )}
+      </div>
+
       {/* Other cards in the same category */}
       {otherCards.length > 0 && (
         <div className="relative z-10 max-w-7xl mx-auto px-4 pb-12">
@@ -93,6 +134,11 @@ export default function FarmingSimCategory() {
             ))}
           </div>
         </div>
+      )}
+
+      {/* Wiki item modal */}
+      {selectedItem && (
+        <WikiItemModal item={selectedItem} onClose={() => setSelectedItem(null)} />
       )}
     </div>
   );

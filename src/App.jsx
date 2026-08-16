@@ -50,6 +50,7 @@ import BoutiqueMatrix from '@/pages/BoutiqueMatrix';
 import BoutiqueNexus from '@/pages/BoutiqueNexus';
 import NexusInvite from '@/pages/NexusInvite';
 import AdminPanel from '@/pages/AdminPanel';
+import AddWikiItem from '@/pages/admin/AddWikiItem';
 import RechercheJoueur from '@/pages/prospecteurs/RechercheJoueur';
 import Privacy from '@/pages/Privacy';
 import GlobalProfileButton from '@/components/profile/GlobalProfileButton';
@@ -127,6 +128,7 @@ const AuthenticatedApp = () => {
         <Route path="/boutique-nexus" element={<BoutiqueNexus />} />
         <Route path="/recherche-joueur" element={<RechercheJoueur />} />
         <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/admin/add-item" element={<AddWikiItem />} />
         <Route element={<TwitchLayout />}>
           <Route path="/twitch" element={<TwitchHome />} />
           <Route path="/twitch/search" element={<TwitchSearch />} />

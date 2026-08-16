@@ -54,6 +54,26 @@
       "type": "string",
       "description": "Emplacement pour image (droits requis)"
     },
+    "category": {
+      "type": "string",
+      "description": "Cat\u00e9gorie parente (ex: Chargeuse, V\u00e9hicule)"
+    },
+    "sub_category": {
+      "type": "string",
+      "description": "Sous-cat\u00e9gorie (ID de la carte)"
+    },
+    "thumbnail_url": {
+      "type": "string",
+      "description": "Image vignette / menu"
+    },
+    "spec_sheet_url": {
+      "type": "string",
+      "description": "Image fiche technique / description"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notes personnelles ou conseils"
+    },
     "tags": {
       "type": "array",
       "items": {
