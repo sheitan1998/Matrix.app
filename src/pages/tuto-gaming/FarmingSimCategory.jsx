@@ -87,10 +87,10 @@ export default function FarmingSimCategory() {
           className="overflow-hidden rounded-lg border border-[#3a3a3a]"
           style={{ background: "#262626" }}>
           
-          <img
-            src={foundCard.img}
-            alt={foundCard.title}
-            className="w-full h-auto object-contain hidden" />
+          
+
+
+          
           
         </div>
       </div>
