@@ -29,10 +29,10 @@ export default function FarmingSimulator25() {
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 py-4">
         <div className="relative overflow-hidden rounded-xl border border-white/10">
-          <img
-            src={FARMING_SIM_POSTER}
-            alt="Farming Simulator 25"
-            className="w-full h-32 sm:h-48 object-cover object-center hidden" />
+          
+
+
+          
           
           <div
             className="absolute inset-0 pointer-events-none"
