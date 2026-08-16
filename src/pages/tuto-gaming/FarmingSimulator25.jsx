@@ -1,7 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { FARMING_SIM_POSTER, FARMING_SIM_SECTIONS } from "@/components/tuto-gaming/farmingSimData";
+import { FARMING_SIM_POSTER, FARMING_SIM_CATEGORIES } from "@/components/tuto-gaming/farmingSimData";
+import CategoryCard from "@/components/tuto-gaming/CategoryCard";
 
 export default function FarmingSimulator25() {
   return (
@@ -10,8 +11,8 @@ export default function FarmingSimulator25() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 pt-4">
         <Link
           to="/tuto-gaming"
-          className="inline-flex items-center gap-1.5 text-white/50 hover:text-white transition tap-sm">
-          
+          className="inline-flex items-center gap-1.5 text-white/50 hover:text-white transition tap-sm"
+        >
           <ArrowLeft className="w-4 h-4" />
           <span className="text-xs font-bold">Retour au Hub</span>
         </Link>
@@ -23,66 +24,58 @@ export default function FarmingSimulator25() {
           <img
             src={FARMING_SIM_POSTER}
             alt="Farming Simulator 25"
-            className="w-full h-32 sm:h-48 object-cover object-center" />
-          
+            className="w-full h-32 sm:h-48 object-cover object-center"
+          />
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
               background:
-              "linear-gradient(180deg, transparent 30%, rgba(26,26,26,0.95) 100%)"
-            }} />
-          
+                "linear-gradient(180deg, transparent 30%, rgba(26,26,26,0.95) 100%)",
+            }}
+          />
         </div>
       </div>
 
-      {/* Level 1 — Category grid */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 pb-12">
-        <h2 className="text-lg font-black uppercase tracking-wider text-white mb-4">
-          Catégories
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          {FARMING_SIM_SECTIONS.map((section) =>
-          <Link
-            key={section.id}
-            to={`/tuto-gaming/farming-simulator-25/${section.id}`}
-            className="group relative overflow-hidden rounded-lg border border-white/5 hover:border-[#a3d633] transition-all duration-200 hidden"
-            style={{ background: "#262626" }}>
-            
-              <div className="relative h-28 sm:h-32 overflow-hidden py-3 mt-5 mb-5 opacity-100">
-                
-
-
-
-              
-              
-                <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background:
-                  "linear-gradient(180deg, transparent 30%, rgba(38,38,38,0.95) 100%)"
-                }} />
-              
-                {/* Green active tab on hover */}
-                <div
-                className="absolute bottom-0 left-0 right-0 h-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                style={{ background: "#a3d633" }} />
-              
-              </div>
-              <div className="p-2.5">
-                <span
-                className="block text-[10px] font-bold uppercase tracking-wider mb-0.5"
-                style={{ color: "#a3d633" }}>
-                
-                  Catégorie
+      {/* Categories stacked vertically */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 pb-12 space-y-8">
+        {FARMING_SIM_CATEGORIES.map((category) => (
+          <div key={category.id}>
+            {/* Category header */}
+            <div className="flex items-center gap-2 mb-3">
+              <span
+                className="block w-1 h-5 rounded-full"
+                style={{ background: "#7DA627" }}
+              />
+              <h2 className="text-sm sm:text-base font-black uppercase tracking-wider text-white">
+                {category.title}
+              </h2>
+              {category.cards.length > 0 && (
+                <span className="text-[10px] text-white/30 ml-auto">
+                  {category.cards.length} modèle{category.cards.length > 1 ? "s" : ""}
                 </span>
-                <span className="block text-xs font-bold text-white uppercase tracking-tight line-clamp-2">
-                  {section.title}
+              )}
+            </div>
+
+            {/* Cards grid or empty state */}
+            {category.cards.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                {category.cards.map((card) => (
+                  <CategoryCard key={card.id} card={card} />
+                ))}
+              </div>
+            ) : (
+              <div
+                className="rounded-lg border border-dashed border-white/10 py-6 text-center"
+                style={{ background: "rgba(38,38,38,0.4)" }}
+              >
+                <span className="text-xs text-white/30 uppercase tracking-wider">
+                  Bientôt disponible
                 </span>
               </div>
-            </Link>
-          )}
-        </div>
+            )}
+          </div>
+        ))}
       </div>
-    </div>);
-
+    </div>
+  );
 }
