@@ -63,7 +63,7 @@ export default function FarmingSimCategory() {
             <span className="text-xs font-bold uppercase tracking-wider">Catalogue</span>
           </Link>
           <div className="flex items-center gap-2 ml-2">
-            <img src={FARMING_SIM_POSTER} alt="FS25" className="w-6 h-6 rounded object-cover hidden" />
+            
             <span className="text-[10px] font-bold uppercase tracking-wider text-white/40">
               {parentCategory.title}
             </span>
