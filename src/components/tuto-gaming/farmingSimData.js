@@ -1,3 +1,5 @@
+import { base44 } from "@/api/base44Client";
+
 export const FARMING_SIM_POSTER = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/018b8e463_Gemini_Generated_Image_fjt2ptfjt2ptfjt2.png";
 
 export const FARMING_SIM_CATEGORIES = [
@@ -44,3 +46,21 @@ export const FARMING_SIM_CATEGORIES = [
   { id: "objets", title: "Objets", cards: [] },
   { id: "outils-manuels", title: "Outils manuels", cards: [] },
 ];
+
+export async function fetchFarmingSimCategories() {
+  try {
+    const items = await base44.entities.FarmingSimCategory.list('sort_order', 200);
+    if (!items || items.length === 0) return FARMING_SIM_CATEGORIES;
+    const cats = items.filter(i => !i.parent_slug).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+    return cats.map(cat => ({
+      id: cat.slug,
+      title: cat.title,
+      cards: items
+        .filter(i => i.parent_slug === cat.slug)
+        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+        .map(sub => ({ id: sub.slug, title: sub.title, img: sub.img })),
+    }));
+  } catch {
+    return FARMING_SIM_CATEGORIES;
+  }
+}
