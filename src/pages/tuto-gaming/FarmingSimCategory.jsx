@@ -125,14 +125,14 @@ export default function FarmingSimCategory() {
       {/* Other cards in the same category */}
       {otherCards.length > 0 &&
       <div className="relative z-10 max-w-7xl mx-auto px-4 pb-12">
-          <h2 className="text-sm font-black uppercase tracking-wider text-white/60 mb-4 hidden">
-            Autres modèles — {parentCategory.title}
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 hidden">
-            {otherCards.map((card) =>
-          <CategoryCard key={card.id} card={card} />
-          )}
-          </div>
+          
+
+        
+          
+
+
+
+        
         </div>
       }
 
