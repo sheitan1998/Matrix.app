@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Shield, Users, Ticket, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Shield, Users, Ticket, AlertTriangle, FileText, FolderTree, ArrowUpDown } from "lucide-react";
 import HeaderActions from "@/components/layout/HeaderActions";
 import AdminUserList from "@/components/admin/AdminUserList";
 import AdminTicketList from "@/components/admin/AdminTicketList";
+import AddWikiItemForm from "@/components/admin/AddWikiItemForm";
+import WikiItemList from "@/components/admin/WikiItemList";
+import CategoryManager from "@/components/admin/CategoryManager";
+import ReorderManager from "@/components/admin/ReorderManager";
 
 export default function AdminPanel() {
   const nav = useNavigate();
   const [user, setUser] = useState(null);
   const [users, setUsers] = useState([]);
   const [tickets, setTickets] = useState([]);
-  const [tab, setTab] = useState("users");
+  const [tab, setTab] = useState("tickets");
   const [loading, setLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
 
@@ -63,6 +67,14 @@ export default function AdminPanel() {
   const bannedUsers = users.filter(u => u.is_banned).length;
   const mutedUsers = users.filter(u => u.is_muted).length;
 
+  const tabs = [
+    { id: "tickets", label: "Support & Tickets", icon: Ticket },
+    { id: "users", label: "Utilisateurs", icon: Users },
+    { id: "wiki", label: "Contenu Wiki", icon: FileText },
+    { id: "categories", label: "Catégories", icon: FolderTree },
+    { id: "reorder", label: "Ordre & Réorganisation", icon: ArrowUpDown },
+  ];
+
   return (
     <div className="min-h-screen relative overflow-y-auto overflow-x-hidden" style={{ backgroundColor: "#0a050f" }}>
       <div className="fixed inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at top, rgba(168,85,247,0.08), transparent 60%)" }} />
@@ -80,7 +92,7 @@ export default function AdminPanel() {
               </div>
               <div>
                 <h1 className="text-lg font-black text-white">Panel Admin</h1>
-                <p className="text-[10px] text-white/40">Gestion en temps réel</p>
+                <p className="text-[10px] text-white/40">Gestion centralisée</p>
               </div>
             </div>
           </div>
@@ -112,27 +124,43 @@ export default function AdminPanel() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-4">
-          <button
-            onClick={() => setTab("users")}
-            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold transition ${tab === "users" ? "text-white" : "text-white/40 hover:text-white/60"}`}
-            style={tab === "users" ? { background: "rgba(168,85,247,0.15)" } : { background: "rgba(255,255,255,0.03)" }}
-          >
-            <Users className="w-3.5 h-3.5" /> Utilisateurs
-          </button>
-          <button
-            onClick={() => setTab("tickets")}
-            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold transition ${tab === "tickets" ? "text-white" : "text-white/40 hover:text-white/60"}`}
-            style={tab === "tickets" ? { background: "rgba(168,85,247,0.15)" } : { background: "rgba(255,255,255,0.03)" }}
-          >
-            <Ticket className="w-3.5 h-3.5" /> Tickets
-            {openTickets > 0 && <span className="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white" style={{ background: "#a855f7" }}>{openTickets}</span>}
-          </button>
+        <div className="flex gap-1 mb-4 overflow-x-auto no-scrollbar">
+          {tabs.map((t) => {
+            const Icon = t.icon;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap tap-sm ${tab === t.id ? "text-white" : "text-white/40 hover:text-white/60"}`}
+                style={tab === t.id ? { background: "rgba(168,85,247,0.15)" } : { background: "rgba(255,255,255,0.03)" }}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{t.label}</span>
+                {t.id === "tickets" && openTickets > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white" style={{ background: "#a855f7" }}>{openTickets}</span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Content */}
-        {tab === "users" && <AdminUserList users={users} onRefresh={loadData} />}
         {tab === "tickets" && <AdminTicketList tickets={tickets} onRefresh={loadData} />}
+        {tab === "users" && <AdminUserList users={users} onRefresh={loadData} />}
+        {tab === "wiki" && (
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-white/10 p-5" style={{ background: "rgba(15,10,25,0.6)" }}>
+              <h3 className="text-sm font-black text-white uppercase tracking-tight mb-4">Ajouter un élément</h3>
+              <AddWikiItemForm onSaved={() => setTab("wiki")} />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-white uppercase tracking-tight mb-3">Éléments existants</h3>
+              <WikiItemList />
+            </div>
+          </div>
+        )}
+        {tab === "categories" && <CategoryManager />}
+        {tab === "reorder" && <ReorderManager />}
       </div>
     </div>
   );

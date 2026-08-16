@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
-import { Mail, User } from "lucide-react";
+import { Mail, User, Shield } from "lucide-react";
 import { formatTrix } from "@/lib/format";
 import { ShoppingBag } from "lucide-react";
 import TrixIcon from "@/components/TrixIcon";
@@ -134,6 +134,18 @@ export default function HeaderActions() {
             </span>
           )}
         </button>
+
+        {/* Admin button — visible only for admins */}
+        {user?.role === 'admin' && (
+          <button
+            onClick={() => nav('/admin')}
+            className="hidden sm:flex w-9 h-9 rounded-full items-center justify-center transition hover:scale-105 tap-sm shrink-0"
+            style={{ background: "rgba(168,85,247,0.15)", border: "1.5px solid rgba(168,85,247,0.4)" }}
+            title="Administration"
+          >
+            <Shield className="w-4 h-4 text-white/70" />
+          </button>
+        )}
 
         {/* Profile button */}
         <button
