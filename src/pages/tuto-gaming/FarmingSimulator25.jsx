@@ -28,19 +28,19 @@ export default function FarmingSimulator25() {
         </Link>
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 py-4 hidden">
-        <div className="relative overflow-hidden rounded-xl border border-white/10">
-          
+      
 
 
-          
-          
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{ background: "linear-gradient(180deg, transparent 30%, rgba(26,26,26,0.95) 100%)" }} />
-          
-        </div>
-      </div>
+
+
+
+
+
+
+
+
+
+      
 
       {/* Dynamic blocks from admin (accordion, banners, etc.) */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 pb-4">
