@@ -66,6 +66,7 @@ import QuestDetailPage from '@/pages/tuto-gaming/QuestDetailPage';
 import WikiEntryDetailPage from '@/pages/tuto-gaming/WikiEntryDetailPage';
 import FarmingSimulator25 from '@/pages/tuto-gaming/FarmingSimulator25';
 import FarmingSimCategory from '@/pages/tuto-gaming/FarmingSimCategory';
+import DynamicPage from '@/pages/DynamicPage';
 import TwitchHome from '@/pages/twitch/TwitchHome';
 import TwitchWatch from '@/pages/twitch/TwitchWatch';
 import TwitchSearch from '@/pages/twitch/TwitchSearch';
@@ -95,6 +96,7 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/nexus/invite/:code" element={<NexusInvite />} />
+      <Route path="/page/:slug" element={<DynamicPage />} />
       <Route path="/" element={<Landing />} />
       <Route element={<TutoGamingLayout />}>
         <Route path="/tuto-gaming" element={<TutoGamingHub />} />

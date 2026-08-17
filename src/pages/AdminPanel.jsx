@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Shield, Users, Ticket, AlertTriangle, FileText, FolderTree, ArrowUpDown, LayoutGrid } from "lucide-react";
+import { ArrowLeft, Shield, Users, Ticket, AlertTriangle, FileText, FolderTree, ArrowUpDown, LayoutGrid, FileCode } from "lucide-react";
 import HeaderActions from "@/components/layout/HeaderActions";
 import AdminUserList from "@/components/admin/AdminUserList";
 import AdminTicketList from "@/components/admin/AdminTicketList";
@@ -10,6 +10,7 @@ import WikiItemList from "@/components/admin/WikiItemList";
 import CategoryManager from "@/components/admin/CategoryManager";
 import ReorderManager from "@/components/admin/ReorderManager";
 import BlockManager from "@/components/admin/BlockManager";
+import DynamicPageManager from "@/components/admin/DynamicPageManager";
 
 export default function AdminPanel() {
   const nav = useNavigate();
@@ -74,7 +75,8 @@ export default function AdminPanel() {
     { id: "wiki", label: "Contenu Wiki", icon: FileText },
     { id: "categories", label: "Catégories", icon: FolderTree },
     { id: "reorder", label: "Ordre & Réorganisation", icon: ArrowUpDown },
-    { id: "blocks", label: "Blocs & Pages", icon: LayoutGrid },
+    { id: "blocks", label: "Blocs Jeux", icon: LayoutGrid },
+    { id: "pages", label: "Pages Dynamiques", icon: FileCode },
   ];
 
   return (
@@ -164,6 +166,7 @@ export default function AdminPanel() {
         {tab === "categories" && <CategoryManager />}
         {tab === "reorder" && <ReorderManager />}
         {tab === "blocks" && <BlockManager />}
+        {tab === "pages" && <DynamicPageManager />}
       </div>
     </div>
   );

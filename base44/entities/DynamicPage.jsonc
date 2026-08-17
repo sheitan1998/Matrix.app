@@ -1,0 +1,78 @@
+{
+  "name": "DynamicPage",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Titre de la page"
+    },
+    "slug": {
+      "type": "string",
+      "description": "URL slug (auto-genere depuis le titre, editable)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description affichee sous le titre"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "published"
+      ],
+      "default": "draft",
+      "description": "Draft = invisible publiquement, Published = public"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "seo_title": {
+      "type": "string",
+      "description": "Titre SEO (balise title)"
+    },
+    "seo_description": {
+      "type": "string",
+      "description": "Description SEO (meta description)"
+    },
+    "background_type": {
+      "type": "string",
+      "enum": [
+        "default",
+        "dark",
+        "cosmic",
+        "grid"
+      ],
+      "default": "default",
+      "description": "Type de fond de page"
+    },
+    "config": {
+      "type": "object",
+      "properties": {},
+      "default": {},
+      "description": "Configuration additionnelle JSON"
+    }
+  },
+  "required": [
+    "title",
+    "slug"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {},
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import AccordionBlock from "@/components/tuto-gaming/AccordionBlock";
+import ReactMarkdown from "react-markdown";
 
 export default function BlockRenderer({ gameSlug, pageKey, className = "" }) {
   const [blocks, setBlocks] = useState([]);
@@ -85,8 +86,12 @@ export default function BlockRenderer({ gameSlug, pageKey, className = "" }) {
               )}
               {block.block_type === "text" && (
                 <div className="p-4 rounded-lg" style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <h3 className="text-sm font-bold text-white mb-1.5">{block.title}</h3>
-                  {block.content && <p className="text-sm text-white/70 whitespace-pre-wrap">{block.content}</p>}
+                  {block.title && <h3 className="text-sm font-bold text-white mb-1.5">{block.title}</h3>}
+                  {block.content && (
+                    <div className="text-sm text-white/70 rich-text-content">
+                      <ReactMarkdown breaks>{block.content}</ReactMarkdown>
+                    </div>
+                  )}
                 </div>
               )}
               {block.block_type === "section" && (
@@ -95,7 +100,11 @@ export default function BlockRenderer({ gameSlug, pageKey, className = "" }) {
                     <span className="block w-1 h-5 rounded-full" style={{ background: "#7DA627" }} />
                     <h2 className="text-sm font-black uppercase tracking-wider text-white">{block.title}</h2>
                   </div>
-                  {block.content && <p className="text-sm text-white/60 mb-3">{block.content}</p>}
+                  {block.content && (
+                    <div className="text-sm text-white/60 mb-3 rich-text-content">
+                      <ReactMarkdown breaks>{block.content}</ReactMarkdown>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

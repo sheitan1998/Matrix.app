@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { ChevronDown, ExternalLink } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 export default function AccordionBlock({ title, content, image_url, link_url, link_label, buttons = [], defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -33,9 +34,11 @@ export default function AccordionBlock({ title, content, image_url, link_url, li
         }}>
         
         <div className="px-4">
-          {content &&
-          <p className="text-sm text-white/70 whitespace-pre-wrap leading-relaxed">{content}</p>
-          }
+          {content && (
+            <div className="text-sm text-white/70 leading-relaxed rich-text-content">
+              <ReactMarkdown breaks>{content}</ReactMarkdown>
+            </div>
+          )}
           {image_url &&
           <img
             src={image_url}
