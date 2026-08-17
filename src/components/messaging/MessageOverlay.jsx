@@ -119,10 +119,14 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
       base44.entities.DirectMessage.filter({ sender_email: user.email, recipient_email: contactEmail }, "created_date", 200),
       base44.entities.DirectMessage.filter({ sender_email: contactEmail, recipient_email: user.email }, "created_date", 200),
     ]).then(([sent, received]) => {
-      const all = [...(sent || []), ...(received || [])].sort(
-        (a, b) => new Date(a.created_date) - new Date(b.created_date)
-      );
-      setMessages(all);
+      const merged = [...(sent || []), ...(received || [])];
+      const seenIds = new Set();
+      const deduped = merged.filter(m => {
+        if (seenIds.has(m.id)) return false;
+        seenIds.add(m.id);
+        return true;
+      }).sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
+      setMessages(deduped);
       // Mark received unread messages as read
       const unread = (received || []).filter(m => !m.is_read);
       if (unread.length > 0) {
@@ -142,7 +146,10 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
       if (event.type === "create") {
         const msg = event.data;
         if (msg.recipient_email === user.email && msg.sender_email === contactEmail) {
-          setMessages(prev => [...prev, msg]);
+          setMessages(prev => {
+            if (prev.some(m => m.id === msg.id)) return prev;
+            return [...prev, msg];
+          });
           if (!msg.is_read) {
             base44.entities.DirectMessage.update(msg.id, { is_read: true });
             if (onMessagesRead) onMessagesRead(1);

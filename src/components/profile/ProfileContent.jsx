@@ -109,9 +109,9 @@ export default function ProfileContent({ onClose }) {
     );
   }
 
-  const ownedAchievements = (progress?.achievements || []);
-  const achievementTrophies = ALL_ACHIEVEMENTS.filter(a => ownedAchievements.includes(a.id)).reduce((s, a) => s + (a.trophies || 0), 0);
-  const totalTrophies = achievementTrophies + (progress?.stats?.total_trophies || 0);
+  const claimedAchievements = (progress?.claimed_achievements || []);
+  const achievementTrophies = ALL_ACHIEVEMENTS.filter(a => claimedAchievements.includes(a.id)).reduce((s, a) => s + (a.trophies || 0), 0);
+  const totalTrophies = achievementTrophies;
 
   const stats = [
     { icon: Zap, label: "Niveau", value: progress?.level || 1, color: "#a855f7", link: "/progression" },

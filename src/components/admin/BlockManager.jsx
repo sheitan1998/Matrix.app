@@ -185,6 +185,7 @@ function BlockForm({ gameSlug, pageKey, editing, onClose, onSaved }) {
   const [gridCol, setGridCol] = useState(editing?.grid_col || 0);
   const [isCollapsible, setIsCollapsible] = useState(editing?.is_collapsible ?? true);
   const [defaultOpen, setDefaultOpen] = useState(editing?.default_open ?? true);
+  const [buttons, setButtons] = useState(editing?.config?.buttons || []);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -220,6 +221,7 @@ function BlockForm({ gameSlug, pageKey, editing, onClose, onSaved }) {
         is_collapsible: isCollapsible,
         default_open: defaultOpen,
         is_active: true,
+        config: { buttons: buttons.filter(b => b.label && b.url) },
       };
       if (editing) {
         await base44.entities.PageBlock.update(editing.id, payload);
@@ -292,15 +294,47 @@ function BlockForm({ gameSlug, pageKey, editing, onClose, onSaved }) {
             <input type="text" value={linkUrl} onChange={e => setLinkUrl(e.target.value)} placeholder="https://..." className="w-full h-10 px-3 rounded-lg text-sm text-white border border-white/10 outline-none placeholder:text-white/20" style={{ background: "#1a1a1a" }} />
           </div>
           {blockType === "accordion" && (
-            <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={isCollapsible} onChange={e => setIsCollapsible(e.target.checked)} className="accent-[#7DA627]" />
-                <span className="text-xs text-white/70">Repliable</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={defaultOpen} onChange={e => setDefaultOpen(e.target.checked)} className="accent-[#7DA627]" />
-                <span className="text-xs text-white/70">Ouvert par défaut</span>
-              </label>
+            <div className="space-y-3">
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={isCollapsible} onChange={e => setIsCollapsible(e.target.checked)} className="accent-[#7DA627]" />
+                  <span className="text-xs text-white/70">Repliable</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={defaultOpen} onChange={e => setDefaultOpen(e.target.checked)} className="accent-[#7DA627]" />
+                  <span className="text-xs text-white/70">Ouvert par défaut</span>
+                </label>
+              </div>
+              {/* Action buttons configuration */}
+              <div>
+                <label className="block text-[10px] font-bold uppercase text-white/50 mb-1.5">Boutons d'action (redirection)</label>
+                {buttons.map((btn, i) => (
+                  <div key={i} className="flex items-center gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={btn.label || ""}
+                      onChange={e => { const b = [...buttons]; b[i] = { ...b[i], label: e.target.value }; setButtons(b); }}
+                      placeholder="Label du bouton"
+                      className="flex-1 h-9 px-2 rounded-lg text-xs text-white border border-white/10 outline-none"
+                      style={{ background: "#1a1a1a" }}
+                    />
+                    <input
+                      type="text"
+                      value={btn.url || ""}
+                      onChange={e => { const b = [...buttons]; b[i] = { ...b[i], url: e.target.value }; setButtons(b); }}
+                      placeholder="https://... ou /page"
+                      className="flex-1 h-9 px-2 rounded-lg text-xs text-white border border-white/10 outline-none"
+                      style={{ background: "#1a1a1a" }}
+                    />
+                    <button type="button" onClick={() => setButtons(buttons.filter((_, idx) => idx !== i))} className="w-7 h-7 rounded flex items-center justify-center text-white/40 hover:text-red-400">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+                <button type="button" onClick={() => setButtons([...buttons, { label: "", url: "", color: "linear-gradient(135deg, #7DA627, #5e8a1c)" }])} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-bold text-white border border-white/10 hover:bg-white/5 transition tap-sm">
+                  <Plus className="w-3.5 h-3.5" /> Ajouter un bouton
+                </button>
+              </div>
             </div>
           )}
           <button type="submit" disabled={saving} className="w-full h-11 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2 disabled:opacity-50" style={{ background: "linear-gradient(135deg, #7DA627, #5e8a1c)" }}>

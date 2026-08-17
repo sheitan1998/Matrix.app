@@ -65,6 +65,8 @@ export default function BlockRenderer({ gameSlug, pageKey, className = "" }) {
                   content={block.content}
                   image_url={block.image_url}
                   link_url={block.link_url}
+                  link_label={block.config?.link_label}
+                  buttons={block.config?.buttons || []}
                   defaultOpen={block.default_open !== false}
                 />
               )}
