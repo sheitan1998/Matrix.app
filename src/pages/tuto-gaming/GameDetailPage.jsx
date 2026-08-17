@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import QuestListItem from "@/components/tuto-gaming/QuestListItem";
 import WikiEntryListItem from "@/components/tuto-gaming/WikiEntryListItem";
+import BlockRenderer from "@/components/tuto-gaming/BlockRenderer";
 import {
   WIKI_SECTIONS, SECTION_GROUPS, getSectionMeta,
 } from "@/components/tuto-gaming/tutoGamingData";
@@ -347,6 +348,11 @@ export default function GameDetailPage() {
           {filters.difficulty && <FilterChip label={filters.difficulty} onRemove={() => setFilters({ ...filters, difficulty: "" })} />}
         </div>
       )}
+
+      {/* Dynamic blocks from admin (accordion, banners, etc.) */}
+      <div className="mb-5">
+        <BlockRenderer gameSlug={gameSlug} pageKey="hub" />
+      </div>
 
       {/* Main content: sidebar + list */}
       <div className="flex gap-6">

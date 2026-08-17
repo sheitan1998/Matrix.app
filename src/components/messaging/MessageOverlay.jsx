@@ -18,14 +18,47 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
   const [profileUserId, setProfileUserId] = useState(null);
   const messagesEndRef = useRef(null);
 
-  // Fetch contacts (accepted friends)
+  // Fetch contacts (accepted friends + DM contacts from DirectMessage records)
   useEffect(() => {
-    base44.entities.Friend.filter({ user_email: user.email, status: "accepted" })
-      .then(data => {
-        setContacts(data || []);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    if (!user?.email) return;
+    Promise.all([
+      base44.entities.Friend.filter({ user_email: user.email, status: "accepted" }).catch(() => []),
+      base44.entities.DirectMessage.filter({ recipient_email: user.email }, "-created_date", 100).catch(() => []),
+      base44.entities.DirectMessage.filter({ sender_email: user.email }, "-created_date", 100).catch(() => []),
+    ]).then(([friends, receivedDms, sentDms]) => {
+      const friendContacts = (friends || []).map(f => ({
+        id: "friend_" + f.id,
+        friend_user_id: f.friend_user_id,
+        friend_email: f.friend_email,
+        friend_name: f.friend_name || f.friend_email?.split("@")[0] || "Utilisateur",
+        is_dm_contact: false,
+      }));
+
+      // Build DM contacts from messages where the other party is not already a friend
+      const friendEmails = new Set((friends || []).map(f => f.friend_email?.toLowerCase()));
+      const dmContacts = [];
+      const seenEmails = new Set();
+      [...(receivedDms || []), ...(sentDms || [])].forEach(dm => {
+        const otherEmail = dm.sender_email === user.email ? dm.recipient_email : dm.sender_email;
+        const otherName = dm.sender_email === user.email ? dm.recipient_name : dm.sender_name;
+        const key = (otherEmail || "").toLowerCase();
+        if (key && !friendEmails.has(key) && !seenEmails.has(key)) {
+          seenEmails.add(key);
+          dmContacts.push({
+            id: "dm_" + key,
+            friend_user_id: null,
+            friend_email: otherEmail,
+            friend_name: otherName || otherEmail?.split("@")[0] || "Contact",
+            is_dm_contact: true,
+            last_dm_date: dm.created_date,
+          });
+        }
+      });
+
+      // Sort: DM contacts with recent messages first, then friends
+      dmContacts.sort((a, b) => new Date(b.last_dm_date || 0) - new Date(a.last_dm_date || 0));
+      setContacts([...dmContacts, ...friendContacts]);
+    }).catch(() => {}).finally(() => setLoading(false));
   }, [user]);
 
   // Fetch fresh profile data for all friends by user_id
@@ -33,6 +66,19 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
     if (!contacts || contacts.length === 0) return;
     const userIds = [...new Set(contacts.map(f => f.friend_user_id).filter(Boolean))];
     if (userIds.length === 0) return;
+    // Also try to auto-select a DM contact matching the preselected email
+    if (preselectedEmail) {
+      const dmContact = contacts.find(c => c.is_dm_contact && c.friend_email?.toLowerCase() === preselectedEmail.toLowerCase());
+      if (dmContact) setSelectedContact(dmContact);
+    }
+    if (userIds.length === 0) {
+      // Still check DM contacts for auto-select even if no friend user IDs
+      if (preselectedEmail) {
+        const dmContact = contacts.find(c => c.is_dm_contact && c.friend_email?.toLowerCase() === preselectedEmail.toLowerCase());
+        if (dmContact) setSelectedContact(dmContact);
+      }
+      return;
+    }
     base44.functions.invoke("serverSearch", { action: "getUsersByIds", ids: userIds })
       .then(res => {
         const map = {};
@@ -50,12 +96,12 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
       .catch(() => {});
   }, [contacts, preselectedEmail]);
 
-  // Resolve contact info from fresh user data
+  // Resolve contact info from fresh user data or DM contact fallback
   const resolveContact = (contact) => {
     const fresh = contact?.friend_user_id ? freshUsers[contact.friend_user_id] : null;
     return {
-      email: fresh?.email || "",
-      name: stripPseudoTag(fresh?.full_name) || "Utilisateur",
+      email: fresh?.email || contact?.friend_email || "",
+      name: stripPseudoTag(fresh?.full_name) || contact?.friend_name || "Utilisateur",
       pseudo: stripPseudoTag(fresh?.pseudo) || "",
       rawUserId: contact?.friend_user_id || fresh?.id || "",
       avatar: fresh?.avatar_url || "",

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { FARMING_SIM_POSTER, fetchFarmingSimCategories } from "@/components/tuto-gaming/farmingSimData";
 import CategoryCard from "@/components/tuto-gaming/CategoryCard";
+import BlockRenderer from "@/components/tuto-gaming/BlockRenderer";
 
 export default function FarmingSimulator25() {
   const [categories, setCategories] = useState([]);
@@ -39,6 +40,11 @@ export default function FarmingSimulator25() {
             style={{ background: "linear-gradient(180deg, transparent 30%, rgba(26,26,26,0.95) 100%)" }} />
           
         </div>
+      </div>
+
+      {/* Dynamic blocks from admin (accordion, banners, etc.) */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 pb-4">
+        <BlockRenderer gameSlug="farming-simulator-25" pageKey="hub" />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 pb-12 space-y-8">
