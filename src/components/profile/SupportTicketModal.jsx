@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
-import { X, Send, Bug, UserCircle, CreditCard, ShieldAlert, HelpCircle } from "lucide-react";
+import { X, Send, Bug, UserCircle, CreditCard, ShieldAlert, HelpCircle, Paperclip, Loader2, Download } from "lucide-react";
 
 const CATEGORIES = [
   { id: "bug", label: "Bug / Technique", icon: Bug, color: "#ef4444" },
@@ -16,7 +16,22 @@ export default function SupportTicketModal({ user, onClose }) {
   const [subject, setSubject] = useState("");
   const [category, setCategory] = useState("other");
   const [message, setMessage] = useState("");
+  const [attachments, setAttachments] = useState([]);
+  const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const handleUpload = async (file) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setAttachments(prev => [...prev, { file_url, file_name: file.name }]);
+    } catch {
+      toast.error("Erreur lors de l'upload du fichier.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const submit = async () => {
     if (!subject.trim() || !message.trim()) {
@@ -25,7 +40,7 @@ export default function SupportTicketModal({ user, onClose }) {
     }
     setLoading(true);
     try {
-      await base44.entities.SupportTicket.create({
+      const ticket = await base44.entities.SupportTicket.create({
         user_email: user.email,
         user_name: user.full_name || user.pseudo || user.email,
         user_avatar: user.avatar_url || "",
@@ -35,7 +50,19 @@ export default function SupportTicketModal({ user, onClose }) {
         status: "open",
         priority: category === "harassment" ? "urgent" : "medium",
       });
-      toast.success("Ticket envoyé ! L'équipe support vous répondra rapidement.");
+
+      // Create the first TicketMessage with attachments
+      await base44.entities.TicketMessage.create({
+        ticket_id: ticket.id,
+        author_email: user.email,
+        author_name: user.full_name || user.pseudo || user.email,
+        author_avatar: user.avatar_url || "",
+        author_role: "user",
+        content: message.trim(),
+        attachments,
+      });
+
+      toast.success("Ticket envoyé ! L'équipe support vous répondra dans la messagerie.");
       onClose();
     } catch {
       toast.error("Erreur lors de l'envoi du ticket");
@@ -54,7 +81,7 @@ export default function SupportTicketModal({ user, onClose }) {
             </div>
             <div>
               <h2 className="text-sm font-black text-white">Contacter le Support</h2>
-              <p className="text-[10px] text-white/40">L'équipe vous répondra dans les plus brefs délais</p>
+              <p className="text-[10px] text-white/40">Réponse dans la messagerie intégrée</p>
             </div>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white transition" style={{ background: "rgba(255,255,255,0.05)" }}>
@@ -105,13 +132,34 @@ export default function SupportTicketModal({ user, onClose }) {
             <textarea
               value={message}
               onChange={e => setMessage(e.target.value)}
-              placeholder="Expliquez en détail la raison de votre contact. Plus vous êtes précis, plus nous pourrons vous aider rapidement..."
-              rows={6}
+              placeholder="Expliquez en détail la raison de votre contact..."
+              rows={5}
               maxLength={2000}
               className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder:text-white/30 outline-none resize-none"
               style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
             />
             <p className="text-[10px] text-white/30 mt-1 text-right">{message.length}/2000</p>
+          </div>
+
+          {/* Attachments */}
+          <div>
+            <label className="text-xs font-bold text-white/60 mb-1.5 block">Pièces jointes (optionnel)</label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {attachments.map((att, i) => (
+                <div key={i} className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg" style={{ background: "rgba(255,255,255,0.05)" }}>
+                  <Download className="w-3 h-3 text-white/40" />
+                  <span className="text-[10px] text-white/60 truncate max-w-[120px]">{att.file_name}</span>
+                  <button onClick={() => setAttachments(prev => prev.filter((_, idx) => idx !== i))} className="text-white/30 hover:text-red-400">
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <label className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white/60 cursor-pointer hover:text-white transition" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Paperclip className="w-3.5 h-3.5" />}
+              {uploading ? "Upload..." : "Ajouter un fichier"}
+              <input type="file" className="hidden" onChange={(e) => handleUpload(e.target.files[0])} />
+            </label>
           </div>
         </div>
 
@@ -122,7 +170,7 @@ export default function SupportTicketModal({ user, onClose }) {
           </button>
           <button
             onClick={submit}
-            disabled={loading || !subject.trim() || !message.trim()}
+            disabled={loading || uploading || !subject.trim() || !message.trim()}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-40 flex items-center justify-center gap-2"
             style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}
           >

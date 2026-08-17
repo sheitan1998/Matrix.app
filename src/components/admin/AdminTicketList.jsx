@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
-import { Send, Clock, CheckCircle2, AlertCircle, X } from "lucide-react";
+import { Clock, CheckCircle2, AlertCircle, X, Lock } from "lucide-react";
+import TicketConversation from "@/components/admin/TicketConversation";
 
 const STATUS_CONFIG = {
   open: { label: "Ouvert", color: "#3b82f6", icon: AlertCircle },
@@ -18,39 +19,29 @@ const CATEGORY_LABELS = {
   other: "Autre",
 };
 
-export default function AdminTicketList({ tickets, onRefresh }) {
+const STATUS_FILTERS = [
+  { value: "all", label: "Tous" },
+  { value: "open", label: "Ouverts" },
+  { value: "in_progress", label: "En cours" },
+  { value: "resolved", label: "Résolus" },
+  { value: "closed", label: "Fermés" },
+];
+
+export default function AdminTicketList({ tickets, user, onRefresh }) {
   const [expanded, setExpanded] = useState(null);
-  const [response, setResponse] = useState({});
-  const [loading, setLoading] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const updateStatus = async (ticket, status) => {
-    setLoading(`status_${ticket.id}`);
     try {
-      await base44.entities.SupportTicket.update(ticket.id, { status });
+      await base44.entities.SupportTicket.update(ticket.id, { status, is_locked: status === "closed" });
       toast.success("Statut mis à jour");
       onRefresh();
     } catch { toast.error("Erreur"); }
-    setLoading(null);
   };
 
-  const sendResponse = async (ticket) => {
-    const msg = response[ticket.id]?.trim();
-    if (!msg) { toast.error("Entrez une réponse"); return; }
-    setLoading(`resp_${ticket.id}`);
-    try {
-      await base44.entities.SupportTicket.update(ticket.id, {
-        admin_response: msg,
-        status: "resolved",
-        responded_at: new Date().toISOString(),
-      });
-      toast.success("Réponse envoyée");
-      setResponse(s => ({ ...s, [ticket.id]: "" }));
-      onRefresh();
-    } catch { toast.error("Erreur"); }
-    setLoading(null);
-  };
+  const filtered = statusFilter === "all" ? tickets : tickets.filter(t => t.status === statusFilter);
 
-  const sorted = [...tickets].sort((a, b) => {
+  const sorted = [...filtered].sort((a, b) => {
     const order = { open: 0, in_progress: 1, resolved: 2, closed: 3 };
     if (order[a.status] !== order[b.status]) return order[a.status] - order[b.status];
     return new Date(b.created_date) - new Date(a.created_date);
@@ -60,13 +51,28 @@ export default function AdminTicketList({ tickets, onRefresh }) {
     <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(168,85,247,0.15)" }}>
       <div className="p-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <h3 className="text-sm font-black text-white">Tickets de Support ({tickets.length})</h3>
-        <p className="text-[10px] text-white/40 mt-0.5">Messages des utilisateurs nécessitant une assistance</p>
+        <p className="text-[10px] text-white/40 mt-0.5">Messagerie interne · pièces jointes · verrouillage</p>
+      </div>
+
+      {/* Status filters */}
+      <div className="flex gap-1 px-4 py-2 overflow-x-auto no-scrollbar" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+        {STATUS_FILTERS.map(f => (
+          <button
+            key={f.value}
+            onClick={() => setStatusFilter(f.value)}
+            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition whitespace-nowrap tap-sm ${statusFilter === f.value ? "text-white" : "text-white/40 hover:text-white/60"}`}
+            style={statusFilter === f.value ? { background: "rgba(168,85,247,0.15)" } : { background: "rgba(255,255,255,0.03)" }}
+          >
+            {f.label}
+          </button>
+        ))}
       </div>
 
       <div className="max-h-[600px] overflow-y-auto scrollbar-thin">
         {sorted.map(ticket => {
           const cfg = STATUS_CONFIG[ticket.status] || STATUS_CONFIG.open;
           const isOpen = expanded === ticket.id;
+          const isLocked = ticket.is_locked || ticket.status === "closed";
           return (
             <div key={ticket.id} className="border-b" style={{ borderColor: "rgba(255,255,255,0.04)" }}>
               <button
@@ -82,6 +88,7 @@ export default function AdminTicketList({ tickets, onRefresh }) {
                     <span className="px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0" style={{ background: `${cfg.color}20`, color: cfg.color }}>
                       <cfg.icon className="w-2.5 h-2.5 inline mr-0.5" />{cfg.label}
                     </span>
+                    {isLocked && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: "rgba(107,114,128,0.2)", color: "#9ca3af" }}><Lock className="w-2.5 h-2.5 inline mr-0.5" />Verrouillé</span>}
                     {ticket.priority === "urgent" && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: "rgba(239,68,68,0.2)", color: "#f87171" }}>URGENT</span>}
                   </div>
                   <p className="text-[10px] text-white/40 truncate">{ticket.user_name} · {CATEGORY_LABELS[ticket.category] || ticket.category}</p>
@@ -89,28 +96,16 @@ export default function AdminTicketList({ tickets, onRefresh }) {
               </button>
 
               {isOpen && (
-                <div className="px-3 pb-4 space-y-3">
-                  {/* User message */}
-                  <div className="p-3 rounded-xl" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                    <p className="text-[10px] font-bold text-white/40 mb-1">Message de l'utilisateur:</p>
-                    <p className="text-xs text-white/80 whitespace-pre-wrap leading-relaxed">{ticket.message}</p>
-                  </div>
-
-                  {/* Admin response (if any) */}
-                  {ticket.admin_response && (
-                    <div className="p-3 rounded-xl" style={{ background: "rgba(34,197,94,0.05)", border: "1px solid rgba(34,197,94,0.15)" }}>
-                      <p className="text-[10px] font-bold text-green-400/60 mb-1">Réponse admin:</p>
-                      <p className="text-xs text-white/80 whitespace-pre-wrap">{ticket.admin_response}</p>
-                    </div>
-                  )}
+                <div className="px-3 pb-4">
+                  <TicketConversation ticket={ticket} user={user} isAdmin={true} onRefresh={onRefresh} />
 
                   {/* Status buttons */}
-                  <div className="flex gap-1.5 flex-wrap">
+                  <div className="flex gap-1.5 flex-wrap mt-3">
                     {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
                       <button
                         key={key}
                         onClick={() => updateStatus(ticket, key)}
-                        disabled={loading === `status_${ticket.id}` || ticket.status === key}
+                        disabled={ticket.status === key}
                         className="px-2.5 py-1 rounded-lg text-[10px] font-bold transition disabled:opacity-30"
                         style={{ background: `${cfg.color}15`, color: cfg.color, border: `1px solid ${cfg.color}30` }}
                       >
@@ -118,29 +113,6 @@ export default function AdminTicketList({ tickets, onRefresh }) {
                       </button>
                     ))}
                   </div>
-
-                  {/* Admin response input */}
-                  {ticket.status !== "closed" && (
-                    <div>
-                      <textarea
-                        value={response[ticket.id] || ""}
-                        onChange={e => setResponse(s => ({ ...s, [ticket.id]: e.target.value }))}
-                        placeholder="Tapez votre réponse à l'utilisateur..."
-                        rows={3}
-                        className="w-full px-3 py-2 rounded-xl text-xs text-white placeholder:text-white/30 outline-none resize-none"
-                        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
-                      />
-                      <button
-                        onClick={() => sendResponse(ticket)}
-                        disabled={loading === `resp_${ticket.id}`}
-                        className="mt-2 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white transition hover:opacity-90 disabled:opacity-40"
-                        style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}
-                      >
-                        {loading === `resp_${ticket.id}` ? "..." : <Send className="w-3 h-3" />}
-                        Envoyer et résoudre
-                      </button>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
@@ -149,7 +121,7 @@ export default function AdminTicketList({ tickets, onRefresh }) {
         {sorted.length === 0 && (
           <div className="p-8 text-center">
             <CheckCircle2 className="w-8 h-8 text-white/20 mx-auto mb-2" />
-            <p className="text-sm text-white/30">Aucun ticket de support</p>
+            <p className="text-sm text-white/30">Aucun ticket dans cette catégorie</p>
           </div>
         )}
       </div>

@@ -58,12 +58,17 @@
     },
     "admin_response": {
       "type": "string",
-      "description": "Reponse de l'admin"
+      "description": "Reponse de l'admin (legacy)"
     },
     "responded_at": {
       "type": "string",
       "format": "date-time",
       "description": "Date de reponse"
+    },
+    "is_locked": {
+      "type": "boolean",
+      "default": false,
+      "description": "Verrouille le ticket en lecture seule (cl\u00f4ture)"
     }
   },
   "required": [

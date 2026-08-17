@@ -1,0 +1,82 @@
+{
+  "name": "TicketMessage",
+  "type": "object",
+  "properties": {
+    "ticket_id": {
+      "type": "string",
+      "description": "ID du ticket parent"
+    },
+    "author_email": {
+      "type": "string",
+      "description": "Email de l'auteur"
+    },
+    "author_name": {
+      "type": "string",
+      "description": "Nom affich\u00e9 de l'auteur"
+    },
+    "author_avatar": {
+      "type": "string",
+      "description": "Avatar de l'auteur"
+    },
+    "author_role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "user"
+      ],
+      "default": "user",
+      "description": "R\u00f4le: admin ou user"
+    },
+    "content": {
+      "type": "string",
+      "description": "Contenu du message"
+    },
+    "attachments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "file_url": {
+            "type": "string"
+          },
+          "file_name": {
+            "type": "string"
+          }
+        }
+      },
+      "default": [],
+      "description": "Pi\u00e8ces jointes"
+    },
+    "is_system": {
+      "type": "boolean",
+      "default": false,
+      "description": "Message syst\u00e8me (ex: ticket ferm\u00e9)"
+    }
+  },
+  "required": [
+    "ticket_id",
+    "author_email",
+    "content"
+  ],
+  "rls": {
+    "create": {
+      "data.author_email": "{{user.email}}"
+    },
+    "read": {},
+    "update": {
+      "data.author_email": "{{user.email}}"
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.author_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

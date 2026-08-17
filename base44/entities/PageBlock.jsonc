@@ -1,0 +1,111 @@
+{
+  "name": "PageBlock",
+  "type": "object",
+  "properties": {
+    "game_slug": {
+      "type": "string",
+      "description": "Jeu/univers (farming-simulator-25, dofus, camions, etc.)"
+    },
+    "page_key": {
+      "type": "string",
+      "description": "Page cible (hub, category, detail, custom)"
+    },
+    "block_type": {
+      "type": "string",
+      "enum": [
+        "accordion",
+        "banner",
+        "image",
+        "widget",
+        "section",
+        "text"
+      ],
+      "default": "accordion",
+      "description": "Type de bloc"
+    },
+    "title": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string",
+      "description": "Contenu riche ou texte"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Image (banniere, illustration)"
+    },
+    "link_url": {
+      "type": "string",
+      "description": "Lien clickable optionnel"
+    },
+    "position": {
+      "type": "number",
+      "default": 0,
+      "description": "Ordre d'affichage"
+    },
+    "grid_col": {
+      "type": "number",
+      "default": 0,
+      "description": "Colonne de depart (0-11)"
+    },
+    "grid_row": {
+      "type": "number",
+      "default": 0,
+      "description": "Ligne de depart"
+    },
+    "col_span": {
+      "type": "number",
+      "default": 12,
+      "description": "Nombre de colonnes (1-12)"
+    },
+    "row_span": {
+      "type": "number",
+      "default": 1,
+      "description": "Nombre de lignes"
+    },
+    "is_collapsible": {
+      "type": "boolean",
+      "default": false,
+      "description": "Repliable (accord\u00e9on)"
+    },
+    "default_open": {
+      "type": "boolean",
+      "default": true,
+      "description": "Ouvert par d\u00e9faut si repliable"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "config": {
+      "type": "object",
+      "properties": {},
+      "default": {},
+      "description": "Configuration additionnelle JSON"
+    }
+  },
+  "required": [
+    "game_slug",
+    "page_key",
+    "block_type",
+    "title"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {},
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

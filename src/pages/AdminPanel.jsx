@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Shield, Users, Ticket, AlertTriangle, FileText, FolderTree, ArrowUpDown } from "lucide-react";
+import { ArrowLeft, Shield, Users, Ticket, AlertTriangle, FileText, FolderTree, ArrowUpDown, LayoutGrid } from "lucide-react";
 import HeaderActions from "@/components/layout/HeaderActions";
 import AdminUserList from "@/components/admin/AdminUserList";
 import AdminTicketList from "@/components/admin/AdminTicketList";
@@ -9,6 +9,7 @@ import AddWikiItemForm from "@/components/admin/AddWikiItemForm";
 import WikiItemList from "@/components/admin/WikiItemList";
 import CategoryManager from "@/components/admin/CategoryManager";
 import ReorderManager from "@/components/admin/ReorderManager";
+import BlockManager from "@/components/admin/BlockManager";
 
 export default function AdminPanel() {
   const nav = useNavigate();
@@ -73,6 +74,7 @@ export default function AdminPanel() {
     { id: "wiki", label: "Contenu Wiki", icon: FileText },
     { id: "categories", label: "Catégories", icon: FolderTree },
     { id: "reorder", label: "Ordre & Réorganisation", icon: ArrowUpDown },
+    { id: "blocks", label: "Blocs & Pages", icon: LayoutGrid },
   ];
 
   return (
@@ -145,7 +147,7 @@ export default function AdminPanel() {
         </div>
 
         {/* Content */}
-        {tab === "tickets" && <AdminTicketList tickets={tickets} onRefresh={loadData} />}
+        {tab === "tickets" && <AdminTicketList tickets={tickets} user={user} onRefresh={loadData} />}
         {tab === "users" && <AdminUserList users={users} onRefresh={loadData} />}
         {tab === "wiki" && (
           <div className="space-y-6">
@@ -161,6 +163,7 @@ export default function AdminPanel() {
         )}
         {tab === "categories" && <CategoryManager />}
         {tab === "reorder" && <ReorderManager />}
+        {tab === "blocks" && <BlockManager />}
       </div>
     </div>
   );
