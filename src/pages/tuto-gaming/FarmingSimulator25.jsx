@@ -28,7 +28,7 @@ export default function FarmingSimulator25() {
         </Link>
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 py-4">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 py-4 hidden">
         <div className="relative overflow-hidden rounded-xl border border-white/10">
           
 
