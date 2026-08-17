@@ -1,47 +1,82 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { Send, Paperclip, Lock, Unlock, X, Download, Loader2 } from "lucide-react";
 
-const STATUS_CONFIG = {
-  open: { label: "Ouvert", color: "#3b82f6" },
-  in_progress: { label: "En cours", color: "#f59e0b" },
-  resolved: { label: "Résolu", color: "#22C55E" },
-  closed: { label: "Fermé", color: "#6b7280" },
-};
-
-export default function TicketConversation({ ticket, user, isAdmin, onRefresh }) {
+export default function TicketConversation({ ticket: initialTicket, user, isAdmin, onRefresh }) {
+  const [ticket, setTicket] = useState(initialTicket);
   const [messages, setMessages] = useState([]);
   const [content, setContent] = useState("");
   const [attachments, setAttachments] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const messagesEndRef = useRef(null);
 
-  const isLocked = ticket.is_locked || ticket.status === "closed";
+  // Derived lock state — reactive to the latest ticket state fetched from server
+  const isLocked = ticket?.is_locked || ticket?.status === "closed";
+
+  // Fetch latest ticket state from server (for real-time lock/status sync)
+  const fetchTicketState = useCallback(async () => {
+    try {
+      const latest = await base44.entities.SupportTicket.get(initialTicket.id);
+      if (latest) setTicket(latest);
+    } catch {
+      /* silent */
+    }
+  }, [initialTicket.id]);
 
   const fetchMessages = useCallback(async () => {
     try {
-      const msgs = await base44.entities.TicketMessage.filter({ ticket_id: ticket.id }, "created_date", 200);
+      const msgs = await base44.entities.TicketMessage.filter({ ticket_id: initialTicket.id }, "created_date", 200);
       setMessages(msgs);
     } catch {
       setMessages([]);
     } finally {
       setLoading(false);
     }
-  }, [ticket.id]);
+  }, [initialTicket.id]);
 
+  // Initial fetch + real-time subscriptions
   useEffect(() => {
     fetchMessages();
-  }, [fetchMessages]);
+    fetchTicketState();
 
+    // Subscribe to TicketMessage changes (new messages appear instantly)
+    const unsubMsgs = base44.entities.TicketMessage.subscribe((event) => {
+      fetchMessages();
+    });
+
+    // Subscribe to SupportTicket changes (lock/status changes appear instantly)
+    const unsubTicket = base44.entities.SupportTicket.subscribe((event) => {
+      if (event.data?.id === initialTicket.id || event.type === "update") {
+        fetchTicketState();
+      }
+    });
+
+    // Polling fallback every 8 seconds (catches changes that subscriptions might miss)
+    const pollInterval = setInterval(() => {
+      fetchTicketState();
+      fetchMessages();
+    }, 8000);
+
+    return () => {
+      unsubMsgs();
+      unsubTicket();
+      clearInterval(pollInterval);
+    };
+  }, [fetchMessages, fetchTicketState, initialTicket.id]);
+
+  // Auto-scroll to bottom on new messages
   useEffect(() => {
-    const unsub = base44.entities.TicketMessage.subscribe(() => fetchMessages());
-    return unsub;
-  }, [fetchMessages]);
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages.length]);
 
   const handleUpload = async (file) => {
     if (!file) return;
+    if (isLocked) return;
     setUploading(true);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
@@ -61,36 +96,25 @@ export default function TicketConversation({ ticket, user, isAdmin, onRefresh })
     }
     setSending(true);
     try {
-      await base44.entities.TicketMessage.create({
+      // Use backend function for server-side lock enforcement
+      const res = await base44.functions.invoke("ticketSystem", {
+        action: "sendMessage",
         ticket_id: ticket.id,
-        author_email: user.email,
-        author_name: user.full_name || user.pseudo || user.email,
-        author_avatar: user.avatar_url || "",
-        author_role: isAdmin ? "admin" : "user",
         content: content.trim(),
         attachments,
       });
 
-      // If admin responds, send internal DM to the user (no email)
-      if (isAdmin) {
-        await base44.entities.DirectMessage.create({
-          sender_email: user.email,
-          sender_name: user.full_name || "Support Matrix",
-          sender_avatar: user.avatar_url || "",
-          recipient_email: ticket.user_email,
-          recipient_name: ticket.user_name || "",
-          content: `🎫 Support — ${ticket.subject}\n\n${content.trim()}`,
-        });
-        // Mark ticket as in_progress if it was open
-        if (ticket.status === "open") {
-          await base44.entities.SupportTicket.update(ticket.id, { status: "in_progress" });
-        }
+      if (res?.data?.error === "Ticket is locked") {
+        toast.error("Ce ticket vient d'être verrouillé par un admin.");
+        fetchTicketState();
+        return;
       }
 
       setContent("");
       setAttachments([]);
       toast.success("Message envoyé.");
       fetchMessages();
+      fetchTicketState();
       if (onRefresh) onRefresh();
     } catch {
       toast.error("Erreur lors de l'envoi.");
@@ -101,33 +125,27 @@ export default function TicketConversation({ ticket, user, isAdmin, onRefresh })
 
   const toggleLock = async () => {
     try {
-      const newLocked = !isLocked;
-      await base44.entities.SupportTicket.update(ticket.id, {
-        is_locked: newLocked,
-        status: newLocked ? "closed" : "open",
-      });
-
-      // Create system message
-      await base44.entities.TicketMessage.create({
+      const res = await base44.functions.invoke("ticketSystem", {
+        action: "lockTicket",
         ticket_id: ticket.id,
-        author_email: user.email,
-        author_name: user.full_name || "Système",
-        author_role: "admin",
-        content: newLocked ? "Ticket clôturé et verrouillé." : "Ticket rouvert.",
-        is_system: true,
       });
 
-      toast.success(newLocked ? "Ticket verrouillé." : "Ticket rouvert.");
-      fetchMessages();
-      if (onRefresh) onRefresh();
+      if (res?.data?.success) {
+        toast.success(res.data.is_locked ? "Ticket verrouillé." : "Ticket rouvert.");
+        fetchTicketState();
+        fetchMessages();
+        if (onRefresh) onRefresh();
+      } else {
+        toast.error("Erreur: " + (res?.data?.error || "Inconnue"));
+      }
     } catch {
-      toast.error("Erreur.");
+      toast.error("Erreur lors du verrouillage.");
     }
   };
 
   return (
     <div className="space-y-3">
-      {/* Lock banner */}
+      {/* Lock banner — strict read-only indicator */}
       {isLocked && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: "rgba(107,114,128,0.1)", border: "1px solid rgba(107,114,128,0.3)" }}>
           <Lock className="w-3.5 h-3.5 text-gray-400" />
@@ -185,6 +203,7 @@ export default function TicketConversation({ ticket, user, isAdmin, onRefresh })
                 )}
               </div>
             ))}
+            <div ref={messagesEndRef} />
           </>
         )}
       </div>
@@ -205,7 +224,7 @@ export default function TicketConversation({ ticket, user, isAdmin, onRefresh })
         </button>
       )}
 
-      {/* Reply area */}
+      {/* Reply area — completely hidden when locked (strict read-only) */}
       {!isLocked && (
         <div className="space-y-2">
           {/* Attachments preview */}
@@ -226,19 +245,20 @@ export default function TicketConversation({ ticket, user, isAdmin, onRefresh })
           <div className="flex items-end gap-2">
             <label className="w-9 h-9 rounded-lg flex items-center justify-center cursor-pointer text-white/40 hover:text-white transition shrink-0" style={{ background: "rgba(255,255,255,0.05)" }}>
               {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
-              <input type="file" className="hidden" onChange={(e) => handleUpload(e.target.files[0])} />
+              <input type="file" className="hidden" onChange={(e) => handleUpload(e.target.files[0])} disabled={isLocked} />
             </label>
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Tapez votre message..."
               rows={2}
-              className="flex-1 px-3 py-2 rounded-xl text-xs text-white placeholder:text-white/30 outline-none resize-none"
+              disabled={isLocked}
+              className="flex-1 px-3 py-2 rounded-xl text-xs text-white placeholder:text-white/30 outline-none resize-none disabled:opacity-30"
               style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
             />
             <button
               onClick={handleSend}
-              disabled={sending || (!content.trim() && attachments.length === 0)}
+              disabled={sending || isLocked || (!content.trim() && attachments.length === 0)}
               className="w-9 h-9 rounded-lg flex items-center justify-center text-white transition hover:opacity-90 disabled:opacity-30 shrink-0"
               style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}
             >
