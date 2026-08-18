@@ -26,6 +26,10 @@ export default function CosmeticItemForm({ onSaved }) {
     icon: "",
     preview_image: "",
     video_url: "",
+    anim_scale: "2",
+    anim_offset_x: "0",
+    anim_offset_y: "0",
+    anim_mask_radius: "0.5",
   });
   const [uploading, setUploading] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -59,6 +63,13 @@ export default function CosmeticItemForm({ onSaved }) {
 
     setSaving(true);
     try {
+      const anim_config = form.category === "avatar_animation" ? {
+        scale: parseFloat(form.anim_scale) || 2,
+        offset_x: parseFloat(form.anim_offset_x) || 0,
+        offset_y: parseFloat(form.anim_offset_y) || 0,
+        mask_radius: parseFloat(form.anim_mask_radius) || 0.5,
+      } : undefined;
+
       const res = await base44.functions.invoke("cosmeticShop", {
         action: "createItem",
         name: form.name.trim(),
@@ -69,6 +80,7 @@ export default function CosmeticItemForm({ onSaved }) {
         icon: form.icon.trim(),
         preview_image: form.preview_image,
         video_url: form.video_url,
+        anim_config,
       });
 
       if (res?.data?.error) {
@@ -80,6 +92,7 @@ export default function CosmeticItemForm({ onSaved }) {
       setForm({
         name: "", description: "", category: "badge", rarity: "common",
         price_euros: "", icon: "", preview_image: "", video_url: "",
+        anim_scale: "2", anim_offset_x: "0", anim_offset_y: "0", anim_mask_radius: "0.5",
       });
       if (onSaved) onSaved();
     } catch (err) {
@@ -175,6 +188,42 @@ export default function CosmeticItemForm({ onSaved }) {
           </div>
         </div>
       </div>
+
+      {/* Animation display config (avatar_animation only) */}
+      {form.category === "avatar_animation" && (
+        <div className="rounded-lg p-4 space-y-3" style={{ background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.15)" }}>
+          <p className="text-[10px] font-black uppercase text-white/60">Configuration d'affichage de l'animation</p>
+          <p className="text-[9px] text-white/30">Ajuste précisément le positionnement du cosmétique vidéo autour de l'avatar.</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[10px] font-bold uppercase text-white/50 mb-1">Échelle</label>
+              <input type="number" step="0.1" min="1" max="4" value={form.anim_scale}
+                onChange={e => setForm(prev => ({ ...prev, anim_scale: e.target.value }))}
+                placeholder="2" className="w-full h-10 px-3 rounded-lg text-sm text-white border border-white/10 outline-none" style={{ background: "#1a1a1a" }} />
+              <p className="text-[9px] text-white/30 mt-1">2 = 200% de l'avatar</p>
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase text-white/50 mb-1">Rayon du masque</label>
+              <input type="number" step="0.05" min="0" max="0.95" value={form.anim_mask_radius}
+                onChange={e => setForm(prev => ({ ...prev, anim_mask_radius: e.target.value }))}
+                placeholder="0.5" className="w-full h-10 px-3 rounded-lg text-sm text-white border border-white/10 outline-none" style={{ background: "#1a1a1a" }} />
+              <p className="text-[9px] text-white/30 mt-1">0.5 = trou = taille de l'avatar</p>
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase text-white/50 mb-1">Décalage X (px)</label>
+              <input type="number" step="1" value={form.anim_offset_x}
+                onChange={e => setForm(prev => ({ ...prev, anim_offset_x: e.target.value }))}
+                placeholder="0" className="w-full h-10 px-3 rounded-lg text-sm text-white border border-white/10 outline-none" style={{ background: "#1a1a1a" }} />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase text-white/50 mb-1">Décalage Y (px)</label>
+              <input type="number" step="1" value={form.anim_offset_y}
+                onChange={e => setForm(prev => ({ ...prev, anim_offset_y: e.target.value }))}
+                placeholder="0" className="w-full h-10 px-3 rounded-lg text-sm text-white border border-white/10 outline-none" style={{ background: "#1a1a1a" }} />
+            </div>
+          </div>
+        </div>
+      )}
 
       <button type="submit" disabled={saving}
         className="w-full h-11 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2 disabled:opacity-50"

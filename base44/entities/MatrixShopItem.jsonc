@@ -65,6 +65,33 @@
     "stripe_price_id": {
       "type": "string",
       "description": "ID prix Stripe (auto-cree)"
+    },
+    "anim_config": {
+      "type": "object",
+      "properties": {
+        "scale": {
+          "type": "number",
+          "default": 2,
+          "description": "Echelle du conteneur video (2 = 200% de l'avatar)"
+        },
+        "offset_x": {
+          "type": "number",
+          "default": 0,
+          "description": "Decalage horizontal en px"
+        },
+        "offset_y": {
+          "type": "number",
+          "default": 0,
+          "description": "Decalage vertical en px"
+        },
+        "mask_radius": {
+          "type": "number",
+          "default": 0.5,
+          "description": "Rayon du trou central transparent (0-1, 0.5 = taille de l'avatar)"
+        }
+      },
+      "default": {},
+      "description": "Configuration d'affichage de l'animation (avatar_animation)"
     }
   },
   "required": [

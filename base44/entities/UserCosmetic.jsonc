@@ -31,6 +31,29 @@
     "preview_image": {
       "type": "string",
       "description": "URL de l'image de preview (pour profile_cover)"
+    },
+    "anim_config": {
+      "type": "object",
+      "properties": {
+        "scale": {
+          "type": "number",
+          "default": 2
+        },
+        "offset_x": {
+          "type": "number",
+          "default": 0
+        },
+        "offset_y": {
+          "type": "number",
+          "default": 0
+        },
+        "mask_radius": {
+          "type": "number",
+          "default": 0.5
+        }
+      },
+      "default": {},
+      "description": "Configuration d'affichage copiee depuis le MatrixShopItem a l'achat"
     }
   },
   "required": [

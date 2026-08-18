@@ -78,6 +78,7 @@ export default async function(req: Request): Promise<Response> {
                   rarity: shopItem.rarity || "common", is_equipped: false,
                   video_url: shopItem.video_url || "",
                   preview_image: shopItem.preview_image || "",
+                  anim_config: shopItem.anim_config || undefined,
                 });
               }
               await base44.asServiceRole.entities.User.update(userId, {
@@ -110,7 +111,7 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ error: 'Réservé aux administrateurs' }, { status: 403 });
       }
 
-      const { name, description, category, rarity, price_euros, icon, preview_image, video_url } = body;
+      const { name, description, category, rarity, price_euros, icon, preview_image, video_url, anim_config } = body;
       if (!name || !category || !price_euros || price_euros < 0.5) {
         return Response.json({ error: 'Nom, catégorie et prix (min 0.50€) requis' }, { status: 400 });
       }
@@ -164,6 +165,7 @@ export default async function(req: Request): Promise<Response> {
         stripe_product_id: product.id,
         stripe_price_id: price.id,
         is_active: true,
+        anim_config: anim_config || undefined,
       });
 
       console.log('[cosmeticShop] Item created:', item.id, 'Stripe Product:', product.id, 'Price:', price.id);
@@ -178,7 +180,7 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ error: 'Réservé aux administrateurs' }, { status: 403 });
       }
 
-      const { itemId, name, description, category, rarity, price_euros, icon, preview_image, video_url, is_active } = body;
+      const { itemId, name, description, category, rarity, price_euros, icon, preview_image, video_url, is_active, anim_config } = body;
       if (!itemId) return Response.json({ error: 'itemId requis' }, { status: 400 });
 
       const shopItem = await base44.asServiceRole.entities.MatrixShopItem.get(itemId);
@@ -193,6 +195,7 @@ export default async function(req: Request): Promise<Response> {
       if (preview_image !== undefined) updates.preview_image = preview_image;
       if (video_url !== undefined) updates.video_url = video_url;
       if (is_active !== undefined) updates.is_active = is_active;
+      if (anim_config !== undefined) updates.anim_config = anim_config;
 
       // If price changed, create a new Stripe Price
       if (price_euros !== undefined && price_euros !== shopItem.price_euros && price_euros >= 0.5) {
