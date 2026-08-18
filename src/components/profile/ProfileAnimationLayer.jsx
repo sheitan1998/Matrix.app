@@ -25,8 +25,8 @@ export default function ProfileAnimationLayer({ cosmetic, size = 96 }) {
   const offsetY = cfg.offset_y || 0;
   // mask_radius: 0-1, fraction of the container radius that stays transparent.
   // 0.52 = clears avatar + frame border, video starts just outside the frame edge.
-  const maskR = Math.max(0, Math.min(0.95, cfg.mask_radius ?? 0.52));
-  const maskRFeather = Math.min(0.99, maskR + 0.01);
+  const maskR = Math.max(0, Math.min(0.95, cfg.mask_radius ?? 0.5));
+  const maskRFeather = Math.min(0.99, maskR + 0.02);
 
   const scaled = size * scale;
 
@@ -49,9 +49,9 @@ export default function ProfileAnimationLayer({ cosmetic, size = 96 }) {
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
           const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
           const data = imageData.data;
-          // Aggressive luminance keying: anything below THRESHOLD is fully transparent.
-          const THRESHOLD = 55;
-          const FEATHER = 15;
+          // Luminance keying: only pure black background → transparent, animation preserved.
+          const THRESHOLD = 20;
+          const FEATHER = 10;
           for (let i = 0; i < data.length; i += 4) {
             const r = data[i];
             const g = data[i + 1];
