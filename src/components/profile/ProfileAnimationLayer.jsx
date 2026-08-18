@@ -3,11 +3,13 @@ import React, { useEffect, useRef } from "react";
 /**
  * ProfileAnimationLayer
  * Renders the equipped avatar animation as a separate absolute layer centered on the avatar.
- * Uses Canvas luminance-keying: black/dark background pixels → transparent,
- * while all bright and colored pixels are preserved at full quality (no blur, no wash-out).
+ * Uses Canvas luminance-keying: black/dark background pixels → fully transparent,
+ * while all bright and colored pixels are preserved at full quality.
  *
- * Reads anim_config from the cosmetic (scale, offset_x, offset_y, mask_radius) so each
- * animation can be individually tuned from the admin panel.
+ * The video wraps around the outer profile frame border: the radial mask clears the
+ * avatar + frame interior, so the animation appears from the frame edge outward.
+ *
+ * Reads anim_config from the cosmetic (scale, offset_x, offset_y, mask_radius).
  *
  * @param {object} cosmetic - The equipped UserCosmetic (category: "avatar_animation")
  * @param {number} size - Base size in px (should match avatar size, e.g. 96 for w-24)
@@ -21,10 +23,10 @@ export default function ProfileAnimationLayer({ cosmetic, size = 96 }) {
   const scale = cfg.scale || 2;
   const offsetX = cfg.offset_x || 0;
   const offsetY = cfg.offset_y || 0;
-  // mask_radius: 0-1, fraction of the container radius that stays transparent (over the avatar).
-  // 0.5 = exactly the avatar circle (avatar = 50% of the scaled container).
-  const maskR = Math.max(0, Math.min(0.95, cfg.mask_radius ?? 0.5));
-  const maskRFeather = Math.min(0.99, maskR + 0.03);
+  // mask_radius: 0-1, fraction of the container radius that stays transparent.
+  // 0.52 = clears avatar + frame border, video starts just outside the frame edge.
+  const maskR = Math.max(0, Math.min(0.95, cfg.mask_radius ?? 0.52));
+  const maskRFeather = Math.min(0.99, maskR + 0.01);
 
   const scaled = size * scale;
 
@@ -47,7 +49,9 @@ export default function ProfileAnimationLayer({ cosmetic, size = 96 }) {
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
           const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
           const data = imageData.data;
-          const THRESHOLD = 28;
+          // Aggressive luminance keying: anything below THRESHOLD is fully transparent.
+          const THRESHOLD = 55;
+          const FEATHER = 15;
           for (let i = 0; i < data.length; i += 4) {
             const r = data[i];
             const g = data[i + 1];
@@ -55,8 +59,8 @@ export default function ProfileAnimationLayer({ cosmetic, size = 96 }) {
             const lum = 0.299 * r + 0.587 * g + 0.114 * b;
             if (lum < THRESHOLD) {
               data[i + 3] = 0;
-            } else if (lum < THRESHOLD + 20) {
-              data[i + 3] = Math.round(((lum - THRESHOLD) / 20) * 255);
+            } else if (lum < THRESHOLD + FEATHER) {
+              data[i + 3] = Math.round(((lum - THRESHOLD) / FEATHER) * 255);
             }
           }
           ctx.putImageData(imageData, 0, 0);
@@ -91,8 +95,8 @@ export default function ProfileAnimationLayer({ cosmetic, size = 96 }) {
         height: scaled,
         transform: `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px))`,
         zIndex: 5,
-        // Radial mask: transparent in the center (over the avatar), opaque everywhere else.
-        // The hole matches the avatar circle precisely; wings/flames beyond it stay fully visible.
+        // Radial mask: transparent in the center (avatar + frame border), opaque everywhere else.
+        // Sharp feather so the video starts right at the frame's outer edge.
         WebkitMaskImage: `radial-gradient(circle at center, transparent ${maskR * 100}%, #000 ${maskRFeather * 100}%)`,
         maskImage: `radial-gradient(circle at center, transparent ${maskR * 100}%, #000 ${maskRFeather * 100}%)`,
       }}

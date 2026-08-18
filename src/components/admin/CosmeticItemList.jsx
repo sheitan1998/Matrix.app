@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Trash2, Loader2, Eye, EyeOff } from "lucide-react";
+import { Trash2, Loader2, Eye, EyeOff, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import CosmeticEditModal from "@/components/admin/CosmeticEditModal";
 
 const RARITY_COLORS = {
   common: "#9ca3af", rare: "#3b82f6", epic: "#a855f7", legendary: "#f59e0b",
@@ -11,6 +12,7 @@ export default function CosmeticItemList({ refreshKey }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(null);
+  const [editing, setEditing] = useState(null);
 
   const fetchItems = useCallback(async () => {
     try {
@@ -106,6 +108,9 @@ export default function CosmeticItemList({ refreshKey }) {
               <button onClick={() => toggleActive(item)} className="w-7 h-7 rounded flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10" title={item.is_active ? "Masquer" : "Afficher"}>
                 {item.is_active ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
               </button>
+              <button onClick={() => setEditing(item)} className="w-7 h-7 rounded flex items-center justify-center text-white/40 hover:text-[#a855f7] hover:bg-white/10" title="Modifier">
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
               <button onClick={() => handleDelete(item)} disabled={deleting === item.id} className="w-7 h-7 rounded flex items-center justify-center text-white/40 hover:text-red-500 hover:bg-white/10 disabled:opacity-30" title="Supprimer">
                 {deleting === item.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
               </button>
@@ -113,6 +118,13 @@ export default function CosmeticItemList({ refreshKey }) {
           </div>
         );
       })}
+      {editing && (
+        <CosmeticEditModal
+          item={editing}
+          onClose={() => setEditing(null)}
+          onSaved={fetchItems}
+        />
+      )}
     </div>
   );
 }
