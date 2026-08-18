@@ -244,6 +244,17 @@ export default async function(req: Request): Promise<Response> {
       }
 
       await base44.asServiceRole.entities.MatrixShopItem.update(itemId, updates);
+
+      // Propagate anim_config changes to all owned copies (UserCosmetic)
+      if (anim_config !== undefined) {
+        const ownedCopies = await base44.asServiceRole.entities.UserCosmetic.filter({ item_id: itemId });
+        if (ownedCopies.length > 0) {
+          await base44.asServiceRole.entities.UserCosmetic.bulkUpdate(
+            ownedCopies.map(c => ({ id: c.id, anim_config }))
+          );
+        }
+      }
+
       return Response.json({ success: true });
     }
 
