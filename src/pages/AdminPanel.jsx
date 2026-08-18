@@ -132,18 +132,18 @@ export default function AdminPanel() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-4 overflow-x-auto no-scrollbar">
+        <div className="flex gap-1.5 mb-4 overflow-x-auto scrollbar-thin pb-1">
           {tabs.map((t) => {
             const Icon = t.icon;
             return (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
-                className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap tap-sm ${tab === t.id ? "text-white" : "text-white/40 hover:text-white/60"}`}
-                style={tab === t.id ? { background: "rgba(168,85,247,0.15)" } : { background: "rgba(255,255,255,0.03)" }}
+                className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${tab === t.id ? "text-white" : "text-white/40 hover:text-white/60"}`}
+                style={tab === t.id ? { background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)" } : { background: "rgba(255,255,255,0.03)", border: "1px solid transparent" }}
               >
-                <Icon className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">{t.label}</span>
+                <Icon className="w-3.5 h-3.5 shrink-0" />
+                <span>{t.label}</span>
                 {t.id === "tickets" && openTickets > 0 && (
                   <span className="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white" style={{ background: "#a855f7" }}>{openTickets}</span>
                 )}
