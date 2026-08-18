@@ -95,10 +95,6 @@ export default function ProfileAnimationLayer({ cosmetic, size = 96 }) {
         height: scaled,
         transform: `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px))`,
         zIndex: 5,
-        // Radial mask: transparent in the center (avatar + frame border), opaque everywhere else.
-        // Sharp feather so the video starts right at the frame's outer edge.
-        WebkitMaskImage: `radial-gradient(circle at center, transparent ${maskR * 100}%, #000 ${maskRFeather * 100}%)`,
-        maskImage: `radial-gradient(circle at center, transparent ${maskR * 100}%, #000 ${maskRFeather * 100}%)`,
       }}
     >
       <video
