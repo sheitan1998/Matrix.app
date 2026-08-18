@@ -20,7 +20,7 @@ export default function ProfileAnimationLayer({ cosmetic, size = 96 }) {
   const rafRef = useRef(null);
 
   const cfg = cosmetic?.anim_config || {};
-  const scale = cfg.scale || 2;
+  const scale = cfg.scale || 1.15;
   const offsetX = cfg.offset_x || 0;
   const offsetY = cfg.offset_y || 0;
   // mask_radius: 0-1, fraction of the container radius that stays transparent.
