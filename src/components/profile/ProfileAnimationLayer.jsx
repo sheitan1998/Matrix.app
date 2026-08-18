@@ -84,8 +84,9 @@ export default function ProfileAnimationLayer({ cosmetic, size = 96 }) {
         transform: "translate(-50%, -50%)",
         zIndex: 5,
         // Ring mask: transparent in center (over avatar), opaque in the border ring, feathered edges
-        WebkitMaskImage: "radial-gradient(circle at center, transparent 38%, #000 42%, #000 72%, transparent 78%)",
-        maskImage: "radial-gradient(circle at center, transparent 38%, #000 42%, #000 72%, transparent 78%)",
+        // Center hole = ~50% of container radius → matches avatar diameter at 200% scale
+        WebkitMaskImage: "radial-gradient(circle at center, transparent 46%, #000 50%, #000 74%, transparent 80%)",
+        maskImage: "radial-gradient(circle at center, transparent 46%, #000 50%, #000 74%, transparent 80%)",
       }}
     >
       {/* Hidden video source — frames are processed via canvas */}
