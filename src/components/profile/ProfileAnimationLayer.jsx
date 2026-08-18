@@ -14,7 +14,7 @@ export default function ProfileAnimationLayer({ cosmetic, size = 96 }) {
   const videoRef = useRef(null);
   const rafRef = useRef(null);
 
-  const scale = 1.2; // 120% of avatar — wraps as external border frame
+  const scale = 2; // 200% of avatar — large enough for wings/flames
   const scaled = size * scale;
 
   useEffect(() => {
