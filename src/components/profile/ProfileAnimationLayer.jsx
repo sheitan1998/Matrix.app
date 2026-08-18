@@ -14,7 +14,7 @@ export default function ProfileAnimationLayer({ cosmetic, size = 96 }) {
   const videoRef = useRef(null);
   const rafRef = useRef(null);
 
-  const scale = 1.5; // overflow 50% larger than avatar
+  const scale = 1.2; // 120% of avatar — wraps as external border frame
   const scaled = size * scale;
 
   useEffect(() => {
@@ -83,6 +83,9 @@ export default function ProfileAnimationLayer({ cosmetic, size = 96 }) {
         height: scaled,
         transform: "translate(-50%, -50%)",
         zIndex: 5,
+        // Ring mask: transparent in center (over avatar), opaque in the border ring, feathered edges
+        WebkitMaskImage: "radial-gradient(circle at center, transparent 38%, #000 42%, #000 72%, transparent 78%)",
+        maskImage: "radial-gradient(circle at center, transparent 38%, #000 42%, #000 72%, transparent 78%)",
       }}
     >
       {/* Hidden video source — frames are processed via canvas */}
@@ -98,7 +101,7 @@ export default function ProfileAnimationLayer({ cosmetic, size = 96 }) {
       />
       <canvas
         ref={canvasRef}
-        className="w-full h-full object-contain"
+        className="w-full h-full object-cover"
       />
     </div>
   );
