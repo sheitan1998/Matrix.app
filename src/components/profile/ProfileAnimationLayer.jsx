@@ -83,10 +83,8 @@ export default function ProfileAnimationLayer({ cosmetic, size = 96 }) {
         height: scaled,
         transform: "translate(-50%, -50%)",
         zIndex: 5,
-        // Ring mask: larger transparent center so video only shows as a thin ring around the avatar border
-        // Center hole = 60% of container radius (avatar = 50% of 200% container), ring is a slim band just outside the avatar
-        WebkitMaskImage: "radial-gradient(circle at center, transparent 56%, #000 60%, #000 78%, transparent 84%)",
-        maskImage: "radial-gradient(circle at center, transparent 56%, #000 60%, #000 78%, transparent 84%)",
+        // No radial mask — luminance keying already makes black background transparent.
+        // object-contain keeps the full video (wings/flames) visible without cropping.
       }}
     >
       {/* Hidden video source — frames are processed via canvas */}
@@ -102,7 +100,8 @@ export default function ProfileAnimationLayer({ cosmetic, size = 96 }) {
       />
       <canvas
         ref={canvasRef}
-        className="w-full h-full object-cover"
+        className="w-full h-full"
+        style={{ objectFit: "contain" }}
       />
     </div>
   );
