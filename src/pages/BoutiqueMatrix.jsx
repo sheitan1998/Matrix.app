@@ -23,6 +23,14 @@ const RARITY_COLORS = {
 // Conversion fixe: 1€ = 100 Trix (1 Trix = 0,01€)
 const trixToEuro = (trix) => (trix / 100).toFixed(2).replace(".", ",") + "€";
 
+// Affiche le prix en € — utilise price_euros si défini, sinon conversion depuis Trix
+const displayEuro = (item) => {
+  if (item.price_euros && item.price_euros > 0) {
+    return item.price_euros.toFixed(2).replace(".", ",") + "€";
+  }
+  return trixToEuro(item.price_trix);
+};
+
 export default function BoutiqueMatrix() {
   const nav = useNavigate();
   const qc = useQueryClient();
@@ -101,8 +109,8 @@ export default function BoutiqueMatrix() {
     if (isOwned(item.id)) { toast.info("Vous possédez déjà cet objet"); return; }
     setBuyingEuro(item.id);
     try {
-      const res = await base44.functions.invoke("stripePayment", {
-        action: "createCosmeticPurchase",
+      const res = await base44.functions.invoke("cosmeticShop", {
+        action: "createCheckout",
         itemId: item.id,
       });
       const url = res?.data?.url;
@@ -198,7 +206,7 @@ export default function BoutiqueMatrix() {
                         {formatTrix(item.price_trix)}
                       </div>
                       <span className="text-[10px] text-white/30">ou</span>
-                      <span className="text-xs font-bold text-white/70">{trixToEuro(item.price_trix)}</span>
+                      <span className="text-xs font-bold text-white/70">{displayEuro(item)}</span>
                     </div>
                     {ownedItem ? (
                       <span className="w-full text-center text-[10px] font-bold text-green-400 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg" style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)" }}>
@@ -255,7 +263,7 @@ export default function BoutiqueMatrix() {
                     {formatTrix(detailItem.price_trix)}
                   </div>
                   <span className="text-xs text-white/30">ou</span>
-                  <span className="text-base font-bold text-white">{trixToEuro(detailItem.price_trix)}</span>
+                  <span className="text-base font-bold text-white">{displayEuro(detailItem)}</span>
                 </div>
 
                 {ownedItem ? (
@@ -282,7 +290,7 @@ export default function BoutiqueMatrix() {
                       {buyingEuro === detailItem.id ? "Redirection..." : (
                         <>
                           <CreditCard className="w-4 h-4 text-white/60" />
-                          Payer {trixToEuro(detailItem.price_trix)}
+                          Payer {displayEuro(detailItem)}
                         </>
                       )}
                     </button>

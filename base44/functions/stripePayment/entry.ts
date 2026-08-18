@@ -449,35 +449,6 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ success: true, type, itemId });
       }
 
-      if (type === 'cosmetic_purchase') {
-        const itemId = session.metadata?.item_id;
-        if (itemId && userId) {
-          const shopItem = await base44.asServiceRole.entities.MatrixShopItem.get(itemId);
-          if (shopItem) {
-            const existingCosm = await base44.asServiceRole.entities.UserCosmetic.filter({
-              user_email: userEmail, item_id: itemId,
-            });
-            if (existingCosm.length === 0) {
-              await base44.asServiceRole.entities.UserCosmetic.create({
-                user_email: userEmail, item_id: itemId, item_name: shopItem.name,
-                category: shopItem.category, icon: shopItem.icon || "",
-                rarity: shopItem.rarity || "common", is_equipped: false,
-                video_url: shopItem.video_url || "",
-                preview_image: shopItem.preview_image || "",
-              });
-            }
-            await base44.asServiceRole.entities.User.update(userId, {
-              stripe_customer_id: session.customer || undefined,
-            });
-          }
-        }
-        await base44.asServiceRole.entities.TrixTransaction.create({
-          user_email: userEmail, type: 'cosmetic', amount: 0,
-          description: `Achat cosmétique ${itemId} - ${(session.amount_total / 100).toFixed(2)}€ (session ${session.id})`,
-        });
-        return Response.json({ success: true, type, itemId });
-      }
-
       if (type === 'donation') {
         await base44.asServiceRole.entities.TrixTransaction.create({
           user_email: userEmail,

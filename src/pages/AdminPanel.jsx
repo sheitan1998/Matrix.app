@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Shield, Users, Ticket, AlertTriangle, FileText, FolderTree, ArrowUpDown, LayoutGrid, FileCode } from "lucide-react";
+import { ArrowLeft, Shield, Users, Ticket, AlertTriangle, FileText, FolderTree, ArrowUpDown, LayoutGrid, FileCode, ShoppingBag } from "lucide-react";
 import HeaderActions from "@/components/layout/HeaderActions";
 import AdminUserList from "@/components/admin/AdminUserList";
 import AdminTicketList from "@/components/admin/AdminTicketList";
@@ -11,6 +11,8 @@ import CategoryManager from "@/components/admin/CategoryManager";
 import ReorderManager from "@/components/admin/ReorderManager";
 import BlockManager from "@/components/admin/BlockManager";
 import DynamicPageManager from "@/components/admin/DynamicPageManager";
+import CosmeticItemForm from "@/components/admin/CosmeticItemForm";
+import CosmeticItemList from "@/components/admin/CosmeticItemList";
 
 export default function AdminPanel() {
   const nav = useNavigate();
@@ -20,6 +22,7 @@ export default function AdminPanel() {
   const [tab, setTab] = useState("tickets");
   const [loading, setLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
+  const [shopRefresh, setShopRefresh] = useState(0);
 
   const loadData = async () => {
     try {
@@ -77,6 +80,7 @@ export default function AdminPanel() {
     { id: "reorder", label: "Ordre & Réorganisation", icon: ArrowUpDown },
     { id: "blocks", label: "Blocs Jeux", icon: LayoutGrid },
     { id: "pages", label: "Pages Dynamiques", icon: FileCode },
+    { id: "shop", label: "Boutique", icon: ShoppingBag },
   ];
 
   return (
@@ -167,6 +171,19 @@ export default function AdminPanel() {
         {tab === "reorder" && <ReorderManager />}
         {tab === "blocks" && <BlockManager />}
         {tab === "pages" && <DynamicPageManager />}
+        {tab === "shop" && (
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-white/10 p-5" style={{ background: "rgba(15,10,25,0.6)" }}>
+              <h3 className="text-sm font-black text-white uppercase tracking-tight mb-1">Ajouter un cosmétique</h3>
+              <p className="text-[10px] text-white/40 mb-4">Le produit et le prix Stripe sont créés automatiquement à la soumission.</p>
+              <CosmeticItemForm onSaved={() => setShopRefresh(r => r + 1)} />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-white uppercase tracking-tight mb-3">Cosmétiques existants</h3>
+              <CosmeticItemList refreshKey={shopRefresh} />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
