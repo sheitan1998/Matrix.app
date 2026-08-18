@@ -23,12 +23,9 @@ export default function ProfileAnimationLayer({ cosmetic, size = 96 }) {
   const scale = cfg.scale || 1.15;
   const offsetX = cfg.offset_x || 0;
   const offsetY = cfg.offset_y || 0;
-  // mask_radius: 0-1, fraction of the container radius that stays transparent.
-  // 0.52 = clears avatar + frame border, video starts just outside the frame edge.
-  const maskR = Math.max(0, Math.min(0.95, cfg.mask_radius ?? 0.5));
-  const maskRFeather = Math.min(0.99, maskR + 0.02);
-
-  const scaled = size * scale;
+  // Width/height overrides (in px). If set, used directly; otherwise derived from scale.
+  const layerW = cfg.width ? Number(cfg.width) : size * scale;
+  const layerH = cfg.height ? Number(cfg.height) : size * scale;
 
   useEffect(() => {
     const video = videoRef.current;
@@ -91,8 +88,8 @@ export default function ProfileAnimationLayer({ cosmetic, size = 96 }) {
     <div
       className="absolute top-1/2 left-1/2 pointer-events-none"
       style={{
-        width: scaled,
-        height: scaled,
+        width: layerW,
+        height: layerH,
         transform: `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px))`,
         zIndex: 5,
       }}

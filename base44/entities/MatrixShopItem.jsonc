@@ -71,8 +71,16 @@
       "properties": {
         "scale": {
           "type": "number",
-          "default": 2,
-          "description": "Echelle du conteneur video (2 = 200% de l'avatar)"
+          "default": 1.15,
+          "description": "Echelle du conteneur video (1.15 = 115% de l'avatar)"
+        },
+        "width": {
+          "type": "number",
+          "description": "Largeur en px (override l'echelle si defini)"
+        },
+        "height": {
+          "type": "number",
+          "description": "Hauteur en px (override l'echelle si defini)"
         },
         "offset_x": {
           "type": "number",

@@ -26,7 +26,9 @@ export default function CosmeticItemForm({ onSaved }) {
     icon: "",
     preview_image: "",
     video_url: "",
-    anim_scale: "2",
+    anim_scale: "1.15",
+    anim_width: "",
+    anim_height: "",
     anim_offset_x: "0",
     anim_offset_y: "0",
     anim_mask_radius: "0.5",
@@ -64,7 +66,9 @@ export default function CosmeticItemForm({ onSaved }) {
     setSaving(true);
     try {
       const anim_config = form.category === "avatar_animation" ? {
-        scale: parseFloat(form.anim_scale) || 2,
+        scale: parseFloat(form.anim_scale) || 1.15,
+        width: form.anim_width ? parseFloat(form.anim_width) : undefined,
+        height: form.anim_height ? parseFloat(form.anim_height) : undefined,
         offset_x: parseFloat(form.anim_offset_x) || 0,
         offset_y: parseFloat(form.anim_offset_y) || 0,
         mask_radius: parseFloat(form.anim_mask_radius) || 0.5,
@@ -92,7 +96,7 @@ export default function CosmeticItemForm({ onSaved }) {
       setForm({
         name: "", description: "", category: "badge", rarity: "common",
         price_euros: "", icon: "", preview_image: "", video_url: "",
-        anim_scale: "2", anim_offset_x: "0", anim_offset_y: "0", anim_mask_radius: "0.5",
+        anim_scale: "1.15", anim_width: "", anim_height: "", anim_offset_x: "0", anim_offset_y: "0", anim_mask_radius: "0.5",
       });
       if (onSaved) onSaved();
     } catch (err) {
@@ -199,15 +203,22 @@ export default function CosmeticItemForm({ onSaved }) {
               <label className="block text-[10px] font-bold uppercase text-white/50 mb-1">Échelle</label>
               <input type="number" step="0.1" min="1" max="4" value={form.anim_scale}
                 onChange={e => setForm(prev => ({ ...prev, anim_scale: e.target.value }))}
-                placeholder="2" className="w-full h-10 px-3 rounded-lg text-sm text-white border border-white/10 outline-none" style={{ background: "#1a1a1a" }} />
-              <p className="text-[9px] text-white/30 mt-1">2 = 200% de l'avatar</p>
+                placeholder="1.15" className="w-full h-10 px-3 rounded-lg text-sm text-white border border-white/10 outline-none" style={{ background: "#1a1a1a" }} />
+              <p className="text-[9px] text-white/30 mt-1">1.15 = 115% de l'avatar</p>
             </div>
             <div>
-              <label className="block text-[10px] font-bold uppercase text-white/50 mb-1">Rayon du masque</label>
-              <input type="number" step="0.05" min="0" max="0.95" value={form.anim_mask_radius}
-                onChange={e => setForm(prev => ({ ...prev, anim_mask_radius: e.target.value }))}
-                placeholder="0.5" className="w-full h-10 px-3 rounded-lg text-sm text-white border border-white/10 outline-none" style={{ background: "#1a1a1a" }} />
-              <p className="text-[9px] text-white/30 mt-1">0.5 = trou = taille de l'avatar</p>
+              <label className="block text-[10px] font-bold uppercase text-white/50 mb-1">Largeur (px)</label>
+              <input type="number" step="1" value={form.anim_width}
+                onChange={e => setForm(prev => ({ ...prev, anim_width: e.target.value }))}
+                placeholder="Auto" className="w-full h-10 px-3 rounded-lg text-sm text-white border border-white/10 outline-none" style={{ background: "#1a1a1a" }} />
+              <p className="text-[9px] text-white/30 mt-1">Override largeur (sinon = échelle)</p>
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase text-white/50 mb-1">Hauteur (px)</label>
+              <input type="number" step="1" value={form.anim_height}
+                onChange={e => setForm(prev => ({ ...prev, anim_height: e.target.value }))}
+                placeholder="Auto" className="w-full h-10 px-3 rounded-lg text-sm text-white border border-white/10 outline-none" style={{ background: "#1a1a1a" }} />
+              <p className="text-[9px] text-white/30 mt-1">Override hauteur (sinon = échelle)</p>
             </div>
             <div>
               <label className="block text-[10px] font-bold uppercase text-white/50 mb-1">Décalage X (px)</label>
@@ -220,6 +231,13 @@ export default function CosmeticItemForm({ onSaved }) {
               <input type="number" step="1" value={form.anim_offset_y}
                 onChange={e => setForm(prev => ({ ...prev, anim_offset_y: e.target.value }))}
                 placeholder="0" className="w-full h-10 px-3 rounded-lg text-sm text-white border border-white/10 outline-none" style={{ background: "#1a1a1a" }} />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase text-white/50 mb-1">Rayon du masque</label>
+              <input type="number" step="0.05" min="0" max="0.95" value={form.anim_mask_radius}
+                onChange={e => setForm(prev => ({ ...prev, anim_mask_radius: e.target.value }))}
+                placeholder="0.5" className="w-full h-10 px-3 rounded-lg text-sm text-white border border-white/10 outline-none" style={{ background: "#1a1a1a" }} />
+              <p className="text-[9px] text-white/30 mt-1">0.5 = trou = taille de l'avatar</p>
             </div>
           </div>
         </div>

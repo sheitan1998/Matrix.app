@@ -37,7 +37,13 @@
       "properties": {
         "scale": {
           "type": "number",
-          "default": 2
+          "default": 1.15
+        },
+        "width": {
+          "type": "number"
+        },
+        "height": {
+          "type": "number"
         },
         "offset_x": {
           "type": "number",

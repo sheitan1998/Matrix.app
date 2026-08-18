@@ -172,7 +172,7 @@ export default function ProfileContent({ onClose }) {
         <div className="px-4 sm:px-6 -mt-12 relative">
           <div className="flex items-end gap-4 mb-4">
             {/* Avatar with frame */}
-            <div className="relative shrink-0">
+            <div className="relative shrink-0 overflow-visible">
               <div className="w-24 h-24 rounded-full p-1" style={{
                 background: equippedFrame ? `linear-gradient(135deg, ${equippedFrame.icon || "#a855f7"}, #6d28d9)` : "rgba(168,85,247,0.2)",
                 boxShadow: equippedFrame ? "0 0 20px rgba(168,85,247,0.4)" : "none",
