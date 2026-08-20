@@ -103,10 +103,10 @@ export default function VIPClubPage({ coins, onBack }) {
 
           {/* VIP Tiers */}
           <section>
-            <h3 className="text-xl font-black text-white mb-1 flex items-center gap-2">
+            <h3 className="text-xl font-black text-white mb-1 flex items-center gap-2 hidden">
               <Gem className="w-5 h-5" style={{ color: "#fbbf24" }} /> Niveaux VIP
             </h3>
-            <p className="text-xs text-white/40 mb-5">Progression par solde de casino</p>
+            <p className="text-xs text-white/40 mb-5 hidden">Progression par solde de casino</p>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {VIP_TIERS.map((tier, i) => {
                 const isCurrent = tier.name === currentTier.name;
@@ -144,7 +144,7 @@ export default function VIPClubPage({ coins, onBack }) {
 
           {/* Benefits */}
           <section>
-            <h3 className="text-xl font-black text-white mb-5 flex items-center gap-2">
+            <h3 className="text-xl font-black text-white mb-5 flex items-center gap-2 hidden">
               <Gift className="w-5 h-5" style={{ color: "#fbbf24" }} /> Avantages VIP
             </h3>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -165,7 +165,7 @@ export default function VIPClubPage({ coins, onBack }) {
 
           {/* Exclusive Rewards */}
           <section>
-            <h3 className="text-xl font-black text-white mb-5 flex items-center gap-2">
+            <h3 className="text-xl font-black text-white mb-5 flex items-center gap-2 hidden">
               <Sparkles className="w-5 h-5" style={{ color: "#fbbf24" }} /> Récompenses Exclusives
             </h3>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -190,7 +190,7 @@ export default function VIPClubPage({ coins, onBack }) {
           </section>
 
           {/* VIP Bonus */}
-          <section className="rounded-3xl p-8 text-center"
+          <section className="rounded-3xl p-8 text-center hidden"
           style={{ background: "linear-gradient(135deg, rgba(251,191,36,0.08), rgba(168,85,247,0.05))", border: "1px solid rgba(251,191,36,0.2)" }}>
             <h3 className="text-xl font-black text-white mb-2">Bonus VIP Mensuel</h3>
             <p className="text-sm text-white/50 max-w-md mx-auto mb-4">
