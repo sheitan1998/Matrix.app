@@ -232,7 +232,7 @@ export default function CasinoLobby({ balance, jackpot, onPlayGame, onShop, onPr
           <motion.button key={i}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="px-2 py-3 rounded-xl text-center"
+          className="px-2 py-3 rounded-xl text-center hidden"
           style={{
             background: "rgba(255,255,255,0.04)",
             border: `1px solid ${tab.color}30`,
