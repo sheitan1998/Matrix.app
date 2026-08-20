@@ -173,31 +173,31 @@ export default function CasinoLobby({ balance, jackpot, onPlayGame, onShop, onPr
       <div className="relative z-30 flex items-center justify-between px-3 py-2.5"
       style={{ background: "rgba(30,0,50,0.6)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         {/* Left: avatar + coins + stars */}
-        <div className="flex items-center gap-2 shrink-0 hidden">
-          <button onClick={onProfile} className="w-9 h-9 rounded-full flex items-center justify-center text-base shrink-0 mx-32"
-          style={{ background: "rgba(255,255,255,0.1)", border: "2px solid rgba(255,215,0,0.4)" }}>
-            👤
-          </button>
-          <div className="flex items-center gap-1 px-2 py-1 rounded-lg"
-          style={{ background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)" }}>
-            <Coins className="w-3.5 h-3.5" style={{ color: "#FFD700" }} />
-            <span className="text-xs font-mono font-black text-white">{(balance || 0).toLocaleString()}</span>
-          </div>
-          <div className="hidden sm:flex items-center gap-0.5 px-1.5 py-1 rounded-lg"
-          style={{ background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.15)" }}>
-            <Star className="w-3 h-3" style={{ color: "#FFD700", fill: "#FFD700" }} />
-            <span className="text-xs font-black text-white">1</span>
-          </div>
-          <div className="hidden sm:flex items-center gap-0.5 px-1.5 py-1 rounded-lg"
-          style={{ background: "rgba(255,105,180,0.08)", border: "1px solid rgba(255,105,180,0.2)" }}>
-            <Star className="w-3 h-3" style={{ color: "#ff69b4", fill: "#ff69b4" }} />
-            <span className="text-xs font-black text-white">5</span>
-          </div>
-          <button className="hidden sm:flex w-7 h-7 rounded-full items-center justify-center"
-          style={{ background: "rgba(255,255,255,0.06)" }}>
-            <Info className="w-3.5 h-3.5 text-white/50" />
-          </button>
-        </div>
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
 
         {/* Right: progress + safe + menu */}
         <div className="flex items-center gap-2 shrink-0">
