@@ -174,7 +174,7 @@ export default function CasinoLobby({ balance, jackpot, onPlayGame, onShop, onPr
       style={{ background: "rgba(30,0,50,0.6)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         {/* Left: avatar + coins + stars */}
         <div className="flex items-center gap-2 shrink-0">
-          <button onClick={onProfile} className="w-9 h-9 rounded-full flex items-center justify-center text-base shrink-0 px-64 py-8"
+          <button onClick={onProfile} className="w-9 h-9 rounded-full flex items-center justify-center text-base shrink-0 mx-32"
           style={{ background: "rgba(255,255,255,0.1)", border: "2px solid rgba(255,215,0,0.4)" }}>
             👤
           </button>
