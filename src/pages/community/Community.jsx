@@ -353,7 +353,7 @@ export default function Community() {
 
             {/* Categories */}
             <div className="px-3 mt-2 border-t border-border pt-3">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1 hidden">Catégories</p>
+              
               {CATEGORIES.map((c) => {
               const active = selectedCategory === c.id;
               return (
