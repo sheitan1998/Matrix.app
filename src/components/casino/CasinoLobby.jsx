@@ -343,8 +343,8 @@ export default function CasinoLobby({ balance, jackpot, onPlayGame, onShop, onPr
       style={{ background: "rgba(30,0,50,0.6)", backdropFilter: "blur(12px)", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
         {/* Left: globe + players online */}
         <div className="flex items-center gap-1.5">
-          <Globe className="w-4 h-4 text-green-400" />
-          <span className="text-xs font-bold text-green-400">17.36K</span>
+          <Globe className="w-4 h-4 text-green-400 hidden" />
+          <span className="text-xs font-bold text-green-400 hidden">17.36K</span>
         </div>
 
         {/* Center: pagination dots + arrows */}
