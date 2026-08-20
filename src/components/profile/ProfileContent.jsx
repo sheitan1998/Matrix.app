@@ -321,7 +321,7 @@ export default function ProfileContent({ onClose }) {
           <div className="flex gap-1 mb-4 overflow-x-auto no-scrollbar border-b border-white/5 pb-1">
             {TABS.map((t) =>
             <button key={t.key} onClick={() => setTab(t.key)}
-            className={`relative px-3 py-2.5 text-xs font-bold whitespace-nowrap transition ${tab === t.key ? "text-white" : "text-white/40 hover:text-white/60"}`}>
+            className={`relative px-3 py-2.5 font-bold whitespace-nowrap transition text-base [font-family:'Titan_One',_system-ui] ${tab === t.key ? "text-white" : "text-white/40 hover:text-white/60"}`}>
                 <t.icon className="w-3.5 h-3.5 inline mr-1" /> {t.label}
                 {tab === t.key && <div className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full" style={{ background: "#a855f7" }} />}
               </button>
