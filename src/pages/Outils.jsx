@@ -12,12 +12,12 @@ import HeaderActions from "@/components/layout/HeaderActions";
 import { Table, Palette } from "lucide-react";
 
 const TOOLS = [
-  { id: "calc", label: "Calculatrice de Bureau", desc: "Opérations basiques, scientifiques et financières.", icon: Calculator, color: "#FF4D4D" },
-  { id: "convert", label: "Convertisseur d'Unités", desc: "Convertissez distances, poids, volumes, et devises.", icon: Coins, color: "#FFD700" },
-  { id: "notepad-mgr", label: "Gestionnaire de Blocs-notes", desc: "Créez et gérez plusieurs blocs-notes personnels.", icon: FileText, color: "#22C55E" },
-  { id: "spreadsheet", label: "Tableur Matrix", desc: "Tableur fonctionnel avec formules SUM, AVG, MIN, MAX et export CSV.", icon: Table, color: "#3b82f6" },
-  { id: "paint", label: "Paint Matrix", desc: "Outil de dessin avec pinceau, gomme, couleurs et export PNG.", icon: Palette, color: "#ec4899" },
-];
+{ id: "calc", label: "Calculatrice de Bureau", desc: "Opérations basiques, scientifiques et financières.", icon: Calculator, color: "#FF4D4D" },
+{ id: "convert", label: "Convertisseur d'Unités", desc: "Convertissez distances, poids, volumes, et devises.", icon: Coins, color: "#FFD700" },
+{ id: "notepad-mgr", label: "Gestionnaire de Blocs-notes", desc: "Créez et gérez plusieurs blocs-notes personnels.", icon: FileText, color: "#22C55E" },
+{ id: "spreadsheet", label: "Tableur Matrix", desc: "Tableur fonctionnel avec formules SUM, AVG, MIN, MAX et export CSV.", icon: Table, color: "#3b82f6" },
+{ id: "paint", label: "Paint Matrix", desc: "Outil de dessin avec pinceau, gomme, couleurs et export PNG.", icon: Palette, color: "#ec4899" }];
+
 
 const BG_URL = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/891f5968b_Gemini_Generated_Image_vsevw4vsevw4vsev.png";
 
@@ -57,22 +57,22 @@ export default function Outils() {
         {/* Tool cards */}
         <div className="flex-1 flex items-center justify-center">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl">
-            {TOOLS.map((tool, i) => (
-              <motion.button
-                key={tool.id}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 + i * 0.1, duration: 0.5 }}
-                whileHover={{ scale: 1.03, y: -4 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setActiveTool(tool.id)}
-                className="relative rounded-2xl p-6 text-left flex flex-col gap-4 overflow-hidden"
-                style={{
-                  background: "rgba(15,10,25,0.7)",
-                  border: `2px solid ${tool.color}`,
-                  boxShadow: `0 0 24px ${tool.color}30, inset 0 0 12px ${tool.color}10`,
-                  backdropFilter: "blur(8px)",
-                }}>
+            {TOOLS.map((tool, i) =>
+            <motion.button
+              key={tool.id}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 + i * 0.1, duration: 0.5 }}
+              whileHover={{ scale: 1.03, y: -4 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setActiveTool(tool.id)}
+              className="relative rounded-2xl p-6 text-left flex flex-col gap-4 overflow-hidden"
+              style={{
+                background: "rgba(15,10,25,0.7)",
+                border: `2px solid ${tool.color}`,
+                boxShadow: `0 0 24px ${tool.color}30, inset 0 0 12px ${tool.color}10`,
+                backdropFilter: "blur(8px)"
+              }}>
                 <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-20" style={{ background: `radial-gradient(circle, ${tool.color}, transparent 70%)` }} />
                 <div className="relative w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: `${tool.color}1a`, border: `1px solid ${tool.color}40` }}>
                   <tool.icon className="w-7 h-7" style={{ color: tool.color }} />
@@ -85,17 +85,17 @@ export default function Outils() {
                   <ChevronRight className="w-6 h-6" style={{ color: tool.color }} />
                 </div>
               </motion.button>
-            ))}
+            )}
           </div>
         </div>
 
         {/* Footer */}
         <footer className="mt-8 flex flex-col items-center gap-3 pb-4">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "#5865F2" }}>
+            <div className="w-10 h-10 rounded-full flex items-center justify-center hidden" style={{ background: "#5865F2" }}>
               <MessageCircle className="w-5 h-5 text-white" />
             </div>
-            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "#FF0000" }}>
+            <div className="w-10 h-10 rounded-full flex items-center justify-center hidden" style={{ background: "#FF0000" }}>
               <Youtube className="w-5 h-5 text-white" />
             </div>
           </div>
@@ -104,18 +104,18 @@ export default function Outils() {
 
       {/* Tool modals */}
       <AnimatePresence>
-        {activeTool && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ background: "rgba(0,0,0,0.8)", backdropFilter: "blur(8px)" }}
-            onClick={() => setActiveTool(null)}>
+        {activeTool &&
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.8)", backdropFilter: "blur(8px)" }}
+          onClick={() => setActiveTool(null)}>
             <motion.div
-              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
-              transition={{ type: "spring", damping: 25 }}
-              className={`w-full rounded-2xl ${activeTool === "paint" ? "max-w-5xl h-[85vh]" : activeTool === "spreadsheet" ? "max-w-4xl h-[80vh]" : activeTool === "notepad-mgr" ? "max-w-3xl max-h-[85vh] overflow-y-auto scrollbar-thin" : "max-w-md max-h-[85vh] overflow-y-auto scrollbar-thin"}`}
-              style={{ background: "#13101a", border: "1px solid rgba(255,255,255,0.08)" }}
-              onClick={(e) => e.stopPropagation()}>
+            initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+            transition={{ type: "spring", damping: 25 }}
+            className={`w-full rounded-2xl ${activeTool === "paint" ? "max-w-5xl h-[85vh]" : activeTool === "spreadsheet" ? "max-w-4xl h-[80vh]" : activeTool === "notepad-mgr" ? "max-w-3xl max-h-[85vh] overflow-y-auto scrollbar-thin" : "max-w-md max-h-[85vh] overflow-y-auto scrollbar-thin"}`}
+            style={{ background: "#13101a", border: "1px solid rgba(255,255,255,0.08)" }}
+            onClick={(e) => e.stopPropagation()}>
               {activeTool === "calc" && <CalculatorTool onClose={() => setActiveTool(null)} />}
               {activeTool === "notepad-mgr" && <NotepadManager onClose={() => setActiveTool(null)} />}
               {activeTool === "convert" && <UnitConverterTool onClose={() => setActiveTool(null)} />}
@@ -123,9 +123,9 @@ export default function Outils() {
               {activeTool === "paint" && <PaintTool onClose={() => setActiveTool(null)} />}
             </motion.div>
           </motion.div>
-        )}
+        }
       </AnimatePresence>
 
-    </div>
-  );
+    </div>);
+
 }
