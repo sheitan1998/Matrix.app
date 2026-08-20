@@ -43,7 +43,7 @@ export default function AccordionBlock({ title, content, image_url, link_url, li
           <img
             src={image_url}
             alt={title}
-            className="rounded-lg w-full block pr-48 pl-48 mx-32"
+            className="rounded-lg w-full block mx-32 pl-64 pr-64"
             loading="lazy"
             style={{ display: "block" }} />
 
