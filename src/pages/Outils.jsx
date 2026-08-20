@@ -92,12 +92,12 @@ export default function Outils() {
         {/* Footer */}
         <footer className="mt-8 flex flex-col items-center gap-3 pb-4">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center hidden" style={{ background: "#5865F2" }}>
-              <MessageCircle className="w-5 h-5 text-white" />
-            </div>
-            <div className="w-10 h-10 rounded-full flex items-center justify-center hidden" style={{ background: "#FF0000" }}>
-              <Youtube className="w-5 h-5 text-white" />
-            </div>
+            
+
+            
+            
+
+            
           </div>
         </footer>
       </div>
