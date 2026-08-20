@@ -34,16 +34,16 @@ export default function AccordionBlock({ title, content, image_url, link_url, li
         }}>
         
         <div className="px-4">
-          {content && (
-            <div className="text-sm text-white/70 leading-relaxed rich-text-content">
+          {content &&
+          <div className="text-sm text-white/70 leading-relaxed rich-text-content">
               <ReactMarkdown breaks>{content}</ReactMarkdown>
             </div>
-          )}
+          }
           {image_url &&
           <img
             src={image_url}
             alt={title}
-            className="mt-2 rounded-lg w-full block"
+            className="rounded-lg w-full block"
             loading="lazy"
             style={{ display: "block" }} />
 
