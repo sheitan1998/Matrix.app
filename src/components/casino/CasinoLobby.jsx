@@ -207,7 +207,7 @@ export default function CasinoLobby({ balance, jackpot, onPlayGame, onShop, onPr
               <span className="text-[9px] font-bold text-white/60">0/6</span>
               <span className="text-[9px] font-bold text-white/40">3j 17h</span>
             </div>
-            <div className="w-16 h-1.5 rounded-full mt-0.5" style={{ background: "rgba(255,255,255,0.1)" }}>
+            <div className="w-16 h-1.5 rounded-full mt-0.5 hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
               <div className="h-full rounded-full" style={{ width: "0%", background: "#ff69b4" }} />
             </div>
           </div>
@@ -217,7 +217,7 @@ export default function CasinoLobby({ balance, jackpot, onPlayGame, onShop, onPr
             <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black text-white"
             style={{ background: "#FFD700", color: "#000" }}>11</span>
           </button>
-          <button className="w-9 h-9 rounded-lg flex items-center justify-center"
+          <button className="w-9 h-9 rounded-lg flex items-center justify-center hidden"
           style={{ background: "rgba(255,255,255,0.06)" }}>
             <MoreVertical className="w-4 h-4 text-white/50" />
           </button>
