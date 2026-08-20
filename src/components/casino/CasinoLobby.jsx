@@ -201,26 +201,26 @@ export default function CasinoLobby({ balance, jackpot, onPlayGame, onShop, onPr
 
         {/* Right: progress + safe + menu */}
         <div className="flex items-center gap-2 shrink-0">
-          <div className="hidden lg:flex flex-col items-center px-2 py-1 rounded-lg"
-          style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
-            <div className="flex items-center gap-1">
-              <span className="text-[9px] font-bold text-white/60">0/6</span>
-              <span className="text-[9px] font-bold text-white/40">3j 17h</span>
-            </div>
-            <div className="w-16 h-1.5 rounded-full mt-0.5 hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
-              <div className="h-full rounded-full" style={{ width: "0%", background: "#ff69b4" }} />
-            </div>
-          </div>
+          
+
+
+
+
+
+
+
+
+          
           <button onClick={onVipClub} className="relative w-9 h-9 rounded-lg flex items-center justify-center"
           style={{ background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)" }}>
             <Lock className="w-4 h-4" style={{ color: "#FFD700" }} />
             <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black text-white"
             style={{ background: "#FFD700", color: "#000" }}>11</span>
           </button>
-          <button className="w-9 h-9 rounded-lg flex items-center justify-center hidden"
-          style={{ background: "rgba(255,255,255,0.06)" }}>
-            <MoreVertical className="w-4 h-4 text-white/50" />
-          </button>
+          
+
+
+          
         </div>
       </div>
 
@@ -228,22 +228,22 @@ export default function CasinoLobby({ balance, jackpot, onPlayGame, onShop, onPr
       <div className="relative z-10 flex h-[calc(100vh-120px)]">
         {/* Vertical tabs */}
         <div className="hidden md:flex flex-col justify-center gap-3 px-2 py-4 shrink-0">
-          {VERTICAL_TABS.map((tab, i) =>
-          <motion.button key={i}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="px-2 py-3 rounded-xl text-center hidden"
-          style={{
-            background: "rgba(255,255,255,0.04)",
-            border: `1px solid ${tab.color}30`,
-            writingMode: "vertical-rl",
-            textOrientation: "mixed",
-            transform: "rotate(180deg)"
-          }}>
-              <span className="text-[10px] font-black tracking-wider whitespace-nowrap" style={{ color: tab.color }}>
-                {tab.label}
-              </span>
-            </motion.button>
+          {VERTICAL_TABS.map((tab, i) => null
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
           )}
         </div>
 
@@ -343,8 +343,8 @@ export default function CasinoLobby({ balance, jackpot, onPlayGame, onShop, onPr
       style={{ background: "rgba(30,0,50,0.6)", backdropFilter: "blur(12px)", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
         {/* Left: globe + players online */}
         <div className="flex items-center gap-1.5">
-          <Globe className="w-4 h-4 text-green-400 hidden" />
-          <span className="text-xs font-bold text-green-400 hidden">17.36K</span>
+          
+          
         </div>
 
         {/* Center: pagination dots + arrows */}
