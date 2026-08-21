@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { formatTrix } from "@/lib/format";
 import HeaderActions from "@/components/layout/HeaderActions";
 import TrixIcon from "@/components/TrixIcon";
+import CosmeticPreview from "@/components/cosmetics/CosmeticPreview";
 
 const CATEGORIES = [
   { key: "all", label: "Tout" },
@@ -40,6 +41,8 @@ export default function BoutiqueMatrix() {
   const [buyingEuro, setBuyingEuro] = useState(null);
   const [detailItem, setDetailItem] = useState(null);
   const [searchParams] = useSearchParams();
+  const [page, setPage] = useState(1);
+  const PER_PAGE = 8;
 
   const { data: items = [] } = useQuery({
     queryKey: ["matrix-shop-items"],
@@ -54,6 +57,13 @@ export default function BoutiqueMatrix() {
 
   const filtered = cat === "all" ? items : items.filter(i => i.category === cat);
   const isOwned = (itemId) => owned.some(o => o.item_id === itemId);
+
+  // Reset to page 1 when category changes
+  useEffect(() => { setPage(1); }, [cat]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  const safePage = Math.min(page, totalPages);
+  const paginated = filtered.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE);
 
   // Handle Stripe redirect with URL cleanup
   useEffect(() => {
@@ -125,18 +135,6 @@ export default function BoutiqueMatrix() {
     setBuyingEuro(null);
   };
 
-  const renderPreview = (item, size = "text-4xl") => (
-    item.category === "avatar_animation" && item.video_url ? (
-      <video src={item.video_url} autoPlay loop muted playsInline className="w-full h-full object-cover" style={{ mixBlendMode: "screen" }} />
-    ) : item.category === "profile_cover" && item.video_url ? (
-      <video src={item.video_url} autoPlay loop muted playsInline className="w-full h-full object-cover" />
-    ) : item.category === "profile_cover" && item.preview_image ? (
-      <img src={item.preview_image} alt="" className="w-full h-full object-cover" />
-    ) : (
-      <span className={size}>{item.icon || "✨"}</span>
-    )
-  );
-
   return (
     <div className="min-h-screen relative overflow-y-auto overflow-x-hidden" style={{ backgroundColor: "#0a050f" }}>
       <div className="fixed inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at top, rgba(168,85,247,0.08), transparent 60%)" }} />
@@ -175,55 +173,86 @@ export default function BoutiqueMatrix() {
             <p className="text-white/40 text-sm">Aucun produit dans cette catégorie pour le moment.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 pb-8">
-            {filtered.map(item => {
-              const ownedItem = isOwned(item.id);
-              const rarityColor = RARITY_COLORS[item.rarity] || RARITY_COLORS.common;
-              return (
-                <div key={item.id} onClick={() => setDetailItem(item)} className="rounded-2xl p-4 flex flex-col cursor-pointer transition hover:scale-[1.02]" style={{
-                  background: "rgba(15,10,25,0.7)",
-                  border: `1.5px solid ${rarityColor}30`,
-                  backdropFilter: "blur(8px)",
-                }}>
-                  {/* Preview */}
-                  <div className="w-full aspect-square rounded-xl flex items-center justify-center mb-3 overflow-hidden relative" style={{ background: `${rarityColor}10` }}>
-                    {renderPreview(item)}
-                  </div>
-
-                  {/* Rarity */}
-                  <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded self-start mb-1" style={{ background: `${rarityColor}20`, color: rarityColor }}>
-                    {item.rarity}
-                  </span>
-
-                  <h3 className="text-sm font-bold text-white truncate">{item.name}</h3>
-                  <p className="text-[10px] text-white/40 mb-3 line-clamp-2">{item.description || item.category}</p>
-
-                  {/* Dual price */}
-                  <div className="mt-auto space-y-1.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1 text-xs font-bold" style={{ color: "#fbbf24" }}>
-                        <TrixIcon size={14} />
-                        {formatTrix(item.price_trix)}
-                      </div>
-                      <span className="text-[10px] text-white/30">ou</span>
-                      <span className="text-xs font-bold text-white/70">{displayEuro(item)}</span>
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 pb-8">
+              {paginated.map(item => {
+                const ownedItem = isOwned(item.id);
+                const rarityColor = RARITY_COLORS[item.rarity] || RARITY_COLORS.common;
+                return (
+                  <div key={item.id} onClick={() => setDetailItem(item)} className="rounded-2xl p-4 flex flex-col cursor-pointer transition hover:scale-[1.02]" style={{
+                    background: "rgba(15,10,25,0.7)",
+                    border: `1.5px solid ${rarityColor}30`,
+                    backdropFilter: "blur(8px)",
+                  }}>
+                    {/* Preview */}
+                    <div className="w-full mb-3">
+                      <CosmeticPreview item={item} />
                     </div>
-                    {ownedItem ? (
-                      <span className="w-full text-center text-[10px] font-bold text-green-400 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg" style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)" }}>
-                        <Check className="w-3 h-3" /> Possédé
-                      </span>
-                    ) : (
-                      <button onClick={(e) => { e.stopPropagation(); setDetailItem(item); }}
-                        className="w-full px-3 py-1.5 rounded-lg text-xs font-bold text-white transition"
-                        style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
-                        Acheter
-                      </button>
-                    )}
+
+                    {/* Rarity */}
+                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded self-start mb-1" style={{ background: `${rarityColor}20`, color: rarityColor }}>
+                      {item.rarity}
+                    </span>
+
+                    <h3 className="text-sm font-bold text-white truncate">{item.name}</h3>
+                    <p className="text-[10px] text-white/40 mb-3 line-clamp-2">{item.description || item.category}</p>
+
+                    {/* Dual price */}
+                    <div className="mt-auto space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1 text-xs font-bold" style={{ color: "#fbbf24" }}>
+                          <TrixIcon size={14} />
+                          {formatTrix(item.price_trix)}
+                        </div>
+                        <span className="text-[10px] text-white/30">ou</span>
+                        <span className="text-xs font-bold text-white/70">{displayEuro(item)}</span>
+                      </div>
+                      {ownedItem ? (
+                        <span className="w-full text-center text-[10px] font-bold text-green-400 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg" style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)" }}>
+                          <Check className="w-3 h-3" /> Possédé
+                        </span>
+                      ) : (
+                        <button onClick={(e) => { e.stopPropagation(); setDetailItem(item); }}
+                          className="w-full px-3 py-1.5 rounded-lg text-xs font-bold text-white transition"
+                          style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
+                          Acheter
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 pb-8">
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={safePage === 1}
+                  className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold text-white/70 disabled:opacity-30 transition hover:bg-white/5"
+                  style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+                  ‹
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                  <button key={p} onClick={() => setPage(p)}
+                    className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold transition"
+                    style={p === safePage
+                      ? { background: "linear-gradient(135deg, #a855f7, #6d28d9)", color: "#fff" }
+                      : { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    {p}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={safePage === totalPages}
+                  className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold text-white/70 disabled:opacity-30 transition hover:bg-white/5"
+                  style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+                  ›
+                </button>
+              </div>
+            )}
+          </>
         )}
 
         {/* Link to profile */}
@@ -248,8 +277,8 @@ export default function BoutiqueMatrix() {
                 </button>
               </div>
               <div className="p-5">
-                <div className="w-full aspect-square rounded-xl flex items-center justify-center mb-4 overflow-hidden" style={{ background: `${rarityColor}10` }}>
-                  {renderPreview(detailItem, "text-5xl")}
+                <div className="w-full mb-4">
+                  <CosmeticPreview item={detailItem} size="text-5xl" forcePlay />
                 </div>
                 <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded mb-2 inline-block" style={{ background: `${rarityColor}20`, color: rarityColor }}>
                   {detailItem.rarity}

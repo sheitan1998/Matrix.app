@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Sparkles } from "lucide-react";
+import { Check, Sparkles, Trash2, AlertTriangle, X } from "lucide-react";
 import { toast } from "sonner";
+import CosmeticPreview from "@/components/cosmetics/CosmeticPreview";
 
 const CATEGORY_LABELS = {
   badge: "Badges",
@@ -16,6 +17,8 @@ const RARITY_COLORS = {
 
 export default function CosmeticsPanel({ user }) {
   const qc = useQueryClient();
+  const [deleting, setDeleting] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const { data: cosmetics = [] } = useQuery({
     queryKey: ["user-cosmetics", user?.email],
@@ -25,12 +28,10 @@ export default function CosmeticsPanel({ user }) {
 
   const equip = async (cosmetic) => {
     try {
-      // Unequip all in same category
       const sameCat = cosmetics.filter(c => c.category === cosmetic.category && c.is_equipped);
       for (const c of sameCat) {
         await base44.entities.UserCosmetic.update(c.id, { is_equipped: false });
       }
-      // Equip selected
       await base44.entities.UserCosmetic.update(cosmetic.id, { is_equipped: true });
       qc.invalidateQueries({ queryKey: ["user-cosmetics"] });
       toast.success(`${cosmetic.item_name} équipé !`);
@@ -41,6 +42,20 @@ export default function CosmeticsPanel({ user }) {
     await base44.entities.UserCosmetic.update(cosmetic.id, { is_equipped: false });
     qc.invalidateQueries({ queryKey: ["user-cosmetics"] });
     toast.success("Retiré");
+  };
+
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    setDeleting(confirmDelete.id);
+    try {
+      await base44.entities.UserCosmetic.delete(confirmDelete.id);
+      qc.invalidateQueries({ queryKey: ["user-cosmetics"] });
+      toast.success(`${confirmDelete.item_name} supprimé définitivement.`);
+      setConfirmDelete(null);
+    } catch {
+      toast.error("Erreur lors de la suppression.");
+    }
+    setDeleting(null);
   };
 
   const byCategory = Object.keys(CATEGORY_LABELS).reduce((acc, cat) => {
@@ -73,37 +88,33 @@ export default function CosmeticsPanel({ user }) {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {items.map(c => {
                 const rarityColor = RARITY_COLORS[c.rarity] || RARITY_COLORS.common;
+                const aspect = c.category === "profile_cover" ? "video" : "square";
                 return (
-                  <div key={c.id} className="rounded-2xl p-4 text-center transition" style={{
+                  <div key={c.id} className="rounded-2xl p-4 text-center transition group relative" style={{
                     background: c.is_equipped ? `${rarityColor}15` : "rgba(15,10,25,0.6)",
                     border: `1.5px solid ${c.is_equipped ? rarityColor : "rgba(255,255,255,0.06)"}`,
                   }}>
-                    {c.category === "avatar_animation" && c.video_url ? (
-                      <div className="w-full aspect-square rounded-xl mb-2 overflow-hidden" style={{ background: "rgba(0,0,0,0.3)" }}>
-                        <video src={c.video_url} autoPlay loop muted playsInline className="w-full h-full object-cover" style={{ mixBlendMode: "screen" }} />
-                      </div>
-                    ) : c.category === "profile_cover" && c.video_url ? (
-                      <div className="w-full aspect-video rounded-xl mb-2 overflow-hidden" style={{ background: "rgba(0,0,0,0.3)" }}>
-                        <video src={c.video_url} autoPlay loop muted playsInline className="w-full h-full object-cover" />
-                      </div>
-                    ) : c.category === "profile_cover" && c.preview_image ? (
-                      <div className="w-full aspect-video rounded-xl mb-2 overflow-hidden" style={{ background: "rgba(0,0,0,0.3)" }}>
-                        <img src={c.preview_image} alt="" className="w-full h-full object-cover" />
-                      </div>
-                    ) : (
-                      <div className="text-3xl mb-2">{c.icon || "✨"}</div>
-                    )}
-                    <p className="text-xs font-bold text-white truncate mb-1">{c.item_name}</p>
+                    <CosmeticPreview item={c} forcePlay={c.is_equipped} aspect={aspect} />
+
+                    <p className="text-xs font-bold text-white truncate mb-1 mt-2">{c.item_name}</p>
                     <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded" style={{ background: `${rarityColor}20`, color: rarityColor }}>{c.rarity}</span>
-                    {c.is_equipped ? (
-                      <button onClick={() => unequip(c)} className="mt-3 w-full py-1.5 rounded-lg text-xs font-bold text-white flex items-center justify-center gap-1" style={{ background: `${rarityColor}30`, border: `1px solid ${rarityColor}50` }}>
-                        <Check className="w-3 h-3" /> Équipé
+
+                    <div className="mt-3 flex gap-1.5">
+                      {c.is_equipped ? (
+                        <button onClick={() => unequip(c)} className="flex-1 py-1.5 rounded-lg text-xs font-bold text-white flex items-center justify-center gap-1" style={{ background: `${rarityColor}30`, border: `1px solid ${rarityColor}50` }}>
+                          <Check className="w-3 h-3" /> Équipé
+                        </button>
+                      ) : (
+                        <button onClick={() => equip(c)} className="flex-1 py-1.5 rounded-lg text-xs font-bold text-white/70 hover:text-white transition" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                          Équiper
+                        </button>
+                      )}
+                      <button onClick={() => setConfirmDelete(c)}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition"
+                        title="Supprimer définitivement">
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
-                    ) : (
-                      <button onClick={() => equip(c)} className="mt-3 w-full py-1.5 rounded-lg text-xs font-bold text-white/70 hover:text-white transition" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                        Équiper
-                      </button>
-                    )}
+                    </div>
                   </div>
                 );
               })}
@@ -111,6 +122,40 @@ export default function CosmeticsPanel({ user }) {
           </div>
         );
       })}
+
+      {/* Confirmation de suppression */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }} onClick={() => setConfirmDelete(null)}>
+          <div className="w-full max-w-sm rounded-2xl p-5" style={{ background: "#0f0a19", border: "1px solid rgba(239,68,68,0.3)" }} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(239,68,68,0.12)" }}>
+                  <AlertTriangle className="w-4 h-4 text-red-400" />
+                </div>
+                <h3 className="text-sm font-black text-white">Supprimer le cosmétique</h3>
+              </div>
+              <button onClick={() => setConfirmDelete(null)} className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 tap-sm">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-white/60 leading-relaxed mb-4">
+              Vous êtes sur le point de supprimer définitivement <span className="font-bold text-white">"{confirmDelete.item_name}"</span> de votre inventaire. Cette action est irréversible et le cosmétique ne sera plus disponible.
+            </p>
+
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmDelete(null)} className="flex-1 h-10 rounded-lg text-xs font-bold text-white/60" style={{ background: "rgba(255,255,255,0.05)" }}>
+                Annuler
+              </button>
+              <button onClick={handleDelete} disabled={deleting !== null}
+                className="flex-1 h-10 rounded-lg text-xs font-bold text-white flex items-center justify-center gap-1.5 disabled:opacity-50"
+                style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}>
+                {deleting !== null ? "Suppression..." : (<><Trash2 className="w-3.5 h-3.5" /> Supprimer définitivement</>)}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
