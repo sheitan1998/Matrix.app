@@ -12,18 +12,18 @@ import { ArrowLeft } from "lucide-react";
 import HeaderActions from "@/components/layout/HeaderActions";
 
 const VIP_PLANS = [
-  { plan: "monthly", label: "VIP Mensuel", price: "4,99€", perks: ["Badge VIP exclusif", "Couleur pseudo dorée", "Accès prioritaire aux salons", "2× XP sur tous les jeux"] },
-  { plan: "yearly", label: "VIP Annuel", price: "49,99€", perks: ["Tout le VIP Mensuel", "2 mois offerts", "Frame animée exclusive", "Accès anticipé aux nouveautés"], tag: "Meilleure offre" },
-];
+{ plan: "monthly", label: "VIP Mensuel", price: "4,99€", perks: ["Badge VIP exclusif", "Couleur pseudo dorée", "Accès prioritaire aux salons", "2× XP sur tous les jeux"] },
+{ plan: "yearly", label: "VIP Annuel", price: "49,99€", perks: ["Tout le VIP Mensuel", "2 mois offerts", "Frame animée exclusive", "Accès anticipé aux nouveautés"], tag: "Meilleure offre" }];
+
 
 const PACKS = [
-  { packId: "pack_500",   trix: 500, priceCents: 499, price: "4,99€", bonus: 0, tag: null },
-  { packId: "pack_1400",  trix: 1200, priceCents: 999, price: "9,99€", bonus: 200, tag: "Populaire" },
-  { packId: "pack_3750",  trix: 3000, priceCents: 2499, price: "24,99€", bonus: 750, tag: null },
-  { packId: "pack_9000",  trix: 7000, priceCents: 4999, price: "49,99€", bonus: 2000, tag: "Meilleure offre" },
-  { packId: "pack_20000", trix: 15000, priceCents: 9999, price: "99,99€", bonus: 5000, tag: null },
-  { packId: "pack_55000", trix: 40000, priceCents: 24999, price: "249,99€", bonus: 15000, tag: "Whale 🐋" },
-];
+{ packId: "pack_500", trix: 500, priceCents: 499, price: "4,99€", bonus: 0, tag: null },
+{ packId: "pack_1400", trix: 1200, priceCents: 999, price: "9,99€", bonus: 200, tag: "Populaire" },
+{ packId: "pack_3750", trix: 3000, priceCents: 2499, price: "24,99€", bonus: 750, tag: null },
+{ packId: "pack_9000", trix: 7000, priceCents: 4999, price: "49,99€", bonus: 2000, tag: "Meilleure offre" },
+{ packId: "pack_20000", trix: 15000, priceCents: 9999, price: "99,99€", bonus: 5000, tag: null },
+{ packId: "pack_55000", trix: 40000, priceCents: 24999, price: "249,99€", bonus: 15000, tag: "Whale 🐋" }];
+
 
 export default function TrixStore() {
   const nav = useNavigate();
@@ -49,27 +49,27 @@ export default function TrixStore() {
       cleanUrl();
     }
     if (vipSuccess === "success" && sessionId) {
-      base44.functions.invoke("stripePayment", { action: "verifySession", sessionId })
-        .then(res => {
-          if (res?.data?.success) {
-            toast.success("Abonnement VIP activé ! 👑", { description: "Profite de tes avantages exclusifs" });
-            checkUserAuth();
-          }
-          cleanUrl();
-        })
-        .catch(() => cleanUrl());
+      base44.functions.invoke("stripePayment", { action: "verifySession", sessionId }).
+      then((res) => {
+        if (res?.data?.success) {
+          toast.success("Abonnement VIP activé ! 👑", { description: "Profite de tes avantages exclusifs" });
+          checkUserAuth();
+        }
+        cleanUrl();
+      }).
+      catch(() => cleanUrl());
     }
     if (payment === "success" && sessionId) {
-      base44.functions.invoke("stripePayment", { action: "verifySession", sessionId })
-        .then(res => {
-          if (res?.data?.success) {
-            const credited = res.data.credited || 0;
-            toast.success(`+${formatTrix(credited)} TRIX !`, { description: "Ton solde est mis à jour 🪙" });
-            checkUserAuth();
-          }
-          cleanUrl();
-        })
-        .catch(() => cleanUrl());
+      base44.functions.invoke("stripePayment", { action: "verifySession", sessionId }).
+      then((res) => {
+        if (res?.data?.success) {
+          const credited = res.data.credited || 0;
+          toast.success(`+${formatTrix(credited)} TRIX !`, { description: "Ton solde est mis à jour 🪙" });
+          checkUserAuth();
+        }
+        cleanUrl();
+      }).
+      catch(() => cleanUrl());
     }
   }, [searchParams]);
 
@@ -79,7 +79,7 @@ export default function TrixStore() {
     try {
       const res = await base44.functions.invoke("stripePayment", {
         action: "createVIPSubscription",
-        plan: plan.plan,
+        plan: plan.plan
       });
       const url = res?.data?.url;
       if (!url) {
@@ -116,7 +116,7 @@ export default function TrixStore() {
     try {
       const res = await base44.functions.invoke("stripePayment", {
         action: "createTrixPurchase",
-        packId: pack.packId,
+        packId: pack.packId
       });
       const url = res?.data?.url;
       if (!url) {
@@ -131,7 +131,7 @@ export default function TrixStore() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[hsl(var(--foreground))]">
       <div className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-xl px-4 py-3">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -163,38 +163,38 @@ export default function TrixStore() {
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-10">
-        {PACKS.map((p) => (
+        {PACKS.map((p) =>
           <div
             key={p.trix}
             className={cn(
-              "relative rounded-2xl border-2 p-6 bg-card transition hover:scale-[1.02]",
+              "relative rounded-2xl border-2 p-6 transition hover:scale-[1.02] bg-[hsl(var(--card-foreground))]",
               p.tag ? "border-trix/60 shadow-glow" : "border-border"
-            )}
-          >
-            {p.tag && (
-              <div className="absolute -top-3 left-6 px-2.5 py-0.5 rounded-full gradient-trix text-background text-xs font-bold">
+            )}>
+            
+            {p.tag &&
+            <div className="absolute -top-3 left-6 px-2.5 py-0.5 rounded-full gradient-trix text-background text-xs font-bold">
                 {p.tag}
               </div>
-            )}
+            }
             <div className="flex items-center gap-2">
               <TrixIcon size={24} />
               <span className="text-3xl font-black font-mono">{formatTrix(p.trix)}</span>
             </div>
-            {p.bonus > 0 && (
-              <div className="mt-2 inline-flex items-center gap-1 text-xs text-trix font-semibold">
+            {p.bonus > 0 &&
+            <div className="mt-2 inline-flex items-center gap-1 text-xs text-trix font-semibold">
                 <Sparkles className="w-3 h-3" /> +{formatTrix(p.bonus)} bonus offerts
               </div>
-            )}
+            }
             <p className="text-3xl font-black mt-5">{p.price}</p>
             <Button
               onClick={() => buy(p)}
               disabled={loading === p.trix || !user}
-              className="w-full mt-5 h-11 rounded-full bg-foreground text-background hover:bg-foreground/90 font-semibold"
-            >
+              className="w-full mt-5 h-11 rounded-full bg-foreground text-background hover:bg-foreground/90 font-semibold">
+              
               {loading === p.trix ? "Traitement..." : "Acheter"}
             </Button>
           </div>
-        ))}
+          )}
       </div>
 
       {/* VIP Subscription Section */}
@@ -207,46 +207,46 @@ export default function TrixStore() {
             <h2 className="text-2xl font-black text-white">Abonnement VIP</h2>
             <p className="text-sm text-white/50">Débloque des avantages exclusifs sur toute la plateforme</p>
           </div>
-          {user?.is_vip && (
+          {user?.is_vip &&
             <span className="ml-auto px-3 py-1 rounded-full text-xs font-bold text-black" style={{ background: "linear-gradient(135deg, #fbbf24, #f59e0b)" }}>
               VIP actif
             </span>
-          )}
+            }
         </div>
 
         <div className="grid sm:grid-cols-2 gap-4">
-          {VIP_PLANS.map((plan) => (
+          {VIP_PLANS.map((plan) =>
             <div
               key={plan.plan}
               className={cn(
                 "relative rounded-2xl border-2 p-6 bg-card transition hover:scale-[1.02]",
                 plan.tag ? "border-trix/60 shadow-glow" : "border-border"
-              )}
-            >
-              {plan.tag && (
-                <div className="absolute -top-3 left-6 px-2.5 py-0.5 rounded-full gradient-trix text-background text-xs font-bold">
+              )}>
+              
+              {plan.tag &&
+              <div className="absolute -top-3 left-6 px-2.5 py-0.5 rounded-full gradient-trix text-background text-xs font-bold">
                   {plan.tag}
                 </div>
-              )}
+              }
               <h3 className="text-xl font-black text-white">{plan.label}</h3>
               <p className="text-3xl font-black mt-3 text-white">{plan.price}</p>
               <ul className="mt-4 space-y-2">
-                {plan.perks.map((perk, idx) => (
-                  <li key={idx} className="flex items-center gap-2 text-sm text-white/70">
+                {plan.perks.map((perk, idx) =>
+                <li key={idx} className="flex items-center gap-2 text-sm text-white/70">
                     <Sparkles className="w-3.5 h-3.5 text-trix shrink-0" />
                     {perk}
                   </li>
-                ))}
+                )}
               </ul>
               <Button
                 onClick={() => buyVIP(plan)}
                 disabled={vipLoading === plan.plan || !user}
-                className="w-full mt-5 h-11 rounded-full bg-foreground text-background hover:bg-foreground/90 font-semibold"
-              >
+                className="w-full mt-5 h-11 rounded-full bg-foreground text-background hover:bg-foreground/90 font-semibold">
+                
                 {vipLoading === plan.plan ? "Traitement..." : `S'abonner — ${plan.price}`}
               </Button>
             </div>
-          ))}
+            )}
         </div>
 
         {/* Customer Portal */}
@@ -257,16 +257,16 @@ export default function TrixStore() {
             <p className="text-xs text-white/50">Modifier, annuler ou télécharger vos factures via le portail Stripe</p>
           </div>
           <Button
-            onClick={openCustomerPortal}
-            disabled={portalLoading || !user}
-            variant="outline"
-            className="shrink-0"
-          >
+              onClick={openCustomerPortal}
+              disabled={portalLoading || !user}
+              variant="outline"
+              className="shrink-0">
+              
             {portalLoading ? "..." : "Portail Client"}
           </Button>
         </div>
       </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
