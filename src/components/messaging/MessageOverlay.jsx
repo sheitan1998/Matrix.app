@@ -203,6 +203,20 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
       (info.email?.toLowerCase().includes(searchQuery.toLowerCase()));
   });
 
+  // Deduplicate by email — keep the friend entry (has friend_user_id) over the DM contact
+  const dedupedContacts = (() => {
+    const map = new Map();
+    filteredContacts.forEach(c => {
+      const info = resolveContact(c);
+      const key = (info.email || c.id).toLowerCase();
+      const existing = map.get(key);
+      if (!existing || (!existing.friend_user_id && c.friend_user_id)) {
+        map.set(key, c);
+      }
+    });
+    return Array.from(map.values());
+  })();
+
   return (
     <div className="h-screen flex flex-col" style={{ background: "#0a050f" }}>
       {/* Header */}
@@ -245,7 +259,7 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
                 </p>
               </div>
             ) : (
-              filteredContacts.map(contact => {
+              dedupedContacts.map(contact => {
                 const info = resolveContact(contact);
                 return (
                   <button
@@ -276,7 +290,7 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-white truncate">{info.name}</p>
-                      <p className="text-[10px] text-white/40 truncate">{info.pseudo || info.email}</p>
+                      <p className="text-[10px] text-white/40 truncate">{info.pseudo || info.name}</p>
                     </div>
                     {info.rawUserId && (
                       <button

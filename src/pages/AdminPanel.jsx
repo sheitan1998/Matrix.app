@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Shield, Users, Ticket, AlertTriangle, FileText, FolderTree, ArrowUpDown, LayoutGrid, FileCode, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Shield, Users, Ticket, AlertTriangle, FileText, FolderTree, ArrowUpDown, LayoutGrid, FileCode, ShoppingBag, BarChart3 } from "lucide-react";
 import HeaderActions from "@/components/layout/HeaderActions";
 import AdminUserList from "@/components/admin/AdminUserList";
 import AdminTicketList from "@/components/admin/AdminTicketList";
@@ -13,6 +13,7 @@ import BlockManager from "@/components/admin/BlockManager";
 import DynamicPageManager from "@/components/admin/DynamicPageManager";
 import CosmeticItemForm from "@/components/admin/CosmeticItemForm";
 import CosmeticItemList from "@/components/admin/CosmeticItemList";
+import CosmeticSalesDashboard from "@/components/admin/CosmeticSalesDashboard";
 
 export default function AdminPanel() {
   const nav = useNavigate();
@@ -81,6 +82,7 @@ export default function AdminPanel() {
     { id: "blocks", label: "Blocs Jeux", icon: LayoutGrid },
     { id: "pages", label: "Pages Dynamiques", icon: FileCode },
     { id: "shop", label: "Boutique", icon: ShoppingBag },
+    { id: "dashboard", label: "Statistiques", icon: BarChart3 },
   ];
 
   return (
@@ -184,6 +186,7 @@ export default function AdminPanel() {
             </div>
           </div>
         )}
+        {tab === "dashboard" && <CosmeticSalesDashboard />}
       </div>
     </div>
   );

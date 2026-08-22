@@ -74,13 +74,15 @@ export default function TicketConversation({ ticket: initialTicket, user, isAdmi
     }
   }, [messages.length]);
 
-  const handleUpload = async (file) => {
-    if (!file) return;
+  const handleUpload = async (files) => {
+    if (!files || files.length === 0) return;
     if (isLocked) return;
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setAttachments((prev) => [...prev, { file_url, file_name: file.name }]);
+      for (const file of Array.from(files)) {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        setAttachments((prev) => [...prev, { file_url, file_name: file.name }]);
+      }
     } catch {
       toast.error("Erreur lors de l'upload du fichier.");
     } finally {
@@ -245,7 +247,7 @@ export default function TicketConversation({ ticket: initialTicket, user, isAdmi
           <div className="flex items-end gap-2">
             <label className="w-9 h-9 rounded-lg flex items-center justify-center cursor-pointer text-white/40 hover:text-white transition shrink-0" style={{ background: "rgba(255,255,255,0.05)" }}>
               {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
-              <input type="file" className="hidden" onChange={(e) => handleUpload(e.target.files[0])} disabled={isLocked} />
+              <input type="file" multiple className="hidden" onChange={(e) => handleUpload(e.target.files)} disabled={isLocked} />
             </label>
             <textarea
               value={content}

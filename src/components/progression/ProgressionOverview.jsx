@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useProgression } from '@/context/ProgressionContext';
 import { base44 } from '@/api/base44Client';
 import { Coins, TrendingUp, Zap, Sparkles, Trophy } from 'lucide-react';
+import { ACHIEVEMENTS } from '@/lib/achievementsData';
 
 export default function ProgressionOverview() {
   const { progress, rank, prestigeInfo } = useProgression();
@@ -21,7 +22,8 @@ export default function ProgressionOverview() {
   if (!progress) return null;
 
   const stats = progress.stats || {};
-  const totalTrophies = stats.total_trophies || 0;
+  const claimed = progress.claimed_achievements || [];
+  const totalTrophies = ACHIEVEMENTS.filter(a => claimed.includes(a.id)).reduce((s, a) => s + (a.trophies || 0), 0);
 
   const statItems = [
     { label: 'Serveurs créés',    value: stats.create_server || 0,     icon: '🏰' },

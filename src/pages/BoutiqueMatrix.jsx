@@ -3,12 +3,13 @@ import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
-import { Home, Check, ShoppingBag, Sparkles, Coins, X, AlertCircle, CreditCard } from "lucide-react";
+import { Home, Check, ShoppingBag, Sparkles, Coins, X, AlertCircle, CreditCard, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { formatTrix } from "@/lib/format";
 import HeaderActions from "@/components/layout/HeaderActions";
 import TrixIcon from "@/components/TrixIcon";
 import CosmeticPreview from "@/components/cosmetics/CosmeticPreview";
+import CosmeticProfilePreview from "@/components/cosmetics/CosmeticProfilePreview";
 
 const CATEGORIES = [
   { key: "all", label: "Tout" },
@@ -40,6 +41,7 @@ export default function BoutiqueMatrix() {
   const [buyingTrix, setBuyingTrix] = useState(null);
   const [buyingEuro, setBuyingEuro] = useState(null);
   const [detailItem, setDetailItem] = useState(null);
+  const [showProfilePreview, setShowProfilePreview] = useState(false);
   const [searchParams] = useSearchParams();
   const [page, setPage] = useState(1);
   const PER_PAGE = 8;
@@ -301,6 +303,18 @@ export default function BoutiqueMatrix() {
                   </div>
                 ) : (
                   <div className="space-y-2">
+                    {/* Profile preview toggle */}
+                    <button
+                      onClick={() => setShowProfilePreview(!showProfilePreview)}
+                      className="w-full py-2 rounded-xl text-xs font-bold text-white/70 flex items-center justify-center gap-1.5 transition hover:text-white"
+                      style={{ background: showProfilePreview ? "rgba(168,85,247,0.15)" : "rgba(255,255,255,0.04)", border: showProfilePreview ? "1px solid rgba(168,85,247,0.3)" : "1px solid rgba(255,255,255,0.06)" }}>
+                      <Eye className="w-3.5 h-3.5" /> {showProfilePreview ? "Masquer l'aperçu profil" : "Aperçu sur mon profil"}
+                    </button>
+                    {showProfilePreview && (
+                      <div className="pb-1">
+                        <CosmeticProfilePreview item={detailItem} user={user} />
+                      </div>
+                    )}
                     {/* Pay with Trix */}
                     <button onClick={() => buyWithTrix(detailItem)} disabled={buyingTrix === detailItem.id}
                       className="w-full py-2.5 rounded-xl text-sm font-bold text-white transition disabled:opacity-50 flex items-center justify-center gap-1.5"

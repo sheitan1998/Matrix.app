@@ -20,12 +20,14 @@ export default function SupportTicketModal({ user, onClose }) {
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleUpload = async (file) => {
-    if (!file) return;
+  const handleUpload = async (files) => {
+    if (!files || files.length === 0) return;
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setAttachments(prev => [...prev, { file_url, file_name: file.name }]);
+      for (const file of Array.from(files)) {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        setAttachments(prev => [...prev, { file_url, file_name: file.name }]);
+      }
     } catch {
       toast.error("Erreur lors de l'upload du fichier.");
     } finally {
@@ -158,7 +160,7 @@ export default function SupportTicketModal({ user, onClose }) {
             <label className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white/60 cursor-pointer hover:text-white transition" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
               {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Paperclip className="w-3.5 h-3.5" />}
               {uploading ? "Upload..." : "Ajouter un fichier"}
-              <input type="file" className="hidden" onChange={(e) => handleUpload(e.target.files[0])} />
+              <input type="file" multiple className="hidden" onChange={(e) => handleUpload(e.target.files)} />
             </label>
           </div>
         </div>
