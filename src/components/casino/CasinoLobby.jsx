@@ -339,7 +339,7 @@ export default function CasinoLobby({ balance, jackpot, onPlayGame, onShop, onPr
       </div>
 
       {/* === FOOTER NAV === */}
-      <div className="relative z-30 flex items-center justify-between px-4 py-3"
+      <div className="relative z-30 flex items-center justify-between px-4 py-3 hidden"
       style={{ background: "rgba(30,0,50,0.6)", backdropFilter: "blur(12px)", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
         {/* Left: globe + players online */}
         <div className="flex items-center gap-1.5">
@@ -348,7 +348,7 @@ export default function CasinoLobby({ balance, jackpot, onPlayGame, onShop, onPr
         </div>
 
         {/* Center: pagination dots + arrows */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 hidden">
           <button onClick={() => scroll(-1)} className="w-8 h-8 rounded-full flex items-center justify-center transition hover:opacity-80"
           style={{ background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)" }}>
             <ChevronLeft className="w-4 h-4 text-green-400" />
