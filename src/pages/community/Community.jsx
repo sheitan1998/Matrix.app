@@ -255,11 +255,11 @@ export default function Community() {
               setSelectedServer((s) => ({ ...s, boosts: newBoosts }));
             }} />
           
-            <button onClick={() => inviteToServer(selectedServer)}
-          className="p-2 rounded-xl transition text-muted-foreground hover:text-white hidden"
-          title="Copier le lien d'invitation">
-              <UserPlus className="w-4 h-4" />
-            </button>
+            
+
+
+
+          
             {isOwner &&
           <button onClick={() => setShowSettings(!showSettings)}
           className={cn("p-2 rounded-xl transition", showSettings ? "text-white bg-white/10" : "text-muted-foreground hover:text-white")}>
