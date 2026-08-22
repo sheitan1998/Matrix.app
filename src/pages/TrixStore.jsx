@@ -176,7 +176,7 @@ export default function TrixStore() {
                 {p.tag}
               </div>
             }
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 text-[#ffffff]">
               <TrixIcon size={24} />
               <span className="text-3xl font-black font-mono">{formatTrix(p.trix)}</span>
             </div>
