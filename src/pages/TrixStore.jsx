@@ -131,7 +131,7 @@ export default function TrixStore() {
   };
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--foreground))]">
+    <div className="min-h-screen bg-gray-950">
       <div className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-xl px-4 py-3">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -145,7 +145,7 @@ export default function TrixStore() {
       </div>
       <div className="px-4 lg:px-6 py-10 max-w-6xl mx-auto">
       <div className="relative overflow-hidden rounded-3xl p-8 md:p-12 gradient-trix text-background">
-        <div className="absolute inset-0 grid-bg opacity-20 bg-[hsl(var(--ring))]" />
+        <div className="absolute inset-0 grid-bg opacity-20 bg-gray-950" />
         <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-5">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest opacity-80">TRIX Store</p>
