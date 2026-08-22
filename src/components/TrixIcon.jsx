@@ -8,7 +8,7 @@ export default function TrixIcon({ className = "", size = 50 }) {
     <img
       src={COIN_URL}
       alt="Trix"
-      className={cn("inline-block shrink-0 object-contain opacity-100", className)}
+      className={cn("inline-block shrink-0 object-contain pb-1", className)}
       style={{ width: size, height: size }} />);
 
 
