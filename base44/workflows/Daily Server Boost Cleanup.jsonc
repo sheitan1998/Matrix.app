@@ -1,0 +1,47 @@
+{
+  "name": "Daily Server Boost Cleanup",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "daily_server_boost_cleanup",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "cleanup_boosts": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "serverSearch",
+            "args": {
+              "action": "cleanupExpiredBoosts"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Nettoyage des boosts expir\u00e9s",
+            "description": "Supprime les boosts de serveur expir\u00e9s (30 jours) et d\u00e9cr\u00e9mente les compteurs"
+          }
+        }
+      }
+    ]
+  },
+  "description": "Supprime quotidiennement les boosts de serveur expir\u00e9s (apr\u00e8s 30 jours) et met \u00e0 jour les compteurs",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 3 * * *",
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  }
+}

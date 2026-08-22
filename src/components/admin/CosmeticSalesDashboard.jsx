@@ -26,7 +26,7 @@ export default function CosmeticSalesDashboard() {
       try {
         const [shopItems, trixTx] = await Promise.all([
           base44.entities.MatrixShopItem.list("-created_date", 200),
-          base44.entities.TrixTransaction.filter({ type: "purchase" }, "-created_date", 500),
+          base44.entities.TrixTransaction.list("-created_date", 500),
         ]);
         setItems(shopItems || []);
         setTransactions(trixTx || []);

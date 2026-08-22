@@ -4,6 +4,7 @@ const VOTE_COOLDOWN_MS = 2 * 60 * 60 * 1000; // 2 hours
 const BOOST_COST = 500; // 500 Trix minimum per boost
 const PLAYER_BOOST_COST = 50; // 50 Trix for player ad boost
 const BOOST_DURATION_HOURS = 24;
+const SERVER_BOOST_DURATION_DAYS = 30; // 30 days for community server boosts
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -651,8 +652,56 @@ export default async function(req: Request): Promise<Response> {
           boosts: newBoosts,
         });
 
-        console.log('[boostServer] server', serverId, 'boosts:', newBoosts, 'by', user.email);
+        // Create a boost record with 30-day expiry
+        const expiresAt = new Date(Date.now() + SERVER_BOOST_DURATION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+        await base44.asServiceRole.entities.ServerBoostRecord.create({
+          server_id: serverId,
+          user_email: user.email,
+          expires_at: expiresAt,
+        });
+
+        console.log('[boostServer] server', serverId, 'boosts:', newBoosts, 'by', user.email, 'expires:', expiresAt);
         return Response.json({ success: true, boosts: newBoosts, newFlashBoosts });
+      }
+
+      // ---- Cleanup expired server boosts (30-day expiry) ----
+      // Secured: requires either a valid API key (for automated tasks) or an admin user
+      case 'cleanupExpiredBoosts': {
+        const apiKey = req.headers.get('x-api-key');
+        const isAuthorized = (apiKey && apiKey === process.env.CLEANUP_API_KEY) || user.role === 'admin';
+        if (!isAuthorized) {
+          return Response.json({ error: 'Forbidden' }, { status: 403 });
+        }
+
+        const now = new Date().toISOString();
+        const expiredRecords = await base44.asServiceRole.entities.ServerBoostRecord.filter({
+          expires_at: { $lt: now }
+        });
+
+        // Group expired records by server_id
+        const byServer = {};
+        for (const rec of expiredRecords) {
+          byServer[rec.server_id] = (byServer[rec.server_id] || 0) + 1;
+        }
+
+        // Decrement each server's boost count
+        for (const [serverId, count] of Object.entries(byServer)) {
+          const srv = await base44.asServiceRole.entities.Server.get(serverId);
+          if (srv) {
+            const newBoosts = Math.max(0, (srv.boosts || 0) - count);
+            await base44.asServiceRole.entities.Server.update(serverId, {
+              boosts: newBoosts,
+            });
+          }
+        }
+
+        // Delete all expired records
+        await base44.asServiceRole.entities.ServerBoostRecord.deleteMany({
+          expires_at: { $lt: now }
+        });
+
+        console.log('[cleanupExpiredBoosts] expired:', expiredRecords.length, 'servers affected:', Object.keys(byServer).length);
+        return Response.json({ success: true, expired: expiredRecords.length, serversAffected: Object.keys(byServer).length });
       }
 
       default:

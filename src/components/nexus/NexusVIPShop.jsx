@@ -101,9 +101,9 @@ export default function NexusVIPShop({ user }) {
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-3"
           style={{ background: "rgba(255,215,0,0.1)", border: "1px solid rgba(255,215,0,0.3)" }}>
           <Crown className="w-4 h-4" style={{ color: "#ffd700" }} />
-          <span className="text-xs font-black uppercase tracking-widest" style={{ color: "#ffd700" }}>Boutique VIP</span>
+          <span className="text-xs font-black uppercase tracking-widest" style={{ color: "#ffd700" }}>VIP Nexus</span>
         </div>
-        <h2 className="text-2xl md:text-3xl font-black text-white">Abonnements VIP Nexus Game</h2>
+        <h2 className="text-2xl md:text-3xl font-black text-white">Abonnements VIP</h2>
         <p className="text-sm text-white/50 mt-2 max-w-lg mx-auto">
           Booste ton expérience avec un abonnement VIP. Badge exclusif, boosts Flash, bonus d'XP et jetons Nexus Game crédités dès le premier paiement.
         </p>

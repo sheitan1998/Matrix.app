@@ -133,28 +133,31 @@ export default function AdminPanel() {
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-1.5 mb-4 overflow-x-auto scrollbar-thin pb-1">
-          {tabs.map((t) => {
-            const Icon = t.icon;
-            return (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${tab === t.id ? "text-white" : "text-white/40 hover:text-white/60"}`}
-                style={tab === t.id ? { background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)" } : { background: "rgba(255,255,255,0.03)", border: "1px solid transparent" }}
-              >
-                <Icon className="w-3.5 h-3.5 shrink-0" />
-                <span>{t.label}</span>
-                {t.id === "tickets" && openTickets > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white" style={{ background: "#a855f7" }}>{openTickets}</span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+        {/* Layout: vertical tabs + content */}
+        <div className="flex gap-4">
+          {/* Vertical tabs sidebar */}
+          <div className="w-44 sm:w-48 shrink-0 space-y-1">
+            {tabs.map((t) => {
+              const Icon = t.icon;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => setTab(t.id)}
+                  className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition ${tab === t.id ? "text-white" : "text-white/40 hover:text-white/60"}`}
+                  style={tab === t.id ? { background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)" } : { background: "rgba(255,255,255,0.03)", border: "1px solid transparent" }}
+                >
+                  <Icon className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">{t.label}</span>
+                  {t.id === "tickets" && openTickets > 0 && (
+                    <span className="ml-auto px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white" style={{ background: "#a855f7" }}>{openTickets}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
 
-        {/* Content */}
+          {/* Content */}
+          <div className="flex-1 min-w-0">
         {tab === "tickets" && <AdminTicketList tickets={tickets} user={user} onRefresh={loadData} />}
         {tab === "users" && <AdminUserList users={users} onRefresh={loadData} />}
         {tab === "wiki" && (
@@ -187,6 +190,8 @@ export default function AdminPanel() {
           </div>
         )}
         {tab === "dashboard" && <CosmeticSalesDashboard />}
+          </div>
+        </div>
       </div>
     </div>
   );
