@@ -361,7 +361,7 @@ export default function CasinoLobby({ balance, jackpot, onPlayGame, onShop, onPr
                 setCurrentPage(i);
               }
             }}
-            className="rounded-full transition-all duration-300"
+            className="rounded-full transition-all duration-300 hidden"
             style={{
               width: currentPage === i ? "24px" : "8px",
               height: "8px",
@@ -376,8 +376,8 @@ export default function CasinoLobby({ balance, jackpot, onPlayGame, onShop, onPr
         </div>
 
         {/* Right: back to home */}
-        <Link to="/" className="flex items-center gap-1 text-xs font-bold text-white/50 hover:text-white transition">
-          <ArrowLeft className="w-3.5 h-3.5" />
+        <Link to="/" className="flex items-center gap-1 text-xs font-bold text-white/50 hover:text-white transition hidden">
+          <ArrowLeft className="w-3.5 h-3.5 hidden" />
           <span className="hidden sm:inline">Accueil</span>
         </Link>
       </div>
