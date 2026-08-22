@@ -185,7 +185,7 @@ export default function TrixStore() {
                 <Sparkles className="w-3 h-3" /> +{formatTrix(p.bonus)} bonus offerts
               </div>
             }
-            <p className="text-3xl font-black mt-5">{p.price}</p>
+            <p className="text-3xl font-black mt-5 bg-[hsl(var(--foreground))]">{p.price}</p>
             <Button
               onClick={() => buy(p)}
               disabled={loading === p.trix || !user}
