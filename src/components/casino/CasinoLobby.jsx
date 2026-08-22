@@ -339,48 +339,48 @@ export default function CasinoLobby({ balance, jackpot, onPlayGame, onShop, onPr
       </div>
 
       {/* === FOOTER NAV === */}
-      <div className="relative z-30 flex items-center justify-between px-4 py-3 hidden"
-      style={{ background: "rgba(30,0,50,0.6)", backdropFilter: "blur(12px)", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-        {/* Left: globe + players online */}
-        <div className="flex items-center gap-1.5">
-          
-          
-        </div>
+      
 
-        {/* Center: pagination dots + arrows */}
-        <div className="flex items-center gap-3 hidden">
-          <button onClick={() => scroll(-1)} className="w-8 h-8 rounded-full flex items-center justify-center transition hover:opacity-80"
-          style={{ background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)" }}>
-            <ChevronLeft className="w-4 h-4 text-green-400" />
-          </button>
-          <div className="flex items-center gap-1.5">
-            {Array.from({ length: totalPages }).map((_, i) =>
-            <button key={i} onClick={() => {
-              if (scrollRef.current) {
-                scrollRef.current.scrollTo({ left: i * 360 * 2, behavior: "smooth" });
-                setCurrentPage(i);
-              }
-            }}
-            className="rounded-full transition-all duration-300 hidden"
-            style={{
-              width: currentPage === i ? "24px" : "8px",
-              height: "8px",
-              background: currentPage === i ? "#22c55e" : "rgba(255,255,255,0.2)"
-            }} />
-            )}
-          </div>
-          <button onClick={() => scroll(1)} className="w-8 h-8 rounded-full flex items-center justify-center transition hover:opacity-80"
-          style={{ background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)" }}>
-            <ChevronRight className="w-4 h-4 text-green-400" />
-          </button>
-        </div>
 
-        {/* Right: back to home */}
-        <Link to="/" className="flex items-center gap-1 text-xs font-bold text-white/50 hover:text-white transition hidden">
-          <ArrowLeft className="w-3.5 h-3.5 hidden" />
-          <span className="hidden sm:inline">Accueil</span>
-        </Link>
-      </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
     </div>);
 
 }
