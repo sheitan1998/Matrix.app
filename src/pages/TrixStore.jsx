@@ -189,7 +189,7 @@ export default function TrixStore() {
             <Button
               onClick={() => buy(p)}
               disabled={loading === p.trix || !user}
-              className="w-full mt-5 h-11 rounded-full bg-foreground text-background hover:bg-foreground/90 font-semibold">
+              className="w-full mt-5 h-11 rounded-full hover:bg-foreground/90 font-semibold bg-yellow-600">
               
               {loading === p.trix ? "Traitement..." : "Acheter"}
             </Button>
