@@ -219,7 +219,7 @@ export default function TrixStore() {
             <div
               key={plan.plan}
               className={cn(
-                "relative rounded-2xl border-2 p-6 bg-card transition hover:scale-[1.02]",
+                "relative rounded-2xl border-2 p-6 transition hover:scale-[1.02] bg-gray-950",
                 plan.tag ? "border-trix/60 shadow-glow" : "border-border"
               )}>
               
@@ -260,7 +260,7 @@ export default function TrixStore() {
               onClick={openCustomerPortal}
               disabled={portalLoading || !user}
               variant="outline"
-              className="shrink-0">
+              className="shrink-0 text-gray-50">
               
             {portalLoading ? "..." : "Portail Client"}
           </Button>
