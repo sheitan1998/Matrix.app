@@ -132,7 +132,7 @@ export default function TrixStore() {
 
   return (
     <div className="min-h-screen bg-gray-950">
-      <div className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-xl px-4 py-3">
+      <div className="sticky top-0 z-40 border-b border-border backdrop-blur-xl px-4 py-3 bg-gray-950/[0.9] text-gray-50">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <button onClick={() => nav(-1)} className="text-muted-foreground hover:text-foreground transition">
