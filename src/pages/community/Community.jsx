@@ -256,7 +256,7 @@ export default function Community() {
             }} />
           
             <button onClick={() => inviteToServer(selectedServer)}
-          className="p-2 rounded-xl transition text-muted-foreground hover:text-white"
+          className="p-2 rounded-xl transition text-muted-foreground hover:text-white hidden"
           title="Copier le lien d'invitation">
               <UserPlus className="w-4 h-4" />
             </button>
