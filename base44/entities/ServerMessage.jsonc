@@ -31,6 +31,10 @@
     },
     "file_url": {
       "type": "string"
+    },
+    "file_name": {
+      "type": "string",
+      "description": "Nom du fichier joint"
     }
   },
   "required": [
@@ -52,18 +56,7 @@
         }
       ]
     },
-    "read": {
-      "$or": [
-        {
-          "data.author_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
+    "read": {},
     "update": {
       "$or": [
         {
