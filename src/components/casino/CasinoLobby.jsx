@@ -211,7 +211,7 @@ export default function CasinoLobby({ balance, jackpot, onPlayGame, onShop, onPr
 
 
           
-          <button onClick={onVipClub} className="relative w-9 h-9 rounded-lg flex items-center justify-center"
+          <button onClick={onVipClub} className="relative w-9 h-9 rounded-lg flex items-center justify-center hidden"
           style={{ background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)" }}>
             <Lock className="w-4 h-4" style={{ color: "#FFD700" }} />
             <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black text-white"
