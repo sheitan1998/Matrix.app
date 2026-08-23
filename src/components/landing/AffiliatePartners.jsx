@@ -40,7 +40,7 @@ function PartnerCard({ p, index }) {
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay: 0.3 + index * 0.08, duration: 0.5 }}
-    className="rounded-2xl overflow-hidden flex items-center gap-4 p-4"
+    className="rounded-2xl overflow-hidden flex items-center gap-4 pt-4 pr-4 pb-4 pl-4"
     style={{
       background: "#101015",
       border: "1px solid rgba(168,85,247,0.15)"
