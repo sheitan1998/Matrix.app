@@ -281,11 +281,11 @@ export default function Community() {
             className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-border hover:bg-secondary transition">
                 <Search className="w-3.5 h-3.5" /> Explorer
               </button>
-              <button onClick={() => setShowVIPShop(true)}
+              <Link to="/boutique-nexus"
             className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition hover:scale-105 tap-sm"
             style={{ background: "rgba(168,85,247,0.15)", border: "2px solid #fff", color: "#a855f7" }}>
                 <Zap className="w-3.5 h-3.5" fill="currentColor" /> Boutique VIP
-              </button>
+              </Link>
             </div>
           </>
         }

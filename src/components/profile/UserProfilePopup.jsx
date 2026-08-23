@@ -46,7 +46,7 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
               setCosmetics(userCosmetics || []);
             } catch { setCosmetics([]); }
             try {
-              const progressRecords = await base44.asServiceRole.entities.UserProgress.filter({ user_email: u.email });
+              const progressRecords = await base44.entities.UserProgress.filter({ user_email: u.email });
               if (progressRecords.length > 0) setProgress(progressRecords[0]);
             } catch { /* silent */ }
           }

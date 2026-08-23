@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Send, Hash, Image, Trash2, Pencil, Check, X, Smile, Paperclip, File, Download } from "lucide-react";
+import { Send, Hash, Image, Trash2, Pencil, Check, X, Smile, Paperclip, File, Download, Reply, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -20,6 +20,8 @@ export default function ServerChat({ server, channel, theme, user }) {
   const [contextMenu, setContextMenu] = useState(null);
   const [editingMsg, setEditingMsg] = useState(null); // { id, content }
   const [profileUser, setProfileUser] = useState(null); // { userId, email }
+  const [replyTo, setReplyTo] = useState(null); // message being replied to
+  const [showReactionPicker, setShowReactionPicker] = useState(null); // message id
   const fileInputRef = useRef(null);
   const docFileInputRef = useRef(null);
   const bottomRef = useRef(null);
@@ -77,6 +79,9 @@ export default function ServerChat({ server, channel, theme, user }) {
       type: attachment ? "file" : "text",
       file_url: attachment?.url || "",
       file_name: attachment?.name || "",
+      reply_to_id: replyTo?.id || "",
+      reply_to_name: replyTo?.author_name || "",
+      reply_to_content: replyTo?.content || "",
     });
 
     if (content && content.includes("@everyone")) {
@@ -118,6 +123,7 @@ export default function ServerChat({ server, channel, theme, user }) {
     }
 
     setInput("");
+    setReplyTo(null);
     setSending(false);
     trackActivity("send_message");
     qc.invalidateQueries({ queryKey });
@@ -189,6 +195,20 @@ export default function ServerChat({ server, channel, theme, user }) {
     toast.success("Message modifié");
   };
 
+  const toggleReaction = async (msg, emoji) => {
+    const reactions = msg.reactions || [];
+    const existing = reactions.find(r => r.emoji === emoji && r.user_email === user.email);
+    let updated;
+    if (existing) {
+      updated = reactions.filter(r => !(r.emoji === emoji && r.user_email === user.email));
+    } else {
+      updated = [...reactions, { emoji, user_email: user.email, user_name: user.full_name || user.email.split("@")[0] }];
+    }
+    await base44.entities.ServerMessage.update(msg.id, { reactions: updated });
+    qc.invalidateQueries({ queryKey });
+    setShowReactionPicker(null);
+  };
+
   const handleContextMenu = (e, msg) => {
     e.preventDefault();
     e.stopPropagation();
@@ -225,7 +245,17 @@ export default function ServerChat({ server, channel, theme, user }) {
             <p className="text-xs mt-1">Sois le premier à envoyer un message ici</p>
           </div>
         )}
-        {grouped.map((msg) => (
+        {grouped.map((msg) => {
+          const msgReactions = msg.reactions || [];
+          // Group reactions by emoji with count
+          const reactionGroups = msgReactions.reduce((acc, r) => {
+            const existing = acc.find(g => g.emoji === r.emoji);
+            if (existing) { existing.count++; existing.users.push(r.user_email); }
+            else acc.push({ emoji: r.emoji, count: 1, users: [r.user_email] });
+            return acc;
+          }, []);
+          const isOwn = msg.author_email === user?.email;
+          return (
           <div key={msg.id}
             className={cn("flex gap-3 group relative", msg.isContinuation ? "mt-0.5" : "mt-3")}
             onContextMenu={(e) => handleContextMenu(e, msg)}>
@@ -259,6 +289,14 @@ export default function ServerChat({ server, channel, theme, user }) {
                 </div>
               ) : (
                 <div className="text-sm text-white/80 leading-relaxed break-words">
+                  {/* Reply preview */}
+                  {msg.reply_to_id && (
+                    <div className="flex items-center gap-2 mb-1 pl-2 py-0.5 rounded-lg" style={{ background: "rgba(255,255,255,0.04)", borderLeft: `2px solid ${accent}` }}>
+                      <Reply className="w-3 h-3 shrink-0 text-white/30" />
+                      <span className="text-[11px] font-bold" style={{ color: accent }}>{msg.reply_to_name}</span>
+                      <span className="text-[11px] text-white/40 truncate max-w-[200px]">{msg.reply_to_content}</span>
+                    </div>
+                  )}
                   {msg.type === "file" && msg.file_url ? (
                     msg.file_url.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i) ? (
                       <img src={msg.file_url} alt="Uploaded" className="max-w-xs max-h-64 rounded-xl mb-1 border border-white/10" />
@@ -281,14 +319,86 @@ export default function ServerChat({ server, channel, theme, user }) {
                   )}
                 </div>
               )}
+
+              {/* Reactions display */}
+              {reactionGroups.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {reactionGroups.map(rg => {
+                    const reacted = rg.users.includes(user.email);
+                    return (
+                      <button key={rg.emoji} onClick={() => toggleReaction(msg, rg.emoji)}
+                        className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition hover:scale-105"
+                        style={{
+                          background: reacted ? accent + "20" : "rgba(255,255,255,0.06)",
+                          border: `1px solid ${reacted ? accent + "50" : "rgba(255,255,255,0.1)"}`,
+                        }}>
+                        <span>{rg.emoji}</span>
+                        <span className="text-white/60 font-bold">{rg.count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Hover toolbar */}
+              <div className="absolute -top-5 right-0 flex items-center gap-0.5 rounded-lg opacity-0 group-hover:opacity-100 transition"
+                style={{ background: "hsl(var(--card))", border: "1px solid rgba(255,255,255,0.1)" }}>
+                <div className="relative">
+                  <button onClick={() => setShowReactionPicker(showReactionPicker === msg.id ? null : msg.id)}
+                    className="w-7 h-7 flex items-center justify-center text-white/50 hover:text-white transition"
+                    title="Réagir">
+                    <Heart className="w-3.5 h-3.5" />
+                  </button>
+                  {showReactionPicker === msg.id && (
+                    <div className="absolute bottom-full left-0 mb-1 flex gap-1 p-1.5 rounded-xl z-50"
+                      style={{ background: "hsl(var(--card))", border: "1px solid rgba(255,255,255,0.1)" }}
+                      onClick={(e) => e.stopPropagation()}>
+                      {REACTIONS.map(emoji => (
+                        <button key={emoji} onClick={() => toggleReaction(msg, emoji)}
+                          className="text-lg hover:scale-125 transition p-0.5">{emoji}</button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button onClick={() => setReplyTo(msg)}
+                  className="w-7 h-7 flex items-center justify-center text-white/50 hover:text-white transition"
+                  title="Répondre">
+                  <Reply className="w-3.5 h-3.5" />
+                </button>
+                {isOwn && (
+                  <button onClick={() => setEditingMsg({ id: msg.id, content: msg.content })}
+                    className="w-7 h-7 flex items-center justify-center text-white/50 hover:text-white transition"
+                    title="Modifier">
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {(isOwn || isOwner) && (
+                  <button onClick={() => deleteMessage(msg)}
+                    className="w-7 h-7 flex items-center justify-center text-red-400 hover:text-red-300 transition"
+                    title="Supprimer">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
-        ))}
+          );
+        })}
         <div ref={bottomRef} />
       </div>
 
       {/* Input */}
       <div className="shrink-0 px-4 pb-4 pt-2 relative">
+        {replyTo && (
+          <div className="flex items-center gap-2 mb-1 px-3 py-1.5 rounded-xl" style={{ background: "rgba(255,255,255,0.04)", borderLeft: `2px solid ${accent}` }}>
+            <Reply className="w-3 h-3 shrink-0 text-white/40" />
+            <div className="flex-1 min-w-0">
+              <span className="text-[11px] font-bold" style={{ color: accent }}>{replyTo.author_name}</span>
+              <p className="text-[11px] text-white/40 truncate">{replyTo.content}</p>
+            </div>
+            <button onClick={() => setReplyTo(null)} className="text-white/40 hover:text-white"><X className="w-3.5 h-3.5" /></button>
+          </div>
+        )}
         {showEmojis && (
           <div className="absolute bottom-full left-4 mb-2 p-2 rounded-xl grid grid-cols-8 gap-1 z-50"
             style={{ background: "hsl(var(--card))", border: "1px solid rgba(255,255,255,0.1)" }}>
@@ -345,10 +455,15 @@ export default function ServerChat({ server, channel, theme, user }) {
           onClick={(e) => e.stopPropagation()}>
           <div className="p-2 flex gap-1 border-b border-white/10">
             {REACTIONS.map(emoji => (
-              <button key={emoji} onClick={() => { toast.info(`Réaction ${emoji} ajoutée`); setContextMenu(null); }}
+              <button key={emoji} onClick={() => { toggleReaction(contextMenu.msg, emoji); setContextMenu(null); }}
                 className="text-xl hover:scale-125 transition p-0.5">{emoji}</button>
             ))}
           </div>
+          <button
+            onClick={() => { setReplyTo(contextMenu.msg); setContextMenu(null); }}
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-white hover:bg-white/10 transition">
+            <Reply className="w-4 h-4" /> Répondre
+          </button>
           {contextMenu.msg.author_email === user?.email && (
             <button
               onClick={() => { setEditingMsg({ id: contextMenu.msg.id, content: contextMenu.msg.content }); setContextMenu(null); }}

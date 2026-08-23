@@ -35,6 +35,37 @@
     "file_name": {
       "type": "string",
       "description": "Nom du fichier joint"
+    },
+    "reactions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "emoji": {
+            "type": "string"
+          },
+          "user_email": {
+            "type": "string"
+          },
+          "user_name": {
+            "type": "string"
+          }
+        }
+      },
+      "default": [],
+      "description": "Reactions des utilisateurs sur ce message"
+    },
+    "reply_to_id": {
+      "type": "string",
+      "description": "ID du message auquel on repond (optionnel)"
+    },
+    "reply_to_name": {
+      "type": "string",
+      "description": "Nom de l'auteur du message repondu (pour apercu)"
+    },
+    "reply_to_content": {
+      "type": "string",
+      "description": "Apercu du contenu du message repondu"
     }
   },
   "required": [
