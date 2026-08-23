@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { useWallet } from "@/hooks/useWallet";
+
 import { ArrowLeft, Trophy, Home } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useCasinoJackpot, casinoGetBalance } from "@/hooks/useCasinoJackpot";
@@ -91,7 +91,6 @@ export default function Casino() {
   const [slotView, setSlotView] = useState(null); // null | "worlds" | "machines"
   const [selectedWorld, setSelectedWorld] = useState(null);
   const [slotThemeId, setSlotThemeId] = useState(null);
-  const { addTransaction } = useWallet();
   const [casinoCoins, setCasinoCoins] = useCasinoCoins();
   const { jackpot } = useCasinoJackpot();
   const [settings, setSettings] = useState({ bgVariant: "space", accent: "#a855f7", glow: true, particles: true, animations: true });
@@ -176,13 +175,13 @@ export default function Casino() {
                 className="rounded-3xl overflow-hidden"
                 style={{ background: "linear-gradient(160deg, rgba(14,0,30,0.6), rgba(18,0,40,0.4), rgba(14,0,30,0.6))", border: `1px solid ${meta.color}20`, boxShadow: `0 0 40px rgba(0,0,0,0.5)` }}>
                 <div className="p-4 sm:p-6">
-                  {screen === "slots" && <SlotsGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} addTransaction={addTransaction} jackpot={jackpot} themeId={slotThemeId} />}
+                  {screen === "slots" && <SlotsGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} themeId={slotThemeId} />}
                   {screen === "blackjack" && <BlackjackGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} />}
                   {screen === "roulette" && <RouletteGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} />}
                   {screen === "bingo" && <BingoGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} />}
-                  {screen === "lotto" && <LottoGame balance={casinoCoins} setBalance={setCasinoCoins} addTransaction={addTransaction} />}
-                  {screen === "poker" && <PokerGame balance={casinoCoins} setBalance={setCasinoCoins} addTransaction={addTransaction} />}
-                  {screen === "baccarat" && <BaccaratGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} addTransaction={addTransaction} />}
+                  {screen === "lotto" && <LottoGame balance={casinoCoins} setBalance={setCasinoCoins} />}
+                  {screen === "poker" && <PokerGame balance={casinoCoins} setBalance={setCasinoCoins} />}
+                  {screen === "baccarat" && <BaccaratGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} />}
                   {screen === "leaderboard" && <CasinoLeaderboard accentColor={meta.color} currentUserBalance={casinoCoins} />}
                 </div>
               </motion.div>

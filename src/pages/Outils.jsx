@@ -117,10 +117,10 @@ export default function Outils() {
             style={{ background: "#13101a", border: "1px solid rgba(255,255,255,0.08)" }}
             onClick={(e) => e.stopPropagation()}>
               {activeTool === "calc" && <CalculatorTool onClose={() => setActiveTool(null)} />}
-              {activeTool === "notepad-mgr" && <NotepadManager onClose={() => setActiveTool(null)} />}
+              {activeTool === "notepad-mgr" && <NotepadManager onClose={() => setActiveTool(null)} user={user} />}
               {activeTool === "convert" && <UnitConverterTool onClose={() => setActiveTool(null)} />}
-              {activeTool === "spreadsheet" && <Spreadsheet onClose={() => setActiveTool(null)} />}
-              {activeTool === "paint" && <PaintTool onClose={() => setActiveTool(null)} />}
+              {activeTool === "spreadsheet" && <Spreadsheet onClose={() => setActiveTool(null)} user={user} />}
+              {activeTool === "paint" && <PaintTool onClose={() => setActiveTool(null)} user={user} />}
             </motion.div>
           </motion.div>
         }

@@ -8,12 +8,14 @@ import ProgressionOverview from '@/components/progression/ProgressionOverview';
 import AchievementsList from '@/components/progression/AchievementsList';
 import MissionsBoard from '@/components/progression/MissionsBoard';
 import ProgressionLeaderboards from '@/components/progression/ProgressionLeaderboards';
+import XPBoosterShop from '@/components/progression/XPBoosterShop';
 import TrixWalletBar from '@/components/TrixWalletBar';
 
 const TABS = [
   { id: 'overview',     label: "Vue d'ensemble" },
   { id: 'achievements', label: 'Succès' },
   { id: 'missions',     label: 'Missions' },
+  { id: 'xp-shop',      label: 'Boutique XP' },
   { id: 'leaderboards', label: 'Classements' },
 ];
 
@@ -87,6 +89,7 @@ export default function Progression() {
             {tab === 'overview' && <ProgressionOverview />}
             {tab === 'achievements' && <AchievementsList />}
             {tab === 'missions' && <MissionsBoard />}
+            {tab === 'xp-shop' && <XPBoosterShop />}
             {tab === 'leaderboards' && <ProgressionLeaderboards />}
           </motion.div>
         </AnimatePresence>

@@ -3,25 +3,27 @@ import { X, Brush, Eraser, Trash2, Download, Undo, Plus, Image as ImageIcon, Cop
 
 const COLORS = ["#ffffff", "#000000", "#ef4444", "#f97316", "#fbbf24", "#22c55e", "#3b82f6", "#a855f7", "#ec4899", "#06b6d4", "#84cc16", "#f59e0b"];
 const SIZES = [2, 4, 8, 16, 32];
-const STORAGE_KEY = "matrix_paint_files";
+function getStorageKey(userEmail) {
+  return `matrix_paint_files_${userEmail || "guest"}`;
+}
 
-function loadFiles() {
+function loadFiles(userEmail) {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(getStorageKey(userEmail));
     if (raw) return JSON.parse(raw);
   } catch {}
   return null;
 }
 
-function saveFiles(files) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(files)); } catch {}
+function saveFiles(files, userEmail) {
+  try { localStorage.setItem(getStorageKey(userEmail), JSON.stringify(files)); } catch {}
 }
 
 function createNewFile(name) {
   return { id: `draw_${Date.now()}`, name: name || "Dessin 1", dataUrl: "" };
 }
 
-export default function PaintTool({ onClose }) {
+export default function PaintTool({ onClose, user }) {
   const canvasRef = useRef(null);
   const ctxRef = useRef(null);
   const [color, setColor] = useState("#a855f7");
@@ -31,7 +33,7 @@ export default function PaintTool({ onClose }) {
   const [history, setHistory] = useState([]);
 
   const [files, setFiles] = useState(() => {
-    const saved = loadFiles();
+    const saved = loadFiles(user?.email);
     if (saved && saved.length > 0) return saved;
     return [createNewFile("Dessin 1")];
   });
@@ -39,7 +41,7 @@ export default function PaintTool({ onClose }) {
 
   const activeFile = files.find(f => f.id === activeId) || files[0];
 
-  useEffect(() => { saveFiles(files); }, [files]);
+  useEffect(() => { saveFiles(files, user?.email); }, [files, user?.email]);
 
   // Initialize canvas
   useEffect(() => {

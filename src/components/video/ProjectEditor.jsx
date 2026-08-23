@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import {
   Plus, Film, Upload, Play, Pause, ArrowLeft, X, Type, Music,
   Save, Video, Undo2, Redo2,
   Scissors, Link2, Magnet, ZoomIn, Wand2, ArrowLeftRight, Star,
-  Sparkles, Maximize2, SkipBack, SkipForward, ChevronDown,
+  Sparkles, Maximize2, SkipBack, SkipForward, ChevronDown, Trash2,
 } from "lucide-react";
 import ClipProperties from "@/components/video/ClipProperties";
 import VideoExporter from "@/components/video/VideoExporter";
@@ -185,8 +186,20 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
     setUploading(true);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setMediaUrl(file_url);
-      toast.success("Fichier importé");
+      // Auto-add to timeline based on current nav tab
+      const isAudio = file.type?.startsWith("audio") || navTab === "audio";
+      const isImage = file.type?.startsWith("image");
+      const clipType = isAudio ? "audio" : isImage ? "image" : "video";
+      if (isAudio) {
+        const track = { id: Date.now().toString(), url: file_url, start: 0, volume: 1 };
+        const newTimeline = { ...timeline, audioTracks: [...(timeline.audioTracks || []), track] };
+        setTimeline(newTimeline); pushHistory(newTimeline);
+      } else {
+        const clip = { id: Date.now().toString(), type: clipType, url: file_url, start: 0, trimStart: 0, trimEnd: 0, duration: 5, name: file.name };
+        const newTimeline = { ...timeline, clips: [...(timeline.clips || []), clip] };
+        setTimeline(newTimeline); pushHistory(newTimeline);
+      }
+      toast.success("Fichier ajouté à la timeline");
     } catch (e) { toast.error("Erreur d'import"); }
     setUploading(false);
   };
@@ -460,20 +473,53 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
               {/* Playhead overlay spanning all tracks */}
               <div className="absolute top-0 bottom-0 w-0.5 pointer-events-none z-10" style={{ left: `calc(64px + (100% - 64px) * ${playhead / 30})`, background: "#ec4899" }} />
 
-              {/* Video 1 — clips */}
+              {/* Video 1 — clips (draggable) */}
               <TrackRow label="Video 1">
                 {(timeline.clips || []).length === 0 ? (
                   <EmptyTrack label="Ajoute des clips" />
-                ) : (timeline.clips || []).map(clip => (
-                  <div key={clip.id} onClick={() => setSelectedClip(clip)}
-                    className={`relative rounded-lg overflow-hidden shrink-0 cursor-pointer transition ${selectedClip?.id === clip.id ? "ring-2 ring-purple-500" : ""}`}
-                    style={{ width: 120 * zoom, height: 40, background: "rgba(124,58,237,0.2)", border: "1px solid rgba(124,58,237,0.4)" }}>
-                    {clip.type === "video" ? <video src={clip.url} className="w-full h-full object-cover" muted /> : <img src={clip.url} className="w-full h-full object-cover" alt="" />}
-                    <div className="absolute bottom-0 left-0 right-0 px-1 py-0.5" style={{ background: "rgba(0,0,0,0.6)" }}>
-                      <p className="text-[8px] text-white truncate">{clip.type === "video" ? "🎬" : "🖼"} Clip</p>
-                    </div>
-                  </div>
-                ))}
+                ) : (
+                  <DragDropContext onDragEnd={(result) => {
+                    if (!result.destination || result.destination.index === result.source.index) return;
+                    const clips = [...(timeline.clips || [])];
+                    const [moved] = clips.splice(result.source.index, 1);
+                    clips.splice(result.destination.index, 0, moved);
+                    const newTimeline = { ...timeline, clips };
+                    setTimeline(newTimeline); pushHistory(newTimeline);
+                  }}>
+                    <Droppable droppableId="clips" direction="horizontal">
+                      {(provided) => (
+                        <div ref={provided.innerRef} {...provided.droppableProps} className="flex items-center gap-1">
+                          {(timeline.clips || []).map((clip, idx) => (
+                            <Draggable key={clip.id} draggableId={clip.id} index={idx}>
+                              {(dragProvided) => (
+                                <div
+                                  ref={dragProvided.innerRef}
+                                  {...dragProvided.draggableProps}
+                                  {...dragProvided.dragHandleProps}
+                                  onClick={() => setSelectedClip(clip)}
+                                  className={`relative rounded-lg overflow-hidden shrink-0 cursor-grab active:cursor-grabbing transition ${selectedClip?.id === clip.id ? "ring-2 ring-purple-500" : ""}`}
+                                  style={{ width: 120 * zoom, height: 40, background: "rgba(124,58,237,0.2)", border: "1px solid rgba(124,58,237,0.4)", ...dragProvided.draggableProps.style }}
+                                >
+                                  {clip.type === "video" ? <video src={clip.url} className="w-full h-full object-cover" muted /> : <img src={clip.url} className="w-full h-full object-cover" alt="" />}
+                                  <div className="absolute bottom-0 left-0 right-0 px-1 py-0.5 flex items-center justify-between" style={{ background: "rgba(0,0,0,0.6)" }}>
+                                    <p className="text-[8px] text-white truncate">{clip.type === "video" ? "🎬" : "🖼"} {(clip.name || "Clip").slice(0, 10)}</p>
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); removeClip(clip.id); }}
+                                      className="text-white/40 hover:text-red-400 transition shrink-0"
+                                    >
+                                      <Trash2 className="w-2.5 h-2.5" />
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </DragDropContext>
+                )}
               </TrackRow>
 
               {/* Video 2 — text overlays */}

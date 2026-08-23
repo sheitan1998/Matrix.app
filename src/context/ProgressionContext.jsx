@@ -45,19 +45,34 @@ function ensureMissions(progress) {
   return { missions, changed };
 }
 
-// --- Pure computation: apply XP gain to progress ---
+// --- Get active XP boost (checks expiry) ---
+function getActiveBoost(progress) {
+  const boost = progress?.active_xp_boost;
+  if (!boost) return null;
+  if (new Date(boost.expires_at).getTime() <= Date.now()) return null; // expired
+  return boost;
+}
+
+// --- Pure computation: apply XP gain to progress (with active boost multiplier) ---
 function applyXP(progress, xpAmount, action) {
   const now = Date.now();
   const lastGains = progress.last_xp_gains || {};
   if (action && ANTI_SPAM[action] && now - (lastGains[action] || 0) < ANTI_SPAM[action]) {
     return null; // anti-spam blocked
   }
-  let { level = 1, xp = 0, total_xp = 0, coins = 0, badges = [], achievements = [], unlocked_rewards = [], stats = {} } = progress;
-  xp += xpAmount;
-  total_xp += xpAmount;
+  // Apply active XP boost multiplier
+  const activeBoost = getActiveBoost(progress);
+  const finalXP = activeBoost ? Math.round(xpAmount * activeBoost.multiplier) : xpAmount;
+
+  let { level = 1, xp = 0, total_xp = 0, coins = 0, badges = [], achievements = [], unlocked_rewards = [], stats = {}, active_xp_boost } = progress;
+  xp += finalXP;
+  total_xp += finalXP;
   badges = [...badges];
   achievements = [...achievements];
   unlocked_rewards = [...unlocked_rewards];
+
+  // Clear expired boost
+  if (progress.active_xp_boost && !activeBoost) active_xp_boost = null;
 
   const levelUps = [];
   const checkLevels = () => {
@@ -81,7 +96,7 @@ function applyXP(progress, xpAmount, action) {
   checkLevels();
 
   return {
-    data: { level, xp, total_xp, coins, badges, achievements, unlocked_rewards, stats, last_xp_gains: { ...lastGains, [action]: now } },
+    data: { level, xp, total_xp, coins, badges, achievements, unlocked_rewards, stats, last_xp_gains: { ...lastGains, [action]: now }, active_xp_boost },
     levelUps,
   };
 }
@@ -248,6 +263,53 @@ export function ProgressionProvider({ children }) {
     });
   }, [save]);
 
+  const buyXPBooster = useCallback(async (booster) => {
+    if (!ref.current) return;
+    // Deduct Trix from user balance
+    const me = await base44.auth.me();
+    const currentBalance = me.trix_balance || 0;
+    if (currentBalance < booster.price_trix) {
+      throw new Error('Insufficient Trix balance');
+    }
+    await base44.auth.updateMe({ trix_balance: currentBalance - booster.price_trix });
+    // Record transaction
+    await base44.entities.TrixTransaction.create({
+      user_email: me.email,
+      type: 'purchase',
+      amount: -booster.price_trix,
+      description: `Booster XP x${booster.multiplier} (${booster.duration_label})`,
+    });
+    // Add to inventory
+    const boosters = [...(ref.current.xp_boosters || []), {
+      id: booster.id,
+      multiplier: booster.multiplier,
+      duration_hours: booster.duration_hours,
+      purchased_at: new Date().toISOString(),
+    }];
+    await save({ xp_boosters: boosters });
+  }, [save]);
+
+  const activateXPBooster = useCallback(async (booster) => {
+    if (!ref.current) return;
+    // Check if a boost is already active
+    const existing = getActiveBoost(ref.current);
+    if (existing) {
+      throw new Error('A booster is already active');
+    }
+    // Remove from inventory
+    const inventory = ref.current.xp_boosters || [];
+    const idx = inventory.findIndex(b => b.id === booster.id && b.multiplier === booster.multiplier && b.duration_hours === booster.duration_hours);
+    if (idx < 0) return;
+    const newInventory = [...inventory];
+    newInventory.splice(idx, 1);
+    // Set active boost
+    const expiresAt = new Date(Date.now() + (booster.duration_hours || 1) * 3600000).toISOString();
+    await save({
+      xp_boosters: newInventory,
+      active_xp_boost: { multiplier: booster.multiplier, expires_at: expiresAt, booster_id: booster.id },
+    });
+  }, [save]);
+
   // Init: load or create progress, ensure missions, daily login bonus
   useEffect(() => {
     let mounted = true;
@@ -313,10 +375,12 @@ export function ProgressionProvider({ children }) {
   const xpNeeded = progress ? XP_FORMULA(progress.level) : 100;
   const xpPercent = progress ? Math.min(100, (progress.xp / xpNeeded) * 100) : 0;
   const prestigeInfo = progress?.prestige ? PRESTIGE_TIERS.find(t => t.tier === progress.prestige) : null;
+  const activeBoost = progress ? getActiveBoost(progress) : null;
 
   const value = {
-    progress, loading, rank, xpNeeded, xpPercent, prestigeInfo,
+    progress, loading, rank, xpNeeded, xpPercent, prestigeInfo, activeBoost,
     trackActivity, claimMission, claimAchievement, buyItem, equipItem, prestige,
+    buyXPBooster, activateXPBooster,
     levelUpData, setLevelUpData,
   };
 

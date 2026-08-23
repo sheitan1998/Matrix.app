@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Edit3, Check, X, Camera, Zap, Coins, Clapperboard, Award, Users, ShoppingBag, Lock, ChevronRight, ArrowLeft, Trophy, Zap as ZapIcon, LifeBuoy } from "lucide-react";
+import { Edit3, Check, X, Camera, Zap, Coins, Clapperboard, Award, Users, ShoppingBag, Lock, ChevronRight, ArrowLeft, Trophy, Zap as ZapIcon, LifeBuoy, Rocket } from "lucide-react";
 import { ACHIEVEMENTS as ALL_ACHIEVEMENTS } from "@/lib/achievementsData";
 import { toast } from "sonner";
 import { formatTrix } from "@/lib/format";
@@ -265,6 +265,27 @@ export default function ProfileContent({ onClose }) {
 
               return s.link ? <button key={i} onClick={() => goTo(s.link)} className="text-left">{content}</button> : <div key={i}>{content}</div>;
             })}
+          </div>
+
+          {/* XP Boosters inventory */}
+          <div className="mb-4">
+            <button
+              onClick={() => goTo("/progression")}
+              className="w-full flex items-center gap-3 p-4 rounded-2xl transition hover:opacity-90"
+              style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(251,191,36,0.15)" }}>
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(251,191,36,0.15)" }}>
+                <Rocket className="w-4 h-4" style={{ color: "#fbbf24" }} />
+              </div>
+              <div className="flex-1 text-left">
+                <p className="text-sm font-bold text-white">Boosters XP</p>
+                <p className="text-[10px] text-white/40">
+                  {progress?.active_xp_boost
+                    ? `x${progress.active_xp_boost.multiplier} actif`
+                    : `${progress?.xp_boosters?.length || 0} en stock`}
+                </p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-white/30 shrink-0" />
+            </button>
           </div>
 
           {/* PWA Install */}

@@ -4,27 +4,29 @@ import { X, Download, Plus, Trash2, FileText, Copy } from "lucide-react";
 const COLS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 const DEFAULT_ROWS = 15;
 const DEFAULT_COLS = 8;
-const STORAGE_KEY = "matrix_spreadsheet_files";
+function getStorageKey(userEmail) {
+  return `matrix_spreadsheet_files_${userEmail || "guest"}`;
+}
 
-function loadFiles() {
+function loadFiles(userEmail) {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(getStorageKey(userEmail));
     if (raw) return JSON.parse(raw);
   } catch {}
   return null;
 }
 
-function saveFiles(files) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(files)); } catch {}
+function saveFiles(files, userEmail) {
+  try { localStorage.setItem(getStorageKey(userEmail), JSON.stringify(files)); } catch {}
 }
 
 function createNewFile(name) {
   return { id: `sheet_${Date.now()}`, name: name || "Sans titre", rows: DEFAULT_ROWS, cols: DEFAULT_COLS, data: {} };
 }
 
-export default function Spreadsheet({ onClose }) {
+export default function Spreadsheet({ onClose, user }) {
   const [files, setFiles] = useState(() => {
-    const saved = loadFiles();
+    const saved = loadFiles(user?.email);
     if (saved && saved.length > 0) return saved;
     return [createNewFile("Tableur 1")];
   });
@@ -34,7 +36,7 @@ export default function Spreadsheet({ onClose }) {
 
   const activeFile = files.find(f => f.id === activeId) || files[0];
 
-  useEffect(() => { saveFiles(files); }, [files]);
+  useEffect(() => { saveFiles(files, user?.email); }, [files, user?.email]);
 
   const updateActiveFile = (updates) => {
     setFiles(prev => prev.map(f => f.id === activeFile.id ? { ...f, ...updates } : f));

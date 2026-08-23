@@ -4,9 +4,12 @@ import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 const ICONS = ["📝", "📓", "📔", "📒", "📕", "📗", "📘", "📙", "📋", "✏️", "📌", "🔖", "💡", "🎯", "⭐", "🔥"];
 const COLORS = ["#4D79FF", "#8a4fff", "#FFD700", "#22C55E", "#FF4D4D", "#FF69B4", "#FFA500", "#06B6D4"];
-const STORAGE_KEY = "matrix_notepad_files";
+function getStorageKey(userEmail) {
+  return `matrix_notepad_files_${userEmail || "guest"}`;
+}
 
-export default function NotepadManager({ onClose }) {
+export default function NotepadManager({ onClose, user }) {
+  const storageKey = getStorageKey(user?.email);
   const [notepads, setNotepads] = useState([]);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("custom");
@@ -16,15 +19,15 @@ export default function NotepadManager({ onClose }) {
   const [customizingId, setCustomizingId] = useState(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(storageKey);
     if (saved) {
       try { setNotepads(JSON.parse(saved)); } catch {}
     }
-  }, []);
+  }, [storageKey]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(notepads));
-  }, [notepads]);
+    localStorage.setItem(storageKey, JSON.stringify(notepads));
+  }, [notepads, storageKey]);
 
   const nowISO = () => new Date().toISOString();
 
