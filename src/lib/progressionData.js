@@ -16,7 +16,7 @@ export const XP_REWARDS = {
   comment: 5,
   like: 1,
   receive_like: 3,
-  use_ai: 10,
+  participate_poll: 15,
   invite_friend: 200,
   participate_event: 100,
   participate_tournament: 150,
@@ -33,7 +33,7 @@ export const ANTI_SPAM = {
   comment: 30000,
   like: 10000,
   receive_like: 5000,
-  use_ai: 60000,
+  participate_poll: 60000,
   invite_friend: 60000,
   participate_event: 60000,
   participate_tournament: 60000,
@@ -80,7 +80,7 @@ export const RARITIES = {
 export const BADGE_CATEGORIES = [
   { id: 'beginner',   name: 'Débutant',   icon: '🌱' },
   { id: 'community',  name: 'Communauté', icon: '👥' },
-  { id: 'ai',         name: 'IA',         icon: '🤖' },
+  { id: 'polls',      name: 'Sondages',   icon: '📊' },
   { id: 'events',     name: 'Événements', icon: '🏆' },
   { id: 'premium',    name: 'Premium',    icon: '💎' },
   { id: 'secret',     name: 'Secrets',    icon: '🔒' },
@@ -100,11 +100,11 @@ export const BADGES = [
   { id: 'leader',       name: 'Leader',      icon: '🚩', rarity: 'epic',      category: 'community', condition: { stat: 'help_community', op: '>=', val: 200 } },
   { id: 'founder',      name: 'Fondateur',   icon: '🏛',  rarity: 'legendary', category: 'community', condition: { stat: 'create_server', op: '>=', val: 10 } },
 
-  // IA
-  { id: 'ai_expert',    name: 'Expert IA',       icon: '🧠', rarity: 'rare',      category: 'ai', condition: { stat: 'use_ai', op: '>=', val: 100 } },
-  { id: 'ai_master',    name: 'Maître IA',       icon: '🔮', rarity: 'epic',      category: 'ai', condition: { stat: 'use_ai', op: '>=', val: 500 } },
-  { id: 'ai_architect', name: 'Architecte IA',   icon: '⚙',  rarity: 'legendary', category: 'ai', condition: { stat: 'use_ai', op: '>=', val: 1000 } },
-  { id: 'ai_oracle',    name: 'Oracle MATRIX',   icon: '👁',  rarity: 'cosmic',    category: 'ai', condition: { stat: 'use_ai', op: '>=', val: 5000 } },
+  // Sondages
+  { id: 'poll_voter',    name: 'Voteur actif',      icon: '📊', rarity: 'rare',      category: 'polls', condition: { stat: 'participate_poll', op: '>=', val: 25 } },
+  { id: 'poll_expert',   name: 'Sondeur aguerri',    icon: '📈', rarity: 'epic',      category: 'polls', condition: { stat: 'participate_poll', op: '>=', val: 100 } },
+  { id: 'poll_master',   name: 'Maître des sondages', icon: '🗳', rarity: 'legendary', category: 'polls', condition: { stat: 'participate_poll', op: '>=', val: 500 } },
+  { id: 'poll_oracle',   name: 'Oracle des sondages', icon: '🔮', rarity: 'cosmic',    category: 'polls', condition: { stat: 'participate_poll', op: '>=', val: 2000 } },
 
   // Événements
   { id: 'event_participant',   name: 'Participant',        icon: '🎫', rarity: 'common',   category: 'events', condition: { stat: 'participate_event', op: '>=', val: 1 } },
@@ -168,7 +168,7 @@ export const PRESTIGE_TIERS = [
 // ============================================================
 export const ACHIEVEMENTS = [
   { id: 'create_50_servers',     name: 'Créer 50 serveurs',          icon: '🏰', xp: 1000, trophies: 5, condition: { stat: 'create_server', op: '>=', val: 50 } },
-  { id: 'use_ai_1000',           name: 'Utiliser MATRIX AI 1000×',  icon: '🤖', xp: 800,  trophies: 4, condition: { stat: 'use_ai', op: '>=', val: 1000 } },
+  { id: 'poll_500',               name: 'Participer à 500 sondages', icon: '📊', xp: 800,  trophies: 4, condition: { stat: 'participate_poll', op: '>=', val: 500 } },
   { id: 'participate_100_events',name: 'Participer à 100 événements',icon: '🏆', xp: 1000, trophies: 5, condition: { stat: 'participate_event', op: '>=', val: 100 } },
   { id: 'complete_100_missions', name: 'Compléter 100 missions',     icon: '✅', xp: 1200, trophies: 6, badge_reward: 'matrix_legend', condition: { stat: 'missions_completed', op: '>=', val: 100 } },
 ];
@@ -179,7 +179,7 @@ export const ACHIEVEMENTS = [
 export const MISSION_TEMPLATES = {
   daily: [
     { id: 'd_comment',        name: 'Poster un commentaire',  action: 'comment',         target: 1,  xp: 30,  trophies: 1 },
-    { id: 'd_use_ai',         name: 'Utiliser MATRIX AI',     action: 'use_ai',          target: 1,  xp: 40,  trophies: 1 },
+    { id: 'd_poll',           name: 'Participer à un sondage', action: 'participate_poll', target: 1,  xp: 40,  trophies: 1 },
     { id: 'd_invite_friend',  name: 'Inviter un ami',         action: 'invite_friend',   target: 1,  xp: 200, trophies: 3 },
     { id: 'd_send_message',   name: 'Envoyer 5 messages',     action: 'send_message',    target: 5,  xp: 25,  trophies: 1 },
     { id: 'd_like',           name: 'Réagir à 10 contenus',   action: 'like',            target: 10, xp: 20,  trophies: 1 },
@@ -187,13 +187,13 @@ export const MISSION_TEMPLATES = {
   weekly: [
     { id: 'w_servers_3',      name: 'Créer 3 serveurs',       action: 'create_server',   target: 3,  xp: 300, trophies: 3 },
     { id: 'w_event',          name: 'Participer à un événement', action: 'participate_event', target: 1, xp: 400, trophies: 3 },
-    { id: 'w_ai_10',          name: 'Utiliser MATRIX AI 10×',  action: 'use_ai',         target: 10, xp: 200, trophies: 2 },
+    { id: 'w_polls_5',        name: 'Participer à 5 sondages', action: 'participate_poll', target: 5,  xp: 200, trophies: 2 },
     { id: 'w_comments_15',    name: 'Poster 15 commentaires',  action: 'comment',        target: 15, xp: 200, trophies: 2 },
   ],
   monthly: [
     { id: 'm_messages_50',    name: 'Défi messagerie (50 messages)', action: 'send_message',  target: 50,  xp: 2000, trophies: 5 },
     { id: 'm_help_50',        name: 'Défi communautaire (50)', action: 'help_community',  target: 50,  xp: 3000, trophies: 5 },
-    { id: 'm_ai_50',          name: 'Défi IA (50 utilisations)',action: 'use_ai',         target: 50,  xp: 1500, trophies: 4 },
+    { id: 'm_polls_30',       name: 'Défi sondages (30 participations)', action: 'participate_poll', target: 30, xp: 1500, trophies: 4 },
   ],
 };
 

@@ -15,6 +15,7 @@ import ProfileAnimationLayer from "@/components/profile/ProfileAnimationLayer";
 import TrixIcon from "@/components/TrixIcon";
 import PWAInstallButton from "@/components/PWAInstallButton";
 import SupportTicketModal from "@/components/profile/SupportTicketModal";
+import ImageCropModal from "@/components/profile/ImageCropModal";
 
 const TABS = [
 { key: "overview", label: "Vue d'ensemble", icon: Zap },
@@ -35,6 +36,7 @@ export default function ProfileContent({ onClose }) {
   const [uploading, setUploading] = useState(null);
   const [editPseudo, setEditPseudo] = useState("");
   const [showSupport, setShowSupport] = useState(false);
+  const [cropModal, setCropModal] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then((me) => {
@@ -164,7 +166,7 @@ export default function ProfileContent({ onClose }) {
           }
           <label className="absolute bottom-2 right-2 w-8 h-8 rounded-full flex items-center justify-center cursor-pointer" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}>
             {uploading === "banner_url" ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Camera className="w-4 h-4 text-white" />}
-            <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && uploadImage(e.target.files[0], "banner_url")} />
+            <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && setCropModal({ file: e.target.files[0], field: "banner_url" })} />
           </label>
         </div>
 
@@ -188,7 +190,7 @@ export default function ProfileContent({ onClose }) {
               <ProfileAnimationLayer cosmetic={equippedAnimation} size={96} />
               <label className="absolute bottom-0 right-0 z-20 w-7 h-7 rounded-full flex items-center justify-center cursor-pointer" style={{ background: "#6d28d9", border: "2px solid #0a050f" }}>
                 {uploading === "avatar_url" ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Camera className="w-3.5 h-3.5 text-white" />}
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && uploadImage(e.target.files[0], "avatar_url")} />
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && setCropModal({ file: e.target.files[0], field: "avatar_url" })} />
               </label>
               {equippedBadge &&
               <div className="absolute -top-1 -left-1 z-20 text-xl" title={equippedBadge.item_name}>{equippedBadge.icon || "🏅"}</div>
@@ -382,6 +384,14 @@ export default function ProfileContent({ onClose }) {
       </div>
 
       {showSupport && <SupportTicketModal user={user} onClose={() => setShowSupport(false)} />}
+      {cropModal && (
+        <ImageCropModal
+          file={cropModal.file}
+          aspect={cropModal.field === "avatar_url" ? 1 : 3}
+          onCrop={(croppedFile) => { uploadImage(croppedFile, cropModal.field); setCropModal(null); }}
+          onClose={() => setCropModal(null)}
+        />
+      )}
     </div>);
 
 }

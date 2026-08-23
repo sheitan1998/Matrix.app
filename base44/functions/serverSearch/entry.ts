@@ -109,42 +109,43 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ success: true, votes: newVotes });
       }
 
-      // ---- Boost a server with Flash Boosts ----
+      // ---- Boost a server ad with Flash Boosts or Trix (200) ----
       case 'boost': {
-        const { serverAdId } = params;
+        const { serverAdId, method } = params;
         if (!serverAdId) return Response.json({ error: 'Missing serverAdId' }, { status: 400 });
 
-        // Verify the ad exists first
         const ad = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
         if (!ad) return Response.json({ error: 'Server not found' }, { status: 404 });
 
-        // Get user's flash boosts count
-        const currentFlashBoosts = user.flash_boosts || 0;
+        if (method === 'trix') {
+          const TRIX_BOOST_COST = 200;
+          const userTrix = user.trix_balance || 0;
+          if (userTrix < TRIX_BOOST_COST) {
+            return Response.json({ error: 'Trix insuffisants (200 requis)', balance: userTrix, cost: TRIX_BOOST_COST }, { status: 400 });
+          }
+          const newBalance = userTrix - TRIX_BOOST_COST;
+          await base44.auth.updateMe({ trix_balance: newBalance });
 
-        if (currentFlashBoosts < 1) {
-          return Response.json({
-            error: 'Insufficient Flash Boosts',
-            balance: currentFlashBoosts,
-          }, { status: 400 });
+          const boostUntil = new Date(Date.now() + BOOST_DURATION_HOURS * 60 * 60 * 1000).toISOString();
+          const newBoosts = (ad.boosts || 0) + 1;
+          await base44.asServiceRole.entities.ServerAd.update(serverAdId, { boosts: newBoosts, is_boosted: true, boost_until: boostUntil });
+
+          return Response.json({ success: true, boosts: newBoosts, newBalance });
         }
 
-        // Deduct 1 flash boost from user
+        const currentFlashBoosts = user.flash_boosts || 0;
+        if (currentFlashBoosts < 1) {
+          return Response.json({ error: 'Insufficient Flash Boosts', balance: currentFlashBoosts }, { status: 400 });
+        }
+
         const newFlashBoosts = currentFlashBoosts - 1;
         await base44.auth.updateMe({ flash_boosts: newFlashBoosts });
 
         const boostUntil = new Date(Date.now() + BOOST_DURATION_HOURS * 60 * 60 * 1000).toISOString();
         const newBoosts = (ad.boosts || 0) + 1;
-        await base44.asServiceRole.entities.ServerAd.update(serverAdId, {
-          boosts: newBoosts,
-          is_boosted: true,
-          boost_until: boostUntil,
-        });
+        await base44.asServiceRole.entities.ServerAd.update(serverAdId, { boosts: newBoosts, is_boosted: true, boost_until: boostUntil });
 
-        return Response.json({
-          success: true,
-          boosts: newBoosts,
-          newFlashBoosts,
-        });
+        return Response.json({ success: true, boosts: newBoosts, newFlashBoosts });
       }
 
       // ---- Boost a player search ad with Trix tokens (50 Trix) ----
@@ -662,6 +663,19 @@ export default async function(req: Request): Promise<Response> {
 
         console.log('[boostServer] server', serverId, 'boosts:', newBoosts, 'by', user.email, 'expires:', expiresAt);
         return Response.json({ success: true, boosts: newBoosts, newFlashBoosts });
+      }
+
+      // ---- Check if a user has blocked the current user ----
+      case 'isBlockedBy': {
+        const { target_email } = params;
+        if (!target_email) return Response.json({ blocked: false });
+
+        const records = await base44.asServiceRole.entities.Friend.filter({
+          user_email: target_email,
+          friend_user_id: user.id,
+          status: 'blocked',
+        });
+        return Response.json({ blocked: records.length > 0 });
       }
 
       // ---- Cleanup expired server boosts (30-day expiry) ----

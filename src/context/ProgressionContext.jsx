@@ -18,15 +18,22 @@ function generateMissions(type, count) {
 }
 
 function ensureMissions(progress) {
-  const today = new Date().toDateString();
-  const monthKey = `${new Date().getFullYear()}-${new Date().getMonth()}`;
+  // Daily missions: renew at 15:00 UTC
+  const now = new Date();
+  const dailyKey = (() => {
+    // If before 15:00, missions belong to previous day's 15:00 cycle
+    const d = new Date(now);
+    if (d.getHours() < 15) d.setDate(d.getDate() - 1);
+    return d.toDateString();
+  })();
+  const monthKey = `${now.getFullYear()}-${now.getMonth()}`;
   const missions = { ...(progress.missions || {}) };
   let changed = false;
 
-  // Daily missions: renew every 24h
-  if (missions.daily_date !== today) {
+  // Daily missions: renew at 15:00
+  if (missions.daily_date !== dailyKey) {
     missions.daily = generateMissions('daily', 4);
-    missions.daily_date = today;
+    missions.daily_date = dailyKey;
     changed = true;
   }
   // Weekly missions: renew every month

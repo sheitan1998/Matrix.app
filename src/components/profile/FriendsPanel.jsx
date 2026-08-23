@@ -126,8 +126,8 @@ export default function FriendsPanel({ user, onClose }) {
   const resolveFriend = (f) => {
     const fresh = f.friend_user_id ? freshUsers[f.friend_user_id] : null;
     return {
-      name: fresh?.full_name || "Utilisateur",
-      pseudo: fresh?.pseudo || "",
+      name: fresh?.pseudo || fresh?.full_name || "Utilisateur",
+      pseudo: fresh?.pseudo || fresh?.full_name || "Utilisateur",
       avatar: fresh?.avatar_url || "",
       online: isUserOnline(fresh?.last_seen),
     };
