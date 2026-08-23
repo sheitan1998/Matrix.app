@@ -89,7 +89,7 @@ function PartnerCard({ p, index }) {
 export default function AffiliatePartners() {
   return (
     <div className="mt-6 lg:mt-8">
-      <h2 className="text-2xl md:text-3xl font-black text-white text-center pt-1">
+      <h2 className="text-2xl md:text-3xl font-black text-white text-center">
         Nos offres chez nos partenaires affiliés
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
