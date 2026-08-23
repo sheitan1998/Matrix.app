@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { ArrowUp, Flame, ExternalLink, Users, Trash2, Pencil } from "lucide-react";
+import { ArrowUp, Flame, ExternalLink, Users, Trash2, Pencil, Zap } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import AdMessages from "./AdMessages";
+import BoostAdModal from "./BoostAdModal";
 
 export default function ServerCard({ server, onVote, onDelete, onEdit, currentUser }) {
   const [voteStatus, setVoteStatus] = useState({ canVote: true, remaining: null });
   const [loading, setLoading] = useState(false);
+  const [showBoost, setShowBoost] = useState(false);
+  const [flashBoosts, setFlashBoosts] = useState(currentUser?.flash_boosts || 0);
+  const [trixBalance, setTrixBalance] = useState(currentUser?.trix_balance || 0);
 
   const isDiscord = server.server_type === "discord";
   const typeColor = isDiscord ? "#5865F2" : "#22c55e";
@@ -71,6 +75,11 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleBoosted = (data) => {
+    setFlashBoosts(data.newFlashBoosts ?? flashBoosts);
+    setTrixBalance(data.newBalance ?? trixBalance);
   };
 
   const handleDelete = async () => {
@@ -263,6 +272,15 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
             </>
           )}
         </button>
+        <button
+          onClick={() => setShowBoost(true)}
+          className="h-7 px-2 rounded-md flex items-center justify-center gap-0.5 transition tap-sm text-[9px] font-bold"
+          style={{ background: "rgba(251,191,36,0.12)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.2)" }}
+          title="Booster cette annonce"
+        >
+          <Zap className="w-3 h-3" />
+          <span className="hidden sm:inline">Boost</span>
+        </button>
         {server.discord_link && (
           <a
             href={server.discord_link}
@@ -276,6 +294,18 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
           </a>
         )}
       </div>
+
+      {/* Boost modal */}
+      {showBoost && (
+        <BoostAdModal
+          adId={server.id}
+          adTitle={server.title}
+          flashBoosts={flashBoosts}
+          trixBalance={trixBalance}
+          onBoosted={handleBoosted}
+          onClose={() => setShowBoost(false)}
+        />
+      )}
 
       {/* Messages */}
       <div className="px-3 pb-3">
