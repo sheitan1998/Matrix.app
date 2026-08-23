@@ -665,6 +665,36 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ success: true, boosts: newBoosts, newFlashBoosts });
       }
 
+      // ---- Delete a server message (author or server owner only) ----
+      case 'deleteServerMessage': {
+        const { messageId } = params;
+        if (!messageId) return Response.json({ error: 'Missing messageId' }, { status: 400 });
+
+        const msg = await base44.asServiceRole.entities.ServerMessage.get(messageId);
+        if (!msg) return Response.json({ error: 'Message not found' }, { status: 404 });
+
+        // Author can delete their own messages
+        if (msg.author_email === user.email) {
+          await base44.asServiceRole.entities.ServerMessage.delete(messageId);
+          return Response.json({ success: true });
+        }
+
+        // Server owner can delete any message in their server
+        const srv = await base44.asServiceRole.entities.Server.get(msg.server_id);
+        if (srv && srv.owner_email === user.email) {
+          await base44.asServiceRole.entities.ServerMessage.delete(messageId);
+          return Response.json({ success: true });
+        }
+
+        // Platform admin can delete any message
+        if (user.role === 'admin') {
+          await base44.asServiceRole.entities.ServerMessage.delete(messageId);
+          return Response.json({ success: true });
+        }
+
+        return Response.json({ error: 'Not authorized' }, { status: 403 });
+      }
+
       // ---- Check if a user has blocked the current user ----
       case 'isBlockedBy': {
         const { target_email } = params;

@@ -20,7 +20,7 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
   const [dmInput, setDmInput] = useState("");
 
   useEffect(() => {
-    if (!open || !userId) return;
+    if (!open || (!userId && !userEmail)) return;
     setLoading(true);
     setProfile(null);
     setProgress(null);
@@ -29,10 +29,17 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
 
     const fetchProfile = async () => {
       try {
-        const res = await base44.functions.invoke("serverSearch", { action: "getUsersByIds", ids: [userId] });
-        const u = res?.data?.users?.[0];
+        let u;
+        if (userId) {
+          const res = await base44.functions.invoke("serverSearch", { action: "getUsersByIds", ids: [userId] });
+          u = res?.data?.users?.[0];
+        } else if (userEmail) {
+          const res = await base44.functions.invoke("serverSearch", { action: "searchUser", email: userEmail });
+          u = res?.data?.user;
+        }
         if (u) {
           setProfile(u);
+          const targetId = u.id || userId;
           if (u.email) {
             try {
               const userCosmetics = await base44.entities.UserCosmetic.filter({ user_email: u.email, is_equipped: true }, "-created_date", 50);
@@ -43,11 +50,13 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
               if (progressRecords.length > 0) setProgress(progressRecords[0]);
             } catch { /* silent */ }
           }
+          if (targetId) {
+            try {
+              const statusRes = await base44.functions.invoke("serverSearch", { action: "getFriendStatus", friend_user_id: targetId });
+              setFriendStatus(statusRes?.data?.status || "none");
+            } catch { /* silent */ }
+          }
         }
-        try {
-          const statusRes = await base44.functions.invoke("serverSearch", { action: "getFriendStatus", friend_user_id: userId });
-          setFriendStatus(statusRes?.data?.status || "none");
-        } catch { /* silent */ }
       } catch { /* silent */ }
       setLoading(false);
     };

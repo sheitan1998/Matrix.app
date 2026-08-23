@@ -11,6 +11,7 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
   const [showBoost, setShowBoost] = useState(false);
   const [flashBoosts, setFlashBoosts] = useState(currentUser?.flash_boosts || 0);
   const [trixBalance, setTrixBalance] = useState(currentUser?.trix_balance || 0);
+  const [boostCount, setBoostCount] = useState(server.boosts || 0);
 
   const isDiscord = server.server_type === "discord";
   const typeColor = isDiscord ? "#5865F2" : "#22c55e";
@@ -80,6 +81,7 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
   const handleBoosted = (data) => {
     setFlashBoosts(data.newFlashBoosts ?? flashBoosts);
     setTrixBalance(data.newBalance ?? trixBalance);
+    setBoostCount(data.boosts ?? boostCount);
   };
 
   const handleDelete = async () => {
@@ -237,9 +239,9 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
           <ArrowUp className="w-2.5 h-2.5" style={{ color: "#8a4fff" }} />
           {server.votes || 0}
         </span>
-        <span className="flex items-center gap-0.5">
+        <span className="flex items-center gap-0.5 font-bold" style={{ color: "#fbbf24" }}>
           <Flame className="w-2.5 h-2.5" style={{ color: "#fbbf24" }} />
-          {server.boosts || 0}
+          {boostCount} boost{boostCount !== 1 ? "s" : ""}
         </span>
         {server.max_players > 0 && (
           <span className="flex items-center gap-0.5">

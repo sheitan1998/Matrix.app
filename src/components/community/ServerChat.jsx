@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Send, Hash, Image, Trash2, Pencil, Check, X } from "lucide-react";
+import { Send, Hash, Image, Trash2, Pencil, Check, X, Smile, Paperclip, File, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -9,14 +9,19 @@ import { NitroAvatar } from "@/components/NitroAvatarPicker";
 import { useProgression } from "@/context/ProgressionContext";
 import UserProfilePopup from "@/components/profile/UserProfilePopup";
 
+const EMOJI_LIST = ["😀","😂","🥰","😎","🤔","😢","😡","👍","👎","❤️","🔥","🎉","🎮","🏆","✨","💎","🚀","💯","🤣","😍","🤝","👏","🙌","💀","🫡","😴","🤯","🥳","😱","🤩"];
+
 export default function ServerChat({ server, channel, theme, user }) {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [showEmojis, setShowEmojis] = useState(false);
   const [contextMenu, setContextMenu] = useState(null);
   const [editingMsg, setEditingMsg] = useState(null); // { id, content }
   const [profileUser, setProfileUser] = useState(null); // { userId, email }
   const fileInputRef = useRef(null);
+  const docFileInputRef = useRef(null);
   const bottomRef = useRef(null);
   const qc = useQueryClient();
   const { trackActivity } = useProgression();
@@ -52,11 +57,11 @@ export default function ServerChat({ server, channel, theme, user }) {
   const canSendImages = settings.embed_links !== false; // reuse embed_links for images
   const canMentionEveryone = settings.mention_everyone !== false;
 
-  const send = async (fileUrl = null) => {
+  const send = async (attachment = null) => {
     const content = input.trim();
-    if ((!content && !fileUrl) || sending) return;
+    if ((!content && !attachment) || sending) return;
     if (!canSendMessages) { toast.error("Envoi de messages désactivé dans ce salon"); return; }
-    if (fileUrl && !canSendImages) { toast.error("Les images ne sont pas autorisées dans ce salon"); return; }
+    if (attachment && !canSendImages) { toast.error("Les fichiers ne sont pas autorisés dans ce salon"); return; }
     if (content && content.includes("@everyone") && !canMentionEveryone) {
       toast.error("Vous n'êtes pas autorisé à mentionner @everyone");
       return;
@@ -68,9 +73,10 @@ export default function ServerChat({ server, channel, theme, user }) {
       author_email: user.email,
       author_name: user.full_name || user.email.split("@")[0],
       author_avatar: user.animated_avatar || user.avatar_url || "",
-      content: fileUrl ? `[Image] ${content}` : content || "[Image]",
-      type: fileUrl ? "file" : "text",
-      file_url: fileUrl || "",
+      content: content || (attachment ? attachment.name : ""),
+      type: attachment ? "file" : "text",
+      file_url: attachment?.url || "",
+      file_name: attachment?.name || "",
     });
 
     if (content && content.includes("@everyone")) {
@@ -141,11 +147,37 @@ export default function ServerChat({ server, channel, theme, user }) {
     img.src = objectUrl;
   };
 
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingFile(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      await send({ url: file_url, name: file.name });
+    } catch {
+      toast.error("Erreur lors de l'upload du fichier");
+    } finally {
+      setUploadingFile(false);
+      if (docFileInputRef.current) docFileInputRef.current.value = "";
+    }
+  };
+
   const deleteMessage = async (msg) => {
     if (msg.author_email !== user?.email && !isOwner) return;
-    await base44.entities.ServerMessage.delete(msg.id);
-    qc.invalidateQueries({ queryKey });
-    toast.success("Message supprimé");
+    try {
+      const res = await base44.functions.invoke("serverSearch", {
+        action: "deleteServerMessage",
+        messageId: msg.id,
+      });
+      if (res.data?.success) {
+        qc.invalidateQueries({ queryKey });
+        toast.success("Message supprimé");
+      } else {
+        toast.error(res.data?.error || "Suppression impossible");
+      }
+    } catch {
+      toast.error("Erreur lors de la suppression");
+    }
     setContextMenu(null);
   };
 
@@ -226,15 +258,28 @@ export default function ServerChat({ server, channel, theme, user }) {
                   <button onClick={() => setEditingMsg(null)} className="text-muted-foreground hover:text-white"><X className="w-4 h-4" /></button>
                 </div>
               ) : (
-                <p className="text-sm text-white/80 leading-relaxed break-words">
+                <div className="text-sm text-white/80 leading-relaxed break-words">
                   {msg.type === "file" && msg.file_url ? (
-                    <img src={msg.file_url} alt="Uploaded" className="max-w-xs max-h-64 rounded-xl mb-1 border border-white/10" />
-                  ) : msg.content.split(/(@\S+)/g).map((part, i) =>
-                    part.startsWith("@")
-                      ? <span key={i} className="font-bold px-1 rounded" style={{ color: accent, background: accent + "20" }}>{part}</span>
-                      : <React.Fragment key={i}>{part}</React.Fragment>
+                    msg.file_url.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i) ? (
+                      <img src={msg.file_url} alt="Uploaded" className="max-w-xs max-h-64 rounded-xl mb-1 border border-white/10" />
+                    ) : (
+                      <a href={msg.file_url} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl mb-1 transition hover:opacity-80"
+                        style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                        <File className="w-4 h-4 shrink-0" style={{ color: accent }} />
+                        <span className="text-xs text-white/80 truncate max-w-[200px]">{msg.file_name || "Fichier"}</span>
+                        <Download className="w-3.5 h-3.5 shrink-0 text-white/40" />
+                      </a>
+                    )
+                  ) : null}
+                  {msg.content && msg.content !== msg.file_name && (
+                    <p>{msg.content.split(/(@\S+)/g).map((part, i) =>
+                      part.startsWith("@")
+                        ? <span key={i} className="font-bold px-1 rounded" style={{ color: accent, background: accent + "20" }}>{part}</span>
+                        : <React.Fragment key={i}>{part}</React.Fragment>
+                    )}</p>
                   )}
-                </p>
+                </div>
               )}
             </div>
           </div>
@@ -243,16 +288,38 @@ export default function ServerChat({ server, channel, theme, user }) {
       </div>
 
       {/* Input */}
-      <div className="shrink-0 px-4 pb-4 pt-2">
+      <div className="shrink-0 px-4 pb-4 pt-2 relative">
+        {showEmojis && (
+          <div className="absolute bottom-full left-4 mb-2 p-2 rounded-xl grid grid-cols-8 gap-1 z-50"
+            style={{ background: "hsl(var(--card))", border: "1px solid rgba(255,255,255,0.1)" }}>
+            {EMOJI_LIST.map((emoji) => (
+              <button key={emoji} onClick={() => { setInput(prev => prev + emoji); setShowEmojis(false); }}
+                className="text-lg hover:scale-125 transition p-1">{emoji}</button>
+            ))}
+          </div>
+        )}
         <div className="flex items-center gap-2 px-4 rounded-2xl border"
           style={{ borderColor: theme?.border || "hsl(var(--border))", background: "rgba(255,255,255,0.05)" }}>
           <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageUpload} className="hidden" />
+          <input type="file" ref={docFileInputRef} onChange={handleFileUpload} className="hidden" />
           <button onClick={() => fileInputRef.current?.click()} disabled={uploadingImage || !canSendMessages}
             className="w-8 h-8 rounded-xl flex items-center justify-center transition text-white/40 hover:text-white disabled:opacity-30"
             title="Envoyer une image">
             {uploadingImage ? (
               <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : <Image className="w-4 h-4" />}
+          </button>
+          <button onClick={() => docFileInputRef.current?.click()} disabled={uploadingFile || !canSendMessages}
+            className="w-8 h-8 rounded-xl flex items-center justify-center transition text-white/40 hover:text-white disabled:opacity-30"
+            title="Envoyer un fichier">
+            {uploadingFile ? (
+              <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : <Paperclip className="w-4 h-4" />}
+          </button>
+          <button onClick={() => setShowEmojis(!showEmojis)} disabled={!canSendMessages}
+            className="w-8 h-8 rounded-xl flex items-center justify-center transition text-white/40 hover:text-white disabled:opacity-30"
+            title="Emojis">
+            <Smile className="w-4 h-4" />
           </button>
           <input
             value={input}
