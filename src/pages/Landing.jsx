@@ -50,7 +50,7 @@ export default function Landing() {
 
       <div className="relative z-10 min-h-screen flex flex-col px-4 sm:px-6 lg:px-10 py-4">
         {/* Header */}
-        <header className="sticky top-0 z-50 flex items-center justify-between sm:mb-8 lg:mb-12 sm:px-0 sm:py-0 -mx-4 sm:-mx-0 px-4 py-4" style={{ background: "rgba(10,5,15,0.9)", backdropFilter: "blur(12px)" }}>
+        <header className="sticky top-0 z-50 flex items-center justify-between sm:mb-8 lg:mb-12 sm:px-0 sm:py-0 -mx-4 sm:-mx-0 px-4" style={{ background: "rgba(10,5,15,0.9)", backdropFilter: "blur(12px)" }}>
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white">MATRIX</h1>
             <div className="flex items-center gap-2 mt-1">
