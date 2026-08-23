@@ -102,7 +102,7 @@ export default function TranslationButton() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 rounded-full transition tap-sm pt-2 pr-3 pb-2 pl-3 ml-32 mt-10 mr-16 mb-16"
+        className="flex items-center gap-1.5 rounded-full transition tap-sm pt-2 pr-3 pb-2 pl-3 ml-32 mt-10 mb-16"
         style={{
           border: "1.5px solid rgba(168,85,247,0.4)",
           background: "rgba(168,85,247,0.05)"
