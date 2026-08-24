@@ -167,7 +167,7 @@ export default function Casino() {
           className="px-3 py-4 pb-12">
               <div className="max-w-2xl mx-auto rounded-3xl overflow-hidden"
             style={{ background: "linear-gradient(160deg, rgba(26,10,46,0.6), rgba(42,10,58,0.4), rgba(26,10,46,0.6))", border: "1px solid rgba(197,160,89,0.15)", boxShadow: "0 0 40px rgba(0,0,0,0.5)" }}>
-                <div className="p-4 sm:p-6">
+                <div className="p-4 sm:p-6 my-48 mx-1">
                   <SlotsGame
                   balance={casinoCoins}
                   setBalance={setCasinoCoins}
