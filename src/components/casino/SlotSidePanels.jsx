@@ -48,22 +48,22 @@ function SpecialOffer() {
     return () => clearInterval(t);
   }, []);
 
-  return (
-    <div
-      className="p-1.5 rounded-xl text-center hidden"
-      style={{
-        background: "linear-gradient(135deg, rgba(255,107,53,0.15), rgba(204,68,0,0.1))",
-        border: "1px solid rgba(255,107,53,0.3)"
-      }}>
-      
-      <div className="flex items-center justify-center gap-1 mb-0.5">
-        <Clock className="w-2.5 h-2.5 text-orange-400" />
-        <p className="text-[7px] font-black text-white">SPECIAL OFFER</p>
-      </div>
-      <p className="text-[9px] font-mono font-bold text-orange-400">
-        {time.h}h {time.m.toString().padStart(2, "0")}m
-      </p>
-    </div>);
+  return null;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 }
 
@@ -71,12 +71,12 @@ export default function SlotSidePanels({ side, theme }) {
   if (side === "left") {
     return (
       <div className="hidden lg:flex flex-col gap-2 w-20 shrink-0">
-        <button
-          className="w-10 h-10 rounded-full flex items-center justify-center mx-auto hidden"
-          style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${theme.sideBorderColor}` }}>
-          
-          <ChevronsLeft className="w-5 h-5 text-white/60" />
-        </button>
+        
+
+
+
+
+        
         {LEFT_PLAYERS.map((p) =>
         <PlayerAvatar key={p.name} player={p} theme={theme} />
         )}

@@ -34,18 +34,18 @@ export default function SlotControlBar({
       
       {/* Social icons — hidden on mobile */}
       <div className="hidden sm:flex items-center gap-1.5">
-        <button
-          className="w-8 h-8 rounded-full flex items-center justify-center text-sm hidden"
-          style={{ background: "rgba(255,255,255,0.05)" }}>
-          
-          😊
-        </button>
-        <button
-          className="w-8 h-8 rounded-full flex items-center justify-center text-sm hidden"
-          style={{ background: "rgba(255,255,255,0.05)" }}>
-          
-          💬
-        </button>
+        
+
+
+
+
+        
+        
+
+
+
+
+        
       </div>
 
       {/* Bet controls: − MISE + */}
