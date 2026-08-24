@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import CasinoToken from "./CasinoToken";
 import { formatBet } from "./slotThemes";
 
 const BETS = [100, 500, 1000, 5000, 10000];
@@ -58,7 +59,10 @@ export default function SlotControlBar({
         </button>
         <div className="text-center min-w-[50px] px-1">
           <p className="text-[8px] font-bold text-white/50">MISE</p>
-          <p className="text-sm font-mono font-black text-white">{formatBet(bet)}</p>
+          <div className="flex items-center justify-center gap-0.5">
+            <CasinoToken size={12} />
+            <p className="text-sm font-mono font-black text-white">{formatBet(bet)}</p>
+          </div>
         </div>
         <button
           onClick={increaseBet}
@@ -72,12 +76,12 @@ export default function SlotControlBar({
       {/* Win display: VICTOIRE */}
       <div className="text-center min-w-[70px] px-2">
         <p className="text-[8px] font-bold text-white/50">VICTOIRE</p>
-        <p
-          className="text-sm font-mono font-black"
-          style={{ color: lastWin > 0 ? "#4caf50" : "rgba(255,255,255,0.3)" }}
-        >
-          {lastWin.toLocaleString()}
-        </p>
+        <div className="flex items-center justify-center gap-0.5">
+          <CasinoToken size={12} />
+          <p className="text-sm font-mono font-black" style={{ color: lastWin > 0 ? "#4caf50" : "rgba(255,255,255,0.3)" }}>
+            {lastWin.toLocaleString()}
+          </p>
+        </div>
       </div>
 
       {/* Max bet + Spin */}

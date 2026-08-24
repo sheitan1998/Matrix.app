@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import WinEffect from "./WinEffect";
 import CasinoWinEffect from "./CasinoWinEffect";
+import CasinoToken from "./CasinoToken";
 import { casinoPlaceBet } from "@/hooks/useCasinoJackpot";
 import { SLOT_THEMES, DEFAULT_THEME, pickRandom, formatBet } from "./slotThemes";
 import SlotReelGrid from "./SlotReelGrid";
@@ -88,7 +89,7 @@ function JackpotTiers({ theme, jackpot }) {
 }
 
 // ─── Main component ───
-export default function SlotsGame({ balance, setBalance, accentColor, addTransaction, jackpot = 0, themeId }) {
+export default function SlotsGame({ balance, setBalance, accentColor, jackpot = 0, themeId, onWin }) {
   const theme = SLOT_THEMES[themeId] || SLOT_THEMES[DEFAULT_THEME];
   const SYMBOLS = theme.symbols;
 
@@ -182,18 +183,10 @@ export default function SlotsGame({ balance, setBalance, accentColor, addTransac
       const netGain = winAmount - bet;
       setResult({ gain: netGain, mult, win: winAmount > 0, jackpot: jpHit });
 
-      if (addTransaction) {
-        addTransaction(
-          netGain >= 0 ? "casino_win" : "casino_loss",
-          netGain >= 0 ? netGain : -bet,
-          netGain >= 0 ? `Slots: +${netGain}` : `Slots: -${bet}`,
-          "casino"
-        );
-      }
-
       if (winAmount > 0) {
         setWinData({ amount: winAmount, multiplier: mult, isJackpot: jpHit });
         setShowWin(true);
+        if (onWin) onWin({ amount: winAmount, multiplier: mult, isJackpot: jpHit });
       }
 
       if (autoSpinningRef.current && serverResult.newBalance - bet >= 0) {

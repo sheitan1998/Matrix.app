@@ -1,64 +1,23 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-
-import { ArrowLeft, Trophy, Home } from "lucide-react";
 import { Link } from "react-router-dom";
+import { ArrowLeft, Home, Trophy, Sparkles } from "lucide-react";
 import { useCasinoJackpot, casinoGetBalance } from "@/hooks/useCasinoJackpot";
-
-import RouletteGame from "@/components/casino/RouletteGame";
 import SlotsGame from "@/components/casino/SlotsGame";
-import BingoGame from "@/components/casino/BingoGame";
-import BlackjackGame from "@/components/casino/BlackjackGame";
-import CasinoLeaderboard from "@/components/casino/CasinoLeaderboard";
-import LottoGame from "@/components/casino/LottoGame";
-import PokerGame from "@/components/casino/PokerGame";
-import BaccaratGame from "@/components/casino/BaccaratGame";
-import CasinoShop from "@/pages/casino/CasinoShop";
-import CasinoProfile from "@/pages/casino/CasinoProfile";
-import VIPClubPage from "@/pages/casino/VIPClubPage";
-
-import CasinoBackground from "@/components/casino/CasinoBackground";
-import CasinoSidebar from "@/components/casino/CasinoSidebar";
-import CasinoTopbar from "@/components/casino/CasinoTopbar";
-import CasinoLobby from "@/components/casino/CasinoLobby";
-import SlotWorldsGrid from "@/components/casino/SlotWorldsGrid";
-import SlotMachineSelect from "@/components/casino/SlotMachineSelect";
-import JackpotBanner from "@/components/casino/JackpotBanner";
-import CasinoCategoryFilters from "@/components/casino/CasinoCategoryFilters";
-import CasinoGameCard from "@/components/casino/CasinoGameCard";
-import CasinoLiveSection from "@/components/casino/CasinoLiveSection";
-import CasinoTournaments from "@/components/casino/CasinoTournaments";
-import CasinoRecentWinners from "@/components/casino/CasinoRecentWinners";
-import CasinoLeaderboards from "@/components/casino/CasinoLeaderboards";
-import CasinoVIPClub from "@/components/casino/CasinoVIPClub";
-import CasinoPromotions from "@/components/casino/CasinoPromotions";
-import CasinoQuests from "@/components/casino/CasinoQuests";
-import CasinoAchievements from "@/components/casino/CasinoAchievements";
-import CasinoSettings from "@/components/casino/CasinoSettings";
-import CasinoSecurityBar from "@/components/casino/CasinoSecurityBar";
-import CasinoNavPanel from "@/components/casino/CasinoNavPanel";
-import { GAMES, VIP_TIERS } from "@/components/casino/casinoData";
-
-const GAME_META = {
-  slots:       { label: "DIAMOND SLOTS", color: "#8866ff", emoji: "💎" },
-  blackjack:   { label: "BLACKJACK", color: "#ffd700", emoji: "🃏" },
-  roulette:    { label: "ROULETTE", color: "#ff2020", emoji: "🎡" },
-  bingo:       { label: "BINGO", color: "#ffaa00", emoji: "🎱" },
-  lotto:       { label: "LOTO", color: "#ffd700", emoji: "🎰" },
-  poker:       { label: "POKER", color: "#00ff88", emoji: "♠️" },
-  baccarat:    { label: "BACCARAT PRO", color: "#a855f7", emoji: "🎴" },
-  leaderboard: { label: "TOP LEAGUE", color: "#ffd700", emoji: "🏆" },
-};
+import CasinoToken from "@/components/casino/CasinoToken";
+import CasinoWinEffect from "@/components/casino/CasinoWinEffect";
+import WinEffect from "@/components/casino/WinEffect";
+import { formatBet } from "@/components/casino/slotThemes";
 
 const CASINO_BALANCE_KEY = "matrix_casino_coins";
+
 function useCasinoCoins() {
   const [coins, setCoinsState] = useState(() => {
     const s = localStorage.getItem(CASINO_BALANCE_KEY);
     return s ? parseInt(s, 10) : 5000;
   });
 
-  // Sync from server on mount
   useEffect(() => {
     casinoGetBalance()
       .then(serverBalance => {
@@ -79,166 +38,223 @@ function useCasinoCoins() {
 }
 
 export default function Casino() {
-  const [screen, setScreen] = useState("home");
-  const [showShop, setShowShop] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showVipClub, setShowVipClub] = useState(false);
-  const [navPanel, setNavPanel] = useState(null); // "favorites" | "history" | null
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [activeSidebar, setActiveSidebar] = useState("home");
-  const [category, setCategory] = useState("all");
-  const [slotView, setSlotView] = useState(null); // null | "worlds" | "machines"
-  const [selectedWorld, setSelectedWorld] = useState(null);
-  const [slotThemeId, setSlotThemeId] = useState(null);
+  const [screen, setScreen] = useState("home"); // "home" | "slots"
   const [casinoCoins, setCasinoCoins] = useCasinoCoins();
   const { jackpot } = useCasinoJackpot();
-  const [settings, setSettings] = useState({ bgVariant: "space", accent: "#a855f7", glow: true, particles: true, animations: true });
+  const [showWin, setShowWin] = useState(false);
+  const [winData, setWinData] = useState(null);
 
-  const vipTier = [...VIP_TIERS].reverse().find(t => casinoCoins >= t.min) || VIP_TIERS[0];
-
-  // Profile screen
-  if (showProfile) return <CasinoProfile onBack={() => setShowProfile(false)} />;
-
-  // VIP Club screen
-  if (showVipClub) return <VIPClubPage coins={casinoCoins} onBack={() => setShowVipClub(false)} />;
-
-  // Slot worlds grid — choosing which slot world to play
-  if (slotView === "worlds") {
-    return (
-      <SlotWorldsGrid
-        balance={casinoCoins}
-        onBack={() => setSlotView(null)}
-        onSelectWorld={(world) => { setSelectedWorld(world); setSlotView("machines"); }}
-      />
-    );
-  }
-
-  // Slot machine select — choosing which tier machine to play
-  if (slotView === "machines" && selectedWorld) {
-    return (
-      <SlotMachineSelect
-        world={selectedWorld}
-        balance={casinoCoins}
-        onBack={() => setSlotView("worlds")}
-        onSelectMachine={() => { setSlotView(null); setSelectedWorld(null); setSlotThemeId(selectedWorld.themeId || null); setScreen("slots"); }}
-      />
-    );
-  }
-
-  // Game screen — premium wrapper around existing game components
-  const meta = GAME_META[screen];
-  if (meta) {
-    return (
-      <div className="min-h-screen relative">
-        <CasinoBackground variant={settings.bgVariant} />
-        <div className="relative z-10">
-          {/* Game header */}
-          <div className="sticky top-0 z-40 flex items-center gap-3 px-4 py-3"
-            style={{ background: "rgba(8,8,12,0.85)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-            <Link to="/" className="flex items-center gap-2 text-white/60 hover:text-white transition tap-sm">
-              <ArrowLeft className="w-4 h-4" />
-              <span className="text-xs font-bold hidden sm:inline">Retour</span>
-            </Link>
-            <button onClick={() => setScreen("home")} className="flex items-center gap-2 text-white/60 hover:text-white transition ml-1 px-2 py-1 rounded-lg hover:bg-white/5 tap-sm">
-              <Home className="w-4 h-4" />
-              <span className="text-xs font-bold hidden sm:inline">Accueil</span>
-            </button>
-            <div className="flex items-center gap-2">
-              <span className="text-lg" style={{ filter: `drop-shadow(0 0 6px ${meta.color})` }}>{meta.emoji}</span>
-              <span className="font-black text-sm tracking-wider" style={{ color: meta.color, textShadow: `0 0 10px ${meta.color}80` }}>
-                {meta.label}
-              </span>
-            </div>
-            <div className="ml-auto flex items-center gap-2">
-              <div className="flex items-center gap-1.5 px-3 h-8 rounded-lg" style={{ background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.15)" }}>
-                <span className="text-xs font-mono font-bold" style={{ color: "#fbbf24" }}>{casinoCoins.toLocaleString()}</span>
-              </div>
-              <button onClick={() => setShowShop(true)} className="h-8 px-3 rounded-lg text-xs font-bold text-white transition"
-                style={{ background: "linear-gradient(135deg, #8b5cf6, #6d28d9)" }}>
-                Boutique
-              </button>
-            </div>
-          </div>
-
-          {/* Responsible gaming */}
-          <div className="px-4 py-1.5 text-center text-[10px] font-semibold"
-            style={{ background: "rgba(251,191,36,0.04)", color: "rgba(251,191,36,0.4)", borderBottom: "1px solid rgba(251,191,36,0.08)" }}>
-            ⚠️ Jeu fictif — Aucun argent réel — 18+ uniquement
-          </div>
-
-          <div className="px-3 py-4 pb-12">
-            <AnimatePresence mode="wait">
-              <motion.div key={screen}
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3 }}
-                className="rounded-3xl overflow-hidden"
-                style={{ background: "linear-gradient(160deg, rgba(14,0,30,0.6), rgba(18,0,40,0.4), rgba(14,0,30,0.6))", border: `1px solid ${meta.color}20`, boxShadow: `0 0 40px rgba(0,0,0,0.5)` }}>
-                <div className="p-4 sm:p-6">
-                  {screen === "slots" && <SlotsGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} themeId={slotThemeId} />}
-                  {screen === "blackjack" && <BlackjackGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} />}
-                  {screen === "roulette" && <RouletteGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} />}
-                  {screen === "bingo" && <BingoGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} />}
-                  {screen === "lotto" && <LottoGame balance={casinoCoins} setBalance={setCasinoCoins} />}
-                  {screen === "poker" && <PokerGame balance={casinoCoins} setBalance={setCasinoCoins} />}
-                  {screen === "baccarat" && <BaccaratGame balance={casinoCoins} setBalance={setCasinoCoins} accentColor={meta.color} jackpot={jackpot} />}
-                  {screen === "leaderboard" && <CasinoLeaderboard accentColor={meta.color} currentUserBalance={casinoCoins} />}
-                </div>
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </div>
-
-        {showShop && <CasinoShop balance={casinoCoins} setBalance={setCasinoCoins} onClose={() => setShowShop(false)} />}
-      </div>
-    );
-  }
-
-  // === HOME (premium casino lobby) ===
-  const filteredGames = GAMES.filter(g => {
-    if (category === "all") return true;
-    if (category === "new") return g.badge === "new";
-    if (category === "hot") return g.isHot;
-    if (category === "jackpot") return g.badge === "jackpot";
-    if (category === "live") return g.badge === "live";
-    if (category === "cards") return g.category === "cards";
-    if (category === "slots") return g.category === "slots";
-    if (category === "roulette") return g.category === "roulette";
-    if (category === "poker") return g.category === "poker";
-    if (category === "blackjack") return g.key === "blackjack";
-    return true;
-  });
-
-  const handleSidebarSelect = (target, gameKey) => {
-    setActiveSidebar(target);
-    if (target === "home") { setScreen("home"); return; }
-    if (target === "favorites") { setNavPanel("favorites"); return; }
-    if (target === "history") { setNavPanel("history"); return; }
-    if (target === "vip") { setShowVipClub(true); return; }
-    if (gameKey && GAME_META[gameKey]) { setScreen(gameKey); }
-    else if (gameKey && !GAME_META[gameKey]) {
-      if (gameKey === "crash" || gameKey === "mines" || gameKey === "dice") setScreen("slots");
+  const handleWin = (data) => {
+    if (data && data.amount > 0) {
+      setWinData(data);
+      setShowWin(true);
     }
   };
 
   return (
-    <div className="min-h-screen relative">
-      <CasinoLobby
-        balance={casinoCoins}
-        jackpot={jackpot}
-        onPlayGame={(key) => {
-          if (key === "slots") { setSlotView("worlds"); return; }
-          if (GAME_META[key]) setScreen(key);
-        }}
-        onShop={() => setShowShop(true)}
-        onProfile={() => setShowProfile(true)}
-        onVipClub={() => setShowVipClub(true)}
-      />
+    <div className="min-h-screen relative overflow-hidden select-none"
+      style={{ background: "linear-gradient(160deg, #0a050f 0%, #1a0a2e 40%, #2a0a3a 70%, #0a050f 100%)" }}>
 
-      {/* Modals */}
-      {showShop && <CasinoShop balance={casinoCoins} setBalance={setCasinoCoins} onClose={() => setShowShop(false)} />}
-      {navPanel && <CasinoNavPanel type={navPanel} onClose={() => setNavPanel(null)} onPlayGame={(key) => { if (GAME_META[key]) setScreen(key); }} />}
-      <CasinoSettings open={showSettings} onClose={() => setShowSettings(false)} settings={settings} onChange={setSettings} />
+      {/* Ambient glows matching token palette (gold + violet) */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at 20% 10%, rgba(139,107,43,0.12), transparent 50%)" }} />
+        <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at 80% 80%, rgba(91,44,110,0.2), transparent 50%)" }} />
+        <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(197,160,89,0.05), transparent 70%)" }} />
+      </div>
+
+      {/* Floating tokens background */}
+      <FloatingTokens />
+
+      {/* Top header bar */}
+      <header className="relative z-30 flex items-center justify-between px-4 py-3"
+        style={{ background: "rgba(10,5,15,0.7)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(197,160,89,0.15)" }}>
+        <div className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-2 text-white/60 hover:text-white transition tap-sm">
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-xs font-bold hidden sm:inline">Retour</span>
+          </Link>
+          {screen !== "home" && (
+            <button onClick={() => setScreen("home")} className="flex items-center gap-2 text-white/60 hover:text-white transition ml-1 px-2 py-1 rounded-lg hover:bg-white/5 tap-sm">
+              <Home className="w-4 h-4" />
+              <span className="text-xs font-bold hidden sm:inline">Accueil</span>
+            </button>
+          )}
+          <div className="flex items-center gap-2 ml-1">
+            <span className="text-xl font-black tracking-wider" style={{
+              background: "linear-gradient(135deg, #C5A059, #8B6B2B)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              textShadow: "0 0 20px rgba(197,160,89,0.3)",
+            }}>NEXUS CASINO</span>
+          </div>
+        </div>
+
+        {/* Balance display with M token */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 px-3 h-9 rounded-xl"
+            style={{ background: "rgba(197,160,89,0.08)", border: "1px solid rgba(197,160,89,0.2)" }}>
+            <CasinoToken size={22} />
+            <span className="text-sm font-mono font-black" style={{ color: "#C5A059" }}>
+              {formatBet(casinoCoins)}
+            </span>
+          </div>
+        </div>
+      </header>
+
+      {/* Responsible gaming notice */}
+      <div className="relative z-20 px-4 py-1.5 text-center text-[10px] font-semibold"
+        style={{ background: "rgba(197,160,89,0.04)", color: "rgba(197,160,89,0.4)", borderBottom: "1px solid rgba(197,160,89,0.08)" }}>
+        ⚠️ Jeu fictif — Jetons Matrix uniquement — Aucun lien avec le solde Trix — 18+
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10">
+        <AnimatePresence mode="wait">
+          {screen === "home" ? (
+            <motion.div key="home"
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}>
+              <CasinoHome jackpot={jackpot} balance={casinoCoins} onPlay={() => setScreen("slots")} />
+            </motion.div>
+          ) : (
+            <motion.div key="slots"
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="px-3 py-4 pb-12">
+              <div className="max-w-2xl mx-auto rounded-3xl overflow-hidden"
+                style={{ background: "linear-gradient(160deg, rgba(26,10,46,0.6), rgba(42,10,58,0.4), rgba(26,10,46,0.6))", border: "1px solid rgba(197,160,89,0.15)", boxShadow: "0 0 40px rgba(0,0,0,0.5)" }}>
+                <div className="p-4 sm:p-6">
+                  <SlotsGame
+                    balance={casinoCoins}
+                    setBalance={setCasinoCoins}
+                    jackpot={jackpot}
+                    onWin={handleWin}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Win effects */}
+      <CasinoWinEffect show={showWin} amount={winData?.amount} multiplier={winData?.multiplier} isJackpot={winData?.isJackpot} onDone={() => setShowWin(false)} />
+      <WinEffect show={showWin} amount={winData?.amount} multiplier={winData?.multiplier} isJackpot={winData?.isJackpot} onDone={() => setShowWin(false)} />
+    </div>
+  );
+}
+
+// ─── Casino Home (lobby) ───
+function CasinoHome({ jackpot, balance, onPlay }) {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-100px)] px-4 py-8">
+      {/* Jackpot Banner */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+        className="mb-8 text-center">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <Trophy className="w-5 h-5" style={{ color: "#C5A059" }} />
+          <span className="text-xs font-black tracking-widest" style={{ color: "#C5A059" }}>JACKPOT GLOBAL</span>
+        </div>
+        <div className="flex items-center justify-center gap-3">
+          <CasinoToken size={48} />
+          <span className="text-4xl sm:text-5xl font-black font-mono" style={{
+            background: "linear-gradient(135deg, #C5A059, #8E44AD)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+          }}>
+            {formatBet(jackpot)}
+          </span>
+        </div>
+        <p className="text-[10px] text-white/30 mt-2">Progression en temps réel</p>
+      </motion.div>
+
+      {/* Featured Slot Card */}
+      <motion.button
+        initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        whileHover={{ scale: 1.03, y: -4 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={onPlay}
+        className="relative overflow-hidden rounded-3xl text-left w-full max-w-md group"
+        style={{
+          background: "linear-gradient(160deg, #1a0a2e 0%, #2a0a3a 50%, #1a0a2e 100%)",
+          border: "2px solid rgba(197,160,89,0.3)",
+          boxShadow: "0 0 30px rgba(197,160,89,0.15), 0 8px 30px rgba(0,0,0,0.5)",
+        }}>
+
+        {/* Card glow overlay */}
+        <div className="absolute inset-0 pointer-events-none"
+          style={{ background: "linear-gradient(135deg, rgba(197,160,89,0.08) 0%, transparent 50%, rgba(139,68,173,0.1) 100%)" }} />
+
+        {/* Token decoration */}
+        <div className="absolute top-4 right-4 opacity-20">
+          <CasinoToken size={80} />
+        </div>
+
+        <div className="relative z-10 p-6 sm:p-8">
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles className="w-4 h-4" style={{ color: "#C5A059" }} />
+            <span className="text-[10px] font-black tracking-widest" style={{ color: "#C5A059" }}>JEU PHARE</span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-black text-white mb-2">MATRIX SLOTS</h2>
+          <p className="text-sm text-white/50 mb-6">5 rouleaux · 3 lignes · Multiplicateur jusqu'à ×50</p>
+
+          <div className="flex items-center gap-4 mb-6">
+            <div>
+              <p className="text-[9px] font-bold text-white/40 uppercase">Votre solde</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <CasinoToken size={18} />
+                <span className="text-lg font-mono font-black" style={{ color: "#C5A059" }}>{formatBet(balance)}</span>
+              </div>
+            </div>
+            <div className="w-px h-10" style={{ background: "rgba(255,255,255,0.1)" }} />
+            <div>
+              <p className="text-[9px] font-bold text-white/40 uppercase">RTP</p>
+              <p className="text-lg font-mono font-black text-white mt-0.5">96.5%</p>
+            </div>
+          </div>
+
+          {/* Play button */}
+          <div className="flex items-center justify-center py-3 rounded-2xl font-black text-white text-base"
+            style={{ background: "linear-gradient(135deg, #C5A059, #8B6B2B)", boxShadow: "0 0 20px rgba(197,160,89,0.3)" }}>
+            ▶ JOUER MAINTENANT
+          </div>
+        </div>
+      </motion.button>
+
+      {/* Info */}
+      <motion.p
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        className="text-[10px] text-white/30 mt-8 text-center max-w-sm">
+        Les jetons Matrix sont propres au casino Nexus et n'interfèrent pas avec votre solde Trix.
+      </motion.p>
+    </div>
+  );
+}
+
+// ─── Floating token background decoration ───
+function FloatingTokens() {
+  const tokens = Array.from({ length: 6 }, (_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    delay: Math.random() * 6,
+    duration: 8 + Math.random() * 6,
+    size: 30 + Math.floor(Math.random() * 30),
+  }));
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {tokens.map((t) => (
+        <motion.div key={t.id}
+          className="absolute"
+          style={{ left: `${t.x}%`, bottom: "-60px", opacity: 0.06 }}
+          animate={{ y: [0, -700], rotate: [0, 360] }}
+          transition={{ duration: t.duration, delay: t.delay, repeat: Infinity, ease: "easeOut" }}>
+          <CasinoToken size={t.size} />
+        </motion.div>
+      ))}
     </div>
   );
 }

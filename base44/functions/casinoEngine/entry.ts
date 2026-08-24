@@ -195,18 +195,6 @@ export default async function(req: Request): Promise<Response> {
           });
         }
 
-        // Record transaction (async, non-blocking)
-        const netGain = payout - betAmount;
-        waitUntil(base44.asServiceRole.entities.WalletTransaction.create({
-          user_email: user.email,
-          type: isJackpotWin ? 'casino_win' : (isWin ? 'casino_win' : 'casino_loss'),
-          amount: netGain,
-          description: isJackpotWin
-            ? `🎰 JACKPOT ${game}! +${payout.toLocaleString()}`
-            : `${game}: ${netGain >= 0 ? '+' + netGain : netGain}`,
-          universe: 'casino',
-        }).catch(() => {}));
-
         return Response.json({
           win: isWin || isJackpotWin,
           jackpot: isJackpotWin,
