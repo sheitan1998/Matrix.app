@@ -9,6 +9,8 @@ import SlotReelGrid from "./SlotReelGrid";
 import SlotControlBar from "./SlotControlBar";
 import SlotSidePanels from "./SlotSidePanels";
 
+const SLOT_BG_IMAGE = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/1cee34d68_Gemini_Generated_Image_1x3aie1x3aie1x3a.jpg";
+
 // ─── Grid generation helpers ───
 function generateRandomGrid(symbols) {
   const grid = [];
@@ -184,7 +186,14 @@ export default function SlotsGame({ balance, setBalance, accentColor, themeId, o
   };
 
   return (
-    <div className="space-y-2 select-none">
+    <div className="relative space-y-2 select-none rounded-2xl overflow-hidden">
+      {/* Background image */}
+      <div className="absolute inset-0 pointer-events-none">
+        <img src={SLOT_BG_IMAGE} alt="" className="w-full h-full object-cover" style={{ opacity: 0.2 }} />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(10,5,15,0.6), rgba(10,5,15,0.8))" }} />
+      </div>
+
+      <div className="relative z-10 space-y-2">
       <CasinoWinEffect
         show={showWin}
         amount={winData?.amount}
@@ -201,7 +210,7 @@ export default function SlotsGame({ balance, setBalance, accentColor, themeId, o
       />
 
       {/* Main game area: side panels + reel grid */}
-      <div className="flex items-stretch gap-2 justify-center">
+      <div className="flex items-center gap-2 justify-center">
         <SlotSidePanels side="left" theme={theme} />
         <SlotReelGrid
           spinning={spinning}
@@ -226,6 +235,7 @@ export default function SlotsGame({ balance, setBalance, accentColor, themeId, o
         onBetChange={setBet}
         theme={theme}
       />
+      </div>
     </div>
   );
 }
