@@ -15,7 +15,7 @@ export default function SlotControlBar({
   onSpin,
   onToggleAuto,
   onBetChange,
-  theme,
+  theme
 }) {
   const decreaseBet = () => {
     const idx = BETS.indexOf(bet);
@@ -30,20 +30,20 @@ export default function SlotControlBar({
   return (
     <div
       className="flex items-center gap-2 sm:gap-3 p-2.5 rounded-2xl flex-wrap"
-      style={{ background: theme.controlBg, border: `1px solid ${theme.controlBorderColor}` }}
-    >
+      style={{ background: theme.controlBg, border: `1px solid ${theme.controlBorderColor}` }}>
+      
       {/* Social icons — hidden on mobile */}
       <div className="hidden sm:flex items-center gap-1.5">
         <button
-          className="w-8 h-8 rounded-full flex items-center justify-center text-sm"
-          style={{ background: "rgba(255,255,255,0.05)" }}
-        >
+          className="w-8 h-8 rounded-full flex items-center justify-center text-sm hidden"
+          style={{ background: "rgba(255,255,255,0.05)" }}>
+          
           😊
         </button>
         <button
-          className="w-8 h-8 rounded-full flex items-center justify-center text-sm"
-          style={{ background: "rgba(255,255,255,0.05)" }}
-        >
+          className="w-8 h-8 rounded-full flex items-center justify-center text-sm hidden"
+          style={{ background: "rgba(255,255,255,0.05)" }}>
+          
           💬
         </button>
       </div>
@@ -53,8 +53,8 @@ export default function SlotControlBar({
         <button
           onClick={decreaseBet}
           className="w-8 h-8 rounded-full flex items-center justify-center text-white font-black text-lg"
-          style={{ background: theme.minusBg }}
-        >
+          style={{ background: theme.minusBg }}>
+          
           −
         </button>
         <div className="text-center min-w-[50px] px-1">
@@ -67,8 +67,8 @@ export default function SlotControlBar({
         <button
           onClick={increaseBet}
           className="w-8 h-8 rounded-full flex items-center justify-center text-white font-black text-lg"
-          style={{ background: theme.plusBg }}
-        >
+          style={{ background: theme.plusBg }}>
+          
           +
         </button>
       </div>
@@ -89,8 +89,8 @@ export default function SlotControlBar({
         <button
           onClick={maxBet}
           className="px-3 h-10 rounded-xl text-xs font-black text-white"
-          style={{ background: "linear-gradient(135deg, #4a6c88, #243644)" }}
-        >
+          style={{ background: "linear-gradient(135deg, #4a6c88, #243644)" }}>
+          
           MAX MISE
         </button>
         <div className="flex flex-col items-center">
@@ -100,23 +100,23 @@ export default function SlotControlBar({
             whileTap={{ scale: 0.95 }}
             className="px-6 h-11 rounded-2xl font-black text-white text-base"
             style={{
-              background: spinning || autoSpinning
-                ? "linear-gradient(135deg, #333, #222)"
-                : theme.spinBg,
-              boxShadow: spinning || autoSpinning ? "none" : theme.spinShadow,
-            }}
-          >
+              background: spinning || autoSpinning ?
+              "linear-gradient(135deg, #333, #222)" :
+              theme.spinBg,
+              boxShadow: spinning || autoSpinning ? "none" : theme.spinShadow
+            }}>
+            
             {spinning ? "..." : "SPIN"}
           </motion.button>
           <button
             onClick={onToggleAuto}
             className="text-[8px] font-bold mt-0.5"
-            style={{ color: autoSpinning ? "#ff4444" : "rgba(255,255,255,0.4)" }}
-          >
+            style={{ color: autoSpinning ? "#ff4444" : "rgba(255,255,255,0.4)" }}>
+            
             {autoSpinning ? `STOP ×${autoCount}` : "MAINTENIR AUTOSPIN"}
           </button>
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
