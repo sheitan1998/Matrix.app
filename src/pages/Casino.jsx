@@ -134,10 +134,10 @@ export default function Casino() {
       </header>
 
       {/* Responsible gaming notice */}
-      <div className="relative z-20 px-4 py-1.5 text-center text-[10px] font-semibold hidden"
-      style={{ background: "rgba(197,160,89,0.04)", color: "rgba(197,160,89,0.4)", borderBottom: "1px solid rgba(197,160,89,0.08)" }}>
-        ⚠️ Jeu fictif — Jetons M uniquement — Aucun lien avec le solde Trix — 18+
-      </div>
+      
+
+
+      
 
       {/* Content */}
       <div className="relative z-10">
