@@ -74,5 +74,10 @@ export async function casinoGetBalance() {
   return res.data?.balance ?? 5000;
 }
 
+export async function casinoGetProfile() {
+  const res = await base44.functions.invoke("casinoEngine", { action: "getProfile" });
+  return res.data;
+}
+
 // casinoAddCoins has been removed for security — casino coin purchases
 // must go through a verified payment flow, not a direct backend call.

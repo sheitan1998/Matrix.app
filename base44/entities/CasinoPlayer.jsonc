@@ -5,9 +5,25 @@
     "user_email": {
       "type": "string"
     },
+    "pseudo": {
+      "type": "string",
+      "description": "Pseudo du joueur pour le profil Nexus Game"
+    },
     "balance": {
       "type": "number",
       "default": 5000
+    },
+    "level": {
+      "type": "number",
+      "default": 1
+    },
+    "xp": {
+      "type": "number",
+      "default": 0
+    },
+    "total_xp": {
+      "type": "number",
+      "default": 0
     },
     "total_bets": {
       "type": "number",
@@ -25,9 +41,20 @@
       "type": "number",
       "default": 0
     },
+    "max_bet": {
+      "type": "number",
+      "default": 0
+    },
     "jackpot_wins": {
       "type": "number",
       "default": 0
+    },
+    "achievements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
     }
   },
   "required": [

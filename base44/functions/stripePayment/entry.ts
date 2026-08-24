@@ -40,6 +40,14 @@ const PREMIUM_PLANS: Record<string, { priceCents: number; label: string; trixBon
   monthly: { priceCents: 999, label: 'MATRIX Premium Mensuel', trixBonus: 500 },
 };
 
+const CASINO_COIN_PACKS: Record<string, { priceCents: number; coinTotal: number; label: string }> = {
+  pack_500:   { priceCents: 199,  coinTotal: 500,   label: 'Pack 500 Jetons M' },
+  pack_2000:  { priceCents: 499,  coinTotal: 2000,  label: 'Pack 2 000 Jetons M' },
+  pack_5000:  { priceCents: 999,  coinTotal: 5000,  label: 'Pack 5 000 Jetons M' },
+  pack_15000: { priceCents: 2499, coinTotal: 15000, label: 'Pack 15 000 Jetons M' },
+  pack_50000: { priceCents: 4999, coinTotal: 50000, label: 'Pack 50 000 Jetons M' },
+};
+
 // ---- Stripe webhook signature verification (Web Crypto API) ----
 async function verifyStripeSignature(payload: string, signatureHeader: string, secret: string): Promise<boolean> {
   const parts = signatureHeader.split(',');
@@ -258,6 +266,32 @@ export default async function(req: Request): Promise<Response> {
             await base44.asServiceRole.entities.TrixTransaction.create({
               user_email: userEmail, type: 'premium', amount: premiumPlan.trixBonus,
               description: `Abonnement MATRIX Premium - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
+            });
+          }
+
+          if (type === 'casino_coin_purchase') {
+            const coinAmount = parseInt(data.metadata?.coin_amount || '0', 10);
+            const packId = data.metadata?.pack_id;
+            const pack = packId ? CASINO_COIN_PACKS[packId] : null;
+            if (pack && pack.coinTotal === coinAmount && userEmail) {
+              const players = await base44.asServiceRole.entities.CasinoPlayer.filter({ user_email: userEmail });
+              if (players.length > 0) {
+                const p = players[0];
+                await base44.asServiceRole.entities.CasinoPlayer.update(p.id, {
+                  balance: (p.balance || 0) + coinAmount,
+                });
+              } else {
+                await base44.asServiceRole.entities.CasinoPlayer.create({
+                  user_email: userEmail,
+                  balance: 5000 + coinAmount,
+                });
+              }
+            }
+            await base44.asServiceRole.entities.TrixTransaction.create({
+              user_email: userEmail,
+              type: 'casino_coins',
+              amount: 0,
+              description: `Achat Jetons M - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
             });
           }
         }
@@ -573,6 +607,33 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ success: true, type });
       }
 
+      if (type === 'casino_coin_purchase') {
+        const coinAmount = parseInt(session.metadata?.coin_amount || '0', 10);
+        const packId = session.metadata?.pack_id;
+        const pack = packId ? CASINO_COIN_PACKS[packId] : null;
+        if (pack && pack.coinTotal === coinAmount && userEmail) {
+          const players = await base44.asServiceRole.entities.CasinoPlayer.filter({ user_email: userEmail });
+          if (players.length > 0) {
+            const p = players[0];
+            await base44.asServiceRole.entities.CasinoPlayer.update(p.id, {
+              balance: (p.balance || 0) + coinAmount,
+            });
+          } else {
+            await base44.asServiceRole.entities.CasinoPlayer.create({
+              user_email: userEmail,
+              balance: 5000 + coinAmount,
+            });
+          }
+        }
+        await base44.asServiceRole.entities.TrixTransaction.create({
+          user_email: userEmail,
+          type: 'casino_coins',
+          amount: 0,
+          description: `Achat Jetons M - ${(session.amount_total / 100).toFixed(2)}€ (session ${session.id})`,
+        });
+        return Response.json({ success: true, type, coinAmount });
+      }
+
       return Response.json({ error: 'Unknown session type' }, { status: 400 });
     }
 
@@ -885,6 +946,38 @@ export default async function(req: Request): Promise<Response> {
       params.append('metadata[user_email]', user.email);
       params.append('metadata[user_id]', user.id);
       params.append('metadata[plan_id]', planId || 'monthly');
+
+      const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${stripeKey}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params,
+      });
+      const session = await res.json();
+      if (session.error) return Response.json({ error: session.error.message }, { status: 400 });
+      return Response.json({ url: session.url, sessionId: session.id });
+    }
+
+    // ---- createCasinoCoinPurchase ----
+    if (action === 'createCasinoCoinPurchase') {
+      const { packId } = body;
+      const pack = packId ? CASINO_COIN_PACKS[packId] : null;
+      if (!pack) return Response.json({ error: 'Pack invalide' }, { status: 400 });
+
+      const params = new URLSearchParams();
+      params.append('payment_method_types[]', 'card');
+      params.append('mode', 'payment');
+      params.append('customer_email', user.email);
+      params.append('line_items[0][price_data][currency]', 'eur');
+      params.append('line_items[0][price_data][product_data][name]', pack.label);
+      params.append('line_items[0][price_data][unit_amount]', String(pack.priceCents));
+      params.append('line_items[0][quantity]', '1');
+      params.append('success_url', `${origin}/casino?payment=success&session_id={CHECKOUT_SESSION_ID}`);
+      params.append('cancel_url', `${origin}/casino?payment=cancelled`);
+      params.append('metadata[type]', 'casino_coin_purchase');
+      params.append('metadata[user_email]', user.email);
+      params.append('metadata[user_id]', user.id);
+      params.append('metadata[coin_amount]', String(pack.coinTotal));
+      params.append('metadata[pack_id]', packId);
 
       const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
         method: 'POST',

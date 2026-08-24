@@ -1,195 +1,137 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Trophy, Zap, TrendingUp, Crown, Star, Target, Flame, Upload, Home } from "lucide-react";
-import { useWallet } from "@/hooks/useWallet";
-import { base44 } from "@/api/base44Client";
+import { ArrowLeft, Home, Trophy, Zap, TrendingUp, Target, Flame, Star } from "lucide-react";
+import { casinoGetProfile } from "@/hooks/useCasinoJackpot";
+import CasinoToken from "@/components/casino/CasinoToken";
+import { formatBet } from "@/components/casino/slotThemes";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
-
-const BADGES = [
-  { id: "first_spin",   label: "Premier Spin",    emoji: "🎰", desc: "Joue pour la premiere fois",      threshold: 0,       },
-  { id: "lucky_1k",     label: "Lucky Starter",   emoji: "🍀", desc: "Atteindre 1 000 Trix",           threshold: 1000,    },
-  { id: "hot_streak",   label: "Hot Streak",       emoji: "🔥", desc: "Atteindre 10 000 Trix",          threshold: 10000,   },
-  { id: "silver_hand",  label: "Silver Hand",      emoji: "🥈", desc: "Rang SILVER atteint",            threshold: 10000,   },
-  { id: "golden_touch", label: "Golden Touch",     emoji: "✨", desc: "Atteindre 50 000 Trix",          threshold: 50000,   },
-  { id: "gold_rank",    label: "Gold Player",      emoji: "🥇", desc: "Rang GOLD atteint",              threshold: 50000,   },
-  { id: "high_roller",  label: "High Roller",      emoji: "💸", desc: "Atteindre 200 000 Trix",         threshold: 200000,  },
-  { id: "platinum_vip", label: "Platinum VIP",     emoji: "💠", desc: "Rang PLATINUM atteint",          threshold: 200000,  },
-  { id: "millionaire",  label: "Millionnaire",     emoji: "💎", desc: "Depasser 1 000 000 Trix",        threshold: 1000000, },
-  { id: "diamond_king", label: "Diamond King",     emoji: "👑", desc: "Rang DIAMOND atteint",           threshold: 1000000, },
-  { id: "mythical_god", label: "Mythical God",     emoji: "🌟", desc: "Rang MYTHICAL - Legende vivante",threshold: 10000000,},
-];
 
 const RANK_TIERS = [
-  { name: "BRONZE",   min: 0,       max: 9999,      color: "#cd7f32", glow: "#8b4513", emoji: "🥉" },
-  { name: "SILVER",   min: 10000,   max: 49999,     color: "#c0c0c0", glow: "#888888", emoji: "🥈" },
-  { name: "GOLD",     min: 50000,   max: 199999,    color: "#ffd700", glow: "#cc8800", emoji: "🥇" },
-  { name: "PLATINUM", min: 200000,  max: 999999,    color: "#44ddff", glow: "#0088cc", emoji: "💠" },
-  { name: "DIAMOND",  min: 1000000, max: 9999999,   color: "#88ddff", glow: "#4488ff", emoji: "💎" },
-  { name: "MYTHICAL", min: 10000000, max: Infinity, color: "#ff44ff", glow: "#cc00cc", emoji: "🌟" },
+  { name: "BRONZE",   minLevel: 1,  color: "#cd7f32", glow: "#8b4513", emoji: "🥉" },
+  { name: "SILVER",   minLevel: 5,  color: "#c0c0c0", glow: "#888888", emoji: "🥈" },
+  { name: "GOLD",     minLevel: 10, color: "#ffd700", glow: "#cc8800", emoji: "🥇" },
+  { name: "PLATINUM", minLevel: 20, color: "#44ddff", glow: "#0088cc", emoji: "💠" },
+  { name: "DIAMOND",  minLevel: 35, color: "#88ddff", glow: "#4488ff", emoji: "💎" },
+  { name: "MYTHICAL", minLevel: 50, color: "#ff44ff", glow: "#cc00cc", emoji: "🌟" },
 ];
 
-function getRank(balance) {
-  return RANK_TIERS.find(r => balance >= r.min && balance <= r.max) || RANK_TIERS[0];
-}
-
-const MOCK_HISTORY = [
-  { game: "Diamond Slots",  result: "win",  amount: 45000,  mult: "×50", date: "Il y a 2h" },
-  { game: "Blackjack",      result: "win",  amount: 12500,  mult: "×2.5",date: "Il y a 5h" },
-  { game: "Roulette",       result: "loss", amount: -1000,  mult: null,  date: "Il y a 6h" },
-  { game: "Diamond Slots",  result: "win",  amount: 8000,   mult: "×8",  date: "Hier" },
-  { game: "Bingo",          result: "loss", amount: -500,   mult: null,  date: "Hier" },
-  { game: "Blackjack",      result: "win",  amount: 3750,   mult: "×1.5",date: "Hier" },
-  { game: "Paris Sportifs", result: "win",  amount: 6200,   mult: "×3.1",date: "Il y a 2j" },
-  { game: "Roulette",       result: "loss", amount: -2000,  mult: null,  date: "Il y a 2j" },
-];
-
-const LEADERBOARD = [
-  { rank: 1, name: "Gabriel",   earnings: "82.49T", avatar: "👨‍💼", color: "#ffd700" },
-  { rank: 2, name: "Damien",    earnings: "67.72T", avatar: "😎",   color: "#c0c0c0" },
-  { rank: 3, name: "Tobias",    earnings: "65.73T", avatar: "🧔",   color: "#cd7f32" },
-  { rank: 4, name: "Adrian",    earnings: "65.65T", avatar: "👩‍🦱",color: "#9988ff" },
-  { rank: 5, name: "Vous",      earnings: "?",      avatar: "👤",   color: "#ff44ff", isYou: true },
-];
-
-function StatCard({ label, value, icon, color }) {
-  return (
-    <div className="rounded-2xl p-4 flex flex-col gap-1"
-      style={{ background: `linear-gradient(135deg, ${color}12, #0a001a)`, border: `1px solid ${color}30` }}>
-      <span className="text-xl">{icon}</span>
-      <p className="font-mono font-black text-lg text-white">{value}</p>
-      <p className="text-[10px] uppercase tracking-widest font-bold" style={{ color: `${color}aa` }}>{label}</p>
-    </div>
-  );
+function getRank(level) {
+  return [...RANK_TIERS].reverse().find(r => level >= r.minLevel) || RANK_TIERS[0];
 }
 
 export default function CasinoProfile({ onBack }) {
-  const { balance } = useWallet();
-  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [tab, setTab] = useState("badges");
-  const [lightPhase, setLightPhase] = useState(0);
-  const [casinoAvatar, setCasinoAvatar] = useState(user?.casino_avatar || "");
-  const fileRef = React.useRef(null);
-
-  const handleAvatarUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const img = new window.Image();
-    const objUrl = URL.createObjectURL(file);
-    img.onload = async () => {
-      URL.revokeObjectURL(objUrl);
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.min(img.width, 300);
-      canvas.height = Math.min(img.height, 300);
-      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
-      setCasinoAvatar(dataUrl);
-      await base44.auth.updateMe({ casino_avatar: dataUrl });
-      toast.success("Avatar casino mis à jour !");
-    };
-    img.src = objUrl;
-    if (fileRef.current) fileRef.current.value = "";
-  };
 
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
-    const t = setInterval(() => setLightPhase(p => (p + 1) % 12), 150);
-    return () => clearInterval(t);
+    casinoGetProfile()
+      .then(data => setProfile(data))
+      .catch(() => toast.error("Erreur lors du chargement du profil"));
   }, []);
 
-  const rank = getRank(balance);
+  if (!profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "#0a050f" }}>
+        <div className="w-9 h-9 border-4 border-white/10 rounded-full animate-spin" style={{ borderTopColor: "#C5A059" }} />
+      </div>
+    );
+  }
+
+  const rank = getRank(profile.level || 1);
   const nextRank = RANK_TIERS[RANK_TIERS.indexOf(rank) + 1];
   const progress = nextRank
-    ? Math.min(100, ((balance - rank.min) / (nextRank.min - rank.min)) * 100)
+    ? Math.min(100, ((profile.level - rank.minLevel) / (nextRank.minLevel - rank.minLevel)) * 100)
     : 100;
+  const xpPercent = ((profile.xp || 0) / (profile.xp_needed || 5000)) * 100;
 
-  const totalWins = MOCK_HISTORY.filter(h => h.result === "win").length;
-  const totalLosses = MOCK_HISTORY.filter(h => h.result === "loss").length;
-  const biggestWin = Math.max(...MOCK_HISTORY.filter(h => h.result === "win").map(h => h.amount));
+  const stats = [
+    { icon: Zap,       label: "Niveau",        value: profile.level || 1,           color: "#C5A059" },
+    { icon: Trophy,    label: "Parties",       value: profile.total_bets || 0,      color: "#a855f7" },
+    { icon: TrendingUp,label: "Total misé",    value: formatBet(profile.total_wagered || 0), color: "#3b82f6" },
+    { icon: Target,   label: "Total gagné",   value: formatBet(profile.total_won || 0),     color: "#22C55E" },
+    { icon: Flame,    label: "Meilleur gain", value: formatBet(profile.biggest_win || 0),   color: "#ef4444" },
+    { icon: Star,     label: "Mise max",      value: formatBet(profile.max_bet || 0),       color: "#fbbf24" },
+  ];
 
   return (
     <div className="min-h-screen pb-16"
-      style={{ background: "linear-gradient(160deg, #080015 0%, #0f0028 50%, #080015 100%)" }}>
+      style={{ background: "linear-gradient(160deg, #0a050f 0%, #1a0a2e 40%, #0a050f 100%)" }}>
 
       {/* Header */}
-      <div className="sticky top-0 z-40"
-        style={{ background: "rgba(8,0,20,0.97)", borderBottom: "2px solid rgba(136,68,255,0.25)", backdropFilter: "blur(20px)" }}>
-        {/* Neon strip */}
-        <div className="h-1 flex overflow-hidden">
-          {Array.from({ length: 24 }).map((_, i) => {
-            const colors = ["#ff00ff","#8844ff","#0088ff","#ff0088","#ffd700","#00ffcc"];
-            const active = i % 6 === lightPhase % 6;
-            return <div key={i} className="flex-1 transition-all duration-100"
-              style={{ background: active ? colors[i % 6] : "rgba(255,255,255,0.04)" }} />;
-          })}
-        </div>
-        <div className="px-4 py-3 flex items-center gap-3">
-          <Link to="/" className="w-9 h-9 rounded-xl flex items-center justify-center tap-sm"
-            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}>
-            <ArrowLeft className="w-4 h-4 text-white/60" />
-          </Link>
-          <button onClick={onBack} className="w-9 h-9 rounded-xl flex items-center justify-center tap-sm"
-            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}>
-            <Home className="w-4 h-4 text-white/60" />
-          </button>
-          <span className="font-black text-white text-base tracking-wide">MON PROFIL CASINO</span>
-          <span className="ml-auto text-xl" style={{ filter: `drop-shadow(0 0 6px ${rank.color})` }}>{rank.emoji}</span>
-        </div>
+      <div className="sticky top-0 z-40 flex items-center gap-3 px-4 py-3"
+        style={{ background: "rgba(10,5,15,0.9)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(197,160,89,0.15)" }}>
+        <button onClick={onBack} className="flex items-center gap-2 text-white/60 hover:text-white transition tap-sm">
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-xs font-bold">Retour</span>
+        </button>
+        <h1 className="font-black text-lg tracking-wider" style={{
+          background: "linear-gradient(135deg, #C5A059, #8B6B2B)",
+          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+        }}>PROFIL NEXUS GAME</h1>
+        <span className="ml-auto text-xl" style={{ filter: `drop-shadow(0 0 6px ${rank.color})` }}>{rank.emoji}</span>
       </div>
 
-      <div className="px-4 pt-5 space-y-4">
-        {/* Profile hero card */}
+      <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
+        {/* Hero card */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           className="relative rounded-3xl overflow-hidden p-5"
           style={{
-            background: `linear-gradient(135deg, ${rank.color}18, #12003a)`,
+            background: `linear-gradient(135deg, ${rank.color}18, #1a0a2e)`,
             border: `2px solid ${rank.color}40`,
-            boxShadow: `0 0 40px ${rank.color}20`
+            boxShadow: `0 0 40px ${rank.color}20`,
           }}>
-          {/* Background shimmer */}
-          <div className="absolute inset-0 pointer-events-none opacity-5"
-            style={{ backgroundImage: "repeating-linear-gradient(45deg, rgba(255,255,255,0.1) 0, rgba(255,255,255,0.1) 1px, transparent 0, transparent 50%)", backgroundSize: "10px 10px" }} />
 
           <div className="relative z-10 flex items-center gap-4">
-            <button onClick={() => fileRef.current?.click()} className="group relative">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-4xl overflow-hidden"
-                style={{ background: `radial-gradient(circle at 30% 30%, ${rank.color}40, ${rank.color}10)`, border: `2px solid ${rank.color}60` }}>
-                {casinoAvatar ? <img src={casinoAvatar} alt="" className="w-full h-full object-cover" /> : "👤"}
-              </div>
-              <div className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                <Upload className="w-5 h-5 text-white" />
-              </div>
-            </button>
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
+              style={{
+                background: `radial-gradient(circle at 30% 30%, ${rank.color}40, ${rank.color}10)`,
+                border: `2px solid ${rank.color}60`,
+              }}>
+              {rank.emoji}
+            </div>
             <div className="flex-1">
-              <p className="font-black text-white text-lg">{user?.full_name || "Joueur"}</p>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-sm font-black" style={{ color: rank.color, textShadow: `0 0 8px ${rank.color}` }}>
-                  {rank.emoji} {rank.name}
+              <p className="font-black text-white text-lg">Niveau {profile.level || 1}</p>
+              <span className="text-sm font-black" style={{ color: rank.color, textShadow: `0 0 8px ${rank.color}` }}>
+                {rank.emoji} {rank.name}
+              </span>
+              <div className="flex items-center gap-1.5 mt-1">
+                <CasinoToken size={16} />
+                <span className="font-mono text-sm font-bold" style={{ color: "#C5A059" }}>
+                  {formatBet(profile.balance || 0)}
                 </span>
-              </div>
-              <div className="font-mono text-sm font-bold mt-1" style={{ color: "#ffd700" }}>
-                {balance.toLocaleString()} 🪙
               </div>
             </div>
           </div>
 
-          {/* Rank progress bar */}
+          {/* Level XP bar */}
+          <div className="relative z-10 mt-4">
+            <div className="flex justify-between text-[10px] font-bold mb-1.5" style={{ color: `${rank.color}aa` }}>
+              <span>Niv. {profile.level || 1}</span>
+              <span>{profile.xp || 0} / {profile.xp_needed || 5000} XP</span>
+              <span>Niv. {(profile.level || 1) + 1}</span>
+            </div>
+            <div className="h-2.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
+              <motion.div className="h-full rounded-full"
+                initial={{ width: 0 }} animate={{ width: `${xpPercent}%` }} transition={{ duration: 1, ease: "easeOut" }}
+                style={{ background: `linear-gradient(90deg, ${rank.color}, ${rank.color}aa)`, boxShadow: `0 0 8px ${rank.color}` }} />
+            </div>
+          </div>
+
+          {/* Rank progress */}
           {nextRank && (
-            <div className="relative z-10 mt-4">
+            <div className="relative z-10 mt-3">
               <div className="flex justify-between text-[10px] font-bold mb-1.5" style={{ color: `${rank.color}aa` }}>
                 <span>{rank.name}</span>
                 <span>{progress.toFixed(0)}%</span>
                 <span>{nextRank.name}</span>
               </div>
-              <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
+              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
                 <motion.div className="h-full rounded-full"
-                  initial={{ width: 0 }} animate={{ width: `${progress}%` }}
-                  transition={{ duration: 1.2, ease: "easeOut" }}
-                  style={{ background: `linear-gradient(90deg, ${rank.color}, ${nextRank.color})`, boxShadow: `0 0 8px ${rank.color}` }} />
+                  initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ duration: 1.2, ease: "easeOut" }}
+                  style={{ background: `linear-gradient(90deg, ${rank.color}, ${nextRank.color})` }} />
               </div>
               <p className="text-[10px] text-center mt-1 font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>
-                {(nextRank.min - balance).toLocaleString()} 🪙 pour atteindre {nextRank.name}
+                Niveau {nextRank.minLevel} pour atteindre {nextRank.name}
               </p>
             </div>
           )}
@@ -202,179 +144,103 @@ export default function CasinoProfile({ onBack }) {
           )}
         </motion.div>
 
+        {/* Stats grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {stats.map((s, i) => (
+            <motion.div key={i} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
+              className="p-4 rounded-2xl"
+              style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <s.icon className="w-4 h-4 mb-2" style={{ color: s.color }} />
+              <p className="text-lg font-black text-white font-mono">{s.value}</p>
+              <p className="text-[10px] text-white/40 uppercase tracking-wider">{s.label}</p>
+            </motion.div>
+          ))}
+        </div>
+
         {/* Tabs */}
-        <div className="flex gap-1.5 flex-wrap">
+        <div className="flex gap-1.5">
           {[
-            { key: "badges", label: "🏅 Badges" },
-            { key: "stats", label: "📊 Stats" },
-            { key: "history", label: "📜 Historique" },
-            { key: "leaderboard", label: "🏆 Classement" },
+            { key: "badges", label: "🏅 Succès" },
+            { key: "ranks", label: "🏆 Rangs" },
           ].map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
               className="flex-1 py-2.5 rounded-2xl text-xs font-black transition-all"
               style={{
-                background: tab === t.key ? "linear-gradient(135deg, #6644ff, #4422cc)" : "rgba(255,255,255,0.04)",
-                color: tab === t.key ? "white" : "#555",
-                border: `1px solid ${tab === t.key ? "#8866ff" : "rgba(255,255,255,0.08)"}`,
-                boxShadow: tab === t.key ? "0 0 15px #6644ff60" : "none"
+                background: tab === t.key ? "linear-gradient(135deg, #C5A059, #8B6B2B)" : "rgba(255,255,255,0.04)",
+                color: tab === t.key ? "#0a050f" : "rgba(255,255,255,0.4)",
+                border: `1px solid ${tab === t.key ? "rgba(197,160,89,0.5)" : "rgba(255,255,255,0.06)"}`,
               }}>
               {t.label}
             </button>
           ))}
         </div>
 
-        {/* BADGES TAB */}
-        {tab === "badges" && (
-          <motion.div key="badges" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            className="space-y-3">
-            <p className="text-xs font-black uppercase tracking-widest text-center" style={{ color: "#aa88ff" }}>
-              Badges et Titres
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {BADGES.map((badge) => {
-                const unlocked = balance >= badge.threshold;
-                return (
-                  <motion.div key={badge.id}
-                    initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                    className="relative p-3 rounded-2xl text-center overflow-hidden"
-                    style={{
-                      background: unlocked ? `linear-gradient(135deg, ${rank.color}15, #0a001a)` : "rgba(255,255,255,0.02)",
-                      border: `1px solid ${unlocked ? rank.color + "50" : "rgba(255,255,255,0.06)"}`,
-                      boxShadow: unlocked ? `0 0 12px ${rank.color}12` : "none",
-                    }}>
-                    {!unlocked && (
-                      <div className="absolute inset-0 rounded-2xl flex items-end justify-center pb-2 z-10"
-                        style={{ background: "rgba(0,0,0,0.6)" }}>
-                        <span className="text-[8px] font-bold text-white/40">
-                          {badge.threshold.toLocaleString()} Trix requis
-                        </span>
-                      </div>
-                    )}
-                    <div className="text-3xl mb-1"
-                      style={{ filter: unlocked ? `drop-shadow(0 0 8px ${rank.color})` : "grayscale(1) opacity(0.35)" }}>
-                      {badge.emoji}
-                    </div>
-                    <p className="font-black text-xs text-white leading-none">{badge.label}</p>
-                    <p className="text-[9px] mt-0.5 leading-tight"
-                      style={{ color: unlocked ? rank.color + "cc" : "rgba(255,255,255,0.25)" }}>
-                      {badge.desc}
-                    </p>
-                    {unlocked && (
-                      <span className="inline-block mt-1.5 text-[8px] font-black px-1.5 py-0.5 rounded-full"
-                        style={{ background: `${rank.color}25`, color: rank.color }}>
-                        DEBLOQUE
-                      </span>
-                    )}
-                  </motion.div>
-                );
-              })}
-            </div>
-          </motion.div>
-        )}
-
-        {/* STATS TAB */}
+        {/* Badges tab */}
         <AnimatePresence mode="wait">
-          {tab === "stats" && (
-            <motion.div key="stats" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+          {tab === "badges" && (
+            <motion.div key="badges" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <StatCard label="Solde actuel" value={balance.toLocaleString() + " 🪙"} icon="💰" color="#ffd700" />
-                <StatCard label="Victoires" value={totalWins} icon="🏆" color="#44ff88" />
-                <StatCard label="Défaites" value={totalLosses} icon="💸" color="#ff4444" />
-                <StatCard label="Meilleur gain" value={biggestWin.toLocaleString() + " 🪙"} icon="🚀" color="#ff00ff" />
+              <p className="text-xs font-black uppercase tracking-widest text-center" style={{ color: "#C5A059aa" }}>
+                Succès Nexus Game ({(profile.achievements || []).length} / {(profile.achievement_defs || []).length})
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {(profile.achievement_defs || []).map((badge) => {
+                  const unlocked = (profile.achievements || []).includes(badge.id);
+                  return (
+                    <motion.div key={badge.id}
+                      initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                      className="relative p-3 rounded-2xl text-center overflow-hidden"
+                      style={{
+                        background: unlocked ? `linear-gradient(135deg, ${rank.color}15, #0a050f)` : "rgba(255,255,255,0.02)",
+                        border: `1px solid ${unlocked ? rank.color + "50" : "rgba(255,255,255,0.06)"}`,
+                        boxShadow: unlocked ? `0 0 12px ${rank.color}12` : "none",
+                      }}>
+                      {!unlocked && (
+                        <div className="absolute inset-0 rounded-2xl flex items-end justify-center pb-2 z-10"
+                          style={{ background: "rgba(0,0,0,0.6)" }}>
+                          <span className="text-[8px] font-bold text-white/30">🔒 Verrouillé</span>
+                        </div>
+                      )}
+                      <div className="text-3xl mb-1" style={{ filter: unlocked ? `drop-shadow(0 0 8px ${rank.color})` : "grayscale(1) opacity(0.35)" }}>
+                        {badge.emoji}
+                      </div>
+                      <p className="font-black text-xs text-white leading-none">{badge.label}</p>
+                      <p className="text-[9px] mt-0.5 leading-tight" style={{ color: unlocked ? `${rank.color}cc` : "rgba(255,255,255,0.25)" }}>
+                        {badge.desc}
+                      </p>
+                      {unlocked && (
+                        <span className="inline-block mt-1.5 text-[8px] font-black px-1.5 py-0.5 rounded-full"
+                          style={{ background: `${rank.color}25`, color: rank.color }}>
+                          DÉBLOQUÉ
+                        </span>
+                      )}
+                    </motion.div>
+                  );
+                })}
               </div>
+            </motion.div>
+          )}
 
-              {/* Win rate */}
-              <div className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs font-black text-white">Taux de victoire</span>
-                  <span className="font-mono font-black text-sm" style={{ color: "#44ff88" }}>
-                    {Math.round((totalWins / (totalWins + totalLosses)) * 100)}%
-                  </span>
-                </div>
-                <div className="h-3 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
-                  <motion.div initial={{ width: 0 }}
-                    animate={{ width: `${Math.round((totalWins / (totalWins + totalLosses)) * 100)}%` }}
-                    transition={{ duration: 1, delay: 0.3 }}
-                    className="h-full rounded-full"
-                    style={{ background: "linear-gradient(90deg, #44ff88, #00cc66)", boxShadow: "0 0 8px #44ff8880" }} />
-                </div>
-              </div>
-
-              {/* Rank ladder */}
-              <div className="rounded-2xl p-4 space-y-2" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          {tab === "ranks" && (
+            <motion.div key="ranks" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              className="space-y-2">
+              <div className="rounded-2xl p-4 space-y-2" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(255,255,255,0.06)" }}>
                 <p className="text-xs font-black text-white mb-3">ÉCHELLE DES RANGS</p>
-                {RANK_TIERS.map((r, i) => (
+                {RANK_TIERS.map((r) => (
                   <div key={r.name} className="flex items-center gap-3 py-1.5 px-2 rounded-xl transition-all"
-                    style={{ background: r.name === rank.name ? `${r.color}15` : "transparent", border: r.name === rank.name ? `1px solid ${r.color}40` : "1px solid transparent" }}>
+                    style={{
+                      background: r.name === rank.name ? `${r.color}15` : "transparent",
+                      border: r.name === rank.name ? `1px solid ${r.color}40` : "1px solid transparent",
+                    }}>
                     <span className="text-lg">{r.emoji}</span>
                     <span className="font-black text-sm flex-1" style={{ color: r.color }}>{r.name}</span>
-                    <span className="text-[10px] font-mono text-white/40">{r.min.toLocaleString()}+</span>
-                    {r.name === rank.name && <span className="text-[10px] font-black px-2 py-0.5 rounded-full" style={{ background: `${r.color}20`, color: r.color }}>VOUS</span>}
+                    <span className="text-[10px] font-mono text-white/40">Niv. {r.minLevel}+</span>
+                    {r.name === rank.name && (
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full" style={{ background: `${r.color}20`, color: r.color }}>VOUS</span>
+                    )}
                   </div>
                 ))}
               </div>
-            </motion.div>
-          )}
-
-          {/* HISTORY TAB */}
-          {tab === "history" && (
-            <motion.div key="history" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className="space-y-2">
-              {MOCK_HISTORY.map((h, i) => (
-                <motion.div key={i} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="flex items-center gap-3 px-4 py-3 rounded-2xl"
-                  style={{
-                    background: h.result === "win" ? "rgba(68,255,136,0.05)" : "rgba(255,68,68,0.05)",
-                    border: `1px solid ${h.result === "win" ? "rgba(68,255,136,0.15)" : "rgba(255,68,68,0.12)"}`
-                  }}>
-                  <span className="text-xl">{h.result === "win" ? "🎉" : "💸"}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm text-white truncate">{h.game}</p>
-                    <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>{h.date}</p>
-                  </div>
-                  {h.mult && (
-                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full"
-                      style={{ background: "rgba(255,215,0,0.15)", color: "#ffd700" }}>{h.mult}</span>
-                  )}
-                  <span className={`font-mono font-black text-sm ${h.result === "win" ? "text-green-400" : "text-red-400"}`}>
-                    {h.result === "win" ? "+" : ""}{h.amount.toLocaleString()}
-                  </span>
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
-
-          {/* LEADERBOARD TAB */}
-          {tab === "leaderboard" && (
-            <motion.div key="leaderboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className="space-y-2">
-              <div className="text-center py-2 mb-2">
-                <p className="font-black text-white text-lg">🏆 TOP CLASSEMENT</p>
-                <p className="text-xs text-white/40">Meilleurs joueurs de la semaine</p>
-              </div>
-              {LEADERBOARD.map((p, i) => (
-                <motion.div key={i} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.07 }}
-                  className="flex items-center gap-3 px-4 py-3 rounded-2xl"
-                  style={{
-                    background: p.isYou ? `${p.color}15` : `${p.color}08`,
-                    border: `1px solid ${p.color}${p.isYou ? "60" : "30"}`,
-                    boxShadow: p.isYou ? `0 0 15px ${p.color}20` : "none"
-                  }}>
-                  <span className="font-black text-lg w-8 text-center" style={{ color: p.color }}>
-                    {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}`}
-                  </span>
-                  <span className="text-2xl">{p.avatar}</span>
-                  <div className="flex-1">
-                    <p className="font-bold text-sm text-white">{p.name} {p.isYou && <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full ml-1" style={{ background: `${p.color}20`, color: p.color }}>VOUS</span>}</p>
-                  </div>
-                  <span className="font-mono font-black text-sm" style={{ color: p.color }}>
-                    ${p.earnings}
-                  </span>
-                </motion.div>
-              ))}
             </motion.div>
           )}
         </AnimatePresence>

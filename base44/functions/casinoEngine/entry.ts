@@ -3,11 +3,12 @@ import { waitUntil } from 'base44:runtime';
 
 // ===== Configuration =====
 const JACKPOT_BASE = 1_000_000;
-const GROWTH_PER_SECOND = 50;        // +50 coins/sec — slow, steady, persistent
-const BET_CONTRIBUTION_RATE = 0.05;  // 5% of each bet feeds the jackpot
-const JACKPOT_WIN_CHANCE = 0.0005;   // 0.05% chance per bet to hit the jackpot
-const WIN_RATE = 0.49;               // 49% global win probability
+const GROWTH_PER_SECOND = 50;
+const BET_CONTRIBUTION_RATE = 0.05;
+const JACKPOT_WIN_CHANCE = 0.0005;
+const WIN_RATE = 0.49;
 const INITIAL_BALANCE = 5000;
+const XP_PER_LEVEL = 5000;
 
 // ===== Slots symbol table (mirrors client) =====
 const SLOTS_SYMBOLS = [
@@ -20,9 +21,35 @@ const SLOTS_SYMBOLS = [
   { s: '🍉',   mult: 4,  rare: 6 },
 ];
 
+// ===== Casino achievements (Nexus Game specific) =====
+const CASINO_ACHIEVEMENTS = [
+  { id: "first_spin",   emoji: "🎰", label: "Premier Spin",     desc: "Jouez pour la première fois",     check: (s: any) => (s.total_bets || 0) >= 1 },
+  { id: "spin_10",     emoji: "🎯", label: "Joueur Régulier",   desc: "10 parties jouées",               check: (s: any) => (s.total_bets || 0) >= 10 },
+  { id: "spin_50",     emoji: "🔥", label: "Accro du Casino",   desc: "50 parties jouées",               check: (s: any) => (s.total_bets || 0) >= 50 },
+  { id: "spin_100",    emoji: "💯", label: "Centurion",         desc: "100 parties jouées",              check: (s: any) => (s.total_bets || 0) >= 100 },
+  { id: "win_big",     emoji: "💰", label: "Gros Gain",         desc: "Gagnez 10 000 jetons d'un coup",  check: (s: any) => (s.biggest_win || 0) >= 10000 },
+  { id: "win_50k",     emoji: "👑", label: "Roi du Casino",     desc: "Gagnez 50 000 jetons d'un coup",  check: (s: any) => (s.biggest_win || 0) >= 50000 },
+  { id: "high_roller", emoji: "💎", label: "High Roller",       desc: "Misez 5 000+ en une partie",      check: (s: any) => (s.max_bet || 0) >= 5000 },
+  { id: "level_5",     emoji: "⭐", label: "Vétéran",           desc: "Atteignez le niveau 5",           check: (s: any) => (s.level || 1) >= 5 },
+  { id: "level_10",    emoji: "🌟", label: "Légende",           desc: "Atteignez le niveau 10",          check: (s: any) => (s.level || 1) >= 10 },
+  { id: "level_25",    emoji: "🔱", label: "Mythe",             desc: "Atteignez le niveau 25",          check: (s: any) => (s.level || 1) >= 25 },
+];
+
 // ===== Helpers =====
 
-async function getJackpotRecord(base44) {
+function computeLevel(totalXp: number): number {
+  return Math.floor((totalXp || 0) / XP_PER_LEVEL) + 1;
+}
+
+function computeXpInLevel(totalXp: number): number {
+  return (totalXp || 0) % XP_PER_LEVEL;
+}
+
+function checkAchievements(stats: any): string[] {
+  return CASINO_ACHIEVEMENTS.filter(a => a.check(stats)).map(a => a.id);
+}
+
+async function getJackpotRecord(base44: any) {
   const records = await base44.asServiceRole.entities.CasinoJackpot.list('-created_date', 1);
   if (records.length > 0) return records[0];
   const now = new Date().toISOString();
@@ -36,29 +63,34 @@ async function getJackpotRecord(base44) {
   });
 }
 
-function computeEffectiveAmount(record) {
+function computeEffectiveAmount(record: any) {
   const lastUpdated = record.last_updated ? new Date(record.last_updated).getTime() : Date.now();
   const elapsed = Math.max(0, (Date.now() - lastUpdated) / 1000);
   const timeGrowth = Math.floor(elapsed * GROWTH_PER_SECOND);
   return (record.amount || JACKPOT_BASE) + timeGrowth;
 }
 
-async function getPlayer(base44, user) {
+async function getPlayer(base44: any, user: any) {
   const records = await base44.asServiceRole.entities.CasinoPlayer.filter({ user_email: user.email });
   if (records.length > 0) return records[0];
   return await base44.asServiceRole.entities.CasinoPlayer.create({
     user_email: user.email,
     balance: INITIAL_BALANCE,
+    level: 1,
+    xp: 0,
+    total_xp: 0,
     total_bets: 0,
     total_wagered: 0,
     total_won: 0,
     biggest_win: 0,
+    max_bet: 0,
     jackpot_wins: 0,
+    achievements: [],
   });
 }
 
 function pickSlotsSymbol() {
-  const pool = [];
+  const pool: any[] = [];
   SLOTS_SYMBOLS.forEach(sym => { for (let i = 0; i < sym.rare; i++) pool.push(sym); });
   return pool[Math.floor(Math.random() * pool.length)];
 }
@@ -100,6 +132,42 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ balance: player.balance || 0 });
       }
 
+      // ---- Get player profile (level, XP, achievements, stats) ----
+      case 'getProfile': {
+        const player = await getPlayer(base44, user);
+        const level = computeLevel(player.total_xp || 0);
+        const xpInLevel = computeXpInLevel(player.total_xp || 0);
+        const statsForCheck = { ...player, level };
+        const allAchievements = checkAchievements(statsForCheck);
+
+        // Sync achievements + level if changed
+        const currentAchievements = player.achievements || [];
+        const newAchievements = allAchievements.filter(id => !currentAchievements.includes(id));
+        if (newAchievements.length > 0 || (player.level || 1) !== level) {
+          await base44.asServiceRole.entities.CasinoPlayer.update(player.id, {
+            achievements: allAchievements,
+            level,
+            xp: xpInLevel,
+          });
+        }
+
+        return Response.json({
+          balance: player.balance || 0,
+          level,
+          xp: xpInLevel,
+          xp_needed: XP_PER_LEVEL,
+          total_xp: player.total_xp || 0,
+          total_bets: player.total_bets || 0,
+          total_wagered: player.total_wagered || 0,
+          total_won: player.total_won || 0,
+          biggest_win: player.biggest_win || 0,
+          max_bet: player.max_bet || 0,
+          jackpot_wins: player.jackpot_wins || 0,
+          achievements: allAchievements,
+          achievement_defs: CASINO_ACHIEVEMENTS,
+        });
+      }
+
       // ---- Place a bet (server-side outcome, 49% win rate) ----
       case 'placeBet': {
         const { game, bet, betType } = params;
@@ -108,20 +176,16 @@ export default async function(req: Request): Promise<Response> {
           return Response.json({ error: 'Invalid bet' }, { status: 400 });
         }
 
-        // Get player record
         const player = await getPlayer(base44, user);
         if ((player.balance || 0) < betAmount) {
           return Response.json({ error: 'Solde insuffisant' }, { status: 400 });
         }
 
-        // Get jackpot record (for contribution + potential win)
         const jackpotRecord = await getJackpotRecord(base44);
         const effectiveJackpot = computeEffectiveAmount(jackpotRecord);
         const contribution = Math.floor(betAmount * BET_CONTRIBUTION_RATE);
 
-        // Determine outcome (49% win rate)
         const isWin = Math.random() < WIN_RATE;
-        // Separate jackpot roll (0.05%)
         const isJackpotWin = Math.random() < JACKPOT_WIN_CHANCE;
 
         let payout = 0;
@@ -129,10 +193,8 @@ export default async function(req: Request): Promise<Response> {
         let slotsSymbol = null;
 
         if (isJackpotWin) {
-          // Jackpot win! Payout = entire jackpot
           payout = effectiveJackpot;
         } else if (isWin) {
-          // Normal win — game-specific payout
           if (game === 'slots') {
             const sym = pickSlotsSymbol();
             multiplier = sym.mult;
@@ -157,27 +219,43 @@ export default async function(req: Request): Promise<Response> {
           }
         }
 
-        // Net gain (payout minus bet)
         const netGain = payout - betAmount;
-
-        // Update player balance
         const newBalance = (player.balance || 0) - betAmount + payout;
 
+        // XP gain: 1 XP per token wagered
+        const xpGained = betAmount;
+        const newTotalXp = (player.total_xp || 0) + xpGained;
+        const newLevel = computeLevel(newTotalXp);
+        const newXpInLevel = computeXpInLevel(newTotalXp);
+
         // Update player stats
-        const playerUpdate = {
+        const playerUpdate: any = {
           balance: newBalance,
+          level: newLevel,
+          xp: newXpInLevel,
+          total_xp: newTotalXp,
           total_bets: (player.total_bets || 0) + 1,
           total_wagered: (player.total_wagered || 0) + betAmount,
           total_won: (player.total_won || 0) + payout,
           biggest_win: Math.max(player.biggest_win || 0, payout),
+          max_bet: Math.max(player.max_bet || 0, betAmount),
         };
         if (isJackpotWin) playerUpdate.jackpot_wins = (player.jackpot_wins || 0) + 1;
+
+        // Check achievements
+        const statsForCheck = { ...player, ...playerUpdate, level: newLevel };
+        const allAchievements = checkAchievements(statsForCheck);
+        const currentAchievements = player.achievements || [];
+        const newAchievements = allAchievements.filter(id => !currentAchievements.includes(id));
+        if (newAchievements.length > 0) {
+          playerUpdate.achievements = allAchievements;
+        }
+
         await base44.asServiceRole.entities.CasinoPlayer.update(player.id, playerUpdate);
 
         // Update jackpot
         const now = new Date().toISOString();
         if (isJackpotWin) {
-          // Reset jackpot to base
           await base44.asServiceRole.entities.CasinoJackpot.update(jackpotRecord.id, {
             amount: JACKPOT_BASE,
             last_updated: now,
@@ -189,7 +267,6 @@ export default async function(req: Request): Promise<Response> {
             last_won_at: now,
           });
         } else {
-          // Add time-growth + bet contribution
           await base44.asServiceRole.entities.CasinoJackpot.update(jackpotRecord.id, {
             amount: effectiveJackpot + contribution,
             last_updated: now,
@@ -207,6 +284,14 @@ export default async function(req: Request): Promise<Response> {
           netGain,
           newBalance,
           jackpotAmount: isJackpotWin ? JACKPOT_BASE : (effectiveJackpot + contribution),
+          level: newLevel,
+          xp: newXpInLevel,
+          xp_needed: XP_PER_LEVEL,
+          total_xp: newTotalXp,
+          newAchievements: newAchievements.length > 0 ? newAchievements : [],
+          achievementDefs: newAchievements.length > 0
+            ? CASINO_ACHIEVEMENTS.filter(a => newAchievements.includes(a.id))
+            : [],
         });
       }
 
