@@ -256,20 +256,20 @@ function CasinoHome({ balance, onPlay }) {
             <span className="text-lg font-mono font-black" style={{ color: "#C5A059" }}>{formatBet(balance)}</span>
           </div>
         </div>
-        <div className="w-px h-10 hidden" style={{ background: "rgba(255,255,255,0.1)" }} />
+        
         <div className="text-center">
-          <p className="text-[9px] font-bold text-white/40 uppercase hidden">RTP</p>
-          <p className="text-lg font-mono font-black text-white mt-0.5 hidden">49%</p>
+          
+          
         </div>
       </motion.div>
 
       {/* Info */}
-      <motion.p
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-        className="text-[10px] text-white/30 mt-8 text-center max-w-sm hidden">
-        Les jetons M sont propres au Nexus Game et n'interfèrent pas avec votre solde Trix.
-      </motion.p>
+      
+
+
+
+
+      
     </div>);
 
 }
