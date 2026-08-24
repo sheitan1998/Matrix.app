@@ -163,8 +163,8 @@ export default function Casino() {
 
           <motion.div key="slots"
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.3 }}
-          className="py-3">
+          transition={{ duration: 0.3 }}>
+            
               <div className="max-w-2xl mx-auto rounded-3xl overflow-hidden"
             style={{ background: "linear-gradient(160deg, rgba(26,10,46,0.6), rgba(42,10,58,0.4), rgba(26,10,46,0.6))", border: "1px solid rgba(197,160,89,0.15)", boxShadow: "0 0 40px rgba(0,0,0,0.5)" }}>
                 <div className="p-4 sm:p-6 mt-48 mb-48">
