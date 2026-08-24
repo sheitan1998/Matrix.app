@@ -63,33 +63,8 @@ function computeWinningCells(winRow, winCount) {
   return cells;
 }
 
-// ─── Jackpot tiers (4 levels) ───
-function JackpotTiers({ theme, jackpot }) {
-  const base = jackpot || 1000000;
-  const tiers = [
-    { label: "COLOSSAL", value: base * 168, color: "#ff6b35" },
-    { label: "MONSTER",  value: base * 140, color: "#a55eea" },
-    { label: "MEGA",     value: base * 88,  color: "#4ecdc4" },
-    { label: "MINI",     value: base * 10,  color: "#f9ca24" },
-  ];
-  return (
-    <div className="grid grid-cols-4 gap-1.5">
-      {tiers.map(t => (
-        <div
-          key={t.label}
-          className="p-1.5 rounded-xl text-center"
-          style={{ background: theme.jackpotBg, border: `1px solid ${theme.jackpotBorderColor}` }}
-        >
-          <p className="text-[7px] font-black" style={{ color: t.color }}>5× {t.label}</p>
-          <p className="text-[10px] font-mono font-black text-white">{formatBet(t.value)}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 // ─── Main component ───
-export default function SlotsGame({ balance, setBalance, accentColor, jackpot = 0, themeId, onWin }) {
+export default function SlotsGame({ balance, setBalance, accentColor, themeId, onWin }) {
   const theme = SLOT_THEMES[themeId] || SLOT_THEMES[DEFAULT_THEME];
   const SYMBOLS = theme.symbols;
 
@@ -224,9 +199,6 @@ export default function SlotsGame({ balance, setBalance, accentColor, jackpot = 
         isJackpot={winData?.isJackpot}
         onDone={() => setShowWin(false)}
       />
-
-      {/* Jackpot tiers (4 levels) */}
-      <JackpotTiers theme={theme} jackpot={jackpot} />
 
       {/* Main game area: side panels + reel grid */}
       <div className="flex items-stretch gap-2 justify-center">

@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useProgression } from '@/context/ProgressionContext';
 import { base44 } from '@/api/base44Client';
-import { Coins, TrendingUp, Zap, Sparkles, Trophy } from 'lucide-react';
+import { TrendingUp, Zap, Trophy } from 'lucide-react';
 import { ACHIEVEMENTS } from '@/lib/achievementsData';
+import CasinoToken from '@/components/casino/CasinoToken';
 
 export default function ProgressionOverview() {
   const { progress, rank, prestigeInfo } = useProgression();
@@ -45,7 +46,7 @@ export default function ProgressionOverview() {
           <div className="text-[10px] text-white/40 uppercase tracking-wide mt-0.5">Trophées</div>
         </div>
         <div className="p-4 rounded-2xl" style={{ background: '#13131a', border: '1px solid rgba(255,255,255,0.04)' }}>
-          <Coins className="w-4 h-4 mb-1.5" style={{ color: '#ff9f1c' }} />
+          <CasinoToken size={24} className="mb-1.5" />
           <div className="text-2xl font-black text-white">{casinoBalance.toLocaleString()}</div>
           <div className="text-[10px] text-white/40 uppercase tracking-wide mt-0.5">Jetons Nexus Game</div>
         </div>

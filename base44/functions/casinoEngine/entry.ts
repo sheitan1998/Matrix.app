@@ -157,6 +157,9 @@ export default async function(req: Request): Promise<Response> {
           }
         }
 
+        // Net gain (payout minus bet)
+        const netGain = payout - betAmount;
+
         // Update player balance
         const newBalance = (player.balance || 0) - betAmount + payout;
 

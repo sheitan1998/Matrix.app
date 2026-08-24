@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Home, Trophy, Sparkles } from "lucide-react";
-import { useCasinoJackpot, casinoGetBalance } from "@/hooks/useCasinoJackpot";
+import { ArrowLeft, Home } from "lucide-react";
+import { casinoGetBalance } from "@/hooks/useCasinoJackpot";
 import SlotsGame from "@/components/casino/SlotsGame";
 import CasinoToken from "@/components/casino/CasinoToken";
 import CasinoWinEffect from "@/components/casino/CasinoWinEffect";
@@ -11,6 +11,7 @@ import WinEffect from "@/components/casino/WinEffect";
 import { formatBet } from "@/components/casino/slotThemes";
 
 const CASINO_BALANCE_KEY = "matrix_casino_coins";
+const SLOTS_CARD_IMG = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/62ba507d3_Gemini_Generated_Image_vqrstlvqrstlvqrs-removebg-preview.png";
 
 function useCasinoCoins() {
   const [coins, setCoinsState] = useState(() => {
@@ -40,7 +41,6 @@ function useCasinoCoins() {
 export default function Casino() {
   const [screen, setScreen] = useState("home"); // "home" | "slots"
   const [casinoCoins, setCasinoCoins] = useCasinoCoins();
-  const { jackpot } = useCasinoJackpot();
   const [showWin, setShowWin] = useState(false);
   const [winData, setWinData] = useState(null);
 
@@ -114,7 +114,7 @@ export default function Casino() {
             <motion.div key="home"
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.3 }}>
-              <CasinoHome jackpot={jackpot} balance={casinoCoins} onPlay={() => setScreen("slots")} />
+              <CasinoHome balance={casinoCoins} onPlay={() => setScreen("slots")} />
             </motion.div>
           ) : (
             <motion.div key="slots"
@@ -127,7 +127,6 @@ export default function Casino() {
                   <SlotsGame
                     balance={casinoCoins}
                     setBalance={setCasinoCoins}
-                    jackpot={jackpot}
                     onWin={handleWin}
                   />
                 </div>
@@ -145,84 +144,53 @@ export default function Casino() {
 }
 
 // ─── Casino Home (lobby) ───
-function CasinoHome({ jackpot, balance, onPlay }) {
+function CasinoHome({ balance, onPlay }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-100px)] px-4 py-8">
-      {/* Jackpot Banner */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="mb-8 text-center">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <Trophy className="w-5 h-5" style={{ color: "#C5A059" }} />
-          <span className="text-xs font-black tracking-widest" style={{ color: "#C5A059" }}>JACKPOT GLOBAL</span>
-        </div>
-        <div className="flex items-center justify-center gap-3">
-          <CasinoToken size={48} />
-          <span className="text-4xl sm:text-5xl font-black font-mono" style={{
-            background: "linear-gradient(135deg, #C5A059, #8E44AD)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-          }}>
-            {formatBet(jackpot)}
-          </span>
-        </div>
-        <p className="text-[10px] text-white/30 mt-2">Progression en temps réel</p>
-      </motion.div>
-
-      {/* Featured Slot Card */}
+      {/* Clickable Slots card with user's image */}
       <motion.button
         initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
         whileHover={{ scale: 1.03, y: -4 }}
         whileTap={{ scale: 0.98 }}
         onClick={onPlay}
-        className="relative overflow-hidden rounded-3xl text-left w-full max-w-md group"
+        className="relative overflow-hidden rounded-2xl text-left w-full max-w-xs group"
         style={{
-          background: "linear-gradient(160deg, #1a0a2e 0%, #2a0a3a 50%, #1a0a2e 100%)",
-          border: "2px solid rgba(197,160,89,0.3)",
+          border: "2px solid rgba(197,160,89,0.35)",
           boxShadow: "0 0 30px rgba(197,160,89,0.15), 0 8px 30px rgba(0,0,0,0.5)",
         }}>
 
-        {/* Card glow overlay */}
-        <div className="absolute inset-0 pointer-events-none"
-          style={{ background: "linear-gradient(135deg, rgba(197,160,89,0.08) 0%, transparent 50%, rgba(139,68,173,0.1) 100%)" }} />
+        {/* The user's image fills the entire card */}
+        <img
+          src={SLOTS_CARD_IMG}
+          alt="Machines à Sous"
+          className="w-full h-auto block"
+          style={{ objectFit: "contain" }}
+        />
 
-        {/* Token decoration */}
-        <div className="absolute top-4 right-4 opacity-20">
-          <CasinoToken size={80} />
-        </div>
-
-        <div className="relative z-10 p-6 sm:p-8">
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="w-4 h-4" style={{ color: "#C5A059" }} />
-            <span className="text-[10px] font-black tracking-widest" style={{ color: "#C5A059" }}>JEU PHARE</span>
-          </div>
-          <h2 className="text-3xl sm:text-4xl font-black text-white mb-2">MATRIX SLOTS</h2>
-          <p className="text-sm text-white/50 mb-6">5 rouleaux · 3 lignes · Multiplicateur jusqu'à ×50</p>
-
-          <div className="flex items-center gap-4 mb-6">
-            <div>
-              <p className="text-[9px] font-bold text-white/40 uppercase">Votre solde</p>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <CasinoToken size={18} />
-                <span className="text-lg font-mono font-black" style={{ color: "#C5A059" }}>{formatBet(balance)}</span>
-              </div>
-            </div>
-            <div className="w-px h-10" style={{ background: "rgba(255,255,255,0.1)" }} />
-            <div>
-              <p className="text-[9px] font-bold text-white/40 uppercase">RTP</p>
-              <p className="text-lg font-mono font-black text-white mt-0.5">96.5%</p>
-            </div>
-          </div>
-
-          {/* Play button */}
-          <div className="flex items-center justify-center py-3 rounded-2xl font-black text-white text-base"
-            style={{ background: "linear-gradient(135deg, #C5A059, #8B6B2B)", boxShadow: "0 0 20px rgba(197,160,89,0.3)" }}>
-            ▶ JOUER MAINTENANT
-          </div>
-        </div>
+        {/* Subtle hover glow overlay */}
+        <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          style={{ background: "linear-gradient(135deg, rgba(197,160,89,0.1) 0%, transparent 50%, rgba(139,68,173,0.12) 100%)" }} />
       </motion.button>
+
+      {/* Balance + RTP info row */}
+      <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+        transition={{ delay: 0.4 }}
+        className="flex items-center gap-4 mt-6">
+        <div className="text-center">
+          <p className="text-[9px] font-bold text-white/40 uppercase">Votre solde</p>
+          <div className="flex items-center gap-1.5 mt-0.5 justify-center">
+            <CasinoToken size={18} />
+            <span className="text-lg font-mono font-black" style={{ color: "#C5A059" }}>{formatBet(balance)}</span>
+          </div>
+        </div>
+        <div className="w-px h-10" style={{ background: "rgba(255,255,255,0.1)" }} />
+        <div className="text-center">
+          <p className="text-[9px] font-bold text-white/40 uppercase">RTP</p>
+          <p className="text-lg font-mono font-black text-white mt-0.5">49%</p>
+        </div>
+      </motion.div>
 
       {/* Info */}
       <motion.p
