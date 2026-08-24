@@ -29,7 +29,7 @@ export default function SlotControlBar({
 
   return (
     <div
-      className="flex items-center gap-2 sm:gap-3 p-2.5 rounded-2xl flex-wrap"
+      className="flex items-center gap-2 sm:gap-3 p-2.5 rounded-2xl flex-wrap my-3"
       style={{ background: theme.controlBg, border: `1px solid ${theme.controlBorderColor}` }}>
       
       {/* Social icons — hidden on mobile */}
@@ -113,12 +113,12 @@ export default function SlotControlBar({
             disabled={spinning && !autoSpinning}
             className="px-4 h-8 rounded-xl font-black text-xs flex items-center gap-1.5 transition disabled:opacity-40"
             style={{
-              background: autoSpinning
-                ? "linear-gradient(135deg, #ff4444, #cc2222)"
-                : `linear-gradient(135deg, ${theme.frameAccent}, ${theme.frameAccent}cc)`,
+              background: autoSpinning ?
+              "linear-gradient(135deg, #ff4444, #cc2222)" :
+              `linear-gradient(135deg, ${theme.frameAccent}, ${theme.frameAccent}cc)`,
               color: "#fff",
               boxShadow: autoSpinning ? "0 0 12px rgba(255,68,68,0.4)" : `0 0 12px ${theme.frameAccent}40`,
-              border: autoSpinning ? "1px solid rgba(255,68,68,0.5)" : `1px solid ${theme.frameAccent}50`,
+              border: autoSpinning ? "1px solid rgba(255,68,68,0.5)" : `1px solid ${theme.frameAccent}50`
             }}>
             {autoSpinning ? `■ STOP ×${autoCount}` : "▶ AUTOSPIN"}
           </motion.button>
