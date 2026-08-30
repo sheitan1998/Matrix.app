@@ -6,6 +6,11 @@
       "type": "string",
       "description": "Cle du theme (classic, nature, enfer, paradis, savane, ovni)"
     },
+    "bg_image": {
+      "type": "string",
+      "default": "",
+      "description": "URL de l'image de fond (surcharge celle par defaut du theme)"
+    },
     "grid_width": {
       "type": "number",
       "default": 70,
@@ -35,6 +40,21 @@
       "type": "number",
       "default": 28,
       "description": "Taille des symboles en pixels"
+    },
+    "control_pos_x": {
+      "type": "number",
+      "default": 50,
+      "description": "Position horizontale des boutons en pourcentage"
+    },
+    "control_pos_y": {
+      "type": "number",
+      "default": 4,
+      "description": "Position verticale des boutons depuis le bas en pourcentage"
+    },
+    "control_scale": {
+      "type": "number",
+      "default": 100,
+      "description": "Echelle des boutons en pourcentage (50-200)"
     }
   },
   "required": [

@@ -210,7 +210,7 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
 
       {/* ─── Full-page background image ─── */}
       <img
-        src={theme.bgImage}
+        src={gridConfig?.bg_image || theme.bgImage}
         alt=""
         draggable={false}
         onContextMenu={(e) => e.preventDefault()}
@@ -280,8 +280,18 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
           />
         </div>
 
-        {/* ─── Control bar ─── */}
-        <div className="p-2 sm:p-4">
+        {/* ─── Control bar (position configurable) ─── */}
+        <div
+          className="absolute z-20"
+          style={{
+            left: `${gridConfig?.control_pos_x ?? 50}%`,
+            bottom: `${gridConfig?.control_pos_y ?? 4}%`,
+            transform: `translateX(-50%) scale(${(gridConfig?.control_scale ?? 100) / 100})`,
+            transformOrigin: "bottom center",
+            width: "92%",
+            maxWidth: "640px",
+          }}
+        >
           <SlotControlBar
             balance={balance}
             bet={bet}

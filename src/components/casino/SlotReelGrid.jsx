@@ -9,6 +9,10 @@ export const DEFAULT_GRID_CONFIG = {
   grid_pos_x: 50,
   grid_pos_y: 50,
   symbol_size: 28,
+  bg_image: "",
+  control_pos_x: 50,
+  control_pos_y: 4,
+  control_scale: 100,
 };
 
 function SymbolCell({ sym, isWinning, symbolSize }) {
@@ -89,7 +93,7 @@ export default function SlotReelGrid({ spinning, finalGrid, showResult, theme, w
   const config = gridConfig || DEFAULT_GRID_CONFIG;
 
   return (
-    <div className="relative w-full h-full">
+    <div className="absolute inset-0">
       {/* Grille positionnee selon la config admin */}
       <div
         className="absolute"

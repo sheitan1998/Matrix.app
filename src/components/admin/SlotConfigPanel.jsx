@@ -62,6 +62,10 @@ export default function SlotConfigPanel() {
           grid_pos_x: config.grid_pos_x,
           grid_pos_y: config.grid_pos_y,
           symbol_size: config.symbol_size,
+          bg_image: config.bg_image,
+          control_pos_x: config.control_pos_x,
+          control_pos_y: config.control_pos_y,
+          control_scale: config.control_scale,
         });
       } else {
         const created = await base44.entities.SlotThemeConfig.create({
@@ -72,6 +76,10 @@ export default function SlotConfigPanel() {
           grid_pos_x: config.grid_pos_x,
           grid_pos_y: config.grid_pos_y,
           symbol_size: config.symbol_size,
+          bg_image: config.bg_image,
+          control_pos_x: config.control_pos_x,
+          control_pos_y: config.control_pos_y,
+          control_scale: config.control_scale,
         });
         setConfigs(prev => ({ ...prev, [selectedTheme]: created }));
       }
@@ -105,6 +113,9 @@ export default function SlotConfigPanel() {
     { key: "grid_pos_y", label: "Position Y", min: 0, max: 100, unit: "%" },
     { key: "grid_gap", label: "Espacement", min: 0, max: 20, unit: "px" },
     { key: "symbol_size", label: "Taille symboles", min: 12, max: 60, unit: "px" },
+    { key: "control_pos_x", label: "Boutons: Position X", min: 0, max: 100, unit: "%" },
+    { key: "control_pos_y", label: "Boutons: Position Y", min: 0, max: 40, unit: "%" },
+    { key: "control_scale", label: "Boutons: Taille", min: 50, max: 200, unit: "%" },
   ];
 
   return (
@@ -185,6 +196,25 @@ export default function SlotConfigPanel() {
 
         {/* Contrôles */}
         <div className="rounded-2xl border border-white/10 p-4 space-y-4" style={{ background: "rgba(15,10,25,0.6)" }}>
+          {/* Image de fond */}
+          <div>
+            <label className="text-xs font-bold text-white/60 mb-1.5 block">Image de fond du slot</label>
+            <input
+              type="text"
+              value={currentConfig.bg_image || ""}
+              onChange={(e) => updateField("bg_image", e.target.value)}
+              placeholder="URL de l'image (laisser vide pour l'image par défaut)"
+              className="w-full px-3 py-2 rounded-lg text-xs bg-white/5 border border-white/10 text-white placeholder-white/30"
+            />
+            {currentConfig.bg_image && (
+              <img
+                src={currentConfig.bg_image}
+                alt=""
+                className="mt-2 w-full h-20 object-cover rounded-lg"
+                onError={(e) => { e.target.style.display = "none"; }}
+              />
+            )}
+          </div>
           {sliders.map(s => (
             <div key={s.key}>
               <div className="flex items-center justify-between mb-1.5">
