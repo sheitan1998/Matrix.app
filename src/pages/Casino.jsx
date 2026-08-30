@@ -88,7 +88,7 @@ export default function Casino() {
       <FloatingTokens />
 
       {/* Top header bar */}
-      <header className="relative z-30 flex items-center justify-between px-4 py-3"
+      <header className="relative z-30 flex items-center justify-between px-3 py-4"
       style={{ background: "rgba(10,5,15,0.7)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(197,160,89,0.15)" }}>
         {/* Left: nav + credits */}
         <div className="flex items-center gap-2 sm:gap-3">
@@ -215,8 +215,8 @@ export default function Casino() {
           setShowThemeSelect(false);
           setScreen("slots");
         }}
-        onClose={() => setShowThemeSelect(false)}
-      />
+        onClose={() => setShowThemeSelect(false)} />
+      
     </div>);
 
 }
