@@ -4,6 +4,7 @@ import CasinoToken from "./CasinoToken";
 import { formatBet, BET_STEPS } from "./slotThemes";
 
 const DEFAULT_POSITIONS = {
+  credits_display: { x: 12, y: 90 },
   spin: { x: 85, y: 85 },
   auto: { x: 85, y: 75 },
   bet_minus: { x: 28, y: 90 },
@@ -50,6 +51,18 @@ export default function SlotControlBar({
 
   return (
     <>
+      {/* Credits display — masks the painted "CREDITS" label in the bg image */}
+      <div
+        style={btnStyle("credits_display", { bg: theme.controlBg, text: "#fff", border: `1px solid ${theme.controlBorderColor}`, radius: 8 })}
+        className="text-center min-w-[70px] pointer-events-none px-2 py-0.5"
+      >
+        <p className="text-[8px] font-bold text-white/50 uppercase">Crédits</p>
+        <div className="flex items-center justify-center gap-0.5">
+          <CasinoToken size={12} />
+          <p className="text-sm font-mono font-black text-white">{formatBet(balance)}</p>
+        </div>
+      </div>
+
       {/* Bet minus */}
       <button
         style={btnStyle("bet_minus", { bg: theme.minusBg, text: "#fff", border: "none", radius: 50 })}
@@ -60,10 +73,10 @@ export default function SlotControlBar({
         −
       </button>
 
-      {/* Bet display */}
+      {/* Bet display — masks the painted "BET" label in the bg image */}
       <div
-        style={btnStyle("bet_display", { bg: "transparent", text: "#fff", border: "none", radius: 0 })}
-        className="text-center min-w-[55px] pointer-events-none"
+        style={btnStyle("bet_display", { bg: theme.controlBg, text: "#fff", border: `1px solid ${theme.controlBorderColor}`, radius: 8 })}
+        className="text-center min-w-[55px] pointer-events-none px-2 py-0.5"
       >
         <p className="text-[8px] font-bold text-white/50 uppercase">Mise</p>
         <div className="flex items-center justify-center gap-0.5">

@@ -91,10 +91,10 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
     };
   }, []);
 
-  // Regenerate grid when theme changes
+  // Regenerate grid when theme or custom symbols load
   useEffect(() => {
     setFinalGrid(generateRandomGrid(SYMBOLS));
-  }, [themeId]);
+  }, [SYMBOLS]);
 
   // Fetch grid config from admin (realtime sync)
   useEffect(() => {
