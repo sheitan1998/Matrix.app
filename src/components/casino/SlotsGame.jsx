@@ -249,7 +249,7 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
       <div className="relative z-10 flex flex-col" style={{ minHeight: "calc(100vh - 56px)" }}>
         {/* Header bar: Credits / Theme / Bet */}
         <div
-          className="flex items-center justify-between pl-3 pr-2"
+          className="flex items-center justify-between pl-3 pr-2 mb-2 mr-1"
           style={{ background: theme.controlBg, borderBottom: `1px solid ${theme.frameAccent}40`, backdropFilter: "blur(8px)" }}>
           
           {/* Credits (left) */}
