@@ -129,7 +129,18 @@ export default async function(req: Request): Promise<Response> {
       // ---- Get player balance ----
       case 'getBalance': {
         const player = await getPlayer(base44, user);
-        return Response.json({ balance: player.balance || 0 });
+        // Check 24h reset
+        const nowMs = Date.now();
+        const lastResetMs = player.last_reset_24h ? new Date(player.last_reset_24h).getTime() : 0;
+        const hoursSinceReset = (nowMs - lastResetMs) / (1000 * 60 * 60);
+        let won24h = player.won_24h || 0;
+        if (hoursSinceReset >= 24) {
+          won24h = 0;
+          if (player.id) {
+            await base44.asServiceRole.entities.CasinoPlayer.update(player.id, { won_24h: 0, last_reset_24h: new Date().toISOString() });
+          }
+        }
+        return Response.json({ balance: player.balance || 0, won_24h: won24h });
       }
 
       // ---- Get player profile (level, XP, achievements, stats) ----
@@ -163,6 +174,7 @@ export default async function(req: Request): Promise<Response> {
           biggest_win: player.biggest_win || 0,
           max_bet: player.max_bet || 0,
           jackpot_wins: player.jackpot_wins || 0,
+          won_24h: player.won_24h || 0,
           achievements: allAchievements,
           achievement_defs: CASINO_ACHIEVEMENTS,
         });
@@ -232,11 +244,38 @@ export default async function(req: Request): Promise<Response> {
         const netGain = payout - betAmount;
         const newBalance = (player.balance || 0) - betAmount + payout;
 
-        // XP gain: 1 XP per token wagered
-        const xpGained = betAmount;
-        const newTotalXp = (player.total_xp || 0) + xpGained;
+        // XP: 10 XP casino + 1 XP global per win only
+        const casinoXpGained = (isWin || isJackpotWin) ? 10 : 0;
+        const globalXpGained = (isWin || isJackpotWin) ? 1 : 0;
+        const newTotalXp = (player.total_xp || 0) + casinoXpGained;
         const newLevel = computeLevel(newTotalXp);
         const newXpInLevel = computeXpInLevel(newTotalXp);
+
+        // Update global profile XP (1 XP per win)
+        if (globalXpGained > 0) {
+          try {
+            const progressRecords = await base44.asServiceRole.entities.UserProgress.filter({ user_email: user.email });
+            if (progressRecords.length > 0) {
+              const progress = progressRecords[0];
+              await base44.asServiceRole.entities.UserProgress.update(progress.id, {
+                total_xp: (progress.total_xp || 0) + globalXpGained,
+              });
+            }
+          } catch {}
+        }
+
+        // Track 24h gains
+        const nowMs = Date.now();
+        const lastResetMs = player.last_reset_24h ? new Date(player.last_reset_24h).getTime() : 0;
+        const hoursSinceReset = (nowMs - lastResetMs) / (1000 * 60 * 60);
+        let newWon24h = player.won_24h || 0;
+        if (payout > 0) {
+          if (hoursSinceReset >= 24) {
+            newWon24h = payout;
+          } else {
+            newWon24h = (player.won_24h || 0) + payout;
+          }
+        }
 
         // Update player stats
         const playerUpdate: any = {
@@ -249,6 +288,8 @@ export default async function(req: Request): Promise<Response> {
           total_won: (player.total_won || 0) + payout,
           biggest_win: Math.max(player.biggest_win || 0, payout),
           max_bet: Math.max(player.max_bet || 0, betAmount),
+          won_24h: newWon24h,
+          last_reset_24h: hoursSinceReset >= 24 ? new Date().toISOString() : (player.last_reset_24h || new Date().toISOString()),
         };
         if (isJackpotWin) playerUpdate.jackpot_wins = (player.jackpot_wins || 0) + 1;
 

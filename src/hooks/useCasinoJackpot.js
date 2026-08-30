@@ -75,6 +75,11 @@ export async function casinoGetBalance() {
   return res.data?.balance ?? 5000;
 }
 
+export async function casinoGetWon24h() {
+  const res = await base44.functions.invoke("casinoEngine", { action: "getBalance" });
+  return res.data?.won_24h ?? 0;
+}
+
 export async function casinoGetProfile() {
   const res = await base44.functions.invoke("casinoEngine", { action: "getProfile" });
   return res.data;

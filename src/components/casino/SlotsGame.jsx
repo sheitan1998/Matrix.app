@@ -247,54 +247,6 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
 
       {/* ─── Content overlay ─── */}
       <div className="relative z-10 flex flex-col" style={{ minHeight: "calc(100vh - 56px)" }}>
-        {/* Header bar: Credits / Theme / Bet */}
-        <div
-          className="flex items-center justify-between pl-3 pr-2 mb-2 mr-1"
-          style={{ background: theme.controlBg, borderBottom: `1px solid ${theme.frameAccent}40`, backdropFilter: "blur(8px)" }}>
-          
-          {/* Credits (left) */}
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${theme.frameAccent}20`, border: `1px solid ${theme.frameAccent}50` }}>
-              <span className="text-sm">⭐</span>
-            </div>
-            <div>
-              <p className="text-[8px] font-bold text-white/50 uppercase tracking-wider">Crédits</p>
-              <div className="flex items-center gap-1">
-                <CasinoToken size={14} />
-                <span className="text-sm font-mono font-black" style={{ color: theme.frameAccent }}>{formatBet(balance)}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Theme name (center) */}
-          <div className="text-center">
-            <div className="flex items-center gap-1.5 justify-center">
-              <span className="text-base">{theme.emoji}</span>
-              <span className="text-sm font-black tracking-wider" style={{ color: theme.frameAccent, textShadow: `0 0 10px ${theme.frameAccent}40` }}>
-                {theme.name}
-              </span>
-            </div>
-          </div>
-
-          {/* Bet (right) */}
-          <div className="flex items-center gap-2">
-            <div className="text-right">
-              <p className="text-[8px] font-bold text-white/50 uppercase tracking-wider">Mise</p>
-              <div className="flex items-center gap-1 justify-end">
-                <CasinoToken size={14} />
-                <span className="text-sm font-mono font-black text-white">{formatBet(bet)}</span>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowPaytable(true)}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-sm transition hover:scale-105"
-              style={{ background: `${theme.frameAccent}20`, border: `1px solid ${theme.frameAccent}50` }}>
-              
-              ?
-            </button>
-          </div>
-        </div>
-
         {/* ─── Reel grid integrated into background ─── */}
         <div className="flex-1 relative">
           <SlotReelGrid
@@ -326,7 +278,7 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
       </div>
 
       {/* Paytable modal */}
-      <PaytableModal show={showPaytable} theme={theme} onClose={() => setShowPaytable(false)} />
+      <PaytableModal show={showPaytable} theme={theme} onClose={() => setShowPaytable(false)} symbols={SYMBOLS} />
     </div>);
 
 }

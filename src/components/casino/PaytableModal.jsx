@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import CasinoToken from "./CasinoToken";
 
-export default function PaytableModal({ show, theme, onClose }) {
+export default function PaytableModal({ show, theme, onClose, symbols }) {
   useEffect(() => {
     if (!show) return;
     const handleEsc = (e) => { if (e.key === "Escape") onClose(); };
@@ -47,16 +47,20 @@ export default function PaytableModal({ show, theme, onClose }) {
             {/* Paytable content */}
             <div className="p-4 space-y-2 max-h-[60vh] overflow-y-auto scrollbar-thin">
               <p className="text-[10px] text-white/40 mb-2">
-                Alignez 3 symboles identiques ou plus sur une ligne pour gagner. Le Wild ({theme.symbols.find(s => s.isWild)?.s || "★"}) remplace n'importe quel symbole.
-              </p>
-              {theme.symbols.map((sym, i) => (
+                Alignez 3 symboles identiques ou plus sur une ligne pour gagner. Le Wild ({(symbols || theme.symbols).find(s => s.isWild)?.s || "★"}) remplace n'importe quel symbole.
+                </p>
+                {(symbols || theme.symbols).map((sym, i) => (
                 <div
                   key={i}
                   className="flex items-center justify-between px-3 py-2 rounded-xl"
                   style={{ background: `${theme.frameAccent}08`, border: `1px solid ${theme.frameAccent}15` }}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">{sym.s}</span>
+                    {sym.image_url ? (
+                      <img src={sym.image_url} alt={sym.label} className="w-8 h-8 object-contain" />
+                    ) : (
+                      <span className="text-2xl">{sym.s}</span>
+                    )}
                     <div>
                       <p className="text-sm font-bold text-white">{sym.label}</p>
                       {sym.isWild && <p className="text-[9px] font-black" style={{ color: theme.frameAccent }}>WILD</p>}

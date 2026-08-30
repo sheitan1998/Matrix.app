@@ -49,6 +49,16 @@
       "type": "number",
       "default": 0
     },
+    "won_24h": {
+      "type": "number",
+      "default": 0,
+      "description": "Gains cumul\u00e9s des derni\u00e8res 24 heures"
+    },
+    "last_reset_24h": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Derni\u00e8re r\u00e9initialisation du compteur 24h"
+    },
     "achievements": {
       "type": "array",
       "items": {

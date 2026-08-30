@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Home, ShoppingBag, User, Sparkles } from "lucide-react";
-import { casinoGetBalance, casinoGetProfile } from "@/hooks/useCasinoJackpot";
+import { casinoGetBalance, casinoGetProfile, casinoGetWon24h } from "@/hooks/useCasinoJackpot";
 import SlotsGame from "@/components/casino/SlotsGame";
 import CasinoToken from "@/components/casino/CasinoToken";
 import CasinoShop from "@/pages/casino/CasinoShop";
@@ -43,9 +43,15 @@ function useCasinoCoins() {
 export default function Casino() {
   const [screen, setScreen] = useState("home"); // "home" | "slots" | "shop" | "profile"
   const [casinoCoins, setCasinoCoins] = useCasinoCoins();
+  const [won24h, setWon24h] = useState(0);
   const [newAchievements, setNewAchievements] = useState([]);
   const [selectedTheme, setSelectedTheme] = useState(null);
   const [showThemeSelect, setShowThemeSelect] = useState(false);
+
+  // Fetch 24h gains on mount
+  useEffect(() => {
+    casinoGetWon24h().then((w) => setWon24h(w)).catch(() => {});
+  }, []);
 
   // Handle payment success redirect
   useEffect(() => {
@@ -63,7 +69,9 @@ export default function Casino() {
     }
   }, []);
 
-  const handleWin = () => {};
+  const handleWin = () => {
+    casinoGetWon24h().then((w) => setWon24h(w)).catch(() => {});
+  };
 
   return (
     <div className="min-h-screen relative overflow-hidden select-none"
@@ -82,6 +90,7 @@ export default function Casino() {
       {/* Top header bar */}
       <header className="relative z-30 flex items-center justify-between px-4 py-3"
       style={{ background: "rgba(10,5,15,0.7)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(197,160,89,0.15)" }}>
+        {/* Left: nav + credits */}
         <div className="flex items-center gap-2 sm:gap-3">
           <Link to="/" className="flex items-center gap-2 text-white/60 hover:text-white transition tap-sm">
             <ArrowLeft className="w-4 h-4" />
@@ -93,17 +102,26 @@ export default function Casino() {
               <span className="text-xs font-bold hidden sm:inline">Accueil</span>
             </button>
           }
-          <div className="flex items-center gap-2 ml-1">
-            <span className="text-xl font-black tracking-wider" style={{
-              background: "linear-gradient(135deg, #C5A059, #8B6B2B)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              textShadow: "0 0 20px rgba(197,160,89,0.3)"
-            }}>NEXUS GAME</span>
+          <div className="flex items-center gap-2 px-3 h-9 rounded-xl ml-1"
+          style={{ background: "rgba(197,160,89,0.08)", border: "1px solid rgba(197,160,89,0.2)" }}>
+            <CasinoToken size={22} />
+            <span className="text-sm font-mono font-black" style={{ color: "#C5A059" }}>
+              {formatBet(casinoCoins)}
+            </span>
           </div>
         </div>
 
-        {/* Right: nav buttons + balance */}
+        {/* Center: logo */}
+        <div className="flex items-center gap-2">
+          <span className="text-xl font-black tracking-wider" style={{
+            background: "linear-gradient(135deg, #C5A059, #8B6B2B)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            textShadow: "0 0 20px rgba(197,160,89,0.3)"
+          }}>NEXUS GAME</span>
+        </div>
+
+        {/* Right: nav buttons + 24h gains */}
         <div className="flex items-center gap-2">
           {screen !== "profile" &&
           <button onClick={() => setScreen("profile")} className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold text-white/80 transition hover:opacity-90 tap-sm"
@@ -118,10 +136,11 @@ export default function Casino() {
             </button>
           }
           <div className="flex items-center gap-2 px-3 h-9 rounded-xl"
-          style={{ background: "rgba(197,160,89,0.08)", border: "1px solid rgba(197,160,89,0.2)" }}>
-            <CasinoToken size={22} />
-            <span className="text-sm font-mono font-black" style={{ color: "#C5A059" }}>
-              {formatBet(casinoCoins)}
+          style={{ background: "rgba(76,175,80,0.08)", border: "1px solid rgba(76,175,80,0.2)" }}>
+            <span className="text-[8px] font-bold text-white/50 uppercase tracking-wider hidden sm:block">24h</span>
+            <CasinoToken size={18} />
+            <span className="text-sm font-mono font-black" style={{ color: "#4caf50" }}>
+              {formatBet(won24h)}
             </span>
           </div>
         </div>
