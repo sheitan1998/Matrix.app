@@ -55,6 +55,16 @@
       "type": "number",
       "default": 100,
       "description": "Echelle des boutons en pourcentage (50-200)"
+    },
+    "win_rate": {
+      "type": "number",
+      "default": 49,
+      "description": "Taux de victoire en pourcentage (0-100)"
+    },
+    "button_styles": {
+      "type": "object",
+      "default": {},
+      "description": "Configuration des styles et positions des boutons par theme (spin, auto, bet_minus, bet_plus, max_bet, paytable)"
     }
   },
   "required": [

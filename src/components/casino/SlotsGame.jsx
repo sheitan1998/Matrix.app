@@ -162,7 +162,7 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
 
     let serverResult;
     try {
-      serverResult = await casinoPlaceBet("slots", bet);
+      serverResult = await casinoPlaceBet("slots", bet, null, themeId);
     } catch {
       setSpinning(false);
       setBalance(b => b + bet);
@@ -308,32 +308,21 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
           />
         </div>
 
-        {/* ─── Control bar (position configurable) ─── */}
-        <div
-          className="absolute z-20"
-          style={{
-            left: `${gridConfig?.control_pos_x ?? 50}%`,
-            bottom: `${gridConfig?.control_pos_y ?? 4}%`,
-            transform: `translateX(-50%) scale(${(gridConfig?.control_scale ?? 100) / 100})`,
-            transformOrigin: "bottom center",
-            width: "92%",
-            maxWidth: "640px",
-          }}
-        >
-          <SlotControlBar
-            balance={balance}
-            bet={bet}
-            lastWin={lastWin}
-            spinning={spinning}
-            autoSpinning={autoSpinning}
-            autoCount={autoCount}
-            onSpin={spin}
-            onToggleAuto={toggleAutoSpin}
-            onBetChange={changeBet}
-            onPaytable={() => setShowPaytable(true)}
-            theme={theme}
-          />
-        </div>
+        {/* ─── Control buttons (individually positioned) ─── */}
+        <SlotControlBar
+          balance={balance}
+          bet={bet}
+          lastWin={lastWin}
+          spinning={spinning}
+          autoSpinning={autoSpinning}
+          autoCount={autoCount}
+          onSpin={spin}
+          onToggleAuto={toggleAutoSpin}
+          onBetChange={changeBet}
+          onPaytable={() => setShowPaytable(true)}
+          theme={theme}
+          buttonStyles={gridConfig?.button_styles}
+        />
       </div>
 
       {/* Paytable modal */}

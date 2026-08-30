@@ -59,12 +59,13 @@ export function useCasinoJackpot() {
 /**
  * Casino engine API helpers — thin wrappers around base44.functions.invoke.
  */
-export async function casinoPlaceBet(game, bet, betType = null) {
+export async function casinoPlaceBet(game, bet, betType = null, themeKey = null) {
   const res = await base44.functions.invoke("casinoEngine", {
     action: "placeBet",
     game,
     bet,
     betType,
+    theme_key: themeKey,
   });
   return res.data;
 }

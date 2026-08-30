@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { SLOT_THEMES } from "@/components/casino/slotThemes";
 import { DEFAULT_GRID_CONFIG } from "@/components/casino/SlotReelGrid";
 import SlotSymbolEditor from "@/components/admin/SlotSymbolEditor";
+import ButtonStylesEditor from "@/components/admin/ButtonStylesEditor";
 import { Save, RotateCcw, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -67,6 +68,8 @@ export default function SlotConfigPanel() {
           control_pos_x: config.control_pos_x,
           control_pos_y: config.control_pos_y,
           control_scale: config.control_scale,
+          win_rate: config.win_rate,
+          button_styles: config.button_styles,
         });
       } else {
         const created = await base44.entities.SlotThemeConfig.create({
@@ -81,6 +84,8 @@ export default function SlotConfigPanel() {
           control_pos_x: config.control_pos_x,
           control_pos_y: config.control_pos_y,
           control_scale: config.control_scale,
+          win_rate: config.win_rate,
+          button_styles: config.button_styles,
         });
         setConfigs(prev => ({ ...prev, [selectedTheme]: created }));
       }
@@ -117,6 +122,7 @@ export default function SlotConfigPanel() {
     { key: "control_pos_x", label: "Boutons: Position X", min: 0, max: 100, unit: "%" },
     { key: "control_pos_y", label: "Boutons: Position Y", min: 0, max: 40, unit: "%" },
     { key: "control_scale", label: "Boutons: Taille", min: 50, max: 200, unit: "%" },
+    { key: "win_rate", label: "Taux de victoire (RTP)", min: 0, max: 100, unit: "%" },
   ];
 
   return (
@@ -259,6 +265,9 @@ export default function SlotConfigPanel() {
           </div>
         </div>
       </div>
+
+      {/* Éditeur de styles de boutons */}
+      <ButtonStylesEditor themeKey={selectedTheme} />
 
       {/* Éditeur de symboles */}
       <SlotSymbolEditor themeKey={selectedTheme} />

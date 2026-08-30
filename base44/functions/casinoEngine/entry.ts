@@ -170,7 +170,7 @@ export default async function(req: Request): Promise<Response> {
 
       // ---- Place a bet (server-side outcome, 49% win rate) ----
       case 'placeBet': {
-        const { game, bet, betType } = params;
+        const { game, bet, betType, theme_key } = params;
         const betAmount = Math.floor(bet);
         if (!betAmount || betAmount <= 0) {
           return Response.json({ error: 'Invalid bet' }, { status: 400 });
@@ -185,7 +185,17 @@ export default async function(req: Request): Promise<Response> {
         const effectiveJackpot = computeEffectiveAmount(jackpotRecord);
         const contribution = Math.floor(betAmount * BET_CONTRIBUTION_RATE);
 
-        const isWin = Math.random() < WIN_RATE;
+        // Fetch win_rate from SlotThemeConfig (default 49%)
+        let effectiveWinRate = WIN_RATE;
+        if (theme_key) {
+          try {
+            const themeConfigs = await base44.asServiceRole.entities.SlotThemeConfig.filter({ theme_key });
+            if (themeConfigs.length > 0 && themeConfigs[0].win_rate != null) {
+              effectiveWinRate = themeConfigs[0].win_rate / 100;
+            }
+          } catch {}
+        }
+        const isWin = Math.random() < effectiveWinRate;
         const isJackpotWin = Math.random() < JACKPOT_WIN_CHANCE;
 
         let payout = 0;

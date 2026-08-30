@@ -3,10 +3,41 @@ import { motion } from "framer-motion";
 import CasinoToken from "./CasinoToken";
 import { formatBet, BET_STEPS } from "./slotThemes";
 
+const DEFAULT_POSITIONS = {
+  spin: { x: 85, y: 85 },
+  auto: { x: 85, y: 75 },
+  bet_minus: { x: 28, y: 90 },
+  bet_display: { x: 36, y: 90 },
+  bet_plus: { x: 44, y: 90 },
+  max_bet: { x: 52, y: 90 },
+  win_display: { x: 62, y: 90 },
+  paytable: { x: 72, y: 90 },
+};
+
 export default function SlotControlBar({
   balance, bet, lastWin, spinning, autoSpinning, autoCount,
-  onSpin, onToggleAuto, onBetChange, onPaytable, theme
+  onSpin, onToggleAuto, onBetChange, onPaytable, theme, buttonStyles
 }) {
+  const styles = buttonStyles || {};
+
+  const btnStyle = (key, defaults) => {
+    const s = styles[key] || {};
+    const pos = DEFAULT_POSITIONS[key];
+    return {
+      position: "absolute",
+      left: `${s.pos_x ?? pos.x}%`,
+      top: `${s.pos_y ?? pos.y}%`,
+      transform: "translate(-50%, -50%)",
+      background: s.bg || defaults.bg,
+      color: s.text_color || defaults.text,
+      border: s.border_color ? `1px solid ${s.border_color}` : defaults.border,
+      borderRadius: `${s.radius ?? defaults.radius}px`,
+      opacity: (s.opacity ?? 100) / 100,
+      zIndex: 20,
+      transition: "all 0.15s ease",
+    };
+  };
+
   const decreaseBet = () => {
     const idx = BET_STEPS.indexOf(bet);
     onBetChange(idx > 0 ? BET_STEPS[idx - 1] : BET_STEPS[BET_STEPS.length - 1]);
@@ -18,49 +49,54 @@ export default function SlotControlBar({
   const maxBet = () => onBetChange(BET_STEPS[BET_STEPS.length - 1]);
 
   return (
-    <div
-      className="flex items-center gap-2 sm:gap-3 rounded-2xl flex-wrap mx-auto"
-      style={{ background: theme.controlBg, border: `1px solid ${theme.controlBorderColor}`, backdropFilter: "blur(8px)" }}>
-      
-      {/* Bet controls: BET − / BET + */}
-      <div className="flex items-center gap-1.5">
-        <button
-          onClick={decreaseBet}
-          disabled={spinning || autoSpinning}
-          className="w-9 h-9 rounded-full flex items-center justify-center text-white font-black text-lg transition hover:scale-105 disabled:opacity-40"
-          style={{ background: theme.minusBg }}>
-          
-          −
-        </button>
-        <div className="text-center min-w-[55px] px-1">
-          <p className="text-[8px] font-bold text-white/50 uppercase">Mise</p>
-          <div className="flex items-center justify-center gap-0.5">
-            <CasinoToken size={12} />
-            <p className="text-sm font-mono font-black text-white">{formatBet(bet)}</p>
-          </div>
+    <>
+      {/* Bet minus */}
+      <button
+        style={btnStyle("bet_minus", { bg: theme.minusBg, text: "#fff", border: "none", radius: 50 })}
+        onClick={decreaseBet}
+        disabled={spinning || autoSpinning}
+        className="w-9 h-9 flex items-center justify-center font-black text-lg transition hover:scale-105 disabled:opacity-40"
+      >
+        −
+      </button>
+
+      {/* Bet display */}
+      <div
+        style={btnStyle("bet_display", { bg: "transparent", text: "#fff", border: "none", radius: 0 })}
+        className="text-center min-w-[55px] pointer-events-none"
+      >
+        <p className="text-[8px] font-bold text-white/50 uppercase">Mise</p>
+        <div className="flex items-center justify-center gap-0.5">
+          <CasinoToken size={12} />
+          <p className="text-sm font-mono font-black text-white">{formatBet(bet)}</p>
         </div>
-        <button
-          onClick={increaseBet}
-          disabled={spinning || autoSpinning}
-          className="w-9 h-9 rounded-full flex items-center justify-center text-white font-black text-lg transition hover:scale-105 disabled:opacity-40"
-          style={{ background: theme.plusBg }}>
-          
-          +
-        </button>
       </div>
+
+      {/* Bet plus */}
+      <button
+        style={btnStyle("bet_plus", { bg: theme.plusBg, text: "#fff", border: "none", radius: 50 })}
+        onClick={increaseBet}
+        disabled={spinning || autoSpinning}
+        className="w-9 h-9 flex items-center justify-center font-black text-lg transition hover:scale-105 disabled:opacity-40"
+      >
+        +
+      </button>
 
       {/* MAX BET */}
       <button
+        style={btnStyle("max_bet", { bg: "linear-gradient(135deg, #4a6c88, #243644)", text: "#fff", border: "none", radius: 12 })}
         onClick={maxBet}
         disabled={spinning || autoSpinning}
-        className="px-3 h-9 rounded-xl text-xs font-black text-white transition hover:scale-105 disabled:opacity-40"
-        style={{ background: "linear-gradient(135deg, #4a6c88, #243644)" }}>
-        
+        className="px-3 h-9 text-xs font-black transition hover:scale-105 disabled:opacity-40"
+      >
         MAX MISE
       </button>
 
       {/* Win display */}
-      <div className="text-center min-w-[70px] px-2">
+      <div
+        style={btnStyle("win_display", { bg: "transparent", text: "#fff", border: "none", radius: 0 })}
+        className="text-center min-w-[70px] pointer-events-none"
+      >
         <p className="text-[8px] font-bold text-white/50 uppercase">Victoire</p>
         <div className="flex items-center justify-center gap-0.5">
           <CasinoToken size={12} />
@@ -72,45 +108,41 @@ export default function SlotControlBar({
 
       {/* PAYTABLE */}
       <button
+        style={btnStyle("paytable", { bg: "linear-gradient(135deg, #4a3a6a, #2a1a4a)", text: "#fff", border: `1px solid ${theme.frameAccent}40`, radius: 12 })}
         onClick={onPaytable}
         disabled={spinning}
-        className="px-3 h-9 rounded-xl text-xs font-black text-white transition hover:scale-105 disabled:opacity-40"
-        style={{ background: "linear-gradient(135deg, #4a3a6a, #2a1a4a)", border: `1px solid ${theme.frameAccent}40` }}>
-        
+        className="px-3 h-9 text-xs font-black transition hover:scale-105 disabled:opacity-40"
+      >
         PAYTABLE
       </button>
 
-      {/* SPIN + AUTO PLAY */}
-      <div className="flex flex-col items-center gap-1.5 ml-auto">
-        <motion.button
-          onClick={onSpin}
-          disabled={spinning || autoSpinning}
-          whileTap={{ scale: 0.95 }}
-          className="px-6 h-11 rounded-2xl font-black text-white text-base transition"
-          style={{
-            background: spinning || autoSpinning ? "linear-gradient(135deg, #333, #222)" : theme.spinBg,
-            boxShadow: spinning || autoSpinning ? "none" : theme.spinShadow
-          }}>
-          
-          {spinning ? "..." : "SPIN"}
-        </motion.button>
-        <motion.button
-          onClick={onToggleAuto}
-          whileTap={{ scale: 0.95 }}
-          disabled={spinning && !autoSpinning}
-          className="px-4 h-8 rounded-xl font-black text-xs flex items-center gap-1.5 transition disabled:opacity-40"
-          style={{
-            background: autoSpinning ?
-            "linear-gradient(135deg, #ff4444, #cc2222)" :
-            `linear-gradient(135deg, ${theme.frameAccent}, ${theme.frameAccent}cc)`,
-            color: "#fff",
-            boxShadow: autoSpinning ? "0 0 12px rgba(255,68,68,0.4)" : `0 0 12px ${theme.frameAccent}40`,
-            border: autoSpinning ? "1px solid rgba(255,68,68,0.5)" : `1px solid ${theme.frameAccent}50`
-          }}>
-          
-          {autoSpinning ? `■ STOP ×${autoCount}` : "▶ AUTO PLAY"}
-        </motion.button>
-      </div>
-    </div>);
+      {/* SPIN */}
+      <motion.button
+        style={btnStyle("spin", {
+          bg: spinning || autoSpinning ? "linear-gradient(135deg, #333, #222)" : theme.spinBg,
+          text: "#fff", border: "none", radius: 16,
+        })}
+        onClick={onSpin}
+        disabled={spinning || autoSpinning}
+        whileTap={{ scale: 0.95 }}
+        className="px-6 h-11 font-black text-base transition"
+      >
+        {spinning ? "..." : "SPIN"}
+      </motion.button>
 
+      {/* AUTO PLAY */}
+      <motion.button
+        style={btnStyle("auto", {
+          bg: autoSpinning ? "linear-gradient(135deg, #ff4444, #cc2222)" : `linear-gradient(135deg, ${theme.frameAccent}, ${theme.frameAccent}cc)`,
+          text: "#fff", border: `1px solid ${theme.frameAccent}50`, radius: 12,
+        })}
+        onClick={onToggleAuto}
+        whileTap={{ scale: 0.95 }}
+        disabled={spinning && !autoSpinning}
+        className="px-4 h-8 text-xs font-black flex items-center gap-1.5 transition disabled:opacity-40"
+      >
+        {autoSpinning ? `■ STOP ×${autoCount}` : "▶ AUTO PLAY"}
+      </motion.button>
+    </>
+  );
 }
