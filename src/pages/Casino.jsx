@@ -12,6 +12,7 @@ import CasinoShop from "@/pages/casino/CasinoShop";
 import CasinoProfile from "@/pages/casino/CasinoProfile";
 import { formatBet } from "@/components/casino/slotThemes";
 import { toast } from "sonner";
+import ThemeSelectionModal from "@/components/casino/ThemeSelectionModal";
 
 const CASINO_BALANCE_KEY = "matrix_casino_coins";
 const SLOTS_CARD_IMG = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/62275f2a2_generated_image.png";
@@ -47,6 +48,8 @@ export default function Casino() {
   const [showWin, setShowWin] = useState(false);
   const [winData, setWinData] = useState(null);
   const [newAchievements, setNewAchievements] = useState([]);
+  const [selectedTheme, setSelectedTheme] = useState(null);
+  const [showThemeSelect, setShowThemeSelect] = useState(false);
 
   // Handle payment success redirect
   useEffect(() => {
@@ -146,7 +149,7 @@ export default function Casino() {
           <motion.div key="home"
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.3 }}>
-              <CasinoHome balance={casinoCoins} onPlay={() => setScreen("slots")} />
+              <CasinoHome balance={casinoCoins} onPlay={() => setShowThemeSelect(true)} />
             </motion.div> :
           screen === "shop" ?
           <motion.div key="shop"
@@ -164,12 +167,11 @@ export default function Casino() {
           <motion.div key="slots"
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.3 }}>
-              <div className="max-w-3xl mx-auto p-2 sm:p-4">
-                <SlotsGame
-                balance={casinoCoins}
-                setBalance={setCasinoCoins}
-                onWin={handleWin} />
-              </div>
+              <SlotsGame
+              balance={casinoCoins}
+              setBalance={setCasinoCoins}
+              themeId={selectedTheme}
+              onWin={handleWin} />
             </motion.div>
           }
         </AnimatePresence>
@@ -198,6 +200,17 @@ export default function Casino() {
         )}
         </div>
       }
+
+      {/* Theme selection modal */}
+      <ThemeSelectionModal
+        show={showThemeSelect}
+        onSelect={(themeKey) => {
+          setSelectedTheme(themeKey);
+          setShowThemeSelect(false);
+          setScreen("slots");
+        }}
+        onClose={() => setShowThemeSelect(false)}
+      />
     </div>);
 
 }

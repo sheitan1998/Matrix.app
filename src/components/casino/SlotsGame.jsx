@@ -58,8 +58,7 @@ function computeWinningCells(winRow, winCount) {
 
 // ─── Main component ───
 export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
-  const [selectedTheme, setSelectedTheme] = useState(themeId || DEFAULT_THEME);
-  const theme = SLOT_THEMES[selectedTheme] || SLOT_THEMES[DEFAULT_THEME];
+  const theme = SLOT_THEMES[themeId] || SLOT_THEMES[DEFAULT_THEME];
   const SYMBOLS = theme.symbols;
 
   const [spinning, setSpinning] = useState(false);
@@ -96,7 +95,7 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
   // Regenerate grid when theme changes
   useEffect(() => {
     setFinalGrid(generateRandomGrid(SYMBOLS));
-  }, [selectedTheme]);
+  }, [themeId]);
 
   useEffect(() => {
     return () => { if (autoRef.current) clearTimeout(autoRef.current); };
@@ -192,92 +191,72 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
   };
 
   return (
-    <div className="relative select-none">
+    <div className="relative select-none" style={{ minHeight: "calc(100vh - 56px)" }}>
       <CasinoWinEffect show={showWin} amount={winData?.amount} multiplier={winData?.multiplier} isJackpot={winData?.isJackpot} onDone={() => setShowWin(false)} />
       <WinEffect show={showWin} amount={winData?.amount} multiplier={winData?.multiplier} isJackpot={winData?.isJackpot} onDone={() => setShowWin(false)} />
 
-      {/* ─── Theme selector ─── */}
-      <div className="flex gap-1.5 overflow-x-auto pb-2 mb-2 no-scrollbar">
-        {Object.entries(SLOT_THEMES).map(([key, t]) => (
-          <button
-            key={key}
-            onClick={() => !spinning && setSelectedTheme(key)}
-            disabled={spinning || autoSpinning}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition disabled:opacity-40 ${
-              selectedTheme === key ? "text-white" : "text-white/40 bg-white/5"
-            }`}
-            style={selectedTheme === key ? {
-              background: `${t.frameAccent}20`,
-              border: `1px solid ${t.frameAccent}80`,
-              boxShadow: `0 0 10px ${t.frameAccent}30`,
-            } : { border: "1px solid rgba(255,255,255,0.05)" }}
-          >
-            <span>{t.emoji}</span>
-            <span>{t.name}</span>
-          </button>
-        ))}
-      </div>
+      {/* ─── Full-page background image ─── */}
+      <img
+        src={theme.bgImage}
+        alt=""
+        draggable={false}
+        onContextMenu={(e) => e.preventDefault()}
+        className="absolute inset-0 w-full h-full object-cover"
+      />
+      <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.3)" }} />
 
-      {/* ─── Header bar: Credits / Title / Bet ─── */}
-      <div
-        className="flex items-center justify-between px-4 py-2.5 rounded-xl mb-2"
-        style={{ background: theme.controlBg, border: `1px solid ${theme.frameAccent}40`, backdropFilter: "blur(8px)" }}
-      >
-        {/* Credits (left) */}
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${theme.frameAccent}20`, border: `1px solid ${theme.frameAccent}50` }}>
-            <span className="text-sm">⭐</span>
-          </div>
-          <div>
-            <p className="text-[8px] font-bold text-white/50 uppercase tracking-wider">Crédits</p>
-            <div className="flex items-center gap-1">
-              <CasinoToken size={14} />
-              <span className="text-sm font-mono font-black" style={{ color: theme.frameAccent }}>{formatBet(balance)}</span>
+      {/* ─── Content overlay ─── */}
+      <div className="relative z-10 flex flex-col" style={{ minHeight: "calc(100vh - 56px)" }}>
+        {/* Header bar: Credits / Theme / Bet */}
+        <div
+          className="flex items-center justify-between px-4 py-2.5"
+          style={{ background: theme.controlBg, borderBottom: `1px solid ${theme.frameAccent}40`, backdropFilter: "blur(8px)" }}
+        >
+          {/* Credits (left) */}
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${theme.frameAccent}20`, border: `1px solid ${theme.frameAccent}50` }}>
+              <span className="text-sm">⭐</span>
+            </div>
+            <div>
+              <p className="text-[8px] font-bold text-white/50 uppercase tracking-wider">Crédits</p>
+              <div className="flex items-center gap-1">
+                <CasinoToken size={14} />
+                <span className="text-sm font-mono font-black" style={{ color: theme.frameAccent }}>{formatBet(balance)}</span>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Title (center) */}
-        <div className="text-center">
-          <span className="text-sm font-black tracking-wider" style={{ color: theme.frameAccent, textShadow: `0 0 10px ${theme.frameAccent}40` }}>
-            NEXUS GAME
-          </span>
-        </div>
-
-        {/* Bet (right) */}
-        <div className="flex items-center gap-2">
-          <div className="text-right">
-            <p className="text-[8px] font-bold text-white/50 uppercase tracking-wider">Mise</p>
-            <div className="flex items-center gap-1 justify-end">
-              <CasinoToken size={14} />
-              <span className="text-sm font-mono font-black text-white">{formatBet(bet)}</span>
+          {/* Theme name (center) */}
+          <div className="text-center">
+            <div className="flex items-center gap-1.5 justify-center">
+              <span className="text-base">{theme.emoji}</span>
+              <span className="text-sm font-black tracking-wider" style={{ color: theme.frameAccent, textShadow: `0 0 10px ${theme.frameAccent}40` }}>
+                {theme.name}
+              </span>
             </div>
           </div>
-          <button
-            onClick={() => setShowPaytable(true)}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-sm transition hover:scale-105"
-            style={{ background: `${theme.frameAccent}20`, border: `1px solid ${theme.frameAccent}50` }}
-          >
-            ?
-          </button>
+
+          {/* Bet (right) */}
+          <div className="flex items-center gap-2">
+            <div className="text-right">
+              <p className="text-[8px] font-bold text-white/50 uppercase tracking-wider">Mise</p>
+              <div className="flex items-center gap-1 justify-end">
+                <CasinoToken size={14} />
+                <span className="text-sm font-mono font-black text-white">{formatBet(bet)}</span>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowPaytable(true)}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-sm transition hover:scale-105"
+              style={{ background: `${theme.frameAccent}20`, border: `1px solid ${theme.frameAccent}50` }}
+            >
+              ?
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* ─── Main game area: background image + reel grid centered ─── */}
-      <div className="relative rounded-2xl overflow-hidden" style={{ minHeight: "280px" }}>
-        {/* Background image */}
-        <img
-          src={theme.bgImage}
-          alt=""
-          draggable={false}
-          onContextMenu={(e) => e.preventDefault()}
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        {/* Dark overlay for readability */}
-        <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.25)" }} />
-
-        {/* Reel grid centered */}
-        <div className="relative z-10 flex items-center justify-center p-3 sm:p-4">
+        {/* ─── Reel grid centered ─── */}
+        <div className="flex-1 flex items-center justify-center p-3 sm:p-4">
           <SlotReelGrid
             spinning={spinning}
             finalGrid={finalGrid}
@@ -286,22 +265,24 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
             winningCells={winningCells}
           />
         </div>
-      </div>
 
-      {/* ─── Control bar ─── */}
-      <SlotControlBar
-        balance={balance}
-        bet={bet}
-        lastWin={lastWin}
-        spinning={spinning}
-        autoSpinning={autoSpinning}
-        autoCount={autoCount}
-        onSpin={spin}
-        onToggleAuto={toggleAutoSpin}
-        onBetChange={changeBet}
-        onPaytable={() => setShowPaytable(true)}
-        theme={theme}
-      />
+        {/* ─── Control bar ─── */}
+        <div className="p-2 sm:p-4">
+          <SlotControlBar
+            balance={balance}
+            bet={bet}
+            lastWin={lastWin}
+            spinning={spinning}
+            autoSpinning={autoSpinning}
+            autoCount={autoCount}
+            onSpin={spin}
+            onToggleAuto={toggleAutoSpin}
+            onBetChange={changeBet}
+            onPaytable={() => setShowPaytable(true)}
+            theme={theme}
+          />
+        </div>
+      </div>
 
       {/* Paytable modal */}
       <PaytableModal show={showPaytable} theme={theme} onClose={() => setShowPaytable(false)} />

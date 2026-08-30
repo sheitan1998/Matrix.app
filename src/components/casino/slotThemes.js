@@ -22,7 +22,7 @@ export const SLOT_THEMES = {
     name: "Casino Classique",
     emoji: "🎰",
     paylines: 20,
-    bgImage: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/f43cd0279_Gemini_Generated_Image_nqw5q4nqw5q4nqw5.jpg",
+    bgImage: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/e1de73c65_Gemini_Generated_Image_nqw5q4nqw5q4nqw5.jpg",
     symbols: [
       { s: "7",   label: "Sept",     color: "#ffd700", glow: "#ffaa00", mult: 50, rare: 1, isWild: true, isText: true },
       { s: "💎",  label: "Diamant",  color: "#00f2ff", glow: "#0099cc", mult: 30, rare: 2 },
@@ -61,7 +61,7 @@ export const SLOT_THEMES = {
     name: "Forêt Enchantée",
     emoji: "🌿",
     paylines: 20,
-    bgImage: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/629a467b4_Gemini_Generated_Image_hi0c5khi0c5khi0c.jpg",
+    bgImage: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/e13d5ca12_Gemini_Generated_Image_hi0c5khi0c5khi0c.jpg",
     symbols: [
       { s: "🧚", label: "Fée",      color: "#00f2ff", glow: "#0099cc", mult: 50, rare: 1, isWild: true },
       { s: "🌳", label: "Arbre",    color: "#22c55e", glow: "#16a34a", mult: 30, rare: 2 },
@@ -100,7 +100,7 @@ export const SLOT_THEMES = {
     name: "Enfer / Magma",
     emoji: "🔥",
     paylines: 20,
-    bgImage: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/5adfcf387_Gemini_Generated_Image_tzpxpytzpxpytzpx.jpg",
+    bgImage: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/1a877ab86_Gemini_Generated_Image_tzpxpytzpxpytzpx.jpg",
     symbols: [
       { s: "😈", label: "Démon",    color: "#ff4500", glow: "#cc2200", mult: 50, rare: 1, isWild: true },
       { s: "🔥", label: "Flamme",   color: "#ff6347", glow: "#cc2200", mult: 30, rare: 2 },
@@ -139,7 +139,7 @@ export const SLOT_THEMES = {
     name: "Paradis / Céleste",
     emoji: "😇",
     paylines: 20,
-    bgImage: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/a211acd2e_Gemini_Generated_Image_pgdhkwpgdhkwpgdh.jpg",
+    bgImage: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/9ad4e2640_Gemini_Generated_Image_pgdhkwpgdhkwpgdh.jpg",
     symbols: [
       { s: "😇", label: "Ange",     color: "#ffd700", glow: "#ffaa00", mult: 50, rare: 1, isWild: true },
       { s: "☁️", label: "Nuage",    color: "#ffffff", glow: "#e0e0e0", mult: 30, rare: 2 },
@@ -178,7 +178,7 @@ export const SLOT_THEMES = {
     name: "Savane / Animaux",
     emoji: "🦁",
     paylines: 20,
-    bgImage: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/97b1b13ef_Gemini_Generated_Image_2ut4s72ut4s72ut4.jpg",
+    bgImage: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/abe7c32e3_Gemini_Generated_Image_2ut4s72ut4s72ut4.jpg",
     symbols: [
       { s: "🦁", label: "Lion",     color: "#ff8c00", glow: "#cc6600", mult: 50, rare: 1, isWild: true },
       { s: "🐆", label: "Léopard",  color: "#ffd700", glow: "#ffaa00", mult: 30, rare: 2 },
@@ -217,7 +217,7 @@ export const SLOT_THEMES = {
     name: "Ovni / Extraterrestre",
     emoji: "🛸",
     paylines: 20,
-    bgImage: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/51901eb41_Gemini_Generated_Image_d6bzssd6bzssd6bz.jpg",
+    bgImage: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/0ba1cea9d_Gemini_Generated_Image_d6bzssd6bzssd6bz.jpg",
     symbols: [
       { s: "🛸", label: "Ovni",     color: "#00f2ff", glow: "#0099cc", mult: 50, rare: 1, isWild: true },
       { s: "👽", label: "Alien",    color: "#22c55e", glow: "#16a34a", mult: 30, rare: 2 },
