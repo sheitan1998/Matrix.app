@@ -5,6 +5,7 @@ import WinEffect from "./WinEffect";
 import CasinoWinEffect from "./CasinoWinEffect";
 import CasinoToken from "./CasinoToken";
 import { casinoPlaceBet } from "@/hooks/useCasinoJackpot";
+import { base44 } from "@/api/base44Client";
 import { SLOT_THEMES, DEFAULT_THEME, BET_STEPS, pickRandom, formatBet } from "./slotThemes";
 import SlotReelGrid from "./SlotReelGrid";
 import SlotControlBar from "./SlotControlBar";
@@ -76,6 +77,7 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
   const [showWin, setShowWin] = useState(false);
   const [winData, setWinData] = useState(null);
   const [winningCells, setWinningCells] = useState(null);
+  const [gridConfig, setGridConfig] = useState(null);
 
   useEffect(() => { balanceRef.current = balance; }, [balance]);
   useEffect(() => { autoSpinningRef.current = autoSpinning; }, [autoSpinning]);
@@ -95,6 +97,17 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
   // Regenerate grid when theme changes
   useEffect(() => {
     setFinalGrid(generateRandomGrid(SYMBOLS));
+  }, [themeId]);
+
+  // Fetch grid config from admin settings
+  useEffect(() => {
+    if (!themeId) return;
+    base44.entities.SlotThemeConfig.filter({ theme_key: themeId })
+      .then(records => {
+        if (records && records.length > 0) setGridConfig(records[0]);
+        else setGridConfig(null);
+      })
+      .catch(() => setGridConfig(null));
   }, [themeId]);
 
   useEffect(() => {
@@ -255,14 +268,15 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
           </div>
         </div>
 
-        {/* ─── Reel grid centered ─── */}
-        <div className="flex-1 flex items-center justify-center p-3 sm:p-4">
+        {/* ─── Reel grid integrated into background ─── */}
+        <div className="flex-1 relative">
           <SlotReelGrid
             spinning={spinning}
             finalGrid={finalGrid}
             showResult={result?.win && !spinning}
             theme={theme}
             winningCells={winningCells}
+            gridConfig={gridConfig}
           />
         </div>
 

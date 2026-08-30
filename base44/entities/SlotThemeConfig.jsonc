@@ -1,0 +1,61 @@
+{
+  "name": "SlotThemeConfig",
+  "type": "object",
+  "properties": {
+    "theme_key": {
+      "type": "string",
+      "description": "Cle du theme (classic, nature, enfer, paradis, savane, ovni)"
+    },
+    "grid_width": {
+      "type": "number",
+      "default": 70,
+      "description": "Largeur de la grille en pourcentage du conteneur"
+    },
+    "grid_height": {
+      "type": "number",
+      "default": 45,
+      "description": "Hauteur de la grille en pourcentage du conteneur"
+    },
+    "grid_gap": {
+      "type": "number",
+      "default": 4,
+      "description": "Espacement entre les symboles en pixels"
+    },
+    "grid_pos_x": {
+      "type": "number",
+      "default": 50,
+      "description": "Position horizontale de la grille en pourcentage"
+    },
+    "grid_pos_y": {
+      "type": "number",
+      "default": 50,
+      "description": "Position verticale de la grille en pourcentage"
+    },
+    "symbol_size": {
+      "type": "number",
+      "default": 28,
+      "description": "Taille des symboles en pixels"
+    }
+  },
+  "required": [
+    "theme_key"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {},
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
