@@ -19,7 +19,7 @@ export default function SlotControlBar({
 
   return (
     <div
-      className="flex items-center gap-2 sm:gap-3 rounded-2xl flex-wrap mx-auto pt-3"
+      className="flex items-center gap-2 sm:gap-3 rounded-2xl flex-wrap mx-auto"
       style={{ background: theme.controlBg, border: `1px solid ${theme.controlBorderColor}`, backdropFilter: "blur(8px)" }}>
       
       {/* Bet controls: BET − / BET + */}
