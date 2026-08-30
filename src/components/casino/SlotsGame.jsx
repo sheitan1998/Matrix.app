@@ -23,8 +23,8 @@ function generateWinningGrid(symbols, winSym, winRow, winCount) {
   for (let col = 0; col < 5; col++) {
     const reel = [];
     for (let row = 0; row < 3; row++) {
-      if (col < winCount && row === winRow) reel.push(winSym);
-      else reel.push(pickRandom(symbols));
+      if (col < winCount && row === winRow) reel.push(winSym);else
+      reel.push(pickRandom(symbols));
     }
     grid.push(reel);
   }
@@ -39,9 +39,9 @@ function hasThreeOfAKind(grid) {
 }
 
 function generateLosingGrid(symbols) {
-  let grid, attempts = 0;
-  do { grid = generateRandomGrid(symbols); attempts++; }
-  while (hasThreeOfAKind(grid) && attempts < 20);
+  let grid,attempts = 0;
+  do {grid = generateRandomGrid(symbols);attempts++;} while (
+  hasThreeOfAKind(grid) && attempts < 20);
   return grid;
 }
 
@@ -76,8 +76,8 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
   const [winningCells, setWinningCells] = useState(null);
   const [gridConfig, setGridConfig] = useState(null);
 
-  useEffect(() => { balanceRef.current = balance; }, [balance]);
-  useEffect(() => { autoSpinningRef.current = autoSpinning; }, [autoSpinning]);
+  useEffect(() => {balanceRef.current = balance;}, [balance]);
+  useEffect(() => {autoSpinningRef.current = autoSpinning;}, [autoSpinning]);
 
   // ─── Right-click / download prevention (global on page) ───
   useEffect(() => {
@@ -100,87 +100,87 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
   useEffect(() => {
     if (!themeId) return;
     const fetchConfig = () => {
-      base44.entities.SlotThemeConfig.filter({ theme_key: themeId })
-        .then(records => {
-          if (records && records.length > 0) setGridConfig(records[0]);
-          else setGridConfig(null);
-        })
-        .catch(() => setGridConfig(null));
+      base44.entities.SlotThemeConfig.filter({ theme_key: themeId }).
+      then((records) => {
+        if (records && records.length > 0) setGridConfig(records[0]);else
+        setGridConfig(null);
+      }).
+      catch(() => setGridConfig(null));
     };
     fetchConfig();
     const unsub = base44.entities.SlotThemeConfig.subscribe(() => fetchConfig());
-    return () => { if (unsub) unsub(); };
+    return () => {if (unsub) unsub();};
   }, [themeId]);
 
   // Fetch custom symbols from admin (realtime sync)
   useEffect(() => {
     if (!themeId) return;
     const fetchSymbols = () => {
-      base44.entities.SlotSymbol.filter({ theme_key: themeId })
-        .then(records => {
-          if (records && records.length > 0) {
-            const mapped = records.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map(r => ({
-              s: r.symbol,
-              image_url: r.image_url,
-              label: r.label,
-              color: r.color,
-              glow: r.glow,
-              mult: r.mult,
-              rare: r.rare,
-              isWild: r.is_wild,
-              isText: r.is_text,
-            }));
-            setCustomSymbols(mapped);
-          } else {
-            setCustomSymbols(null);
-          }
-        })
-        .catch(() => setCustomSymbols(null));
+      base44.entities.SlotSymbol.filter({ theme_key: themeId }).
+      then((records) => {
+        if (records && records.length > 0) {
+          const mapped = records.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map((r) => ({
+            s: r.symbol,
+            image_url: r.image_url,
+            label: r.label,
+            color: r.color,
+            glow: r.glow,
+            mult: r.mult,
+            rare: r.rare,
+            isWild: r.is_wild,
+            isText: r.is_text
+          }));
+          setCustomSymbols(mapped);
+        } else {
+          setCustomSymbols(null);
+        }
+      }).
+      catch(() => setCustomSymbols(null));
     };
     fetchSymbols();
     const unsub = base44.entities.SlotSymbol.subscribe(() => fetchSymbols());
-    return () => { if (unsub) unsub(); };
+    return () => {if (unsub) unsub();};
   }, [themeId]);
 
   useEffect(() => {
-    return () => { if (autoRef.current) clearTimeout(autoRef.current); };
+    return () => {if (autoRef.current) clearTimeout(autoRef.current);};
   }, []);
 
   const stopAutoSpin = () => {
     setAutoSpinning(false);
-    if (autoRef.current) { clearTimeout(autoRef.current); autoRef.current = null; }
+    if (autoRef.current) {clearTimeout(autoRef.current);autoRef.current = null;}
   };
 
   const doSpin = async () => {
     const currentBalance = balanceRef.current;
-    if (bet > currentBalance || bet <= 0) { stopAutoSpin(); toast.error("Solde insuffisant"); return; }
+    if (bet > currentBalance || bet <= 0) {stopAutoSpin();toast.error("Solde insuffisant");return;}
 
     setSpinning(true);
     setResult(null);
     setWinningCells(null);
-    setBalance(b => b - bet);
+    setBalance((b) => b - bet);
 
     let serverResult;
     try {
       serverResult = await casinoPlaceBet("slots", bet, null, themeId);
     } catch {
       setSpinning(false);
-      setBalance(b => b + bet);
+      setBalance((b) => b + bet);
       toast.error("Erreur de connexion");
       stopAutoSpin();
       return;
     }
     if (serverResult.error) {
       setSpinning(false);
-      setBalance(b => b + bet);
+      setBalance((b) => b + bet);
       toast.error(serverResult.error);
       stopAutoSpin();
       return;
     }
 
-    let grid, winCells = null;
+    let grid,winCells = null;
     if (serverResult.win) {
-      const winSym = SYMBOLS.find(s => s.s === serverResult.slotsSymbol) || SYMBOLS[0];
+      const winSym = SYMBOLS.find((s) => s.s === serverResult.slotsSymbol) || SYMBOLS[0];
       const winRow = Math.floor(Math.random() * 3);
       const winCount = Math.min(5, 3 + Math.floor(Math.random() * 3));
       grid = generateWinningGrid(SYMBOLS, winSym, winRow, winCount);
@@ -210,7 +210,7 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
       }
 
       if (autoSpinningRef.current && serverResult.newBalance - bet >= 0) {
-        setAutoCount(c => c + 1);
+        setAutoCount((c) => c + 1);
         autoRef.current = setTimeout(() => doSpin(), 800);
       } else if (autoSpinningRef.current) {
         stopAutoSpin();
@@ -218,11 +218,11 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
     }, 2500);
   };
 
-  const spin = () => { if (!autoSpinning) doSpin(); };
+  const spin = () => {if (!autoSpinning) doSpin();};
 
   const toggleAutoSpin = () => {
-    if (autoSpinning) { stopAutoSpin(); return; }
-    if (bet > balance) { toast.error("Solde insuffisant"); return; }
+    if (autoSpinning) {stopAutoSpin();return;}
+    if (bet > balance) {toast.error("Solde insuffisant");return;}
     setAutoSpinning(true);
     setAutoCount(0);
     doSpin();
@@ -241,17 +241,17 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
         alt=""
         draggable={false}
         onContextMenu={(e) => e.preventDefault()}
-        className="absolute inset-0 w-full h-full object-cover"
-      />
+        className="absolute inset-0 w-full h-full object-cover" />
+      
       <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.3)" }} />
 
       {/* ─── Content overlay ─── */}
       <div className="relative z-10 flex flex-col" style={{ minHeight: "calc(100vh - 56px)" }}>
         {/* Header bar: Credits / Theme / Bet */}
         <div
-          className="flex items-center justify-between px-4 py-2.5"
-          style={{ background: theme.controlBg, borderBottom: `1px solid ${theme.frameAccent}40`, backdropFilter: "blur(8px)" }}
-        >
+          className="flex items-center justify-between px-3 my-1"
+          style={{ background: theme.controlBg, borderBottom: `1px solid ${theme.frameAccent}40`, backdropFilter: "blur(8px)" }}>
+          
           {/* Credits (left) */}
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${theme.frameAccent}20`, border: `1px solid ${theme.frameAccent}50` }}>
@@ -288,8 +288,8 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
             <button
               onClick={() => setShowPaytable(true)}
               className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-sm transition hover:scale-105"
-              style={{ background: `${theme.frameAccent}20`, border: `1px solid ${theme.frameAccent}50` }}
-            >
+              style={{ background: `${theme.frameAccent}20`, border: `1px solid ${theme.frameAccent}50` }}>
+              
               ?
             </button>
           </div>
@@ -304,8 +304,8 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
             theme={theme}
             winningCells={winningCells}
             gridConfig={gridConfig}
-            symbols={SYMBOLS}
-          />
+            symbols={SYMBOLS} />
+          
         </div>
 
         {/* ─── Control buttons (individually positioned) ─── */}
@@ -321,12 +321,12 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
           onBetChange={changeBet}
           onPaytable={() => setShowPaytable(true)}
           theme={theme}
-          buttonStyles={gridConfig?.button_styles}
-        />
+          buttonStyles={gridConfig?.button_styles} />
+        
       </div>
 
       {/* Paytable modal */}
       <PaytableModal show={showPaytable} theme={theme} onClose={() => setShowPaytable(false)} />
-    </div>
-  );
+    </div>);
+
 }
