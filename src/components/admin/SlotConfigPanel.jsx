@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { SLOT_THEMES } from "@/components/casino/slotThemes";
 import { DEFAULT_GRID_CONFIG } from "@/components/casino/SlotReelGrid";
+import SlotSymbolEditor from "@/components/admin/SlotSymbolEditor";
 import { Save, RotateCcw, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -258,6 +259,9 @@ export default function SlotConfigPanel() {
           </div>
         </div>
       </div>
+
+      {/* Éditeur de symboles */}
+      <SlotSymbolEditor themeKey={selectedTheme} />
     </div>
   );
 }

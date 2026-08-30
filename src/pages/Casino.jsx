@@ -6,8 +6,6 @@ import { ArrowLeft, Home, ShoppingBag, User, Sparkles } from "lucide-react";
 import { casinoGetBalance, casinoGetProfile } from "@/hooks/useCasinoJackpot";
 import SlotsGame from "@/components/casino/SlotsGame";
 import CasinoToken from "@/components/casino/CasinoToken";
-import CasinoWinEffect from "@/components/casino/CasinoWinEffect";
-import WinEffect from "@/components/casino/WinEffect";
 import CasinoShop from "@/pages/casino/CasinoShop";
 import CasinoProfile from "@/pages/casino/CasinoProfile";
 import { formatBet } from "@/components/casino/slotThemes";
@@ -45,8 +43,6 @@ function useCasinoCoins() {
 export default function Casino() {
   const [screen, setScreen] = useState("home"); // "home" | "slots" | "shop" | "profile"
   const [casinoCoins, setCasinoCoins] = useCasinoCoins();
-  const [showWin, setShowWin] = useState(false);
-  const [winData, setWinData] = useState(null);
   const [newAchievements, setNewAchievements] = useState([]);
   const [selectedTheme, setSelectedTheme] = useState(null);
   const [showThemeSelect, setShowThemeSelect] = useState(false);
@@ -67,12 +63,7 @@ export default function Casino() {
     }
   }, []);
 
-  const handleWin = (data) => {
-    if (data && data.amount > 0) {
-      setWinData(data);
-      setShowWin(true);
-    }
-  };
+  const handleWin = () => {};
 
   return (
     <div className="min-h-screen relative overflow-hidden select-none"
@@ -176,10 +167,6 @@ export default function Casino() {
           }
         </AnimatePresence>
       </div>
-
-      {/* Win effects */}
-      <CasinoWinEffect show={showWin} amount={winData?.amount} multiplier={winData?.multiplier} isJackpot={winData?.isJackpot} onDone={() => setShowWin(false)} />
-      <WinEffect show={showWin} amount={winData?.amount} multiplier={winData?.multiplier} isJackpot={winData?.isJackpot} onDone={() => setShowWin(false)} />
 
       {/* Achievement toasts */}
       {newAchievements.length > 0 &&

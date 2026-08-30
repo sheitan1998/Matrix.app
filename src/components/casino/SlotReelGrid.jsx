@@ -24,7 +24,16 @@ function SymbolCell({ sym, isWinning, symbolSize }) {
         transform: isWinning ? "scale(1.12)" : "scale(1)",
       }}
     >
-      {sym.isText ? (
+      {sym.image_url ? (
+        <img
+          src={sym.image_url}
+          alt={sym.label || sym.s}
+          draggable={false}
+          onContextMenu={(e) => e.preventDefault()}
+          className="object-contain"
+          style={{ maxWidth: `${symbolSize * 1.5}px`, maxHeight: `${symbolSize * 1.5}px` }}
+        />
+      ) : sym.isText ? (
         <span
           className="font-black leading-none"
           style={{
@@ -88,8 +97,8 @@ function ReelColumn({ spinning, finalSymbols, stopDelay, showResult, symbols, th
   );
 }
 
-export default function SlotReelGrid({ spinning, finalGrid, showResult, theme, winningCells, gridConfig }) {
-  const SYMBOLS = theme.symbols;
+export default function SlotReelGrid({ spinning, finalGrid, showResult, theme, winningCells, gridConfig, symbols }) {
+  const SYMBOLS = symbols || theme.symbols;
   const config = gridConfig || DEFAULT_GRID_CONFIG;
 
   return (

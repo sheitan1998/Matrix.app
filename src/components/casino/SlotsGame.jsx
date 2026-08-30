@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import WinEffect from "./WinEffect";
-import CasinoWinEffect from "./CasinoWinEffect";
 import CasinoToken from "./CasinoToken";
 import { casinoPlaceBet } from "@/hooks/useCasinoJackpot";
 import { base44 } from "@/api/base44Client";
@@ -60,7 +58,8 @@ function computeWinningCells(winRow, winCount) {
 // ─── Main component ───
 export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
   const theme = SLOT_THEMES[themeId] || SLOT_THEMES[DEFAULT_THEME];
-  const SYMBOLS = theme.symbols;
+  const [customSymbols, setCustomSymbols] = useState(null);
+  const SYMBOLS = customSymbols || theme.symbols;
 
   const [spinning, setSpinning] = useState(false);
   const [autoSpinning, setAutoSpinning] = useState(false);
@@ -74,8 +73,6 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
   const [result, setResult] = useState(null);
   const [bet, setBet] = useState(500);
   const [lastWin, setLastWin] = useState(0);
-  const [showWin, setShowWin] = useState(false);
-  const [winData, setWinData] = useState(null);
   const [winningCells, setWinningCells] = useState(null);
   const [gridConfig, setGridConfig] = useState(null);
 
@@ -99,15 +96,50 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
     setFinalGrid(generateRandomGrid(SYMBOLS));
   }, [themeId]);
 
-  // Fetch grid config from admin settings
+  // Fetch grid config from admin (realtime sync)
   useEffect(() => {
     if (!themeId) return;
-    base44.entities.SlotThemeConfig.filter({ theme_key: themeId })
-      .then(records => {
-        if (records && records.length > 0) setGridConfig(records[0]);
-        else setGridConfig(null);
-      })
-      .catch(() => setGridConfig(null));
+    const fetchConfig = () => {
+      base44.entities.SlotThemeConfig.filter({ theme_key: themeId })
+        .then(records => {
+          if (records && records.length > 0) setGridConfig(records[0]);
+          else setGridConfig(null);
+        })
+        .catch(() => setGridConfig(null));
+    };
+    fetchConfig();
+    const unsub = base44.entities.SlotThemeConfig.subscribe(() => fetchConfig());
+    return () => { if (unsub) unsub(); };
+  }, [themeId]);
+
+  // Fetch custom symbols from admin (realtime sync)
+  useEffect(() => {
+    if (!themeId) return;
+    const fetchSymbols = () => {
+      base44.entities.SlotSymbol.filter({ theme_key: themeId })
+        .then(records => {
+          if (records && records.length > 0) {
+            const mapped = records.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map(r => ({
+              s: r.symbol,
+              image_url: r.image_url,
+              label: r.label,
+              color: r.color,
+              glow: r.glow,
+              mult: r.mult,
+              rare: r.rare,
+              isWild: r.is_wild,
+              isText: r.is_text,
+            }));
+            setCustomSymbols(mapped);
+          } else {
+            setCustomSymbols(null);
+          }
+        })
+        .catch(() => setCustomSymbols(null));
+    };
+    fetchSymbols();
+    const unsub = base44.entities.SlotSymbol.subscribe(() => fetchSymbols());
+    return () => { if (unsub) unsub(); };
   }, [themeId]);
 
   useEffect(() => {
@@ -174,8 +206,6 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
       setResult({ gain: netGain, mult, win: winAmount > 0, jackpot: jpHit });
 
       if (winAmount > 0) {
-        setWinData({ amount: winAmount, multiplier: mult, isJackpot: jpHit });
-        setShowWin(true);
         if (onWin) onWin({ amount: winAmount, multiplier: mult, isJackpot: jpHit });
       }
 
@@ -205,9 +235,6 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
 
   return (
     <div className="relative select-none" style={{ minHeight: "calc(100vh - 56px)" }}>
-      <CasinoWinEffect show={showWin} amount={winData?.amount} multiplier={winData?.multiplier} isJackpot={winData?.isJackpot} onDone={() => setShowWin(false)} />
-      <WinEffect show={showWin} amount={winData?.amount} multiplier={winData?.multiplier} isJackpot={winData?.isJackpot} onDone={() => setShowWin(false)} />
-
       {/* ─── Full-page background image ─── */}
       <img
         src={gridConfig?.bg_image || theme.bgImage}
@@ -277,6 +304,7 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
             theme={theme}
             winningCells={winningCells}
             gridConfig={gridConfig}
+            symbols={SYMBOLS}
           />
         </div>
 
