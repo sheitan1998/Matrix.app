@@ -1,15 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 import WinEffect from "./WinEffect";
 import CasinoWinEffect from "./CasinoWinEffect";
 import CasinoToken from "./CasinoToken";
 import { casinoPlaceBet } from "@/hooks/useCasinoJackpot";
-import { SLOT_THEMES, DEFAULT_THEME, pickRandom, formatBet } from "./slotThemes";
+import { SLOT_THEMES, DEFAULT_THEME, BET_STEPS, pickRandom, formatBet } from "./slotThemes";
 import SlotReelGrid from "./SlotReelGrid";
 import SlotControlBar from "./SlotControlBar";
-import SlotSidePanels from "./SlotSidePanels";
-
-const SLOT_BG_IMAGE = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/1cee34d68_Gemini_Generated_Image_1x3aie1x3aie1x3a.jpg";
+import PaytableModal from "./PaytableModal";
 
 // ─── Grid generation helpers ───
 function generateRandomGrid(symbols) {
@@ -25,11 +24,8 @@ function generateWinningGrid(symbols, winSym, winRow, winCount) {
   for (let col = 0; col < 5; col++) {
     const reel = [];
     for (let row = 0; row < 3; row++) {
-      if (col < winCount && row === winRow) {
-        reel.push(winSym);
-      } else {
-        reel.push(pickRandom(symbols));
-      }
+      if (col < winCount && row === winRow) reel.push(winSym);
+      else reel.push(pickRandom(symbols));
     }
     grid.push(reel);
   }
@@ -44,12 +40,9 @@ function hasThreeOfAKind(grid) {
 }
 
 function generateLosingGrid(symbols) {
-  let grid;
-  let attempts = 0;
-  do {
-    grid = generateRandomGrid(symbols);
-    attempts++;
-  } while (hasThreeOfAKind(grid) && attempts < 20);
+  let grid, attempts = 0;
+  do { grid = generateRandomGrid(symbols); attempts++; }
+  while (hasThreeOfAKind(grid) && attempts < 20);
   return grid;
 }
 
@@ -57,22 +50,22 @@ function computeWinningCells(winRow, winCount) {
   const cells = [];
   for (let col = 0; col < 5; col++) {
     const reel = [];
-    for (let row = 0; row < 3; row++) {
-      reel.push(col < winCount && row === winRow);
-    }
+    for (let row = 0; row < 3; row++) reel.push(col < winCount && row === winRow);
     cells.push(reel);
   }
   return cells;
 }
 
 // ─── Main component ───
-export default function SlotsGame({ balance, setBalance, accentColor, themeId, onWin }) {
-  const theme = SLOT_THEMES[themeId] || SLOT_THEMES[DEFAULT_THEME];
+export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
+  const [selectedTheme, setSelectedTheme] = useState(themeId || DEFAULT_THEME);
+  const theme = SLOT_THEMES[selectedTheme] || SLOT_THEMES[DEFAULT_THEME];
   const SYMBOLS = theme.symbols;
 
   const [spinning, setSpinning] = useState(false);
   const [autoSpinning, setAutoSpinning] = useState(false);
   const [autoCount, setAutoCount] = useState(0);
+  const [showPaytable, setShowPaytable] = useState(false);
   const autoRef = useRef(null);
   const balanceRef = useRef(balance);
   const autoSpinningRef = useRef(false);
@@ -88,10 +81,22 @@ export default function SlotsGame({ balance, setBalance, accentColor, themeId, o
   useEffect(() => { balanceRef.current = balance; }, [balance]);
   useEffect(() => { autoSpinningRef.current = autoSpinning; }, [autoSpinning]);
 
+  // ─── Right-click / download prevention (global on page) ───
+  useEffect(() => {
+    const preventContext = (e) => e.preventDefault();
+    const preventDrag = (e) => e.preventDefault();
+    document.addEventListener("contextmenu", preventContext);
+    document.addEventListener("dragstart", preventDrag);
+    return () => {
+      document.removeEventListener("contextmenu", preventContext);
+      document.removeEventListener("dragstart", preventDrag);
+    };
+  }, []);
+
   // Regenerate grid when theme changes
   useEffect(() => {
     setFinalGrid(generateRandomGrid(SYMBOLS));
-  }, [themeId]);
+  }, [selectedTheme]);
 
   useEffect(() => {
     return () => { if (autoRef.current) clearTimeout(autoRef.current); };
@@ -104,7 +109,7 @@ export default function SlotsGame({ balance, setBalance, accentColor, themeId, o
 
   const doSpin = async () => {
     const currentBalance = balanceRef.current;
-    if (bet > currentBalance || bet <= 0) { stopAutoSpin(); return; }
+    if (bet > currentBalance || bet <= 0) { stopAutoSpin(); toast.error("Solde insuffisant"); return; }
 
     setSpinning(true);
     setResult(null);
@@ -129,9 +134,7 @@ export default function SlotsGame({ balance, setBalance, accentColor, themeId, o
       return;
     }
 
-    // Generate grid based on server result
-    let grid;
-    let winCells = null;
+    let grid, winCells = null;
     if (serverResult.win) {
       const winSym = SYMBOLS.find(s => s.s === serverResult.slotsSymbol) || SYMBOLS[0];
       const winRow = Math.floor(Math.random() * 3);
@@ -147,10 +150,8 @@ export default function SlotsGame({ balance, setBalance, accentColor, themeId, o
     const jpHit = serverResult.jackpot;
     const mult = serverResult.multiplier || 0;
 
-    // Stop reels after 1.5s
     setTimeout(() => setSpinning(false), 1500);
 
-    // Show result after 2.5s (all reels have stopped)
     setTimeout(() => {
       setBalance(serverResult.newBalance);
       balanceRef.current = serverResult.newBalance;
@@ -185,44 +186,109 @@ export default function SlotsGame({ balance, setBalance, accentColor, themeId, o
     doSpin();
   };
 
+  const changeBet = (newBet) => {
+    if (spinning || autoSpinning) return;
+    setBet(Math.max(100, Math.min(1000000, newBet)));
+  };
+
   return (
-    <div className="relative space-y-2 select-none rounded-2xl overflow-hidden">
-      {/* Background image */}
-      <div className="absolute inset-0 pointer-events-none">
-        <img src={SLOT_BG_IMAGE} alt="" className="w-full h-full object-cover" style={{ opacity: 0.2 }} />
-        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(10,5,15,0.6), rgba(10,5,15,0.8))" }} />
+    <div className="relative select-none">
+      <CasinoWinEffect show={showWin} amount={winData?.amount} multiplier={winData?.multiplier} isJackpot={winData?.isJackpot} onDone={() => setShowWin(false)} />
+      <WinEffect show={showWin} amount={winData?.amount} multiplier={winData?.multiplier} isJackpot={winData?.isJackpot} onDone={() => setShowWin(false)} />
+
+      {/* ─── Theme selector ─── */}
+      <div className="flex gap-1.5 overflow-x-auto pb-2 mb-2 no-scrollbar">
+        {Object.entries(SLOT_THEMES).map(([key, t]) => (
+          <button
+            key={key}
+            onClick={() => !spinning && setSelectedTheme(key)}
+            disabled={spinning || autoSpinning}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition disabled:opacity-40 ${
+              selectedTheme === key ? "text-white" : "text-white/40 bg-white/5"
+            }`}
+            style={selectedTheme === key ? {
+              background: `${t.frameAccent}20`,
+              border: `1px solid ${t.frameAccent}80`,
+              boxShadow: `0 0 10px ${t.frameAccent}30`,
+            } : { border: "1px solid rgba(255,255,255,0.05)" }}
+          >
+            <span>{t.emoji}</span>
+            <span>{t.name}</span>
+          </button>
+        ))}
       </div>
 
-      <div className="relative z-10 space-y-2">
-      <CasinoWinEffect
-        show={showWin}
-        amount={winData?.amount}
-        multiplier={winData?.multiplier}
-        isJackpot={winData?.isJackpot}
-        onDone={() => setShowWin(false)}
-      />
-      <WinEffect
-        show={showWin}
-        amount={winData?.amount}
-        multiplier={winData?.multiplier}
-        isJackpot={winData?.isJackpot}
-        onDone={() => setShowWin(false)}
-      />
+      {/* ─── Header bar: Credits / Title / Bet ─── */}
+      <div
+        className="flex items-center justify-between px-4 py-2.5 rounded-xl mb-2"
+        style={{ background: theme.controlBg, border: `1px solid ${theme.frameAccent}40`, backdropFilter: "blur(8px)" }}
+      >
+        {/* Credits (left) */}
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${theme.frameAccent}20`, border: `1px solid ${theme.frameAccent}50` }}>
+            <span className="text-sm">⭐</span>
+          </div>
+          <div>
+            <p className="text-[8px] font-bold text-white/50 uppercase tracking-wider">Crédits</p>
+            <div className="flex items-center gap-1">
+              <CasinoToken size={14} />
+              <span className="text-sm font-mono font-black" style={{ color: theme.frameAccent }}>{formatBet(balance)}</span>
+            </div>
+          </div>
+        </div>
 
-      {/* Main game area: side panels + reel grid */}
-      <div className="flex items-center gap-2 justify-center">
-        <SlotSidePanels side="left" theme={theme} />
-        <SlotReelGrid
-          spinning={spinning}
-          finalGrid={finalGrid}
-          showResult={result?.win && !spinning}
-          theme={theme}
-          winningCells={winningCells}
+        {/* Title (center) */}
+        <div className="text-center">
+          <span className="text-sm font-black tracking-wider" style={{ color: theme.frameAccent, textShadow: `0 0 10px ${theme.frameAccent}40` }}>
+            NEXUS GAME
+          </span>
+        </div>
+
+        {/* Bet (right) */}
+        <div className="flex items-center gap-2">
+          <div className="text-right">
+            <p className="text-[8px] font-bold text-white/50 uppercase tracking-wider">Mise</p>
+            <div className="flex items-center gap-1 justify-end">
+              <CasinoToken size={14} />
+              <span className="text-sm font-mono font-black text-white">{formatBet(bet)}</span>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowPaytable(true)}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-sm transition hover:scale-105"
+            style={{ background: `${theme.frameAccent}20`, border: `1px solid ${theme.frameAccent}50` }}
+          >
+            ?
+          </button>
+        </div>
+      </div>
+
+      {/* ─── Main game area: background image + reel grid centered ─── */}
+      <div className="relative rounded-2xl overflow-hidden" style={{ minHeight: "280px" }}>
+        {/* Background image */}
+        <img
+          src={theme.bgImage}
+          alt=""
+          draggable={false}
+          onContextMenu={(e) => e.preventDefault()}
+          className="absolute inset-0 w-full h-full object-cover"
         />
-        <SlotSidePanels side="right" theme={theme} />
+        {/* Dark overlay for readability */}
+        <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.25)" }} />
+
+        {/* Reel grid centered */}
+        <div className="relative z-10 flex items-center justify-center p-3 sm:p-4">
+          <SlotReelGrid
+            spinning={spinning}
+            finalGrid={finalGrid}
+            showResult={result?.win && !spinning}
+            theme={theme}
+            winningCells={winningCells}
+          />
+        </div>
       </div>
 
-      {/* Control bar */}
+      {/* ─── Control bar ─── */}
       <SlotControlBar
         balance={balance}
         bet={bet}
@@ -232,10 +298,13 @@ export default function SlotsGame({ balance, setBalance, accentColor, themeId, o
         autoCount={autoCount}
         onSpin={spin}
         onToggleAuto={toggleAutoSpin}
-        onBetChange={setBet}
+        onBetChange={changeBet}
+        onPaytable={() => setShowPaytable(true)}
         theme={theme}
       />
-      </div>
+
+      {/* Paytable modal */}
+      <PaytableModal show={showPaytable} theme={theme} onClose={() => setShowPaytable(false)} />
     </div>
   );
 }
