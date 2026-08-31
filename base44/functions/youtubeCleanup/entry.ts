@@ -7,10 +7,19 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
  */
 export default async function(req: Request): Promise<Response> {
   try {
+    // ─── Secret key verification (protects public URL) ───
+    // Allows execution via scheduled workflow (x-api-key header) OR an authenticated admin user.
+    const apiKey = req.headers.get('x-api-key') || req.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
+    const isAuthorizedByKey = apiKey && apiKey === process.env.CLEANUP_API_KEY;
+
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
+    let user = null;
+    try { user = await base44.auth.me(); } catch { /* not authenticated */ }
+
+    if (!isAuthorizedByKey) {
+      if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
     const cutoff = new Date(Date.now() - THIRTY_DAYS_MS).toISOString();
