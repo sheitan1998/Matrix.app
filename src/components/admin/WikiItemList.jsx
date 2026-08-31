@@ -6,16 +6,30 @@ import { toast } from "sonner";
 import WikiItemEditModal from "@/components/admin/WikiItemEditModal";
 import ConfirmDeleteModal from "@/components/admin/ConfirmDeleteModal";
 
+const WIKI_GAMES = [
+  { slug: "farming-simulator-25", name: "Farming Simulator 25" },
+  { slug: "dofus", name: "Dofus" },
+  { slug: "fortnite", name: "Fortnite" },
+  { slug: "rocket-league", name: "Rocket League" },
+  { slug: "minecraft", name: "Minecraft" },
+  { slug: "league-of-legends", name: "League of Legends" },
+  { slug: "valorant", name: "Valorant" },
+  { slug: "call-of-duty", name: "Call of Duty" },
+  { slug: "genshin-impact", name: "Genshin Impact" },
+  { slug: "wow", name: "World of Warcraft" },
+];
+
 export default function WikiItemList() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingItem, setEditingItem] = useState(null);
   const [deletingItem, setDeletingItem] = useState(null);
+  const [selectedGame, setSelectedGame] = useState("farming-simulator-25");
 
-  const fetchItems = useCallback(async () => {
+  const fetchItems = useCallback(async (gameSlug) => {
     setLoading(true);
     try {
-      const data = await base44.entities.WikiEntry.filter({ game_slug: "farming-simulator-25" }, "sort_order", 200);
+      const data = await base44.entities.WikiEntry.filter({ game_slug: gameSlug }, "sort_order", 200);
       setItems(data);
     } catch {
       toast.error("Erreur lors du chargement des éléments.");
@@ -25,18 +39,26 @@ export default function WikiItemList() {
   }, []);
 
   useEffect(() => {
-    fetchItems();
-  }, [fetchItems]);
+    fetchItems(selectedGame);
+  }, [fetchItems, selectedGame]);
+
+  const isFarmingSim = selectedGame === "farming-simulator-25";
 
   const getCategoryTitle = (catId) => {
-    const cat = FARMING_SIM_CATEGORIES.find((c) => c.id === catId);
-    return cat?.title || catId || "—";
+    if (isFarmingSim) {
+      const cat = FARMING_SIM_CATEGORIES.find((c) => c.id === catId);
+      return cat?.title || catId || "—";
+    }
+    return catId || "—";
   };
 
   const getSubCategoryTitle = (catId, subId) => {
-    const cat = FARMING_SIM_CATEGORIES.find((c) => c.id === catId);
-    const sub = cat?.cards.find((c) => c.id === subId);
-    return sub?.title || subId || "—";
+    if (isFarmingSim) {
+      const cat = FARMING_SIM_CATEGORIES.find((c) => c.id === catId);
+      const sub = cat?.cards.find((c) => c.id === subId);
+      return sub?.title || subId || "—";
+    }
+    return subId || "—";
   };
 
   const handleReorder = async (index, direction) => {
@@ -85,7 +107,22 @@ export default function WikiItemList() {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
+      {/* Game selector */}
+      <div className="flex items-center gap-2">
+        <select
+          value={selectedGame}
+          onChange={(e) => setSelectedGame(e.target.value)}
+          className="px-3 py-1.5 rounded-lg text-xs font-bold text-white"
+          style={{ background: "#262626", border: "1px solid rgba(255,255,255,0.1)" }}
+        >
+          {WIKI_GAMES.map(g => (
+            <option key={g.slug} value={g.slug}>{g.name}</option>
+          ))}
+        </select>
+        <span className="text-[10px] text-white/30">{items.length} entrée{items.length > 1 ? "s" : ""}</span>
+      </div>
+
       {items.map((item, index) => (
         <div
           key={item.id}

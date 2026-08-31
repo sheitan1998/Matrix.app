@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { Clock, CheckCircle2, AlertCircle, X, Lock, Trash2 } from "lucide-react";
 import TicketConversation from "@/components/admin/TicketConversation";
+import ConfirmDeleteModal from "@/components/admin/ConfirmDeleteModal";
 
 const STATUS_CONFIG = {
   open: { label: "Ouvert", color: "#3b82f6", icon: AlertCircle },
@@ -30,6 +31,7 @@ const STATUS_FILTERS = [
 export default function AdminTicketList({ tickets, user, onRefresh }) {
   const [expanded, setExpanded] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [deletingTicket, setDeletingTicket] = useState(null);
 
   const updateStatus = async (ticket, status) => {
     try {
@@ -39,14 +41,15 @@ export default function AdminTicketList({ tickets, user, onRefresh }) {
     } catch { toast.error("Erreur"); }
   };
 
-  const deleteTicket = async (ticket) => {
-    if (!window.confirm(`Supprimer définitivement le ticket "${ticket.subject}" ?\nCette action est irréversible et supprimera tous les messages associés.`)) return;
+  const confirmDelete = async () => {
+    if (!deletingTicket) return;
     try {
-      await base44.functions.invoke("ticketSystem", { action: "deleteTicket", ticket_id: ticket.id });
+      await base44.functions.invoke("ticketSystem", { action: "deleteTicket", ticket_id: deletingTicket.id });
       toast.success("Ticket supprimé définitivement");
       setExpanded(null);
       onRefresh();
     } catch { toast.error("Erreur lors de la suppression"); }
+    setDeletingTicket(null);
   };
 
   const filtered = statusFilter === "all" ? tickets : tickets.filter(t => t.status === statusFilter);
@@ -123,7 +126,7 @@ export default function AdminTicketList({ tickets, user, onRefresh }) {
                       </button>
                     ))}
                     <button
-                      onClick={() => deleteTicket(ticket)}
+                      onClick={() => setDeletingTicket(ticket)}
                       className="px-2.5 py-1 rounded-lg text-[10px] font-bold text-red-400 transition hover:bg-red-500/10 flex items-center gap-1 ml-auto"
                       style={{ border: "1px solid rgba(239,68,68,0.3)" }}
                     >
@@ -142,6 +145,14 @@ export default function AdminTicketList({ tickets, user, onRefresh }) {
           </div>
         )}
       </div>
+
+      {deletingTicket && (
+        <ConfirmDeleteModal
+          title={deletingTicket.subject}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeletingTicket(null)}
+        />
+      )}
     </div>
   );
 }

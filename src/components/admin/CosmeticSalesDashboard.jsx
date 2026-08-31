@@ -24,12 +24,15 @@ export default function CosmeticSalesDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [shopItems, trixTx] = await Promise.all([
+        const [shopItems, trixTx, users] = await Promise.all([
           base44.entities.MatrixShopItem.list("-created_date", 200),
           base44.entities.TrixTransaction.list("-created_date", 500),
+          base44.entities.User.list("-created_date", 500),
         ]);
         setItems(shopItems || []);
-        setTransactions(trixTx || []);
+        const adminEmails = (users || []).filter(u => u.role === "admin").map(u => u.email);
+        const filteredTx = (trixTx || []).filter(t => !adminEmails.includes(t.user_email));
+        setTransactions(filteredTx);
       } catch { /* silent */ }
       setLoading(false);
     };
