@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import CasinoToken from "./CasinoToken";
 import { formatBet, BET_STEPS } from "./slotThemes";
@@ -21,14 +21,29 @@ export default function SlotControlBar({
 }) {
   const styles = buttonStyles || {};
 
-  const btnStyle = (key, defaults) => {
+  const containerRef = useRef(null);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const update = () => {
+      const w = el.clientWidth;
+      setScale(Math.min(1.3, Math.max(0.5, w / 1200)));
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const btnStyle = (key, defaults, isMotion = false) => {
     const s = styles[key] || {};
     const pos = DEFAULT_POSITIONS[key];
-    return {
+    const base = {
       position: "absolute",
       left: `${s.pos_x ?? pos.x}%`,
       top: `${s.pos_y ?? pos.y}%`,
-      transform: "translate(-50%, -50%)",
       background: s.bg || defaults.bg,
       color: s.text_color || defaults.text,
       border: s.border_color ? `1px solid ${s.border_color}` : defaults.border,
@@ -37,6 +52,10 @@ export default function SlotControlBar({
       zIndex: 20,
       transition: "all 0.15s ease",
     };
+    if (isMotion) {
+      return { ...base, x: "-50%", y: "-50%", scale };
+    }
+    return { ...base, transform: `translate(-50%, -50%) scale(${scale})` };
   };
 
   const decreaseBet = () => {
@@ -50,7 +69,7 @@ export default function SlotControlBar({
   const maxBet = () => onBetChange(BET_STEPS[BET_STEPS.length - 1]);
 
   return (
-    <>
+    <div ref={containerRef} className="absolute inset-0" style={{ zIndex: 15 }}>
       {/* Credits display — masks the painted "CREDITS" label in the bg image */}
       <div
         style={btnStyle("credits_display", { bg: theme.controlBg, text: "#fff", border: `1px solid ${theme.controlBorderColor}`, radius: 8 })}
@@ -134,10 +153,10 @@ export default function SlotControlBar({
         style={btnStyle("spin", {
           bg: spinning || autoSpinning ? "linear-gradient(135deg, #333, #222)" : theme.spinBg,
           text: "#fff", border: "none", radius: 16,
-        })}
+        }, true)}
         onClick={onSpin}
         disabled={spinning || autoSpinning}
-        whileTap={{ scale: 0.95 }}
+        whileTap={{ scale: 0.92 }}
         className="px-6 h-11 font-black text-base transition"
       >
         {spinning ? "..." : "SPIN"}
@@ -148,14 +167,14 @@ export default function SlotControlBar({
         style={btnStyle("auto", {
           bg: autoSpinning ? "linear-gradient(135deg, #ff4444, #cc2222)" : `linear-gradient(135deg, ${theme.frameAccent}, ${theme.frameAccent}cc)`,
           text: "#fff", border: `1px solid ${theme.frameAccent}50`, radius: 12,
-        })}
+        }, true)}
         onClick={onToggleAuto}
-        whileTap={{ scale: 0.95 }}
+        whileTap={{ scale: 0.92 }}
         disabled={spinning && !autoSpinning}
         className="px-4 h-8 text-xs font-black flex items-center gap-1.5 transition disabled:opacity-40"
       >
         {autoSpinning ? `■ STOP ×${autoCount}` : "▶ AUTO PLAY"}
       </motion.button>
-    </>
+    </div>
   );
 }

@@ -234,14 +234,14 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
   };
 
   return (
-    <div className="relative select-none" style={{ minHeight: "calc(100vh - 56px)" }}>
+    <div className="relative select-none" style={{ minHeight: "calc(100vh - 56px)", background: "#000" }}>
       {/* ─── Full-page background image ─── */}
       <img
         src={gridConfig?.bg_image || theme.bgImage}
         alt=""
         draggable={false}
         onContextMenu={(e) => e.preventDefault()}
-        className="absolute inset-0 w-full h-full object-cover" />
+        className="absolute inset-0 w-full h-full object-contain" />
       
       <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.3)" }} />
 
