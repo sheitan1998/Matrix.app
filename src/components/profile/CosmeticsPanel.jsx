@@ -78,7 +78,7 @@ export default function CosmeticsPanel({ user }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 select-none" onContextMenu={(e) => e.preventDefault()} onDragStart={(e) => e.preventDefault()}>
       {Object.entries(CATEGORY_LABELS).map(([cat, label]) => {
         const items = byCategory[cat];
         if (!items || items.length === 0) return null;

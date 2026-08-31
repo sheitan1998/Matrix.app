@@ -22,7 +22,7 @@ export const SLOT_THEMES = {
     name: "Casino Classique",
     emoji: "🎰",
     paylines: 20,
-    bgImage: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/e1de73c65_Gemini_Generated_Image_nqw5q4nqw5q4nqw5.jpg",
+    bgImage: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/d267ffb17_Gemini_Generated_Image_vr9la2vr9la2vr9l.jpg",
     symbols: [
       { s: "7",   label: "Sept",     color: "#ffd700", glow: "#ffaa00", mult: 50, rare: 1, isWild: true, isText: true },
       { s: "💎",  label: "Diamant",  color: "#00f2ff", glow: "#0099cc", mult: 30, rare: 2 },
