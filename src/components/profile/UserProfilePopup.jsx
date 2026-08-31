@@ -70,6 +70,8 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
   const avatar = profile?.avatar_url;
   const isAdmin = profile?.role === "admin";
   const level = progress?.level || 1;
+  const targetUserId = profile?.id || userId;
+  const targetEmail = profile?.email || userEmail;
 
   // Trophies — same calculation as ProfileContent (claimed_achievements)
   const claimed = progress?.claimed_achievements || [];
@@ -81,7 +83,7 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
   const handleAddFriend = async () => {
     setActionLoading(true);
     try {
-      const res = await base44.functions.invoke("serverSearch", { action: "sendFriendRequest", target_user_id: userId });
+      const res = await base44.functions.invoke("serverSearch", { action: "sendFriendRequest", target_user_id: targetUserId });
       if (res?.data?.success) { setFriendStatus("pending_sent"); toast.success("Demande d'ami envoyée"); }
       else { toast.error(res?.data?.error || "Erreur"); }
     } catch { toast.error("Erreur lors de l'envoi"); }
@@ -91,7 +93,7 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
   const handleRemoveFriend = async () => {
     setActionLoading(true);
     try {
-      const res = await base44.functions.invoke("serverSearch", { action: "removeFriend", friend_user_id: userId });
+      const res = await base44.functions.invoke("serverSearch", { action: "removeFriend", friend_user_id: targetUserId });
       if (res?.data?.success) { setFriendStatus("none"); toast.success("Ami supprimé"); }
       else { toast.error("Erreur"); }
     } catch { toast.error("Erreur"); }
@@ -101,7 +103,7 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
   const handleBlock = async () => {
     setActionLoading(true);
     try {
-      const res = await base44.functions.invoke("serverSearch", { action: "blockFriend", friend_user_id: userId });
+      const res = await base44.functions.invoke("serverSearch", { action: "blockFriend", friend_user_id: targetUserId });
       if (res?.data?.success) { setFriendStatus("blocked"); toast.success("Utilisateur bloqué"); }
       else { toast.error("Erreur"); }
     } catch { toast.error("Erreur"); }
@@ -111,7 +113,7 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
   const handleUnblock = async () => {
     setActionLoading(true);
     try {
-      const res = await base44.functions.invoke("serverSearch", { action: "removeFriend", friend_user_id: userId });
+      const res = await base44.functions.invoke("serverSearch", { action: "removeFriend", friend_user_id: targetUserId });
       if (res?.data?.success) { setFriendStatus("none"); toast.success("Utilisateur débloqué"); }
       else { toast.error("Erreur"); }
     } catch { toast.error("Erreur"); }
@@ -120,7 +122,7 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
 
   const handleSendDm = () => {
     if (!dmInput.trim()) return;
-    onOpenDm?.({ friend_email: userEmail || profile?.email, friend_name: displayName });
+    onOpenDm?.({ friend_email: targetEmail, friend_name: displayName });
     setDmInput("");
     onClose();
   };
@@ -150,7 +152,7 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
           <div className="absolute top-3 right-3 flex gap-1.5">
             {friendStatus !== "blocked" && (
               <button
-                onClick={() => { onOpenDm?.({ friend_email: userEmail || profile?.email, friend_name: displayName }); onClose(); }}
+                onClick={() => { onOpenDm?.({ friend_email: targetEmail, friend_name: displayName }); onClose(); }}
                 className="w-7 h-7 rounded-full flex items-center justify-center tap-sm"
                 style={{ background: "rgba(0,0,0,0.3)", backdropFilter: "blur(4px)" }}
                 title="Envoyer un message"
@@ -247,7 +249,7 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
           <div className="flex gap-2 mt-3">
             {friendStatus !== "blocked" && (
               <button
-                onClick={() => { onOpenDm?.({ friend_email: userEmail || profile?.email, friend_name: displayName }); onClose(); }}
+                onClick={() => { onOpenDm?.({ friend_email: targetEmail, friend_name: displayName }); onClose(); }}
                 className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-1.5 transition hover:opacity-80 tap-sm"
                 style={{ background: "rgba(255,255,255,0.06)" }}
               >
