@@ -34,6 +34,10 @@
       "type": "boolean",
       "default": false,
       "description": "Statut de lecture"
+    },
+    "ticket_id": {
+      "type": "string",
+      "description": "ID du ticket de support associe (pour suppression a la fermeture du ticket)"
     }
   },
   "required": [

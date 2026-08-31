@@ -38,15 +38,16 @@ export default async function(req: Request): Promise<Response> {
           attachments: attachments || [],
         });
 
-        // If admin responds, send internal DM to the user (no external email)
+        // If admin responds, send internal DM as "Support Matrix" (individual admin never exposed)
         if (user.role === 'admin') {
           await base44.asServiceRole.entities.DirectMessage.create({
-            sender_email: user.email,
-            sender_name: user.full_name || 'Support Matrix',
-            sender_avatar: user.avatar_url || '',
+            sender_email: 'support@matrix-hub.base44.app',
+            sender_name: 'Support Matrix',
+            sender_avatar: '',
             recipient_email: ticket.user_email,
             recipient_name: ticket.user_name || '',
             content: `🎫 Support — ${ticket.subject}\n\n${content}`,
+            ticket_id,
           });
           if (ticket.status === 'open') {
             await base44.asServiceRole.entities.SupportTicket.update(ticket_id, { status: 'in_progress' });
@@ -71,6 +72,11 @@ export default async function(req: Request): Promise<Response> {
           is_locked: newLocked,
           status: newLocked ? 'closed' : 'open',
         });
+
+        // When closing, delete all associated DMs from the user's messaging
+        if (newLocked) {
+          await base44.asServiceRole.entities.DirectMessage.deleteMany({ ticket_id });
+        }
 
         // System message in the conversation
         await base44.asServiceRole.entities.TicketMessage.create({
@@ -97,6 +103,31 @@ export default async function(req: Request): Promise<Response> {
         if (status === 'open') updateData.is_locked = false;
 
         await base44.asServiceRole.entities.SupportTicket.update(ticket_id, updateData);
+
+        // When closing, delete all associated DMs from the user's messaging
+        if (status === 'closed') {
+          await base44.asServiceRole.entities.DirectMessage.deleteMany({ ticket_id });
+        }
+
+        return Response.json({ success: true });
+      }
+
+      // ---- Permanently delete a ticket and all associated data (admin only) ----
+      case 'deleteTicket': {
+        if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
+
+        const { ticket_id } = params;
+        if (!ticket_id) return Response.json({ error: 'Missing ticket_id' }, { status: 400 });
+
+        // Delete all ticket messages
+        await base44.asServiceRole.entities.TicketMessage.deleteMany({ ticket_id });
+
+        // Delete all associated DMs
+        await base44.asServiceRole.entities.DirectMessage.deleteMany({ ticket_id });
+
+        // Delete the ticket itself
+        await base44.asServiceRole.entities.SupportTicket.delete(ticket_id);
+
         return Response.json({ success: true });
       }
 

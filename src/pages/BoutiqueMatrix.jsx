@@ -138,7 +138,7 @@ export default function BoutiqueMatrix() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-y-auto overflow-x-hidden" style={{ backgroundColor: "#0a050f" }}>
+    <div className="min-h-screen relative overflow-y-auto overflow-x-hidden select-none" style={{ backgroundColor: "#0a050f" }} onContextMenu={(e) => e.preventDefault()} onDragStart={(e) => e.preventDefault()}>
       <div className="fixed inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at top, rgba(168,85,247,0.08), transparent 60%)" }} />
 
       <div className="relative z-10 min-h-screen flex flex-col max-w-5xl mx-auto w-full px-4 sm:px-6 py-4">

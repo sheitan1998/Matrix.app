@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
-import { Clock, CheckCircle2, AlertCircle, X, Lock } from "lucide-react";
+import { Clock, CheckCircle2, AlertCircle, X, Lock, Trash2 } from "lucide-react";
 import TicketConversation from "@/components/admin/TicketConversation";
 
 const STATUS_CONFIG = {
@@ -33,10 +33,20 @@ export default function AdminTicketList({ tickets, user, onRefresh }) {
 
   const updateStatus = async (ticket, status) => {
     try {
-      await base44.entities.SupportTicket.update(ticket.id, { status, is_locked: status === "closed" });
+      await base44.functions.invoke("ticketSystem", { action: "updateStatus", ticket_id: ticket.id, status });
       toast.success("Statut mis à jour");
       onRefresh();
     } catch { toast.error("Erreur"); }
+  };
+
+  const deleteTicket = async (ticket) => {
+    if (!window.confirm(`Supprimer définitivement le ticket "${ticket.subject}" ?\nCette action est irréversible et supprimera tous les messages associés.`)) return;
+    try {
+      await base44.functions.invoke("ticketSystem", { action: "deleteTicket", ticket_id: ticket.id });
+      toast.success("Ticket supprimé définitivement");
+      setExpanded(null);
+      onRefresh();
+    } catch { toast.error("Erreur lors de la suppression"); }
   };
 
   const filtered = statusFilter === "all" ? tickets : tickets.filter(t => t.status === statusFilter);
@@ -100,7 +110,7 @@ export default function AdminTicketList({ tickets, user, onRefresh }) {
                   <TicketConversation ticket={ticket} user={user} isAdmin={true} onRefresh={onRefresh} />
 
                   {/* Status buttons */}
-                  <div className="flex gap-1.5 flex-wrap mt-3">
+                  <div className="flex gap-1.5 flex-wrap mt-3 items-center">
                     {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
                       <button
                         key={key}
@@ -112,6 +122,13 @@ export default function AdminTicketList({ tickets, user, onRefresh }) {
                         {cfg.label}
                       </button>
                     ))}
+                    <button
+                      onClick={() => deleteTicket(ticket)}
+                      className="px-2.5 py-1 rounded-lg text-[10px] font-bold text-red-400 transition hover:bg-red-500/10 flex items-center gap-1 ml-auto"
+                      style={{ border: "1px solid rgba(239,68,68,0.3)" }}
+                    >
+                      <Trash2 className="w-3 h-3" /> Supprimer
+                    </button>
                   </div>
                 </div>
               )}
