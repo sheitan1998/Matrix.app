@@ -75,6 +75,14 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
   const [lastWin, setLastWin] = useState(0);
   const [winningCells, setWinningCells] = useState(null);
   const [gridConfig, setGridConfig] = useState(null);
+  const [imgAspect, setImgAspect] = useState(16 / 9);
+
+  const handleImgLoad = (e) => {
+    const img = e.target;
+    if (img.naturalWidth && img.naturalHeight) {
+      setImgAspect(img.naturalWidth / img.naturalHeight);
+    }
+  };
 
   useEffect(() => {balanceRef.current = balance;}, [balance]);
   useEffect(() => {autoSpinningRef.current = autoSpinning;}, [autoSpinning]);
@@ -234,33 +242,37 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
   };
 
   return (
-    <div className="relative select-none" style={{ minHeight: "calc(100vh - 56px)", background: "#000" }}>
-      {/* ─── Full-page background image ─── */}
-      <img
-        src={gridConfig?.bg_image || theme.bgImage}
-        alt=""
-        draggable={false}
-        onContextMenu={(e) => e.preventDefault()}
-        className="absolute inset-0 w-full h-full object-contain" />
-      
-      <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.3)" }} />
+    <div className="relative select-none flex items-center justify-center overflow-hidden" style={{ height: "calc(100vh - 56px)", background: "#000" }}>
+      {/* ─── Machine wrapper (single reference container) ─── */}
+      {/* aspect-ratio matches the bg image so the wrapper IS the chassis */}
+      <div className="relative" style={{
+        width: "100%",
+        maxWidth: `calc((100vh - 56px) * ${imgAspect})`,
+        aspectRatio: `${imgAspect}`,
+      }}>
+        {/* Background image fills wrapper exactly (no object-fit crop) */}
+        <img
+          src={gridConfig?.bg_image || theme.bgImage}
+          alt=""
+          draggable={false}
+          onContextMenu={(e) => e.preventDefault()}
+          onLoad={handleImgLoad}
+          className="absolute inset-0 w-full h-full" />
 
-      {/* ─── Content overlay ─── */}
-      <div className="relative z-10 flex flex-col" style={{ minHeight: "calc(100vh - 56px)" }}>
-        {/* ─── Reel grid integrated into background ─── */}
-        <div className="flex-1 relative">
-          <SlotReelGrid
-            spinning={spinning}
-            finalGrid={finalGrid}
-            showResult={result?.win && !spinning}
-            theme={theme}
-            winningCells={winningCells}
-            gridConfig={gridConfig}
-            symbols={SYMBOLS} />
-          
-        </div>
+        {/* Dark overlay */}
+        <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.3)" }} />
 
-        {/* ─── Control buttons (individually positioned) ─── */}
+        {/* ─── Reel grid (positioned in % relative to wrapper) ─── */}
+        <SlotReelGrid
+          spinning={spinning}
+          finalGrid={finalGrid}
+          showResult={result?.win && !spinning}
+          theme={theme}
+          winningCells={winningCells}
+          gridConfig={gridConfig}
+          symbols={SYMBOLS} />
+
+        {/* ─── Control buttons (positioned in % relative to wrapper) ─── */}
         <SlotControlBar
           balance={balance}
           bet={bet}
@@ -274,11 +286,11 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
           onPaytable={() => setShowPaytable(true)}
           theme={theme}
           buttonStyles={gridConfig?.button_styles} />
-        
       </div>
 
       {/* Paytable modal */}
       <PaytableModal show={showPaytable} theme={theme} onClose={() => setShowPaytable(false)} symbols={SYMBOLS} />
-    </div>);
+    </div>
+  );
 
-}
+  }
