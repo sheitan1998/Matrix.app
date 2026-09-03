@@ -80,7 +80,7 @@ export default function TrixStore() {
     setVipLoading(plan.plan);
     setCheckout({
       functionName: "stripePayment",
-      params: { action: "createVIPSubscription", plan: plan.plan },
+      params: { action: "createVIPSubscription", plan: plan.plan }
     });
     setVipLoading(null);
   };
@@ -107,7 +107,7 @@ export default function TrixStore() {
     setLoading(pack.trix);
     setCheckout({
       functionName: "stripePayment",
-      params: { action: "createTrixPurchase", packId: pack.packId },
+      params: { action: "createTrixPurchase", packId: pack.packId }
     });
     setLoading(null);
   };
@@ -167,7 +167,7 @@ export default function TrixStore() {
                 <Sparkles className="w-3 h-3" /> +{formatTrix(p.bonus)} bonus offerts
               </div>
             }
-            <p className="text-3xl font-black mt-5 bg-[hsl(var(--foreground))]">{p.price}</p>
+            <p className="text-3xl font-black mt-5 text-[#ffffff] bg-[#000000]">{p.price}</p>
             <Button
               onClick={() => buy(p)}
               disabled={loading === p.trix || !user}
@@ -250,16 +250,16 @@ export default function TrixStore() {
       </div>
       </div>
 
-      {checkout && (
-        <CheckoutModal
-          functionName={checkout.functionName}
-          params={checkout.params}
-          onClose={() => setCheckout(null)}
-          onSuccess={() => {
-            checkUserAuth();
-            toast.success("Achat réussi ! 🎉");
-          }}
-        />
-      )}
-      </div>);
+      {checkout &&
+      <CheckoutModal
+        functionName={checkout.functionName}
+        params={checkout.params}
+        onClose={() => setCheckout(null)}
+        onSuccess={() => {
+          checkUserAuth();
+          toast.success("Achat réussi ! 🎉");
+        }} />
+
       }
+      </div>);
+}
