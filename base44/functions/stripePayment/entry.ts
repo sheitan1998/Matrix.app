@@ -377,14 +377,18 @@ export default async function(req: Request): Promise<Response> {
     }
 
     // ================================================================
-    // JSON API — user-invoked actions
+    // JSON API — user-invoked actions (auth required)
     // ================================================================
     const body = JSON.parse(rawBody);
     const { action } = body;
 
     const base44 = createClientFromRequest(req);
 
-    // ---- verifySession (no auth required — called on redirect) ----
+    // ---- Auth required for all JSON API actions ----
+    const user = await base44.auth.me();
+    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+    // ---- verifySession ----
     if (action === 'verifySession') {
       const { sessionId } = body;
       if (!sessionId) return Response.json({ error: 'Missing sessionId' }, { status: 400 });
@@ -637,10 +641,6 @@ export default async function(req: Request): Promise<Response> {
 
       return Response.json({ error: 'Unknown session type' }, { status: 400 });
     }
-
-    // ---- Auth required below ----
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     // ---- createDonation ----
     if (action === 'createDonation') {
