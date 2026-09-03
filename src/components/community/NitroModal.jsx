@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Sparkles, X, Check, Crown, Zap } from "lucide-react";
 import { toast } from "sonner";
+import CheckoutModal from "@/components/CheckoutModal";
 
 const PLANS = [
   {
@@ -23,24 +24,15 @@ const PLANS = [
 
 export default function NitroModal({ open, onClose }) {
   const [loading, setLoading] = useState(null);
+  const [checkout, setCheckout] = useState(null);
   if (!open) return null;
 
-  const subscribe = async (planId) => {
+  const subscribe = (planId) => {
     setLoading(planId);
-    try {
-      const res = await base44.functions.invoke("stripePayment", {
-        action: "createNitroSubscription",
-        plan: planId,
-      });
-      const url = res?.data?.url;
-      if (!url) {
-        toast.error(res?.data?.error || "Erreur lors de la création du paiement");
-        return;
-      }
-      window.location.href = url;
-    } catch (err) {
-      toast.error(err?.response?.data?.error || err?.message || "Erreur");
-    }
+    setCheckout({
+      functionName: "stripePayment",
+      params: { action: "createNitroSubscription", plan: planId },
+    });
     setLoading(null);
   };
 
@@ -124,6 +116,19 @@ export default function NitroModal({ open, onClose }) {
           <Zap className="w-3 h-3" /> Paiement sécurisé via Stripe · Non remboursable après achat
         </p>
       </div>
+
+      {checkout && (
+        <CheckoutModal
+          functionName={checkout.functionName}
+          params={checkout.params}
+          onClose={() => setCheckout(null)}
+          onSuccess={() => {
+            base44.auth.me().then(() => {});
+            toast.success("Abonnement Nitro activé !");
+            onClose?.();
+          }}
+        />
+      )}
     </div>
   );
 }

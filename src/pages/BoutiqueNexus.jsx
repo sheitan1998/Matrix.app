@@ -8,6 +8,7 @@ import TrixIcon from "@/components/TrixIcon";
 import { formatTrix } from "@/lib/format";
 import { useAuth } from "@/lib/AuthContext";
 import NexusVIPShop from "@/components/nexus/NexusVIPShop";
+import CheckoutModal from "@/components/CheckoutModal";
 
 const TRIX_TO_EURO = (trix) => (trix / 100).toFixed(2).replace(".", ",") + "€";
 
@@ -22,6 +23,7 @@ export default function BoutiqueNexus() {
   const { user, checkUserAuth } = useAuth();
   const [loading, setLoading] = useState(null);
   const [searchParams] = useSearchParams();
+  const [checkout, setCheckout] = useState(null);
 
   useEffect(() => {
     const payment = searchParams.get("payment");
@@ -71,24 +73,12 @@ export default function BoutiqueNexus() {
     setLoading(null);
   };
 
-  const buyWithEuro = async (pack) => {
+  const buyWithEuro = (pack) => {
     if (!user) return;
-    setLoading(`euro_${pack.id}`);
-    try {
-      const res = await base44.functions.invoke("stripePayment", {
-        action: "createNexusItemPurchase",
-        itemId: pack.id,
-      });
-      const url = res?.data?.url;
-      if (!url) {
-        toast.error(res?.data?.error || "Erreur lors de la création du paiement");
-        return;
-      }
-      window.location.replace(url);
-    } catch (err) {
-      toast.error(err?.response?.data?.error || err?.message || "Erreur");
-    }
-    setLoading(null);
+    setCheckout({
+      functionName: "stripePayment",
+      params: { action: "createNexusItemPurchase", itemId: pack.id },
+    });
   };
 
   return (
@@ -213,9 +203,21 @@ export default function BoutiqueNexus() {
 
         {/* VIP Subscriptions */}
         <div className="mt-10">
-          <NexusVIPShop user={user} />
+          <NexusVIPShop user={user} onSuccess={() => { checkUserAuth(); }} />
         </div>
       </div>
+
+      {checkout && (
+        <CheckoutModal
+          functionName={checkout.functionName}
+          params={checkout.params}
+          onClose={() => setCheckout(null)}
+          onSuccess={() => {
+            checkUserAuth();
+            toast.success("Article acheté ! 🎉");
+          }}
+        />
+      )}
     </div>
   );
 }

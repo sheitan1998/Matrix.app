@@ -301,6 +301,8 @@ export default async function(req: Request): Promise<Response> {
       const params = new URLSearchParams();
       params.append('payment_method_types[]', 'card');
       params.append('mode', 'payment');
+      params.append('ui_mode', 'embedded');
+      params.append('return_url', `${origin}`);
       params.append('customer_email', user.email);
 
       // Use pre-created Stripe Price ID if available, otherwise inline price_data
@@ -330,7 +332,7 @@ export default async function(req: Request): Promise<Response> {
       const session = await res.json();
       if (session.error) return Response.json({ error: session.error.message }, { status: 400 });
 
-      return Response.json({ url: session.url, sessionId: session.id });
+      return Response.json({ clientSecret: session.client_secret, sessionId: session.id, publishableKey: STRIPE_PUBLISHABLE_KEY });
     }
 
     return Response.json({ error: `Unknown action: ${action}` }, { status: 400 });

@@ -5,6 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import CasinoToken from "@/components/casino/CasinoToken";
 import { formatBet } from "@/components/casino/slotThemes";
+import CheckoutModal from "@/components/CheckoutModal";
 
 const COIN_PACKS = [
   { id: "pack_500",   coins: 500,   price: "1,99 €", priceCents: 199,  bonus: "" },
@@ -14,24 +15,16 @@ const COIN_PACKS = [
   { id: "pack_50000", coins: 50000, price: "49,99 €", priceCents: 4999, bonus: "+25 000 BONUS" },
 ];
 
-export default function CasinoShop({ balance, onBack }) {
+export default function CasinoShop({ balance, onBack, onPurchaseSuccess }) {
   const [loading, setLoading] = useState(null);
+  const [checkout, setCheckout] = useState(null);
 
-  const buyPack = async (pack) => {
+  const buyPack = (pack) => {
     setLoading(pack.id);
-    try {
-      const res = await base44.functions.invoke("stripePayment", {
-        action: "createCasinoCoinPurchase",
-        packId: pack.id,
-      });
-      if (res.data?.url) {
-        window.location.href = res.data.url;
-      } else {
-        toast.error("Erreur lors de la création du paiement");
-      }
-    } catch {
-      toast.error("Erreur de connexion");
-    }
+    setCheckout({
+      functionName: "stripePayment",
+      params: { action: "createCasinoCoinPurchase", packId: pack.id },
+    });
     setLoading(null);
   };
 
@@ -113,6 +106,18 @@ export default function CasinoShop({ balance, onBack }) {
           </p>
         </div>
       </div>
+
+      {checkout && (
+        <CheckoutModal
+          functionName={checkout.functionName}
+          params={checkout.params}
+          onClose={() => setCheckout(null)}
+          onSuccess={() => {
+            if (onPurchaseSuccess) onPurchaseSuccess();
+            toast.success("Achat réussi ! Vos jetons M ont été crédités.");
+          }}
+        />
+      )}
     </div>
   );
 }

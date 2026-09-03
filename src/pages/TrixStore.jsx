@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import HeaderActions from "@/components/layout/HeaderActions";
+import CheckoutModal from "@/components/CheckoutModal";
 
 const VIP_PLANS = [
 { plan: "monthly", label: "VIP Mensuel", price: "4,99€", perks: ["Badge VIP exclusif", "Couleur pseudo dorée", "Accès prioritaire aux salons", "2× XP sur tous les jeux"] },
@@ -32,6 +33,7 @@ export default function TrixStore() {
   const [vipLoading, setVipLoading] = useState(null);
   const [portalLoading, setPortalLoading] = useState(false);
   const [searchParams] = useSearchParams();
+  const [checkout, setCheckout] = useState(null);
 
   // Handle Stripe redirect: verify session, credit Trix or activate VIP, then clean URL
   useEffect(() => {
@@ -73,23 +75,13 @@ export default function TrixStore() {
     }
   }, [searchParams]);
 
-  const buyVIP = async (plan) => {
+  const buyVIP = (plan) => {
     if (!user) return;
     setVipLoading(plan.plan);
-    try {
-      const res = await base44.functions.invoke("stripePayment", {
-        action: "createVIPSubscription",
-        plan: plan.plan
-      });
-      const url = res?.data?.url;
-      if (!url) {
-        toast.error(res?.data?.error || "Erreur lors de la création de l'abonnement");
-        return;
-      }
-      window.location.href = url;
-    } catch (err) {
-      toast.error(err?.response?.data?.error || err?.message || "Erreur");
-    }
+    setCheckout({
+      functionName: "stripePayment",
+      params: { action: "createVIPSubscription", plan: plan.plan },
+    });
     setVipLoading(null);
   };
 
@@ -110,23 +102,13 @@ export default function TrixStore() {
     setPortalLoading(false);
   };
 
-  const buy = async (pack) => {
+  const buy = (pack) => {
     if (!user) return;
     setLoading(pack.trix);
-    try {
-      const res = await base44.functions.invoke("stripePayment", {
-        action: "createTrixPurchase",
-        packId: pack.packId
-      });
-      const url = res?.data?.url;
-      if (!url) {
-        toast.error(res?.data?.error || "Erreur lors de la création du paiement");
-        return;
-      }
-      window.location.href = url;
-    } catch (err) {
-      toast.error(err?.response?.data?.error || err?.message || "Erreur");
-    }
+    setCheckout({
+      functionName: "stripePayment",
+      params: { action: "createTrixPurchase", packId: pack.packId },
+    });
     setLoading(null);
   };
 
@@ -267,6 +249,17 @@ export default function TrixStore() {
         </div>
       </div>
       </div>
-    </div>);
 
-}
+      {checkout && (
+        <CheckoutModal
+          functionName={checkout.functionName}
+          params={checkout.params}
+          onClose={() => setCheckout(null)}
+          onSuccess={() => {
+            checkUserAuth();
+            toast.success("Achat réussi ! 🎉");
+          }}
+        />
+      )}
+      </div>);
+      }

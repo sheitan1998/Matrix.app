@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Crown, Check, Ban, Zap, Coins, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import CheckoutModal from "@/components/CheckoutModal";
 
 const PERKS = [
   { icon: Ban, title: "Zéro publicité", desc: "Regarde toutes les vidéos sans aucune interruption." },
@@ -16,6 +17,7 @@ export default function Premium() {
   const [loading, setLoading] = useState(false);
 
   const [loadingUser, setLoadingUser] = useState(true);
+  const [checkout, setCheckout] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then((u) => { setUser(u); setLoadingUser(false); }).catch(() => setLoadingUser(false));
@@ -37,20 +39,12 @@ export default function Premium() {
     }
   }, []);
 
-  const activate = async () => {
+  const activate = () => {
     if (!user) return;
-    setLoading(true);
-    try {
-      const res = await base44.functions.invoke("stripePayment", {
-        action: "createPremiumSubscription",
-        planId: "monthly",
-      });
-      if (res.data?.url) window.location.href = res.data.url;
-    } catch {
-      toast.error("Erreur lors de la création du paiement");
-    } finally {
-      setLoading(false);
-    }
+    setCheckout({
+      functionName: "stripePayment",
+      params: { action: "createPremiumSubscription", planId: "monthly" },
+    });
   };
 
   const cancel = async () => {
@@ -113,6 +107,18 @@ export default function Premium() {
           );
         })}
       </div>
+
+      {checkout && (
+        <CheckoutModal
+          functionName={checkout.functionName}
+          params={checkout.params}
+          onClose={() => setCheckout(null)}
+          onSuccess={() => {
+            base44.auth.me().then((u) => { setUser(u); setLoadingUser(false); });
+            toast.success("Bienvenue dans MATRIX Premium ! 💎");
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -10,6 +10,7 @@ import HeaderActions from "@/components/layout/HeaderActions";
 import TrixIcon from "@/components/TrixIcon";
 import CosmeticPreview from "@/components/cosmetics/CosmeticPreview";
 import CosmeticProfilePreview from "@/components/cosmetics/CosmeticProfilePreview";
+import CheckoutModal from "@/components/CheckoutModal";
 
 const CATEGORIES = [
   { key: "all", label: "Tout" },
@@ -42,6 +43,7 @@ export default function BoutiqueMatrix() {
   const [buyingEuro, setBuyingEuro] = useState(null);
   const [detailItem, setDetailItem] = useState(null);
   const [showProfilePreview, setShowProfilePreview] = useState(false);
+  const [checkout, setCheckout] = useState(null);
   const [searchParams] = useSearchParams();
   const [page, setPage] = useState(1);
   const PER_PAGE = 8;
@@ -116,25 +118,13 @@ export default function BoutiqueMatrix() {
     setBuyingTrix(null);
   };
 
-  const buyWithEuro = async (item) => {
+  const buyWithEuro = (item) => {
     if (!user) return;
     if (isOwned(item.id)) { toast.info("Vous possédez déjà cet objet"); return; }
-    setBuyingEuro(item.id);
-    try {
-      const res = await base44.functions.invoke("cosmeticShop", {
-        action: "createCheckout",
-        itemId: item.id,
-      });
-      const url = res?.data?.url;
-      if (!url) {
-        toast.error(res?.data?.error || "Erreur lors de la création du paiement");
-        return;
-      }
-      window.location.href = url;
-    } catch (err) {
-      toast.error(err?.response?.data?.error || err?.message || "Erreur");
-    }
-    setBuyingEuro(null);
+    setCheckout({
+      functionName: "cosmeticShop",
+      params: { action: "createCheckout", itemId: item.id },
+    });
   };
 
   return (
@@ -347,6 +337,20 @@ export default function BoutiqueMatrix() {
           </div>
         );
       })()}
+
+      {checkout && (
+        <CheckoutModal
+          functionName={checkout.functionName}
+          params={checkout.params}
+          onClose={() => setCheckout(null)}
+          onSuccess={() => {
+            qc.invalidateQueries({ queryKey: ["user-cosmetics"] });
+            checkUserAuth();
+            setDetailItem(null);
+            toast.success("Cosmétique débloqué ! 🎉");
+          }}
+        />
+      )}
     </div>
   );
 }

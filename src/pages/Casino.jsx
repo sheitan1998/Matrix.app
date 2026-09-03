@@ -165,7 +165,7 @@ export default function Casino() {
           <motion.div key="shop"
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.3 }}>
-              <CasinoShop balance={casinoCoins} onBack={() => setScreen("home")} />
+              <CasinoShop balance={casinoCoins} onBack={() => setScreen("home")} onPurchaseSuccess={() => { casinoGetBalance().then((b) => setCasinoCoins(b)).catch(() => {}); casinoGetWon24h().then((w) => setWon24h(w)).catch(() => {}); }} />
             </motion.div> :
           screen === "profile" ?
           <motion.div key="profile"

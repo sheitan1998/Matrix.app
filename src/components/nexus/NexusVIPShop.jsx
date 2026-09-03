@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Crown, Check, Zap, Star, Shield } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
+import CheckoutModal from "@/components/CheckoutModal";
 
 const VIP_PLANS = [
   {
@@ -68,29 +69,20 @@ const VIP_PLANS = [
   },
 ];
 
-export default function NexusVIPShop({ user }) {
+export default function NexusVIPShop({ user, onSuccess }) {
   const [loading, setLoading] = useState(null);
+  const [checkout, setCheckout] = useState(null);
 
-  const subscribe = async (plan) => {
+  const subscribe = (plan) => {
     if (!user) {
       toast.error("Connecte-toi pour t'abonner");
       return;
     }
     setLoading(plan.id);
-    try {
-      const res = await base44.functions.invoke("stripePayment", {
-        action: "createVIPSubscription",
-        plan: plan.id,
-      });
-      const url = res?.data?.url;
-      if (!url) {
-        toast.error(res?.data?.error || "Erreur lors de la création du paiement");
-        return;
-      }
-      window.location.replace(url);
-    } catch (err) {
-      toast.error(err?.message || "Erreur");
-    }
+    setCheckout({
+      functionName: "stripePayment",
+      params: { action: "createVIPSubscription", plan: plan.id },
+    });
     setLoading(null);
   };
 
@@ -185,6 +177,18 @@ export default function NexusVIPShop({ user }) {
         🔒 Paiement sécurisé via Stripe. Renouvellement mensuel automatique. Résiliable à tout moment.
         Les jetons, boosts Flash et l'XP sont recrédités à chaque renouvellement.
       </p>
+
+      {checkout && (
+        <CheckoutModal
+          functionName={checkout.functionName}
+          params={checkout.params}
+          onClose={() => setCheckout(null)}
+          onSuccess={() => {
+            if (onSuccess) onSuccess();
+            toast.success("Abonnement VIP activé ! 👑");
+          }}
+        />
+      )}
     </div>
   );
 }

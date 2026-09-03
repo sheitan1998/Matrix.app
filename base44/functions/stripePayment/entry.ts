@@ -650,6 +650,8 @@ export default async function(req: Request): Promise<Response> {
       const params = new URLSearchParams();
       params.append('payment_method_types[]', 'card');
       params.append('mode', 'payment');
+      params.append('ui_mode', 'embedded');
+      params.append('return_url', `${origin}`);
       params.append('customer_email', user.email);
       params.append('line_items[0][price_data][currency]', 'eur');
       params.append('line_items[0][price_data][product_data][name]', 'Don - MATRIX');
@@ -668,7 +670,7 @@ export default async function(req: Request): Promise<Response> {
       });
       const session = await res.json();
       if (session.error) return Response.json({ error: session.error.message }, { status: 400 });
-      return Response.json({ url: session.url });
+      return Response.json({ clientSecret: session.client_secret, publishableKey: STRIPE_PUBLISHABLE_KEY });
     }
 
     // ---- createTrixPurchase ----
@@ -680,6 +682,8 @@ export default async function(req: Request): Promise<Response> {
       const params = new URLSearchParams();
       params.append('payment_method_types[]', 'card');
       params.append('mode', 'payment');
+      params.append('ui_mode', 'embedded');
+      params.append('return_url', `${origin}`);
       params.append('customer_email', user.email);
       params.append('line_items[0][price_data][currency]', 'eur');
       params.append('line_items[0][price_data][product_data][name]', pack.label);
@@ -700,7 +704,7 @@ export default async function(req: Request): Promise<Response> {
       });
       const session = await res.json();
       if (session.error) return Response.json({ error: session.error.message }, { status: 400 });
-      return Response.json({ url: session.url, sessionId: session.id });
+      return Response.json({ clientSecret: session.client_secret, sessionId: session.id, publishableKey: STRIPE_PUBLISHABLE_KEY });
     }
 
     // ---- createNexusItemPurchase (NEW) ----
@@ -712,6 +716,8 @@ export default async function(req: Request): Promise<Response> {
       const params = new URLSearchParams();
       params.append('payment_method_types[]', 'card');
       params.append('mode', 'payment');
+      params.append('ui_mode', 'embedded');
+      params.append('return_url', `${origin}`);
       params.append('customer_email', user.email);
       params.append('line_items[0][price_data][currency]', 'eur');
       params.append('line_items[0][price_data][product_data][name]', item.label);
@@ -731,7 +737,7 @@ export default async function(req: Request): Promise<Response> {
       });
       const session = await res.json();
       if (session.error) return Response.json({ error: session.error.message }, { status: 400 });
-      return Response.json({ url: session.url, sessionId: session.id });
+      return Response.json({ clientSecret: session.client_secret, sessionId: session.id, publishableKey: STRIPE_PUBLISHABLE_KEY });
     }
 
     // ---- createCosmeticPurchase (NEW) ----
@@ -745,6 +751,8 @@ export default async function(req: Request): Promise<Response> {
       const params = new URLSearchParams();
       params.append('payment_method_types[]', 'card');
       params.append('mode', 'payment');
+      params.append('ui_mode', 'embedded');
+      params.append('return_url', `${origin}`);
       params.append('customer_email', user.email);
       params.append('line_items[0][price_data][currency]', 'eur');
       params.append('line_items[0][price_data][product_data][name]', shopItem.name);
@@ -764,7 +772,7 @@ export default async function(req: Request): Promise<Response> {
       });
       const session = await res.json();
       if (session.error) return Response.json({ error: session.error.message }, { status: 400 });
-      return Response.json({ url: session.url, sessionId: session.id });
+      return Response.json({ clientSecret: session.client_secret, sessionId: session.id, publishableKey: STRIPE_PUBLISHABLE_KEY });
     }
 
     // ---- createVIPSubscription ----
@@ -775,6 +783,8 @@ export default async function(req: Request): Promise<Response> {
       const params = new URLSearchParams();
       params.append('payment_method_types[]', 'card');
       params.append('mode', 'subscription');
+      params.append('ui_mode', 'embedded');
+      params.append('return_url', `${origin}`);
       params.append('customer_email', user.email);
       params.append('line_items[0][price_data][currency]', 'eur');
       params.append('line_items[0][price_data][product_data][name]', selected.label);
@@ -795,7 +805,7 @@ export default async function(req: Request): Promise<Response> {
       });
       const session = await res.json();
       if (session.error) return Response.json({ error: session.error.message }, { status: 400 });
-      return Response.json({ url: session.url, sessionId: session.id });
+      return Response.json({ clientSecret: session.client_secret, sessionId: session.id, publishableKey: STRIPE_PUBLISHABLE_KEY });
     }
 
     // ---- createCustomerPortal (NEW) ----
@@ -844,6 +854,8 @@ export default async function(req: Request): Promise<Response> {
       const params = new URLSearchParams();
       params.append('payment_method_types[]', 'card');
       params.append('mode', 'payment');
+      params.append('ui_mode', 'embedded');
+      params.append('return_url', `${origin}`);
       params.append('customer_email', user.email);
       params.append('line_items[0][price_data][currency]', 'eur');
       params.append('line_items[0][price_data][product_data][name]', selected.label);
@@ -863,7 +875,7 @@ export default async function(req: Request): Promise<Response> {
       });
       const session = await res.json();
       if (session.error) return Response.json({ error: session.error.message }, { status: 400 });
-      return Response.json({ url: session.url, sessionId: session.id });
+      return Response.json({ clientSecret: session.client_secret, sessionId: session.id, publishableKey: STRIPE_PUBLISHABLE_KEY });
     }
 
     // ---- createAISubscription ----
@@ -875,6 +887,8 @@ export default async function(req: Request): Promise<Response> {
       const params = new URLSearchParams();
       params.append('payment_method_types[]', 'card');
       params.append('mode', 'payment');
+      params.append('ui_mode', 'embedded');
+      params.append('return_url', `${origin}`);
       params.append('customer_email', user.email);
       params.append('line_items[0][price_data][currency]', 'eur');
       params.append('line_items[0][price_data][product_data][name]', plan.label);
@@ -894,7 +908,7 @@ export default async function(req: Request): Promise<Response> {
       });
       const session = await res.json();
       if (session.error) return Response.json({ error: session.error.message }, { status: 400 });
-      return Response.json({ url: session.url, sessionId: session.id });
+      return Response.json({ clientSecret: session.client_secret, sessionId: session.id, publishableKey: STRIPE_PUBLISHABLE_KEY });
     }
 
     // ---- createCommunitySubscription ----
@@ -906,6 +920,8 @@ export default async function(req: Request): Promise<Response> {
       const params = new URLSearchParams();
       params.append('payment_method_types[]', 'card');
       params.append('mode', 'payment');
+      params.append('ui_mode', 'embedded');
+      params.append('return_url', `${origin}`);
       params.append('customer_email', user.email);
       params.append('line_items[0][price_data][currency]', 'eur');
       params.append('line_items[0][price_data][product_data][name]', plan.label);
@@ -925,7 +941,7 @@ export default async function(req: Request): Promise<Response> {
       });
       const session = await res.json();
       if (session.error) return Response.json({ error: session.error.message }, { status: 400 });
-      return Response.json({ url: session.url, sessionId: session.id });
+      return Response.json({ clientSecret: session.client_secret, sessionId: session.id, publishableKey: STRIPE_PUBLISHABLE_KEY });
     }
 
     // ---- createPremiumSubscription ----
@@ -936,6 +952,8 @@ export default async function(req: Request): Promise<Response> {
       const params = new URLSearchParams();
       params.append('payment_method_types[]', 'card');
       params.append('mode', 'payment');
+      params.append('ui_mode', 'embedded');
+      params.append('return_url', `${origin}`);
       params.append('customer_email', user.email);
       params.append('line_items[0][price_data][currency]', 'eur');
       params.append('line_items[0][price_data][product_data][name]', plan.label);
@@ -955,7 +973,7 @@ export default async function(req: Request): Promise<Response> {
       });
       const session = await res.json();
       if (session.error) return Response.json({ error: session.error.message }, { status: 400 });
-      return Response.json({ url: session.url, sessionId: session.id });
+      return Response.json({ clientSecret: session.client_secret, sessionId: session.id, publishableKey: STRIPE_PUBLISHABLE_KEY });
     }
 
     // ---- createCasinoCoinPurchase ----
@@ -967,6 +985,8 @@ export default async function(req: Request): Promise<Response> {
       const params = new URLSearchParams();
       params.append('payment_method_types[]', 'card');
       params.append('mode', 'payment');
+      params.append('ui_mode', 'embedded');
+      params.append('return_url', `${origin}`);
       params.append('customer_email', user.email);
       params.append('line_items[0][price_data][currency]', 'eur');
       params.append('line_items[0][price_data][product_data][name]', pack.label);
@@ -987,7 +1007,7 @@ export default async function(req: Request): Promise<Response> {
       });
       const session = await res.json();
       if (session.error) return Response.json({ error: session.error.message }, { status: 400 });
-      return Response.json({ url: session.url, sessionId: session.id });
+      return Response.json({ clientSecret: session.client_secret, sessionId: session.id, publishableKey: STRIPE_PUBLISHABLE_KEY });
     }
 
     return Response.json({ error: `Unknown action: ${action}` }, { status: 400 });

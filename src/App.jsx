@@ -6,6 +6,7 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import AuthGate from '@/components/AuthGate';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
@@ -106,7 +107,7 @@ const AuthenticatedApp = () => {
         <Route path="/tuto-gaming/farming-simulator-25" element={<FarmingSimulator25 />} />
         <Route path="/tuto-gaming/farming-simulator-25/:categoryId" element={<FarmingSimCategory />} />
       </Route>
-      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+      <Route element={<ProtectedRoute unauthenticatedElement={<AuthGate />} />}>
         <Route path="/community" element={<Community />} />
       <Route path="/shorts" element={<Shorts />} />
       <Route path="/market" element={<MarketHome />} />

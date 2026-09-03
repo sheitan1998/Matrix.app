@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
+import CheckoutModal from "@/components/CheckoutModal";
 
 const PLANS = [
   {
@@ -49,6 +50,7 @@ export default function CommunitySubscription() {
   }, []);
 
   const [loadingPlan, setLoadingPlan] = useState(null);
+  const [checkout, setCheckout] = useState(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -66,20 +68,14 @@ export default function CommunitySubscription() {
     }
   }, []);
 
-  const subscribe = async (plan) => {
+  const subscribe = (plan) => {
     if (!user || plan.id === "free") return;
     setLoadingPlan(plan.id);
-    try {
-      const res = await base44.functions.invoke("stripePayment", {
-        action: "createCommunitySubscription",
-        planId: plan.id,
-      });
-      if (res.data?.url) window.location.href = res.data.url;
-    } catch {
-      toast.error("Erreur lors de la création du paiement");
-    } finally {
-      setLoadingPlan(null);
-    }
+    setCheckout({
+      functionName: "stripePayment",
+      params: { action: "createCommunitySubscription", planId: plan.id },
+    });
+    setLoadingPlan(null);
   };
 
   return (
@@ -153,6 +149,18 @@ export default function CommunitySubscription() {
           </div>
         </div>
       </div>
+
+      {checkout && (
+        <CheckoutModal
+          functionName={checkout.functionName}
+          params={checkout.params}
+          onClose={() => setCheckout(null)}
+          onSuccess={() => {
+            base44.auth.me().then((u) => { setUser(u); setActivePlan(u?.community_plan || "free"); });
+            toast.success("Abonnement activé !");
+          }}
+        />
+      )}
     </div>
   );
 }
