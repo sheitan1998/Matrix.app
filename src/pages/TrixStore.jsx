@@ -149,7 +149,7 @@ export default function TrixStore() {
           <div
             key={p.trix}
             className={cn(
-              "relative rounded-2xl border-2 p-6 transition hover:scale-[1.02] bg-gray-950 text-gray-50",
+              "relative rounded-2xl border-2 p-6 transition hover:scale-[1.02] text-gray-50 bg-[#000000]",
               p.tag ? "border-trix/60 shadow-glow" : "border-border"
             )}>
             
