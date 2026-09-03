@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 import { formatViews } from "@/lib/format";
 import YouTubePlayer from "@/components/video/YouTubePlayer";
 
-function ShortItem({ short, isActive, isNearby }) {
+function ShortItem({ short, isActive }) {
   const videoRef = useRef(null);
   const ytPlayerRef = useRef(null);
   const isActiveRef = useRef(isActive);
@@ -15,7 +15,6 @@ function ShortItem({ short, isActive, isNearby }) {
   const [muted, setMuted] = useState(true);
 
   const isYouTube = short._source === "youtube" || (!short.video_url && !!short.id);
-  const shouldRenderPlayer = isNearby || isActive;
 
   isActiveRef.current = isActive;
 
@@ -45,6 +44,18 @@ function ShortItem({ short, isActive, isNearby }) {
     if (muted) p.mute?.(); else p.unMute?.();
   }, [muted]);
 
+  // Clean up YouTube player when this item goes inactive
+  useEffect(() => {
+    return () => {
+      const p = ytPlayerRef.current;
+      if (p) {
+        try { p.stopVideo?.(); } catch {}
+        try { p.destroy?.(); } catch {}
+        ytPlayerRef.current = null;
+      }
+    };
+  }, []);
+
   // Stable onReady — keeps YouTubePlayer from recreating the iframe
   const handleYTReady = useCallback((player) => {
     ytPlayerRef.current = player;
@@ -55,8 +66,8 @@ function ShortItem({ short, isActive, isNearby }) {
   return (
     <div className="relative w-full h-full bg-black flex items-center justify-center">
       {isYouTube ? (
-        shouldRenderPlayer ? (
-          <YouTubePlayer videoId={short.id} autoplay={false} onReady={handleYTReady} />
+        isActive ? (
+          <YouTubePlayer videoId={short.id} autoplay onReady={handleYTReady} />
         ) : short.thumbnail_url ? (
           <img src={short.thumbnail_url} alt={short.title} className="h-full w-full object-cover" />
         ) : (
@@ -134,12 +145,19 @@ export default function Shorts() {
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+    let scrollTimer = null;
     const handler = () => {
-      const idx = Math.round(container.scrollTop / container.clientHeight);
-      setActiveIndex(idx);
+      if (scrollTimer) cancelAnimationFrame(scrollTimer);
+      scrollTimer = requestAnimationFrame(() => {
+        const idx = Math.round(container.scrollTop / container.clientHeight);
+        setActiveIndex((prev) => (prev !== idx ? idx : prev));
+      });
     };
     container.addEventListener("scroll", handler, { passive: true });
-    return () => container.removeEventListener("scroll", handler);
+    return () => {
+      container.removeEventListener("scroll", handler);
+      if (scrollTimer) cancelAnimationFrame(scrollTimer);
+    };
   }, []);
 
   return (
@@ -170,7 +188,7 @@ export default function Shorts() {
         )}
         {shorts.map((short, i) => (
           <div key={short.id} className="h-screen snap-start snap-always overflow-hidden">
-            <ShortItem short={short} isActive={activeIndex === i} isNearby={Math.abs(activeIndex - i) <= 1} />
+            <ShortItem short={short} isActive={activeIndex === i} />
           </div>
         ))}
       </div>

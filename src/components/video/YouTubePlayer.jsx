@@ -20,27 +20,11 @@ function loadYouTubeAPI() {
   return apiPromise;
 }
 
-// Module-level singleton: ensures only ONE YouTube iframe player is active at a time.
-// Before creating a new player, any existing one is stopped + destroyed so no
-// background audio or double audio can occur.
-let activePlayer = null;
-function registerPlayer(player) {
-  if (activePlayer && activePlayer !== player) {
-    try { activePlayer.stopVideo?.(); } catch {}
-    try { activePlayer.destroy?.(); } catch {}
-  }
-  activePlayer = player;
-}
-function unregisterPlayer(player) {
-  if (activePlayer === player) {
-    activePlayer = null;
-  }
-}
-
 /**
  * YouTube IFrame Player — embeds a YouTube video using the official
  * IFrame Player API. Pass the video ID returned by the YouTube Data API v3.
  *
+ * The player starts muted to comply with browser autoplay policies.
  * Callbacks (onReady, onStateChange) are stored in refs so the player
  * is only re-created when `videoId` changes — never on parent re-render.
  */
@@ -57,8 +41,8 @@ export default function YouTubePlayer({ videoId, autoplay = true, onReady, onSta
   useEffect(() => {
     let active = true;
     loadYouTubeAPI().then((YT) => {
-      if (!active || !wrapperRef.current) return;
-      // Destroy previous player instance if any (stopVideo first to kill audio immediately)
+      if (!active || !wrapperRef.current || !YT?.Player) return;
+      // Destroy previous player instance if any
       if (playerRef.current) {
         try { playerRef.current.stopVideo?.(); } catch {}
         try { playerRef.current.destroy?.(); } catch {}
@@ -72,9 +56,11 @@ export default function YouTubePlayer({ videoId, autoplay = true, onReady, onSta
         videoId,
         playerVars: {
           autoplay: autoplay ? 1 : 0,
+          mute: 1, // Start muted so autoplay works on all browsers
           rel: 0,
           modestbranding: 1,
           playsinline: 1,
+          controls: 1,
         },
         events: {
           onReady: (e) => onReadyRef.current?.(e.target),
@@ -82,14 +68,12 @@ export default function YouTubePlayer({ videoId, autoplay = true, onReady, onSta
         },
       });
       playerRef.current = player;
-      registerPlayer(player);
     });
     return () => {
       active = false;
       if (playerRef.current) {
         try { playerRef.current.stopVideo?.(); } catch {}
         try { playerRef.current.destroy?.(); } catch {}
-        unregisterPlayer(playerRef.current);
         playerRef.current = null;
       }
     };
