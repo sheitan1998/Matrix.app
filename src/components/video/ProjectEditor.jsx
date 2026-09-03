@@ -1,16 +1,18 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import {
-  Plus, Film, Upload, Play, Pause, ArrowLeft, X, Type, Music,
-  Save, Video, Undo2, Redo2,
+  Plus, Film, Upload, ArrowLeft, X, Type, Music,
+  Save, Undo2, Redo2,
   Scissors, Link2, Magnet, ZoomIn, Wand2, ArrowLeftRight, Star,
-  Sparkles, Maximize2, SkipBack, SkipForward, ChevronDown, Trash2,
+  Sparkles, ChevronDown,
 } from "lucide-react";
 import ClipProperties from "@/components/video/ClipProperties";
 import VideoExporter from "@/components/video/VideoExporter";
+import PreviewStage from "@/components/video/PreviewStage";
+import TimelineClip from "@/components/video/TimelineClip";
 
 const NAV_ITEMS = [
   { key: "media", label: "Media Library", icon: Film },
@@ -46,10 +48,9 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
   const [magnet, setMagnet] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [playhead, setPlayhead] = useState(12);
+  const [playhead, setPlayhead] = useState(0);
   const [mixerVolumes, setMixerVolumes] = useState({ v1: 80, v2: 70, a1: 60, a2: 50 });
   const autoSaveRef = useRef(null);
-  const videoRef = useRef(null);
 
   useEffect(() => {
     if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
@@ -133,6 +134,15 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
     pushHistory(newTimeline);
   };
 
+  const updateTextOverlay = (id, updates) => {
+    const textOverlays = (timeline.textOverlays || []).map(t => t.id === id ? { ...t, ...updates } : t);
+    const newTimeline = { ...timeline, textOverlays };
+    setTimeline(newTimeline);
+    pushHistory(newTimeline);
+  };
+
+  const handleSeek = useCallback((t) => setPlayhead(t), []);
+
   const splitClip = (id) => {
     const clip = timeline.clips.find(c => c.id === id);
     if (!clip) return;
@@ -173,15 +183,6 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
   const calcDuration = (tl) => (tl.clips || []).reduce((sum, c) => sum + (c.duration || 5), 0) || 0;
   function formatDuration(sec) { return `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, "0")}`; }
 
-  const getClipFilter = (clip) => {
-    if (!clip?.effects) return "none";
-    const e = clip.effects;
-    return [
-      `brightness(${e.brightness ?? 100}%)`, `contrast(${e.contrast ?? 100}%)`,
-      `saturate(${e.saturation ?? 100}%)`, e.blur ? `blur(${e.blur}px)` : "",
-    ].filter(Boolean).join(" ") || "none";
-  };
-
   const uploadFile = async (file) => {
     setUploading(true);
     try {
@@ -214,11 +215,9 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
   const audioTracks = timeline.audioTracks || [];
   const sfxTracks = audioTracks.slice(0, Math.ceil(audioTracks.length / 2));
   const bgmTracks = audioTracks.slice(Math.ceil(audioTracks.length / 2));
+  const totalDuration = calcDuration(timeline) || 30;
 
-  const togglePlay = () => {
-    if (!videoRef.current) { setIsPlaying(!isPlaying); return; }
-    if (isPlaying) videoRef.current.pause(); else videoRef.current.play();
-  };
+  const togglePlay = () => setIsPlaying(p => !p);
 
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: "#0a0a0c" }}>
@@ -397,46 +396,17 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
 
         {/* --- Center: Preview + Timeline --- */}
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-          {/* Video player */}
-          <div className="shrink-0 flex items-center justify-center p-3" style={{ background: "#000" }}>
-            <div className="relative w-full max-w-3xl aspect-video rounded-xl overflow-hidden" style={{ background: "#0a0a0c" }}>
-              {(timeline.clips || []).length > 0 ? (
-                <video ref={videoRef} src={timeline.clips[0]?.url} className="w-full h-full object-contain"
-                  style={{ filter: getClipFilter(timeline.clips[0]) }}
-                  onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)} />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, #0a0a0c, #1a1a2e)" }}>
-                  <div className="text-center">
-                    <Film className="w-12 h-12 text-purple-400/30 mx-auto mb-2" />
-                    <p className="text-sm text-white/30">Aperçu — importe un média pour commencer</p>
-                  </div>
-                </div>
-              )}
-              {(timeline.textOverlays || []).map(t => (
-                <div key={t.id} className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg" style={{ background: "rgba(0,0,0,0.6)", color: t.color }}>
-                  <p className="text-sm font-bold">{t.text}</p>
-                </div>
-              ))}
-              {/* Controls */}
-              <div className="absolute bottom-0 left-0 right-0 p-3" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.8), transparent)" }}>
-                <div className="flex items-center gap-3">
-                  <button onClick={togglePlay} className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: "#7c3aed" }}>
-                    {isPlaying ? <Pause className="w-4 h-4 text-white fill-white" /> : <Play className="w-4 h-4 text-white fill-white ml-0.5" />}
-                  </button>
-                  <button onClick={() => setPlayhead(Math.max(0, playhead - 5))} className="w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:text-white shrink-0"><SkipBack className="w-3.5 h-3.5" /></button>
-                  <div className="flex-1 relative">
-                    <div className="h-1 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }}>
-                      <div className="h-full rounded-full" style={{ width: `${(playhead / 30) * 100}%`, background: "#7c3aed" }} />
-                    </div>
-                    <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full" style={{ left: `${(playhead / 30) * 100}%`, transform: "translate(-50%, -50%)", background: "#a855f7", boxShadow: "0 0 8px rgba(124,58,237,0.6)" }} />
-                  </div>
-                  <button onClick={() => setPlayhead(Math.min(30, playhead + 5))} className="w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:text-white shrink-0"><SkipForward className="w-3.5 h-3.5" /></button>
-                  <span className="text-[10px] font-mono text-white/60 tabular-nums shrink-0">00:{String(playhead).padStart(2, "0")}</span>
-                  <button onClick={() => videoRef.current?.requestFullscreen?.()} className="w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:text-white shrink-0"><Maximize2 className="w-3.5 h-3.5" /></button>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Preview stage with multi-clip playback, text overlays, transitions */}
+          <PreviewStage
+            clips={timeline.clips || []}
+            textOverlays={timeline.textOverlays || []}
+            duration={calcDuration(timeline)}
+            isPlaying={isPlaying}
+            onTogglePlay={togglePlay}
+            onSeek={handleSeek}
+            playhead={playhead}
+            onUpdateText={updateTextOverlay}
+          />
 
           {/* Timeline */}
           <div className="flex-1 flex flex-col overflow-hidden" style={{ background: "#121214", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
@@ -457,21 +427,21 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
             <div className="flex items-center px-1 py-0.5" style={{ borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
               <div className="w-16 shrink-0" />
               <div className="flex-1 relative h-5">
-                {Array.from({ length: 7 }).map((_, i) => (
-                  <div key={i} className="absolute top-0 flex flex-col items-center" style={{ left: `${(i / 6) * 100}%` }}>
+                {Array.from({ length: Math.max(4, Math.ceil(totalDuration / 5)) }).map((_, i) => (
+                  <div key={i} className="absolute top-0 flex flex-col items-center" style={{ left: `${(i / Math.ceil(totalDuration / 5)) * 100}%` }}>
                     <div className="w-px h-2" style={{ background: "rgba(255,255,255,0.1)" }} />
                     <span className="text-[8px] text-white/30 font-mono">00:{String(i * 5).padStart(2, "0")}</span>
                   </div>
                 ))}
                 {/* Playhead line */}
-                <div className="absolute top-0 bottom-0 w-px pointer-events-none" style={{ left: `${(playhead / 30) * 100}%`, background: "#ec4899", zIndex: 5 }} />
+                <div className="absolute top-0 bottom-0 w-px pointer-events-none" style={{ left: `${(playhead / totalDuration) * 100}%`, background: "#ec4899", zIndex: 5 }} />
               </div>
             </div>
 
             {/* Tracks */}
             <div className="flex-1 overflow-y-auto scrollbar-thin relative">
               {/* Playhead overlay spanning all tracks */}
-              <div className="absolute top-0 bottom-0 w-0.5 pointer-events-none z-10" style={{ left: `calc(64px + (100% - 64px) * ${playhead / 30})`, background: "#ec4899" }} />
+              <div className="absolute top-0 bottom-0 w-0.5 pointer-events-none z-10" style={{ left: `calc(64px + (100% - 64px) * ${playhead / totalDuration})`, background: "#ec4899" }} />
 
               {/* Video 1 — clips (draggable) */}
               <TrackRow label="Video 1">
@@ -489,31 +459,28 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
                     <Droppable droppableId="clips" direction="horizontal">
                       {(provided) => (
                         <div ref={provided.innerRef} {...provided.droppableProps} className="flex items-center gap-1">
-                          {(timeline.clips || []).map((clip, idx) => (
-                            <Draggable key={clip.id} draggableId={clip.id} index={idx}>
-                              {(dragProvided) => (
-                                <div
-                                  ref={dragProvided.innerRef}
-                                  {...dragProvided.draggableProps}
-                                  {...dragProvided.dragHandleProps}
-                                  onClick={() => setSelectedClip(clip)}
-                                  className={`relative rounded-lg overflow-hidden shrink-0 cursor-grab active:cursor-grabbing transition ${selectedClip?.id === clip.id ? "ring-2 ring-purple-500" : ""}`}
-                                  style={{ width: 120 * zoom, height: 40, background: "rgba(124,58,237,0.2)", border: "1px solid rgba(124,58,237,0.4)", ...dragProvided.draggableProps.style }}
-                                >
-                                  {clip.type === "video" ? <video src={clip.url} className="w-full h-full object-cover" muted /> : <img src={clip.url} className="w-full h-full object-cover" alt="" />}
-                                  <div className="absolute bottom-0 left-0 right-0 px-1 py-0.5 flex items-center justify-between" style={{ background: "rgba(0,0,0,0.6)" }}>
-                                    <p className="text-[8px] text-white truncate">{clip.type === "video" ? "🎬" : "🖼"} {(clip.name || "Clip").slice(0, 10)}</p>
-                                    <button
-                                      onClick={(e) => { e.stopPropagation(); removeClip(clip.id); }}
-                                      className="text-white/40 hover:text-red-400 transition shrink-0"
-                                    >
-                                      <Trash2 className="w-2.5 h-2.5" />
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                            </Draggable>
-                          ))}
+                          {(timeline.clips || []).map((clip, idx) => {
+                            // Compute cumulative start offset for this clip
+                            let offset = 0;
+                            for (let i = 0; i < idx; i++) offset += timeline.clips[i].duration || 5;
+                            return (
+                              <Draggable key={clip.id} draggableId={clip.id} index={idx}>
+                                {(dragProvided) => (
+                                  <TimelineClip
+                                    clip={clip}
+                                    index={idx}
+                                    zoom={zoom}
+                                    isSelected={selectedClip?.id === clip.id}
+                                    offsetSec={offset}
+                                    onSelect={setSelectedClip}
+                                    onRemove={removeClip}
+                                    onResize={updateClip}
+                                    provided={dragProvided}
+                                  />
+                                )}
+                              </Draggable>
+                            );
+                          })}
                           {provided.placeholder}
                         </div>
                       )}
@@ -579,6 +546,7 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
                   onMoveLeft={() => moveClip(selectedClip.id, -1)}
                   onMoveRight={() => moveClip(selectedClip.id, 1)}
                   onDelete={() => removeClip(selectedClip.id)}
+                  onClose={() => setSelectedClip(null)}
                   hasNext={timeline.clips.findIndex(c => c.id === selectedClip.id) < timeline.clips.length - 1}
                   hasPrev={timeline.clips.findIndex(c => c.id === selectedClip.id) > 0}
                 />

@@ -1,5 +1,5 @@
 import React from "react";
-import { Scissors, Merge, Gauge, Sparkles, Wand2, Sun, Contrast, Droplet, Aperture as Blur, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { Scissors, Merge, Gauge, Sparkles, Wand2, Sun, Contrast, Droplet, Aperture as Blur, ChevronLeft, ChevronRight, Trash2, PanelBottomClose } from "lucide-react";
 
 const TRANSITIONS = [
   { key: "none", label: "Aucune", icon: "⬜" },
@@ -19,7 +19,7 @@ const EFFECTS = [
 
 const SPEEDS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
 
-export default function ClipProperties({ clip, onUpdate, onSplit, onMerge, onMoveLeft, onMoveRight, onDelete, hasNext, hasPrev }) {
+export default function ClipProperties({ clip, onUpdate, onSplit, onMerge, onMoveLeft, onMoveRight, onDelete, hasNext, hasPrev, onClose }) {
   if (!clip) return null;
 
   const effects = clip.effects || {};
@@ -50,8 +50,11 @@ export default function ClipProperties({ clip, onUpdate, onSplit, onMerge, onMov
         <button onClick={onMerge} disabled={!hasNext} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold text-blue-300 hover:bg-blue-500/10 transition disabled:opacity-30">
           <Merge className="w-3 h-3" /> Fusionner
         </button>
-        <button onClick={onDelete} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold text-red-400 hover:bg-red-500/10 transition ml-auto">
+        <button onClick={onDelete} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold text-red-400 hover:bg-red-500/10 transition">
           <Trash2 className="w-3 h-3" /> Supprimer
+        </button>
+        <button onClick={onClose} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold text-white/50 hover:text-white hover:bg-white/5 transition ml-auto" title="Retour à la timeline">
+          <PanelBottomClose className="w-3.5 h-3.5" /> Fermer
         </button>
       </div>
 

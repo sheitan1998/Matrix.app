@@ -97,12 +97,36 @@ export default function VideoExporter({ timeline, projectName, resolution }) {
         video.pause();
       }
 
-      // Transition flash effect between clips
-      if (clip.transition === "flash" && i < clips.length - 1) {
-        ctx.filter = "none";
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        await new Promise(r => setTimeout(r, 100));
+      // Apply transition effect between clips
+      if (clip.transition && clip.transition !== "none" && i < clips.length - 1) {
+        const transitionDuration = 300; // ms
+        const steps = 10;
+        for (let s = 0; s < steps; s++) {
+          const progress = s / steps;
+          ctx.filter = "none";
+          const nextClip = clips[i + 1];
+          if (clip.transition === "fade") {
+            ctx.globalAlpha = 1 - progress;
+            drawBlackFill(ctx, canvas);
+          } else if (clip.transition === "flash") {
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = `rgba(255,255,255,${progress})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          } else if (clip.transition === "slide") {
+            ctx.fillStyle = "#000";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          } else if (clip.transition === "zoom") {
+            // zoom out to black
+            ctx.fillStyle = "#000";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          } else if (clip.transition === "wipe") {
+            ctx.fillStyle = "#000";
+            ctx.fillRect(0, 0, canvas.width * progress, canvas.height);
+          }
+          ctx.globalAlpha = 1;
+          setProgress(Math.round(((i + 1) / clips.length) * 100));
+          await new Promise(r => setTimeout(r, transitionDuration / steps));
+        }
       }
     }
 
@@ -141,6 +165,11 @@ function drawImageCover(ctx, img, w, h) {
   const dw = img.width * scale;
   const dh = img.height * scale;
   ctx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
+}
+
+function drawBlackFill(ctx, canvas) {
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
 function drawVideoCover(ctx, video, w, h) {
