@@ -317,8 +317,8 @@ export default async function(req: Request): Promise<Response> {
         params.append('line_items[0][quantity]', '1');
       }
 
-      params.append('success_url', `${origin}/boutique-matrix?payment=success&session_id={CHECKOUT_SESSION_ID}`);
-      params.append('cancel_url', `${origin}/boutique-matrix?payment=cancelled`);
+      // params.append('success_url', `${origin}/boutique-matrix?payment=success&session_id={CHECKOUT_SESSION_ID}`);
+      // params.append('cancel_url', `${origin}/boutique-matrix?payment=cancelled`);
       params.append('metadata[type]', 'cosmetic_purchase');
       params.append('metadata[user_email]', user.email);
       params.append('metadata[user_id]', user.id);
