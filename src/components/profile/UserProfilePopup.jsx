@@ -18,6 +18,7 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [dmInput, setDmInput] = useState("");
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     if (!open || (!userId && !userEmail)) return;
@@ -29,6 +30,8 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
 
     const fetchProfile = async () => {
       try {
+        const me = await base44.auth.me();
+        setCurrentUser(me);
         let u;
         if (userId) {
           const res = await base44.functions.invoke("serverSearch", { action: "getUsersByIds", ids: [userId] });
@@ -120,11 +123,23 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
     setActionLoading(false);
   };
 
-  const handleSendDm = () => {
-    if (!dmInput.trim()) return;
-    onOpenDm?.({ friend_email: targetEmail, friend_name: displayName });
-    setDmInput("");
-    onClose();
+  const handleSendDm = async () => {
+    if (!dmInput.trim() || !currentUser) return;
+    try {
+      await base44.entities.DirectMessage.create({
+        sender_email: currentUser.email,
+        sender_name: currentUser.full_name || currentUser.email?.split("@")[0],
+        sender_avatar: currentUser.avatar_url || "",
+        recipient_email: targetEmail,
+        recipient_name: displayName,
+        content: dmInput.trim(),
+      });
+      toast.success("Message envoyé !");
+      setDmInput("");
+      onClose();
+    } catch {
+      toast.error("Erreur lors de l'envoi du message");
+    }
   };
 
   if (loading) {
@@ -152,7 +167,7 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
           <div className="absolute top-3 right-3 flex gap-1.5">
             {friendStatus !== "blocked" && (
               <button
-                onClick={() => { onOpenDm?.({ friend_email: targetEmail, friend_name: displayName }); onClose(); }}
+                onClick={() => { window.dispatchEvent(new CustomEvent("matrix-open-chat", { detail: { friendEmail: targetEmail } })); onClose(); }}
                 className="w-7 h-7 rounded-full flex items-center justify-center tap-sm"
                 style={{ background: "rgba(0,0,0,0.3)", backdropFilter: "blur(4px)" }}
                 title="Envoyer un message"
@@ -249,7 +264,7 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
           <div className="flex gap-2 mt-3">
             {friendStatus !== "blocked" && (
               <button
-                onClick={() => { onOpenDm?.({ friend_email: targetEmail, friend_name: displayName }); onClose(); }}
+                onClick={() => { window.dispatchEvent(new CustomEvent("matrix-open-chat", { detail: { friendEmail: targetEmail } })); onClose(); }}
                 className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-1.5 transition hover:opacity-80 tap-sm"
                 style={{ background: "rgba(255,255,255,0.06)" }}
               >

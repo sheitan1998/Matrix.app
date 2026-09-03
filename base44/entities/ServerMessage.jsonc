@@ -66,6 +66,25 @@
     "reply_to_content": {
       "type": "string",
       "description": "Apercu du contenu du message repondu"
+    },
+    "is_thread_starter": {
+      "type": "boolean",
+      "default": false,
+      "description": "Indique si ce message est le premier d'une discussion (forum)"
+    },
+    "thread_title": {
+      "type": "string",
+      "description": "Titre de la discussion (forum)"
+    },
+    "thread_replies": {
+      "type": "number",
+      "default": 0,
+      "description": "Nombre de reponses dans la discussion"
+    },
+    "thread_pinned": {
+      "type": "boolean",
+      "default": false,
+      "description": "Discussion epinglee dans le forum"
     }
   },
   "required": [

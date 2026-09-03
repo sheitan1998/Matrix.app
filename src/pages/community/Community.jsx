@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Sparkles, Plus, Hash, Volume2, Megaphone, Settings, Trash2, Search, UserPlus, Link2, MessageCircle, X, Zap, ArrowRight, Folder, MessageSquare } from "lucide-react";
 import ChannelCreateModal from "@/components/community/ChannelCreateModal";
+import ChannelList from "@/components/community/ChannelList";
+import ForumChannel from "@/components/community/ForumChannel";
 import HeaderActions from "@/components/layout/HeaderActions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -151,6 +153,10 @@ export default function Community() {
     setChannelModalMode(mode);
     setShowChannelModal(true);
     setContextMenu(null);
+  };
+
+  const reorderChannels = async (newChannels) => {
+    await updateServer({ channels: newChannels });
   };
 
   const uploadIcon = async (file) => {
@@ -447,32 +453,20 @@ export default function Community() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-2 space-y-0.5"
+            <ChannelList
+              channels={channels}
+              activeChannel={activeChannel}
+              setActiveChannel={setActiveChannel}
+              canManage={canManageChannels}
+              theme={theme}
+              onReorder={reorderChannels}
+              onRemove={removeChannel}
               onContextMenu={(e) => {
                 if (!canManageChannels) return;
                 e.preventDefault();
                 setContextMenu({ x: e.clientX, y: e.clientY });
-              }}>
-              {channels.map((ch) => {
-              const TypeIcon = CHANNEL_TYPES.find((t) => t.key === ch.type)?.icon || Hash;
-              return (
-                <div key={ch.id}
-                className={cn("flex items-center gap-2 px-2 py-1.5 rounded-xl cursor-pointer group transition",
-                activeChannel?.id === ch.id ? "text-white" : "text-muted-foreground hover:text-white")}
-                style={activeChannel?.id === ch.id ? { background: theme.accent + "30" } : {}}
-                onClick={() => setActiveChannel(ch)}>
-                    <TypeIcon className="w-3.5 h-3.5 shrink-0" />
-                    <span className="text-xs font-semibold truncate flex-1">{ch.name}</span>
-                    {canManageChannels &&
-                  <button onClick={(e) => {e.stopPropagation();removeChannel(ch.id);}}
-                  className="opacity-0 group-hover:opacity-100 transition hover:text-destructive">
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                  }
-                  </div>);
-
-            })}
-            </div>
+              }}
+            />
 
 
           </div>
@@ -558,11 +552,23 @@ export default function Community() {
           {selectedServer && selectedServer.id !== "__feed__" && activeChannel?.type === "voice" && !showSettings &&
           <VoiceChannel channel={activeChannel} server={selectedServer} theme={theme} user={user} />
           }
+
+          {/* Forum channel */}
+          {selectedServer && selectedServer.id !== "__feed__" && activeChannel?.type === "forum" && !showSettings && user &&
+          <ForumChannel channel={activeChannel} server={selectedServer} theme={theme} user={user} />
+          }
         </div>
 
         {/* Members list — right panel (always visible when server selected) */}
         {selectedServer && selectedServer.id !== "__feed__" &&
-        <MembersList server={selectedServer} theme={theme} currentUserEmail={user?.email} />
+        <MembersList
+          server={selectedServer}
+          theme={theme}
+          currentUserEmail={user?.email}
+          onOpenDm={(contact) => {
+            window.dispatchEvent(new CustomEvent("matrix-open-chat", { detail: { friendEmail: contact.user_email } }));
+          }}
+        />
         }
       </div>
 

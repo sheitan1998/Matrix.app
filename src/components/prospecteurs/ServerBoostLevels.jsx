@@ -8,10 +8,9 @@ const BOOST_LEVELS = [
     color: "#FF4081",
     crystalColor: "#F472B6",
     perks: [
-      { icon: "🗄️", text: "Icône de serveur animée" },
-      { icon: "✨", text: "Badge de serveur basique" },
+      { icon: "🗄️", text: "Image de serveur animée" },
       { icon: "🎨", text: "Couleur de serveur personnalisée" },
-      { icon: "📝", text: "Description de serveur étendue" },
+      { icon: "😀", text: "Émojis personnalisés" },
     ],
   },
   {
@@ -20,10 +19,9 @@ const BOOST_LEVELS = [
     color: "#9C27B0",
     crystalColor: "#C084FC",
     perks: [
-      { icon: "🖼️", text: "Bannière de serveur" },
+      { icon: "🖼️", text: "Bannière de serveur fixe" },
       { icon: "🛡️", text: "Icônes de rôle personnalisées" },
-      { icon: "🏷️", text: "Titre de serveur exclusif" },
-      { icon: "💫", text: "Effet visuel sur les messages" },
+      { icon: "💫", text: "Effets visuels sur les messages" },
     ],
   },
   {
@@ -34,8 +32,7 @@ const BOOST_LEVELS = [
     perks: [
       { icon: "⭐", text: "Lien d'invitation personnalisé" },
       { icon: "🎭", text: "Bannière de serveur animée" },
-      { icon: "🏅", text: "Badge de serveur premium" },
-      { icon: "🌈", text: "Thème de serveur exclusif" },
+      { icon: "🌈", text: "Thèmes de serveur" },
     ],
   },
   {
@@ -44,10 +41,8 @@ const BOOST_LEVELS = [
     color: "#FFD700",
     crystalColor: "#FBBF24",
     perks: [
-      { icon: "👑", text: "Badge serveur légendaire" },
-      { icon: "🚀", text: "Boost d'XP maximal pour les membres" },
-      { icon: "💎", text: "Statut Premium affiché" },
-      { icon: "🌠", text: "Cosmétique exclusif pour le fondateur" },
+      { icon: "🚀", text: "Boost d'XP x2 pour tous les membres" },
+      { icon: "😀", text: "Limite de 50 émojis personnalisés" },
     ],
   },
 ];

@@ -97,18 +97,13 @@ export default function ChannelCreateModal({ show, mode, theme, onClose, onCreat
             <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5 block">
               Nom {isCategory ? "de la catégorie" : "du salon"}
             </label>
-            <div className="flex items-center gap-2">
-              {!isCategory && (
-                <ModeIcon className="w-4 h-4 text-muted-foreground shrink-0" />
-              )}
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                autoFocus
-                placeholder={isCategory ? "nouvelle-categorie" : "nouveau-salon"}
-                className="flex-1 px-3 py-2 rounded-lg bg-secondary border border-border text-white placeholder:text-muted-foreground outline-none text-sm focus:border-primary"
-              />
-            </div>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              autoFocus
+              placeholder={isCategory ? "nouvelle-categorie" : "nouveau-salon"}
+              className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-white placeholder:text-muted-foreground outline-none text-sm focus:border-primary"
+            />
           </div>
 
           {/* Topic */}
