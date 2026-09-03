@@ -66,19 +66,29 @@ export default function ProfileAnimationLayer({ cosmetic, size = 96 }) {
       rafRef.current = requestAnimationFrame(processFrame);
     };
 
+    const forcePlay = () => {
+      const p = video.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    };
+
     const onLoaded = () => {
+      forcePlay();
       rafRef.current = requestAnimationFrame(processFrame);
     };
+
+    const onCanPlay = () => forcePlay();
 
     if (video.readyState >= 2) {
       onLoaded();
     } else {
       video.addEventListener("loadeddata", onLoaded);
     }
+    video.addEventListener("canplay", onCanPlay);
 
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       video.removeEventListener("loadeddata", onLoaded);
+      video.removeEventListener("canplay", onCanPlay);
     };
   }, [cosmetic?.video_url]);
 
@@ -101,7 +111,12 @@ export default function ProfileAnimationLayer({ cosmetic, size = 96 }) {
         loop
         muted
         playsInline
+        preload="auto"
         crossOrigin="anonymous"
+        webkit-playsinline="true"
+        x5-playsinline="true"
+        x5-video-player-type="h5"
+        x5-video-player-fullscreen="false"
         style={{ display: "none" }}
       />
       <canvas
