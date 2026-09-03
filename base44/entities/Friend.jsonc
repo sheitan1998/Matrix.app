@@ -19,6 +19,10 @@
         "blocked"
       ],
       "default": "pending_sent"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

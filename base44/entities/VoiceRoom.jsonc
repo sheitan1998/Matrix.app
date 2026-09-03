@@ -18,6 +18,10 @@
     "participants_count": {
       "type": "number",
       "default": 1
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

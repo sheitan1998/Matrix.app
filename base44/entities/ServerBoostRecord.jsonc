@@ -14,6 +14,10 @@
       "type": "string",
       "format": "date-time",
       "description": "Date d'expiration du boost (now + 30 jours)"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

@@ -69,6 +69,10 @@
       "type": "boolean",
       "default": false,
       "description": "Verrouille le ticket en lecture seule (cl\u00f4ture)"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

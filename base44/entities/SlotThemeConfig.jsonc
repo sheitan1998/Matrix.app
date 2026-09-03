@@ -65,6 +65,10 @@
       "type": "object",
       "default": {},
       "description": "Configuration des styles et positions des boutons par theme (spin, auto, bet_minus, bet_plus, max_bet, paytable)"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

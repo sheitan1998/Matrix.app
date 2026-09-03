@@ -116,6 +116,10 @@
       },
       "default": null,
       "description": "Booster XP actuellement actif (null si aucun)"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

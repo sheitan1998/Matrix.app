@@ -53,6 +53,8 @@ import NexusInvite from '@/pages/NexusInvite';
 import AdminPanel from '@/pages/AdminPanel';
 import RechercheJoueur from '@/pages/prospecteurs/RechercheJoueur';
 import Privacy from '@/pages/Privacy';
+import About from '@/pages/About';
+import Contact from '@/pages/Contact';
 import GlobalProfileButton from '@/components/profile/GlobalProfileButton';
 import GlobalMessageButton from '@/components/messaging/GlobalMessageButton';
 import { ProgressionProvider } from '@/context/ProgressionContext';
@@ -92,6 +94,8 @@ const AuthenticatedApp = () => {
     <AnimatedRoutes>
     <Routes>
       <Route path="/privacy" element={<Privacy />} />
+      <Route path="/about" element={<About />} />
+      <Route path="/contact" element={<Contact />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />

@@ -60,6 +60,10 @@
       },
       "default": {},
       "description": "Configuration d'affichage copiee depuis le MatrixShopItem a l'achat"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

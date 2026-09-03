@@ -24,6 +24,10 @@
     "game_slug": {
       "type": "string",
       "default": "farming-simulator-25"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

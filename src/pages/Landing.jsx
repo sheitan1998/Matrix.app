@@ -174,9 +174,17 @@ export default function Landing() {
 
         {/* Footer */}
         <footer className="mt-8 lg:mt-12 flex flex-col items-center gap-4 pt-4">
-          <Link to="/privacy" className="text-[11px] text-white/40 hover:text-white/70 transition tap-sm">
-            Politique de Confidentialité
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link to="/about" className="text-[11px] text-white/40 hover:text-white/70 transition tap-sm">
+              À propos
+            </Link>
+            <Link to="/contact" className="text-[11px] text-white/40 hover:text-white/70 transition tap-sm">
+              Contact
+            </Link>
+            <Link to="/privacy" className="text-[11px] text-white/40 hover:text-white/70 transition tap-sm">
+              Politique de Confidentialité
+            </Link>
+          </div>
           <p className="text-[10px] text-white/30 font-mono">© 2026 MATRIX. TOUS DROITS RÉSERVÉS.</p>
         </footer>
       </div>
