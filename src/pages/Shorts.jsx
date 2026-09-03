@@ -1,11 +1,23 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { fetchYouTube, mergeYouTubeLocal } from "@/hooks/useYouTube";
-import { Heart, MessageCircle, Share2, ArrowLeft, Volume2, VolumeX } from "lucide-react";
+import { fetchYouTubeRaw } from "@/hooks/useYouTube";
+import { Heart, MessageCircle, Share2, ArrowLeft, Volume2, VolumeX, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { formatViews } from "@/lib/format";
 import YouTubePlayer from "@/components/video/YouTubePlayer";
+
+// Random search terms to avoid always seeing the same shorts when starting fresh
+const SHORT_QUERIES = [
+  "#shorts", "#short", "#ytshorts", "#viral", "#trending",
+  "#funny", "#dance", "#gaming", "#cooking", "#music",
+  "#challenge", "#life", "#tech", "#sport", "#art",
+];
+
+function pickRandomQuery(exclude = []) {
+  const available = SHORT_QUERIES.filter(q => !exclude.includes(q));
+  if (available.length === 0) return SHORT_QUERIES[Math.floor(Math.random() * SHORT_QUERIES.length)];
+  return available[Math.floor(Math.random() * available.length)];
+}
 
 function ShortItem({ short, isActive }) {
   const videoRef = useRef(null);
@@ -48,8 +60,7 @@ function ShortItem({ short, isActive }) {
     } catch { ytPlayerRef.current = null; }
   }, [muted]);
 
-  // When this item becomes inactive, drop the player reference so the
-  // YouTubePlayer unmount can fully clean up without stale references.
+  // When this item becomes inactive, drop the player reference
   useEffect(() => {
     if (!isActive) ytPlayerRef.current = null;
   }, [isActive]);
@@ -139,19 +150,98 @@ function ShortItem({ short, isActive }) {
 
 export default function Shorts() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [shorts, setShorts] = useState([]);
+  const [nextPageToken, setNextPageToken] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [usedQueries, setUsedQueries] = useState([]);
   const containerRef = useRef(null);
+  const seenIdsRef = useRef(new Set());
+  const tokenRef = useRef(null);
+  const loadingMoreRef = useRef(false);
 
-  const { data: shorts = [], isLoading } = useQuery({
-    queryKey: ["shorts"],
-    queryFn: async () => {
-      const [local, yt] = await Promise.all([
-        base44.entities.Short.list("-created_date", 20),
-        fetchYouTube("shorts", { maxResults: 20 }),
-      ]);
-      return mergeYouTubeLocal(yt, local);
-    },
-  });
+  // Initial load — local shorts + first YouTube page
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const local = await base44.entities.Short.list("-created_date", 20);
+        const query = pickRandomQuery();
+        setUsedQueries([query]);
+        const ytRes = await fetchYouTubeRaw("shorts", { q: query, maxResults: 20 });
+        const ytVideos = ytRes?.videos || [];
+        const token = ytRes?.nextPageToken || null;
+        tokenRef.current = token;
+        setNextPageToken(token);
 
+        const merged = [...ytVideos, ...local].filter(v => {
+          if (!v?.id || seenIdsRef.current.has(v.id)) return false;
+          seenIdsRef.current.add(v.id);
+          return true;
+        });
+        if (!cancelled) setShorts(merged);
+      } catch (e) {
+        console.error("[Shorts] initial load failed:", e);
+      }
+      if (!cancelled) setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Load more shorts when approaching the end
+  const loadMore = useCallback(async () => {
+    if (loadingMoreRef.current) return;
+    loadingMoreRef.current = true;
+    setLoadingMore(true);
+    try {
+      // If we have a page token, paginate; otherwise pick a new random query
+      if (tokenRef.current) {
+        const res = await fetchYouTubeRaw("shorts", { q: usedQueries[usedQueries.length - 1] || "#shorts", maxResults: 20, pageToken: tokenRef.current });
+        const videos = res?.videos || [];
+        const token = res?.nextPageToken || null;
+        tokenRef.current = token;
+        setNextPageToken(token);
+        const newVideos = videos.filter(v => {
+          if (!v?.id || seenIdsRef.current.has(v.id)) return false;
+          seenIdsRef.current.add(v.id);
+          return true;
+        });
+        if (newVideos.length > 0) {
+          setShorts(prev => [...prev, ...newVideos]);
+        } else if (token) {
+          // Token returned but no new unique videos — retry with the same token
+        } else {
+          // No more pages for this query — switch to a new random query
+          tokenRef.current = null;
+          setNextPageToken(null);
+        }
+      } else {
+        // No token — pick a new random query
+        const query = pickRandomQuery(usedQueries);
+        setUsedQueries(prev => [...prev, query]);
+        const res = await fetchYouTubeRaw("shorts", { q: query, maxResults: 20 });
+        const videos = res?.videos || [];
+        const token = res?.nextPageToken || null;
+        tokenRef.current = token;
+        setNextPageToken(token);
+        const newVideos = videos.filter(v => {
+          if (!v?.id || seenIdsRef.current.has(v.id)) return false;
+          seenIdsRef.current.add(v.id);
+          return true;
+        });
+        if (newVideos.length > 0) {
+          setShorts(prev => [...prev, ...newVideos]);
+        }
+      }
+    } catch (e) {
+      console.error("[Shorts] loadMore failed:", e);
+    }
+    loadingMoreRef.current = false;
+    setLoadingMore(false);
+  }, [usedQueries]);
+
+  // Scroll handler — track active index + trigger load more near the end
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -161,6 +251,10 @@ export default function Shorts() {
       scrollTimer = requestAnimationFrame(() => {
         const idx = Math.round(container.scrollTop / container.clientHeight);
         setActiveIndex((prev) => (prev !== idx ? idx : prev));
+        // Load more when within 2 items of the end
+        if (idx >= shorts.length - 2 && !loadingMoreRef.current) {
+          loadMore();
+        }
       });
     };
     container.addEventListener("scroll", handler, { passive: true });
@@ -168,7 +262,7 @@ export default function Shorts() {
       container.removeEventListener("scroll", handler);
       if (scrollTimer) cancelAnimationFrame(scrollTimer);
     };
-  }, []);
+  }, [shorts.length, loadMore]);
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
@@ -186,10 +280,12 @@ export default function Shorts() {
         className="flex-1 overflow-y-scroll snap-y snap-mandatory"
         style={{ scrollbarWidth: "none" }}
       >
-        {isLoading && (
-          <div className="h-screen flex items-center justify-center text-muted-foreground">Chargement...</div>
+        {loading && (
+          <div className="h-screen flex items-center justify-center text-muted-foreground">
+            <Loader2 className="w-8 h-8 animate-spin" />
+          </div>
         )}
-        {!isLoading && shorts.length === 0 && (
+        {!loading && shorts.length === 0 && (
           <div className="h-screen flex flex-col items-center justify-center gap-4 text-center px-8">
             <span className="text-5xl">🎬</span>
             <p className="text-white font-bold text-xl">Aucun Short</p>
@@ -206,6 +302,12 @@ export default function Shorts() {
             </div>
           );
         })}
+        {/* Loading more indicator */}
+        {loadingMore && (
+          <div className="h-screen flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-white/50" />
+          </div>
+        )}
       </div>
     </div>
   );

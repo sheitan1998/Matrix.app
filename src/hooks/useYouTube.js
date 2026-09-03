@@ -32,6 +32,20 @@ export async function fetchYouTube(action, params = {}) {
   }
 }
 
+/**
+ * Fetch YouTube data preserving the full response object (including nextPageToken).
+ * Use this for paginated flows like Shorts infinite scroll.
+ */
+export async function fetchYouTubeRaw(action, params = {}) {
+  try {
+    const res = await base44.functions.invoke("youtubeApi", { action, ...params });
+    return res.data?.data || {};
+  } catch (e) {
+    console.error(`[fetchYouTubeRaw] ${action} failed:`, e?.response?.data || e?.message || e);
+    return {};
+  }
+}
+
 /** Merge YouTube + local arrays, deduplicating by id, YouTube first */
 export function mergeYouTubeLocal(yt, local) {
   const seen = new Set();

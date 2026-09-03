@@ -281,19 +281,22 @@ export default async function(req: Request): Promise<Response> {
 
       // ─── search.list — shorts (#shorts + short duration) ───
       case 'shorts': {
-        const data = await youtubeFetch('search', {
+        const searchParams: Record<string, string> = {
           part: 'snippet',
           q: params.q || '#shorts',
           type: 'video',
-          maxResults: params.maxResults || 20,
+          maxResults: String(params.maxResults || 20),
           regionCode: params.regionCode || 'FR',
           hl: params.hl || 'fr',
           order: 'viewCount',
           videoDuration: 'short',
-        }, apiKey);
+        };
+        if (params.pageToken) searchParams.pageToken = params.pageToken;
+        const data = await youtubeFetch('search', searchParams, apiKey);
         if (data._error) return Response.json(data, { status: data.status });
         const ids = (data.items || []).map(i => i.id?.videoId).filter(Boolean);
-        result = await fetchVideoStats(ids, apiKey);
+        const videos = await fetchVideoStats(ids, apiKey);
+        result = { videos, nextPageToken: data.nextPageToken || null };
         break;
       }
 
