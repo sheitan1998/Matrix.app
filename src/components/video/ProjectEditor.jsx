@@ -40,6 +40,8 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
   const [mediaType, setMediaType] = useState("video");
   const [textInput, setTextInput] = useState("");
   const [textColor, setTextColor] = useState("#ffffff");
+  const [textStyle, setTextStyle] = useState("default");
+  const [selectedText, setSelectedText] = useState(null);
   const [selectedClip, setSelectedClip] = useState(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -97,7 +99,7 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
 
   const addText = () => {
     if (!textInput.trim()) return;
-    const overlay = { id: Date.now().toString(), text: textInput.trim(), color: textColor, start: 0, duration: 3 };
+    const overlay = { id: Date.now().toString(), text: textInput.trim(), color: textColor, style: textStyle, start: 0, duration: 3, x: 50, y: 10, fontSize: 18 };
     const newTimeline = { ...timeline, textOverlays: [...(timeline.textOverlays || []), overlay] };
     setTimeline(newTimeline); pushHistory(newTimeline); setTextInput("");
     toast.success("Texte ajouté");
@@ -134,14 +136,12 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
     pushHistory(newTimeline);
   };
 
-  const updateTextOverlay = (id, updates) => {
-    const textOverlays = (timeline.textOverlays || []).map(t => t.id === id ? { ...t, ...updates } : t);
-    const newTimeline = { ...timeline, textOverlays };
-    setTimeline(newTimeline);
-    pushHistory(newTimeline);
-  };
-
-  const handleSeek = useCallback((t) => setPlayhead(t), []);
+  const handleSeek = useCallback((t) => {
+    setPlayhead(t);
+    // Auto-stop at end
+    const total = (timeline.clips || []).reduce((sum, c) => sum + (c.duration || 5), 0) || 30;
+    if (t >= total && isPlaying) setIsPlaying(false);
+  }, [timeline, isPlaying]);
 
   const splitClip = (id) => {
     const clip = timeline.clips.find(c => c.id === id);
@@ -173,6 +173,15 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
   const removeText = (id) => {
     const newTimeline = { ...timeline, textOverlays: timeline.textOverlays.filter(t => t.id !== id) };
     setTimeline(newTimeline); pushHistory(newTimeline);
+    if (selectedText?.id === id) setSelectedText(null);
+  };
+
+  const updateTextProps = (id, updates) => {
+    const textOverlays = (timeline.textOverlays || []).map(t => t.id === id ? { ...t, ...updates } : t);
+    const newTimeline = { ...timeline, textOverlays };
+    setTimeline(newTimeline);
+    setSelectedText(prev => prev ? { ...prev, ...updates } : prev);
+    pushHistory(newTimeline);
   };
 
   const removeAudio = (id) => {
@@ -294,17 +303,26 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
                   <input value={textInput} onChange={e => setTextInput(e.target.value)} placeholder="Texte à afficher" className="w-full px-2.5 py-1.5 rounded-lg bg-black/40 border border-white/5 text-white placeholder:text-white/30 outline-none text-[11px]" />
                   <div className="flex items-center gap-2">
                     <input type="color" value={textColor} onChange={e => setTextColor(e.target.value)} className="w-8 h-8 rounded-lg bg-transparent cursor-pointer" />
-                    <span className="text-[10px] text-white/40">Couleur du texte</span>
+                    <span className="text-[10px] text-white/40">Couleur</span>
+                    <select value={textStyle} onChange={e => setTextStyle(e.target.value)} className="flex-1 px-2 py-1 rounded-lg bg-black/40 border border-white/5 text-white text-[10px] outline-none">
+                      <option value="default">Classique</option>
+                      <option value="outline">Contour</option>
+                      <option value="glow">Lueur</option>
+                      <option value="neon">Néon</option>
+                      <option value="cinematic">Cinématique</option>
+                      <option value="threeD">3D</option>
+                      <option value="box">Encadré</option>
+                    </select>
                   </div>
                   <button onClick={addText} disabled={!textInput.trim()} className="w-full py-1.5 rounded-lg text-[11px] font-bold text-white disabled:opacity-40 flex items-center justify-center gap-1.5" style={{ background: "#7c3aed" }}>
                     <Plus className="w-3.5 h-3.5" /> Ajouter le texte
                   </button>
                   <div className="space-y-1.5 mt-2">
                     {(timeline.textOverlays || []).map(t => (
-                      <div key={t.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                      <div key={t.id} onClick={() => setSelectedText(t)} className={`flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer ${selectedText?.id === t.id ? "ring-1 ring-purple-500" : ""}`} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
                         <span className="text-[10px] font-bold" style={{ color: t.color }}>T</span>
                         <p className="text-[10px] text-white truncate flex-1">{t.text}</p>
-                        <button onClick={() => removeText(t.id)} className="text-white/30 hover:text-red-400"><X className="w-3 h-3" /></button>
+                        <button onClick={(e) => { e.stopPropagation(); removeText(t.id); }} className="text-white/30 hover:text-red-400"><X className="w-3 h-3" /></button>
                       </div>
                     ))}
                   </div>
@@ -344,16 +362,22 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
               {navTab === "transitions" && (
                 <div className="grid grid-cols-2 gap-1.5">
                   {[
-                    { label: "Fondu", value: "fade" },
-                    { label: "Glisser", value: "slide" },
-                    { label: "Zoom", value: "zoom" },
-                    { label: "Rotation", value: "rotate" },
-                    { label: "Volet", value: "wipe" },
-                    { label: "Flash", value: "flash" },
+                    { label: "Fondu", value: "fade", icon: "🌅" },
+                    { label: "Glisser", value: "slide", icon: "➡️" },
+                    { label: "Zoom", value: "zoom", icon: "🔍" },
+                    { label: "Rotation", value: "rotate", icon: "🔄" },
+                    { label: "Volet", value: "wipe", icon: "👋" },
+                    { label: "Flash", value: "flash", icon: "⚡" },
+                    { label: "Rebond", value: "bounce", icon: "🏀" },
+                    { label: "Dissolve", value: "dissolve", icon: "💧" },
+                    { label: "Flou", value: "blur", icon: "🌫" },
                   ].map(t => (
                     <button key={t.value} onClick={() => { if (!selectedClip) { toast.error("Sélectionne un clip d'abord"); return; } updateClip(selectedClip.id, { transition: t.value }); toast.success(`Transition "${t.label}" appliquée`); }}
-                      className={`aspect-video rounded-lg flex items-center justify-center text-[10px] font-bold transition ${selectedClip?.transition === t.value ? "text-white" : "text-white/50 hover:text-white hover:bg-white/5"}`}
-                      style={{ background: selectedClip?.transition === t.value ? "rgba(124,58,237,0.2)" : "rgba(255,255,255,0.03)", border: `1px solid ${selectedClip?.transition === t.value ? "rgba(124,58,237,0.5)" : "rgba(255,255,255,0.05)"}` }}>{t.label}</button>
+                      className={`aspect-video rounded-lg flex flex-col items-center justify-center text-[10px] font-bold transition ${selectedClip?.transition === t.value ? "text-white" : "text-white/50 hover:text-white hover:bg-white/5"}`}
+                      style={{ background: selectedClip?.transition === t.value ? "rgba(124,58,237,0.2)" : "rgba(255,255,255,0.03)", border: `1px solid ${selectedClip?.transition === t.value ? "rgba(124,58,237,0.5)" : "rgba(255,255,255,0.05)"}` }}>
+                      <span className="text-base mb-0.5">{t.icon}</span>
+                      {t.label}
+                    </button>
                   ))}
                 </div>
               )}
@@ -369,6 +393,10 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
                     { label: "Chrome", fx: { brightness: 100, contrast: 150, saturation: 0 } },
                     { label: "Rétro", fx: { brightness: 95, contrast: 120, saturation: 80 } },
                     { label: "HDR", fx: { brightness: 110, contrast: 160, saturation: 140 } },
+                    { label: "Noir & Blanc", fx: { grayscale: 100, contrast: 110 } },
+                    { label: "Sépia", fx: { sepia: 80, brightness: 105 } },
+                    { label: "Inverser", fx: { invert: 100 } },
+                    { label: "Psyché", fx: { hueRotate: 180, saturation: 150 } },
                   ].map(t => (
                     <button key={t.label} onClick={() => { if (!selectedClip) { toast.error("Sélectionne un clip d'abord"); return; } updateClip(selectedClip.id, { effects: { ...selectedClip.effects, ...t.fx } }); toast.success(`Effet "${t.label}" appliqué`); }}
                       className="aspect-video rounded-lg flex items-center justify-center text-[10px] font-bold text-white/50 hover:text-white hover:bg-white/5 transition" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
@@ -405,7 +433,7 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
             onTogglePlay={togglePlay}
             onSeek={handleSeek}
             playhead={playhead}
-            onUpdateText={updateTextOverlay}
+            onUpdateText={updateTextProps}
           />
 
           {/* Timeline */}
@@ -552,6 +580,18 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
                 />
               </div>
             )}
+            {/* Selected text properties */}
+            {selectedText && !selectedClip && (
+              <div className="shrink-0 px-3 py-2" style={{ background: "rgba(18,18,20,0.9)", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                <ClipProperties
+                  clip={selectedText}
+                  isText
+                  onUpdate={updates => updateTextProps(selectedText.id, updates)}
+                  onDelete={() => removeText(selectedText.id)}
+                  onClose={() => setSelectedText(null)}
+                />
+              </div>
+            )}
           </div>
         </div>
 
@@ -570,6 +610,10 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
                 <EffectSlider label="Luminosité" value={selectedClip.effects?.brightness ?? 100} min={0} max={200} onChange={v => setEffect("brightness", v)} />
                 <EffectSlider label="Contraste" value={selectedClip.effects?.contrast ?? 100} min={0} max={200} onChange={v => setEffect("contrast", v)} />
                 <EffectSlider label="Flou" value={selectedClip.effects?.blur ?? 0} min={0} max={20} onChange={v => setEffect("blur", v)} />
+                <EffectSlider label="Noir & Blanc" value={selectedClip.effects?.grayscale ?? 0} min={0} max={100} onChange={v => setEffect("grayscale", v)} />
+                <EffectSlider label="Sépia" value={selectedClip.effects?.sepia ?? 0} min={0} max={100} onChange={v => setEffect("sepia", v)} />
+                <EffectSlider label="Inverser" value={selectedClip.effects?.invert ?? 0} min={0} max={100} onChange={v => setEffect("invert", v)} />
+                <EffectSlider label="Teinte" value={selectedClip.effects?.hueRotate ?? 0} min={0} max={360} onChange={v => setEffect("hueRotate", v)} />
               </div>
             )}
 

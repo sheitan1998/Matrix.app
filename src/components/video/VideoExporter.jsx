@@ -99,31 +99,47 @@ export default function VideoExporter({ timeline, projectName, resolution }) {
 
       // Apply transition effect between clips
       if (clip.transition && clip.transition !== "none" && i < clips.length - 1) {
-        const transitionDuration = 300; // ms
-        const steps = 10;
+        const transitionDuration = 400; // ms
+        const steps = 12;
         for (let s = 0; s < steps; s++) {
           const progress = s / steps;
           ctx.filter = "none";
-          const nextClip = clips[i + 1];
+          ctx.globalAlpha = 1;
           if (clip.transition === "fade") {
             ctx.globalAlpha = 1 - progress;
             drawBlackFill(ctx, canvas);
           } else if (clip.transition === "flash") {
-            ctx.globalAlpha = 1;
             ctx.fillStyle = `rgba(255,255,255,${progress})`;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
           } else if (clip.transition === "slide") {
             ctx.fillStyle = "#000";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
           } else if (clip.transition === "zoom") {
-            // zoom out to black
             ctx.fillStyle = "#000";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
           } else if (clip.transition === "wipe") {
             ctx.fillStyle = "#000";
             ctx.fillRect(0, 0, canvas.width * progress, canvas.height);
+          } else if (clip.transition === "rotate") {
+            ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.rotate(progress * Math.PI);
+            ctx.fillStyle = "#000";
+            ctx.fillRect(-canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height);
+            ctx.restore();
+          } else if (clip.transition === "bounce") {
+            ctx.fillStyle = `rgba(0,0,0,${progress})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          } else if (clip.transition === "dissolve") {
+            ctx.globalAlpha = progress;
+            ctx.fillStyle = "#000";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          } else if (clip.transition === "blur") {
+            ctx.filter = `blur(${progress * 20}px) brightness(${1 - progress * 0.5})`;
+            drawBlackFill(ctx, canvas);
           }
           ctx.globalAlpha = 1;
+          ctx.filter = "none";
           setProgress(Math.round(((i + 1) / clips.length) * 100));
           await new Promise(r => setTimeout(r, transitionDuration / steps));
         }
