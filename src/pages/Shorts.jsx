@@ -33,15 +33,19 @@ function ShortItem({ short, isActive }) {
   useEffect(() => {
     const p = ytPlayerRef.current;
     if (!p) return;
-    if (isActive) p.playVideo?.();
-    else { p.pauseVideo?.(); p.seekTo?.(0); }
+    try {
+      if (isActive) p.playVideo?.();
+      else { p.pauseVideo?.(); p.seekTo?.(0); }
+    } catch { ytPlayerRef.current = null; }
   }, [isActive]);
 
   // YouTube mute/unmute
   useEffect(() => {
     const p = ytPlayerRef.current;
     if (!p) return;
-    if (muted) p.mute?.(); else p.unMute?.();
+    try {
+      if (muted) p.mute?.(); else p.unMute?.();
+    } catch { ytPlayerRef.current = null; }
   }, [muted]);
 
   // When this item becomes inactive, drop the player reference so the
