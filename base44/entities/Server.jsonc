@@ -89,6 +89,11 @@
       "format": "date-time",
       "description": "Date d'expiration du lien d'invitation (null = permanent)"
     },
+    "allow_member_invites": {
+      "type": "boolean",
+      "default": false,
+      "description": "Autoriser les membres a generer des liens d'invitation"
+    },
     "channels": {
       "type": "array",
       "items": {

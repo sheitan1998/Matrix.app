@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Upload, Trash2, Copy, Shield, Ban, MicOff, Crown, Plus, X, Hash, Volume2, Megaphone, RefreshCw, Clock, Edit3 } from "lucide-react";
+import { ArrowLeft, Upload, Trash2, Copy, Shield, Ban, MicOff, Crown, Plus, X, Hash, Volume2, Megaphone, RefreshCw, Clock, Edit3, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { VISUAL_THEMES } from "@/lib/visualThemes";
@@ -92,9 +92,7 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
     return code;
   };
 
-  const INVITE_BASE_URL = "https://matrix.app/nexus/invite/";
-
-  const buildInviteUrl = (code) => code ? `${INVITE_BASE_URL}${code}` : "";
+  const buildInviteUrl = (code) => code ? `${window.location.origin}/nexus/invite/${code}` : "";
 
   const handleSaveInvite = async () => {
     const code = inviteInput.trim() || generateInviteCode();
@@ -243,6 +241,23 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
                 </p>
               )}
             </div>
+
+            {/* Member invite permission */}
+            <div className="p-3 rounded-xl border flex items-center justify-between" style={{ borderColor: theme?.border, background: "rgba(255,255,255,0.03)" }}>
+              <div className="flex-1 pr-3">
+                <p className="text-sm font-bold text-white flex items-center gap-1.5">
+                  <UserPlus className="w-3.5 h-3.5" style={{ color: accent }} /> Autoriser les membres à inviter
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">Les membres pourront générer et partager le lien d'invitation du serveur</p>
+              </div>
+              <button
+                onClick={() => onUpdate({ allow_member_invites: !server.allow_member_invites })}
+                className={cn("w-10 h-5 rounded-full transition shrink-0", server.allow_member_invites ? "bg-green-500" : "bg-white/20")}
+              >
+                <div className={cn("w-4 h-4 rounded-full bg-white transition-transform", server.allow_member_invites ? "translate-x-5" : "translate-x-0.5")} />
+              </button>
+            </div>
+
             <Button onClick={onDelete} variant="destructive" className="w-full font-bold">
               <Trash2 className="w-4 h-4 mr-2" /> Supprimer ce serveur
             </Button>

@@ -23,8 +23,9 @@ export default function ServerList() {
   const publicServers = servers.filter((s) => s.is_public && s.owner_email !== user?.email);
 
   const copyInvite = (code) => {
-    navigator.clipboard.writeText(code);
-    toast.success("Code d'invitation copié !");
+    const url = `${window.location.origin}/nexus/invite/${code}`;
+    navigator.clipboard.writeText(url);
+    toast.success("Lien d'invitation copié !");
   };
 
   return (

@@ -404,22 +404,32 @@ export default function Community() {
           }
             <div className="p-3 border-b shrink-0 flex items-center justify-between" style={{ borderColor: theme.border }}>
               <p className="text-xs font-black text-muted-foreground uppercase tracking-widest">Salons</p>
-              {isOwner &&
-            <button
-              onClick={() => {
-                const name = prompt("Nom du salon :");
-                if (!name) return;
-                const type = prompt("Type : text / voice / announce") || "text";
-                const ch = { id: Date.now().toString(), name: name.trim().toLowerCase().replace(/\s+/g, "-"), type: ["text", "voice", "announce"].includes(type) ? type : "text" };
-                const updated = [...(selectedServer.channels?.length ? selectedServer.channels : defaultChannels), ch];
-                updateServer({ channels: updated }).then(() => toast.success("Salon créé !"));
-              }}
-              className="w-5 h-5 rounded-md flex items-center justify-center transition hover:opacity-80"
-              style={{ background: theme.accent, color: "#000" }}
-              title="Créer un salon">
-                  <Plus className="w-3 h-3" />
-                </button>
-            }
+              <div className="flex items-center gap-1">
+                {(isOwner || selectedServer.allow_member_invites) && selectedServer.invite_code &&
+                  <button
+                    onClick={() => inviteToServer(selectedServer)}
+                    className="w-5 h-5 rounded-md flex items-center justify-center transition hover:opacity-80 text-muted-foreground hover:text-white"
+                    title="Inviter des membres">
+                    <UserPlus className="w-3 h-3" />
+                  </button>
+                }
+                {isOwner &&
+              <button
+                onClick={() => {
+                  const name = prompt("Nom du salon :");
+                  if (!name) return;
+                  const type = prompt("Type : text / voice / announce") || "text";
+                  const ch = { id: Date.now().toString(), name: name.trim().toLowerCase().replace(/\s+/g, "-"), type: ["text", "voice", "announce"].includes(type) ? type : "text" };
+                  const updated = [...(selectedServer.channels?.length ? selectedServer.channels : defaultChannels), ch];
+                  updateServer({ channels: updated }).then(() => toast.success("Salon créé !"));
+                }}
+                className="w-5 h-5 rounded-md flex items-center justify-center transition hover:opacity-80"
+                style={{ background: theme.accent, color: "#000" }}
+                title="Créer un salon">
+                    <Plus className="w-3 h-3" />
+                  </button>
+                }
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
@@ -615,7 +625,7 @@ export default function Community() {
             value={inviteCodeInput}
             onChange={(e) => setInviteCodeInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && joinByInviteCode()}
-            placeholder="https://matrix.app/nexus/invite/..."
+            placeholder="Colle le lien d'invitation Nexus..."
             className="w-full px-4 py-3 rounded-2xl bg-secondary border border-border text-white placeholder:text-muted-foreground outline-none text-sm" />
           
             <div className="flex gap-3">
