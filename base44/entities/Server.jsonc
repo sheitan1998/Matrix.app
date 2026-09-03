@@ -110,7 +110,9 @@
             "enum": [
               "text",
               "voice",
-              "announce"
+              "announce",
+              "forum",
+              "category"
             ]
           },
           "topic": {
@@ -123,6 +125,37 @@
           "slowmode_seconds": {
             "type": "number",
             "default": 0
+          },
+          "category_id": {
+            "type": "string",
+            "description": "ID de la categorie parente (null si aucun)"
+          },
+          "permissions": {
+            "type": "object",
+            "properties": {
+              "read": {
+                "type": "string",
+                "enum": [
+                  "everyone",
+                  "mods",
+                  "admin"
+                ],
+                "default": "everyone"
+              },
+              "write": {
+                "type": "string",
+                "enum": [
+                  "everyone",
+                  "mods",
+                  "admin"
+                ],
+                "default": "everyone"
+              }
+            },
+            "default": {
+              "read": "everyone",
+              "write": "everyone"
+            }
           }
         }
       }

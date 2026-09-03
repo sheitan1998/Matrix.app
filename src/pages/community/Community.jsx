@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Sparkles, Plus, Hash, Volume2, Megaphone, Settings, Trash2, Search, UserPlus, Link2, MessageCircle, X, Zap, ArrowRight } from "lucide-react";
+import { ArrowLeft, Sparkles, Plus, Hash, Volume2, Megaphone, Settings, Trash2, Search, UserPlus, Link2, MessageCircle, X, Zap, ArrowRight, Folder, MessageSquare } from "lucide-react";
+import ChannelCreateModal from "@/components/community/ChannelCreateModal";
 import HeaderActions from "@/components/layout/HeaderActions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -34,7 +35,9 @@ const CATEGORIES = [
 const CHANNEL_TYPES = [
 { key: "text", label: "Textuel", icon: Hash },
 { key: "voice", label: "Vocal", icon: Volume2 },
-{ key: "announce", label: "Annonces", icon: Megaphone }];
+{ key: "announce", label: "Annonces", icon: Megaphone },
+{ key: "forum", label: "Forum", icon: MessageSquare },
+{ key: "category", label: "Catégorie", icon: Folder }];
 
 
 const defaultChannels = [
@@ -58,6 +61,10 @@ export default function Community() {
   const [showProfile, setShowProfile] = useState(false);
   const [flashBoosts, setFlashBoosts] = useState(0);
   const [joinConfirmServer, setJoinConfirmServer] = useState(null);
+  const [showChannelModal, setShowChannelModal] = useState(false);
+  const [channelModalMode, setChannelModalMode] = useState("text");
+  const [contextMenu, setContextMenu] = useState(null);
+  const [userMemberships, setUserMemberships] = useState([]);
   const [joinedServerIds, setJoinedServerIds] = useState(new Set());
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [searchParams] = useSearchParams();
@@ -97,6 +104,7 @@ export default function Community() {
     base44.entities.ServerMember.filter({ user_email: user.email }, "-created_date", 200).
     then((members) => {
       setJoinedServerIds(new Set(members.map((m) => m.server_id)));
+      setUserMemberships(members);
     }).
     catch(() => {});
   }, [user]);
@@ -105,6 +113,8 @@ export default function Community() {
   const publicServers = servers.filter((s) => s.is_public && s.owner_email !== user?.email && !joinedServerIds.has(s.id));
 
   const isOwner = selectedServer?.owner_email === user?.email;
+  const myMembership = userMemberships.find((m) => m.server_id === selectedServer?.id);
+  const canManageChannels = isOwner || myMembership?.role === "admin" || myMembership?.role === "moderator";
   const theme = getTheme(selectedServer?.visual_theme || "default");
   const channels = selectedServer && selectedServer.id !== "__feed__" ?
   selectedServer.channels?.length ? selectedServer.channels : defaultChannels :
@@ -129,6 +139,18 @@ export default function Community() {
     const updated = (selectedServer.channels?.length ? selectedServer.channels : defaultChannels).filter((c) => c.id !== id);
     await updateServer({ channels: updated });
     if (activeChannel?.id === id) setActiveChannel(null);
+  };
+
+  const createChannel = async (channel) => {
+    const updated = [...(selectedServer.channels?.length ? selectedServer.channels : defaultChannels), channel];
+    await updateServer({ channels: updated });
+    toast.success(`${channel.type === "category" ? "Catégorie" : "Salon"} créé !`);
+  };
+
+  const openChannelModal = (mode) => {
+    setChannelModalMode(mode);
+    setShowChannelModal(true);
+    setContextMenu(null);
   };
 
   const uploadIcon = async (file) => {
@@ -405,7 +427,7 @@ export default function Community() {
             <div className="p-3 border-b shrink-0 flex items-center justify-between" style={{ borderColor: theme.border }}>
               <p className="text-xs font-black text-muted-foreground uppercase tracking-widest">Salons</p>
               <div className="flex items-center gap-1">
-                {(isOwner || selectedServer.allow_member_invites) && selectedServer.invite_code &&
+                {(canManageChannels || selectedServer.allow_member_invites) && selectedServer.invite_code &&
                   <button
                     onClick={() => inviteToServer(selectedServer)}
                     className="w-5 h-5 rounded-md flex items-center justify-center transition hover:opacity-80 text-muted-foreground hover:text-white"
@@ -413,16 +435,9 @@ export default function Community() {
                     <UserPlus className="w-3 h-3" />
                   </button>
                 }
-                {isOwner &&
+                {canManageChannels &&
               <button
-                onClick={() => {
-                  const name = prompt("Nom du salon :");
-                  if (!name) return;
-                  const type = prompt("Type : text / voice / announce") || "text";
-                  const ch = { id: Date.now().toString(), name: name.trim().toLowerCase().replace(/\s+/g, "-"), type: ["text", "voice", "announce"].includes(type) ? type : "text" };
-                  const updated = [...(selectedServer.channels?.length ? selectedServer.channels : defaultChannels), ch];
-                  updateServer({ channels: updated }).then(() => toast.success("Salon créé !"));
-                }}
+                onClick={() => openChannelModal("text")}
                 className="w-5 h-5 rounded-md flex items-center justify-center transition hover:opacity-80"
                 style={{ background: theme.accent, color: "#000" }}
                 title="Créer un salon">
@@ -432,7 +447,12 @@ export default function Community() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+            <div className="flex-1 overflow-y-auto p-2 space-y-0.5"
+              onContextMenu={(e) => {
+                if (!canManageChannels) return;
+                e.preventDefault();
+                setContextMenu({ x: e.clientX, y: e.clientY });
+              }}>
               {channels.map((ch) => {
               const TypeIcon = CHANNEL_TYPES.find((t) => t.key === ch.type)?.icon || Hash;
               return (
@@ -443,7 +463,7 @@ export default function Community() {
                 onClick={() => setActiveChannel(ch)}>
                     <TypeIcon className="w-3.5 h-3.5 shrink-0" />
                     <span className="text-xs font-semibold truncate flex-1">{ch.name}</span>
-                    {isOwner &&
+                    {canManageChannels &&
                   <button onClick={(e) => {e.stopPropagation();removeChannel(ch.id);}}
                   className="opacity-0 group-hover:opacity-100 transition hover:text-destructive">
                         <Trash2 className="w-3 h-3" />
@@ -610,6 +630,39 @@ export default function Community() {
           onClose={() => setShowSearch(false)} />
         
         </div>
+      }
+
+      {/* Channel creation modal */}
+      {showChannelModal && selectedServer &&
+      <ChannelCreateModal
+        show={showChannelModal}
+        mode={channelModalMode}
+        theme={theme}
+        onClose={() => setShowChannelModal(false)}
+        onCreate={createChannel} />
+      }
+
+      {/* Channel context menu */}
+      {contextMenu && canManageChannels &&
+      <>
+        <div className="fixed inset-0 z-[95]" onClick={() => setContextMenu(null)} onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); }} />
+        <div className="fixed z-[96] rounded-xl overflow-hidden py-1 min-w-[180px]"
+          style={{ top: Math.min(contextMenu.y, window.innerHeight - 220), left: Math.min(contextMenu.x, window.innerWidth - 200), background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", boxShadow: "0 8px 24px rgba(0,0,0,0.4)" }}>
+          <button onClick={() => openChannelModal("category")} className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white/80 hover:bg-white/5 transition text-left">
+            <Folder className="w-3.5 h-3.5" style={{ color: "#8b5cf6" }} /> Créer une catégorie
+          </button>
+          <div className="h-px bg-white/5 my-1" />
+          <button onClick={() => openChannelModal("text")} className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white/80 hover:bg-white/5 transition text-left">
+            <Hash className="w-3.5 h-3.5" style={{ color: "#3b82f6" }} /> Salon textuel
+          </button>
+          <button onClick={() => openChannelModal("voice")} className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white/80 hover:bg-white/5 transition text-left">
+            <Volume2 className="w-3.5 h-3.5" style={{ color: "#10b981" }} /> Salon vocal
+          </button>
+          <button onClick={() => openChannelModal("forum")} className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white/80 hover:bg-white/5 transition text-left">
+            <MessageSquare className="w-3.5 h-3.5" style={{ color: "#f59e0b" }} /> Salon forum
+          </button>
+        </div>
+      </>
       }
 
       {/* Join by invite code modal */}

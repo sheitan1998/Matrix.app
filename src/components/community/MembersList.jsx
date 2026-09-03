@@ -63,9 +63,12 @@ export default function MembersList({ server, theme, currentUserEmail, onOpenDm 
                     {/* Avatar — clickable */}
                     <button onClick={() => !isMe && setProfileEmail(m.user_email)}
                       className="relative shrink-0 tap-sm" disabled={isMe}>
-                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                        style={{ background: isOwner ? "#f59e0b30" : accent + "30", border: `1px solid ${isOwner ? "#f59e0b" : accent}50` }}>
-                        {(m.user_name || "?")[0].toUpperCase()}
+                      <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center text-xs font-bold text-white"
+                        style={{ background: isOwner ? "#f59e0b30" : accent + "30", border: `1.5px solid ${isOwner ? "#f59e0b" : accent}80` }}>
+                        {m.user_avatar ?
+                          <img src={m.user_avatar} className="w-full h-full object-cover" alt="" /> :
+                          <span>{(m.user_name || "?")[0].toUpperCase()}</span>
+                        }
                       </div>
                       <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border border-black"
                         style={{ background: "#44ff88" }} />
