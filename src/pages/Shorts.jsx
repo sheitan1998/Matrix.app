@@ -44,7 +44,13 @@ function ShortItem({ short, isActive }) {
     if (muted) p.mute?.(); else p.unMute?.();
   }, [muted]);
 
-  // Clean up YouTube player when this item goes inactive
+  // When this item becomes inactive, drop the player reference so the
+  // YouTubePlayer unmount can fully clean up without stale references.
+  useEffect(() => {
+    if (!isActive) ytPlayerRef.current = null;
+  }, [isActive]);
+
+  // Clean up YouTube player on unmount
   useEffect(() => {
     return () => {
       const p = ytPlayerRef.current;
@@ -186,11 +192,16 @@ export default function Shorts() {
             <p className="text-white/50 text-sm">Les Shorts apparaîtront ici dès qu'ils seront publiés.</p>
           </div>
         )}
-        {shorts.map((short, i) => (
-          <div key={short.id} className="h-screen snap-start snap-always overflow-hidden">
-            <ShortItem short={short} isActive={activeIndex === i} />
-          </div>
-        ))}
+        {shorts.map((short, i) => {
+          const inWindow = Math.abs(activeIndex - i) <= 1;
+          return (
+            <div key={short.id} className="h-screen snap-start snap-always overflow-hidden">
+              {inWindow ? (
+                <ShortItem short={short} isActive={activeIndex === i} />
+              ) : null}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

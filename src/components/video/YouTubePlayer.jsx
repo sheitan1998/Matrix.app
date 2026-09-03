@@ -76,6 +76,10 @@ export default function YouTubePlayer({ videoId, autoplay = true, onReady, onSta
         try { playerRef.current.destroy?.(); } catch {}
         playerRef.current = null;
       }
+      // Explicitly clear the DOM to remove any lingering iframe
+      if (wrapperRef.current) {
+        wrapperRef.current.innerHTML = "";
+      }
     };
     // Only re-create when videoId changes — callbacks are in refs
   }, [videoId]);
