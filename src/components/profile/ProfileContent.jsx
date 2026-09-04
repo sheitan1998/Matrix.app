@@ -274,7 +274,7 @@ export default function ProfileContent({ onClose }) {
           <div className="mb-4">
             <button
               onClick={() => setTab("inventory")}
-              className="w-full flex items-center gap-3 p-4 rounded-2xl transition hover:opacity-90"
+              className="w-full flex items-center gap-3 p-4 rounded-2xl transition hover:opacity-90 hidden"
               style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(168,85,247,0.15)" }}>
               <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(168,85,247,0.15)" }}>
                 <Backpack className="w-4 h-4" style={{ color: "#a855f7" }} />
@@ -407,14 +407,14 @@ export default function ProfileContent({ onClose }) {
       </div>
 
       {showSupport && <SupportTicketModal user={user} onClose={() => setShowSupport(false)} />}
-      {cropModal && (
-        <ImageCropModal
-          file={cropModal.file}
-          aspect={cropModal.field === "avatar_url" ? 1 : 3}
-          onCrop={(croppedFile) => { uploadImage(croppedFile, cropModal.field); setCropModal(null); }}
-          onClose={() => setCropModal(null)}
-        />
-      )}
+      {cropModal &&
+      <ImageCropModal
+        file={cropModal.file}
+        aspect={cropModal.field === "avatar_url" ? 1 : 3}
+        onCrop={(croppedFile) => {uploadImage(croppedFile, cropModal.field);setCropModal(null);}}
+        onClose={() => setCropModal(null)} />
+
+      }
     </div>);
 
 }
