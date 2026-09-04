@@ -160,6 +160,7 @@ export function ProgressionProvider({ children }) {
   const [levelUpData, setLevelUpData] = useState(null);
   const ref = useRef(null);
   const unsubRef = useRef(null);
+  const timeSpentRef = useRef(null);
 
   const set = useCallback((data) => { ref.current = data; setProgress(data); }, []);
 
@@ -230,7 +231,19 @@ export function ProgressionProvider({ children }) {
       const r = LEVEL_REWARDS.find(r => r.level === level);
       if (r && !unlocked_rewards.includes(r.id)) unlocked_rewards.push(r.id);
     }
-    await save({ missions, xp, total_xp, level, unlocked_rewards, stats }, levelUps);
+
+    // Re-evaluate badges & achievements with updated stats (missions_completed fix)
+    let badges = [...(ref.current.badges || [])];
+    BADGES.forEach(b => { if (!badges.includes(b.id) && checkCondition(b.condition, stats)) badges.push(b.id); });
+    let achievements = [...(ref.current.achievements || [])];
+    ACHIEVEMENTS.forEach(a => {
+      if (!achievements.includes(a.id) && checkCondition(a.condition, stats)) {
+        achievements.push(a.id);
+        if (a.badge_reward && !badges.includes(a.badge_reward)) badges.push(a.badge_reward);
+      }
+    });
+
+    await save({ missions, xp, total_xp, level, unlocked_rewards, stats, badges, achievements }, levelUps);
   }, [save]);
 
   const buyItem = useCallback(async (itemId) => {
@@ -385,7 +398,8 @@ export function ProgressionProvider({ children }) {
         // Daily login bonus
         const today = new Date().toDateString();
         if (p.stats?.last_login_date !== today) {
-          const stats = { ...(p.stats || {}), last_login_date: today, daily_logins: (p.stats?.daily_logins || 0) + 1 };
+          const dailyLogins = (p.stats?.daily_logins || 0) + 1;
+          const stats = { ...(p.stats || {}), last_login_date: today, daily_logins: dailyLogins, daily_login: dailyLogins };
           await base44.entities.UserProgress.update(p.id, { stats });
           set({ ...p, stats });
           // Award daily login XP
@@ -402,8 +416,18 @@ export function ProgressionProvider({ children }) {
   useEffect(() => {
     return () => {
       if (unsubRef.current) unsubRef.current();
+      if (timeSpentRef.current) clearInterval(timeSpentRef.current);
     };
   }, []);
+
+  // Time spent tracking — increments time_spent stat every 5 minutes
+  useEffect(() => {
+    if (!progress) return;
+    timeSpentRef.current = setInterval(() => {
+      trackActivity('time_spent');
+    }, 300000); // 5 minutes
+    return () => { if (timeSpentRef.current) clearInterval(timeSpentRef.current); };
+  }, [progress, trackActivity]);
 
   const rank = progress ? getRank(progress.level) : null;
   const xpNeeded = progress ? XP_FORMULA(progress.level) : 100;

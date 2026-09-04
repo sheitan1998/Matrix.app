@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import SondageCard from "@/components/sondages/SondageCard";
 import CreateSondageModal from "@/components/sondages/CreateSondageModal";
 import HeaderActions from "@/components/layout/HeaderActions";
+import { useProgression } from "@/context/ProgressionContext";
 
 export default function Sondages() {
   const nav = useNavigate();
@@ -19,6 +20,7 @@ export default function Sondages() {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
+  const { trackActivity } = useProgression();
   const isAdmin = user?.role === "admin";
   const [showProposal, setShowProposal] = useState(false);
   const [proposalCategory, setProposalCategory] = useState("all");
@@ -68,6 +70,7 @@ export default function Sondages() {
         user_email: user.email,
       });
       qc.invalidateQueries({ queryKey: ["sondage-votes"] });
+      trackActivity("participate_poll");
       toast.success("Vote enregistré !");
     } catch {
       toast.error("Erreur lors du vote");

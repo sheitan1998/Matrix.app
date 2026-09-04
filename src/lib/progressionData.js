@@ -18,11 +18,27 @@ export const XP_REWARDS = {
   receive_like: 3,
   participate_poll: 15,
   invite_friend: 200,
-  participate_event: 100,
-  participate_tournament: 150,
   popular_content: 500,
   valid_report: 30,
   help_community: 25,
+  cosmetics_owned: 20,
+  cosmetics_equipped: 10,
+  friends_added: 50,
+  dm_sent: 2,
+  servers_joined: 30,
+  posts_created: 10,
+  profile_views: 1,
+  channels_created: 15,
+  polls_created: 20,
+  shorts_watched: 2,
+  video_projects: 30,
+  boosters_used: 15,
+  tools_used: 10,
+  marketplace_listings: 25,
+  tickets_created: 15,
+  nexus_games: 5,
+  use_ai: 8,
+  server_boosts: 50,
 };
 
 // Anti-spam: minimum ms between XP gains for the same action
@@ -35,12 +51,28 @@ export const ANTI_SPAM = {
   receive_like: 5000,
   participate_poll: 60000,
   invite_friend: 60000,
-  participate_event: 60000,
-  participate_tournament: 60000,
   popular_content: 3600000,
   valid_report: 60000,
   help_community: 60000,
   daily_login: 3600000,
+  cosmetics_owned: 60000,
+  cosmetics_equipped: 30000,
+  friends_added: 60000,
+  dm_sent: 30000,
+  servers_joined: 60000,
+  posts_created: 30000,
+  profile_views: 10000,
+  channels_created: 60000,
+  polls_created: 60000,
+  shorts_watched: 5000,
+  video_projects: 60000,
+  boosters_used: 60000,
+  tools_used: 30000,
+  marketplace_listings: 60000,
+  tickets_created: 60000,
+  nexus_games: 10000,
+  use_ai: 30000,
+  server_boosts: 60000,
 };
 
 // ============================================================
@@ -81,7 +113,7 @@ export const BADGE_CATEGORIES = [
   { id: 'beginner',   name: 'Débutant',   icon: '🌱' },
   { id: 'community',  name: 'Communauté', icon: '👥' },
   { id: 'polls',      name: 'Sondages',   icon: '📊' },
-  { id: 'events',     name: 'Événements', icon: '🏆' },
+  { id: 'collection', name: 'Collection', icon: '🎒' },
   { id: 'premium',    name: 'Premium',    icon: '💎' },
   { id: 'secret',     name: 'Secrets',    icon: '🔒' },
 ];
@@ -106,11 +138,12 @@ export const BADGES = [
   { id: 'poll_master',   name: 'Maître des sondages', icon: '🗳', rarity: 'legendary', category: 'polls', condition: { stat: 'participate_poll', op: '>=', val: 500 } },
   { id: 'poll_oracle',   name: 'Oracle des sondages', icon: '🔮', rarity: 'cosmic',    category: 'polls', condition: { stat: 'participate_poll', op: '>=', val: 2000 } },
 
-  // Événements
-  { id: 'event_participant',   name: 'Participant',        icon: '🎫', rarity: 'common',   category: 'events', condition: { stat: 'participate_event', op: '>=', val: 1 } },
-  { id: 'event_champion',      name: 'Champion',           icon: '🏅', rarity: 'rare',     category: 'events', condition: { stat: 'tournaments_won', op: '>=', val: 1 } },
-  { id: 'event_organizer',     name: 'Organisateur',       icon: '🎪', rarity: 'epic',     category: 'events', condition: { stat: 'events_organized', op: '>=', val: 5 } },
-  { id: 'tournament_winner',   name: 'Tournoi remporté',   icon: '🏆', rarity: 'legendary', category: 'events', condition: { stat: 'tournaments_won', op: '>=', val: 10 } },
+  // Collection
+  { id: 'collector_bronze',   name: 'Collectionneur Bronze',  icon: '📦', rarity: 'common',   category: 'collection', condition: { stat: 'cosmetics_owned', op: '>=', val: 5 } },
+  { id: 'collector_silver',   name: 'Collectionneur Argent', icon: '🎁', rarity: 'uncommon', category: 'collection', condition: { stat: 'cosmetics_owned', op: '>=', val: 25 } },
+  { id: 'collector_gold',     name: 'Collectionneur Or',     icon: '🏆', rarity: 'rare',     category: 'collection', condition: { stat: 'cosmetics_owned', op: '>=', val: 50 } },
+  { id: 'fashionista',        name: 'Tendance',              icon: '👗', rarity: 'epic',     category: 'collection', condition: { stat: 'cosmetics_equipped', op: '>=', val: 10 } },
+  { id: 'curator',            name: 'Conservateur',          icon: '🏛',  rarity: 'legendary', category: 'collection', condition: { stat: 'cosmetics_owned', op: '>=', val: 100 } },
 
   // Premium
   { id: 'supporter_bronze',  name: 'Supporter Bronze',  icon: '🥉', rarity: 'uncommon',  category: 'premium', condition: { stat: 'premium_tier', op: '>=', val: 1 } },
@@ -169,7 +202,6 @@ export const PRESTIGE_TIERS = [
 export const ACHIEVEMENTS = [
   { id: 'create_50_servers',     name: 'Créer 50 serveurs',          icon: '🏰', xp: 1000, trophies: 5, condition: { stat: 'create_server', op: '>=', val: 50 } },
   { id: 'poll_500',               name: 'Participer à 500 sondages', icon: '📊', xp: 800,  trophies: 4, condition: { stat: 'participate_poll', op: '>=', val: 500 } },
-  { id: 'participate_100_events',name: 'Participer à 100 événements',icon: '🏆', xp: 1000, trophies: 5, condition: { stat: 'participate_event', op: '>=', val: 100 } },
   { id: 'complete_100_missions', name: 'Compléter 100 missions',     icon: '✅', xp: 1200, trophies: 6, badge_reward: 'matrix_legend', condition: { stat: 'missions_completed', op: '>=', val: 100 } },
 ];
 
@@ -186,9 +218,9 @@ export const MISSION_TEMPLATES = {
   ],
   weekly: [
     { id: 'w_servers_3',      name: 'Créer 3 serveurs',       action: 'create_server',   target: 3,  xp: 300, trophies: 3 },
-    { id: 'w_event',          name: 'Participer à un événement', action: 'participate_event', target: 1, xp: 400, trophies: 3 },
     { id: 'w_polls_5',        name: 'Participer à 5 sondages', action: 'participate_poll', target: 5,  xp: 200, trophies: 2 },
     { id: 'w_comments_15',    name: 'Poster 15 commentaires',  action: 'comment',        target: 15, xp: 200, trophies: 2 },
+    { id: 'w_dm_20',          name: 'Envoyer 20 messages privés', action: 'dm_sent',      target: 20, xp: 250, trophies: 2 },
   ],
   monthly: [
     { id: 'm_messages_50',    name: 'Défi messagerie (50 messages)', action: 'send_message',  target: 50,  xp: 2000, trophies: 5 },
