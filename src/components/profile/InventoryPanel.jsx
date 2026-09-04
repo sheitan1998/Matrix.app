@@ -210,15 +210,15 @@ export default function InventoryPanel({ user }) {
           <span className="text-sm font-black text-white">Inventaire</span>
         </div>
         <div className="flex items-center gap-4 ml-auto flex-wrap">
-          <div className="flex items-center gap-1.5 text-xs hidden">
-            <Coins className="w-4 h-4 hidden" style={{ color: "#fbbf24" }} />
-            <span className="font-bold text-white">{(progress?.coins || 0).toLocaleString()}</span>
-            <span className="text-white/40">XP Coins</span>
-          </div>
+          
+
+
+
+          
           <div className="flex items-center gap-1.5 text-xs">
             <TrixIcon size={16} />
-            <span className="font-bold text-white hidden">{balance || 0}</span>
-            <span className="text-white/40 hidden">Trix</span>
+            
+            
           </div>
           <div className="flex items-center gap-1.5 text-xs">
             <Star className="w-4 h-4" style={{ color: "#fbbf24" }} />
