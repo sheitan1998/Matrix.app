@@ -185,51 +185,12 @@ export default function XPBoosterShop() {
         );
       })}
 
-      {/* Inventory */}
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="w-4 h-4" style={{ color: "#22c55e" }} />
-          <h3 className="text-sm font-black text-white">Mon inventaire ({inventory.length})</h3>
+      {inventory.length > 0 && (
+        <div className="p-3 rounded-xl flex items-center gap-2 text-xs text-white/40" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
+          <Sparkles className="w-3.5 h-3.5" style={{ color: "#22c55e" }} />
+          {inventory.length} booster{inventory.length > 1 ? "s" : ""} en stock — consultez votre inventaire sur votre profil pour les activer.
         </div>
-        {inventory.length === 0 ? (
-          <p className="text-xs text-white/40 py-4 text-center">Aucun booster en stock. Achetez-en ci-dessus pour les utiliser quand vous le souhaitez.</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {inventory.map((item, idx) => {
-              const booster = BOOSTERS.find(b => b.id === item.id) || { color: "#6c47ff", label: `x${item.multiplier}`, duration_label: `${item.duration_hours}h` };
-              const isActive = activeBoost?.booster_id === item.id;
-              return (
-                <div key={idx}
-                  className="p-3 rounded-xl flex items-center gap-3"
-                  style={{ background: "#13131a", border: `1px solid ${booster.color}30` }}
-                >
-                  <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${booster.color}20` }}>
-                    <Zap className="w-4 h-4" style={{ color: booster.color }} fill="currentColor" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-white">{booster.label}</p>
-                    <p className="text-[9px] text-white/40">{booster.duration_label}</p>
-                  </div>
-                  {isActive ? (
-                    <span className="text-[10px] font-bold px-2 py-1 rounded-lg" style={{ background: "#22c55e20", color: "#22c55e" }}>En cours</span>
-                  ) : activeBoost ? (
-                    <span className="text-[10px] text-white/30">En attente</span>
-                  ) : (
-                    <button
-                      onClick={() => handleActivate(item)}
-                      disabled={activating === item.id}
-                      className="px-3 py-1.5 rounded-lg text-[10px] font-bold text-white transition disabled:opacity-30 tap-sm"
-                      style={{ background: `linear-gradient(135deg, ${booster.color}, ${booster.color}dd)` }}
-                    >
-                      {activating === item.id ? "..." : "Activer"}
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }

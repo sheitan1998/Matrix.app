@@ -24,6 +24,11 @@
       "type": "boolean",
       "default": false
     },
+    "quantity": {
+      "type": "number",
+      "default": 1,
+      "description": "Quantite possedee de ce cosm\u00e9tique (cumul des rachats)"
+    },
     "video_url": {
       "type": "string",
       "description": "URL de la video d'animation (copiee depuis l'item a l'achat)"

@@ -77,9 +77,16 @@ export default async function(req: Request): Promise<Response> {
                   user_email: userEmail, item_id: itemId, item_name: shopItem.name,
                   category: shopItem.category, icon: shopItem.icon || "",
                   rarity: shopItem.rarity || "common", is_equipped: false,
+                  quantity: 1,
                   video_url: shopItem.video_url || "",
                   preview_image: shopItem.preview_image || "",
                   anim_config: shopItem.anim_config || undefined,
+                });
+              } else {
+                // Increment quantity instead of duplicating
+                const existingItem = existingCosm[0];
+                await base44.asServiceRole.entities.UserCosmetic.update(existingItem.id, {
+                  quantity: (existingItem.quantity || 1) + 1,
                 });
               }
               await base44.asServiceRole.entities.User.update(userId, {

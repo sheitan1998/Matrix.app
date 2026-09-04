@@ -61,6 +61,10 @@ export default function BoutiqueMatrix() {
 
   const filtered = cat === "all" ? items : items.filter(i => i.category === cat);
   const isOwned = (itemId) => owned.some(o => o.item_id === itemId);
+  const getOwnedQuantity = (itemId) => {
+    const item = owned.find(o => o.item_id === itemId);
+    return item?.quantity || (item ? 1 : 0);
+  };
 
   // Reset to page 1 when category changes
   useEffect(() => { setPage(1); }, [cat]);
@@ -96,23 +100,31 @@ export default function BoutiqueMatrix() {
   const buyWithTrix = async (item) => {
     const balance = user?.trix_balance || 0;
     if (balance < item.price_trix) { toast.error("Solde TRIX insuffisant"); return; }
-    if (isOwned(item.id)) { toast.info("Vous possédez déjà cet objet"); return; }
     setBuyingTrix(item.id);
     try {
       await base44.auth.updateMe({ trix_balance: balance - item.price_trix });
-      await base44.entities.UserCosmetic.create({
-        user_email: user.email, item_id: item.id, item_name: item.name,
-        category: item.category, icon: item.icon, rarity: item.rarity, is_equipped: false,
-        video_url: item.video_url || "",
-        preview_image: item.preview_image || "",
-      });
+      const existing = owned.find(o => o.item_id === item.id);
+      if (existing) {
+        // Increment quantity instead of duplicating
+        await base44.entities.UserCosmetic.update(existing.id, {
+          quantity: (existing.quantity || 1) + 1,
+        });
+      } else {
+        await base44.entities.UserCosmetic.create({
+          user_email: user.email, item_id: item.id, item_name: item.name,
+          category: item.category, icon: item.icon, rarity: item.rarity, is_equipped: false,
+          quantity: 1,
+          video_url: item.video_url || "",
+          preview_image: item.preview_image || "",
+        });
+      }
       await base44.entities.TrixTransaction.create({
         user_email: user.email, type: "purchase", amount: -item.price_trix,
         description: `Achat cosmétique: ${item.name} (-${item.price_trix} Trix)`,
       });
       qc.invalidateQueries({ queryKey: ["user-cosmetics"] });
       checkUserAuth();
-      toast.success(`${item.name} acheté ! Équipez-le depuis votre profil.`);
+      toast.success(`${item.name} acheté ! ${existing ? "Quantité augmentée" : "Équipez-le depuis votre profil"}.`);
       setDetailItem(null);
     } catch { toast.error("Erreur lors de l'achat"); }
     setBuyingTrix(null);
@@ -120,7 +132,6 @@ export default function BoutiqueMatrix() {
 
   const buyWithEuro = (item) => {
     if (!user) return;
-    if (isOwned(item.id)) { toast.info("Vous possédez déjà cet objet"); return; }
     setCheckout({
       functionName: "cosmeticShop",
       params: { action: "createCheckout", itemId: item.id },
@@ -200,9 +211,10 @@ export default function BoutiqueMatrix() {
                         <span className="text-xs font-bold text-white/70">{displayEuro(item)}</span>
                       </div>
                       {ownedItem ? (
-                        <span className="w-full text-center text-[10px] font-bold text-green-400 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg" style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)" }}>
-                          <Check className="w-3 h-3" /> Possédé
-                        </span>
+                        <button onClick={(e) => { e.stopPropagation(); setDetailItem(item); }}
+                          className="w-full text-center text-[10px] font-bold text-green-400 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg transition hover:opacity-80" style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)" }}>
+                          <Check className="w-3 h-3" /> Possédé{getOwnedQuantity(item.id) > 1 ? ` (x${getOwnedQuantity(item.id)})` : ""} · Racheter
+                        </button>
                       ) : (
                         <button onClick={(e) => { e.stopPropagation(); setDetailItem(item); }}
                           className="w-full px-3 py-1.5 rounded-lg text-xs font-bold text-white transition"
@@ -287,48 +299,47 @@ export default function BoutiqueMatrix() {
                   <span className="text-base font-bold text-white">{displayEuro(detailItem)}</span>
                 </div>
 
-                {ownedItem ? (
-                  <div className="py-2.5 rounded-xl text-sm font-bold text-green-400 flex items-center justify-center gap-1.5" style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)" }}>
-                    <Check className="w-4 h-4" /> Possédé
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {/* Profile preview toggle */}
-                    <button
-                      onClick={() => setShowProfilePreview(!showProfilePreview)}
-                      className="w-full py-2 rounded-xl text-xs font-bold text-white/70 flex items-center justify-center gap-1.5 transition hover:text-white"
-                      style={{ background: showProfilePreview ? "rgba(168,85,247,0.15)" : "rgba(255,255,255,0.04)", border: showProfilePreview ? "1px solid rgba(168,85,247,0.3)" : "1px solid rgba(255,255,255,0.06)" }}>
-                      <Eye className="w-3.5 h-3.5" /> {showProfilePreview ? "Masquer l'aperçu profil" : "Aperçu sur mon profil"}
-                    </button>
-                    {showProfilePreview && (
-                      <div className="pb-1">
-                        <CosmeticProfilePreview item={detailItem} user={user} />
-                      </div>
-                    )}
-                    {/* Pay with Trix */}
-                    <button onClick={() => buyWithTrix(detailItem)} disabled={buyingTrix === detailItem.id}
-                      className="w-full py-2.5 rounded-xl text-sm font-bold text-white transition disabled:opacity-50 flex items-center justify-center gap-1.5"
-                      style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
-                      {buyingTrix === detailItem.id ? "Traitement..." : (
-                        <>
-                          <TrixIcon size={16} />
-                          Payer {formatTrix(detailItem.price_trix)} Trix
-                        </>
-                      )}
-                    </button>
-                    {/* Pay with Euro */}
-                    <button onClick={() => buyWithEuro(detailItem)} disabled={buyingEuro === detailItem.id}
-                      className="w-full py-2.5 rounded-xl text-sm font-bold text-white transition disabled:opacity-50 flex items-center justify-center gap-1.5"
-                      style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)" }}>
-                      {buyingEuro === detailItem.id ? "Redirection..." : (
-                        <>
-                          <CreditCard className="w-4 h-4 text-white/60" />
-                          Payer {displayEuro(detailItem)}
-                        </>
-                      )}
-                    </button>
+                {ownedItem && (
+                  <div className="py-2 rounded-xl text-xs font-bold text-green-400 flex items-center justify-center gap-1.5 mb-2" style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)" }}>
+                    <Check className="w-3.5 h-3.5" /> Possédé{getOwnedQuantity(detailItem.id) > 1 ? ` (x${getOwnedQuantity(detailItem.id)})` : ""}
                   </div>
                 )}
+                <div className="space-y-2">
+                  {/* Profile preview toggle */}
+                  <button
+                    onClick={() => setShowProfilePreview(!showProfilePreview)}
+                    className="w-full py-2 rounded-xl text-xs font-bold text-white/70 flex items-center justify-center gap-1.5 transition hover:text-white"
+                    style={{ background: showProfilePreview ? "rgba(168,85,247,0.15)" : "rgba(255,255,255,0.04)", border: showProfilePreview ? "1px solid rgba(168,85,247,0.3)" : "1px solid rgba(255,255,255,0.06)" }}>
+                    <Eye className="w-3.5 h-3.5" /> {showProfilePreview ? "Masquer l'aperçu profil" : "Aperçu sur mon profil"}
+                  </button>
+                  {showProfilePreview && (
+                    <div className="pb-1">
+                      <CosmeticProfilePreview item={detailItem} user={user} />
+                    </div>
+                  )}
+                  {/* Pay with Trix */}
+                  <button onClick={() => buyWithTrix(detailItem)} disabled={buyingTrix === detailItem.id}
+                    className="w-full py-2.5 rounded-xl text-sm font-bold text-white transition disabled:opacity-50 flex items-center justify-center gap-1.5"
+                    style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
+                    {buyingTrix === detailItem.id ? "Traitement..." : (
+                      <>
+                        <TrixIcon size={16} />
+                        {ownedItem ? "Racheter" : "Payer"} {formatTrix(detailItem.price_trix)} Trix
+                      </>
+                    )}
+                  </button>
+                  {/* Pay with Euro */}
+                  <button onClick={() => buyWithEuro(detailItem)} disabled={buyingEuro === detailItem.id}
+                    className="w-full py-2.5 rounded-xl text-sm font-bold text-white transition disabled:opacity-50 flex items-center justify-center gap-1.5"
+                    style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)" }}>
+                    {buyingEuro === detailItem.id ? "Redirection..." : (
+                      <>
+                        <CreditCard className="w-4 h-4 text-white/60" />
+                        {ownedItem ? "Racheter" : "Payer"} {displayEuro(detailItem)}
+                      </>
+                    )}
+                  </button>
+                </div>
                 <p className="text-[10px] text-white/30 text-center mt-3 flex items-center justify-center gap-1">
                   <AlertCircle className="w-3 h-3" /> Non remboursable après achat
                 </p>

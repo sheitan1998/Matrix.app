@@ -2,13 +2,14 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Edit3, Check, X, Camera, Zap, Coins, Clapperboard, Award, Users, ShoppingBag, Lock, ChevronRight, ArrowLeft, Trophy, Zap as ZapIcon, LifeBuoy, Rocket } from "lucide-react";
+import { Edit3, Check, X, Camera, Zap, Coins, Clapperboard, Award, Users, ShoppingBag, Lock, ChevronRight, ArrowLeft, Trophy, Zap as ZapIcon, LifeBuoy, Rocket, Backpack } from "lucide-react";
 import { ACHIEVEMENTS as ALL_ACHIEVEMENTS } from "@/lib/achievementsData";
 import { toast } from "sonner";
 import { formatTrix } from "@/lib/format";
 import { useProgression } from "@/context/ProgressionContext";
 import FriendsPanel from "@/components/profile/FriendsPanel";
 import CosmeticsPanel from "@/components/profile/CosmeticsPanel";
+import InventoryPanel from "@/components/profile/InventoryPanel";
 import TransactionHistory from "@/components/profile/TransactionHistory";
 import PrivacyPanel from "@/components/profile/PrivacyPanel";
 import ProfileAnimationLayer from "@/components/profile/ProfileAnimationLayer";
@@ -20,6 +21,7 @@ import ImageCropModal from "@/components/profile/ImageCropModal";
 const TABS = [
 { key: "overview", label: "Vue d'ensemble", icon: Zap },
 { key: "friends", label: "Amis", icon: Users },
+{ key: "inventory", label: "Inventaire", icon: Backpack },
 { key: "cosmetics", label: "Cosmétiques", icon: Award },
 { key: "wallet", label: "Transactions", icon: Coins },
 { key: "privacy", label: "Confidentialité", icon: Lock }];
@@ -267,21 +269,19 @@ export default function ProfileContent({ onClose }) {
             })}
           </div>
 
-          {/* XP Boosters inventory */}
+          {/* Inventory shortcut */}
           <div className="mb-4">
             <button
-              onClick={() => goTo("/progression")}
+              onClick={() => setTab("inventory")}
               className="w-full flex items-center gap-3 p-4 rounded-2xl transition hover:opacity-90"
-              style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(251,191,36,0.15)" }}>
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(251,191,36,0.15)" }}>
-                <Rocket className="w-4 h-4" style={{ color: "#fbbf24" }} />
+              style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(168,85,247,0.15)" }}>
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(168,85,247,0.15)" }}>
+                <Backpack className="w-4 h-4" style={{ color: "#a855f7" }} />
               </div>
               <div className="flex-1 text-left">
-                <p className="text-sm font-bold text-white">Boosters XP</p>
+                <p className="text-sm font-bold text-white">Mon Inventaire</p>
                 <p className="text-[10px] text-white/40">
-                  {progress?.active_xp_boost
-                    ? `x${progress.active_xp_boost.multiplier} actif`
-                    : `${progress?.xp_boosters?.length || 0} en stock`}
+                  {cosmetics.length + (progress?.xp_boosters?.length || 0) + (progress?.badges?.length || 0)} objets au total
                 </p>
               </div>
               <ChevronRight className="w-4 h-4 text-white/30 shrink-0" />
@@ -369,8 +369,8 @@ export default function ProfileContent({ onClose }) {
                       </div>
                   )}
                   </div>
-                  <button onClick={() => setTab("cosmetics")} className="mt-3 text-xs font-bold text-white/50 hover:text-white flex items-center gap-1">
-                    Gérer mes cosmétiques <ChevronRight className="w-3 h-3" />
+                  <button onClick={() => setTab("inventory")} className="mt-3 text-xs font-bold text-white/50 hover:text-white flex items-center gap-1">
+                    Gérer mon inventaire <ChevronRight className="w-3 h-3" />
                   </button>
                 </div>
 
@@ -397,6 +397,7 @@ export default function ProfileContent({ onClose }) {
               </div>
             }
             {tab === "friends" && <FriendsPanel user={user} onClose={onClose} />}
+            {tab === "inventory" && <InventoryPanel user={user} />}
             {tab === "cosmetics" && <CosmeticsPanel user={user} />}
             {tab === "wallet" && <TransactionHistory user={user} />}
             {tab === "privacy" && <PrivacyPanel user={user} onUpdate={setUser} />}
