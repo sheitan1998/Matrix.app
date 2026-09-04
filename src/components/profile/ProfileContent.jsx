@@ -29,7 +29,8 @@ const TABS = [
 
 export default function ProfileContent({ onClose }) {
   const nav = useNavigate();
-  const { progress, rank, xpNeeded, xpPercent } = useProgression();
+  const progression = useProgression();
+  const { progress, rank, xpNeeded, xpPercent } = progression || {};
   const [user, setUser] = useState(null);
   const [tab, setTab] = useState("overview");
   const [editing, setEditing] = useState(false);
