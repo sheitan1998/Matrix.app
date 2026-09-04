@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Send, X, Trash2, Pencil, Check, Reply } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { useProgression } from "@/context/ProgressionContext";
 import { cn } from "@/lib/utils";
 
 const REACTIONS = ["❤️", "😂", "🔥", "👏", "😮", "😢"];
@@ -14,6 +15,7 @@ function getDmId(emailA, emailB) {
 }
 
 export default function PrivateChat({ user, friend, onClose }) {
+  const { trackActivity } = useProgression();
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [contextMenu, setContextMenu] = useState(null);
@@ -91,6 +93,7 @@ export default function PrivateChat({ user, friend, onClose }) {
     setInput("");
     setSending(false);
     if (replyingTo) setReplyingTo(null);
+    trackActivity("dm_sent");
     qc.invalidateQueries({ queryKey: ["dm-messages", dmId] });
   };
 

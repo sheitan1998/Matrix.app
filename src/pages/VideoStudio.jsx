@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Film, Play, Clock, ArrowLeft, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
+import { useProgression } from "@/context/ProgressionContext";
 import SpaceBackground from "@/components/SpaceBackground";
 import TrixWalletBar from "@/components/TrixWalletBar";
 import ProjectEditor from "@/components/video/ProjectEditor";
@@ -11,6 +12,7 @@ import ProjectEditor from "@/components/video/ProjectEditor";
 export default function VideoStudio() {
   const nav = useNavigate();
   const qc = useQueryClient();
+  const { trackActivity } = useProgression();
   const [user, setUser] = useState(null);
   const [editingProject, setEditingProject] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
@@ -35,6 +37,7 @@ export default function VideoStudio() {
     qc.invalidateQueries({ queryKey: ["video-projects"] });
     setShowCreate(false);
     setEditingProject(proj);
+    trackActivity("video_projects");
     toast.success("Projet créé !");
   };
 

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { X, Upload, Plus } from "lucide-react";
+import { useProgression } from "@/context/ProgressionContext";
 import MobileSelect from "./MobileSelect";
 import { toast } from "sonner";
 
@@ -31,6 +32,7 @@ const CONDITIONS = [
 const SIZES = ["XXS","XS","S","M","L","XL","XXL","3XL","36","37","38","39","40","41","42","43","44","45","Unique"];
 
 export default function ListingForm({ onClose }) {
+  const { trackActivity } = useProgression();
   const [user, setUser] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -61,6 +63,7 @@ export default function ListingForm({ onClose }) {
       seller_avatar: user.avatar_url || "",
     });
     toast.success("Article mis en vente !");
+    trackActivity("marketplace_listings");
     setSaving(false);
     onClose();
   };

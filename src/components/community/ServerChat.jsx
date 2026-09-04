@@ -203,6 +203,7 @@ export default function ServerChat({ server, channel, theme, user }) {
       updated = reactions.filter(r => !(r.emoji === emoji && r.user_email === user.email));
     } else {
       updated = [...reactions, { emoji, user_email: user.email, user_name: user.full_name || user.email.split("@")[0] }];
+      trackActivity("like");
     }
     await base44.entities.ServerMessage.update(msg.id, { reactions: updated });
     qc.invalidateQueries({ queryKey });

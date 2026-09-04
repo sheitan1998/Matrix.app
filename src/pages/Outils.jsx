@@ -10,6 +10,7 @@ import Spreadsheet from "@/components/tools/Spreadsheet";
 import PaintTool from "@/components/tools/PaintTool";
 import HeaderActions from "@/components/layout/HeaderActions";
 import { Table, Palette } from "lucide-react";
+import { useProgression } from "@/context/ProgressionContext";
 
 const TOOLS = [
 { id: "calc", label: "Calculatrice de Bureau", desc: "Opérations basiques, scientifiques et financières.", icon: Calculator, color: "#FF4D4D" },
@@ -23,6 +24,7 @@ const BG_URL = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/
 
 export default function Outils() {
   const nav = useNavigate();
+  const { trackActivity } = useProgression();
   const [user, setUser] = useState(null);
   const [activeTool, setActiveTool] = useState(null);
 
@@ -65,7 +67,7 @@ export default function Outils() {
               transition={{ delay: 0.2 + i * 0.1, duration: 0.5 }}
               whileHover={{ scale: 1.03, y: -4 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => setActiveTool(tool.id)}
+              onClick={() => { setActiveTool(tool.id); trackActivity("tools_used"); }}
               className="relative rounded-2xl p-6 text-left flex flex-col gap-4 overflow-hidden"
               style={{
                 background: "rgba(15,10,25,0.7)",

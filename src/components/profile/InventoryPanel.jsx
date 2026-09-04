@@ -59,7 +59,7 @@ function formatRemaining(expiresAt) {
 
 export default function InventoryPanel({ user }) {
   const qc = useQueryClient();
-  const { progress, activateXPBooster, activeBoost } = useProgression();
+  const { progress, activateXPBooster, activeBoost, trackActivity } = useProgression();
   const { balance } = useWallet();
   const [deleting, setDeleting] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
@@ -165,6 +165,7 @@ export default function InventoryPanel({ user }) {
       }
       await base44.entities.UserCosmetic.update(cosmetic.id, { is_equipped: true });
       qc.invalidateQueries({ queryKey: ["user-cosmetics"] });
+      trackActivity("cosmetics_equipped");
       toast.success(`${cosmetic.item_name} équipé !`);
     } catch {toast.error("Erreur");}
   };

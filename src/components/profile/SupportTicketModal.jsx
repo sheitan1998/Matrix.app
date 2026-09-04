@@ -67,6 +67,7 @@ export default function SupportTicketModal({ user, onClose }) {
       });
 
       toast.success("Ticket envoyé ! L'équipe support vous répondra dans la messagerie.");
+      trackActivity("tickets_created");
       trackActivity("help_community");
       onClose();
     } catch {

@@ -78,7 +78,7 @@ export default function PostFeed() {
       setVideoPreview(null);
       setLastPostTime(Date.now());
       qc.invalidateQueries({ queryKey: ["posts"] });
-      trackActivity("send_message");
+      trackActivity("posts_created");
     },
   });
 

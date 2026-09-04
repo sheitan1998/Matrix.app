@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useProgression } from "@/context/ProgressionContext";
 import { UserCheck, Clock, Users, X, Search, Send, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { isUserOnline } from "@/hooks/usePresence";
 
 export default function FriendsPanel({ user, onClose }) {
+  const { trackActivity } = useProgression();
   const [addPseudo, setAddPseudo] = useState("");
   const [searching, setSearching] = useState(false);
   const [freshUsers, setFreshUsers] = useState({});
@@ -73,6 +75,7 @@ export default function FriendsPanel({ user, onClose }) {
       }
       qc.invalidateQueries({ queryKey: ["mp-friends"] });
       setAddPseudo("");
+      trackActivity("friends_added");
       toast.success(`Demande envoyée à ${res.data.target_name || ""} !`);
     } catch (err) {
       const msg = err?.response?.data?.error || err?.message || "Erreur lors de l'envoi";

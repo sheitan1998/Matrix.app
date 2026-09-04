@@ -53,7 +53,7 @@ export default function NexusInvite() {
         await base44.entities.Server.update(server.id, { members_count: (server.members_count || 1) + 1 });
       }
       setJoined(true);
-      trackActivity("join_server");
+      trackActivity("servers_joined");
       toast.success(`Rejoint "${server.name}" !`);
     } catch {
       toast.error("Erreur lors de la rejointe du serveur");

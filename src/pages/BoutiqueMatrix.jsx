@@ -126,7 +126,7 @@ export default function BoutiqueMatrix() {
       });
       qc.invalidateQueries({ queryKey: ["user-cosmetics"] });
       checkUserAuth();
-      trackActivity("cosmetic_purchase");
+      trackActivity("cosmetics_owned");
       toast.success(`${item.name} acheté ! ${existing ? "Quantité augmentée" : "Équipez-le depuis votre profil"}.`);
       setDetailItem(null);
     } catch { toast.error("Erreur lors de l'achat"); }

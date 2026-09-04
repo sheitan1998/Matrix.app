@@ -10,6 +10,7 @@ import CasinoShop from "@/pages/casino/CasinoShop";
 import CasinoProfile from "@/pages/casino/CasinoProfile";
 import { formatBet } from "@/components/casino/slotThemes";
 import { toast } from "sonner";
+import { useProgression } from "@/context/ProgressionContext";
 import ThemeSelectionModal from "@/components/casino/ThemeSelectionModal";
 
 const CASINO_BALANCE_KEY = "matrix_casino_coins";
@@ -41,6 +42,7 @@ function useCasinoCoins() {
 }
 
 export default function Casino() {
+  const { trackActivity } = useProgression();
   const [screen, setScreen] = useState("home"); // "home" | "slots" | "shop" | "profile"
   const [casinoCoins, setCasinoCoins] = useCasinoCoins();
   const [won24h, setWon24h] = useState(0);
@@ -214,6 +216,7 @@ export default function Casino() {
           setSelectedTheme(themeKey);
           setShowThemeSelect(false);
           setScreen("slots");
+          trackActivity("nexus_games");
         }}
         onClose={() => setShowThemeSelect(false)} />
       

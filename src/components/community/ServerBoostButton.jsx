@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { Zap, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
+import { useProgression } from "@/context/ProgressionContext";
 import ServerBoostLevels from "@/components/prospecteurs/ServerBoostLevels";
 
 const MAX_BOOSTS = 30;
@@ -16,6 +17,7 @@ function getBoostLevel(boosts) {
 }
 
 export default function ServerBoostButton({ server, user, flashBoosts, onBoosted }) {
+  const { trackActivity } = useProgression();
   const [loading, setLoading] = useState(false);
   const [showLevels, setShowLevels] = useState(false);
   const currentBoosts = server?.boosts || 0;
@@ -46,6 +48,7 @@ export default function ServerBoostButton({ server, user, flashBoosts, onBoosted
         return;
       }
       toast.success(`Serveur boosté ! (${res.data.boosts}/${MAX_BOOSTS})`);
+      trackActivity("server_boosts");
       if (onBoosted) onBoosted(res.data.boosts, res.data.newFlashBoosts);
     } catch (err) {
       toast.error(err?.message || "Erreur lors du boost");

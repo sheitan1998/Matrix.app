@@ -5,6 +5,7 @@ import { Heart, MessageCircle, Share2, ArrowLeft, Volume2, VolumeX, Loader2 } fr
 import { Link } from "react-router-dom";
 import { formatViews } from "@/lib/format";
 import YouTubePlayer from "@/components/video/YouTubePlayer";
+import { useProgression } from "@/context/ProgressionContext";
 
 // Random search terms to avoid always seeing the same shorts when starting fresh
 const SHORT_QUERIES = [
@@ -23,6 +24,7 @@ function ShortItem({ short, isActive }) {
   const videoRef = useRef(null);
   const ytPlayerRef = useRef(null);
   const isActiveRef = useRef(isActive);
+  const { trackActivity } = useProgression();
   const [liked, setLiked] = useState(false);
   const [muted, setMuted] = useState(true);
 
@@ -115,7 +117,7 @@ function ShortItem({ short, isActive }) {
       {/* Side actions */}
       <div className="absolute right-4 bottom-24 flex flex-col items-center gap-5">
         <button
-          onClick={() => setLiked((l) => !l)}
+          onClick={() => { setLiked((l) => !l); trackActivity("shorts_watched"); trackActivity("like"); }}
           className="flex flex-col items-center gap-1"
         >
           <Heart className={`w-7 h-7 transition ${liked ? "fill-red-500 text-red-500" : "text-white"}`} />

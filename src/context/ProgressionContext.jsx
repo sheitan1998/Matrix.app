@@ -107,6 +107,12 @@ function applyActivity(progress, action, count = 1) {
   stats[action] = (stats[action] || 0) + count;
   stats.total_actions = (stats.total_actions || 0) + 1;
 
+  // Derived stats — synced from progress state each call
+  stats.level_reached = progress.level || 1;
+  stats.achievements_unlocked = (progress.achievements || []).length;
+  stats.badges_earned = (progress.badges || []).length;
+  stats.missions_completed = stats.missions_completed || 0;
+
   const missions = JSON.parse(JSON.stringify(progress.missions || {}));
   ['daily', 'weekly'].forEach(period => {
     (missions[period] || []).forEach(m => {
@@ -355,6 +361,8 @@ export function ProgressionProvider({ children }) {
       xp_boosters: newInventory,
       active_xp_boost: newBoost,
     });
+    // Track booster usage for achievements
+    trackActivity('boosters_used', toActivate);
   }, [save]);
 
   // Init: load or create progress, ensure missions, daily login bonus
