@@ -52,39 +52,9 @@ export default function SportsBetting({ balance, setBalance }) {
     // Try to enrich with live odds via AI, fallback to static
     const enrich = async () => {
       try {
-        const data = await base44.integrations.Core.InvokeLLM({
-          prompt: "Génère des cotes réalistes pour 6 matchs sportifs du jour (foot, tennis, basket). Format JSON.",
-          add_context_from_internet: true,
-          response_json_schema: {
-            type: "object",
-            properties: {
-              matches: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    id: { type: "string" },
-                    sport: { type: "string" },
-                    league: { type: "string" },
-                    home: { type: "string" },
-                    away: { type: "string" },
-                    time: { type: "string" },
-                    odds: {
-                      type: "object",
-                      properties: {
-                        home: { type: "number" },
-                        draw: { type: "number" },
-                        away: { type: "number" }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        });
-        if (data?.matches?.length > 0) {
-          setMatches(data.matches);
+        const res = await base44.functions.invoke("casinoEngine", { action: "getSportsOdds" });
+        if (res.data?.matches?.length > 0) {
+          setMatches(res.data.matches);
         } else {
           setMatches(STATIC_MATCHES);
         }

@@ -85,12 +85,13 @@ export default function AIStudio() {
     const modelKey = currentAI?.model || "gpt_5_mini";
     const useInternet = modelKey === "gemini_3_1_pro" || modelKey === "gemini_3_flash";
 
-    const response = await base44.integrations.Core.InvokeLLM({
+    const res = await base44.functions.invoke("aiStudio", {
+      action: "chat",
       prompt,
       model: modelKey !== "automatic" ? modelKey : undefined,
       add_context_from_internet: useInternet,
     });
-    setMessages((prev) => [...prev, { role: "assistant", content: response, model: currentAI?.label }]);
+    setMessages((prev) => [...prev, { role: "assistant", content: res.data.response, model: currentAI?.label }]);
     setLoading(false);
   };
 
@@ -110,8 +111,12 @@ export default function AIStudio() {
     }
     setGeneratingVideo(true);
     toast.info(`Génération vidéo ${videoDuration}s en cours (~40 secondes)...`);
-    const result = await base44.integrations.Core.GenerateVideo({ prompt: videoPrompt, duration: videoDuration });
-    setGeneratedVideo(result.url);
+    const res = await base44.functions.invoke("aiStudio", {
+      action: "generateVideo",
+      prompt: videoPrompt,
+      duration: videoDuration,
+    });
+    setGeneratedVideo(res.data.url);
     if (!isPremium) setVideoUsage((u) => u + 1);
     setGeneratingVideo(false);
     toast.success("Vidéo générée !");

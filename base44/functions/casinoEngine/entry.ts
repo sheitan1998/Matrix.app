@@ -346,6 +346,42 @@ export default async function(req: Request): Promise<Response> {
         });
       }
 
+      // ---- Get sports betting odds (AI-enriched) ----
+      case 'getSportsOdds': {
+        const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
+          prompt: "Génère des cotes réalistes pour 6 matchs sportifs du jour (foot, tennis, basket). Format JSON.",
+          add_context_from_internet: true,
+          response_json_schema: {
+            type: "object",
+            properties: {
+              matches: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "string" },
+                    sport: { type: "string" },
+                    league: { type: "string" },
+                    home: { type: "string" },
+                    away: { type: "string" },
+                    time: { type: "string" },
+                    odds: {
+                      type: "object",
+                      properties: {
+                        home: { type: "number" },
+                        draw: { type: "number" },
+                        away: { type: "number" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+        });
+        return Response.json({ matches: result.matches || [] });
+      }
+
       default:
         return Response.json({ error: `Unknown action: ${action}` }, { status: 400 });
     }
