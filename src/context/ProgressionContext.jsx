@@ -289,24 +289,58 @@ export function ProgressionProvider({ children }) {
     await save({ xp_boosters: boosters });
   }, [save]);
 
-  const activateXPBooster = useCallback(async (booster) => {
+  const activateXPBooster = useCallback(async (booster, quantity = 1) => {
     if (!ref.current) return;
-    // Check if a boost is already active
-    const existing = getActiveBoost(ref.current);
-    if (existing) {
-      throw new Error('A booster is already active');
-    }
-    // Remove from inventory
     const inventory = ref.current.xp_boosters || [];
-    const idx = inventory.findIndex(b => b.id === booster.id && b.multiplier === booster.multiplier && b.duration_hours === booster.duration_hours);
-    if (idx < 0) return;
-    const newInventory = [...inventory];
-    newInventory.splice(idx, 1);
-    // Set active boost
-    const expiresAt = new Date(Date.now() + (booster.duration_hours || 1) * 3600000).toISOString();
+
+    // Find matching boosters (same id, multiplier, duration_hours)
+    const matching = inventory.filter(b => b.id === booster.id && b.multiplier === booster.multiplier && b.duration_hours === booster.duration_hours);
+    const toActivate = Math.min(quantity, matching.length);
+    if (toActivate <= 0) return;
+
+    // Remove `toActivate` boosters from inventory
+    let removed = 0;
+    const newInventory = inventory.filter(b => {
+      if (removed < toActivate && b.id === booster.id && b.multiplier === booster.multiplier && b.duration_hours === booster.duration_hours) {
+        removed++;
+        return false;
+      }
+      return true;
+    });
+
+    // Total duration to add (hours → ms)
+    const durationMs = (booster.duration_hours || 1) * 3600000 * toActivate;
+
+    // Accumulate onto existing active boost (if same multiplier) or start fresh
+    const existing = getActiveBoost(ref.current);
+    let newBoost;
+    if (existing && existing.multiplier === booster.multiplier) {
+      // Extend the existing boost's expiry
+      const currentExpiry = new Date(existing.expires_at).getTime();
+      const baseTime = Math.max(currentExpiry, Date.now());
+      newBoost = {
+        multiplier: existing.multiplier,
+        expires_at: new Date(baseTime + durationMs).toISOString(),
+        booster_id: existing.booster_id,
+      };
+    } else if (existing) {
+      // Different multiplier — replace the active boost (don't stack different multipliers)
+      newBoost = {
+        multiplier: booster.multiplier,
+        expires_at: new Date(Date.now() + durationMs).toISOString(),
+        booster_id: booster.id,
+      };
+    } else {
+      newBoost = {
+        multiplier: booster.multiplier,
+        expires_at: new Date(Date.now() + durationMs).toISOString(),
+        booster_id: booster.id,
+      };
+    }
+
     await save({
       xp_boosters: newInventory,
-      active_xp_boost: { multiplier: booster.multiplier, expires_at: expiresAt, booster_id: booster.id },
+      active_xp_boost: newBoost,
     });
   }, [save]);
 

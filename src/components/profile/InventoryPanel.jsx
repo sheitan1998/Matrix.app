@@ -4,10 +4,11 @@ import { base44 } from "@/api/base44Client";
 import { useProgression } from "@/context/ProgressionContext";
 import { useWallet } from "@/hooks/useWallet";
 import { toast } from "sonner";
-import { Zap, Coins, Award, ShoppingBag, Sparkles, Check, Trash2, AlertTriangle, X, Star, Rocket, Search } from "lucide-react";
+import { Zap, Coins, Award, ShoppingBag, Sparkles, Check, Trash2, AlertTriangle, X, Star, Rocket, Search, Clock } from "lucide-react";
 import { BADGES, RARITIES } from "@/lib/progressionData";
 import CosmeticPreview from "@/components/cosmetics/CosmeticPreview";
 import TrixIcon from "@/components/TrixIcon";
+import BoosterActivateModal from "@/components/profile/BoosterActivateModal";
 
 const RARITY_COLORS = {
   common: "#9ca3af", rare: "#3b82f6", epic: "#a855f7", legendary: "#f59e0b",
@@ -46,6 +47,16 @@ const FILTER_TABS = [
   { key: "badge", label: "Badges", icon: Sparkles },
 ];
 
+function formatRemaining(expiresAt) {
+  if (!expiresAt) return null;
+  const ms = new Date(expiresAt).getTime() - Date.now();
+  if (ms <= 0) return "Expiré";
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  if (h > 0) return `${h}h ${m}min`;
+  return `${m}min`;
+}
+
 export default function InventoryPanel({ user }) {
   const qc = useQueryClient();
   const { progress, activateXPBooster, activeBoost } = useProgression();
@@ -55,6 +66,7 @@ export default function InventoryPanel({ user }) {
   const [activating, setActivating] = useState(null);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [boosterModal, setBoosterModal] = useState(null); // { stack, meta }
 
   const { data: cosmetics = [] } = useQuery({
     queryKey: ["user-cosmetics", user?.email],
@@ -69,19 +81,28 @@ export default function InventoryPanel({ user }) {
   const allItems = useMemo(() => {
     const items = [];
 
-    // Boosters
+    // Boosters — grouped by type into stacks
+    const boosterGroups = {};
     for (const b of xpBoosters) {
+      const key = `${b.id}`;
+      if (!boosterGroups[key]) boosterGroups[key] = { booster: b, count: 0 };
+      boosterGroups[key].count++;
+    }
+    for (const key of Object.keys(boosterGroups)) {
+      const { booster: b, count } = boosterGroups[key];
       const meta = BOOSTER_META[b.id] || { color: "#6c47ff", label: `x${b.multiplier}`, duration_label: `${b.duration_hours}h` };
+      const isActive = activeBoost?.booster_id === b.id;
       items.push({
-        id: `booster_${b.id}_${b.purchased_at}`,
+        id: `booster_${b.id}`,
         type: "booster",
         name: meta.label,
         subtitle: meta.duration_label,
         rarity: "epic",
-        quantity: 1,
+        quantity: count,
         color: meta.color,
         icon: "booster",
-        isActive: activeBoost?.booster_id === b.id,
+        isActive,
+        activeBoost,
         action: { type: "activate", item: b, label: "Activer" },
       });
     }
@@ -168,11 +189,12 @@ export default function InventoryPanel({ user }) {
     setDeleting(null);
   };
 
-  const handleActivateBooster = async (item) => {
-    setActivating(item.id);
+  const handleActivateBooster = async (booster, quantity) => {
+    setActivating(booster.id);
     try {
-      await activateXPBooster(item);
-      toast.success("Booster activé !");
+      await activateXPBooster(booster, quantity);
+      toast.success(`${quantity} booster${quantity > 1 ? "s" : ""} activé${quantity > 1 ? "s" : ""} !`);
+      setBoosterModal(null);
     } catch (e) {
       toast.error(e.message || "Erreur lors de l'activation");
     }
@@ -239,7 +261,11 @@ export default function InventoryPanel({ user }) {
               item={item}
               onEquip={() => equip(item.cosmetic)}
               onUnequip={() => unequip(item.cosmetic)}
-              onActivate={() => handleActivateBooster(item.action.item)}
+              onActivate={() => {
+                if (item.type === "booster") {
+                  setBoosterModal({ booster: item.action.item, stack: item });
+                }
+              }}
               onDelete={() => setConfirmDelete(item.cosmetic)}
               activating={activating === item.action?.item?.id}
               hasActiveBoost={!!activeBoost}
@@ -258,6 +284,18 @@ export default function InventoryPanel({ user }) {
         <div className="text-center py-12">
           <p className="text-white/30 text-sm">Aucun objet ne correspond à votre recherche.</p>
         </div>
+      )}
+
+      {/* Booster quantity selector */}
+      {boosterModal && (
+        <BoosterActivateModal
+          stack={boosterModal.stack}
+          booster={boosterModal.booster}
+          activeBoost={activeBoost}
+          activating={activating === boosterModal.booster.id}
+          onConfirm={(qty) => handleActivateBooster(boosterModal.booster, qty)}
+          onClose={() => setBoosterModal(null)}
+        />
       )}
 
       {/* Delete confirmation */}
@@ -368,12 +406,9 @@ function InventoryCard({ item, onEquip, onUnequip, onActivate, onDelete, activat
         <div className="px-2 pb-2 flex gap-1">
           {item.action.type === "activate" ? (
             isActive ? (
-              <span className="flex-1 py-1.5 rounded-lg text-[10px] font-bold text-center" style={{ background: "#22c55e20", color: "#22c55e" }}>
-                En cours
-              </span>
-            ) : hasActiveBoost ? (
-              <span className="flex-1 py-1.5 rounded-lg text-[10px] font-bold text-center text-white/30">
-                En attente
+              <span className="flex-1 py-1.5 rounded-lg text-[10px] font-bold text-center flex items-center justify-center gap-1" style={{ background: "#22c55e20", color: "#22c55e" }}>
+                <Clock className="w-3 h-3" />
+                {item.activeBoost ? formatRemaining(item.activeBoost.expires_at) : "En cours"}
               </span>
             ) : (
               <button onClick={onActivate} disabled={activating}
