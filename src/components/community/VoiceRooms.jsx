@@ -6,8 +6,10 @@ import { Mic, MicOff, Video, VideoOff, Monitor, Lock, Globe, Plus, Pencil, X, Lo
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useProgression } from "@/context/ProgressionContext";
 
 export default function VoiceRooms() {
+  const { trackActivity } = useProgression();
   const [user, setUser] = useState(null);
   const [myRoom, setMyRoom] = useState(null);
   const [editName, setEditName] = useState("");
@@ -102,6 +104,7 @@ export default function VoiceRooms() {
     }
     await base44.entities.VoiceRoom.update(room.id, { participants_count: (room.participants_count || 0) + 1 });
     setJoinedRoom(room.id);
+    trackActivity("voice_channel");
     qc.invalidateQueries({ queryKey: ["voice-rooms"] });
     toast.success(`Vous avez rejoint "${room.name}"`);
   };

@@ -11,6 +11,7 @@ import TrixIcon from "@/components/TrixIcon";
 import CosmeticPreview from "@/components/cosmetics/CosmeticPreview";
 import CosmeticProfilePreview from "@/components/cosmetics/CosmeticProfilePreview";
 import CheckoutModal from "@/components/CheckoutModal";
+import { useProgression } from "@/context/ProgressionContext";
 
 const CATEGORIES = [
   { key: "all", label: "Tout" },
@@ -38,6 +39,7 @@ export default function BoutiqueMatrix() {
   const nav = useNavigate();
   const qc = useQueryClient();
   const { user, checkUserAuth } = useAuth();
+  const { trackActivity } = useProgression();
   const [cat, setCat] = useState("all");
   const [buyingTrix, setBuyingTrix] = useState(null);
   const [buyingEuro, setBuyingEuro] = useState(null);
@@ -124,6 +126,7 @@ export default function BoutiqueMatrix() {
       });
       qc.invalidateQueries({ queryKey: ["user-cosmetics"] });
       checkUserAuth();
+      trackActivity("cosmetic_purchase");
       toast.success(`${item.name} acheté ! ${existing ? "Quantité augmentée" : "Équipez-le depuis votre profil"}.`);
       setDetailItem(null);
     } catch { toast.error("Erreur lors de l'achat"); }

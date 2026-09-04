@@ -3,10 +3,12 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { ArrowLeft, Loader2, CheckCircle2, AlertCircle, Users, Lock, Globe, Clock, MessageCircle, UserPlus } from "lucide-react";
 import { toast } from "sonner";
+import { useProgression } from "@/context/ProgressionContext";
 
 export default function NexusInvite() {
   const { code } = useParams();
   const nav = useNavigate();
+  const { trackActivity } = useProgression();
   const [user, setUser] = useState(null);
   const [server, setServer] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -51,6 +53,7 @@ export default function NexusInvite() {
         await base44.entities.Server.update(server.id, { members_count: (server.members_count || 1) + 1 });
       }
       setJoined(true);
+      trackActivity("join_server");
       toast.success(`Rejoint "${server.name}" !`);
     } catch {
       toast.error("Erreur lors de la rejointe du serveur");

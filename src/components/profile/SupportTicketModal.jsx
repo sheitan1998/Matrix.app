@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { X, Send, Bug, UserCircle, CreditCard, ShieldAlert, HelpCircle, Paperclip, Loader2, Download } from "lucide-react";
+import { useProgression } from "@/context/ProgressionContext";
 
 const CATEGORIES = [
   { id: "bug", label: "Bug / Technique", icon: Bug, color: "#ef4444" },
@@ -13,6 +14,7 @@ const CATEGORIES = [
 ];
 
 export default function SupportTicketModal({ user, onClose }) {
+  const { trackActivity } = useProgression();
   const [subject, setSubject] = useState("");
   const [category, setCategory] = useState("other");
   const [message, setMessage] = useState("");
@@ -65,6 +67,7 @@ export default function SupportTicketModal({ user, onClose }) {
       });
 
       toast.success("Ticket envoyé ! L'équipe support vous répondra dans la messagerie.");
+      trackActivity("help_community");
       onClose();
     } catch {
       toast.error("Erreur lors de l'envoi du ticket");
