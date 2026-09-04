@@ -21,16 +21,18 @@ const TABS = [
 
 export default function Progression() {
   const nav = useNavigate();
-  const { progress, prestigeInfo, prestige } = useProgression();
+  const progression = useProgression();
   const [tab, setTab] = useState('overview');
 
-  if (!progress) {
+  if (!progression || !progression.progress) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#0a0a0c' }}>
         <div className="w-9 h-9 border-4 border-white/10 border-t-primary rounded-full animate-spin" />
       </div>
     );
   }
+
+  const { progress, prestigeInfo, prestige } = progression;
 
   const canPrestige = progress.level >= 100 && (!progress.prestige || progress.prestige < 10);
 
