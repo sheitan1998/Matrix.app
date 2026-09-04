@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { X, Plus, Trash2 } from "lucide-react";
+import { useProgression } from "@/context/ProgressionContext";
 
 const CATEGORIES = [
   { id: "general", label: "Général" },
@@ -36,10 +37,12 @@ export default function CreateSondageModal({ onClose, onSubmit, editing, isPropo
   const addChoice = () => setChoices([...choices, ""]);
   const removeChoice = (i) => choices.length > 2 && setChoices(choices.filter((_, idx) => idx !== i));
 
+  const { trackActivity } = useProgression();
   const handleSubmit = () => {
     if (!title.trim()) return;
     const validChoices = choices.filter(c => c.trim()).map((text, i) => ({ id: (i + 1).toString(), text: text.trim() }));
     if (validChoices.length < 2) return;
+    if (!editing) trackActivity("polls_created");
     onSubmit({ title: title.trim(), description: description.trim(), choices: validChoices, category, is_proposal: isProposal || false });
   };
 

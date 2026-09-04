@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { VISUAL_THEMES } from "@/lib/visualThemes";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useProgression } from "@/context/ProgressionContext";
 
 const ROLES = [
   { key: "member", label: "Membre", color: "#888" },
@@ -41,6 +42,7 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
   const [editingInvite, setEditingInvite] = useState(false);
   const [inviteInput, setInviteInput] = useState(server.invite_code || "");
   const [tempDuration, setTempDuration] = useState("24h");
+  const { trackActivity } = useProgression();
 
   const { data: members = [], refetch: refetchMembers } = useQuery({
     queryKey: ["server-members", server.id],
@@ -99,6 +101,7 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
     await onUpdate({ invite_code: code, invite_expires_at: null });
     setInviteInput(code);
     setEditingInvite(false);
+    trackActivity("invite_friend");
     toast.success("Lien d'invitation modifié");
   };
 

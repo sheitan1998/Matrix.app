@@ -49,6 +49,11 @@ export default function ProfileContent({ onClose }) {
     }).catch(() => {});
   }, []);
 
+  // Track profile view once on mount
+  useEffect(() => {
+    if (progression?.trackActivity) progression.trackActivity("profile_views");
+  }, [progression]);
+
   const { data: cosmetics = [] } = useQuery({
     queryKey: ["user-cosmetics", user?.email],
     queryFn: () => base44.entities.UserCosmetic.filter({ user_email: user.email }, "-created_date", 200),

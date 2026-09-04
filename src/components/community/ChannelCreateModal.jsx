@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { X, Hash, Volume2, MessageSquare, Folder, Eye, EyeOff, Lock } from "lucide-react";
+import { useProgression } from "@/context/ProgressionContext";
 
 const MODES = {
   category: { icon: Folder, label: "une catégorie", color: "#8b5cf6", article: "la" },
@@ -18,6 +19,7 @@ export default function ChannelCreateModal({ show, mode, theme, onClose, onCreat
   const [writePerm, setWritePerm] = useState("everyone");
   const [creating, setCreating] = useState(false);
 
+  const { trackActivity } = useProgression();
   if (!show) return null;
 
   const modeInfo = MODES[mode] || MODES.text;
@@ -39,6 +41,7 @@ export default function ChannelCreateModal({ show, mode, theme, onClose, onCreat
       permissions: { read: readPerm, write: writePerm },
     };
     try {
+      if (mode !== "category") trackActivity("channels_created");
       await onCreate(channel);
     } finally {
       setCreating(false);
