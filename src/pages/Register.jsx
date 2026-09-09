@@ -29,6 +29,7 @@ export default function Register() {
     setLoading(true);
     try {
       await base44.auth.register({ email, password });
+      base44.analytics.track({ eventName: "user_registered" });
       setShowOtp(true);
     } catch (err) {
       setError(err.message || "Registration failed");
