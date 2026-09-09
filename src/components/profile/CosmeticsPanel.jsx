@@ -29,8 +29,10 @@ export default function CosmeticsPanel({ user }) {
   const equip = async (cosmetic) => {
     try {
       const sameCat = cosmetics.filter(c => c.category === cosmetic.category && c.is_equipped);
-      for (const c of sameCat) {
-        await base44.entities.UserCosmetic.update(c.id, { is_equipped: false });
+      if (sameCat.length > 0) {
+        await base44.entities.UserCosmetic.bulkUpdate(
+          sameCat.map((c) => ({ id: c.id, is_equipped: false }))
+        );
       }
       await base44.entities.UserCosmetic.update(cosmetic.id, { is_equipped: true });
       await qc.invalidateQueries({ queryKey: ["user-cosmetics"] });
