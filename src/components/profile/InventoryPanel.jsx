@@ -159,13 +159,10 @@ export default function InventoryPanel({ user }) {
 
   const equip = async (cosmetic) => {
     try {
-      const sameCat = cosmetics.filter((c) => c.category === cosmetic.category && c.is_equipped);
-      if (sameCat.length > 0) {
-        await base44.entities.UserCosmetic.bulkUpdate(
-          sameCat.map((c) => ({ id: c.id, is_equipped: false }))
-        );
-      }
-      await base44.entities.UserCosmetic.update(cosmetic.id, { is_equipped: true });
+      await base44.functions.invoke("cosmeticAction", {
+        cosmetic_id: cosmetic.id,
+        action: "equip"
+      });
       await qc.invalidateQueries({ queryKey: ["user-cosmetics"] });
       if (trackActivity) trackActivity("cosmetics_equipped");
       toast.success(`${cosmetic.item_name} équipé !`);
@@ -177,7 +174,10 @@ export default function InventoryPanel({ user }) {
 
   const unequip = async (cosmetic) => {
     try {
-      await base44.entities.UserCosmetic.update(cosmetic.id, { is_equipped: false });
+      await base44.functions.invoke("cosmeticAction", {
+        cosmetic_id: cosmetic.id,
+        action: "unequip"
+      });
       await qc.invalidateQueries({ queryKey: ["user-cosmetics"] });
       toast.success("Retiré");
     } catch (e) {
