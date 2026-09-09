@@ -50,6 +50,7 @@ import MonProfil from '@/pages/MonProfil';
 import BoutiqueMatrix from '@/pages/BoutiqueMatrix';
 import BoutiqueNexus from '@/pages/BoutiqueNexus';
 import NexusInvite from '@/pages/NexusInvite';
+import CreatorProfile from '@/pages/CreatorProfile';
 import AdminPanel from '@/pages/AdminPanel';
 import RechercheJoueur from '@/pages/prospecteurs/RechercheJoueur';
 import Privacy from '@/pages/Privacy';
@@ -101,6 +102,7 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/nexus/invite/:code" element={<NexusInvite />} />
+      <Route path="/creator/:username" element={<CreatorProfile />} />
       <Route path="/page/:slug" element={<DynamicPage />} />
       <Route path="/" element={<Landing />} />
       <Route element={<TutoGamingLayout />}>
