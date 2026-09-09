@@ -33,15 +33,23 @@ export default function CosmeticsPanel({ user }) {
         await base44.entities.UserCosmetic.update(c.id, { is_equipped: false });
       }
       await base44.entities.UserCosmetic.update(cosmetic.id, { is_equipped: true });
-      qc.invalidateQueries({ queryKey: ["user-cosmetics"] });
+      await qc.invalidateQueries({ queryKey: ["user-cosmetics"] });
       toast.success(`${cosmetic.item_name} équipé !`);
-    } catch { toast.error("Erreur"); }
+    } catch (e) {
+      console.error("[equip] error:", e);
+      toast.error(e?.message || "Erreur lors de l'équipement");
+    }
   };
 
   const unequip = async (cosmetic) => {
-    await base44.entities.UserCosmetic.update(cosmetic.id, { is_equipped: false });
-    qc.invalidateQueries({ queryKey: ["user-cosmetics"] });
-    toast.success("Retiré");
+    try {
+      await base44.entities.UserCosmetic.update(cosmetic.id, { is_equipped: false });
+      await qc.invalidateQueries({ queryKey: ["user-cosmetics"] });
+      toast.success("Retiré");
+    } catch (e) {
+      console.error("[unequip] error:", e);
+      toast.error(e?.message || "Erreur lors du retrait");
+    }
   };
 
   const handleDelete = async () => {
