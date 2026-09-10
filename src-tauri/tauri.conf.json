@@ -18,11 +18,14 @@
         "minWidth": 960,
         "minHeight": 640,
         "resizable": true,
-        "fullscreen": false
+        "fullscreen": false,
+        "webviewAttributes": {
+          "autoplay": true
+        }
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self' http://localhost:1420 http://127.0.0.1:1420; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:1420; style-src 'self' 'unsafe-inline' http://localhost:1420; img-src 'self' data: https: http:; font-src 'self' data: https:; connect-src 'self' http://localhost:1420 http://127.0.0.1:1420 https: http: ws: wss:; frame-src 'self' https:; child-src 'self' https:; base-uri 'self'"
     }
   },
   "bundle": {
