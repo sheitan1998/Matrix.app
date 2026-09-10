@@ -14,7 +14,7 @@ import TransactionHistory from "@/components/profile/TransactionHistory";
 import PrivacyPanel from "@/components/profile/PrivacyPanel";
 import ProfileAnimationLayer from "@/components/profile/ProfileAnimationLayer";
 import TrixIcon from "@/components/TrixIcon";
-import PWAInstallButton from "@/components/PWAInstallButton";
+import DesktopDownloadButton from "@/components/DesktopDownloadButton";
 import SupportTicketModal from "@/components/profile/SupportTicketModal";
 import ImageCropModal from "@/components/profile/ImageCropModal";
 
@@ -140,7 +140,7 @@ export default function ProfileContent({ onClose }) {
         <header className="flex items-center justify-between px-4 sm:px-6 py-4">
           <div className="flex items-center gap-3">
             {onClose ?
-            <button onClick={onClose} className="w-9 h-9 rounded-xl flex items-center justify-center transition hover:opacity-80" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <button onClick={onClose} className="w-9 h-9 rounded-xl flex items-center justify-center transition hover:opacity-80" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}>
                 <ArrowLeft className="w-4 h-4 text-white/60" />
               </button> :
             null}
@@ -149,13 +149,13 @@ export default function ProfileContent({ onClose }) {
             </button>
           </div>
           <div className="flex items-center gap-2.5">
-            <button onClick={() => goTo("/boutique-nexus")} className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-xs font-bold text-white transition hover:opacity-90 tap-sm" style={{ background: "rgba(168,85,247,0.15)", border: "1.5px solid rgba(168,85,247,0.4)", boxShadow: "0 0 12px rgba(168,85,247,0.15)" }}>
+            <button onClick={() => goTo("/boutique-nexus")} className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-xs font-bold text-white transition hover:opacity-90 tap-sm" style={{ background: "rgba(168,85,247,0.15)" }}>
               <Zap className="w-3.5 h-3.5" fill="currentColor" /> <span className="hidden sm:inline">Boutique Nexus</span><span className="sm:hidden">Nexus</span>
             </button>
-            <button onClick={() => goTo("/boutique-matrix")} className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-xs font-bold text-white transition hover:opacity-90 tap-sm" style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)", boxShadow: "0 0 12px rgba(168,85,247,0.25)" }}>
+            <button onClick={() => goTo("/boutique-matrix")} className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-xs font-bold text-white transition hover:opacity-90 tap-sm" style={{ background: "rgba(34,197,94,0.15)" }}>
               <ShoppingBag className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Cosmétiques</span><span className="sm:hidden">Cosmétiques</span>
             </button>
-            <button onClick={() => goTo("/trix-store")} className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-xs font-bold text-white transition hover:opacity-90 tap-sm" style={{ background: "linear-gradient(135deg, #fbbf24, #f59e0b)", boxShadow: "0 0 12px rgba(251,191,36,0.25)" }}>
+            <button onClick={() => goTo("/trix-store")} className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-xs font-bold text-white transition hover:opacity-90 tap-sm" style={{ background: "rgba(245,158,11,0.15)" }}>
               <TrixIcon size={16} /> <span className="hidden sm:inline">Trix</span><span className="sm:hidden">Trix</span>
             </button>
           </div>
@@ -238,12 +238,12 @@ export default function ProfileContent({ onClose }) {
                     </button>
                   </div>
                   {equippedTitle &&
-                <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black" style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.2), rgba(109,40,217,0.15))", border: "1px solid rgba(168,85,247,0.3)", color: "#c084fc" }}>
+                <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black" style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.2), rgba(109,40,217,0.15))", border: "1px solid rgba(168,85,247,0.3)" }}>
                       {equippedTitle.icon || "✨"} {equippedTitle.item_name}
                     </span>
                 }
                   {isDonator &&
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black" style={{ background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.35)", color: "#4ade80" }}>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black" style={{ background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.3)" }}>
                       <Trophy className="w-2.5 h-2.5" /> Donateur
                     </span>
                 }
@@ -294,9 +294,9 @@ export default function ProfileContent({ onClose }) {
             </button>
           </div>
 
-          {/* PWA Install */}
+          {/* Desktop App Download */}
           <div className="mb-4">
-            <PWAInstallButton />
+            <DesktopDownloadButton />
           </div>
 
           {/* Contact Support */}
