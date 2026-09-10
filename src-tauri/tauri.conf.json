@@ -28,6 +28,7 @@
   "bundle": {
     "active": true,
     "targets": ["nsis", "msi"],
+    "icon": ["icons/icon.ico"],
     "category": "Entertainment",
     "shortDescription": "Matrix, plateforme vidéo et communautaire",
     "longDescription": "Matrix rassemble streaming vidéo, communauté, casino et outils créatifs."
