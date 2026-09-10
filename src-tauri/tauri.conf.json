@@ -34,6 +34,40 @@
     "icon": ["icons/icon.ico"],
     "category": "Entertainment",
     "shortDescription": "Matrix, plateforme vidéo et communautaire",
-    "longDescription": "Matrix rassemble streaming vidéo, communauté, casino et outils créatifs."
+    "longDescription": "Matrix rassemble streaming vidéo, communauté, casino et outils créatifs.",
+    "nsis": {
+      "artifactPath": null,
+      "certificatePath": null,
+      "certificatePassword": null,
+      "signingIdentity": null,
+      "timestampUrl": null,
+      "preInstallerScript": null,
+      "installerHooks": null,
+      "installersPath": null,
+      "license": null,
+      "languages": null,
+      "customNsisScript": null,
+      "headerImage": null,
+      "sidebarImage": null,
+      "installerIcon": null,
+      "uninstallerIcon": null,
+      "displayLanguageSelector": false,
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcuts": true,
+      "startMenuShortcuts": ["NSIS_SHORTCUTS_APP"],
+      "shortcutLanguages": []
+    },
+    "windows": [
+      {
+        "certificatePath": null,
+        "certificatePassword": null,
+        "signingIdentity": null,
+        "timestampUrl": null,
+        "tsp": false,
+        "sign": []
+      }
+    ]
   }
 }
