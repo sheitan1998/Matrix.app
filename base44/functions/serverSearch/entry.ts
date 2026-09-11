@@ -26,9 +26,11 @@ export default async function(req: Request): Promise<Response> {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // System action: monthly reset of votes AND boosts (admin only, 1st of each month)
+    // System action: monthly reset of votes AND boosts (admin or cron only, 1st of each month)
     if (action === 'resetMonthly') {
-      if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
+      const apiKey = req.headers.get('x-api-key');
+      const isAuthorized = (apiKey && apiKey === process.env.CRON_SECRET) || user.role === 'admin';
+      if (!isAuthorized) return Response.json({ error: 'Forbidden' }, { status: 403 });
       await base44.asServiceRole.entities.ServerAd.updateMany(
         {},
         { $set: { votes: 0, boosts: 0, is_boosted: false, boost_until: null } }
@@ -38,9 +40,11 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ success: true });
     }
 
-    // System action: monthly purge of all server ads (1st of each month)
+    // System action: monthly purge of all server ads (admin or cron only, 1st of each month)
     if (action === 'monthlyPurge') {
-      if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
+      const apiKey = req.headers.get('x-api-key');
+      const isAuthorized = (apiKey && apiKey === process.env.CRON_SECRET) || user.role === 'admin';
+      if (!isAuthorized) return Response.json({ error: 'Forbidden' }, { status: 403 });
       const allAds = await base44.asServiceRole.entities.ServerAd.list('-created_date', 500);
       for (const ad of allAds) {
         await base44.asServiceRole.entities.AdMessage.deleteMany({ ad_id: ad.id });

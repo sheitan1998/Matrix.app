@@ -1,5 +1,12 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
+// Strip HTML tags and limit length to sanitize user-controlled strings before
+// embedding them into system-generated messages (prevents XSS / content injection).
+function sanitize(str: unknown, maxLen = 200): string {
+  if (typeof str !== 'string') return '';
+  return str.replace(/<[^>]*>/g, '').slice(0, maxLen);
+}
+
 export default async function(req: Request): Promise<Response> {
   try {
     const body = await req.json().catch(() => ({}));
@@ -23,8 +30,8 @@ export default async function(req: Request): Promise<Response> {
           return Response.json({ error: 'Not authorized' }, { status: 403 });
         }
 
-        // SERVER-SIDE LOCK ENFORCEMENT: if the ticket is locked or closed, reject the message
-        if (ticket.is_locked || ticket.status === 'closed') {
+        // SERVER-SIDE LOCK ENFORCEMENT: reject if ticket is locked, closed, or resolved
+        if (ticket.is_locked || ticket.status === 'closed' || ticket.status === 'resolved') {
           return Response.json({ error: 'Ticket is locked', is_locked: true }, { status: 403 });
         }
 
@@ -46,7 +53,7 @@ export default async function(req: Request): Promise<Response> {
             sender_avatar: '',
             recipient_email: ticket.user_email,
             recipient_name: ticket.user_name || '',
-            content: `🎫 Support — ${ticket.subject}\n\n${content}`,
+            content: `🎫 Support — ${sanitize(ticket.subject)}\n\n${sanitize(content, 2000)}`,
             ticket_id,
           });
           if (ticket.status === 'open') {
