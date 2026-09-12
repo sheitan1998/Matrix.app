@@ -42,12 +42,14 @@ export async function checkForDesktopUpdates() {
 
           isInstallingUpdate = true;
           toast.info("Téléchargement de la mise à jour Matrix...");
+          toast.success(
+            "La mise à jour va s'installer. Matrix redémarrera automatiquement."
+          );
 
           try {
             await update.downloadAndInstall(undefined, {
               restartAfterInstall: true,
             });
-            toast.success("Mise à jour installée. Redémarrage de Matrix…");
           } catch (error) {
             toast.error("La mise à jour n'a pas pu être installée.", {
               description: getErrorMessage(error),

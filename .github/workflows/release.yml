@@ -47,9 +47,13 @@ jobs:
           const path = 'src-tauri/tauri.release.conf.json';
           const output = 'src-tauri/tauri.release.generated.conf.json';
           const config = JSON.parse(fs.readFileSync(path, 'utf8'));
+          const publicKey = process.env.TAURI_UPDATER_PUBLIC_KEY.trim();
+          if (!publicKey || publicKey === '__TAURI_UPDATER_PUBLIC_KEY__') {
+            throw new Error('TAURI_UPDATER_PUBLIC_KEY repository variable must contain the updater public key.');
+          }
           config.plugins ??= {};
           config.plugins.updater ??= {};
-          config.plugins.updater.pubkey = process.env.TAURI_UPDATER_PUBLIC_KEY.trim();
+          config.plugins.updater.pubkey = publicKey;
           fs.writeFileSync(output, `${JSON.stringify(config, null, 2)}\n`);
           NODE
 

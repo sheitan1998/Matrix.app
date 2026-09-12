@@ -5,7 +5,7 @@
       "endpoints": [
         "https://github.com/sheitan1998/Matrix.app/releases/latest/download/latest.json"
       ],
-      "pubkey": ""
+      "pubkey": "__TAURI_UPDATER_PUBLIC_KEY__"
     }
   }
 }
