@@ -30,3 +30,5 @@ dist-ssr
 .env
 .vite
 base44/.app.jsonc
+src-tauri/target
+src-tauri/tauri.release.generated.conf.json

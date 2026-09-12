@@ -28,13 +28,48 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Validate updater configuration
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_UPDATER_PUBLIC_KEY: ${{ vars.TAURI_UPDATER_PUBLIC_KEY }}
+        run: |
+          test -n "$TAURI_SIGNING_PRIVATE_KEY" || (echo "Missing TAURI_SIGNING_PRIVATE_KEY secret" >&2 && exit 1)
+          test -n "$TAURI_UPDATER_PUBLIC_KEY" || (echo "Missing TAURI_UPDATER_PUBLIC_KEY repository variable" >&2 && exit 1)
+
+      - name: Generate release updater config
+        shell: bash
+        env:
+          TAURI_UPDATER_PUBLIC_KEY: ${{ vars.TAURI_UPDATER_PUBLIC_KEY }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = 'src-tauri/tauri.release.conf.json';
+          const output = 'src-tauri/tauri.release.generated.conf.json';
+          const config = JSON.parse(fs.readFileSync(path, 'utf8'));
+          const publicKey = process.env.TAURI_UPDATER_PUBLIC_KEY.trim();
+          if (!publicKey || publicKey === '__TAURI_UPDATER_PUBLIC_KEY__') {
+            throw new Error('TAURI_UPDATER_PUBLIC_KEY repository variable must contain the updater public key.');
+          }
+          config.plugins ??= {};
+          config.plugins.updater ??= {};
+          config.plugins.updater.pubkey = publicKey;
+          fs.writeFileSync(output, `${JSON.stringify(config, null, 2)}\n`);
+          NODE
+
       - name: Build Tauri App & Create Installer
         uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: v__VERSION__
           releaseName: 'Matrix v__VERSION__'
           releaseBody: 'Nouvelle mise à jour de Matrix.'
           releaseDraft: false
           prerelease: false
+          args: --config src-tauri/tauri.release.generated.conf.json
+          uploadUpdaterJson: true
+          uploadUpdaterSignatures: true
+          updaterJsonPreferNsis: true
