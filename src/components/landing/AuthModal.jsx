@@ -5,6 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
 import { X, Mail, Lock, Loader2, AlertCircle } from "lucide-react";
 import GoogleIcon from "@/components/GoogleIcon";
+import { oauthService } from "@/lib/OAuthService";
 
 export default function AuthModal({ open, onClose }) {
   const [email, setEmail] = useState("");
@@ -29,8 +30,13 @@ export default function AuthModal({ open, onClose }) {
     }
   };
 
-  const handleGoogle = () => {
-    base44.auth.loginWithProvider("google", "/");
+  const handleProviderLogin = async (provider) => {
+    if (oauthService.isDesktopApp) {
+      await oauthService.startDesktopProviderAuth(provider, "/");
+      return;
+    }
+
+    base44.auth.loginWithProvider(provider, "/");
   };
 
   return createPortal(
@@ -86,7 +92,7 @@ export default function AuthModal({ open, onClose }) {
 
               {/* Social login buttons */}
               <button
-                onClick={handleGoogle}
+                onClick={() => handleProviderLogin("google")}
                 disabled={loading}
                 className="w-full h-10 rounded-lg flex items-center justify-center gap-2 text-sm font-bold text-white transition disabled:opacity-50 tap-sm"
                 style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
@@ -97,7 +103,7 @@ export default function AuthModal({ open, onClose }) {
 
               <div className="grid grid-cols-2 gap-2">
                 <button
-                  onClick={() => base44.auth.loginWithProvider("facebook", "/")}
+                  onClick={() => handleProviderLogin("facebook")}
                   disabled={loading}
                   className="w-full h-10 rounded-lg flex items-center justify-center gap-2 text-xs font-bold text-white transition disabled:opacity-50 tap-sm"
                   style={{ background: "rgba(24,119,242,0.15)", border: "1px solid rgba(24,119,242,0.3)" }}
@@ -106,7 +112,7 @@ export default function AuthModal({ open, onClose }) {
                   Facebook
                 </button>
                 <button
-                  onClick={() => base44.auth.loginWithProvider("microsoft", "/")}
+                  onClick={() => handleProviderLogin("microsoft")}
                   disabled={loading}
                   className="w-full h-10 rounded-lg flex items-center justify-center gap-2 text-xs font-bold text-white transition disabled:opacity-50 tap-sm"
                   style={{ background: "rgba(0,120,212,0.15)", border: "1px solid rgba(0,120,212,0.3)" }}

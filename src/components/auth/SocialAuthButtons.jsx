@@ -2,6 +2,7 @@ import React from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import GoogleIcon from "@/components/GoogleIcon";
+import { oauthService } from "@/lib/OAuthService";
 
 const MicrosoftIcon = ({ className = "w-5 h-5" }) => (
   <svg className={className} viewBox="0 0 23 23" aria-hidden="true">
@@ -32,6 +33,15 @@ const PROVIDERS = [
 ];
 
 export default function SocialAuthButtons() {
+  const handleProviderLogin = async (provider) => {
+    if (oauthService.isDesktopApp) {
+      await oauthService.startDesktopProviderAuth(provider, "/");
+      return;
+    }
+
+    base44.auth.loginWithProvider(provider, "/");
+  };
+
   return (
     <>
       <div className="space-y-3 mb-6">
@@ -40,7 +50,7 @@ export default function SocialAuthButtons() {
             key={id}
             variant="outline"
             className="w-full h-12 text-sm font-medium"
-            onClick={() => base44.auth.loginWithProvider(id, "/")}
+            onClick={() => handleProviderLogin(id)}
           >
             <Icon className="w-5 h-5 mr-2" />
             Continue with {label}

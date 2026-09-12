@@ -2,8 +2,13 @@ name: Release Tauri App
 
 on:
   push:
+    branches:
+      - main
+      - master
+      - 'copilot/**'
     tags:
       - 'v*'
+  workflow_dispatch:
 
 jobs:
   release:
