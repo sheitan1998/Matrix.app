@@ -2,9 +2,10 @@ import { Toaster } from "@/components/ui/toaster"
 import { Toaster as SonnerToaster } from "sonner"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
+import { oauthService } from '@/lib/OAuthService';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AuthGate from '@/components/AuthGate';
 import Login from '@/pages/Login';
@@ -101,6 +102,7 @@ const AuthenticatedApp = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/oauth/callback" element={<Navigate to="/" replace />} />
       <Route path="/nexus/invite/:code" element={<NexusInvite />} />
       <Route path="/creator/:username" element={<CreatorProfile />} />
       <Route path="/page/:slug" element={<DynamicPage />} />
@@ -171,6 +173,8 @@ const AuthenticatedApp = () => {
 };
 
 function App() {
+  const Router = oauthService.isDesktopApp ? HashRouter : BrowserRouter;
+
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>

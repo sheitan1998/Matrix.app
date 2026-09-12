@@ -1,4 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
+import { appParams } from "@/lib/app-params";
+
+const OAUTH_CALLBACK_EVENT = "oauth-callback";
+const OAUTH_CALLBACK_PATH = "/oauth/callback";
 
 /**
  * Service pour gérer le flux OAuth dans une application Tauri desktop
@@ -16,11 +20,92 @@ class OAuthService {
    * Détecte si l'app s'exécute dans Tauri
    */
   detectTauriApp() {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
     try {
-      return typeof window.__TAURI__ !== "undefined";
+      return (
+        typeof window.__TAURI__ !== "undefined" ||
+        window.location.protocol === "tauri:" ||
+        window.location.hostname.endsWith(".localhost")
+      );
     } catch {
       return false;
     }
+  }
+
+  getCallbackEventName() {
+    return OAUTH_CALLBACK_EVENT;
+  }
+
+  normalizeReturnTo(returnTo = "/") {
+    const url = new URL(returnTo, window.location.origin);
+    if (url.origin !== window.location.origin) {
+      return "/";
+    }
+    return `${url.pathname}${url.search}${url.hash}` || "/";
+  }
+
+  getAppRouteUrl(route = "/") {
+    const normalizedRoute = this.normalizeReturnTo(route);
+
+    if (!this.isDesktopApp) {
+      return new URL(normalizedRoute, window.location.origin).toString();
+    }
+
+    const hashRoute = normalizedRoute === "/" ? "#/" : `#${normalizedRoute}`;
+    return `${window.location.origin}/${hashRoute}`;
+  }
+
+  getDesktopCallbackUrl(returnTo = "/") {
+    const callbackUrl = new URL(this.getAppRouteUrl(OAUTH_CALLBACK_PATH));
+    callbackUrl.searchParams.set("returnTo", this.normalizeReturnTo(returnTo));
+    return callbackUrl.toString();
+  }
+
+  buildBase44LoginUrl(returnTo = "/") {
+    const redirectUrl = this.isDesktopApp
+      ? this.getDesktopCallbackUrl(returnTo)
+      : new URL(returnTo, window.location.origin).toString();
+
+    return `${appParams.appBaseUrl}/login?from_url=${encodeURIComponent(
+      redirectUrl
+    )}`;
+  }
+
+  buildBase44ProviderUrl(providerName, returnTo = "/") {
+    const redirectUrl = this.isDesktopApp
+      ? this.getDesktopCallbackUrl(returnTo)
+      : new URL(returnTo, window.location.origin).toString();
+
+    const queryParams = new URLSearchParams({
+      app_id: appParams.appId,
+      from_url: redirectUrl,
+    });
+
+    const providerPath = providerName === "google" ? "" : `/${providerName}`;
+    return `${appParams.appBaseUrl}/api/apps/auth${providerPath}/login?${queryParams.toString()}`;
+  }
+
+  async openDesktopAuthWindow(url) {
+    if (!this.isDesktopApp) {
+      window.location.href = url;
+      return true;
+    }
+
+    await invoke("open_auth_window", { url });
+    return true;
+  }
+
+  async startDesktopProviderAuth(providerName, returnTo = "/") {
+    return this.openDesktopAuthWindow(
+      this.buildBase44ProviderUrl(providerName, returnTo)
+    );
+  }
+
+  async startDesktopLogin(returnTo = "/") {
+    return this.openDesktopAuthWindow(this.buildBase44LoginUrl(returnTo));
   }
 
   /**
@@ -81,9 +166,10 @@ class OAuthService {
       sessionStorage.setItem("oauth_provider", providerName);
 
       // Construire l'URL d'autorisation
+      const callbackUri = redirectUri || this.getDesktopCallbackUrl();
       const params = new URLSearchParams({
         client_id: clientId,
-        redirect_uri: redirectUri,
+        redirect_uri: callbackUri,
         response_type: "code",
         scope: scopes.join(" ") || "openid profile email",
         state: this.oauthState,
@@ -95,8 +181,8 @@ class OAuthService {
 
       // Si c'est une application Tauri, ouvrir dans le navigateur par défaut
       if (this.isDesktopApp) {
-        await invoke("open_auth_window", { url: fullAuthUrl });
-        console.log("✅ OAuth popup ouvert dans le navigateur (Tauri)");
+        await this.openDesktopAuthWindow(fullAuthUrl);
+        console.log("✅ Fenêtre OAuth Tauri ouverte");
       } else {
         // Sinon, ouvrir un popup standard
         window.open(fullAuthUrl, "oauth_popup", "width=500,height=600");
@@ -115,14 +201,14 @@ class OAuthService {
    */
   async handleOAuthCallback(callbackUrl) {
     try {
-      const url = new URL(callbackUrl);
-      const code = url.searchParams.get("code");
-      const state = url.searchParams.get("state");
-      const error = url.searchParams.get("error");
+      const { params } = this.parseCallbackUrl(callbackUrl);
+      const code = params.get("code");
+      const state = params.get("state");
+      const error = params.get("error");
 
       // Vérifier les erreurs OAuth
       if (error) {
-        const errorDescription = url.searchParams.get("error_description");
+        const errorDescription = params.get("error_description");
         throw new Error(`OAuth Error: ${error} - ${errorDescription || ""}`);
       }
 
@@ -164,23 +250,79 @@ class OAuthService {
   /**
    * Vérifier si on est en train de revenir d'un OAuth callback
    */
-  isOAuthCallback() {
-    const params = new URLSearchParams(window.location.search);
-    return params.has("code") && params.has("state");
+  isOAuthCallback(callbackUrl = window.location.href) {
+    const { params, callbackPath } = this.parseCallbackUrl(callbackUrl);
+    return (
+      callbackPath === OAUTH_CALLBACK_PATH ||
+      params.has("access_token") ||
+      params.has("error") ||
+      (params.has("code") && params.has("state"))
+    );
   }
 
   /**
    * Extraire les paramètres du callback depuis l'URL actuelle
    */
-  getOAuthCallbackParams() {
-    if (!this.isOAuthCallback()) return null;
+  getOAuthCallbackParams(callbackUrl = window.location.href) {
+    if (!this.isOAuthCallback(callbackUrl)) return null;
 
-    const params = new URLSearchParams(window.location.search);
+    const { params } = this.parseCallbackUrl(callbackUrl);
     return {
       code: params.get("code"),
       state: params.get("state"),
+      access_token: params.get("access_token"),
+      is_new_user: params.get("is_new_user"),
       error: params.get("error"),
       error_description: params.get("error_description"),
+      returnTo: params.get("returnTo") || "/",
+    };
+  }
+
+  parseCallbackUrl(callbackUrl = window.location.href) {
+    const url = new URL(callbackUrl);
+    const params = new URLSearchParams(url.search);
+    const rawHash = url.hash.startsWith("#") ? url.hash.slice(1) : url.hash;
+    const [hashPath = "", hashSearch = ""] = rawHash.split("?");
+    const callbackPath = hashPath
+      ? `/${hashPath.replace(/^\/+/, "")}`
+      : url.pathname;
+
+    if (hashSearch) {
+      const hashParams = new URLSearchParams(hashSearch);
+      for (const [key, value] of hashParams.entries()) {
+        params.set(key, value);
+      }
+    }
+
+    return { url, params, callbackPath };
+  }
+
+  applyDesktopCallback(callbackUrl = window.location.href) {
+    const callback = this.getOAuthCallbackParams(callbackUrl);
+    if (!callback) {
+      return null;
+    }
+
+    const redirectUrl = new URL(this.getAppRouteUrl(callback.returnTo || "/"));
+    if (callback.access_token) {
+      redirectUrl.searchParams.set("access_token", callback.access_token);
+    }
+    if (callback.is_new_user) {
+      redirectUrl.searchParams.set("is_new_user", callback.is_new_user);
+    }
+    if (callback.error) {
+      redirectUrl.searchParams.set("error", callback.error);
+    }
+    if (callback.error_description) {
+      redirectUrl.searchParams.set(
+        "error_description",
+        callback.error_description
+      );
+    }
+
+    return {
+      ...callback,
+      redirectUrl: redirectUrl.toString(),
     };
   }
 }

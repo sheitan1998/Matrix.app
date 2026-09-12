@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { appParams } from '@/lib/app-params';
+import { oauthService } from '@/lib/OAuthService';
 import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
 
 const AuthContext = createContext();
@@ -15,7 +16,40 @@ export const AuthProvider = ({ children }) => {
   const [appPublicSettings, setAppPublicSettings] = useState(null); // Contains only { id, public_settings }
 
   useEffect(() => {
+    const initialCallback = oauthService.applyDesktopCallback(window.location.href);
+    if (initialCallback?.redirectUrl) {
+      window.location.replace(initialCallback.redirectUrl);
+      return undefined;
+    }
+
+    let removeDesktopListener = () => {};
+
+    if (oauthService.isDesktopApp) {
+      import("@tauri-apps/api/event")
+        .then(({ listen }) =>
+          listen(oauthService.getCallbackEventName(), (event) => {
+            const callback = oauthService.applyDesktopCallback(
+              String(event.payload || "")
+            );
+
+            if (callback?.redirectUrl) {
+              window.location.replace(callback.redirectUrl);
+            }
+          })
+        )
+        .then((unlisten) => {
+          removeDesktopListener = unlisten;
+        })
+        .catch((error) => {
+          console.error("OAuth desktop listener setup failed:", error);
+        });
+    }
+
     checkAppState();
+
+    return () => {
+      removeDesktopListener();
+    };
   }, []);
 
   const checkAppState = async () => {
@@ -128,7 +162,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   const navigateToLogin = () => {
-    // Use the SDK's redirectToLogin method
+    if (oauthService.isDesktopApp) {
+      window.location.href = oauthService.getAppRouteUrl("/login");
+      return;
+    }
+
     base44.auth.redirectToLogin(window.location.href);
   };
 
