@@ -38,7 +38,7 @@ async fn open_auth_window(app: tauri::AppHandle, url: String) -> Result<String, 
         .center()
         .on_navigation(move |requested_url| {
             if is_oauth_callback_url(&requested_url) {
-                let _ = app_handle.emit_to("main", OAUTH_CALLBACK_EVENT, requested_url.to_string());
+                let _ = app_handle.emit(OAUTH_CALLBACK_EVENT, requested_url.to_string());
                 if let Some(window) = app_handle.get_webview_window(OAUTH_WINDOW_LABEL) {
                     let _ = window.close();
                 }

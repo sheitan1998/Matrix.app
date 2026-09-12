@@ -41,6 +41,9 @@ class OAuthService {
 
   normalizeReturnTo(returnTo = "/") {
     const url = new URL(returnTo, window.location.origin);
+    if (url.origin !== window.location.origin) {
+      return "/";
+    }
     return `${url.pathname}${url.search}${url.hash}` || "/";
   }
 
@@ -300,14 +303,26 @@ class OAuthService {
       return null;
     }
 
+    const redirectUrl = new URL(this.getAppRouteUrl(callback.returnTo || "/"));
     if (callback.access_token) {
-      localStorage.setItem("base44_access_token", callback.access_token);
-      localStorage.setItem("token", callback.access_token);
+      redirectUrl.searchParams.set("access_token", callback.access_token);
+    }
+    if (callback.is_new_user) {
+      redirectUrl.searchParams.set("is_new_user", callback.is_new_user);
+    }
+    if (callback.error) {
+      redirectUrl.searchParams.set("error", callback.error);
+    }
+    if (callback.error_description) {
+      redirectUrl.searchParams.set(
+        "error_description",
+        callback.error_description
+      );
     }
 
     return {
       ...callback,
-      redirectUrl: this.getAppRouteUrl(callback.returnTo || "/"),
+      redirectUrl: redirectUrl.toString(),
     };
   }
 }
