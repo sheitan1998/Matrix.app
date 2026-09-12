@@ -77,7 +77,7 @@
       "endpoints": [
         "https://github.com/sheitan1998/Matrix/releases/latest/download/latest.json"
       ],
-      "pubkey": "",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDcwMTY5REJDMUE2MjRCRjIKUldUeVMySWF2SjBXY0NzWHUwblpuWnFLVDRTQ0FyQzQzd1d3RFRMcFUzblZUY2RWeVpTNHBhRXcK",
       "windows": {
         "installMode": "passive"
       }
