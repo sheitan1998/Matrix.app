@@ -30,7 +30,6 @@
   },
   "bundle": {
     "active": true,
-    "createUpdaterArtifacts": true,
     "targets": ["nsis", "msi"],
     "icon": ["icons/icon.ico"],
     "category": "Entertainment",
