@@ -1,3 +1,5 @@
+use tauri_plugin_updater::UpdaterExt;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -37,9 +39,7 @@ async fn handle_oauth_callback(code: String, state: String) -> Result<bool, Stri
 
 /// Vérifie les mises à jour disponibles
 #[tauri::command]
-async fn check_for_updates(
-    app: tauri::AppHandle,
-) -> Result<serde_json::Value, String> {
+async fn check_for_updates(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
     match app.updater().check().await {
         Ok(update) => {
             if update.is_update_available() {
@@ -57,27 +57,28 @@ async fn check_for_updates(
                 }))
             }
         }
-        Err(e) => Err(format!("Erreur lors de la vérification des mises à jour: {}", e)),
+        Err(e) => Err(format!(
+            "Erreur lors de la vérification des mises à jour: {}",
+            e
+        )),
     }
 }
 
 /// Télécharge et installe la mise à jour
 #[tauri::command]
-async fn install_update(
-    app: tauri::AppHandle,
-) -> Result<serde_json::Value, String> {
+async fn install_update(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
     match app.updater().check().await {
         Ok(update) => {
             if update.is_update_available() {
-                println!("Téléchargement de la mise à jour vers la version: {}", update.latest_version());
-                
+                println!(
+                    "Téléchargement de la mise à jour vers la version: {}",
+                    update.latest_version()
+                );
+
                 match update.download_and_install().await {
                     Ok(_) => {
                         println!("Mise à jour téléchargée et installée avec succès");
-                        Ok(serde_json::json!({
-                            "success": true,
-                            "message": "Mise à jour installée. Redémarrage en cours...",
-                        }))
+                        app.restart();
                     }
                     Err(e) => Err(format!("Erreur lors de l'installation: {}", e)),
                 }
