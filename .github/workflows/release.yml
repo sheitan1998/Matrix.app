@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: Git ref, branch, or commit to build from
-        required: false
+        description: Git ref, branch, or commit to build from (for example main or a release commit SHA)
+        required: true
         type: string
 
 jobs:
