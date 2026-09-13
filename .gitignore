@@ -30,3 +30,6 @@ dist-ssr
 .env
 .vite
 base44/.app.jsonc
+
+# Rust/Tauri build artifacts
+src-tauri/target/
