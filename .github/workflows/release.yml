@@ -11,7 +11,7 @@ on:
         required: true
         type: string
       ref:
-        description: Git ref, branch, or commit to build from
+        description: Git ref, branch, or commit to build from (defaults to release_tag)
         required: false
         type: string
 
@@ -27,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.ref }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.ref || github.event.inputs.release_tag) || github.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
