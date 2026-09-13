@@ -4,6 +4,16 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing release tag to create or update (for example v1.0.3)
+        required: true
+        type: string
+      ref:
+        description: Git ref, branch, or commit to build from
+        required: false
+        type: string
 
 jobs:
   release:
@@ -16,6 +26,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -33,8 +45,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: v__VERSION__
-          releaseName: 'Matrix v__VERSION__'
+          tagName: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_tag || 'v__VERSION__' }}
+          releaseName: ${{ github.event_name == 'workflow_dispatch' && format('Matrix {0}', github.event.inputs.release_tag) || 'Matrix v__VERSION__' }}
           releaseBody: 'Nouvelle mise à jour de Matrix.'
           releaseDraft: false
           prerelease: false
