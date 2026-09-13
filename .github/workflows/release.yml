@@ -7,8 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: Git ref, branch, or commit to build from (for example main or a release commit SHA)
+        description: 'Git ref, branch, or commit to build from'
         required: true
+        default: 'main'
         type: string
 
 jobs:
@@ -21,7 +22,8 @@ jobs:
     runs-on: ${{ matrix.platform }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.sha }}
 
@@ -40,6 +42,8 @@ jobs:
         uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: v__VERSION__
           releaseName: 'Matrix v__VERSION__'
