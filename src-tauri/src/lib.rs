@@ -78,7 +78,16 @@ async fn install_update(app: tauri::AppHandle) -> Result<serde_json::Value, Stri
                 match update.download_and_install().await {
                     Ok(_) => {
                         println!("Mise à jour téléchargée et installée avec succès");
-                        app.restart();
+                        let app_handle = app.clone();
+                        std::thread::spawn(move || {
+                            std::thread::sleep(std::time::Duration::from_millis(500));
+                            app_handle.restart();
+                        });
+
+                        Ok(serde_json::json!({
+                            "success": true,
+                            "message": "Mise à jour installée. Redémarrage en cours...",
+                        }))
                     }
                     Err(e) => Err(format!("Erreur lors de l'installation: {}", e)),
                 }
