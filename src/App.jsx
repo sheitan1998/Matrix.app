@@ -3,6 +3,7 @@ import { Toaster as SonnerToaster } from "sonner"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -76,9 +77,25 @@ import TwitchWatch from '@/pages/twitch/TwitchWatch';
 import TwitchSearch from '@/pages/twitch/TwitchSearch';
 import TwitchCategoryPage from '@/pages/twitch/TwitchCategoryPage';
 
+// Import updater
+import UpdateModal from '@/components/UpdateModal';
+import { setupAutoUpdateCheck } from '@/lib/updater';
+
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings } = useAuth();
+  const [updateInfo, setUpdateInfo] = useState(null);
   usePresence();
+
+  // Setup automatic update checking
+  useEffect(() => {
+    // Vérifier les mises à jour au démarrage et toutes les heures
+    const stopAutoCheck = setupAutoUpdateCheck((update) => {
+      console.log("Mise à jour disponible:", update);
+      setUpdateInfo(update);
+    }, 60 * 60 * 1000); // 1 heure
+
+    return () => stopAutoCheck();
+  }, []);
 
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
@@ -89,84 +106,98 @@ const AuthenticatedApp = () => {
   }
 
   return (
-    <ProgressionProvider>
-    <NotificationProvider>
-    <MiniPlayerProvider>
-    <AnimatedRoutes>
-    <Routes>
-      <Route path="/privacy" element={<Privacy />} />
-      <Route path="/about" element={<About />} />
-      <Route path="/contact" element={<Contact />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/nexus/invite/:code" element={<NexusInvite />} />
-      <Route path="/creator/:username" element={<CreatorProfile />} />
-      <Route path="/page/:slug" element={<DynamicPage />} />
-      <Route path="/" element={<Landing />} />
-      <Route element={<TutoGamingLayout />}>
-        <Route path="/tuto-gaming" element={<TutoGamingHub />} />
-        <Route path="/tuto-gaming/:gameSlug" element={<GameDetailPage />} />
-        <Route path="/tuto-gaming/:gameSlug/quest/:questId" element={<QuestDetailPage />} />
-        <Route path="/tuto-gaming/:gameSlug/wiki/:entryId" element={<WikiEntryDetailPage />} />
-        <Route path="/tuto-gaming/farming-simulator-25" element={<FarmingSimulator25 />} />
-        <Route path="/tuto-gaming/farming-simulator-25/:categoryId" element={<FarmingSimCategory />} />
-      </Route>
-      <Route element={<ProtectedRoute unauthenticatedElement={<AuthGate />} />}>
-        <Route path="/community" element={<Community />} />
-      <Route path="/shorts" element={<Shorts />} />
-      <Route path="/market" element={<MarketHome />} />
-      <Route path="/market/browse" element={<Marketplace />} />
-      <Route path="/market/subscription" element={<MarketSubscription />} />
-      <Route path="/market/:id" element={<ListingDetail />} />
+    <>
+      <ProgressionProvider>
+      <NotificationProvider>
+      <MiniPlayerProvider>
+      <AnimatedRoutes>
+      <Routes>
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/nexus/invite/:code" element={<NexusInvite />} />
+        <Route path="/creator/:username" element={<CreatorProfile />} />
+        <Route path="/page/:slug" element={<DynamicPage />} />
+        <Route path="/" element={<Landing />} />
+        <Route element={<TutoGamingLayout />}>
+          <Route path="/tuto-gaming" element={<TutoGamingHub />} />
+          <Route path="/tuto-gaming/:gameSlug" element={<GameDetailPage />} />
+          <Route path="/tuto-gaming/:gameSlug/quest/:questId" element={<QuestDetailPage />} />
+          <Route path="/tuto-gaming/:gameSlug/wiki/:entryId" element={<WikiEntryDetailPage />} />
+          <Route path="/tuto-gaming/farming-simulator-25" element={<FarmingSimulator25 />} />
+          <Route path="/tuto-gaming/farming-simulator-25/:categoryId" element={<FarmingSimCategory />} />
+        </Route>
+        <Route element={<ProtectedRoute unauthenticatedElement={<AuthGate />} />}>
+          <Route path="/community" element={<Community />} />
+        <Route path="/shorts" element={<Shorts />} />
+        <Route path="/market" element={<MarketHome />} />
+        <Route path="/market/browse" element={<Marketplace />} />
+        <Route path="/market/subscription" element={<MarketSubscription />} />
+        <Route path="/market/:id" element={<ListingDetail />} />
 
-      <Route path="/casino" element={<Casino />} />
-      <Route path="/prospecteurs" element={<Prospecteurs />} />
-      <Route path="/community/subscription" element={<CommunitySubscription />} />
-        <Route path="/wallet" element={<Wallet />} />
-        <Route path="/trix-store" element={<TrixStore />} />
-        <Route path="/video-studio" element={<VideoStudio />} />
-        <Route path="/progression" element={<Progression />} />
-        <Route path="/notifications" element={<Notifications />} />
-        <Route path="/outils" element={<Outils />} />
-        <Route path="/sondages" element={<Sondages />} />
-        <Route path="/mon-profil" element={<MonProfil />} />
-        <Route path="/boutique-matrix" element={<BoutiqueMatrix />} />
-        <Route path="/boutique-nexus" element={<BoutiqueNexus />} />
-        <Route path="/recherche-joueur" element={<RechercheJoueur />} />
-        <Route path="/admin" element={<AdminPanel />} />
-        <Route element={<TwitchLayout />}>
-          <Route path="/twitch" element={<TwitchHome />} />
-          <Route path="/twitch/search" element={<TwitchSearch />} />
-          <Route path="/twitch/category/:gameId" element={<TwitchCategoryPage />} />
-          <Route path="/twitch/watch/:channelLogin" element={<TwitchWatch />} />
+        <Route path="/casino" element={<Casino />} />
+        <Route path="/prospecteurs" element={<Prospecteurs />} />
+        <Route path="/community/subscription" element={<CommunitySubscription />} />
+          <Route path="/wallet" element={<Wallet />} />
+          <Route path="/trix-store" element={<TrixStore />} />
+          <Route path="/video-studio" element={<VideoStudio />} />
+          <Route path="/progression" element={<Progression />} />
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/outils" element={<Outils />} />
+          <Route path="/sondages" element={<Sondages />} />
+          <Route path="/mon-profil" element={<MonProfil />} />
+          <Route path="/boutique-matrix" element={<BoutiqueMatrix />} />
+          <Route path="/boutique-nexus" element={<BoutiqueNexus />} />
+          <Route path="/recherche-joueur" element={<RechercheJoueur />} />
+          <Route path="/admin" element={<AdminPanel />} />
+          <Route element={<TwitchLayout />}>
+            <Route path="/twitch" element={<TwitchHome />} />
+            <Route path="/twitch/search" element={<TwitchSearch />} />
+            <Route path="/twitch/category/:gameId" element={<TwitchCategoryPage />} />
+            <Route path="/twitch/watch/:channelLogin" element={<TwitchWatch />} />
+          </Route>
+          <Route element={<MainLayout />}>
+            <Route path="/stream" element={<Home />} />
+          <Route path="/trending" element={<Trending />} />
+          <Route path="/live" element={<LiveHub />} />
+          <Route path="/subscriptions" element={<Subscriptions />} />
+          <Route path="/category/:slug" element={<Category />} />
+          <Route path="/search" element={<Search />} />
+          <Route path="/watch/:id" element={<Watch />} />
+          <Route path="/live/:id" element={<Live />} />
+          <Route path="/channel/:id" element={<Channel />} />
+          <Route path="/premium" element={<Premium />} />
+          <Route path="/upload" element={<Upload />} />
+          <Route path="/studio" element={<StudioSetup />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+          </Route>
         </Route>
-        <Route element={<MainLayout />}>
-          <Route path="/stream" element={<Home />} />
-        <Route path="/trending" element={<Trending />} />
-        <Route path="/live" element={<LiveHub />} />
-        <Route path="/subscriptions" element={<Subscriptions />} />
-        <Route path="/category/:slug" element={<Category />} />
-        <Route path="/search" element={<Search />} />
-        <Route path="/watch/:id" element={<Watch />} />
-        <Route path="/live/:id" element={<Live />} />
-        <Route path="/channel/:id" element={<Channel />} />
-        <Route path="/premium" element={<Premium />} />
-        <Route path="/upload" element={<Upload />} />
-        <Route path="/studio" element={<StudioSetup />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-        </Route>
-      </Route>
-      <Route path="*" element={<PageNotFound />} />
-    </Routes>
-    </AnimatedRoutes>
-    <GlobalProfileButton />
-    <GlobalMessageButton />
-    <BottomTabs />
-    </MiniPlayerProvider>
-    </NotificationProvider>
-    </ProgressionProvider>
+        <Route path="*" element={<PageNotFound />} />
+      </Routes>
+      </AnimatedRoutes>
+      <GlobalProfileButton />
+      <GlobalMessageButton />
+      <BottomTabs />
+      </MiniPlayerProvider>
+      </NotificationProvider>
+      </ProgressionProvider>
+
+      {/* Update Modal - affiche une modale quand une mise à jour est disponible */}
+      {updateInfo && (
+        <UpdateModal
+          update={updateInfo}
+          onClose={() => setUpdateInfo(null)}
+          onInstalled={() => {
+            // Fermer la modale après installation (redémarrage automatique)
+            setUpdateInfo(null);
+          }}
+        />
+      )}
+    </>
   );
 };
 
