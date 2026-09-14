@@ -42,7 +42,7 @@ async fn handle_oauth_callback(code: String, state: String) -> Result<bool, Stri
 async fn check_for_updates(
     app: tauri::AppHandle,
 ) -> Result<serde_json::Value, String> {
-    match app.updater().check().await {
+    match app.updater()?.check().await {
         Ok(update) => {
             if update.is_update_available() {
                 Ok(serde_json::json!({
@@ -68,7 +68,7 @@ async fn check_for_updates(
 async fn install_update(
     app: tauri::AppHandle,
 ) -> Result<serde_json::Value, String> {
-    match app.updater().check().await {
+    match app.updater()?.check().await {
         Ok(update) => {
             if update.is_update_available() {
                 println!("Téléchargement de la mise à jour vers la version: {}", update.latest_version());
