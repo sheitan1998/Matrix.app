@@ -4,6 +4,7 @@ import AuthLayout from "@/components/AuthLayout";
 import { useAuth } from "@/lib/AuthContext";
 import { safeReturnTo } from "@/lib/authReturnTo";
 import { oauthService } from "@/lib/OAuthService";
+import { getTauriInvoke } from "@/lib/tauriInvoke";
 
 export default function OAuthCallback() {
   const { isAuthenticated, isLoadingAuth, isLoadingPublicSettings } = useAuth();
@@ -43,9 +44,11 @@ export default function OAuthCallback() {
 
       try {
         const { code, state } = await oauthService.handleOAuthCallback(window.location.href);
-        // Invoke direct via l'API interne Tauri v2 — évite la dépendance npm @tauri-apps/api
-        if (oauthService.isDesktopApp && code && typeof window.__TAURI_INTERNALS__?.invoke === "function") {
-          await window.__TAURI_INTERNALS__.invoke("handle_oauth_callback", { code, state });
+        if (oauthService.isDesktopApp && code) {
+          const invoke = await getTauriInvoke();
+          if (invoke) {
+            await invoke("handle_oauth_callback", { code, state });
+          }
         }
       } catch (callbackError) {
         if (!cancelled) {

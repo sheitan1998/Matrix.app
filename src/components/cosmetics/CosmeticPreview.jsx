@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { appParams, resolveAssetUrl } from "@/lib/app-params";
 import { getCosmeticIconImageUrl, isImageAssetUrl, isVideoAssetUrl, normalizeCosmeticAssetUrl } from "@/lib/cosmeticAssetUrl";
 
 /**
@@ -16,13 +17,19 @@ export default function CosmeticPreview({ item, size = "text-4xl", forcePlay = f
     iconImage: false,
   });
   const playing = forcePlay || hovering;
-  const normalizedVideoAsset = normalizeCosmeticAssetUrl(item?.video_url);
-  const normalizedPreviewAsset = normalizeCosmeticAssetUrl(item?.preview_image);
+  const normalizedVideoAsset = resolveAssetUrl(
+    normalizeCosmeticAssetUrl(item?.video_url),
+    appParams.appBaseUrl
+  );
+  const normalizedPreviewAsset = resolveAssetUrl(
+    normalizeCosmeticAssetUrl(item?.preview_image),
+    appParams.appBaseUrl
+  );
   const primaryVideo = isVideoAssetUrl(item?.video_url) ? normalizedVideoAsset : "";
   const previewImage = isImageAssetUrl(item?.preview_image)
     ? normalizedPreviewAsset
     : (isImageAssetUrl(item?.video_url) ? normalizedVideoAsset : "");
-  const iconImage = getCosmeticIconImageUrl(item?.icon);
+  const iconImage = resolveAssetUrl(getCosmeticIconImageUrl(item?.icon), appParams.appBaseUrl);
 
   useEffect(() => {
     setHovering(false);

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { appParams } from "@/lib/app-params";
-import { resolveBase44ServerUrl } from "@/api/base44Client";
+import { appParams, resolveBase44ServerUrl } from "@/lib/app-params";
 import { toAbsoluteApiUrl } from "@/lib/urlUtils";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, Loader2 } from "lucide-react";
@@ -15,13 +14,13 @@ import AuthLayout from "@/components/AuthLayout";
 // and copy are safe to edit.
 export default function OAuthConsent() {
   const ctx = new URLSearchParams(window.location.search).get("ctx");
+  const apiBaseUrl = resolveBase44ServerUrl(appParams.appBaseUrl);
   const [info, setInfo] = useState(null);
   const [checking, setChecking] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [decided, setDecided] = useState("");
   const [error, setError] = useState("");
   const [reconnect, setReconnect] = useState("");
-  const apiBaseUrl = resolveBase44ServerUrl();
   const consentInfoUrl = toAbsoluteApiUrl(
     apiBaseUrl,
     `/api/apps/${appParams.appId}/mcp/consent-info?handle=${encodeURIComponent(ctx || "")}`

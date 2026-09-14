@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { base44, resolveBase44ServerUrl } from '@/api/base44Client';
-import { appParams } from '@/lib/app-params';
+import { base44 } from '@/api/base44Client';
+import { appParams, resolveBase44ServerUrl } from '@/lib/app-params';
 import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
 
 const AuthContext = createContext();
@@ -22,11 +22,12 @@ export const AuthProvider = ({ children }) => {
     try {
       setIsLoadingPublicSettings(true);
       setAuthError(null);
+      const serverUrl = resolveBase44ServerUrl(appParams.appBaseUrl);
       
       // First, check app public settings (with token if available)
       // This will tell us if auth is required, user not registered, etc.
       const appClient = createAxiosClient({
-        baseURL: `${resolveBase44ServerUrl()}/api/apps/public`,
+        baseURL: serverUrl ? `${serverUrl}/api/apps/public` : `/api/apps/public`,
         headers: {
           'X-App-Id': appParams.appId
         },

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { appParams, resolveAssetUrl } from "@/lib/app-params";
 import { Loader2, Upload, X, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { normalizeCosmeticAssetUrl, normalizeCosmeticIcon } from "@/lib/cosmeticAssetUrl";
@@ -159,7 +160,7 @@ export default function CosmeticItemForm({ onSaved }) {
           <div className="relative rounded-lg border border-dashed border-white/10 overflow-hidden" style={{ background: "#1a1a1a" }}>
             {form.preview_image ? (
               <div className="relative">
-                <img src={form.preview_image} alt="" className="w-full h-28 object-contain" />
+                <img src={resolveAssetUrl(form.preview_image, appParams.appBaseUrl)} alt="" className="w-full h-28 object-contain" />
                 <button type="button" onClick={() => setForm(prev => ({ ...prev, preview_image: "" }))}
                   className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white text-xs flex items-center justify-center">
                   <X className="w-3 h-3" />
@@ -178,7 +179,7 @@ export default function CosmeticItemForm({ onSaved }) {
           <div className="relative rounded-lg border border-dashed border-white/10 overflow-hidden" style={{ background: "#1a1a1a" }}>
             {form.video_url ? (
               <div className="relative">
-                <video src={form.video_url} autoPlay loop muted playsInline className="w-full h-28 object-contain" />
+                <video src={resolveAssetUrl(form.video_url, appParams.appBaseUrl)} autoPlay loop muted playsInline className="w-full h-28 object-contain" />
                 <button type="button" onClick={() => setForm(prev => ({ ...prev, video_url: "" }))}
                   className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white text-xs flex items-center justify-center">
                   <X className="w-3 h-3" />
