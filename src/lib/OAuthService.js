@@ -1,21 +1,4 @@
-/**
- * Charge dynamiquement le module Tauri uniquement quand il est disponible.
- * En build web, @tauri-apps/api n'est pas installé — un import statique
- * ferait échouer Vite/Rollup.
- */
-async function getTauriInvoke() {
-  if (typeof window === "undefined" || !window.__TAURI_INTERNALS__) return null;
-  try {
-    // Invoke direct via l'API interne exposée par Tauri v2 dans le webview —
-    // évite toute dépendance npm à @tauri-apps/api côté build web.
-    if (typeof window.__TAURI_INTERNALS__.invoke === "function") {
-      return (cmd, args) => window.__TAURI_INTERNALS__.invoke(cmd, args);
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
+import { getTauriInvoke } from "@/lib/tauriInvoke";
 
 /**
  * Service pour gérer le flux OAuth dans une application Tauri desktop

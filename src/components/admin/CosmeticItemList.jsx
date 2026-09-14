@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { appParams, resolveAssetUrl } from "@/lib/app-params";
 import { Trash2, Loader2, Eye, EyeOff, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import CosmeticEditModal from "@/components/admin/CosmeticEditModal";
@@ -73,9 +74,9 @@ export default function CosmeticItemList({ refreshKey }) {
             {/* Preview */}
             <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden shrink-0" style={{ background: `${rarityColor}15` }}>
               {item.video_url ? (
-                <video src={item.video_url} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+                <video src={resolveAssetUrl(item.video_url, appParams.appBaseUrl)} autoPlay loop muted playsInline className="w-full h-full object-cover" />
               ) : item.preview_image ? (
-                <img src={item.preview_image} alt="" className="w-full h-full object-cover" />
+                <img src={resolveAssetUrl(item.preview_image, appParams.appBaseUrl)} alt="" className="w-full h-full object-cover" />
               ) : (
                 <span className="text-lg">{item.icon || "✨"}</span>
               )}

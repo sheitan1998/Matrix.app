@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { appParams, resolveAssetUrl } from "@/lib/app-params";
 
 /**
  * CosmeticPreview
@@ -9,6 +10,8 @@ export default function CosmeticPreview({ item, size = "text-4xl", forcePlay = f
   const videoRef = useRef(null);
   const [hovering, setHovering] = useState(false);
   const playing = forcePlay || hovering;
+  const videoUrl = resolveAssetUrl(item?.video_url, appParams.appBaseUrl);
+  const previewImage = resolveAssetUrl(item?.preview_image, appParams.appBaseUrl);
 
   const handleEnter = () => {
     setHovering(true);
@@ -24,11 +27,11 @@ export default function CosmeticPreview({ item, size = "text-4xl", forcePlay = f
   const aspectClass = aspect === "video" ? "aspect-video" : "aspect-square";
 
   const renderMedia = () => {
-    if (item.category === "avatar_animation" && item.video_url) {
+    if (item.category === "avatar_animation" && videoUrl) {
       return (
         <div className={`w-full ${aspectClass} rounded-xl overflow-hidden relative flex items-center justify-center`} style={{ background: "rgba(0,0,0,0.3)" }}
           onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
-          <video ref={videoRef} src={item.video_url} loop muted playsInline
+          <video ref={videoRef} src={videoUrl} loop muted playsInline
             className="w-full h-full object-cover" style={{ mixBlendMode: "screen" }}
             preload="metadata" />
           {!playing && (
@@ -39,19 +42,19 @@ export default function CosmeticPreview({ item, size = "text-4xl", forcePlay = f
         </div>
       );
     }
-    if (item.category === "profile_cover" && item.video_url) {
+    if (item.category === "profile_cover" && videoUrl) {
       return (
         <div className={`w-full ${aspectClass} rounded-xl overflow-hidden relative flex items-center justify-center`} style={{ background: "rgba(0,0,0,0.3)" }}
           onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
-          <video ref={videoRef} src={item.video_url} loop muted playsInline
+          <video ref={videoRef} src={videoUrl} loop muted playsInline
             className="w-full h-full object-cover" preload="metadata" />
         </div>
       );
     }
-    if (item.category === "profile_cover" && item.preview_image) {
+    if (item.category === "profile_cover" && previewImage) {
       return (
         <div className={`w-full ${aspectClass} rounded-xl overflow-hidden`} style={{ background: "rgba(0,0,0,0.3)" }}>
-          <img src={item.preview_image} alt="" className="w-full h-full object-cover" />
+          <img src={previewImage} alt="" className="w-full h-full object-cover" />
         </div>
       );
     }
