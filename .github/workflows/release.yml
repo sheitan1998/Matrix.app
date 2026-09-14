@@ -39,6 +39,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Build Tauri App & Create Installer
+        id: tauri-build
         uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -53,25 +54,119 @@ jobs:
 
       - name: Verify updater artifacts
         shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_ARTIFACT_PATHS: ${{ steps.tauri-build.outputs.artifactPaths }}
+          TAURI_RELEASE_ID: ${{ steps.tauri-build.outputs.releaseId }}
         run: |
-          $bundleRoot = "src-tauri/target/release/bundle"
-          if (-not (Test-Path $bundleRoot)) {
-            Write-Error "Bundle folder not found: $bundleRoot"
+          $candidateRoots = New-Object System.Collections.Generic.List[string]
+
+          foreach ($root in @(
+            "src-tauri/target/release/bundle",
+            "src-tauri/target/release",
+            "target/release/bundle",
+            "target/release"
+          )) {
+            if (Test-Path $root) {
+              $candidateRoots.Add((Resolve-Path $root).Path)
+            }
+          }
+
+          if ($env:TAURI_ARTIFACT_PATHS) {
+            try {
+              $artifactPaths = @(ConvertFrom-Json -InputObject $env:TAURI_ARTIFACT_PATHS)
+              foreach ($artifactPath in $artifactPaths) {
+                if (-not $artifactPath) {
+                  continue
+                }
+
+                foreach ($candidate in @(
+                  ((Test-Path $artifactPath -PathType Container) ? $artifactPath : $null),
+                  (Split-Path -Parent $artifactPath),
+                  ((Split-Path -Parent $artifactPath) ? (Split-Path -Parent (Split-Path -Parent $artifactPath)) : $null)
+                )) {
+                  if ($candidate -and (Test-Path $candidate)) {
+                    $candidateRoots.Add((Resolve-Path $candidate).Path)
+                  }
+                }
+              }
+            } catch {
+              Write-Warning "Unable to parse tauri-action artifactPaths output: $($_.Exception.Message)"
+            }
+          }
+
+          $candidateRoots = @($candidateRoots | Sort-Object -Unique)
+          if ($candidateRoots.Count -eq 0 -and -not $env:TAURI_RELEASE_ID) {
+            Write-Error "No Tauri build output directory found to verify updater artifacts."
             exit 1
           }
 
-          $latestJson = @(Get-ChildItem -Path $bundleRoot -Recurse -File -Include "latest.json" -ErrorAction SilentlyContinue)
-          if ($latestJson.Count -eq 0) {
-            Write-Error "Updater metadata latest.json not found in bundle output."
+          if ($candidateRoots.Count -gt 0) {
+            Write-Host "Inspecting updater artifacts under:"
+            $candidateRoots | ForEach-Object { Write-Host " - $_" }
+          } else {
+            Write-Warning "No local Tauri output directories found; falling back to uploaded release assets."
+          }
+
+          $latestJson = @()
+          $signatures = @()
+
+          foreach ($root in $candidateRoots) {
+            $latestJson += @(Get-ChildItem -Path $root -Recurse -File -Filter "latest.json" -ErrorAction SilentlyContinue)
+            $signatures += @(Get-ChildItem -Path $root -Recurse -File -Filter "*.sig" -ErrorAction SilentlyContinue)
+          }
+
+          $latestJson = @($latestJson | Sort-Object FullName -Unique)
+          $signatures = @($signatures | Sort-Object FullName -Unique)
+
+          if ($latestJson.Count -gt 0) {
+            Write-Host "Found local latest.json:"
+            $latestJson | ForEach-Object { Write-Host " - $($_.FullName)" }
+          }
+
+          if ($signatures.Count -gt 0) {
+            Write-Host "Found local signature files:"
+            $signatures | ForEach-Object { Write-Host " - $($_.FullName)" }
+          }
+
+          $releaseAssets = @()
+          if (($latestJson.Count -eq 0 -or $signatures.Count -eq 0) -and $env:TAURI_RELEASE_ID) {
+            $assetUrl = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases/$env:TAURI_RELEASE_ID/assets?per_page=100"
+            Write-Host "Local updater artifacts incomplete, checking uploaded release assets: $assetUrl"
+
+            try {
+              $headers = @{
+                Authorization = "Bearer $env:GITHUB_TOKEN"
+                Accept = "application/vnd.github+json"
+                "X-GitHub-Api-Version" = "2022-11-28"
+              }
+              $releaseAssets = @(Invoke-RestMethod -Uri $assetUrl -Headers $headers -Method Get)
+            } catch {
+              Write-Warning "Unable to inspect uploaded release assets: $($_.Exception.Message)"
+            }
+          }
+
+          $latestJsonAssets = @($releaseAssets | Where-Object { $_.name -eq "latest.json" })
+          $signatureAssets = @($releaseAssets | Where-Object { $_.name -like "*.sig" })
+
+          if ($latestJson.Count -eq 0 -and $latestJsonAssets.Count -gt 0) {
+            Write-Host "Found release asset latest.json:"
+            $latestJsonAssets | ForEach-Object { Write-Host " - $($_.browser_download_url)" }
+          }
+
+          if ($signatures.Count -eq 0 -and $signatureAssets.Count -gt 0) {
+            Write-Host "Found release asset signatures:"
+            $signatureAssets | ForEach-Object { Write-Host " - $($_.browser_download_url)" }
+          }
+
+          if ($latestJson.Count -eq 0 -and $latestJsonAssets.Count -eq 0) {
+            Write-Error "Updater metadata latest.json not found in Tauri outputs or uploaded release assets."
             exit 1
           }
 
-          $signatures = @(Get-ChildItem -Path $bundleRoot -Recurse -File -Filter "*.sig" -ErrorAction SilentlyContinue)
-          if ($signatures.Count -eq 0) {
-            Write-Error "No signature files (*.sig) found in bundle output."
+          if ($signatures.Count -eq 0 -and $signatureAssets.Count -eq 0) {
+            Write-Error "No signature files (*.sig) found in Tauri outputs or uploaded release assets."
             exit 1
           }
 
-          Write-Host "Found updater metadata:"
-          $latestJson | ForEach-Object { Write-Host " - $($_.FullName)" }
-          Write-Host "Found signature files: $($signatures.Count)"
+          Write-Host "Updater artifact verification passed."
