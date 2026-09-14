@@ -1,5 +1,6 @@
 import React from "react";
 import { base44 } from "@/api/base44Client";
+import { appParams } from "@/lib/app-params";
 import { Button } from "@/components/ui/button";
 import GoogleIcon from "@/components/GoogleIcon";
 
@@ -33,11 +34,22 @@ const PROVIDERS = [
 
 function getOAuthReturnPath() {
   if (typeof window === "undefined") return "/oauth/callback";
+
+  const configuredBase = appParams.appBaseUrl || appParams.fromUrl;
+  if (configuredBase) {
+    try {
+      const callbackUrl = new URL("/oauth/callback", configuredBase);
+      return callbackUrl.toString();
+    } catch {
+      // fallback below
+    }
+  }
+
   const host = window.location.hostname;
   if (host === "localhost" || host === "127.0.0.1" || host.endsWith(".base44.app")) {
     return "/oauth/callback";
   }
-  return "https://matrix-hub.base44.app/oauth/callback";
+  return new URL("/oauth/callback", window.location.origin).toString();
 }
 
 export default function SocialAuthButtons() {
