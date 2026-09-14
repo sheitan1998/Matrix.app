@@ -14,7 +14,7 @@ import { useProgression } from "@/context/ProgressionContext";
 import ThemeSelectionModal from "@/components/casino/ThemeSelectionModal";
 
 const CASINO_BALANCE_KEY = "matrix_casino_coins";
-const SLOTS_CARD_IMG = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/62275f2a2_generated_image.png";
+const SLOTS_CARD_IMG = "/media/tuto-gaming/62275f2a2_generated_image.png";
 
 function useCasinoCoins() {
   const [coins, setCoinsState] = useState(() => {

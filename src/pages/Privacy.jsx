@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Shield, Users, FileText, Mail, Database, Cookie, Share2 } from "lucide-react";
 
 // Official YouTube icon
-const YT_ICON_RED = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/7b7c491be_yt_icon_red_digital.png";
+const YT_ICON_RED = "/media/tuto-gaming/7b7c491be_yt_icon_red_digital.png";
 
 const SECTIONS = [
   {

@@ -5,7 +5,7 @@ import { useYouTubeAuth } from "@/hooks/useYouTubeAuth";
 import { formatViews } from "@/lib/format";
 
 // Official YouTube icon PNG (red rectangle + white triangle — brand guidelines, proportions must not be altered)
-const YT_ICON_RED = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/c4e71cf23_yt_icon_red_digital.png";
+const YT_ICON_RED = "/media/tuto-gaming/c4e71cf23_yt_icon_red_digital.png";
 
 /**
  * Top-right profile for the YouTube universe only.

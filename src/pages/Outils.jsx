@@ -20,7 +20,7 @@ const TOOLS = [
 { id: "paint", label: "Paint Matrix", desc: "Outil de dessin avec pinceau, gomme, couleurs et export PNG.", icon: Palette, color: "#ec4899" }];
 
 
-const BG_URL = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/891f5968b_Gemini_Generated_Image_vsevw4vsevw4vsev.png";
+const BG_URL = "/media/tuto-gaming/891f5968b_Gemini_Generated_Image_vsevw4vsevw4vsev.png";
 
 export default function Outils() {
   const nav = useNavigate();

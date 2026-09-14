@@ -116,7 +116,7 @@ export const SLOT_WORLDS = [
   {
     id: "call_of_the_wild",
     name: "CALL OF THE WILD",
-    img: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/ed0c1289e_generated_image.png",
+    img: "/media/tuto-gaming/ed0c1289e_generated_image.png",
     jackpot: "3 772 559 004 118",
     bgGradient: "linear-gradient(160deg, #0a2a0a 0%, #228b22 50%, #0a1a0a 100%)",
     themeColor: "#228b22",

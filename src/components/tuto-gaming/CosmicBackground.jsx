@@ -7,7 +7,7 @@ export default function CosmicBackground() {
       <div
         className="absolute inset-0"
         style={{
-          backgroundImage: "url(https://media.base44.com/images/public/69e14a987a927963a9924d5a/36cb13e5a_Gemini_Generated_Image_vhl52mvhl52mvhl5.png)",
+          backgroundImage: "url(/media/tuto-gaming/36cb13e5a_Gemini_Generated_Image_vhl52mvhl52mvhl5.png)",
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundAttachment: "fixed",

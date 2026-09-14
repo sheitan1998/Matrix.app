@@ -8,28 +8,28 @@ const PARTNERS = [
   title: "Nos offres chez Amazon",
   btn: "Voir sur Amazon",
   href: "https://amzn.to/3SslkT2",
-  image: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/3ea092b99_Gemini_Generated_Image_dwz0m2dwz0m2dwz0.png"
+  image: "/media/tuto-gaming/3ea092b99_Gemini_Generated_Image_dwz0m2dwz0m2dwz0.png"
 },
 {
   name: "Instant Gaming",
   title: "Nos offres chez Instant Gaming",
   btn: "Découvrir Instant Gaming",
   href: "https://www.instant-gaming.com/?igr=gamer-45b9bd",
-  image: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/cf05661b3_Gemini_Generated_Image_38wgo938wgo938wg.png"
+  image: "/media/tuto-gaming/cf05661b3_Gemini_Generated_Image_38wgo938wgo938wg.png"
 },
 {
   name: "Intersport",
   title: "Nos offres chez Intersport",
   btn: "Acheter Intersport",
   href: null,
-  image: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/9ff3a90f6_Gemini_Generated_Image_axli8xaxli8xaxli.png"
+  image: "/media/tuto-gaming/9ff3a90f6_Gemini_Generated_Image_axli8xaxli8xaxli.png"
 },
 {
   name: "LDLC",
   title: "Nos offres chez LDLC",
   btn: "Explorer LDLC",
   href: null,
-  image: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/38538f9f2_Gemini_Generated_Image_luwqztluwqztluwq.png",
+  image: "/media/tuto-gaming/38538f9f2_Gemini_Generated_Image_luwqztluwqztluwq.png",
   extraSearch: true
 }];
 
