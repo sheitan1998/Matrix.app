@@ -50,3 +50,28 @@ jobs:
           releaseBody: 'Nouvelle mise à jour de Matrix.'
           releaseDraft: false
           prerelease: false
+
+      - name: Verify updater artifacts
+        shell: pwsh
+        run: |
+          $bundleRoot = "src-tauri/target/release/bundle"
+          if (-not (Test-Path $bundleRoot)) {
+            Write-Error "Bundle folder not found: $bundleRoot"
+            exit 1
+          }
+
+          $latestJson = @(Get-ChildItem -Path $bundleRoot -Recurse -File -Include "latest.json" -ErrorAction SilentlyContinue)
+          if ($latestJson.Count -eq 0) {
+            Write-Error "Updater metadata latest.json not found in bundle output."
+            exit 1
+          }
+
+          $signatures = @(Get-ChildItem -Path $bundleRoot -Recurse -File -Filter "*.sig" -ErrorAction SilentlyContinue)
+          if ($signatures.Count -eq 0) {
+            Write-Error "No signature files (*.sig) found in bundle output."
+            exit 1
+          }
+
+          Write-Host "Found updater metadata:"
+          $latestJson | ForEach-Object { Write-Host " - $($_.FullName)" }
+          Write-Host "Found signature files: $($signatures.Count)"

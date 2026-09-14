@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Star, ArrowRight, Search } from "lucide-react";
+import { normalizeAppAssetUrl, normalizeExternalUrl } from "@/lib/urlUtils";
 
 const PARTNERS = [
 {
@@ -21,20 +22,22 @@ const PARTNERS = [
   name: "Intersport",
   title: "Nos offres chez Intersport",
   btn: "Acheter Intersport",
-  href: null,
+  href: "https://www.intersport.fr/",
   image: "/media/tuto-gaming/9ff3a90f6_Gemini_Generated_Image_axli8xaxli8xaxli.png"
 },
 {
   name: "LDLC",
   title: "Nos offres chez LDLC",
   btn: "Explorer LDLC",
-  href: null,
+  href: "https://www.ldlc.com/",
   image: "/media/tuto-gaming/38538f9f2_Gemini_Generated_Image_luwqztluwqztluwq.png",
   extraSearch: true
 }];
 
 
 function PartnerCard({ p, index }) {
+  const href = normalizeExternalUrl(p.href);
+  const imageUrl = normalizeAppAssetUrl(p.image);
   const inner =
   <motion.div
     initial={{ opacity: 0, y: 20 }}
@@ -48,7 +51,7 @@ function PartnerCard({ p, index }) {
     
       {/* Image */}
       <div className="w-20 h-20 shrink-0 rounded-xl overflow-hidden flex items-center justify-center" style={{ background: "#0a050f" }}>
-        <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+        <img src={imageUrl || p.image} alt={p.name} className="w-full h-full object-cover" />
       </div>
 
       {/* Text */}
@@ -61,13 +64,12 @@ function PartnerCard({ p, index }) {
           <span className="text-xs text-white/60 ml-1">4.5</span>
         </div>
         <div className="flex items-center gap-2 mt-2">
-          <button
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition hover:opacity-90 tap-sm"
-          style={{ background: "linear-gradient(135deg, #8b5cf6, #6d28d9)" }}>
-          
+          <span
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white"
+          style={{ background: "linear-gradient(135deg, #8b5cf6, #6d28d9)", opacity: href ? 1 : 0.6 }}>
             {p.btn}
             <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+          </span>
           {p.extraSearch &&
         <Search className="w-4 h-4 text-white/40" />
         }
@@ -76,9 +78,9 @@ function PartnerCard({ p, index }) {
     </motion.div>;
 
 
-  if (p.href) {
+  if (href) {
     return (
-      <a href={p.href} target="_blank" rel="noopener noreferrer" className="block hover:scale-[1.02] transition-transform">
+      <a href={href} target="_blank" rel="noopener noreferrer" className="block hover:scale-[1.02] transition-transform">
         {inner}
       </a>);
 
