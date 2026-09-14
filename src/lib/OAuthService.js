@@ -166,7 +166,7 @@ class OAuthService {
    */
   isOAuthCallback(callbackUrl = window.location.href) {
     const params = this.getOAuthCallbackParams(callbackUrl);
-    return Boolean(params?.error || params?.access_token || (params?.code && params?.state));
+    return Boolean(params?.error || params?.access_token || params?.code || params?.state);
   }
 
   /**

@@ -26,6 +26,7 @@ export default function OAuthCallback() {
         if (!cancelled) {
           setError(description || "La connexion OAuth a été annulée ou a échoué.");
         }
+        oauthService.clearOAuthSession();
         return;
       }
 
@@ -37,6 +38,7 @@ export default function OAuthCallback() {
       }
 
       if (!callbackParams.code) {
+        oauthService.clearOAuthSession();
         return;
       }
 
