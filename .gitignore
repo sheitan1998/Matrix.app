@@ -30,5 +30,3 @@ dist-ssr
 .env
 .vite
 base44/.app.jsonc
-src-tauri/target/
-src-tauri/Cargo.lock
