@@ -79,7 +79,7 @@ import TwitchCategoryPage from '@/pages/twitch/TwitchCategoryPage';
 
 // Import updater
 import UpdateModal from '@/components/UpdateModal';
-import { setupAutoUpdateCheck } from '@/lib/updater';
+import { checkForUpdates } from '@/lib/updater';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings } = useAuth();
@@ -88,13 +88,24 @@ const AuthenticatedApp = () => {
 
   // Setup automatic update checking
   useEffect(() => {
-    // Vérifier les mises à jour au démarrage et toutes les heures
-    const stopAutoCheck = setupAutoUpdateCheck((update) => {
-      console.log("Mise à jour disponible:", update);
-      setUpdateInfo(update);
-    }, 60 * 60 * 1000); // 1 heure
+    const checkUpdates = async () => {
+      try {
+        const update = await checkForUpdates();
+        if (update?.available) {
+          console.log("Mise à jour disponible:", update);
+          setUpdateInfo(update);
+        }
+      } catch (error) {
+        console.error("Erreur lors de la vérification des mises à jour:", error);
+      }
+    };
 
-    return () => stopAutoCheck();
+    // Vérifier les mises à jour au démarrage
+    checkUpdates();
+
+    // Puis vérifier toutes les heures
+    const intervalId = setInterval(checkUpdates, 60 * 60 * 1000);
+    return () => clearInterval(intervalId);
   }, []);
 
   if (isLoadingPublicSettings || isLoadingAuth) {
