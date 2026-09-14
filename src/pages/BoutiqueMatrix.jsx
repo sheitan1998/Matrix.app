@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
-import { Home, Check, ShoppingBag, Sparkles, Coins, X, AlertCircle, CreditCard, Eye } from "lucide-react";
+import { Home, Check, ShoppingBag, Sparkles, X, AlertCircle, CreditCard, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { formatTrix } from "@/lib/format";
 import HeaderActions from "@/components/layout/HeaderActions";
@@ -12,6 +12,7 @@ import CosmeticPreview from "@/components/cosmetics/CosmeticPreview";
 import CosmeticProfilePreview from "@/components/cosmetics/CosmeticProfilePreview";
 import CheckoutModal from "@/components/CheckoutModal";
 import { useProgression } from "@/context/ProgressionContext";
+import { normalizeCosmeticAssetUrl, normalizeCosmeticIcon } from "@/lib/cosmeticAssetUrl";
 
 const CATEGORIES = [
   { key: "all", label: "Tout" },
@@ -114,10 +115,10 @@ export default function BoutiqueMatrix() {
       } else {
         await base44.entities.UserCosmetic.create({
           user_email: user.email, item_id: item.id, item_name: item.name,
-          category: item.category, icon: item.icon, rarity: item.rarity, is_equipped: false,
+          category: item.category, icon: normalizeCosmeticIcon(item.icon), rarity: item.rarity, is_equipped: false,
           quantity: 1,
-          video_url: item.video_url || "",
-          preview_image: item.preview_image || "",
+          video_url: normalizeCosmeticAssetUrl(item.video_url),
+          preview_image: normalizeCosmeticAssetUrl(item.preview_image),
         });
       }
       await base44.entities.TrixTransaction.create({
