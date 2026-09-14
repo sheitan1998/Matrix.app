@@ -18,28 +18,31 @@ export default function OAuthCallback() {
     let cancelled = false;
 
     const finalizeCallback = async () => {
-      const params = new URLSearchParams(window.location.search);
-      const providerError = params.get("error");
+      const callbackParams = oauthService.getOAuthCallbackParams(window.location.href);
       const hasStoredBase44Token = Boolean(localStorage.getItem("base44_access_token"));
 
-      if (providerError) {
-        const description = params.get("error_description");
+      if (callbackParams?.error) {
+        const description = callbackParams.error_description;
         if (!cancelled) {
           setError(description || "La connexion OAuth a été annulée ou a échoué.");
         }
         return;
       }
 
-      if (!oauthService.isOAuthCallback()) {
+      if (!callbackParams) {
         if (!hasStoredBase44Token && !cancelled) {
           setError("Le retour OAuth est incomplet ou invalide.");
         }
         return;
       }
 
+      if (!callbackParams.code) {
+        return;
+      }
+
       try {
         const { code, state } = await oauthService.handleOAuthCallback(window.location.href);
-        if (oauthService.isDesktopApp) {
+        if (oauthService.isDesktopApp && code) {
           await invoke("handle_oauth_callback", { code, state });
         }
       } catch (callbackError) {
@@ -65,14 +68,6 @@ export default function OAuthCallback() {
 
     window.location.replace(redirectTarget);
   }, [error, isAuthenticated, isLoadingAuth, isLoadingPublicSettings, redirectTarget]);
-
-  useEffect(() => {
-    if (error || isLoadingAuth || isLoadingPublicSettings || isAuthenticated) {
-      return;
-    }
-
-    setError("Aucune session n'a pu être créée après le retour OAuth.");
-  }, [error, isAuthenticated, isLoadingAuth, isLoadingPublicSettings]);
 
   if (error) {
     return (
