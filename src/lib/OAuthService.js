@@ -115,14 +115,14 @@ class OAuthService {
    */
   async handleOAuthCallback(callbackUrl) {
     try {
-      const url = new URL(callbackUrl);
-      const code = url.searchParams.get("code");
-      const state = url.searchParams.get("state");
-      const error = url.searchParams.get("error");
+      const params = this.getOAuthCallbackParams(callbackUrl);
+      const code = params?.code;
+      const state = params?.state;
+      const error = params?.error;
 
       // Vérifier les erreurs OAuth
       if (error) {
-        const errorDescription = url.searchParams.get("error_description");
+        const errorDescription = params?.error_description;
         throw new Error(`OAuth Error: ${error} - ${errorDescription || ""}`);
       }
 
@@ -164,23 +164,38 @@ class OAuthService {
   /**
    * Vérifier si on est en train de revenir d'un OAuth callback
    */
-  isOAuthCallback() {
-    const params = new URLSearchParams(window.location.search);
-    return params.has("code") && params.has("state");
+  isOAuthCallback(callbackUrl = window.location.href) {
+    const params = this.getOAuthCallbackParams(callbackUrl);
+    return Boolean(params?.error || params?.access_token || params?.code || params?.state);
   }
 
   /**
    * Extraire les paramètres du callback depuis l'URL actuelle
    */
-  getOAuthCallbackParams() {
-    if (!this.isOAuthCallback()) return null;
+  getOAuthCallbackParams(callbackUrl = window.location.href) {
+    const url = new URL(callbackUrl);
+    const hashParams = new URLSearchParams(url.hash.startsWith("#") ? url.hash.slice(1) : "");
+    const readParam = (key) => url.searchParams.get(key) ?? hashParams.get(key);
+    const params = {
+      code: readParam("code"),
+      state: readParam("state"),
+      error: readParam("error"),
+      error_description: readParam("error_description"),
+      access_token: readParam("access_token"),
+      token_type: readParam("token_type"),
+    };
 
-    const params = new URLSearchParams(window.location.search);
+    if (!params.code && !params.state && !params.error && !params.access_token) {
+      return null;
+    }
+
     return {
-      code: params.get("code"),
-      state: params.get("state"),
-      error: params.get("error"),
-      error_description: params.get("error_description"),
+      code: params.code,
+      state: params.state,
+      error: params.error,
+      error_description: params.error_description,
+      access_token: params.access_token,
+      token_type: params.token_type,
     };
   }
 }
