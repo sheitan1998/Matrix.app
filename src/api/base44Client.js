@@ -10,7 +10,7 @@ const { appId, token, functionsVersion, appBaseUrl } = appParams;
  * integrations resolve correctly. On localhost (Vite dev proxy) and on the Base44
  * web platform (backend serves /api), relative URLs work and we keep serverUrl empty.
  */
-function resolveServerUrl() {
+export function resolveBase44ServerUrl() {
   if (typeof window === 'undefined') return '';
   const host = window.location.hostname;
   if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('.base44.app')) return '';
@@ -21,7 +21,7 @@ export const base44 = createClient({
   appId,
   token,
   functionsVersion,
-  serverUrl: resolveServerUrl(),
+  serverUrl: resolveBase44ServerUrl(),
   requiresAuth: false,
   appBaseUrl
 });
