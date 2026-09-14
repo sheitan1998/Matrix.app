@@ -1,17 +1,31 @@
-import { invoke } from "@tauri-apps/api/core";
+/**
+ * Charge dynamiquement le module Tauri uniquement quand il est disponible.
+ * En build web, @tauri-apps/api n'est pas installé — un import statique
+ * ferait échouer Vite/Rollup. On utilise un import() dynamique gardé.
+ */
+async function getTauriInvoke() {
+  if (typeof window === "undefined" || !window.__TAURI_INTERNALS__) return null;
+  try {
+    // Invoke direct via l'API interne exposée par Tauri v2 dans le webview —
+    // évite toute dépendance npm à @tauri-apps/api côté build web.
+    if (typeof window.__TAURI_INTERNALS__.invoke === "function") {
+      return (cmd, args) => window.__TAURI_INTERNALS__.invoke(cmd, args);
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Vérifie les mises à jour disponibles
  * @returns {Promise<{available: boolean, current_version?: string, latest_version?: string, body?: string, date?: string}>}
  */
 export async function checkForUpdates() {
-  try {
-    const result = await invoke("check_for_updates");
-    return result;
-  } catch (error) {
-    console.error("Erreur lors de la vérification des mises à jour:", error);
-    throw new Error(`Impossible de vérifier les mises à jour: ${error}`);
-  }
+  const invoke = await getTauriInvoke();
+  if (!invoke) return { available: false };
+  const result = await invoke("check_for_updates");
+  return result;
 }
 
 /**
@@ -19,13 +33,10 @@ export async function checkForUpdates() {
  * @returns {Promise<{success: boolean, message: string}>}
  */
 export async function installUpdate() {
-  try {
-    const result = await invoke("install_update");
-    return result;
-  } catch (error) {
-    console.error("Erreur lors de l'installation de la mise à jour:", error);
-    throw new Error(`Impossible d'installer la mise à jour: ${error}`);
-  }
+  const invoke = await getTauriInvoke();
+  if (!invoke) return { success: false, message: "Not in desktop app" };
+  const result = await invoke("install_update");
+  return result;
 }
 
 /**
@@ -33,13 +44,10 @@ export async function installUpdate() {
  * @returns {Promise<string>} Version actuelle (ex: "1.0.3")
  */
 export async function getCurrentVersion() {
-  try {
-    const version = await invoke("get_current_version");
-    return version;
-  } catch (error) {
-    console.error("Erreur lors de la récupération de la version:", error);
-    throw new Error(`Impossible de récupérer la version: ${error}`);
-  }
+  const invoke = await getTauriInvoke();
+  if (!invoke) return "web";
+  const version = await invoke("get_current_version");
+  return version;
 }
 
 /**

@@ -1,10 +1,26 @@
-import { invoke } from "@tauri-apps/api/core";
+/**
+ * Charge dynamiquement le module Tauri uniquement quand il est disponible.
+ * En build web, @tauri-apps/api n'est pas installé — un import statique
+ * ferait échouer Vite/Rollup.
+ */
+async function getTauriInvoke() {
+  if (typeof window === "undefined" || !window.__TAURI_INTERNALS__) return null;
+  try {
+    // Invoke direct via l'API interne exposée par Tauri v2 dans le webview —
+    // évite toute dépendance npm à @tauri-apps/api côté build web.
+    if (typeof window.__TAURI_INTERNALS__.invoke === "function") {
+      return (cmd, args) => window.__TAURI_INTERNALS__.invoke(cmd, args);
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Service pour gérer le flux OAuth dans une application Tauri desktop
  * Compatible avec Base44 SDK et les fournisseurs OAuth standard
  */
-
 class OAuthService {
   constructor() {
     this.isDesktopApp = this.detectTauriApp();
@@ -95,8 +111,13 @@ class OAuthService {
 
       // Si c'est une application Tauri, ouvrir dans le navigateur par défaut
       if (this.isDesktopApp) {
-        await invoke("open_auth_window", { url: fullAuthUrl });
-        console.log("✅ OAuth popup ouvert dans le navigateur (Tauri)");
+        const invoke = await getTauriInvoke();
+        if (invoke) {
+          await invoke("open_auth_window", { url: fullAuthUrl });
+          console.log("✅ OAuth popup ouvert dans le navigateur (Tauri)");
+        } else {
+          window.open(fullAuthUrl, "oauth_popup", "width=500,height=600");
+        }
       } else {
         // Sinon, ouvrir un popup standard
         window.open(fullAuthUrl, "oauth_popup", "width=500,height=600");

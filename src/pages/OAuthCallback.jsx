@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Loader2, AlertTriangle } from "lucide-react";
-import { invoke } from "@tauri-apps/api/core";
 import AuthLayout from "@/components/AuthLayout";
 import { useAuth } from "@/lib/AuthContext";
 import { safeReturnTo } from "@/lib/authReturnTo";
@@ -44,8 +43,9 @@ export default function OAuthCallback() {
 
       try {
         const { code, state } = await oauthService.handleOAuthCallback(window.location.href);
-        if (oauthService.isDesktopApp && code) {
-          await invoke("handle_oauth_callback", { code, state });
+        // Invoke direct via l'API interne Tauri v2 — évite la dépendance npm @tauri-apps/api
+        if (oauthService.isDesktopApp && code && typeof window.__TAURI_INTERNALS__?.invoke === "function") {
+          await window.__TAURI_INTERNALS__.invoke("handle_oauth_callback", { code, state });
         }
       } catch (callbackError) {
         if (!cancelled) {
