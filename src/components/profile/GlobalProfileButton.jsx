@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import { User } from "lucide-react";
@@ -7,17 +7,11 @@ import ProfileContent from "@/components/profile/ProfileContent";
 
 const EXCLUDED_PREFIXES = [
   "/twitch", "/community", "/mon-profil", "/login", "/register",
-  "/forgot-password", "/reset-password", "/stream", "/trending",
-  "/subscriptions", "/category", "/search", "/watch", "/channel",
-  "/premium", "/upload", "/profile", "/studio", "/dashboard",
-  "/outils", "/casino", "/trix-store", "/boutique-matrix",
-  "/sondages", "/prospecteurs", "/progression", "/wallet",
-  "/video-studio", "/ai", "/shorts", "/market", "/boutique-nexus",
+  "/forgot-password", "/reset-password", "/oauth",
 ];
 
 export default function GlobalProfileButton() {
   const location = useLocation();
-  const nav = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
