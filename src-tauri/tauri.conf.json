@@ -38,6 +38,7 @@
     "updater": {
       "active": true,
       "endpoints": [
+        "https://matrix-hub.app/latest.json",
         "https://github.com/sheitan1998/Matrix.app/releases/latest/download/latest.json"
       ],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDcwMTY5REJDMUA2MjRCRjIKUldUeVMySWF2SjBXY0NzWHUwblpuWnFLVDRTQ0FyQzQzd1d3RFRMcFUzblZUY2RWeVpTNHBhRXcK",
