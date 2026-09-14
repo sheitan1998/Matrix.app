@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
-import { getCosmeticIconImageUrl, normalizeCosmeticAssetUrl } from "@/lib/cosmeticAssetUrl";
+import { getCosmeticIconImageUrl, isImageAssetUrl, isVideoAssetUrl, normalizeCosmeticAssetUrl } from "@/lib/cosmeticAssetUrl";
 
 /**
  * CosmeticProfilePreview
@@ -15,8 +15,12 @@ export default function CosmeticProfilePreview({ item, user }) {
   const rafRef = useRef(null);
   const [videoReady, setVideoReady] = useState(false);
 
-  const videoUrl = normalizeCosmeticAssetUrl(item?.video_url);
-  const previewImage = normalizeCosmeticAssetUrl(item?.preview_image);
+  const normalizedVideoAsset = normalizeCosmeticAssetUrl(item?.video_url);
+  const normalizedPreviewAsset = normalizeCosmeticAssetUrl(item?.preview_image);
+  const videoUrl = isVideoAssetUrl(item?.video_url) ? normalizedVideoAsset : "";
+  const previewImage = isImageAssetUrl(item?.preview_image)
+    ? normalizedPreviewAsset
+    : (isImageAssetUrl(item?.video_url) ? normalizedVideoAsset : "");
   const iconImage = getCosmeticIconImageUrl(item?.icon);
   const isAnimation = item?.category === "avatar_animation" && videoUrl;
   const isCover = item?.category === "profile_cover";

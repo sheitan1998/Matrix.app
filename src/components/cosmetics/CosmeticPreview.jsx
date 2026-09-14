@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { getCosmeticIconImageUrl, normalizeCosmeticAssetUrl } from "@/lib/cosmeticAssetUrl";
+import { getCosmeticIconImageUrl, isImageAssetUrl, isVideoAssetUrl, normalizeCosmeticAssetUrl } from "@/lib/cosmeticAssetUrl";
 
 /**
  * CosmeticPreview
@@ -16,8 +16,12 @@ export default function CosmeticPreview({ item, size = "text-4xl", forcePlay = f
     iconImage: false,
   });
   const playing = forcePlay || hovering;
-  const primaryVideo = normalizeCosmeticAssetUrl(item?.video_url);
-  const previewImage = normalizeCosmeticAssetUrl(item?.preview_image);
+  const normalizedVideoAsset = normalizeCosmeticAssetUrl(item?.video_url);
+  const normalizedPreviewAsset = normalizeCosmeticAssetUrl(item?.preview_image);
+  const primaryVideo = isVideoAssetUrl(item?.video_url) ? normalizedVideoAsset : "";
+  const previewImage = isImageAssetUrl(item?.preview_image)
+    ? normalizedPreviewAsset
+    : (isImageAssetUrl(item?.video_url) ? normalizedVideoAsset : "");
   const iconImage = getCosmeticIconImageUrl(item?.icon);
 
   useEffect(() => {

@@ -1,6 +1,8 @@
 const SAFE_SCHEME_RE = /^(https?:|data:|blob:)/i;
 const ANY_SCHEME_RE = /^[a-z][a-z\d+.-]*:/i;
 const FILE_SUFFIX_RE = /\.(png|jpe?g|gif|webp|svg|avif|bmp|mp4|webm|mov|m4v|ogg)([?#].*)?$/i;
+const VIDEO_SUFFIX_RE = /\.(mp4|webm|mov|m4v|ogg)([?#].*)?$/i;
+const IMAGE_SUFFIX_RE = /\.(png|jpe?g|gif|webp|svg|avif|bmp)([?#].*)?$/i;
 
 function toAssetPath(raw) {
   const noRelativePrefix = raw.replace(/^\.?\//, "");
@@ -26,4 +28,14 @@ export function normalizeCosmeticIcon(value) {
 
 export function getCosmeticIconImageUrl(value) {
   return normalizeCosmeticAssetUrl(value);
+}
+
+export function isVideoAssetUrl(value) {
+  const normalized = normalizeCosmeticAssetUrl(value);
+  return Boolean(normalized && (normalized.startsWith("data:video/") || VIDEO_SUFFIX_RE.test(normalized)));
+}
+
+export function isImageAssetUrl(value) {
+  const normalized = normalizeCosmeticAssetUrl(value);
+  return Boolean(normalized && (normalized.startsWith("data:image/") || IMAGE_SUFFIX_RE.test(normalized)));
 }
