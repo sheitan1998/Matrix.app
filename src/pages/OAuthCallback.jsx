@@ -20,6 +20,7 @@ export default function OAuthCallback() {
     const finalizeCallback = async () => {
       const params = new URLSearchParams(window.location.search);
       const providerError = params.get("error");
+      const hasStoredBase44Token = Boolean(localStorage.getItem("base44_access_token"));
 
       if (providerError) {
         const description = params.get("error_description");
@@ -30,6 +31,9 @@ export default function OAuthCallback() {
       }
 
       if (!oauthService.isOAuthCallback()) {
+        if (!hasStoredBase44Token && !cancelled) {
+          setError("Le retour OAuth est incomplet ou invalide.");
+        }
         return;
       }
 
@@ -38,11 +42,12 @@ export default function OAuthCallback() {
         if (oauthService.isDesktopApp) {
           await invoke("handle_oauth_callback", { code, state });
         }
-        oauthService.clearOAuthSession();
       } catch (callbackError) {
         if (!cancelled) {
           setError(callbackError.message || "Impossible de finaliser la connexion OAuth.");
         }
+      } finally {
+        oauthService.clearOAuthSession();
       }
     };
 
