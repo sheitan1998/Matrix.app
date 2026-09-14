@@ -42,23 +42,22 @@ async fn handle_oauth_callback(code: String, state: String) -> Result<bool, Stri
 async fn check_for_updates(
     app: tauri::AppHandle,
 ) -> Result<serde_json::Value, String> {
-    match app.updater()?.check().await {
-        Ok(update) => {
-            if update.is_update_available() {
-                Ok(serde_json::json!({
-                    "available": true,
-                    "current_version": update.current_version(),
-                    "latest_version": update.latest_version(),
-                    "body": update.body(),
-                    "date": update.date(),
-                }))
-            } else {
-                Ok(serde_json::json!({
-                    "available": false,
-                    "current_version": update.current_version(),
-                }))
-            }
-        }
+    let updater = app
+        .updater()
+        .map_err(|e| format!("Erreur lors de l'initialisation de l'updater: {}", e))?;
+
+    match updater.check().await {
+        Ok(Some(update)) => Ok(serde_json::json!({
+            "available": true,
+            "current_version": update.current_version(),
+            "latest_version": update.latest_version(),
+            "body": update.body(),
+            "date": update.date(),
+        })),
+        Ok(None) => Ok(serde_json::json!({
+            "available": false,
+            "current_version": app.package_info().version.to_string(),
+        })),
         Err(e) => Err(format!("Erreur lors de la vérification des mises à jour: {}", e)),
     }
 }
@@ -68,28 +67,32 @@ async fn check_for_updates(
 async fn install_update(
     app: tauri::AppHandle,
 ) -> Result<serde_json::Value, String> {
-    match app.updater()?.check().await {
-        Ok(update) => {
-            if update.is_update_available() {
-                println!("Téléchargement de la mise à jour vers la version: {}", update.latest_version());
-                
-                match update.download_and_install().await {
-                    Ok(_) => {
-                        println!("Mise à jour téléchargée et installée avec succès");
-                        Ok(serde_json::json!({
-                            "success": true,
-                            "message": "Mise à jour installée. Redémarrage en cours...",
-                        }))
-                    }
-                    Err(e) => Err(format!("Erreur lors de l'installation: {}", e)),
+    let updater = app
+        .updater()
+        .map_err(|e| format!("Erreur lors de l'initialisation de l'updater: {}", e))?;
+
+    match updater.check().await {
+        Ok(Some(update)) => {
+            println!(
+                "Téléchargement de la mise à jour vers la version: {}",
+                update.latest_version()
+            );
+
+            match update.download_and_install().await {
+                Ok(_) => {
+                    println!("Mise à jour téléchargée et installée avec succès");
+                    Ok(serde_json::json!({
+                        "success": true,
+                        "message": "Mise à jour installée. Redémarrage en cours...",
+                    }))
                 }
-            } else {
-                Ok(serde_json::json!({
-                    "success": false,
-                    "message": "Aucune mise à jour disponible",
-                }))
+                Err(e) => Err(format!("Erreur lors de l'installation: {}", e)),
             }
         }
+        Ok(None) => Ok(serde_json::json!({
+            "success": false,
+            "message": "Aucune mise à jour disponible",
+        })),
         Err(e) => Err(format!("Erreur lors de la vérification: {}", e)),
     }
 }
