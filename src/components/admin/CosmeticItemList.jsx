@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { appParams, resolveAssetUrl } from "@/lib/app-params";
 import { Trash2, Loader2, Eye, EyeOff, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import CosmeticEditModal from "@/components/admin/CosmeticEditModal";
+import CosmeticPreview from "@/components/cosmetics/CosmeticPreview";
 
 const RARITY_COLORS = {
   common: "#9ca3af", rare: "#3b82f6", epic: "#a855f7", legendary: "#f59e0b",
@@ -72,14 +72,8 @@ export default function CosmeticItemList({ refreshKey }) {
         return (
           <div key={item.id} className="flex items-center gap-3 rounded-lg border border-white/5 px-3 py-2.5" style={{ background: "#1a1a1a" }}>
             {/* Preview */}
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden shrink-0" style={{ background: `${rarityColor}15` }}>
-              {item.video_url ? (
-                <video src={resolveAssetUrl(item.video_url, appParams.appBaseUrl)} autoPlay loop muted playsInline className="w-full h-full object-cover" />
-              ) : item.preview_image ? (
-                <img src={resolveAssetUrl(item.preview_image, appParams.appBaseUrl)} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-lg">{item.icon || "✨"}</span>
-              )}
+            <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0" style={{ background: `${rarityColor}15` }}>
+              <CosmeticPreview item={item} size="text-lg" aspect={item.category === "profile_cover" ? "video" : "square"} />
             </div>
 
             <div className="flex-1 min-w-0">

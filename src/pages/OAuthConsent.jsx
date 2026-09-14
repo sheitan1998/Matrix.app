@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { appParams, resolveBase44ServerUrl } from "@/lib/app-params";
+import { toAbsoluteApiUrl } from "@/lib/urlUtils";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
@@ -13,14 +14,21 @@ import AuthLayout from "@/components/AuthLayout";
 // and copy are safe to edit.
 export default function OAuthConsent() {
   const ctx = new URLSearchParams(window.location.search).get("ctx");
-  const apiBase = resolveBase44ServerUrl(appParams.appBaseUrl);
-  const buildApiUrl = (path) => (apiBase ? `${apiBase}${path}` : path);
+  const apiBaseUrl = resolveBase44ServerUrl(appParams.appBaseUrl);
   const [info, setInfo] = useState(null);
   const [checking, setChecking] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [decided, setDecided] = useState("");
   const [error, setError] = useState("");
   const [reconnect, setReconnect] = useState("");
+  const consentInfoUrl = toAbsoluteApiUrl(
+    apiBaseUrl,
+    `/api/apps/${appParams.appId}/mcp/consent-info?handle=${encodeURIComponent(ctx || "")}`
+  );
+  const authorizeGrantUrl = toAbsoluteApiUrl(
+    apiBaseUrl,
+    `/api/apps/${appParams.appId}/mcp/authorize-grant`
+  );
 
   useEffect(() => {
     (async () => {
@@ -39,7 +47,7 @@ export default function OAuthConsent() {
         const infoHeaders = {};
         if (appParams.token) infoHeaders.Authorization = "Bearer " + appParams.token;
         const res = await fetch(
-          buildApiUrl(`/api/apps/${appParams.appId}/mcp/consent-info?handle=${encodeURIComponent(ctx)}`),
+          consentInfoUrl,
           { credentials: "include", headers: infoHeaders },
         );
         if (!res.ok) {
@@ -79,7 +87,7 @@ export default function OAuthConsent() {
         if (!redirecting) setChecking(false);
       }
     })();
-  }, [ctx]);
+  }, [consentInfoUrl, ctx]);
 
   const respond = async (action) => {
     setSubmitting(true);
@@ -89,7 +97,7 @@ export default function OAuthConsent() {
       // Cookie-backed sessions carry no token; sending "Bearer null" would
       // shadow the valid cookie, so add the header only when a token exists.
       if (appParams.token) headers.Authorization = "Bearer " + appParams.token;
-      const res = await fetch(buildApiUrl(`/api/apps/${appParams.appId}/mcp/authorize-grant`), {
+      const res = await fetch(authorizeGrantUrl, {
         method: "POST",
         credentials: "include",
         headers,

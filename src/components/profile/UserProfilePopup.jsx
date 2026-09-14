@@ -5,6 +5,7 @@ import { X, MessageCircle, UserPlus, UserMinus, Ban, Shield, Crown, Send } from 
 import { toast } from "sonner";
 import { ACHIEVEMENTS } from "@/lib/achievementsData";
 import ProfileAnimationLayer from "@/components/profile/ProfileAnimationLayer";
+import { getCosmeticIconImageUrl } from "@/lib/cosmeticAssetUrl";
 
 const RARITY_COLORS = {
   common: "#9ca3af", rare: "#3b82f6", epic: "#a855f7", legendary: "#f59e0b",
@@ -242,16 +243,32 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
           {/* Roles / equipped cosmetics */}
           {cosmetics.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5">
-              {equippedBadges.slice(0, 3).map(b => (
-                <span key={b.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: "rgba(255,255,255,0.04)", color: "#b9bbbe" }}>
-                  <span>{b.icon || "✨"}</span> {b.item_name}
-                </span>
-              ))}
-              {cosmetics.filter(c => c.is_equipped && c.category !== "badge" && c.category !== "avatar_animation").map(c => (
-                <span key={c.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: "rgba(168,85,247,0.1)", color: "#c084fc" }}>
-                  {c.icon || "✨"} {c.item_name}
-                </span>
-              ))}
+              {equippedBadges.slice(0, 3).map((b) => {
+                const iconImageUrl = getCosmeticIconImageUrl(b.icon);
+                return (
+                  <span key={b.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: "rgba(255,255,255,0.04)", color: "#b9bbbe" }}>
+                    {iconImageUrl ? (
+                      <img src={iconImageUrl} alt="" className="w-3 h-3 rounded object-cover" />
+                    ) : (
+                      <span>{b.icon || "✨"}</span>
+                    )}
+                    {b.item_name}
+                  </span>
+                );
+              })}
+              {cosmetics.filter(c => c.is_equipped && c.category !== "badge" && c.category !== "avatar_animation").map((c) => {
+                const iconImageUrl = getCosmeticIconImageUrl(c.icon);
+                return (
+                  <span key={c.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: "rgba(168,85,247,0.1)", color: "#c084fc" }}>
+                    {iconImageUrl ? (
+                      <img src={iconImageUrl} alt="" className="w-3 h-3 rounded object-cover" />
+                    ) : (
+                      <span>{c.icon || "✨"}</span>
+                    )}
+                    {c.item_name}
+                  </span>
+                );
+              })}
               {isAdmin && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: "rgba(168,85,247,0.15)", color: "#c084fc" }}>
                   <Crown className="w-2.5 h-2.5" /> Fondateur

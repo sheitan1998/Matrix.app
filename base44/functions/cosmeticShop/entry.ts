@@ -1,6 +1,20 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from 'base44:runtime';
 
+function normalizeAssetUrl(value: unknown, { allowText = false }: { allowText?: boolean } = {}): string {
+  const raw = typeof value === 'string' ? value.trim() : '';
+  if (!raw) return '';
+  if (/^(https?:|data:|blob:)/i.test(raw)) return raw;
+  if (raw.startsWith('//')) return `https:${raw}`;
+  if (raw.startsWith('/')) return raw;
+  if (/^[a-z][a-z\d+.-]*:/i.test(raw)) return allowText ? raw : '';
+  if (raw.includes('/') || /\.(png|jpe?g|gif|webp|svg|avif|bmp|mp4|webm|mov|m4v|ogg)([?#].*)?$/i.test(raw)) {
+    const noRelativePrefix = raw.replace(/^\.?\//, '');
+    return `/${noRelativePrefix.replace(/^\/+/, '')}`;
+  }
+  return allowText ? raw : '';
+}
+
 // ---- Stripe webhook signature verification (Web Crypto API) ----
 async function verifyStripeSignature(payload: string, signatureHeader: string, secret: string): Promise<boolean> {
   const parts = signatureHeader.split(',');
@@ -123,6 +137,9 @@ export default async function(req: Request): Promise<Response> {
       if (!name || !category || !price_euros || price_euros < 0.5) {
         return Response.json({ error: 'Nom, catégorie et prix (min 0.50€) requis' }, { status: 400 });
       }
+      const normalizedIcon = normalizeAssetUrl(icon, { allowText: true });
+      const normalizedPreviewImage = normalizeAssetUrl(preview_image);
+      const normalizedVideoUrl = normalizeAssetUrl(video_url);
 
       const euroCents = Math.round(price_euros * 100);
 
@@ -167,9 +184,9 @@ export default async function(req: Request): Promise<Response> {
         rarity: rarity || 'common',
         price_trix: euroCents, // 1 Trix = 1 cent → price_trix = euroCents (backward compat)
         price_euros,
-        icon: icon || '',
-        preview_image: preview_image || '',
-        video_url: video_url || '',
+        icon: normalizedIcon,
+        preview_image: normalizedPreviewImage,
+        video_url: normalizedVideoUrl,
         stripe_product_id: product.id,
         stripe_price_id: price.id,
         is_active: true,
@@ -199,9 +216,9 @@ export default async function(req: Request): Promise<Response> {
       if (description !== undefined) updates.description = description;
       if (category !== undefined) updates.category = category;
       if (rarity !== undefined) updates.rarity = rarity;
-      if (icon !== undefined) updates.icon = icon;
-      if (preview_image !== undefined) updates.preview_image = preview_image;
-      if (video_url !== undefined) updates.video_url = video_url;
+      if (icon !== undefined) updates.icon = normalizeAssetUrl(icon, { allowText: true });
+      if (preview_image !== undefined) updates.preview_image = normalizeAssetUrl(preview_image);
+      if (video_url !== undefined) updates.video_url = normalizeAssetUrl(video_url);
       if (is_active !== undefined) updates.is_active = is_active;
       if (anim_config !== undefined) updates.anim_config = anim_config;
 
@@ -254,11 +271,16 @@ export default async function(req: Request): Promise<Response> {
       await base44.asServiceRole.entities.MatrixShopItem.update(itemId, updates);
 
       // Propagate anim_config changes to all owned copies (UserCosmetic)
-      if (anim_config !== undefined) {
+      if (anim_config !== undefined || icon !== undefined || preview_image !== undefined || video_url !== undefined) {
         const ownedCopies = await base44.asServiceRole.entities.UserCosmetic.filter({ item_id: itemId });
         if (ownedCopies.length > 0) {
+          const userCosmeticUpdates: any = {};
+          if (anim_config !== undefined) userCosmeticUpdates.anim_config = anim_config;
+          if (icon !== undefined) userCosmeticUpdates.icon = updates.icon;
+          if (preview_image !== undefined) userCosmeticUpdates.preview_image = updates.preview_image;
+          if (video_url !== undefined) userCosmeticUpdates.video_url = updates.video_url;
           await base44.asServiceRole.entities.UserCosmetic.bulkUpdate(
-            ownedCopies.map(c => ({ id: c.id, anim_config }))
+            ownedCopies.map(c => ({ id: c.id, ...userCosmeticUpdates }))
           );
         }
       }

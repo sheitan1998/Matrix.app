@@ -31,7 +31,13 @@ const PROVIDERS = [
   { id: "apple", label: "Apple", Icon: AppleIcon },
 ];
 
+function getOAuthReturnPath() {
+  return "/oauth/callback";
+}
+
 export default function SocialAuthButtons() {
+  const oauthReturnPath = getOAuthReturnPath();
+
   return (
     <>
       <div className="space-y-3 mb-6">
@@ -40,7 +46,7 @@ export default function SocialAuthButtons() {
             key={id}
             variant="outline"
             className="w-full h-12 text-sm font-medium"
-            onClick={() => base44.auth.loginWithProvider(id, "/")}
+            onClick={() => base44.auth.loginWithProvider(id, oauthReturnPath)}
           >
             <Icon className="w-5 h-5 mr-2" />
             Continue with {label}

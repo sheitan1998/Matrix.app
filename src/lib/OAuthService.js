@@ -16,7 +16,7 @@ class OAuthService {
    */
   detectTauriApp() {
     try {
-      return typeof window.__TAURI__ !== "undefined";
+      return Boolean(window.__TAURI__ || window.__TAURI_INTERNALS__);
     } catch {
       return false;
     }

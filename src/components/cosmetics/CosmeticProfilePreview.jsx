@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
+import { getCosmeticIconImageUrl, isImageAssetUrl, isVideoAssetUrl, normalizeCosmeticAssetUrl } from "@/lib/cosmeticAssetUrl";
 
 /**
  * CosmeticProfilePreview
@@ -14,7 +15,14 @@ export default function CosmeticProfilePreview({ item, user }) {
   const rafRef = useRef(null);
   const [videoReady, setVideoReady] = useState(false);
 
-  const isAnimation = item?.category === "avatar_animation" && item?.video_url;
+  const normalizedVideoAsset = normalizeCosmeticAssetUrl(item?.video_url);
+  const normalizedPreviewAsset = normalizeCosmeticAssetUrl(item?.preview_image);
+  const videoUrl = isVideoAssetUrl(item?.video_url) ? normalizedVideoAsset : "";
+  const previewImage = isImageAssetUrl(item?.preview_image)
+    ? normalizedPreviewAsset
+    : (isImageAssetUrl(item?.video_url) ? normalizedVideoAsset : "");
+  const iconImage = getCosmeticIconImageUrl(item?.icon);
+  const isAnimation = item?.category === "avatar_animation" && videoUrl;
   const isCover = item?.category === "profile_cover";
   const cfg = item?.anim_config || {};
   const scale = cfg.scale || 1.3;
@@ -63,10 +71,10 @@ export default function CosmeticProfilePreview({ item, user }) {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       video.removeEventListener("loadeddata", onLoaded);
     };
-  }, [item?.video_url, isAnimation]);
+  }, [videoUrl, isAnimation]);
 
   const avatar = user?.avatar_url;
-  const banner = isCover ? (item?.video_url || item?.preview_image) : user?.banner_url;
+  const banner = isCover ? (videoUrl || previewImage) : user?.banner_url;
   const pseudo = user?.pseudo || user?.full_name?.split(" ")[0] || "Vous";
   const pseudoTag = user?.pseudo_tag || "????";
 
@@ -74,10 +82,10 @@ export default function CosmeticProfilePreview({ item, user }) {
     <div className="rounded-2xl overflow-hidden" style={{ background: "#13101a", border: "1px solid rgba(168,85,247,0.2)" }}>
       {/* Banner */}
       <div className="h-16 relative overflow-hidden" style={{ background: banner ? "transparent" : "linear-gradient(135deg, rgba(168,85,247,0.3), rgba(109,40,217,0.2))" }}>
-        {isCover && item?.video_url ? (
-          <video src={item.video_url} autoPlay loop muted playsInline className="w-full h-full" style={{ objectFit: "cover" }} />
-        ) : isCover && item?.preview_image ? (
-          <img src={item.preview_image} alt="" className="w-full h-full object-cover" />
+        {isCover && videoUrl ? (
+          <video src={videoUrl} autoPlay loop muted playsInline className="w-full h-full" style={{ objectFit: "cover" }} />
+        ) : isCover && previewImage ? (
+          <img src={previewImage} alt="" className="w-full h-full object-cover" />
         ) : banner ? (
           <img src={banner} alt="" className="w-full h-full object-cover" />
         ) : null}
@@ -113,7 +121,7 @@ export default function CosmeticProfilePreview({ item, user }) {
             >
               <video
                 ref={videoRef}
-                src={item.video_url}
+                src={videoUrl}
                 autoPlay
                 loop
                 muted
@@ -128,7 +136,7 @@ export default function CosmeticProfilePreview({ item, user }) {
           {/* Badge preview */}
           {item?.category === "badge" && (
             <div className="absolute -top-1 -left-1 z-20 text-lg" title={item.name}>
-              {item.icon || "🏅"}
+              {iconImage ? <img src={iconImage} alt="" className="w-6 h-6 rounded-full object-cover" /> : (item.icon || "🏅")}
             </div>
           )}
         </div>
@@ -143,7 +151,7 @@ export default function CosmeticProfilePreview({ item, user }) {
 
         {/* Cosmetic name */}
         <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full" style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.2)" }}>
-          <span className="text-xs">{item?.icon || "✨"}</span>
+          <span className="text-xs">{iconImage ? <img src={iconImage} alt="" className="w-4 h-4 rounded-full object-cover" /> : (item?.icon || "✨")}</span>
           <span className="text-[10px] font-bold text-white/70">{item?.name}</span>
         </div>
       </div>

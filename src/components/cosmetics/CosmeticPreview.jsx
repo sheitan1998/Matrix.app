@@ -1,5 +1,6 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { appParams, resolveAssetUrl } from "@/lib/app-params";
+import { getCosmeticIconImageUrl, isImageAssetUrl, isVideoAssetUrl, normalizeCosmeticAssetUrl } from "@/lib/cosmeticAssetUrl";
 
 /**
  * CosmeticPreview
@@ -9,9 +10,36 @@ import { appParams, resolveAssetUrl } from "@/lib/app-params";
 export default function CosmeticPreview({ item, size = "text-4xl", forcePlay = false, aspect = "square" }) {
   const videoRef = useRef(null);
   const [hovering, setHovering] = useState(false);
+  const [mediaError, setMediaError] = useState({
+    primaryVideo: false,
+    fallbackVideo: false,
+    image: false,
+    iconImage: false,
+  });
   const playing = forcePlay || hovering;
-  const videoUrl = resolveAssetUrl(item?.video_url, appParams.appBaseUrl);
-  const previewImage = resolveAssetUrl(item?.preview_image, appParams.appBaseUrl);
+  const normalizedVideoAsset = resolveAssetUrl(
+    normalizeCosmeticAssetUrl(item?.video_url),
+    appParams.appBaseUrl
+  );
+  const normalizedPreviewAsset = resolveAssetUrl(
+    normalizeCosmeticAssetUrl(item?.preview_image),
+    appParams.appBaseUrl
+  );
+  const primaryVideo = isVideoAssetUrl(item?.video_url) ? normalizedVideoAsset : "";
+  const previewImage = isImageAssetUrl(item?.preview_image)
+    ? normalizedPreviewAsset
+    : (isImageAssetUrl(item?.video_url) ? normalizedVideoAsset : "");
+  const iconImage = resolveAssetUrl(getCosmeticIconImageUrl(item?.icon), appParams.appBaseUrl);
+
+  useEffect(() => {
+    setHovering(false);
+    setMediaError({
+      primaryVideo: false,
+      fallbackVideo: false,
+      image: false,
+      iconImage: false,
+    });
+  }, [item?.id, item?.video_url, item?.preview_image, item?.icon, item?.category]);
 
   const handleEnter = () => {
     setHovering(true);
@@ -27,11 +55,11 @@ export default function CosmeticPreview({ item, size = "text-4xl", forcePlay = f
   const aspectClass = aspect === "video" ? "aspect-video" : "aspect-square";
 
   const renderMedia = () => {
-    if (item.category === "avatar_animation" && videoUrl) {
+    if (item.category === "avatar_animation" && primaryVideo && !mediaError.primaryVideo) {
       return (
         <div className={`w-full ${aspectClass} rounded-xl overflow-hidden relative flex items-center justify-center`} style={{ background: "rgba(0,0,0,0.3)" }}
           onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
-          <video ref={videoRef} src={videoUrl} loop muted playsInline
+          <video ref={videoRef} src={primaryVideo} loop muted playsInline onError={() => setMediaError(prev => ({ ...prev, primaryVideo: true }))}
             className="w-full h-full object-cover" style={{ mixBlendMode: "screen" }}
             preload="metadata" />
           {!playing && (
@@ -42,19 +70,26 @@ export default function CosmeticPreview({ item, size = "text-4xl", forcePlay = f
         </div>
       );
     }
-    if (item.category === "profile_cover" && videoUrl) {
+    if (item.category === "profile_cover" && primaryVideo && !mediaError.fallbackVideo) {
       return (
         <div className={`w-full ${aspectClass} rounded-xl overflow-hidden relative flex items-center justify-center`} style={{ background: "rgba(0,0,0,0.3)" }}
           onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
-          <video ref={videoRef} src={videoUrl} loop muted playsInline
+          <video ref={videoRef} src={primaryVideo} loop muted playsInline onError={() => setMediaError(prev => ({ ...prev, fallbackVideo: true }))}
             className="w-full h-full object-cover" preload="metadata" />
         </div>
       );
     }
-    if (item.category === "profile_cover" && previewImage) {
+    if ((item.category === "profile_cover" || item.category === "avatar_animation") && previewImage && !mediaError.image) {
       return (
         <div className={`w-full ${aspectClass} rounded-xl overflow-hidden`} style={{ background: "rgba(0,0,0,0.3)" }}>
-          <img src={previewImage} alt="" className="w-full h-full object-cover" />
+          <img src={previewImage} alt="" onError={() => setMediaError(prev => ({ ...prev, image: true }))} className="w-full h-full object-cover" />
+        </div>
+      );
+    }
+    if (iconImage && !mediaError.iconImage) {
+      return (
+        <div className={`w-full ${aspectClass} rounded-xl overflow-hidden`} style={{ background: "rgba(168,85,247,0.06)" }}>
+          <img src={iconImage} alt="" onError={() => setMediaError(prev => ({ ...prev, iconImage: true }))} className="w-full h-full object-cover" />
         </div>
       );
     }

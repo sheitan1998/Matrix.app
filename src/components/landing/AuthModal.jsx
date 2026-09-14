@@ -30,7 +30,7 @@ export default function AuthModal({ open, onClose }) {
   };
 
   const handleGoogle = () => {
-    base44.auth.loginWithProvider("google", "/");
+    base44.auth.loginWithProvider("google", "/oauth/callback");
   };
 
   return createPortal(
@@ -97,7 +97,7 @@ export default function AuthModal({ open, onClose }) {
 
               <div className="grid grid-cols-2 gap-2">
                 <button
-                  onClick={() => base44.auth.loginWithProvider("facebook", "/")}
+                  onClick={() => base44.auth.loginWithProvider("facebook", "/oauth/callback")}
                   disabled={loading}
                   className="w-full h-10 rounded-lg flex items-center justify-center gap-2 text-xs font-bold text-white transition disabled:opacity-50 tap-sm"
                   style={{ background: "rgba(24,119,242,0.15)", border: "1px solid rgba(24,119,242,0.3)" }}
@@ -106,7 +106,7 @@ export default function AuthModal({ open, onClose }) {
                   Facebook
                 </button>
                 <button
-                  onClick={() => base44.auth.loginWithProvider("microsoft", "/")}
+                  onClick={() => base44.auth.loginWithProvider("microsoft", "/oauth/callback")}
                   disabled={loading}
                   className="w-full h-10 rounded-lg flex items-center justify-center gap-2 text-xs font-bold text-white transition disabled:opacity-50 tap-sm"
                   style={{ background: "rgba(0,120,212,0.15)", border: "1px solid rgba(0,120,212,0.3)" }}

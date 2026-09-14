@@ -8,7 +8,7 @@ const PLATFORM_LABELS = {
   windows: "Windows",
   macos: "macOS",
   linux: "Linux",
-  unknown: "votre plateforme",
+  unknown: "plateforme non détectée",
 };
 
 function detectPlatform() {
@@ -198,8 +198,8 @@ export default function DesktopDownloadButton({ className = "" }) {
 
   const platformLabel = PLATFORM_LABELS[releaseInfo?.platform || "unknown"];
   const buttonLabel = releaseInfo?.hasDirectAsset
-    ? `Télécharger pour ${platformLabel}`
-    : "Voir les releases GitHub";
+    ? `⬇️ Télécharger l'application pour ${platformLabel}`
+    : "⬇️ Télécharger l'application";
 
   return (
     <div className="space-y-2">
