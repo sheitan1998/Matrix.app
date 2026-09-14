@@ -34,18 +34,27 @@ function detectPlatform() {
   return "unknown";
 }
 
-function getAssetMatchers(platform) {
-  switch (platform) {
-    case "windows":
-      return [/\.exe$/i, /\.msi$/i];
-    case "macos":
-      return [/\.dmg$/i, /\.pkg$/i, /\.app\.tar\.gz$/i];
-    case "linux":
-      return [/\.appimage$/i, /\.deb$/i, /\.rpm$/i, /\.tar\.gz$/i];
-    default:
-      return [];
-  }
-}
+const PLATFORM_ASSET_RULES = {
+  windows: [
+    { extension: /\.msi$/i },
+    { extension: /\.exe$/i, marker: /(setup|installer|nsis|windows|win)/i },
+    { extension: /\.exe$/i },
+    { extension: /\.zip$/i, marker: /(\.msi|\.exe|setup|installer|nsis|windows|win)/i },
+  ],
+  macos: [
+    { extension: /\.dmg$/i },
+    { extension: /\.pkg$/i },
+    { extension: /\.app\.tar\.gz$/i },
+    { extension: /\.zip$/i, marker: /(mac|macos|darwin|osx)/i },
+  ],
+  linux: [
+    { extension: /\.appimage$/i },
+    { extension: /\.deb$/i },
+    { extension: /\.rpm$/i },
+    { extension: /\.tar\.gz$/i, marker: /(linux|appimage|deb|rpm|ubuntu|amd64|x86_64)/i },
+    { extension: /\.zip$/i, marker: /(linux|appimage|deb|rpm|ubuntu|amd64|x86_64)/i },
+  ],
+};
 
 function isInstallerAsset(assetName) {
   const name = assetName.toLowerCase();
@@ -58,8 +67,11 @@ function findInstallerAsset(assets, platform) {
     (asset) => asset?.browser_download_url && isInstallerAsset(asset.name || "")
   );
 
-  for (const matcher of getAssetMatchers(platform)) {
-    const asset = installerAssets.find(({ name = "" }) => matcher.test(name));
+  for (const rule of PLATFORM_ASSET_RULES[platform] || []) {
+    const asset = installerAssets.find(({ name = "" }) => {
+      if (!rule.extension.test(name)) return false;
+      return rule.marker ? rule.marker.test(name) : true;
+    });
     if (asset) return asset;
   }
 
@@ -159,7 +171,12 @@ export default function DesktopDownloadButton({ className = "" }) {
           // Ignorer les erreurs de tracking
         }
 
-        window.open(releaseInfo.url, "_blank", "noopener,noreferrer");
+        const downloadLink = document.createElement("a");
+        downloadLink.href = releaseInfo.url;
+        downloadLink.rel = "noopener noreferrer";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        downloadLink.remove();
         toast.success("Téléchargement commencé !");
       } else {
         window.open(releaseInfo.releaseUrl, "_blank", "noopener,noreferrer");

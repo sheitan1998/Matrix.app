@@ -48,7 +48,7 @@ const universes = [
   { to: "/playlists", label: "Playlists", icon: Music2 },
   { to: "/outils", label: "Outils", icon: Wrench },
   { to: "/sondages", label: "Sondages", icon: BarChart3 },
-  { to: "/profile", label: "Mon profil", icon: User },
+  { to: "/mon-profil", label: "Mon profil", icon: User },
 ];
 
 function NavItem({ to, label, icon: Icon, active }) {

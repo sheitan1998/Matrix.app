@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { Toaster as SonnerToaster } from "sonner"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
@@ -170,7 +170,7 @@ const AuthenticatedApp = () => {
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/outils" element={<Outils />} />
           <Route path="/sondages" element={<Sondages />} />
-          <Route path="/profile" element={<MonProfil />} />
+          <Route path="/profile" element={<Navigate to="/mon-profil" replace />} />
           <Route path="/mon-profil" element={<MonProfil />} />
           <Route path="/boutique-matrix" element={<BoutiqueMatrix />} />
           <Route path="/boutique-nexus" element={<BoutiqueNexus />} />

@@ -58,7 +58,7 @@ export default function MatrixTopbar({ title, searchPlaceholder = "Rechercher da
             <div className="absolute right-0 top-12 w-52 rounded-2xl overflow-hidden z-50"
               style={{ background: "rgba(18,18,20,0.95)", backdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.08)" }}
               onMouseLeave={() => setMenuOpen(false)}>
-              <button onClick={() => { nav("/profile"); setMenuOpen(false); }}
+              <button onClick={() => { nav("/mon-profil"); setMenuOpen(false); }}
                 className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white/70 hover:text-white hover:bg-white/5 transition">
                 <User className="w-4 h-4" /> Mon profil
               </button>
