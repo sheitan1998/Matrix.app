@@ -10,7 +10,7 @@ const GAME_CARDS = [
 {
   id: "slots",
   title: "Slots",
-  img: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/cc993559c_generated_image.png",
+  img: "/media/tuto-gaming/cc993559c_generated_image.png",
   bg: "linear-gradient(160deg, #6b1d5a 0%, #c71585 50%, #8b0a6b 100%)",
   glow: "#ff1493",
   width: "320px",
@@ -20,7 +20,7 @@ const GAME_CARDS = [
 {
   id: "blackjack",
   title: "Incredibulls",
-  img: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/6c7ee7ecd_generated_image.png",
+  img: "/media/tuto-gaming/6c7ee7ecd_generated_image.png",
   bg: "linear-gradient(160deg, #8b1a0e 0%, #ff4500 50%, #b22222 100%)",
   glow: "#ff6347",
   width: "200px",
@@ -30,7 +30,7 @@ const GAME_CARDS = [
 {
   id: "baccarat",
   title: "Diamonds & Pearls",
-  img: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/8ebb214ad_generated_image.png",
+  img: "/media/tuto-gaming/8ebb214ad_generated_image.png",
   bg: "linear-gradient(160deg, #1a0a4a 0%, #4169e1 50%, #2a1a6b 100%)",
   glow: "#4169e1",
   width: "200px",
@@ -40,7 +40,7 @@ const GAME_CARDS = [
 {
   id: "roulette",
   title: "Festival Blast",
-  img: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/715954293_generated_image.png",
+  img: "/media/tuto-gaming/715954293_generated_image.png",
   bg: "linear-gradient(160deg, #4b0082 0%, #8a2be2 50%, #c71585 100%)",
   glow: "#9370db",
   width: "380px",
@@ -53,7 +53,7 @@ const GAME_CARDS = [
 {
   id: "poker",
   title: "Music Journey",
-  img: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/76f30181d_generated_image.png",
+  img: "/media/tuto-gaming/76f30181d_generated_image.png",
   bg: "linear-gradient(160deg, #2a0a4a 0%, #6b2c91 50%, #1a0a3a 100%)",
   glow: "#a855f7",
   width: "240px",
@@ -64,7 +64,7 @@ const GAME_CARDS = [
 {
   id: "bingo",
   title: "Other Games",
-  img: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/6447f5d98_generated_image.png",
+  img: "/media/tuto-gaming/6447f5d98_generated_image.png",
   bg: "linear-gradient(160deg, #c71585 0%, #ff1493 50%, #8b0a6b 100%)",
   glow: "#ff69b4",
   width: "320px",

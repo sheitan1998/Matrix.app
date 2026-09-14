@@ -55,7 +55,7 @@ export const FEATURED_GAMES = [
   {
     name: "Farming Simulator 25",
     slug: "farming-simulator-25",
-    image_url: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/5a7d6231a_Farming-Simulator-25.jpg",
+    image_url: "/media/tuto-gaming/5a7d6231a_Farming-Simulator-25.jpg",
     is_active: true,
   },
 ];
