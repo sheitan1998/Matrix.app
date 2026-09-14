@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Trash2, Loader2, Eye, EyeOff, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import CosmeticEditModal from "@/components/admin/CosmeticEditModal";
-import { getCosmeticIconImageUrl, isImageAssetUrl, isVideoAssetUrl, normalizeCosmeticAssetUrl } from "@/lib/cosmeticAssetUrl";
+import CosmeticPreview from "@/components/cosmetics/CosmeticPreview";
 
 const RARITY_COLORS = {
   common: "#9ca3af", rare: "#3b82f6", epic: "#a855f7", legendary: "#f59e0b",
@@ -69,26 +69,11 @@ export default function CosmeticItemList({ refreshKey }) {
     <div className="space-y-2">
       {items.map(item => {
         const rarityColor = RARITY_COLORS[item.rarity] || RARITY_COLORS.common;
-        const normalizedVideoAsset = normalizeCosmeticAssetUrl(item.video_url);
-        const normalizedPreviewAsset = normalizeCosmeticAssetUrl(item.preview_image);
-        const itemVideoUrl = isVideoAssetUrl(item.video_url) ? normalizedVideoAsset : "";
-        const itemPreviewImage = isImageAssetUrl(item.preview_image)
-          ? normalizedPreviewAsset
-          : (isImageAssetUrl(item.video_url) ? normalizedVideoAsset : "");
-        const itemIconImage = getCosmeticIconImageUrl(item.icon);
         return (
           <div key={item.id} className="flex items-center gap-3 rounded-lg border border-white/5 px-3 py-2.5" style={{ background: "#1a1a1a" }}>
             {/* Preview */}
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden shrink-0" style={{ background: `${rarityColor}15` }}>
-              {itemVideoUrl ? (
-                <video src={itemVideoUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />
-              ) : itemPreviewImage ? (
-                <img src={itemPreviewImage} alt="" className="w-full h-full object-cover" />
-              ) : itemIconImage ? (
-                <img src={itemIconImage} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-lg">{item.icon || "✨"}</span>
-              )}
+            <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0" style={{ background: `${rarityColor}15` }}>
+              <CosmeticPreview item={item} size="text-lg" aspect={item.category === "profile_cover" ? "video" : "square"} />
             </div>
 
             <div className="flex-1 min-w-0">
