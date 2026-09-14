@@ -2,72 +2,139 @@ import React, { useState, useEffect } from "react";
 import { Download, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
+const GITHUB_RELEASES_URL = "https://github.com/sheitan1998/Matrix.app/releases/latest";
+const GITHUB_LATEST_RELEASE_API = "https://api.github.com/repos/sheitan1998/Matrix.app/releases/latest";
+const PLATFORM_LABELS = {
+  windows: "Windows",
+  macos: "macOS",
+  linux: "Linux",
+  unknown: "votre plateforme",
+};
+
+function detectPlatform() {
+  if (typeof navigator === "undefined") return "unknown";
+
+  const platform =
+    navigator.userAgentData?.platform ||
+    navigator.platform ||
+    navigator.userAgent ||
+    "";
+  const normalized = platform.toLowerCase();
+
+  if (normalized.includes("win")) return "windows";
+  if (
+    normalized.includes("mac") ||
+    normalized.includes("darwin") ||
+    normalized.includes("iphone") ||
+    normalized.includes("ipad")
+  ) {
+    return "macos";
+  }
+  if (normalized.includes("linux") || normalized.includes("x11")) return "linux";
+  return "unknown";
+}
+
+function getAssetMatchers(platform) {
+  switch (platform) {
+    case "windows":
+      return [/\.exe$/i, /\.msi$/i];
+    case "macos":
+      return [/\.dmg$/i, /\.pkg$/i, /\.app\.tar\.gz$/i];
+    case "linux":
+      return [/\.appimage$/i, /\.deb$/i, /\.rpm$/i, /\.tar\.gz$/i];
+    default:
+      return [];
+  }
+}
+
+function isInstallerAsset(assetName) {
+  const name = assetName.toLowerCase();
+  if (name === "latest.json" || name.endsWith(".sig")) return false;
+  return /\.(exe|msi|dmg|pkg|appimage|deb|rpm|tar\.gz|zip)$/.test(name);
+}
+
+function findInstallerAsset(assets, platform) {
+  const installerAssets = (assets || []).filter(
+    (asset) => asset?.browser_download_url && isInstallerAsset(asset.name || "")
+  );
+
+  for (const matcher of getAssetMatchers(platform)) {
+    const asset = installerAssets.find(({ name = "" }) => matcher.test(name));
+    if (asset) return asset;
+  }
+
+  if (platform === "unknown") {
+    return installerAssets[0] || null;
+  }
+
+  return null;
+}
+
 /**
- * Service pour récupérer le dernier installateur Windows depuis GitHub Releases
+ * Service pour récupérer le meilleur installateur disponible depuis GitHub Releases
  */
 const GitHubReleaseService = {
   /**
-   * Récupère le dernier release et le lien du .exe
+   * Récupère la dernière release et le meilleur asset installateur pour la plateforme courante
    */
   async getLatestInstallerUrl() {
+    const platform = detectPlatform();
+
     try {
-      const response = await fetch(
-        "https://api.github.com/repos/sheitan1998/Matrix.app/releases/latest",
-        {
-          headers: {
-            Accept: "application/vnd.github.v3+json",
-          },
-        }
-      );
+      const response = await fetch(GITHUB_LATEST_RELEASE_API, {
+        headers: {
+          Accept: "application/vnd.github+json",
+        },
+      });
 
       if (!response.ok) {
         throw new Error(`GitHub API error: ${response.status}`);
       }
 
       const release = await response.json();
-
-      // Chercher le fichier .exe dans les assets
-      const exeAsset = release.assets?.find((asset) =>
-        asset.name.toLowerCase().endsWith(".exe")
-      );
-
-      if (!exeAsset) {
-        throw new Error("Aucun fichier .exe trouvé dans la dernière release");
-      }
+      const installerAsset = findInstallerAsset(release.assets, platform);
+      const releaseUrl = release.html_url || GITHUB_RELEASES_URL;
 
       return {
-        url: exeAsset.browser_download_url,
-        fileName: exeAsset.name,
-        version: release.tag_name,
-        releaseUrl: release.html_url,
+        url: installerAsset?.browser_download_url || releaseUrl,
+        fileName: installerAsset?.name || null,
+        version: release.tag_name || "latest",
+        releaseUrl,
+        platform,
+        hasDirectAsset: Boolean(installerAsset),
       };
     } catch (error) {
       console.error("Erreur lors de la récupération du release GitHub:", error);
-      throw error;
+      return {
+        url: GITHUB_RELEASES_URL,
+        fileName: null,
+        version: null,
+        releaseUrl: GITHUB_RELEASES_URL,
+        platform,
+        hasDirectAsset: false,
+        error,
+      };
     }
   },
 };
 
 /**
- * Bouton de téléchargement du dernier installateur Windows
+ * Bouton de téléchargement du dernier installateur publié
  */
 export default function DesktopDownloadButton({ className = "" }) {
   const [loading, setLoading] = useState(false);
-  const [installerUrl, setInstallerUrl] = useState(null);
   const [releaseInfo, setReleaseInfo] = useState(null);
 
   // Charger les informations du release au montage
   useEffect(() => {
     const fetchReleaseInfo = async () => {
-      try {
-        const info = await GitHubReleaseService.getLatestInstallerUrl();
-        setInstallerUrl(info.url);
-        setReleaseInfo(info);
-      } catch (error) {
-        console.error("Erreur:", error);
-        toast.error(
-          "Impossible de récupérer l'installateur. Veuillez visiter GitHub."
-        );
+      const info = await GitHubReleaseService.getLatestInstallerUrl();
+      setReleaseInfo(info);
+
+      if (info.error) {
+        toast.error("Impossible de charger l'installateur automatiquement. Ouverture des releases GitHub disponible.");
+      } else if (!info.hasDirectAsset) {
+        toast.info(`Aucun installateur ${PLATFORM_LABELS[info.platform]} n'a été trouvé dans la dernière release.`);
       }
     };
 
@@ -75,27 +142,29 @@ export default function DesktopDownloadButton({ className = "" }) {
   }, []);
 
   const handleDownload = async () => {
-    if (!installerUrl) {
+    if (!releaseInfo?.url) {
       toast.error("Lien de téléchargement indisponible");
       return;
     }
 
     setLoading(true);
     try {
-      // Enregistrer le téléchargement via fonction Base44 (optionnel)
-      try {
-        const { base44 } = await import("@/api/base44Client");
-        await base44.functions.invoke("desktopAppDownload", {
-          version: releaseInfo?.version || "unknown",
-        });
-      } catch {
-        // Ignorer les erreurs de tracking
+      if (releaseInfo.hasDirectAsset) {
+        try {
+          const { base44 } = await import("@/api/base44Client");
+          await base44.functions.invoke("desktopAppDownload", {
+            version: releaseInfo.version || "unknown",
+          });
+        } catch {
+          // Ignorer les erreurs de tracking
+        }
+
+        window.open(releaseInfo.url, "_blank", "noopener,noreferrer");
+        toast.success("Téléchargement commencé !");
+      } else {
+        window.open(releaseInfo.releaseUrl, "_blank", "noopener,noreferrer");
+        toast.info("Aucun installateur direct trouvé pour cette plateforme. Ouverture des releases GitHub.");
       }
-
-      // Ouvrir le lien de téléchargement
-      window.location.href = installerUrl;
-
-      toast.success("Téléchargement commencé !");
     } catch (error) {
       console.error("Erreur téléchargement:", error);
       toast.error("Erreur lors du démarrage du téléchargement");
@@ -110,12 +179,17 @@ export default function DesktopDownloadButton({ className = "" }) {
     }
   };
 
+  const platformLabel = PLATFORM_LABELS[releaseInfo?.platform || "unknown"];
+  const buttonLabel = releaseInfo?.hasDirectAsset
+    ? `Télécharger pour ${platformLabel}`
+    : "Voir les releases GitHub";
+
   return (
     <div className="space-y-2">
       {/* Bouton principal de téléchargement */}
       <button
         onClick={handleDownload}
-        disabled={!installerUrl || loading}
+        disabled={!releaseInfo?.url || loading}
         className={`w-full flex items-center justify-center gap-2 h-10 px-4 rounded-xl text-sm font-bold text-white transition hover:opacity-90 tap-sm disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
         style={{
           background: "linear-gradient(135deg, #a855f7, #6d28d9)",
@@ -130,7 +204,7 @@ export default function DesktopDownloadButton({ className = "" }) {
         ) : (
           <>
             <Download className="w-4 h-4" />
-            Télécharger pour Windows
+            {buttonLabel}
           </>
         )}
       </button>
@@ -139,8 +213,12 @@ export default function DesktopDownloadButton({ className = "" }) {
       {releaseInfo && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/30 border border-border">
           <div className="flex-1 text-xs">
-            <p className="text-white/80 font-medium">Version {releaseInfo.version}</p>
-            <p className="text-white/50">{releaseInfo.fileName}</p>
+            <p className="text-white/80 font-medium">
+              {releaseInfo.version ? `Version ${releaseInfo.version}` : "Dernière release GitHub"}
+            </p>
+            <p className="text-white/50">
+              {releaseInfo.fileName || `Aucun binaire ${platformLabel} détecté automatiquement`}
+            </p>
           </div>
           <button
             onClick={handleOpenRelease}
