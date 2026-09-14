@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { Toaster as SonnerToaster } from "sonner"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
@@ -13,6 +13,10 @@ import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import OAuthCallback from '@/pages/OAuthCallback';
+import OAuthConsent from '@/pages/OAuthConsent';
+import AIStudio from '@/pages/AIStudio';
+import AISubscription from '@/pages/AISubscription';
+import Playlists from '@/pages/Playlists';
 
 import MainLayout from '@/components/layout/MainLayout';
 import BottomTabs from '@/components/layout/BottomTabs';
@@ -132,6 +136,7 @@ const AuthenticatedApp = () => {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/oauth/callback" element={<OAuthCallback />} />
+        <Route path="/oauth/consent" element={<OAuthConsent />} />
         <Route path="/nexus/invite/:code" element={<NexusInvite />} />
         <Route path="/creator/:username" element={<CreatorProfile />} />
         <Route path="/page/:slug" element={<DynamicPage />} />
@@ -157,11 +162,15 @@ const AuthenticatedApp = () => {
         <Route path="/community/subscription" element={<CommunitySubscription />} />
           <Route path="/wallet" element={<Wallet />} />
           <Route path="/trix-store" element={<TrixStore />} />
+          <Route path="/ai" element={<AIStudio />} />
+          <Route path="/ai/subscription" element={<AISubscription />} />
           <Route path="/video-studio" element={<VideoStudio />} />
+          <Route path="/playlists" element={<Playlists />} />
           <Route path="/progression" element={<Progression />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/outils" element={<Outils />} />
           <Route path="/sondages" element={<Sondages />} />
+          <Route path="/profile" element={<Navigate to="/mon-profil" replace />} />
           <Route path="/mon-profil" element={<MonProfil />} />
           <Route path="/boutique-matrix" element={<BoutiqueMatrix />} />
           <Route path="/boutique-nexus" element={<BoutiqueNexus />} />

@@ -75,7 +75,7 @@ export default function Wallet() {
       {/* Header */}
       <div className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-xl px-4 py-4">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <Link to="/profile" className="text-muted-foreground hover:text-foreground transition">
+          <Link to="/mon-profil" className="text-muted-foreground hover:text-foreground transition">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <span className="font-black text-xl">💰 Portefeuille</span>
