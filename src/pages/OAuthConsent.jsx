@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { appParams } from "@/lib/app-params";
+import { resolveBase44ServerUrl } from "@/api/base44Client";
+import { toAbsoluteApiUrl } from "@/lib/urlUtils";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
@@ -19,6 +21,15 @@ export default function OAuthConsent() {
   const [decided, setDecided] = useState("");
   const [error, setError] = useState("");
   const [reconnect, setReconnect] = useState("");
+  const apiBaseUrl = resolveBase44ServerUrl();
+  const consentInfoUrl = toAbsoluteApiUrl(
+    apiBaseUrl,
+    `/api/apps/${appParams.appId}/mcp/consent-info?handle=${encodeURIComponent(ctx || "")}`
+  );
+  const authorizeGrantUrl = toAbsoluteApiUrl(
+    apiBaseUrl,
+    `/api/apps/${appParams.appId}/mcp/authorize-grant`
+  );
 
   useEffect(() => {
     (async () => {
@@ -37,7 +48,7 @@ export default function OAuthConsent() {
         const infoHeaders = {};
         if (appParams.token) infoHeaders.Authorization = "Bearer " + appParams.token;
         const res = await fetch(
-          `/api/apps/${appParams.appId}/mcp/consent-info?handle=${encodeURIComponent(ctx)}`,
+          consentInfoUrl,
           { credentials: "include", headers: infoHeaders },
         );
         if (!res.ok) {
@@ -77,7 +88,7 @@ export default function OAuthConsent() {
         if (!redirecting) setChecking(false);
       }
     })();
-  }, [ctx]);
+  }, [consentInfoUrl, ctx]);
 
   const respond = async (action) => {
     setSubmitting(true);
@@ -87,7 +98,7 @@ export default function OAuthConsent() {
       // Cookie-backed sessions carry no token; sending "Bearer null" would
       // shadow the valid cookie, so add the header only when a token exists.
       if (appParams.token) headers.Authorization = "Bearer " + appParams.token;
-      const res = await fetch(`/api/apps/${appParams.appId}/mcp/authorize-grant`, {
+      const res = await fetch(authorizeGrantUrl, {
         method: "POST",
         credentials: "include",
         headers,
