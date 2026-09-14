@@ -39,46 +39,53 @@ async fn handle_oauth_callback(code: String, state: String) -> Result<bool, Stri
 
 /// Vérifie les mises à jour disponibles
 #[tauri::command]
-async fn check_for_updates(
-    app: tauri::AppHandle,
-) -> Result<serde_json::Value, String> {
-    let updater = app
-        .updater()
-        .map_err(|e| format!("Erreur lors de l'initialisation de l'updater: {}", e))?;
-
-    match updater.check().await {
-        Ok(Some(update)) => Ok(serde_json::json!({
-            "available": true,
-            "current_version": update.current_version(),
-            "latest_version": update.latest_version(),
-            "body": update.body(),
-            "date": update.date(),
-        })),
-        Ok(None) => Ok(serde_json::json!({
-            "available": false,
-            "current_version": app.package_info().version.to_string(),
-        })),
-        Err(e) => Err(format!("Erreur lors de la vérification des mises à jour: {}", e)),
-    }
-}
-
-/// Télécharge et installe la mise à jour
-#[tauri::command]
-async fn install_update(
-    app: tauri::AppHandle,
-) -> Result<serde_json::Value, String> {
+async fn check_for_updates(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
     let updater = app
         .updater()
         .map_err(|e| format!("Erreur lors de l'initialisation de l'updater: {}", e))?;
 
     match updater.check().await {
         Ok(Some(update)) => {
+            let current_version = update.current_version.clone();
+            let latest_version = update.version.clone();
+            let body = update.body.clone();
+            let date = update.date.map(|date| date.to_string());
+
+            Ok(serde_json::json!({
+                "available": true,
+                "current_version": current_version,
+                "latest_version": latest_version,
+                "body": body,
+                "date": date,
+            }))
+        }
+        Ok(None) => Ok(serde_json::json!({
+            "available": false,
+            "current_version": app.package_info().version.to_string(),
+        })),
+        Err(e) => Err(format!(
+            "Erreur lors de la vérification des mises à jour: {}",
+            e
+        )),
+    }
+}
+
+/// Télécharge et installe la mise à jour
+#[tauri::command]
+async fn install_update(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+    let updater = app
+        .updater()
+        .map_err(|e| format!("Erreur lors de l'initialisation de l'updater: {}", e))?;
+
+    match updater.check().await {
+        Ok(Some(update)) => {
+            let latest_version = update.version.clone();
             println!(
                 "Téléchargement de la mise à jour vers la version: {}",
-                update.latest_version()
+                latest_version
             );
 
-            match update.download_and_install().await {
+            match update.download_and_install(|_, _| {}, || {}).await {
                 Ok(_) => {
                     println!("Mise à jour téléchargée et installée avec succès");
                     Ok(serde_json::json!({
