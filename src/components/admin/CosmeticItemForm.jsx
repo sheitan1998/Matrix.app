@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Loader2, Upload, X, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { normalizeCosmeticAssetUrl, normalizeCosmeticIcon } from "@/lib/cosmeticAssetUrl";
 
 const CATEGORIES = [
   { value: "badge", label: "Badge" },
@@ -41,7 +42,7 @@ export default function CosmeticItemForm({ onSaved }) {
     setUploading(field);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setForm(prev => ({ ...prev, [field]: file_url }));
+      setForm(prev => ({ ...prev, [field]: normalizeCosmeticAssetUrl(file_url) }));
       toast.success("Fichier uploadé.");
     } catch {
       toast.error("Erreur lors de l'upload.");
@@ -81,9 +82,9 @@ export default function CosmeticItemForm({ onSaved }) {
         category: form.category,
         rarity: form.rarity,
         price_euros: parseFloat(form.price_euros),
-        icon: form.icon.trim(),
-        preview_image: form.preview_image,
-        video_url: form.video_url,
+        icon: normalizeCosmeticIcon(form.icon),
+        preview_image: normalizeCosmeticAssetUrl(form.preview_image),
+        video_url: normalizeCosmeticAssetUrl(form.video_url),
         anim_config,
       });
 

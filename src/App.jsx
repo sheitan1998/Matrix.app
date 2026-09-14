@@ -136,6 +136,7 @@ const AuthenticatedApp = () => {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/oauth/callback" element={<OAuthCallback />} />
+        <Route path="/oauth" element={<Navigate to="/oauth/callback" replace />} />
         <Route path="/oauth/consent" element={<OAuthConsent />} />
         <Route path="/nexus/invite/:code" element={<NexusInvite />} />
         <Route path="/creator/:username" element={<CreatorProfile />} />
