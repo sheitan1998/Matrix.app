@@ -1,4 +1,5 @@
 use tauri_plugin_updater::UpdaterExt;
+use time::format_description::well_known::Rfc3339;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -48,7 +49,13 @@ async fn check_for_updates(app: tauri::AppHandle) -> Result<serde_json::Value, S
         Ok(Some(update)) => {
             let current_version = update.current_version.clone();
             let latest_version = update.version.clone();
-            let date = update.date.map(|date| date.to_string());
+            let date = update
+                .date
+                .map(|date| date.format(&Rfc3339))
+                .transpose()
+                .map_err(|e| {
+                    format!("Erreur lors du formatage de la date de mise à jour: {}", e)
+                })?;
 
             Ok(serde_json::json!({
                 "available": true,
