@@ -49,6 +49,18 @@ function detectPlatformKey(fileName) {
   return null;
 }
 
+function artifactPriority(platformKey, fileName) {
+  const lowerName = fileName.toLowerCase();
+  if (platformKey.startsWith("windows-")) return lowerName.endsWith(".msi") ? 1 : 2;
+  if (platformKey.startsWith("darwin-")) return lowerName.endsWith(".app.tar.gz") ? 1 : 2;
+  if (platformKey.startsWith("linux-")) {
+    if (lowerName.endsWith(".appimage")) return 1;
+    if (lowerName.endsWith(".deb")) return 2;
+    return 3;
+  }
+  return Number.MAX_SAFE_INTEGER;
+}
+
 const bundleFiles = candidateRoots.flatMap((root) => walk(root));
 const installers = bundleFiles.filter((filePath) => {
   const fileName = path.basename(filePath).toLowerCase();
@@ -64,18 +76,35 @@ const installers = bundleFiles.filter((filePath) => {
   );
 });
 
-const platforms = {};
+const selectedArtifacts = {};
 for (const installerPath of installers) {
-  const platformKey = detectPlatformKey(path.basename(installerPath));
-  if (!platformKey || platforms[platformKey]) continue;
+  const fileName = path.basename(installerPath);
+  const platformKey = detectPlatformKey(fileName);
+  if (!platformKey) continue;
 
   const signaturePath = `${installerPath}.sig`;
   if (!fs.existsSync(signaturePath)) continue;
 
-  const fileName = path.basename(installerPath);
-  platforms[platformKey] = {
+  const candidate = {
+    priority: artifactPriority(platformKey, fileName),
+    fileName,
     signature: fs.readFileSync(signaturePath, "utf8").trim(),
-    url: `${baseUrl}/${encodeURIComponent(fileName)}`,
+  };
+  const existing = selectedArtifacts[platformKey];
+  if (
+    !existing ||
+    candidate.priority < existing.priority ||
+    (candidate.priority === existing.priority && candidate.fileName.localeCompare(existing.fileName) < 0)
+  ) {
+    selectedArtifacts[platformKey] = candidate;
+  }
+}
+
+const platforms = {};
+for (const [platformKey, artifact] of Object.entries(selectedArtifacts)) {
+  platforms[platformKey] = {
+    signature: artifact.signature,
+    url: `${baseUrl}/${encodeURIComponent(artifact.fileName)}`,
   };
 }
 

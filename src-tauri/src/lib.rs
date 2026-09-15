@@ -127,15 +127,19 @@ async fn open_auth_window(url: String) -> Result<String, String> {
 async fn start_oauth_bridge() -> Result<String, String> {
     let redirect_uri = format!("http://127.0.0.1:{}/oauth/callback", OAUTH_BRIDGE_PORT);
 
-    if OAUTH_BRIDGE_STARTED.load(Ordering::SeqCst) {
+    if OAUTH_BRIDGE_STARTED
+        .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+        .is_err()
+    {
         return Ok(redirect_uri);
     }
 
     let listener = TcpListener::bind(("127.0.0.1", OAUTH_BRIDGE_PORT))
         .await
-        .map_err(|e| format!("Unable to start OAuth localhost bridge: {}", e))?;
-
-    OAUTH_BRIDGE_STARTED.store(true, Ordering::SeqCst);
+        .map_err(|e| {
+            OAUTH_BRIDGE_STARTED.store(false, Ordering::SeqCst);
+            format!("Unable to start OAuth localhost bridge: {}", e)
+        })?;
 
     tokio::spawn(async move {
         loop {
@@ -178,12 +182,13 @@ async fn handle_oauth_bridge_connection(stream: &mut TcpStream) -> Result<(), st
         );
         let deep_link_json = serde_json::to_string(&deep_link)
             .unwrap_or_else(|_| "\"matrix://oauth/callback\"".to_string());
+        let deep_link_href = escape_html_attribute(&deep_link);
 
         let body = format!(
             "<!doctype html><html><head><meta charset=\"utf-8\"><title>Matrix OAuth</title></head>\
             <body><p>Connexion validée. Retour vers Matrix…</p>\
             <script>window.location.replace({deep_link_json});</script>\
-            <noscript><a href=\"{deep_link}\">Retourner vers Matrix</a></noscript></body></html>"
+            <noscript><a href=\"{deep_link_href}\">Retourner vers Matrix</a></noscript></body></html>"
         );
 
         format!(
@@ -203,6 +208,15 @@ async fn handle_oauth_bridge_connection(stream: &mut TcpStream) -> Result<(), st
     stream.write_all(response.as_bytes()).await?;
     stream.flush().await?;
     Ok(())
+}
+
+fn escape_html_attribute(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
 }
 
 /// Traite le callback OAuth après l'authentification
