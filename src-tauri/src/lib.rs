@@ -20,7 +20,7 @@ pub fn run() {
 async fn open_auth_window(url: String) -> Result<String, String> {
     match open::that(&url) {
         Ok(()) => {
-            println!("OAuth window opened: {}", url);
+            println!("OAuth browser window opened successfully");
             Ok("OAuth window opened successfully".to_string())
         }
         Err(e) => {
@@ -33,7 +33,13 @@ async fn open_auth_window(url: String) -> Result<String, String> {
 /// Traite le callback OAuth après l'authentification
 #[tauri::command]
 async fn handle_oauth_callback(code: String, state: String) -> Result<bool, String> {
-    println!("OAuth callback received - Code: {}, State: {}", code, state);
+    if code.trim().is_empty() {
+        return Err("OAuth callback missing authorization code".to_string());
+    }
+    if state.trim().is_empty() {
+        return Err("OAuth callback missing state".to_string());
+    }
+    println!("OAuth callback received and validated");
     Ok(true)
 }
 
