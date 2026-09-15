@@ -64,7 +64,7 @@ export default function SlotSymbolEditor({ themeKey }) {
   const handleUpload = async (symbolId, file) => {
     if (!file) return;
     try {
-      const result = await base44.integrations.Core.UploadFile({ file });
+      const result = await base44.integrations.Core.UploadPublicFile({ file });
       await base44.entities.SlotSymbol.update(symbolId, { image_url: result.file_url });
       toast.success("Image uploadée");
     } catch {

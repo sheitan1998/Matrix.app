@@ -1,26 +1,23 @@
 {
-  "name": "Matrix — Streaming, Communauté & Casino",
+  "name": "Matrix",
   "short_name": "Matrix",
-  "description": "Plateforme de streaming vidéo, communauté, casino et outils créatifs.",
+  "description": "Matrix — Plateforme de streaming vidéo, communauté, casino et outils créatifs.",
   "start_url": "/",
-  "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
   "background_color": "#0a050f",
   "theme_color": "#0a050f",
-  "lang": "fr",
-  "categories": ["entertainment", "social", "games"],
   "icons": [
     {
-      "src": "https://media.base44.com/images/public/69e14a987a927963a9924d5a/d423a042f_Code_Generated_Image1.png",
-      "sizes": "192x192",
+      "src": "https://media.base44.com/images/public/69e14a987a927963a9924d5a/d423a042e_Code_Generated_Image1.png",
       "type": "image/png",
+      "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
       "src": "https://media.base44.com/images/public/69e14a987a927963a9924d5a/ea9b5db0f_Code_Generated_Image.png",
-      "sizes": "512x512",
       "type": "image/png",
+      "sizes": "512x512",
       "purpose": "any maskable"
     }
   ]

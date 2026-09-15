@@ -107,7 +107,7 @@ export default function PostFeed() {
     if (file.size > 50 * 1024 * 1024) { toast.error("Vidéo trop lourde (max 50MB)"); return; }
     toast.info("Import vidéo...");
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
       setVideoPreview(file_url);
       toast.success("Vidéo importée !");
     } catch (err) { toast.error("Erreur d'import vidéo"); }

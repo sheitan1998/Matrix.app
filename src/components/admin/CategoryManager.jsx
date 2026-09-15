@@ -41,7 +41,7 @@ export default function CategoryManager() {
     if (!file) return;
     setUploadingSubImg(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
       setNewSubImg(file_url);
     } catch {
       toast.error("Erreur lors de l'upload.");

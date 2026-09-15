@@ -42,7 +42,7 @@ export default function CosmeticItemForm({ onSaved }) {
     if (!file) return;
     setUploading(field);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
       setForm(prev => ({ ...prev, [field]: normalizeCosmeticAssetUrl(file_url) }));
       toast.success("Fichier uploadé.");
     } catch {

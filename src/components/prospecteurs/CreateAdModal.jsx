@@ -36,7 +36,7 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
     if (!file) return;
     setUploadingField(type);
     try {
-      const result = await base44.integrations.Core.UploadFile({ file });
+      const result = await base44.integrations.Core.UploadPublicFile({ file });
       if (type === "profile") {
         setProfileImage(result.file_url);
       } else {

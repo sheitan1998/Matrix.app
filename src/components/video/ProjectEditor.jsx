@@ -195,7 +195,7 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
   const uploadFile = async (file) => {
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
       // Auto-add to timeline based on current nav tab
       const isAudio = file.type?.startsWith("audio") || navTab === "audio";
       const isImage = file.type?.startsWith("image");

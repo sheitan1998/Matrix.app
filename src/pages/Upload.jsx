@@ -35,7 +35,7 @@ export default function Upload() {
   }, []);
 
   const uploadFile = async (file, key) => {
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
     setForm((f) => ({ ...f, [key]: file_url }));
     toast.success("Fichier téléversé");
   };

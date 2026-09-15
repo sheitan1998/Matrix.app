@@ -158,7 +158,7 @@ export default function ServerChat({ server, channel, theme, user }) {
     if (!file) return;
     setUploadingFile(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
       await send({ url: file_url, name: file.name });
     } catch {
       toast.error("Erreur lors de l'upload du fichier");

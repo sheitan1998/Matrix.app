@@ -34,7 +34,7 @@ export default function BlockEditModal({ block, blockType, pageSlug, onClose, on
     if (!file) return;
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
       setImageUrl(file_url);
       toast.success("Image uploadée.");
     } catch {

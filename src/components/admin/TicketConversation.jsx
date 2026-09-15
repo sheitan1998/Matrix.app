@@ -80,7 +80,7 @@ export default function TicketConversation({ ticket: initialTicket, user, isAdmi
     setUploading(true);
     try {
       for (const file of Array.from(files)) {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
         setAttachments((prev) => [...prev, { file_url, file_name: file.name }]);
       }
     } catch {
