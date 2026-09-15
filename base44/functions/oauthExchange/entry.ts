@@ -134,8 +134,8 @@ function normalizeRedirectUri(value: unknown): string {
     throw new HttpError(400, 'Invalid redirectUri: absolute URL expected.');
   }
 
-  if (['javascript:', 'data:', 'file:'].includes(parsed.protocol)) {
-    throw new HttpError(400, 'Invalid redirectUri: unsupported protocol.');
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    throw new HttpError(400, 'Invalid redirectUri: only http and https URLs are supported.');
   }
 
   return parsed.toString();
