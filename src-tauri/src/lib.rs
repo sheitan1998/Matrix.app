@@ -1,11 +1,28 @@
+use std::sync::atomic::{AtomicBool, Ordering};
+use tauri::Manager;
+use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_updater::UpdaterExt;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::{TcpListener, TcpStream};
+
+const OAUTH_BRIDGE_PORT: u16 = 48923;
+const OAUTH_DEEP_LINK_SCHEME: &str = "matrix";
+static OAUTH_BRIDGE_STARTED: AtomicBool = AtomicBool::new(false);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .setup(|app| {
+            #[cfg(desktop)]
+            setup_oauth_deep_link(app);
+
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             open_auth_window,
+            start_oauth_bridge,
             handle_oauth_callback,
             check_for_updates,
             install_update,
@@ -13,6 +30,81 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running Matrix");
+}
+
+#[cfg(desktop)]
+fn setup_oauth_deep_link(app: &mut tauri::App) {
+    let app_handle = app.handle().clone();
+
+    app.deep_link().on_open_url(move |event| {
+        for url in event.urls() {
+            forward_oauth_deep_link(&app_handle, url.as_str());
+        }
+    });
+
+    if let Err(error) = app.deep_link().register_all() {
+        eprintln!("Unable to register deep-link schemes: {}", error);
+    }
+
+    if let Ok(Some(urls)) = app.deep_link().get_current() {
+        for url in urls {
+            forward_oauth_deep_link(app.handle(), url.as_str());
+        }
+    }
+}
+
+#[cfg(desktop)]
+fn forward_oauth_deep_link(app: &tauri::AppHandle, raw_url: &str) {
+    let Some(callback_route) = parse_oauth_callback_route(raw_url) else {
+        return;
+    };
+
+    let Some(main_window) = app.get_webview_window("main") else {
+        return;
+    };
+
+    if let Ok(serialized_route) = serde_json::to_string(&callback_route) {
+        let script = format!("window.location.replace({serialized_route});");
+        if let Err(error) = main_window.eval(&script) {
+            eprintln!("Unable to forward OAuth deep link to frontend: {}", error);
+        }
+    }
+}
+
+fn parse_oauth_callback_route(raw_url: &str) -> Option<String> {
+    let deep_link_prefix = format!("{OAUTH_DEEP_LINK_SCHEME}://");
+    let url_without_scheme = raw_url.strip_prefix(&deep_link_prefix)?;
+
+    let (before_fragment, fragment) = match url_without_scheme.split_once('#') {
+        Some((value, fragment)) => (value, Some(fragment)),
+        None => (url_without_scheme, None),
+    };
+    let (path_candidate, query) = match before_fragment.split_once('?') {
+        Some((path, query)) => (path, Some(query)),
+        None => (before_fragment, None),
+    };
+
+    let normalized_path = if path_candidate.starts_with('/') {
+        path_candidate.to_string()
+    } else {
+        format!("/{path_candidate}")
+    };
+
+    if normalized_path != "/oauth/callback" {
+        return None;
+    }
+
+    let mut route = normalized_path;
+    if let Some(query) = query {
+        route.push('?');
+        route.push_str(query);
+    }
+    if let Some(fragment) = fragment {
+        route.push('#');
+        route.push_str(fragment);
+    }
+
+    Some(route)
 }
 
 /// Ouvre l'URL d'authentification OAuth dans le navigateur par défaut
@@ -28,6 +120,89 @@ async fn open_auth_window(url: String) -> Result<String, String> {
             Err(format!("Failed to open OAuth URL: {}", e))
         }
     }
+}
+
+/// Démarre un bridge localhost pour récupérer le callback OAuth puis rediriger vers matrix://oauth/callback
+#[tauri::command]
+async fn start_oauth_bridge() -> Result<String, String> {
+    let redirect_uri = format!("http://127.0.0.1:{}/oauth/callback", OAUTH_BRIDGE_PORT);
+
+    if OAUTH_BRIDGE_STARTED.load(Ordering::SeqCst) {
+        return Ok(redirect_uri);
+    }
+
+    let listener = TcpListener::bind(("127.0.0.1", OAUTH_BRIDGE_PORT))
+        .await
+        .map_err(|e| format!("Unable to start OAuth localhost bridge: {}", e))?;
+
+    OAUTH_BRIDGE_STARTED.store(true, Ordering::SeqCst);
+
+    tokio::spawn(async move {
+        loop {
+            let (mut stream, _) = match listener.accept().await {
+                Ok(connection) => connection,
+                Err(error) => {
+                    eprintln!("OAuth bridge accept error: {}", error);
+                    break;
+                }
+            };
+
+            if let Err(error) = handle_oauth_bridge_connection(&mut stream).await {
+                eprintln!("OAuth bridge connection error: {}", error);
+            }
+        }
+
+        OAUTH_BRIDGE_STARTED.store(false, Ordering::SeqCst);
+    });
+
+    Ok(redirect_uri)
+}
+
+async fn handle_oauth_bridge_connection(stream: &mut TcpStream) -> Result<(), std::io::Error> {
+    let mut buffer = [0u8; 8192];
+    let bytes_read = stream.read(&mut buffer).await?;
+    if bytes_read == 0 {
+        return Ok(());
+    }
+
+    let request = String::from_utf8_lossy(&buffer[..bytes_read]);
+    let first_line = request.lines().next().unwrap_or_default();
+    let mut request_parts = first_line.split_whitespace();
+    let method = request_parts.next().unwrap_or_default();
+    let path = request_parts.next().unwrap_or_default();
+
+    let response = if method.eq_ignore_ascii_case("GET") && path.starts_with("/oauth/callback") {
+        let deep_link = format!(
+            "{OAUTH_DEEP_LINK_SCHEME}://oauth/callback{}",
+            &path["/oauth/callback".len()..]
+        );
+        let deep_link_json = serde_json::to_string(&deep_link)
+            .unwrap_or_else(|_| "\"matrix://oauth/callback\"".to_string());
+
+        let body = format!(
+            "<!doctype html><html><head><meta charset=\"utf-8\"><title>Matrix OAuth</title></head>\
+            <body><p>Connexion validée. Retour vers Matrix…</p>\
+            <script>window.location.replace({deep_link_json});</script>\
+            <noscript><a href=\"{deep_link}\">Retourner vers Matrix</a></noscript></body></html>"
+        );
+
+        format!(
+            "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+            body.len(),
+            body
+        )
+    } else {
+        let body = "Not found";
+        format!(
+            "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+            body.len(),
+            body
+        )
+    };
+
+    stream.write_all(response.as_bytes()).await?;
+    stream.flush().await?;
+    Ok(())
 }
 
 /// Traite le callback OAuth après l'authentification

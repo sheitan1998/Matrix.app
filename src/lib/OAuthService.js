@@ -24,7 +24,9 @@ class OAuthService {
   normalizeRedirectUri(redirectUri = "/oauth/callback") {
     const rawValue = typeof redirectUri === "string" ? redirectUri.trim() : "";
     const baseUrl = this.getCallbackBaseUrl();
-    const fallbackUrl = new URL("/oauth/callback", baseUrl).toString();
+    const fallbackUrl = this.isDesktopApp
+      ? "matrix://oauth/callback"
+      : new URL("/oauth/callback", baseUrl).toString();
 
     if (!rawValue) {
       return fallbackUrl;
@@ -34,6 +36,26 @@ class OAuthService {
       return new URL(rawValue, baseUrl).toString();
     } catch {
       return fallbackUrl;
+    }
+  }
+
+  async resolveDesktopRedirectUri(redirectUri) {
+    const fallbackRedirectUri = this.normalizeRedirectUri(redirectUri);
+    if (!this.isDesktopApp) {
+      return fallbackRedirectUri;
+    }
+
+    const invoke = await getTauriInvoke();
+    if (!invoke) {
+      return fallbackRedirectUri;
+    }
+
+    try {
+      const bridgeRedirectUri = await invoke("start_oauth_bridge");
+      return this.normalizeRedirectUri(bridgeRedirectUri);
+    } catch (error) {
+      console.warn("Unable to start OAuth localhost bridge, fallback on deep-link URL.", error);
+      return fallbackRedirectUri;
     }
   }
 
@@ -139,7 +161,7 @@ class OAuthService {
       const normalizedProvider = this.normalizeProviderName(providerName);
       const normalizedAuthUrl = typeof authUrl === "string" ? authUrl.trim() : "";
       const normalizedClientId = typeof clientId === "string" ? clientId.trim() : "";
-      const normalizedRedirectUri = this.normalizeRedirectUri(redirectUri);
+      const normalizedRedirectUri = await this.resolveDesktopRedirectUri(redirectUri);
       const normalizedScopes = this.normalizeScopes(scopes) || "openid profile email";
 
       if (!normalizedProvider) {
