@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Loader2, AlertTriangle } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 import AuthLayout from "@/components/AuthLayout";
 import { useAuth } from "@/lib/AuthContext";
 import { safeReturnTo } from "@/lib/authReturnTo";
@@ -7,8 +8,9 @@ import { oauthService } from "@/lib/OAuthService";
 import { getTauriInvoke } from "@/lib/tauriInvoke";
 
 export default function OAuthCallback() {
-  const { isAuthenticated, isLoadingAuth, isLoadingPublicSettings } = useAuth();
+  const { isAuthenticated, isLoadingAuth, isLoadingPublicSettings, checkUserAuth } = useAuth();
   const [error, setError] = useState("");
+  const [isCustomExchangeComplete, setIsCustomExchangeComplete] = useState(false);
   const redirectTarget = useMemo(() => {
     const target = safeReturnTo();
     return target === "/oauth/callback" ? "/" : target;
@@ -19,7 +21,9 @@ export default function OAuthCallback() {
 
     const finalizeCallback = async () => {
       const callbackParams = oauthService.getOAuthCallbackParams(window.location.href);
+      const storedSession = oauthService.getStoredOAuthSession();
       const hasStoredBase44Token = Boolean(localStorage.getItem("base44_access_token"));
+      const isCustomOAuthFlow = Boolean(storedSession?.provider && storedSession?.codeVerifier);
 
       if (callbackParams?.error) {
         const description = callbackParams.error_description;
@@ -42,17 +46,46 @@ export default function OAuthCallback() {
         return;
       }
 
+      if (!isCustomOAuthFlow) {
+        return;
+      }
+
       try {
-        const { code, state } = await oauthService.handleOAuthCallback(window.location.href);
+        const { code, state, codeVerifier } = await oauthService.handleOAuthCallback(
+          window.location.href
+        );
+        const exchangeResponse = await base44.functions.invoke("oauthExchange", {
+          provider: storedSession.provider,
+          code,
+          codeVerifier,
+          redirectUri: storedSession.redirectUri,
+        });
+        const exchangeData = exchangeResponse?.data?.data;
+
+        if (!exchangeData?.access_token) {
+          throw new Error("Le serveur OAuth n'a pas retourné de jeton d'accès.");
+        }
+
+        await checkUserAuth().catch(() => {});
+
         if (oauthService.isDesktopApp && code) {
           const invoke = await getTauriInvoke();
           if (invoke) {
             await invoke("handle_oauth_callback", { code, state });
           }
         }
+
+        if (!cancelled) {
+          setIsCustomExchangeComplete(true);
+        }
       } catch (callbackError) {
         if (!cancelled) {
-          setError(callbackError.message || "Impossible de finaliser la connexion OAuth.");
+          setError(
+            callbackError?.response?.data?.provider_message ||
+              callbackError?.response?.data?.error ||
+              callbackError?.message ||
+              "Impossible de finaliser la connexion OAuth."
+          );
         }
       } finally {
         oauthService.clearOAuthSession();
@@ -67,12 +100,26 @@ export default function OAuthCallback() {
   }, []);
 
   useEffect(() => {
-    if (error || isLoadingAuth || isLoadingPublicSettings || !isAuthenticated) {
+    const canRedirectAfterCustomExchange =
+      isCustomExchangeComplete && !isLoadingPublicSettings && !error;
+
+    if (
+      error ||
+      isLoadingPublicSettings ||
+      (!canRedirectAfterCustomExchange && (isLoadingAuth || !isAuthenticated))
+    ) {
       return;
     }
 
     window.location.replace(redirectTarget);
-  }, [error, isAuthenticated, isLoadingAuth, isLoadingPublicSettings, redirectTarget]);
+  }, [
+    error,
+    isAuthenticated,
+    isCustomExchangeComplete,
+    isLoadingAuth,
+    isLoadingPublicSettings,
+    redirectTarget,
+  ]);
 
   if (error) {
     return (

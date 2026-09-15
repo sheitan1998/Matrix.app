@@ -1,3 +1,4 @@
+import { appParams, resolveFromUrl } from "@/lib/app-params";
 import { getTauriInvoke } from "@/lib/tauriInvoke";
 
 /**
@@ -9,6 +10,67 @@ class OAuthService {
     this.isDesktopApp = this.detectTauriApp();
     this.oauthState = null;
     this.oauthCodeVerifier = null;
+  }
+
+  getCallbackBaseUrl() {
+    try {
+      const resolvedUrl = resolveFromUrl(appParams.appBaseUrl) || window.location.href;
+      return new URL(resolvedUrl).origin;
+    } catch {
+      return window.location.origin;
+    }
+  }
+
+  normalizeRedirectUri(redirectUri = "/oauth/callback") {
+    const rawValue = typeof redirectUri === "string" ? redirectUri.trim() : "";
+    const baseUrl = this.getCallbackBaseUrl();
+    const fallbackUrl = new URL("/oauth/callback", baseUrl).toString();
+
+    if (!rawValue) {
+      return fallbackUrl;
+    }
+
+    try {
+      return new URL(rawValue, baseUrl).toString();
+    } catch {
+      return fallbackUrl;
+    }
+  }
+
+  normalizeProviderName(providerName) {
+    return typeof providerName === "string" ? providerName.trim().toLowerCase() : "";
+  }
+
+  normalizeScopes(scopes = []) {
+    if (Array.isArray(scopes)) {
+      return scopes.map((scope) => String(scope || "").trim()).filter(Boolean).join(" ");
+    }
+
+    if (typeof scopes === "string") {
+      return scopes.trim();
+    }
+
+    return "";
+  }
+
+  getStoredOAuthSession() {
+    const provider = this.normalizeProviderName(sessionStorage.getItem("oauth_provider"));
+    const state = sessionStorage.getItem("oauth_state") || "";
+    const codeVerifier = sessionStorage.getItem("oauth_code_verifier") || "";
+    const redirectUri = this.normalizeRedirectUri(
+      sessionStorage.getItem("oauth_redirect_uri") || "/oauth/callback"
+    );
+
+    if (!provider && !state && !codeVerifier) {
+      return null;
+    }
+
+    return {
+      provider,
+      state,
+      codeVerifier,
+      redirectUri,
+    };
   }
 
   /**
@@ -65,8 +127,33 @@ class OAuthService {
    * Démarre le flux d'authentification OAuth
    * Dans Tauri, ouvre le popup dans le navigateur par défaut
    */
-  async startOAuthFlow(providerName, authUrl, clientId, redirectUri, scopes = []) {
+  async startOAuthFlow(
+    providerName,
+    authUrl,
+    clientId,
+    redirectUri,
+    scopes = [],
+    authorizationParams = {}
+  ) {
     try {
+      const normalizedProvider = this.normalizeProviderName(providerName);
+      const normalizedAuthUrl = typeof authUrl === "string" ? authUrl.trim() : "";
+      const normalizedClientId = typeof clientId === "string" ? clientId.trim() : "";
+      const normalizedRedirectUri = this.normalizeRedirectUri(redirectUri);
+      const normalizedScopes = this.normalizeScopes(scopes) || "openid profile email";
+
+      if (!normalizedProvider) {
+        throw new Error("OAuth provider is required");
+      }
+
+      if (!normalizedAuthUrl) {
+        throw new Error("OAuth authorization URL is required");
+      }
+
+      if (!normalizedClientId) {
+        throw new Error("OAuth client_id is required");
+      }
+
       // Générer état et code verifier
       this.oauthState = this.generateRandomState();
       this.oauthCodeVerifier = this.generateCodeVerifier();
@@ -77,20 +164,30 @@ class OAuthService {
       // Stocker temporairement (sera validé au callback)
       sessionStorage.setItem("oauth_state", this.oauthState);
       sessionStorage.setItem("oauth_code_verifier", this.oauthCodeVerifier);
-      sessionStorage.setItem("oauth_provider", providerName);
+      sessionStorage.setItem("oauth_provider", normalizedProvider);
+      sessionStorage.setItem("oauth_redirect_uri", normalizedRedirectUri);
 
       // Construire l'URL d'autorisation
       const params = new URLSearchParams({
-        client_id: clientId,
-        redirect_uri: redirectUri,
+        client_id: normalizedClientId,
+        redirect_uri: normalizedRedirectUri,
         response_type: "code",
-        scope: scopes.join(" ") || "openid profile email",
+        scope: normalizedScopes,
         state: this.oauthState,
         code_challenge: codeChallenge,
         code_challenge_method: "S256",
       });
 
-      const fullAuthUrl = `${authUrl}?${params.toString()}`;
+      Object.entries(authorizationParams || {}).forEach(([key, value]) => {
+        const normalizedKey = String(key || "").trim();
+        const normalizedValue = typeof value === "string" ? value.trim() : value;
+        if (!normalizedKey || normalizedValue === undefined || normalizedValue === null || normalizedValue === "") {
+          return;
+        }
+        params.set(normalizedKey, String(normalizedValue));
+      });
+
+      const fullAuthUrl = `${normalizedAuthUrl}?${params.toString()}`;
 
       // Si c'est une application Tauri, ouvrir dans le navigateur par défaut
       if (this.isDesktopApp) {
@@ -135,13 +232,14 @@ class OAuthService {
       }
 
       // Valider l'état CSRF
-      const savedState = sessionStorage.getItem("oauth_state");
+      const storedSession = this.getStoredOAuthSession();
+      const savedState = storedSession?.state || "";
       if (state !== savedState) {
         throw new Error("OAuth state mismatch - potential CSRF attack");
       }
 
       // Récupérer le code verifier
-      const codeVerifier = sessionStorage.getItem("oauth_code_verifier");
+      const codeVerifier = storedSession?.codeVerifier || "";
       if (!codeVerifier) {
         throw new Error("Code verifier not found");
       }
@@ -161,6 +259,7 @@ class OAuthService {
     sessionStorage.removeItem("oauth_state");
     sessionStorage.removeItem("oauth_code_verifier");
     sessionStorage.removeItem("oauth_provider");
+    sessionStorage.removeItem("oauth_redirect_uri");
     this.oauthState = null;
     this.oauthCodeVerifier = null;
   }
