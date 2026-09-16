@@ -30,6 +30,12 @@ VITE_BASE44_FUNCTIONS_VERSION=prod
 
 Run the app: `npm run dev`
 
+### Desktop OAuth & OTA updates (Tauri)
+
+- OAuth desktop callback now uses a localhost bridge (`http://127.0.0.1:48923/oauth/callback`) that redirects to deep link `matrix://oauth/callback`.
+- Tauri updater checks `https://matrix-hub.app/updates/latest.json` first.
+- During release workflow, `latest.json` is generated automatically with `npm run tauri:generate-latest-json` and uploaded as a release asset.
+
 **Publish your changes**
 
 Open [Base44.com](http://Base44.com) and click on Publish.

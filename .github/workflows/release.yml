@@ -52,6 +52,30 @@ jobs:
           releaseDraft: false
           prerelease: false
 
+      - name: Generate latest.json for matrix-hub updater
+        shell: pwsh
+        run: |
+          $version = (Get-Content "src-tauri/tauri.conf.json" -Raw | ConvertFrom-Json).version
+          node scripts/generate-latest-json.mjs --version=$version --base-url=https://matrix-hub.app/downloads
+
+      - name: Upload generated latest.json in release assets
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_RELEASE_ID: ${{ steps.tauri-build.outputs.releaseId }}
+        run: |
+          if (-not $env:TAURI_RELEASE_ID) {
+            Write-Error "Missing tauri release id, cannot upload latest.json."
+            exit 1
+          }
+          $uploadUrl = "https://uploads.github.com/repos/$env:GITHUB_REPOSITORY/releases/$env:TAURI_RELEASE_ID/assets?name=latest.json"
+          $headers = @{
+            Authorization = "token $env:GITHUB_TOKEN"
+            Accept = "application/vnd.github+json"
+            "Content-Type" = "application/json"
+          }
+          Invoke-RestMethod -Uri $uploadUrl -Headers $headers -Method Post -InFile "latest.json"
+
       - name: Verify updater artifacts
         shell: pwsh
         env:
