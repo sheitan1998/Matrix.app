@@ -74,9 +74,14 @@ jobs:
             Accept = "application/vnd.github+json"
             "X-GitHub-Api-Version" = "2022-11-28"
           }
-          $assetListUrl = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases/$env:TAURI_RELEASE_ID/assets?per_page=100"
-          $existingAssets = @(Invoke-RestMethod -Uri $assetListUrl -Headers $headers -Method Get)
-          $existingLatestAssets = @($existingAssets | Where-Object { $_.name -eq $assetName })
+          $existingLatestAssets = @()
+          $assetPageNumber = 1
+          do {
+            $assetListUrl = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases/$env:TAURI_RELEASE_ID/assets?per_page=100&page=$assetPageNumber"
+            $assetPage = @(Invoke-RestMethod -Uri $assetListUrl -Headers $headers -Method Get)
+            $existingLatestAssets += @($assetPage | Where-Object { $_.name -eq $assetName })
+            $assetPageNumber++
+          } while ($assetPage.Count -eq 100)
 
           if ($existingLatestAssets.Count -gt 0) {
             # GitHub release assets do not overwrite duplicate names; remove old latest.json before upload.
