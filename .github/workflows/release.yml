@@ -98,15 +98,32 @@ jobs:
             return @($assets)
           }
 
+          function ShouldDeleteReleaseAsset([object]$Asset) {
+            if (-not $Asset -or -not $Asset.name) {
+              return $false
+            }
+
+            $assetName = [string]$Asset.name
+            return (
+              $assetName -eq "latest.json" -or
+              $assetName -eq "Matrix-Setup.msi" -or
+              $assetName -eq "Matrix-Setup.exe" -or
+              $assetName -like "*.msi" -or
+              $assetName -like "*.msi.sig" -or
+              $assetName -like "*setup.exe" -or
+              $assetName -like "*setup.exe.sig"
+            )
+          }
+
           $release = Get-ReleaseByTag -TagName $releaseTag
           if (-not $release) {
             Write-Host "No existing release found for tag '$releaseTag'; nothing to clean."
             exit 0
           }
 
-          $assets = Get-ReleaseAssets -ReleaseId $release.id
+          $assets = @(Get-ReleaseAssets -ReleaseId $release.id | Where-Object { ShouldDeleteReleaseAsset $_ })
           if ($assets.Count -eq 0) {
-            Write-Host "Release '$releaseTag' exists but has no assets to delete."
+            Write-Host "Release '$releaseTag' exists but has no Windows-owned assets to delete."
             exit 0
           }
 
@@ -116,7 +133,7 @@ jobs:
             Invoke-RestMethod -Uri $deleteUrl -Headers $headers -Method Delete -ErrorAction Stop
           }
 
-          Write-Host "Removed $($assets.Count) existing asset(s) from release '$releaseTag'."
+          Write-Host "Removed $($assets.Count) existing Windows-owned asset(s) from release '$releaseTag'."
 
       - name: Build Tauri App & Create Installer
         id: tauri-build
