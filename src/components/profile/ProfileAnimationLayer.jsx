@@ -34,6 +34,11 @@ export default function ProfileAnimationLayer({ cosmetic, size = 96 }) {
     const canvas = canvasRef.current;
     if (!video || !canvas) return;
 
+    video.setAttribute("webkit-playsinline", "true");
+    video.setAttribute("x5-playsinline", "true");
+    video.setAttribute("x5-video-player-type", "h5");
+    video.setAttribute("x5-video-player-fullscreen", "false");
+
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
 
     const processFrame = () => {

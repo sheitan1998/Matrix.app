@@ -69,7 +69,6 @@ export default function OAuthCallback() {
         if (typeof base44.auth?.setToken === "function") {
           base44.auth.setToken(exchangeData.access_token);
         }
-        localStorage.setItem("base44_access_token", exchangeData.access_token);
 
         await checkUserAuth().catch(() => {});
 
