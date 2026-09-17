@@ -225,19 +225,12 @@ function Remove-GitHubReleaseAsset {
   }
 
   Write-Host "Deleting existing release asset '$assetName' $Reason."
-  $deleteOutput = @()
   $assetId = ConvertTo-GitHubReleaseId -ReleaseId $Asset.id -ParameterName "Asset.id"
-  if ($null -ne $assetId) {
-    $deleteOutput = gh api --method DELETE "repos/$repositoryValue/releases/assets/$assetId" 2>&1
-  } else {
-    $tagValue = Resolve-GitHubReleaseTag
-    if (-not $tagValue) {
-      throw "Unable to resolve release tag to delete asset '$assetName'."
-    }
-
-    $deleteOutput = gh release delete-asset "$tagValue" "$assetName" --repo "$repositoryValue" --yes 2>&1
+  if ($null -eq $assetId) {
+    throw "Cannot delete release asset '$assetName' without a valid asset id."
   }
 
+  $deleteOutput = gh api --method DELETE "repos/$repositoryValue/releases/assets/$assetId" 2>&1
   if ($LASTEXITCODE -ne 0) {
     $errorText = ([string]::Join("`n", @($deleteOutput))).Trim()
     throw "Failed to delete release asset '$assetName'. $errorText"
