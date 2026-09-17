@@ -19,9 +19,51 @@ function New-GitHubReleaseHeaders {
   return $headers
 }
 
-function ConvertTo-GitHubReleaseId {
+function Resolve-GitHubReleaseTag {
+  param(
+    [string]$TagName
+  )
+
+  if (-not [string]::IsNullOrWhiteSpace([string]$TagName)) {
+    return ([string]$TagName).Trim()
+  }
+
+  if (-not [string]::IsNullOrWhiteSpace([string]$env:RELEASE_TAG)) {
+    return ([string]$env:RELEASE_TAG).Trim()
+  }
+
+  if (-not [string]::IsNullOrWhiteSpace([string]$env:GITHUB_REF_NAME)) {
+    return ([string]$env:GITHUB_REF_NAME).Trim()
+  }
+
+  $githubRef = [string]$env:GITHUB_REF
+  if ($githubRef -and $githubRef.StartsWith("refs/tags/", [System.StringComparison]::OrdinalIgnoreCase)) {
+    return $githubRef.Substring(10)
+  }
+
+  return $null
+}
+
+function Split-GitHubRepository {
   param(
     [Parameter(Mandatory = $true)]
+    [string]$Repository
+  )
+
+  $repositoryValue = ([string]$Repository).Trim()
+  $parts = $repositoryValue -split '/'
+  if ($parts.Count -ne 2 -or [string]::IsNullOrWhiteSpace($parts[0]) -or [string]::IsNullOrWhiteSpace($parts[1])) {
+    throw "Invalid GitHub repository identifier '$Repository'. Expected 'owner/name'."
+  }
+
+  return [PSCustomObject]@{
+    Owner = $parts[0]
+    Name = $parts[1]
+  }
+}
+
+function ConvertTo-GitHubReleaseId {
+  param(
     [AllowNull()]
     [object]$ReleaseId,
 
@@ -33,25 +75,74 @@ function ConvertTo-GitHubReleaseId {
   }
 
   try {
-    # GitHub release ids are 64-bit values. GitHub Actions outputs/env vars arrive as strings,
-    # while API responses can be Int64/JsonElement depending on the PowerShell runtime.
     return [System.Convert]::ToInt64(([string]$ReleaseId).Trim(), [System.Globalization.CultureInfo]::InvariantCulture)
   } catch {
     throw "Invalid GitHub release id for '$ParameterName': '$ReleaseId'. $($_.Exception.Message)"
   }
 }
 
-function Get-GitHubReleaseHttpStatusCode {
+function Get-GitHubTokenFromHeaders {
   param(
     [Parameter(Mandatory = $true)]
-    [System.Management.Automation.ErrorRecord]$ErrorRecord
+    [hashtable]$Headers
   )
 
-  if (-not $ErrorRecord.Exception.Response) {
+  $authorization = [string]$Headers.Authorization
+  if ([string]::IsNullOrWhiteSpace($authorization)) {
     return $null
   }
 
-  return [int]$ErrorRecord.Exception.Response.StatusCode
+  if ($authorization -match '^[Tt]oken\s+(.+)$') {
+    return $matches[1].Trim()
+  }
+
+  return $authorization.Trim()
+}
+
+function Invoke-GitHubCli {
+  param(
+    [Parameter(Mandatory = $true)]
+    [hashtable]$Headers,
+
+    [Parameter(Mandatory = $true)]
+    [string[]]$Arguments
+  )
+
+  $token = Get-GitHubTokenFromHeaders -Headers $Headers
+  $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+  $startInfo.FileName = "gh"
+  $startInfo.UseShellExecute = $false
+  $startInfo.RedirectStandardOutput = $true
+  $startInfo.RedirectStandardError = $true
+
+  foreach ($argument in $Arguments) {
+    [void]$startInfo.ArgumentList.Add([string]$argument)
+  }
+
+  if (-not [string]::IsNullOrWhiteSpace($token)) {
+    $startInfo.Environment["GH_TOKEN"] = [string]$token
+    $startInfo.Environment["GITHUB_TOKEN"] = [string]$token
+  } else {
+    $startInfo.Environment["GH_TOKEN"] = ""
+    $startInfo.Environment["GITHUB_TOKEN"] = ""
+  }
+
+  $process = [System.Diagnostics.Process]::new()
+  $process.StartInfo = $startInfo
+  try {
+    [void]$process.Start()
+  } catch {
+    throw "Failed to start GitHub CLI ('gh'). Ensure gh is installed and available on PATH. $($_.Exception.Message)"
+  }
+  $standardOutput = $process.StandardOutput.ReadToEnd()
+  $standardError = $process.StandardError.ReadToEnd()
+  $process.WaitForExit()
+
+  return [PSCustomObject]@{
+    ExitCode = $process.ExitCode
+    StdOut = [string]$standardOutput
+    StdErr = [string]$standardError
+  }
 }
 
 function Get-GitHubReleaseByTag {
@@ -67,17 +158,77 @@ function Get-GitHubReleaseByTag {
   )
 
   $repositoryValue = [string]$Repository
-  $tagNameValue = [string]$TagName
-  $releaseUrl = "https://api.github.com/repos/$repositoryValue/releases/tags/$([System.Uri]::EscapeDataString($tagNameValue))"
+  $tagValue = Resolve-GitHubReleaseTag -TagName $TagName
+  if (-not $tagValue) {
+    return $null
+  }
+
+  $repositoryParts = Split-GitHubRepository -Repository $repositoryValue
+  $releaseQuery = @'
+query($owner:String!, $name:String!, $tag:String!) {
+  repository(owner: $owner, name: $name) {
+    release(tagName: $tag) {
+      databaseId
+      tagName
+      url
+    }
+  }
+}
+'@
+
+  $releaseResult = Invoke-GitHubCli -Headers $Headers -Arguments @(
+    'api',
+    'graphql',
+    '-f', "query=$releaseQuery",
+    '-f', "owner=$($repositoryParts.Owner)",
+    '-f', "name=$($repositoryParts.Name)",
+    '-f', "tag=$tagValue"
+  )
+  $releaseJson = [string]$releaseResult.StdOut
+  if ([string]::IsNullOrWhiteSpace($releaseJson)) {
+    if ($releaseResult.ExitCode -ne 0) {
+      $errorText = ([string]$releaseResult.StdErr).Trim()
+      throw "Failed to fetch release '$tagValue' in repository '$repositoryValue'. $errorText"
+    }
+
+    return $null
+  }
 
   try {
-    return Invoke-RestMethod -Uri $releaseUrl -Headers $Headers -Method Get -ErrorAction Stop
+    $releaseGraph = $releaseJson | ConvertFrom-Json
   } catch {
-    if ((Get-GitHubReleaseHttpStatusCode $_) -eq 404) {
+    throw "Failed to parse release lookup response for tag '$tagValue' in repository '$repositoryValue'. $($_.Exception.Message)"
+  }
+
+  if ($releaseGraph.errors -and @($releaseGraph.errors).Count -gt 0) {
+    $notFoundErrors = @($releaseGraph.errors | Where-Object { [string]$_.type -eq 'NOT_FOUND' })
+    if ($notFoundErrors.Count -eq @($releaseGraph.errors).Count) {
       return $null
     }
 
-    throw
+    $graphErrors = ((@($releaseGraph.errors) | ForEach-Object { [string]$_.message }) -join "; ").Trim()
+    throw "Failed to fetch release '$tagValue' in repository '$repositoryValue'. $graphErrors"
+  }
+
+  if ($releaseResult.ExitCode -ne 0) {
+    $errorText = ([string]$releaseResult.StdErr).Trim()
+    throw "Failed to fetch release '$tagValue' in repository '$repositoryValue'. $errorText"
+  }
+
+  if (-not $releaseGraph.data -or -not $releaseGraph.data.repository -or -not $releaseGraph.data.repository.release) {
+    return $null
+  }
+
+  $release = $releaseGraph.data.repository.release
+  $releaseId = ConvertTo-GitHubReleaseId -ReleaseId $release.databaseId -ParameterName "release.databaseId"
+  if ($null -eq $releaseId) {
+    return $null
+  }
+
+  return [PSCustomObject]@{
+    id = $releaseId
+    tagName = [string]$release.tagName
+    url = [string]$release.url
   }
 }
 
@@ -100,10 +251,8 @@ function Get-GitHubReleaseId {
     return $explicitReleaseId
   }
 
-  $repositoryValue = [string]$Repository
-  $tagNameValue = [string]$TagName
-  $release = Get-GitHubReleaseByTag -Repository $repositoryValue -Headers $Headers -TagName $tagNameValue
-  if ($release) {
+  $release = Get-GitHubReleaseByTag -Repository ([string]$Repository) -Headers $Headers -TagName ([string]$TagName)
+  if ($release -and $null -ne $release.id) {
     return (ConvertTo-GitHubReleaseId -ReleaseId $release.id -ParameterName "release.id")
   }
 
@@ -124,26 +273,47 @@ function Get-GitHubReleaseAssets {
 
   $repositoryValue = [string]$Repository
   $releaseIdValue = ConvertTo-GitHubReleaseId -ReleaseId $ReleaseId -ParameterName "ReleaseId"
+  $assets = New-Object System.Collections.Generic.List[object]
+
   if ($null -eq $releaseIdValue) {
     throw "ReleaseId is required to list GitHub release assets."
   }
 
-  $assets = New-Object System.Collections.Generic.List[object]
-  $assetPageNumber = 1
+  $assetsResult = Invoke-GitHubCli -Headers $Headers -Arguments @(
+    'api',
+    '--paginate',
+    '--slurp',
+    "repos/$repositoryValue/releases/$releaseIdValue/assets?per_page=100"
+  )
+  if ($assetsResult.ExitCode -ne 0) {
+    $errorText = ([string]$assetsResult.StdErr).Trim()
+    throw "Failed to list release assets for release id '$releaseIdValue' in repository '$repositoryValue'. $errorText"
+  }
 
-  while ($true) {
-    $assetListUrl = "https://api.github.com/repos/$repositoryValue/releases/$releaseIdValue/assets?per_page=100&page=$assetPageNumber"
-    $assetPage = @(Invoke-RestMethod -Uri $assetListUrl -Headers $Headers -Method Get -ErrorAction Stop)
+  $assetsPagesJson = [string]$assetsResult.StdOut
+  if ([string]::IsNullOrWhiteSpace($assetsPagesJson)) {
+    return @()
+  }
 
-    foreach ($asset in $assetPage) {
+  try {
+    $parsedAssets = $assetsPagesJson | ConvertFrom-Json
+  } catch {
+    throw "Failed to parse release assets response for release id '$releaseIdValue' in repository '$repositoryValue'. $($_.Exception.Message)"
+  }
+
+  $assetPages = New-Object System.Collections.Generic.List[object]
+  foreach ($parsedItem in @($parsedAssets)) {
+    if ($null -eq $parsedItem) {
+      continue
+    }
+
+    $assetPages.Add(@($parsedItem))
+  }
+
+  foreach ($assetPage in $assetPages) {
+    foreach ($asset in @($assetPage)) {
       $assets.Add($asset)
     }
-
-    if ($assetPage.Count -lt 100) {
-      break
-    }
-
-    $assetPageNumber++
   }
 
   return @($assets)
@@ -164,10 +334,25 @@ function Remove-GitHubReleaseAsset {
   )
 
   $repositoryValue = [string]$Repository
+  $assetName = [string]$Asset.name
+  $assetDisplayName = if ([string]::IsNullOrWhiteSpace($assetName)) { "<unnamed asset>" } else { $assetName }
+
   $assetId = ConvertTo-GitHubReleaseId -ReleaseId $Asset.id -ParameterName "Asset.id"
-  $deleteUrl = "https://api.github.com/repos/$repositoryValue/releases/assets/$assetId"
-  Write-Host "Deleting existing release asset '$($Asset.name)' (id=$assetId) $Reason."
-  Invoke-RestMethod -Uri $deleteUrl -Headers $Headers -Method Delete -ErrorAction Stop
+  if ($null -eq $assetId) {
+    throw "Cannot delete release asset '$assetDisplayName' without a valid asset id."
+  }
+
+  Write-Host "Deleting existing release asset '$assetDisplayName' $Reason."
+  $deleteResult = Invoke-GitHubCli -Headers $Headers -Arguments @(
+    'api',
+    '--method',
+    'DELETE',
+    "repos/$repositoryValue/releases/assets/$assetId"
+  )
+  if ($deleteResult.ExitCode -ne 0) {
+    $errorText = ([string]$deleteResult.StdErr).Trim()
+    throw "Failed to delete release asset '$assetDisplayName' (id=$assetId) in repository '$repositoryValue'. $errorText"
+  }
 }
 
 function Remove-GitHubReleaseAssetsByName {

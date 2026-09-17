@@ -81,7 +81,7 @@ jobs:
             exit 0
           }
 
-          $assets = @(Get-GitHubReleaseAssets -Repository $env:GITHUB_REPOSITORY -Headers $headers -ReleaseId $release.id | Where-Object { $assetNameSet.Contains($_.name) })
+          $assets = @(Get-GitHubReleaseAssets -Repository ([string]$env:GITHUB_REPOSITORY) -Headers $headers -ReleaseId $release.id | Where-Object { $assetNameSet.Contains($_.name) })
           if ($assets.Count -eq 0) {
             Write-Host "Release '$env:RELEASE_TAG' exists but has no Windows-owned assets to delete."
             exit 0
