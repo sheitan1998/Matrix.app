@@ -121,6 +121,10 @@ function Invoke-GitHubCli {
 
   if (-not [string]::IsNullOrWhiteSpace($token)) {
     $startInfo.Environment["GH_TOKEN"] = [string]$token
+    $startInfo.Environment["GITHUB_TOKEN"] = [string]$token
+  } else {
+    $startInfo.Environment["GH_TOKEN"] = ""
+    $startInfo.Environment["GITHUB_TOKEN"] = ""
   }
 
   $process = [System.Diagnostics.Process]::new()
@@ -180,13 +184,13 @@ query($owner:String!, $name:String!, $tag:String!) {
     '-f', "name=$($repositoryParts.Name)",
     '-f', "tag=$tagValue"
   )
-  if ($releaseResult.ExitCode -ne 0) {
-    $errorText = ([string]$releaseResult.StdErr).Trim()
-    throw "Failed to fetch release '$tagValue' in repository '$repositoryValue'. $errorText"
-  }
-
   $releaseJson = [string]$releaseResult.StdOut
   if ([string]::IsNullOrWhiteSpace($releaseJson)) {
+    if ($releaseResult.ExitCode -ne 0) {
+      $errorText = ([string]$releaseResult.StdErr).Trim()
+      throw "Failed to fetch release '$tagValue' in repository '$repositoryValue'. $errorText"
+    }
+
     return $null
   }
 
@@ -197,8 +201,18 @@ query($owner:String!, $name:String!, $tag:String!) {
   }
 
   if ($releaseGraph.errors -and @($releaseGraph.errors).Count -gt 0) {
+    $notFoundErrors = @($releaseGraph.errors | Where-Object { [string]$_.type -eq 'NOT_FOUND' })
+    if ($notFoundErrors.Count -eq @($releaseGraph.errors).Count) {
+      return $null
+    }
+
     $graphErrors = ((@($releaseGraph.errors) | ForEach-Object { [string]$_.message }) -join "; ").Trim()
     throw "Failed to fetch release '$tagValue' in repository '$repositoryValue'. $graphErrors"
+  }
+
+  if ($releaseResult.ExitCode -ne 0) {
+    $errorText = ([string]$releaseResult.StdErr).Trim()
+    throw "Failed to fetch release '$tagValue' in repository '$repositoryValue'. $errorText"
   }
 
   if (-not $releaseGraph.data -or -not $releaseGraph.data.repository -or -not $releaseGraph.data.repository.release) {
@@ -293,11 +307,7 @@ function Get-GitHubReleaseAssets {
       continue
     }
 
-    if ($parsedItem -is [System.Array]) {
-      $assetPages.Add(@($parsedItem))
-    } else {
-      $assetPages.Add(@($parsedItem))
-    }
+    $assetPages.Add(@($parsedItem))
   }
 
   foreach ($assetPage in $assetPages) {
