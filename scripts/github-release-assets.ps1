@@ -255,9 +255,9 @@ function Remove-GitHubReleaseAssetsByName {
   )
 
   $repositoryValue = [string]$Repository
-  $tagValue = Resolve-GitHubReleaseTag
-  if (-not $tagValue) {
-    throw "Unable to resolve release tag while deleting release assets."
+  $releaseIdValue = ConvertTo-GitHubReleaseId -ReleaseId $ReleaseId -ParameterName "ReleaseId"
+  if ($null -eq $releaseIdValue) {
+    throw "ReleaseId is required to remove GitHub release assets."
   }
 
   $assetNameSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
@@ -270,7 +270,7 @@ function Remove-GitHubReleaseAssetsByName {
   $existingAssets = if ($PSBoundParameters.ContainsKey('ReleaseAssets') -and $null -ne $ReleaseAssets) {
     @($ReleaseAssets | Where-Object { $assetNameSet.Contains([string]$_.name) })
   } else {
-    @(Get-GitHubReleaseAssets -Repository $repositoryValue -Headers $Headers -ReleaseId $ReleaseId | Where-Object { $assetNameSet.Contains([string]$_.name) })
+    @(Get-GitHubReleaseAssets -Repository $repositoryValue -Headers $Headers -ReleaseId $releaseIdValue | Where-Object { $assetNameSet.Contains([string]$_.name) })
   }
 
   foreach ($asset in $existingAssets) {
