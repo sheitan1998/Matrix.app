@@ -106,42 +106,11 @@ jobs:
           RELEASE_TAG: ${{ steps.release-metadata.outputs.release_tag }}
           TAURI_ARTIFACT_PATHS: ${{ steps.tauri-build.outputs.artifactPaths }}
         run: |
-          $candidateRoots = @()
-          foreach ($root in @(
-            "src-tauri/target/release/bundle",
-            "src-tauri/target/release",
-            "target/release/bundle",
-            "target/release"
-          )) {
-            if (Test-Path $root) {
-              $candidateRoots += (Resolve-Path $root).Path
-            }
+          $candidateRootsJson = ./scripts/tauri-artifact-roots.ps1
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
           }
-
-          if ($env:TAURI_ARTIFACT_PATHS) {
-            try {
-              $artifactPaths = @(ConvertFrom-Json -InputObject $env:TAURI_ARTIFACT_PATHS)
-              foreach ($artifactPath in $artifactPaths) {
-                if (-not $artifactPath) {
-                  continue
-                }
-
-                foreach ($candidate in @(
-                  ((Test-Path $artifactPath -PathType Container) ? $artifactPath : $null),
-                  (Split-Path -Parent $artifactPath),
-                  ((Split-Path -Parent $artifactPath) ? (Split-Path -Parent (Split-Path -Parent $artifactPath)) : $null)
-                )) {
-                  if ($candidate -and (Test-Path $candidate)) {
-                    $candidateRoots += (Resolve-Path $candidate).Path
-                  }
-                }
-              }
-            } catch {
-              Write-Warning "Unable to parse tauri-action artifactPaths output: $($_.Exception.Message)"
-            }
-          }
-
-          $candidateRoots = @($candidateRoots | Sort-Object -Unique)
+          $candidateRoots = if ($candidateRootsJson) { @(ConvertFrom-Json -InputObject $candidateRootsJson) } else { @() }
           if ($candidateRoots.Count -eq 0) {
             Write-Error "No Tauri build output directory found while locating Windows installers."
             exit 1
@@ -233,42 +202,11 @@ jobs:
           RELEASE_TAG: ${{ steps.release-metadata.outputs.release_tag }}
           TAURI_ARTIFACT_PATHS: ${{ steps.tauri-build.outputs.artifactPaths }}
         run: |
-          $candidateRoots = @()
-          foreach ($root in @(
-            "src-tauri/target/release/bundle",
-            "src-tauri/target/release",
-            "target/release/bundle",
-            "target/release"
-          )) {
-            if (Test-Path $root) {
-              $candidateRoots += (Resolve-Path $root).Path
-            }
+          $candidateRootsJson = ./scripts/tauri-artifact-roots.ps1
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
           }
-
-          if ($env:TAURI_ARTIFACT_PATHS) {
-            try {
-              $artifactPaths = @(ConvertFrom-Json -InputObject $env:TAURI_ARTIFACT_PATHS)
-              foreach ($artifactPath in $artifactPaths) {
-                if (-not $artifactPath) {
-                  continue
-                }
-
-                foreach ($candidate in @(
-                  ((Test-Path $artifactPath -PathType Container) ? $artifactPath : $null),
-                  (Split-Path -Parent $artifactPath),
-                  ((Split-Path -Parent $artifactPath) ? (Split-Path -Parent (Split-Path -Parent $artifactPath)) : $null)
-                )) {
-                  if ($candidate -and (Test-Path $candidate)) {
-                    $candidateRoots += (Resolve-Path $candidate).Path
-                  }
-                }
-              }
-            } catch {
-              Write-Warning "Unable to parse tauri-action artifactPaths output: $($_.Exception.Message)"
-            }
-          }
-
-          $candidateRoots = @($candidateRoots | Sort-Object -Unique)
+          $candidateRoots = if ($candidateRootsJson) { @(ConvertFrom-Json -InputObject $candidateRootsJson) } else { @() }
           if ($candidateRoots.Count -eq 0) {
             Write-Warning "No local Tauri output directories found; falling back to uploaded release assets."
           }
@@ -301,15 +239,25 @@ jobs:
 
           $releaseAssets = @()
           if ($latestJson.Count -eq 0 -or $signatures.Count -eq 0) {
-            $releaseView = gh release view $env:RELEASE_TAG --json assets
+            $releaseTags = @(gh release list --limit 1000 --json tagName --jq '.[].tagName')
             if ($LASTEXITCODE -ne 0) {
-              Write-Error "Unable to inspect uploaded release assets for tag '$env:RELEASE_TAG'."
+              Write-Error "Unable to list GitHub releases."
               exit 1
             }
 
-            if ($releaseView) {
-              $releaseAssets = @((ConvertFrom-Json -InputObject $releaseView).assets)
-              Write-Host "Local updater artifacts incomplete, checking uploaded release assets for tag '$env:RELEASE_TAG'."
+            if ($releaseTags -contains $env:RELEASE_TAG) {
+              $releaseView = gh release view $env:RELEASE_TAG --json assets
+              if ($LASTEXITCODE -ne 0) {
+                Write-Error "Unable to inspect uploaded release assets for tag '$env:RELEASE_TAG'."
+                exit 1
+              }
+
+              if ($releaseView) {
+                $releaseAssets = @((ConvertFrom-Json -InputObject $releaseView).assets)
+                Write-Host "Local updater artifacts incomplete, checking uploaded release assets for tag '$env:RELEASE_TAG'."
+              }
+            } else {
+              Write-Warning "Release '$env:RELEASE_TAG' does not exist yet; no uploaded assets to inspect."
             }
           }
 
