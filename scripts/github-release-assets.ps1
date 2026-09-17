@@ -109,34 +109,31 @@ function Invoke-GitHubCli {
   )
 
   $token = Get-GitHubTokenFromHeaders -Headers $Headers
-  $previousGhToken = $env:GH_TOKEN
-  $hadPreviousGhToken = Test-Path Env:GH_TOKEN
-  $errorFile = Join-Path ([System.IO.Path]::GetTempPath()) ("gh-stderr-{0}.log" -f [System.Guid]::NewGuid().ToString("N"))
+  $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+  $startInfo.FileName = "gh"
+  $startInfo.UseShellExecute = $false
+  $startInfo.RedirectStandardOutput = $true
+  $startInfo.RedirectStandardError = $true
 
-  try {
-    if (-not [string]::IsNullOrWhiteSpace($token)) {
-      $env:GH_TOKEN = $token
-    }
+  foreach ($argument in $Arguments) {
+    [void]$startInfo.ArgumentList.Add([string]$argument)
+  }
 
-    $standardOutput = & gh @Arguments 2> $errorFile
-    $standardError = if (Test-Path $errorFile) { Get-Content -Path $errorFile -Raw } else { "" }
-    $exitCode = $LASTEXITCODE
+  if (-not [string]::IsNullOrWhiteSpace($token)) {
+    $startInfo.Environment["GH_TOKEN"] = [string]$token
+  }
 
-    return [PSCustomObject]@{
-      ExitCode = $exitCode
-      StdOut = [string]::Join("`n", @($standardOutput))
-      StdErr = [string]$standardError
-    }
-  } finally {
-    if ($hadPreviousGhToken) {
-      $env:GH_TOKEN = $previousGhToken
-    } else {
-      Remove-Item Env:GH_TOKEN -ErrorAction SilentlyContinue
-    }
+  $process = [System.Diagnostics.Process]::new()
+  $process.StartInfo = $startInfo
+  [void]$process.Start()
+  $standardOutput = $process.StandardOutput.ReadToEnd()
+  $standardError = $process.StandardError.ReadToEnd()
+  $process.WaitForExit()
 
-    if (Test-Path $errorFile) {
-      Remove-Item $errorFile -ErrorAction SilentlyContinue
-    }
+  return [PSCustomObject]@{
+    ExitCode = $process.ExitCode
+    StdOut = [string]$standardOutput
+    StdErr = [string]$standardError
   }
 }
 
