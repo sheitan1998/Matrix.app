@@ -44,6 +44,24 @@ function Resolve-GitHubReleaseTag {
   return $null
 }
 
+function Split-GitHubRepository {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$Repository
+  )
+
+  $repositoryValue = ([string]$Repository).Trim()
+  $parts = $repositoryValue -split '/'
+  if ($parts.Count -ne 2 -or [string]::IsNullOrWhiteSpace($parts[0]) -or [string]::IsNullOrWhiteSpace($parts[1])) {
+    throw "Invalid GitHub repository identifier '$Repository'. Expected 'owner/name'."
+  }
+
+  return [PSCustomObject]@{
+    Owner = $parts[0]
+    Name = $parts[1]
+  }
+}
+
 function ConvertTo-GitHubReleaseId {
   param(
     [AllowNull()]
@@ -81,27 +99,40 @@ function Get-GitHubReleaseByTag {
     return $null
   }
 
-  $releaseListOutput = gh release list --repo "$repositoryValue" --limit 1000 --json tagName,databaseId,url 2>&1
+  $repositoryParts = Split-GitHubRepository -Repository $repositoryValue
+  $releaseQuery = @'
+query($owner:String!, $name:String!, $tag:String!) {
+  repository(owner: $owner, name: $name) {
+    release(tagName: $tag) {
+      databaseId
+      tagName
+      url
+    }
+  }
+}
+'@
+
+  $releaseOutput = gh api graphql -f query="$releaseQuery" -f owner="$($repositoryParts.Owner)" -f name="$($repositoryParts.Name)" -f tag="$tagValue" 2>&1
   if ($LASTEXITCODE -ne 0) {
-    $errorText = ([string]::Join("`n", @($releaseListOutput))).Trim()
-    throw "Failed to list releases in repository '$repositoryValue'. $errorText"
+    $errorText = ([string]::Join("`n", @($releaseOutput))).Trim()
+    throw "Failed to fetch release '$tagValue' in repository '$repositoryValue'. $errorText"
   }
 
-  $releaseListJson = [string]::Join("`n", @($releaseListOutput))
-  if ([string]::IsNullOrWhiteSpace($releaseListJson)) {
+  $releaseJson = [string]::Join("`n", @($releaseOutput))
+  if ([string]::IsNullOrWhiteSpace($releaseJson)) {
     return $null
   }
 
-  $releaseList = @($releaseListJson | ConvertFrom-Json)
-  $release = @($releaseList | Where-Object { [string]$_.tagName -eq $tagValue } | Select-Object -First 1)
-  if ($release.Count -eq 0) {
+  $releaseGraph = $releaseJson | ConvertFrom-Json
+  if (-not $releaseGraph.data -or -not $releaseGraph.data.repository -or -not $releaseGraph.data.repository.release) {
     return $null
   }
 
+  $release = $releaseGraph.data.repository.release
   return [PSCustomObject]@{
-    id = [System.Convert]::ToInt64([string]$release[0].databaseId, [System.Globalization.CultureInfo]::InvariantCulture)
-    tagName = [string]$release[0].tagName
-    url = [string]$release[0].url
+    id = [System.Convert]::ToInt64([string]$release.databaseId, [System.Globalization.CultureInfo]::InvariantCulture)
+    tagName = [string]$release.tagName
+    url = [string]$release.url
   }
 }
 
@@ -193,23 +224,23 @@ function Remove-GitHubReleaseAsset {
     return
   }
 
-  $tagValue = Resolve-GitHubReleaseTag
-  if (-not $tagValue) {
-    throw "Unable to resolve release tag to delete asset '$assetName'."
-  }
-
   Write-Host "Deleting existing release asset '$assetName' $Reason."
   $deleteOutput = @()
   $assetId = ConvertTo-GitHubReleaseId -ReleaseId $Asset.id -ParameterName "Asset.id"
   if ($assetId) {
     $deleteOutput = gh api --method DELETE "repos/$repositoryValue/releases/assets/$assetId" 2>&1
   } else {
+    $tagValue = Resolve-GitHubReleaseTag
+    if (-not $tagValue) {
+      throw "Unable to resolve release tag to delete asset '$assetName'."
+    }
+
     $deleteOutput = gh release delete-asset "$tagValue" "$assetName" --repo "$repositoryValue" --yes 2>&1
   }
 
   if ($LASTEXITCODE -ne 0) {
     $errorText = ([string]::Join("`n", @($deleteOutput))).Trim()
-    throw "Failed to delete release asset '$assetName' from tag '$tagValue'. $errorText"
+    throw "Failed to delete release asset '$assetName'. $errorText"
   }
 }
 
