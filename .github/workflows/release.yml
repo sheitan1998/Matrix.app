@@ -173,15 +173,21 @@ jobs:
           New-Item -ItemType Directory -Path $tempUploadDir -Force | Out-Null
 
           $stableMsi = Join-Path $tempUploadDir "Matrix-Setup.msi"
+          $stableMsiSig = Join-Path $tempUploadDir "Matrix-Setup.msi.sig"
           $stableExe = Join-Path $tempUploadDir "Matrix-Setup.exe"
+          $stableExeSig = Join-Path $tempUploadDir "Matrix-Setup.exe.sig"
           Copy-Item -Path $msiInstallers[0].FullName -Destination $stableMsi -Force
+          Copy-Item -Path "$($msiInstallers[0].FullName).sig" -Destination $stableMsiSig -Force
           Copy-Item -Path $exeInstallers[0].FullName -Destination $stableExe -Force
+          Copy-Item -Path "$($exeInstallers[0].FullName).sig" -Destination $stableExeSig -Force
 
           foreach ($assetPath in @(
             "$($msiInstallers[0].FullName).sig",
             "$($exeInstallers[0].FullName).sig",
             $stableMsi,
-            $stableExe
+            $stableMsiSig,
+            $stableExe,
+            $stableExeSig
           )) {
             gh release upload $env:RELEASE_TAG $assetPath --clobber
             if ($LASTEXITCODE -ne 0) {

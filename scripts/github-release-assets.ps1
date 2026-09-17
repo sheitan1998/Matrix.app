@@ -17,7 +17,9 @@ $productName = if ($env:TAURI_PRODUCT_NAME) {
 $assetNames = @(
   'latest.json',
   'Matrix-Setup.msi',
-  'Matrix-Setup.exe'
+  'Matrix-Setup.msi.sig',
+  'Matrix-Setup.exe',
+  'Matrix-Setup.exe.sig'
 )
 
 if ($env:TAURI_APP_VERSION) {
