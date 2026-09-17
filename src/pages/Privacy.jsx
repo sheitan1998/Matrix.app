@@ -56,6 +56,13 @@ const SECTIONS = [
     id: "youtube-terms",
     icon: FileText,
     title: "5. Conditions YouTube & Google — Liens obligatoires",
+    content: [
+      "L'utilisation des fonctionnalités YouTube intégrées dans MATRIX est soumise aux conditions d'utilisation et aux règles de confidentialité de YouTube et de Google. Nous vous invitons à consulter ces documents :",
+    ],
+    links: [
+      { label: "Conditions d'utilisation de YouTube", url: "https://www.youtube.com/t/terms" },
+      { label: "Politique de confidentialité de Google", url: "http://www.google.com/policies/privacy" },
+    ],
   },
   {
     id: "payments",
@@ -81,18 +88,6 @@ const SECTIONS = [
     id: "contact",
     icon: Mail,
     title: "8. Contact — Droits sur vos données",
-    content: [
-      "L'utilisation des fonctionnalités YouTube intégrées dans MATRIX est soumise aux conditions d'utilisation et aux règles de confidentialité de YouTube et de Google. Nous vous invitons à consulter ces documents :",
-    ],
-    links: [
-      { label: "Conditions d'utilisation de YouTube", url: "https://www.youtube.com/t/terms" },
-      { label: "Politique de confidentialité de Google", url: "http://www.google.com/policies/privacy" },
-    ],
-  },
-  {
-    id: "contact",
-    icon: Mail,
-    title: "6. Contact — Droits sur vos données",
     content: [
       "Conformément au RGPD, vous disposez d'un droit d'accès, de rectification, d'effacement, de portabilité et d'opposition concernant vos données personnelles.",
       "Pour toute demande, question ou préoccupation relative à vos données personnelles ou à la présente politique, vous pouvez nous contacter via l'adresse e-mail ci-dessous. Nous traiterons votre demande dans un délai de 30 jours.",
