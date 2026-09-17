@@ -287,14 +287,17 @@ function Get-GitHubReleaseAssets {
     throw "Failed to parse release assets response for release id '$releaseIdValue' in repository '$repositoryValue'. $($_.Exception.Message)"
   }
 
-  $assetPages = if ($parsedAssets -is [System.Array]) {
-    @($parsedAssets)
-  } else {
-    @($parsedAssets)
-  }
+  $assetPages = New-Object System.Collections.Generic.List[object]
+  foreach ($parsedItem in @($parsedAssets)) {
+    if ($null -eq $parsedItem) {
+      continue
+    }
 
-  if ($assetPages.Count -gt 0 -and $assetPages[0] -and ($assetPages[0].PSObject.Properties.Name -contains 'id')) {
-    $assetPages = @(@($assetPages))
+    if ($parsedItem -is [System.Array]) {
+      $assetPages.Add(@($parsedItem))
+    } else {
+      $assetPages.Add(@($parsedItem))
+    }
   }
 
   foreach ($assetPage in $assetPages) {
@@ -338,7 +341,7 @@ function Remove-GitHubReleaseAsset {
   )
   if ($deleteResult.ExitCode -ne 0) {
     $errorText = ([string]$deleteResult.StdErr).Trim()
-    throw "Failed to delete release asset '$assetDisplayName'. $errorText"
+    throw "Failed to delete release asset '$assetDisplayName' (id=$assetId) in repository '$repositoryValue'. $errorText"
   }
 }
 
