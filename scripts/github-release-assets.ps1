@@ -36,7 +36,7 @@ Write-Host "Cleaning existing release assets..."
 
 $releaseViewErrorFile = Join-Path ([System.IO.Path]::GetTempPath()) "gh-release-assets-view.err"
 Remove-Item $releaseViewErrorFile -ErrorAction SilentlyContinue
-$existingAssets = @(gh release view $releaseTag --json assets --jq '.assets[].name' 2>$releaseViewErrorFile)
+$existingAssets = @(gh release view $releaseTag --repo $env:GITHUB_REPOSITORY --json assets --jq '.assets[].name' 2>$releaseViewErrorFile)
 if ($LASTEXITCODE -ne 0) {
   $releaseViewError = if (Test-Path $releaseViewErrorFile) {
     (Get-Content $releaseViewErrorFile -Raw).Trim()
@@ -54,7 +54,7 @@ if ($LASTEXITCODE -ne 0) {
 
 foreach ($assetName in @($assetNames | Select-Object -Unique)) {
   if ($existingAssets -contains $assetName) {
-    gh release delete-asset $releaseTag $assetName --yes
+    gh release delete-asset $releaseTag $assetName --repo $env:GITHUB_REPOSITORY --yes
     if ($LASTEXITCODE -ne 0) {
       throw "Unable to delete asset '$assetName' from release '$releaseTag'."
     }

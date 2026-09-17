@@ -92,9 +92,10 @@ jobs:
         shell: pwsh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
           RELEASE_TAG: ${{ steps.release-metadata.outputs.release_tag }}
         run: |
-          gh release upload $env:RELEASE_TAG latest.json --clobber
+          gh release upload $env:RELEASE_TAG latest.json --repo $env:GITHUB_REPOSITORY --clobber
           if ($LASTEXITCODE -ne 0) {
             exit $LASTEXITCODE
           }
@@ -103,6 +104,7 @@ jobs:
         shell: pwsh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
           RELEASE_TAG: ${{ steps.release-metadata.outputs.release_tag }}
           TAURI_ARTIFACT_PATHS: ${{ steps.tauri-build.outputs.artifactPaths }}
         run: |
@@ -189,7 +191,7 @@ jobs:
             $stableExe,
             $stableExeSig
           )) {
-            gh release upload $env:RELEASE_TAG $assetPath --clobber
+            gh release upload $env:RELEASE_TAG $assetPath --repo $env:GITHUB_REPOSITORY --clobber
             if ($LASTEXITCODE -ne 0) {
               exit $LASTEXITCODE
             }
@@ -205,6 +207,7 @@ jobs:
         shell: pwsh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
           RELEASE_TAG: ${{ steps.release-metadata.outputs.release_tag }}
           TAURI_ARTIFACT_PATHS: ${{ steps.tauri-build.outputs.artifactPaths }}
         run: |
@@ -247,7 +250,7 @@ jobs:
           if ($latestJson.Count -eq 0 -or $signatures.Count -eq 0) {
             $releaseViewErrorFile = Join-Path $env:RUNNER_TEMP "gh-release-view.err"
             Remove-Item $releaseViewErrorFile -ErrorAction SilentlyContinue
-            $releaseView = gh release view $env:RELEASE_TAG --json assets 2>$releaseViewErrorFile
+            $releaseView = gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --json assets 2>$releaseViewErrorFile
             if ($LASTEXITCODE -ne 0) {
               $releaseViewError = if (Test-Path $releaseViewErrorFile) {
                 (Get-Content $releaseViewErrorFile -Raw).Trim()
