@@ -30,31 +30,34 @@ if ($env:TAURI_APP_VERSION) {
   )
 }
 
-Write-Host "Nettoyage des anciens assets de la release..."
+Write-Host "Cleaning existing release assets..."
 
-$releaseTags = @(gh release list --limit 1000 --json tagName --jq '.[].tagName')
+$releaseViewErrorFile = Join-Path ([System.IO.Path]::GetTempPath()) "gh-release-assets-view.err"
+Remove-Item $releaseViewErrorFile -ErrorAction SilentlyContinue
+$existingAssets = @(gh release view $releaseTag --json assets --jq '.assets[].name' 2>$releaseViewErrorFile)
 if ($LASTEXITCODE -ne 0) {
-  throw "Impossible de lister les releases GitHub."
-}
+  $releaseViewError = if (Test-Path $releaseViewErrorFile) {
+    (Get-Content $releaseViewErrorFile -Raw).Trim()
+  } else {
+    ""
+  }
 
-if ($releaseTags -notcontains $releaseTag) {
-  Write-Host "Release absente pour le tag '$releaseTag', rien à nettoyer."
-  exit 0
-}
+  if ($releaseViewError -match '(?i)(release|tag).*(not found|404)') {
+    Write-Host "Release '$releaseTag' does not exist yet; nothing to clean."
+    exit 0
+  }
 
-$existingAssets = @(gh release view $releaseTag --json assets --jq '.assets[].name')
-if ($LASTEXITCODE -ne 0) {
-  throw "Impossible de lire les assets de la release '$releaseTag'."
+  throw "Unable to read assets for release '$releaseTag'. $releaseViewError".Trim()
 }
 
 foreach ($assetName in @($assetNames | Select-Object -Unique)) {
   if ($existingAssets -contains $assetName) {
     gh release delete-asset $releaseTag $assetName --yes
     if ($LASTEXITCODE -ne 0) {
-      throw "Impossible de supprimer l'asset '$assetName' de la release '$releaseTag'."
+      throw "Unable to delete asset '$assetName' from release '$releaseTag'."
     }
-    Write-Host "Asset supprimé: $assetName"
+    Write-Host "Deleted asset: $assetName"
   } else {
-    Write-Host "Asset absent ou déjà supprimé: $assetName"
+    Write-Host "Asset already absent: $assetName"
   }
 }

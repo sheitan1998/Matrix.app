@@ -239,25 +239,25 @@ jobs:
 
           $releaseAssets = @()
           if ($latestJson.Count -eq 0 -or $signatures.Count -eq 0) {
-            $releaseTags = @(gh release list --limit 1000 --json tagName --jq '.[].tagName')
+            $releaseViewErrorFile = Join-Path $env:RUNNER_TEMP "gh-release-view.err"
+            Remove-Item $releaseViewErrorFile -ErrorAction SilentlyContinue
+            $releaseView = gh release view $env:RELEASE_TAG --json assets 2>$releaseViewErrorFile
             if ($LASTEXITCODE -ne 0) {
-              Write-Error "Unable to list GitHub releases."
-              exit 1
-            }
+              $releaseViewError = if (Test-Path $releaseViewErrorFile) {
+                (Get-Content $releaseViewErrorFile -Raw).Trim()
+              } else {
+                ""
+              }
 
-            if ($releaseTags -contains $env:RELEASE_TAG) {
-              $releaseView = gh release view $env:RELEASE_TAG --json assets
-              if ($LASTEXITCODE -ne 0) {
-                Write-Error "Unable to inspect uploaded release assets for tag '$env:RELEASE_TAG'."
+              if ($releaseViewError -match '(?i)(release|tag).*(not found|404)') {
+                Write-Warning "Release '$env:RELEASE_TAG' does not exist yet; no uploaded assets to inspect."
+              } else {
+                Write-Error "Unable to inspect uploaded release assets for tag '$env:RELEASE_TAG'. $releaseViewError"
                 exit 1
               }
-
-              if ($releaseView) {
-                $releaseAssets = @((ConvertFrom-Json -InputObject $releaseView).assets)
-                Write-Host "Local updater artifacts incomplete, checking uploaded release assets for tag '$env:RELEASE_TAG'."
-              }
             } else {
-              Write-Warning "Release '$env:RELEASE_TAG' does not exist yet; no uploaded assets to inspect."
+              $releaseAssets = @((ConvertFrom-Json -InputObject $releaseView).assets)
+              Write-Host "Local updater artifacts incomplete, checking uploaded release assets for tag '$env:RELEASE_TAG'."
             }
           }
 
