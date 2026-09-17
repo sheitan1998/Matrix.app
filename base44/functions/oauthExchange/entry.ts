@@ -10,6 +10,15 @@ type ProviderConfig = {
   authorizationParams?: Record<string, string>;
 };
 
+const DESKTOP_OAUTH_BRIDGE_ORIGINS = new Set([
+  'http://127.0.0.1:48923',
+  'http://localhost:48923',
+]);
+const DESKTOP_OAUTH_CALLBACK_PATH = '/oauth/callback';
+const DESKTOP_OAUTH_DEEP_LINK_PROTOCOL = 'matrix:';
+const DESKTOP_OAUTH_DEEP_LINK_HOST = 'oauth';
+const DESKTOP_OAUTH_DEEP_LINK_PATH = '/callback';
+
 const PROVIDERS: Record<string, ProviderConfig> = {
   google: {
     authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
@@ -134,11 +143,43 @@ function normalizeRedirectUri(value: unknown): string {
     throw new HttpError(400, 'Invalid redirectUri: absolute URL expected.');
   }
 
-  if (!['http:', 'https:'].includes(parsed.protocol)) {
-    throw new HttpError(400, 'Invalid redirectUri: only http and https URLs are supported.');
+  const isHttpRedirect = ['http:', 'https:'].includes(parsed.protocol);
+  const isDesktopDeepLink =
+    parsed.protocol === DESKTOP_OAUTH_DEEP_LINK_PROTOCOL &&
+    parsed.hostname === DESKTOP_OAUTH_DEEP_LINK_HOST &&
+    parsed.pathname === DESKTOP_OAUTH_DEEP_LINK_PATH;
+
+  if (!isHttpRedirect && !isDesktopDeepLink) {
+    throw new HttpError(
+      400,
+      'Invalid redirectUri: only http, https, or the trusted desktop callback are supported.'
+    );
   }
 
   return parsed.toString();
+}
+
+function isTrustedDesktopRedirectUri(redirectUri: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(redirectUri);
+  } catch {
+    return false;
+  }
+
+  if (
+    ['http:', 'https:'].includes(parsed.protocol) &&
+    DESKTOP_OAUTH_BRIDGE_ORIGINS.has(parsed.origin) &&
+    parsed.pathname === DESKTOP_OAUTH_CALLBACK_PATH
+  ) {
+    return true;
+  }
+
+  return (
+    parsed.protocol === DESKTOP_OAUTH_DEEP_LINK_PROTOCOL &&
+    parsed.hostname === DESKTOP_OAUTH_DEEP_LINK_HOST &&
+    parsed.pathname === DESKTOP_OAUTH_DEEP_LINK_PATH
+  );
 }
 
 function normalizeCodeVerifier(value: unknown): string {
@@ -177,7 +218,7 @@ function resolveRedirectUri(
     return requestedRedirectUri;
   }
 
-  if (configuredRedirectUri !== requestedRedirectUri) {
+  if (configuredRedirectUri !== requestedRedirectUri && !isTrustedDesktopRedirectUri(requestedRedirectUri)) {
     throw new HttpError(
       400,
       'OAuth redirect URI mismatch. Check the provider configuration and the app callback URL.'

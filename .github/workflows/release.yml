@@ -38,6 +38,61 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Resolve release metadata
+        id: release-metadata
+        shell: pwsh
+        run: |
+          $tauriConfig = Get-Content "src-tauri/tauri.conf.json" -Raw | ConvertFrom-Json
+          $version = $tauriConfig.version
+          $productName = $tauriConfig.productName
+          $releaseTag = if ($env:GITHUB_REF_TYPE -eq "tag" -and $env:GITHUB_REF_NAME) {
+            $env:GITHUB_REF_NAME
+          } else {
+            "v$version"
+          }
+
+          "app_version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "product_name=$productName" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "release_tag=$releaseTag" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Remove existing assets from target release
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.release-metadata.outputs.release_tag }}
+          TAURI_APP_VERSION: ${{ steps.release-metadata.outputs.app_version }}
+          TAURI_PRODUCT_NAME: ${{ steps.release-metadata.outputs.product_name }}
+        run: |
+          . ./scripts/github-release-assets.ps1
+          $headers = New-GitHubReleaseHeaders -Token $env:GITHUB_TOKEN
+          $assetNamesToDelete = @(
+            "latest.json",
+            "Matrix-Setup.msi",
+            "Matrix-Setup.exe"
+          ) + @(Get-TauriWindowsExpectedAssetNames -ProductName $env:TAURI_PRODUCT_NAME -Version $env:TAURI_APP_VERSION)
+          $assetNameSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+          foreach ($assetName in $assetNamesToDelete) {
+            [void]$assetNameSet.Add($assetName)
+          }
+
+          $release = Get-GitHubReleaseByTag -Repository $env:GITHUB_REPOSITORY -Headers $headers -TagName $env:RELEASE_TAG
+          if (-not $release) {
+            Write-Host "No existing release found for tag '$env:RELEASE_TAG'; nothing to clean."
+            exit 0
+          }
+
+          $assets = @(Get-GitHubReleaseAssets -Repository $env:GITHUB_REPOSITORY -Headers $headers -ReleaseId $release.id | Where-Object { $assetNameSet.Contains($_.name) })
+          if ($assets.Count -eq 0) {
+            Write-Host "Release '$env:RELEASE_TAG' exists but has no Windows-owned assets to delete."
+            exit 0
+          }
+
+          foreach ($asset in $assets) {
+            Remove-GitHubReleaseAsset -Repository $env:GITHUB_REPOSITORY -Headers $headers -Asset $asset -Reason "before rebuild"
+          }
+
+          Write-Host "Removed $($assets.Count) existing Windows-owned asset(s) from release '$env:RELEASE_TAG'."
+
       - name: Build Tauri App & Create Installer
         id: tauri-build
         uses: tauri-apps/tauri-action@v1
@@ -51,96 +106,155 @@ jobs:
           releaseBody: 'Nouvelle mise à jour de Matrix.'
           releaseDraft: false
           prerelease: false
+          uploadUpdaterJson: false
+          uploadUpdaterSignatures: false
 
       - name: Generate latest.json for matrix-hub updater
         shell: pwsh
+        env:
+          TAURI_APP_VERSION: ${{ steps.release-metadata.outputs.app_version }}
         run: |
-          $version = (Get-Content "src-tauri/tauri.conf.json" -Raw | ConvertFrom-Json).version
-          node scripts/generate-latest-json.mjs --version=$version --base-url=https://matrix-hub.app/downloads
+          node scripts/generate-latest-json.mjs --version=$env:TAURI_APP_VERSION --base-url=https://matrix-hub.app/downloads
 
       - name: Upload generated latest.json in release assets
         shell: pwsh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.release-metadata.outputs.release_tag }}
           TAURI_RELEASE_ID: ${{ steps.tauri-build.outputs.releaseId }}
         run: |
-          if (-not $env:TAURI_RELEASE_ID) {
-            Write-Error "Missing tauri release id, cannot upload latest.json."
+          . ./scripts/github-release-assets.ps1
+          $headers = New-GitHubReleaseHeaders -Token $env:GITHUB_TOKEN
+          $releaseId = Get-GitHubReleaseId -Repository $env:GITHUB_REPOSITORY -Headers $headers -TagName $env:RELEASE_TAG -ReleaseId $env:TAURI_RELEASE_ID
+          if (-not $releaseId) {
+            Write-Error "Missing tauri release id and no release was found for tag '$env:RELEASE_TAG'."
             exit 1
           }
-          $assetName = "latest.json"
-          $headers = @{
-            Authorization = "token $env:GITHUB_TOKEN"
-            Accept = "application/vnd.github+json"
-            "X-GitHub-Api-Version" = "2022-11-28"
-          }
-          $existingLatestAssets = @()
-          $assetPageNumber = 1
-          do {
-            $assetListUrl = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases/$env:TAURI_RELEASE_ID/assets?per_page=100&page=$assetPageNumber"
-            $assetPage = @(Invoke-RestMethod -Uri $assetListUrl -Headers $headers -Method Get)
-            $existingLatestAssets += @($assetPage | Where-Object { $_.name -eq $assetName })
-            $assetPageNumber++
-          } while ($assetPage.Count -eq 100)
 
-          if ($existingLatestAssets.Count -gt 0) {
-            # GitHub release assets do not overwrite duplicate names; remove old latest.json before upload.
-            foreach ($asset in $existingLatestAssets) {
-              $deleteUrl = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases/assets/$($asset.id)"
-              Write-Host "Deleting existing release asset '$assetName' (id=$($asset.id)) before upload."
-              Invoke-RestMethod -Uri $deleteUrl -Headers $headers -Method Delete
+          $assetName = "latest.json"
+          Remove-GitHubReleaseAssetsByName -Repository $env:GITHUB_REPOSITORY -Headers $headers -ReleaseId $releaseId -AssetNames @($assetName)
+
+          $uploadHeaders = New-GitHubReleaseHeaders -Token $env:GITHUB_TOKEN -ContentType "application/octet-stream"
+          $uploadUrl = "https://uploads.github.com/repos/$env:GITHUB_REPOSITORY/releases/$releaseId/assets?name=$([System.Uri]::EscapeDataString($assetName))"
+          Invoke-RestMethod -Uri $uploadUrl -Headers $uploadHeaders -Method Post -InFile $assetName -ErrorAction Stop
+
+      - name: Publish Windows updater assets and stable aliases
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.release-metadata.outputs.release_tag }}
+          TAURI_ARTIFACT_PATHS: ${{ steps.tauri-build.outputs.artifactPaths }}
+          TAURI_RELEASE_ID: ${{ steps.tauri-build.outputs.releaseId }}
+        run: |
+          . ./scripts/github-release-assets.ps1
+          $headers = New-GitHubReleaseHeaders -Token $env:GITHUB_TOKEN
+
+          try {
+            $candidateRoots = @(Get-TauriArtifactCandidateRoots -ArtifactPathsJson $env:TAURI_ARTIFACT_PATHS)
+          } catch {
+            Write-Warning $_.Exception.Message
+            $candidateRoots = @()
+          }
+          if ($candidateRoots.Count -eq 0) {
+            Write-Error "No Tauri build output directory found while locating Windows installers."
+            exit 1
+          }
+
+          Write-Host "Searching Windows installers under:"
+          $candidateRoots | ForEach-Object { Write-Host " - $_" }
+
+          $windowsArtifacts = Get-TauriWindowsInstallerArtifacts -CandidateRoots $candidateRoots
+          $msiInstallers = @($windowsArtifacts.MsiInstallers)
+          $exeInstallers = @($windowsArtifacts.ExeInstallers)
+
+          if ($msiInstallers.Count -eq 0) {
+            Write-Error "No Windows MSI installer (*.msi) was found in the Tauri build outputs."
+            exit 1
+          }
+
+          if ($exeInstallers.Count -eq 0) {
+            Write-Error "No Windows NSIS installer (*setup.exe) was found in the Tauri build outputs."
+            exit 1
+          }
+
+          if ($msiInstallers.Count -gt 1) {
+            Write-Warning "Multiple MSI installers found; using the first deterministic match:"
+            $msiInstallers | ForEach-Object { Write-Warning " - $($_.FullName)" }
+          }
+
+          if ($exeInstallers.Count -gt 1) {
+            Write-Warning "Multiple NSIS installers found; using the first deterministic match:"
+            $exeInstallers | ForEach-Object { Write-Warning " - $($_.FullName)" }
+          }
+
+          $releaseId = Get-GitHubReleaseId -Repository $env:GITHUB_REPOSITORY -Headers $headers -TagName $env:RELEASE_TAG -ReleaseId $env:TAURI_RELEASE_ID
+          if (-not $releaseId) {
+            Write-Error "Missing tauri release id and no release was found for tag '$env:RELEASE_TAG'."
+            exit 1
+          }
+
+          $assetUploads = @(
+            @{
+              AssetName = [System.IO.Path]::GetFileName("$($msiInstallers[0].FullName).sig")
+              SourcePath = "$($msiInstallers[0].FullName).sig"
+              ContentType = "application/octet-stream"
+            },
+            @{
+              AssetName = [System.IO.Path]::GetFileName("$($exeInstallers[0].FullName).sig")
+              SourcePath = "$($exeInstallers[0].FullName).sig"
+              ContentType = "application/octet-stream"
+            },
+            @{
+              AssetName = "Matrix-Setup.msi"
+              SourcePath = $msiInstallers[0].FullName
+              ContentType = "application/x-msi"
+            },
+            @{
+              AssetName = "Matrix-Setup.exe"
+              SourcePath = $exeInstallers[0].FullName
+              ContentType = "application/octet-stream"
+            }
+          )
+
+          foreach ($assetUpload in $assetUploads) {
+            if (-not (Test-Path $assetUpload.SourcePath -PathType Leaf)) {
+              Write-Error "Expected release asset source file not found: $($assetUpload.SourcePath)"
+              exit 1
             }
           }
 
-          $uploadHeaders = $headers.Clone()
-          $uploadHeaders["Content-Type"] = "application/octet-stream"
-          $uploadUrl = "https://uploads.github.com/repos/$env:GITHUB_REPOSITORY/releases/$env:TAURI_RELEASE_ID/assets?name=$assetName"
-          Invoke-RestMethod -Uri $uploadUrl -Headers $uploadHeaders -Method Post -InFile $assetName
+          $releaseAssets = @(Get-GitHubReleaseAssets -Repository $env:GITHUB_REPOSITORY -Headers $headers -ReleaseId $releaseId)
+          foreach ($assetUpload in $assetUploads) {
+            foreach ($asset in @($releaseAssets | Where-Object { $_.name -eq $assetUpload.AssetName })) {
+              Remove-GitHubReleaseAsset -Repository $env:GITHUB_REPOSITORY -Headers $headers -Asset $asset
+            }
+            $releaseAssets = @($releaseAssets | Where-Object { $_.name -ne $assetUpload.AssetName })
+
+            $uploadHeaders = New-GitHubReleaseHeaders -Token $env:GITHUB_TOKEN -ContentType $assetUpload.ContentType
+            $uploadUrl = "https://uploads.github.com/repos/$env:GITHUB_REPOSITORY/releases/$releaseId/assets?name=$([System.Uri]::EscapeDataString($assetUpload.AssetName))"
+            Invoke-RestMethod -Uri $uploadUrl -Headers $uploadHeaders -Method Post -InFile $assetUpload.SourcePath -ErrorAction Stop
+            Write-Host "Published release asset '$($assetUpload.AssetName)' from '$($assetUpload.SourcePath)'."
+
+            if ($assetUpload.AssetName -like "Matrix-Setup.*") {
+              Write-Host "Stable direct download URL: https://github.com/$env:GITHUB_REPOSITORY/releases/latest/download/$($assetUpload.AssetName)"
+            }
+          }
 
       - name: Verify updater artifacts
         shell: pwsh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.release-metadata.outputs.release_tag }}
           TAURI_ARTIFACT_PATHS: ${{ steps.tauri-build.outputs.artifactPaths }}
           TAURI_RELEASE_ID: ${{ steps.tauri-build.outputs.releaseId }}
         run: |
-          $candidateRoots = New-Object System.Collections.Generic.List[string]
-
-          foreach ($root in @(
-            "src-tauri/target/release/bundle",
-            "src-tauri/target/release",
-            "target/release/bundle",
-            "target/release"
-          )) {
-            if (Test-Path $root) {
-              $candidateRoots.Add((Resolve-Path $root).Path)
-            }
+          . ./scripts/github-release-assets.ps1
+          try {
+            $candidateRoots = @(Get-TauriArtifactCandidateRoots -ArtifactPathsJson $env:TAURI_ARTIFACT_PATHS)
+          } catch {
+            Write-Warning $_.Exception.Message
+            $candidateRoots = @()
           }
-
-          if ($env:TAURI_ARTIFACT_PATHS) {
-            try {
-              $artifactPaths = @(ConvertFrom-Json -InputObject $env:TAURI_ARTIFACT_PATHS)
-              foreach ($artifactPath in $artifactPaths) {
-                if (-not $artifactPath) {
-                  continue
-                }
-
-                foreach ($candidate in @(
-                  ((Test-Path $artifactPath -PathType Container) ? $artifactPath : $null),
-                  (Split-Path -Parent $artifactPath),
-                  ((Split-Path -Parent $artifactPath) ? (Split-Path -Parent (Split-Path -Parent $artifactPath)) : $null)
-                )) {
-                  if ($candidate -and (Test-Path $candidate)) {
-                    $candidateRoots.Add((Resolve-Path $candidate).Path)
-                  }
-                }
-              }
-            } catch {
-              Write-Warning "Unable to parse tauri-action artifactPaths output: $($_.Exception.Message)"
-            }
-          }
-
-          $candidateRoots = @($candidateRoots | Sort-Object -Unique)
           if ($candidateRoots.Count -eq 0 -and -not $env:TAURI_RELEASE_ID) {
             Write-Error "No Tauri build output directory found to verify updater artifacts."
             exit 1
@@ -175,19 +289,18 @@ jobs:
           }
 
           $releaseAssets = @()
-          if (($latestJson.Count -eq 0 -or $signatures.Count -eq 0) -and $env:TAURI_RELEASE_ID) {
-            $assetUrl = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases/$env:TAURI_RELEASE_ID/assets?per_page=100"
-            Write-Host "Local updater artifacts incomplete, checking uploaded release assets: $assetUrl"
-
-            try {
-              $headers = @{
-                Authorization = "Bearer $env:GITHUB_TOKEN"
-                Accept = "application/vnd.github+json"
-                "X-GitHub-Api-Version" = "2022-11-28"
+          if ($latestJson.Count -eq 0 -or $signatures.Count -eq 0) {
+            $headers = New-GitHubReleaseHeaders -Token $env:GITHUB_TOKEN
+            $releaseId = Get-GitHubReleaseId -Repository $env:GITHUB_REPOSITORY -Headers $headers -TagName $env:RELEASE_TAG -ReleaseId $env:TAURI_RELEASE_ID
+            if ($releaseId) {
+              Write-Host "Local updater artifacts incomplete, checking uploaded release assets for release id $releaseId."
+              try {
+                $releaseAssets = @(Get-GitHubReleaseAssets -Repository $env:GITHUB_REPOSITORY -Headers $headers -ReleaseId $releaseId)
+              } catch {
+                Write-Warning "Unable to inspect uploaded release assets: $($_.Exception.Message)"
               }
-              $releaseAssets = @(Invoke-RestMethod -Uri $assetUrl -Headers $headers -Method Get)
-            } catch {
-              Write-Warning "Unable to inspect uploaded release assets: $($_.Exception.Message)"
+            } else {
+              Write-Warning "Release id is unavailable while verifying fallback release assets."
             }
           }
 

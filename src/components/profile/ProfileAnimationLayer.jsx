@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { appParams, resolveAssetUrl } from "@/lib/app-params";
 
 /**
  * ProfileAnimationLayer
@@ -26,11 +27,17 @@ export default function ProfileAnimationLayer({ cosmetic, size = 96 }) {
   // Width/height overrides (in px). If set, used directly; otherwise derived from scale.
   const layerW = cfg.width ? Number(cfg.width) : size * scale;
   const layerH = cfg.height ? Number(cfg.height) : size * scale;
+  const videoUrl = resolveAssetUrl(cosmetic?.video_url, appParams.appBaseUrl);
 
   useEffect(() => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas) return;
+
+    video.setAttribute("webkit-playsinline", "true");
+    video.setAttribute("x5-playsinline", "true");
+    video.setAttribute("x5-video-player-type", "h5");
+    video.setAttribute("x5-video-player-fullscreen", "false");
 
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
 
@@ -90,9 +97,9 @@ export default function ProfileAnimationLayer({ cosmetic, size = 96 }) {
       video.removeEventListener("loadeddata", onLoaded);
       video.removeEventListener("canplay", onCanPlay);
     };
-  }, [cosmetic?.video_url]);
+  }, [videoUrl]);
 
-  if (!cosmetic || !cosmetic.video_url) return null;
+  if (!cosmetic || !videoUrl) return null;
 
   return (
     <div
@@ -106,17 +113,13 @@ export default function ProfileAnimationLayer({ cosmetic, size = 96 }) {
     >
       <video
         ref={videoRef}
-        src={cosmetic.video_url}
+        src={videoUrl}
         autoPlay
         loop
         muted
         playsInline
         preload="auto"
         crossOrigin="anonymous"
-        webkit-playsinline="true"
-        x5-playsinline="true"
-        x5-video-player-type="h5"
-        x5-video-player-fullscreen="false"
         style={{ display: "none" }}
       />
       <canvas

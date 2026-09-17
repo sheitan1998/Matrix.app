@@ -1,4 +1,5 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect } from "react";
+import { appParams, resolveAssetUrl } from "@/lib/app-params";
 import { getCosmeticIconImageUrl, isImageAssetUrl, isVideoAssetUrl, normalizeCosmeticAssetUrl } from "@/lib/cosmeticAssetUrl";
 
 /**
@@ -13,15 +14,20 @@ export default function CosmeticProfilePreview({ item, user }) {
   const canvasRef = useRef(null);
   const videoRef = useRef(null);
   const rafRef = useRef(null);
-  const [videoReady, setVideoReady] = useState(false);
 
-  const normalizedVideoAsset = normalizeCosmeticAssetUrl(item?.video_url);
-  const normalizedPreviewAsset = normalizeCosmeticAssetUrl(item?.preview_image);
+  const normalizedVideoAsset = resolveAssetUrl(
+    normalizeCosmeticAssetUrl(item?.video_url),
+    appParams.appBaseUrl
+  );
+  const normalizedPreviewAsset = resolveAssetUrl(
+    normalizeCosmeticAssetUrl(item?.preview_image),
+    appParams.appBaseUrl
+  );
   const videoUrl = isVideoAssetUrl(item?.video_url) ? normalizedVideoAsset : "";
   const previewImage = isImageAssetUrl(item?.preview_image)
     ? normalizedPreviewAsset
     : (isImageAssetUrl(item?.video_url) ? normalizedVideoAsset : "");
-  const iconImage = getCosmeticIconImageUrl(item?.icon);
+  const iconImage = resolveAssetUrl(getCosmeticIconImageUrl(item?.icon), appParams.appBaseUrl);
   const isAnimation = item?.category === "avatar_animation" && videoUrl;
   const isCover = item?.category === "profile_cover";
   const cfg = item?.anim_config || {};
@@ -63,7 +69,7 @@ export default function CosmeticProfilePreview({ item, user }) {
       rafRef.current = requestAnimationFrame(processFrame);
     };
 
-    const onLoaded = () => { setVideoReady(true); rafRef.current = requestAnimationFrame(processFrame); };
+    const onLoaded = () => { rafRef.current = requestAnimationFrame(processFrame); };
     if (video.readyState >= 2) onLoaded();
     else video.addEventListener("loadeddata", onLoaded);
 
@@ -73,8 +79,10 @@ export default function CosmeticProfilePreview({ item, user }) {
     };
   }, [videoUrl, isAnimation]);
 
-  const avatar = user?.avatar_url;
-  const banner = isCover ? (videoUrl || previewImage) : user?.banner_url;
+  const avatar = resolveAssetUrl(user?.avatar_url, appParams.appBaseUrl);
+  const banner = isCover
+    ? (videoUrl || previewImage)
+    : resolveAssetUrl(user?.banner_url, appParams.appBaseUrl);
   const pseudo = user?.pseudo || user?.full_name?.split(" ")[0] || "Vous";
   const pseudoTag = user?.pseudo_tag || "????";
 
