@@ -206,8 +206,13 @@ query($owner:String!, $name:String!, $tag:String!) {
   }
 
   $release = $releaseGraph.data.repository.release
+  $releaseId = ConvertTo-GitHubReleaseId -ReleaseId $release.databaseId -ParameterName "release.databaseId"
+  if ($null -eq $releaseId) {
+    return $null
+  }
+
   return [PSCustomObject]@{
-    id = [System.Convert]::ToInt64([string]$release.databaseId, [System.Globalization.CultureInfo]::InvariantCulture)
+    id = $releaseId
     tagName = [string]$release.tagName
     url = [string]$release.url
   }
@@ -282,14 +287,14 @@ function Get-GitHubReleaseAssets {
     throw "Failed to parse release assets response for release id '$releaseIdValue' in repository '$repositoryValue'. $($_.Exception.Message)"
   }
 
-  if ($parsedAssets -is [System.Array]) {
-    if ($parsedAssets.Count -gt 0 -and -not ($parsedAssets[0] -is [System.Array])) {
-      $assetPages = @([object[]]$parsedAssets)
-    } else {
-      $assetPages = @($parsedAssets)
-    }
+  $assetPages = if ($parsedAssets -is [System.Array]) {
+    @($parsedAssets)
   } else {
-    $assetPages = @(@($parsedAssets))
+    @($parsedAssets)
+  }
+
+  if ($assetPages.Count -gt 0 -and $assetPages[0] -and ($assetPages[0].PSObject.Properties.Name -contains 'id')) {
+    $assetPages = @(@($assetPages))
   }
 
   foreach ($assetPage in $assetPages) {
