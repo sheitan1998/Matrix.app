@@ -156,7 +156,7 @@ function Get-GitHubReleaseId {
   }
 
   $release = Get-GitHubReleaseByTag -Repository ([string]$Repository) -Headers $Headers -TagName ([string]$TagName)
-  if ($release -and $release.id) {
+  if ($release -and $null -ne $release.id) {
     return (ConvertTo-GitHubReleaseId -ReleaseId $release.id -ParameterName "release.id")
   }
 
@@ -179,7 +179,7 @@ function Get-GitHubReleaseAssets {
   $releaseIdValue = ConvertTo-GitHubReleaseId -ReleaseId $ReleaseId -ParameterName "ReleaseId"
   $assets = New-Object System.Collections.Generic.List[object]
 
-  if (-not $releaseIdValue) {
+  if ($null -eq $releaseIdValue) {
     throw "ReleaseId is required to list GitHub release assets."
   }
 
@@ -227,7 +227,7 @@ function Remove-GitHubReleaseAsset {
   Write-Host "Deleting existing release asset '$assetName' $Reason."
   $deleteOutput = @()
   $assetId = ConvertTo-GitHubReleaseId -ReleaseId $Asset.id -ParameterName "Asset.id"
-  if ($assetId) {
+  if ($null -ne $assetId) {
     $deleteOutput = gh api --method DELETE "repos/$repositoryValue/releases/assets/$assetId" 2>&1
   } else {
     $tagValue = Resolve-GitHubReleaseTag
