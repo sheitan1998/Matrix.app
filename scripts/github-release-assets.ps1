@@ -19,6 +19,28 @@ function New-GitHubReleaseHeaders {
   return $headers
 }
 
+function ConvertTo-GitHubReleaseId {
+  param(
+    [Parameter(Mandatory = $true)]
+    [AllowNull()]
+    [object]$ReleaseId,
+
+    [string]$ParameterName = "ReleaseId"
+  )
+
+  if ($null -eq $ReleaseId -or [string]::IsNullOrWhiteSpace([string]$ReleaseId)) {
+    return $null
+  }
+
+  try {
+    # GitHub release ids are 64-bit values. GitHub Actions outputs/env vars arrive as strings,
+    # while API responses can be Int64/JsonElement depending on the PowerShell runtime.
+    return [System.Convert]::ToInt64(([string]$ReleaseId).Trim(), [System.Globalization.CultureInfo]::InvariantCulture)
+  } catch {
+    throw "Invalid GitHub release id for '$ParameterName': '$ReleaseId'. $($_.Exception.Message)"
+  }
+}
+
 function Get-GitHubReleaseHttpStatusCode {
   param(
     [Parameter(Mandatory = $true)]
@@ -44,7 +66,7 @@ function Get-GitHubReleaseByTag {
     [string]$TagName
   )
 
-  $releaseUrl = "https://api.github.com/repos/$Repository/releases/tags/$([System.Uri]::EscapeDataString($TagName))"
+  $releaseUrl = "https://api.github.com/repos/$Repository/releases/tags/$([System.Uri]::EscapeDataString([string]$TagName))"
 
   try {
     return Invoke-RestMethod -Uri $releaseUrl -Headers $Headers -Method Get -ErrorAction Stop
@@ -68,16 +90,17 @@ function Get-GitHubReleaseId {
     [Parameter(Mandatory = $true)]
     [string]$TagName,
 
-    [string]$ReleaseId
+    [object]$ReleaseId
   )
 
-  if ($ReleaseId) {
-    return [int]$ReleaseId
+  $explicitReleaseId = ConvertTo-GitHubReleaseId -ReleaseId $ReleaseId -ParameterName "ReleaseId"
+  if ($null -ne $explicitReleaseId) {
+    return $explicitReleaseId
   }
 
-  $release = Get-GitHubReleaseByTag -Repository $Repository -Headers $Headers -TagName $TagName
+  $release = Get-GitHubReleaseByTag -Repository ([string]$Repository) -Headers $Headers -TagName ([string]$TagName)
   if ($release) {
-    return [int]$release.id
+    return (ConvertTo-GitHubReleaseId -ReleaseId $release.id -ParameterName "release.id")
   }
 
   return $null
@@ -92,14 +115,19 @@ function Get-GitHubReleaseAssets {
     [hashtable]$Headers,
 
     [Parameter(Mandatory = $true)]
-    [int]$ReleaseId
+    [object]$ReleaseId
   )
+
+  $releaseIdValue = ConvertTo-GitHubReleaseId -ReleaseId $ReleaseId -ParameterName "ReleaseId"
+  if ($null -eq $releaseIdValue) {
+    throw "ReleaseId is required to list GitHub release assets."
+  }
 
   $assets = New-Object System.Collections.Generic.List[object]
   $assetPageNumber = 1
 
   while ($true) {
-    $assetListUrl = "https://api.github.com/repos/$Repository/releases/$ReleaseId/assets?per_page=100&page=$assetPageNumber"
+    $assetListUrl = "https://api.github.com/repos/$Repository/releases/$releaseIdValue/assets?per_page=100&page=$assetPageNumber"
     $assetPage = @(Invoke-RestMethod -Uri $assetListUrl -Headers $Headers -Method Get -ErrorAction Stop)
 
     foreach ($asset in $assetPage) {
@@ -130,8 +158,9 @@ function Remove-GitHubReleaseAsset {
     [string]$Reason = "before upload"
   )
 
-  $deleteUrl = "https://api.github.com/repos/$Repository/releases/assets/$($Asset.id)"
-  Write-Host "Deleting existing release asset '$($Asset.name)' (id=$($Asset.id)) $Reason."
+  $assetId = ConvertTo-GitHubReleaseId -ReleaseId $Asset.id -ParameterName "Asset.id"
+  $deleteUrl = "https://api.github.com/repos/$Repository/releases/assets/$assetId"
+  Write-Host "Deleting existing release asset '$($Asset.name)' (id=$assetId) $Reason."
   Invoke-RestMethod -Uri $deleteUrl -Headers $Headers -Method Delete -ErrorAction Stop
 }
 
@@ -144,7 +173,7 @@ function Remove-GitHubReleaseAssetsByName {
     [hashtable]$Headers,
 
     [Parameter(Mandatory = $true)]
-    [int]$ReleaseId,
+    [object]$ReleaseId,
 
     [Parameter(Mandatory = $true)]
     [string[]]$AssetNames,
@@ -152,19 +181,26 @@ function Remove-GitHubReleaseAssetsByName {
     [object[]]$ReleaseAssets
   )
 
+  $releaseIdValue = ConvertTo-GitHubReleaseId -ReleaseId $ReleaseId -ParameterName "ReleaseId"
+  if ($null -eq $releaseIdValue) {
+    throw "ReleaseId is required to remove GitHub release assets."
+  }
+
   $assetNameSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
   foreach ($assetName in $AssetNames) {
-    [void]$assetNameSet.Add($assetName)
+    if (-not [string]::IsNullOrWhiteSpace([string]$assetName)) {
+      [void]$assetNameSet.Add([string]$assetName)
+    }
   }
 
   $existingAssets = if ($PSBoundParameters.ContainsKey('ReleaseAssets') -and $null -ne $ReleaseAssets) {
-    @($ReleaseAssets | Where-Object { $assetNameSet.Contains($_.name) })
+    @($ReleaseAssets | Where-Object { $assetNameSet.Contains([string]$_.name) })
   } else {
-    @(Get-GitHubReleaseAssets -Repository $Repository -Headers $Headers -ReleaseId $ReleaseId | Where-Object { $assetNameSet.Contains($_.name) })
+    @(Get-GitHubReleaseAssets -Repository ([string]$Repository) -Headers $Headers -ReleaseId $releaseIdValue | Where-Object { $assetNameSet.Contains([string]$_.name) })
   }
 
   foreach ($asset in $existingAssets) {
-    Remove-GitHubReleaseAsset -Repository $Repository -Headers $Headers -Asset $asset
+    Remove-GitHubReleaseAsset -Repository ([string]$Repository) -Headers $Headers -Asset $asset
   }
 }
 
@@ -177,7 +213,7 @@ function Get-TauriWindowsExpectedAssetNames {
     [string]$Version
   )
 
-  $productFileName = $ProductName -replace '\s+', '_'
+  $productFileName = ([string]$ProductName) -replace '\s+', '_'
   $baseName = "${productFileName}_${Version}_x64"
 
   return @(
