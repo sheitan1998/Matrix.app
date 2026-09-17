@@ -32,9 +32,27 @@ if ($env:TAURI_APP_VERSION) {
 
 Write-Host "Nettoyage des anciens assets de la release..."
 
+$releaseTags = @(gh release list --limit 1000 --json tagName --jq '.[].tagName')
+if ($LASTEXITCODE -ne 0) {
+  throw "Impossible de lister les releases GitHub."
+}
+
+if ($releaseTags -notcontains $releaseTag) {
+  Write-Host "Release absente pour le tag '$releaseTag', rien à nettoyer."
+  exit 0
+}
+
+$existingAssets = @(gh release view $releaseTag --json assets --jq '.assets[].name')
+if ($LASTEXITCODE -ne 0) {
+  throw "Impossible de lire les assets de la release '$releaseTag'."
+}
+
 foreach ($assetName in @($assetNames | Select-Object -Unique)) {
-  gh release delete-asset $releaseTag $assetName --yes 2>$null
-  if ($LASTEXITCODE -eq 0) {
+  if ($existingAssets -contains $assetName) {
+    gh release delete-asset $releaseTag $assetName --yes
+    if ($LASTEXITCODE -ne 0) {
+      throw "Impossible de supprimer l'asset '$assetName' de la release '$releaseTag'."
+    }
     Write-Host "Asset supprimé: $assetName"
   } else {
     Write-Host "Asset absent ou déjà supprimé: $assetName"
