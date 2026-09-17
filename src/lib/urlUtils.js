@@ -1,3 +1,5 @@
+import { appParams, resolveAssetUrl } from "@/lib/app-params";
+
 const SAFE_SCHEME_RE = /^(https?:|blob:)/i;
 const ANY_SCHEME_RE = /^[a-z][a-z\d+.-]*:/i;
 
@@ -6,10 +8,10 @@ export function normalizeAppAssetUrl(value) {
   if (!raw) return "";
   if (SAFE_SCHEME_RE.test(raw) || raw.startsWith("data:")) return raw;
   if (raw.startsWith("//")) return `https:${raw}`;
-  if (raw.startsWith("/")) return raw;
   if (ANY_SCHEME_RE.test(raw)) return "";
   const noRelativePrefix = raw.replace(/^\.?\//, "");
-  return `/${noRelativePrefix.replace(/^\/+/, "")}`;
+  const normalizedPath = raw.startsWith("/") ? raw : `/${noRelativePrefix.replace(/^\/+/, "")}`;
+  return resolveAssetUrl(normalizedPath, appParams.appBaseUrl);
 }
 
 export function toAbsoluteApiUrl(baseUrl, path) {

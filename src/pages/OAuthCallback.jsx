@@ -66,6 +66,11 @@ export default function OAuthCallback() {
           throw new Error("Le serveur OAuth n'a pas retourné de jeton d'accès.");
         }
 
+        if (typeof base44.auth?.setToken === "function") {
+          base44.auth.setToken(exchangeData.access_token);
+        }
+        localStorage.setItem("base44_access_token", exchangeData.access_token);
+
         await checkUserAuth().catch(() => {});
 
         if (oauthService.isDesktopApp && code) {
@@ -83,6 +88,7 @@ export default function OAuthCallback() {
           setError(
             callbackError?.response?.data?.provider_message ||
               callbackError?.response?.data?.error ||
+              callbackError?.response?.data?.error_description ||
               callbackError?.message ||
               "Impossible de finaliser la connexion OAuth."
           );
