@@ -58,11 +58,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ steps.release-metadata.outputs.release_tag }}
-          TAURI_APP_VERSION: ${{ steps.release-metadata.outputs.app_version }}
         run: |
           . ./scripts/github-release-assets.ps1
           $headers = New-GitHubReleaseHeaders -Token $env:GITHUB_TOKEN
-          $versionPattern = [Regex]::Escape($env:TAURI_APP_VERSION)
 
           function ShouldDeleteReleaseAsset([object]$Asset) {
             if (-not $Asset -or -not $Asset.name) {
@@ -74,8 +72,10 @@ jobs:
               $assetName -eq "latest.json" -or
               $assetName -eq "Matrix-Setup.msi" -or
               $assetName -eq "Matrix-Setup.exe" -or
-              $assetName -match "^.+_${versionPattern}_.+\.msi(?:\.sig)?$" -or
-              $assetName -match "^.+_${versionPattern}_.+-setup\.exe(?:\.sig)?$"
+              $assetName -like "*.msi" -or
+              $assetName -like "*.msi.sig" -or
+              $assetName -like "*-setup.exe" -or
+              $assetName -like "*-setup.exe.sig"
             )
           }
 
@@ -242,7 +242,6 @@ jobs:
             exit 1
           }
 
-          $releaseAssets = @(Get-GitHubReleaseAssets -Repository $env:GITHUB_REPOSITORY -Headers $headers -ReleaseId $releaseId)
           $aliasUploads = @(
             @{
               AssetName = "Matrix-Setup.msi"
@@ -257,6 +256,7 @@ jobs:
           )
 
           foreach ($aliasUpload in $aliasUploads) {
+            $releaseAssets = @(Get-GitHubReleaseAssets -Repository $env:GITHUB_REPOSITORY -Headers $headers -ReleaseId $releaseId)
             Remove-GitHubReleaseAssetsByName -Repository $env:GITHUB_REPOSITORY -Headers $headers -ReleaseId $releaseId -AssetNames @($aliasUpload.AssetName) -ReleaseAssets $releaseAssets
 
             $uploadHeaders = New-GitHubReleaseHeaders -Token $env:GITHUB_TOKEN -ContentType $aliasUpload.ContentType
