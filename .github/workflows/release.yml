@@ -107,7 +107,18 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           RELEASE_TAG: ${{ steps.release-metadata.outputs.release_tag }}
           TAURI_ARTIFACT_PATHS: ${{ steps.tauri-build.outputs.artifactPaths }}
+          TAURI_PRODUCT_NAME: ${{ steps.release-metadata.outputs.product_name }}
         run: |
+          $productName = if ($env:TAURI_PRODUCT_NAME) {
+            $env:TAURI_PRODUCT_NAME -replace '\s+', '_'
+          } else {
+            'Matrix'
+          }
+          $stableMsiName = "${productName}-Setup.msi"
+          $stableMsiSigName = "${stableMsiName}.sig"
+          $stableExeName = "${productName}-Setup.exe"
+          $stableExeSigName = "${stableExeName}.sig"
+
           $candidateRootsJson = ./scripts/tauri-artifact-roots.ps1
           if ($LASTEXITCODE -ne 0) {
             exit $LASTEXITCODE
@@ -174,10 +185,10 @@ jobs:
           $tempUploadDir = Join-Path $env:RUNNER_TEMP "matrix-release-assets"
           New-Item -ItemType Directory -Path $tempUploadDir -Force | Out-Null
 
-          $stableMsi = Join-Path $tempUploadDir "Matrix-Setup.msi"
-          $stableMsiSig = Join-Path $tempUploadDir "Matrix-Setup.msi.sig"
-          $stableExe = Join-Path $tempUploadDir "Matrix-Setup.exe"
-          $stableExeSig = Join-Path $tempUploadDir "Matrix-Setup.exe.sig"
+          $stableMsi = Join-Path $tempUploadDir $stableMsiName
+          $stableMsiSig = Join-Path $tempUploadDir $stableMsiSigName
+          $stableExe = Join-Path $tempUploadDir $stableExeName
+          $stableExeSig = Join-Path $tempUploadDir $stableExeSigName
           Copy-Item -Path $msiInstallers[0].FullName -Destination $stableMsi -Force
           Copy-Item -Path "$($msiInstallers[0].FullName).sig" -Destination $stableMsiSig -Force
           Copy-Item -Path $exeInstallers[0].FullName -Destination $stableExe -Force
@@ -198,7 +209,7 @@ jobs:
             $assetName = Split-Path -Leaf $assetPath
             Write-Host "Published release asset '$assetName' from '$assetPath'."
 
-            if ($assetName -like "Matrix-Setup.*") {
+            if ($assetName -like "${productName}-Setup.*") {
               Write-Host "Stable direct download URL: https://github.com/$env:GITHUB_REPOSITORY/releases/latest/download/$assetName"
             }
           }

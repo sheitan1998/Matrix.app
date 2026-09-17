@@ -14,12 +14,17 @@ $productName = if ($env:TAURI_PRODUCT_NAME) {
   'Matrix'
 }
 
+$stableMsiName = "${productName}-Setup.msi"
+$stableMsiSigName = "${stableMsiName}.sig"
+$stableExeName = "${productName}-Setup.exe"
+$stableExeSigName = "${stableExeName}.sig"
+
 $assetNames = @(
   'latest.json',
-  'Matrix-Setup.msi',
-  'Matrix-Setup.msi.sig',
-  'Matrix-Setup.exe',
-  'Matrix-Setup.exe.sig'
+  $stableMsiName,
+  $stableMsiSigName,
+  $stableExeName,
+  $stableExeSigName
 )
 
 if ($env:TAURI_APP_VERSION) {
