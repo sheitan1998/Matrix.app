@@ -125,7 +125,11 @@ function Invoke-GitHubCli {
 
   $process = [System.Diagnostics.Process]::new()
   $process.StartInfo = $startInfo
-  [void]$process.Start()
+  try {
+    [void]$process.Start()
+  } catch {
+    throw "Failed to start GitHub CLI ('gh'). Ensure gh is installed and available on PATH. $($_.Exception.Message)"
+  }
   $standardOutput = $process.StandardOutput.ReadToEnd()
   $standardError = $process.StandardError.ReadToEnd()
   $process.WaitForExit()
@@ -187,6 +191,11 @@ query($owner:String!, $name:String!, $tag:String!) {
   }
 
   $releaseGraph = $releaseJson | ConvertFrom-Json
+  if ($releaseGraph.errors -and @($releaseGraph.errors).Count -gt 0) {
+    $graphErrors = ((@($releaseGraph.errors) | ForEach-Object { [string]$_.message }) -join "; ").Trim()
+    throw "Failed to fetch release '$tagValue' in repository '$repositoryValue'. $graphErrors"
+  }
+
   if (-not $releaseGraph.data -or -not $releaseGraph.data.repository -or -not $releaseGraph.data.repository.release) {
     return $null
   }
@@ -264,7 +273,7 @@ function Get-GitHubReleaseAssets {
 
   $assetPages = $assetsPagesJson | ConvertFrom-Json
   foreach ($assetPage in $assetPages) {
-    foreach ($asset in $assetPage) {
+    foreach ($asset in @($assetPage)) {
       $assets.Add($asset)
     }
   }
