@@ -255,9 +255,13 @@ jobs:
             }
           )
 
+          $releaseAssets = @(Get-GitHubReleaseAssets -Repository $env:GITHUB_REPOSITORY -Headers $headers -ReleaseId $releaseId)
           foreach ($aliasUpload in $aliasUploads) {
-            $releaseAssets = @(Get-GitHubReleaseAssets -Repository $env:GITHUB_REPOSITORY -Headers $headers -ReleaseId $releaseId)
-            Remove-GitHubReleaseAssetsByName -Repository $env:GITHUB_REPOSITORY -Headers $headers -ReleaseId $releaseId -AssetNames @($aliasUpload.AssetName) -ReleaseAssets $releaseAssets
+            $existingAliasAssets = @($releaseAssets | Where-Object { $_.name -eq $aliasUpload.AssetName })
+            foreach ($asset in $existingAliasAssets) {
+              Remove-GitHubReleaseAsset -Repository $env:GITHUB_REPOSITORY -Headers $headers -Asset $asset
+            }
+            $releaseAssets = @($releaseAssets | Where-Object { $_.name -ne $aliasUpload.AssetName })
 
             $uploadHeaders = New-GitHubReleaseHeaders -Token $env:GITHUB_TOKEN -ContentType $aliasUpload.ContentType
             $uploadUrl = "https://uploads.github.com/repos/$env:GITHUB_REPOSITORY/releases/$releaseId/assets?name=$([System.Uri]::EscapeDataString($aliasUpload.AssetName))"
@@ -347,15 +351,15 @@ jobs:
 
           $releaseAssets = @()
           if ($latestJson.Count -eq 0 -or $signatures.Count -eq 0) {
-              $headers = New-GitHubReleaseHeaders -Token $env:GITHUB_TOKEN
-              $releaseId = Get-GitHubReleaseId -Repository $env:GITHUB_REPOSITORY -Headers $headers -TagName $env:RELEASE_TAG -ReleaseId $env:TAURI_RELEASE_ID
-              if ($releaseId) {
-                Write-Host "Local updater artifacts incomplete, checking uploaded release assets for release id $releaseId."
-                try {
-                  $releaseAssets = @(Get-GitHubReleaseAssets -Repository $env:GITHUB_REPOSITORY -Headers $headers -ReleaseId $releaseId)
-                } catch {
-                  Write-Warning "Unable to inspect uploaded release assets: $($_.Exception.Message)"
-                }
+            $headers = New-GitHubReleaseHeaders -Token $env:GITHUB_TOKEN
+            $releaseId = Get-GitHubReleaseId -Repository $env:GITHUB_REPOSITORY -Headers $headers -TagName $env:RELEASE_TAG -ReleaseId $env:TAURI_RELEASE_ID
+            if ($releaseId) {
+              Write-Host "Local updater artifacts incomplete, checking uploaded release assets for release id $releaseId."
+              try {
+                $releaseAssets = @(Get-GitHubReleaseAssets -Repository $env:GITHUB_REPOSITORY -Headers $headers -ReleaseId $releaseId)
+              } catch {
+                Write-Warning "Unable to inspect uploaded release assets: $($_.Exception.Message)"
+              }
             } else {
               Write-Warning "Release id is unavailable while verifying fallback release assets."
             }
