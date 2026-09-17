@@ -51,10 +51,9 @@ export function resolveAssetUrl(assetUrl, appBaseUrl = DEFAULT_APP_BASE_URL) {
   if (isAbsoluteUrl(trimmed) || trimmed.startsWith('data:') || trimmed.startsWith('blob:')) {
     return trimmed;
   }
-  const serverUrl = resolveBase44ServerUrl(appBaseUrl);
-  if (!serverUrl) return trimmed;
-  if (trimmed.startsWith('/')) return `${serverUrl}${trimmed}`;
-  return `${serverUrl}/${trimmed}`;
+  // Local paths (e.g. /media/...) are bundled in the frontend dist and must
+  // resolve locally in both web and Tauri — never rewrite them to a remote URL.
+  return trimmed;
 }
 
 const toSnakeCase = (str) => {
