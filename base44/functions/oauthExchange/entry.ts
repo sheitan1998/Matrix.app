@@ -225,6 +225,12 @@ function resolveRedirectUri(
     );
   }
 
+  // For trusted desktop redirect URIs (localhost bridge or deep link),
+  // use the requested URI — the token exchange must match the authorization request.
+  if (isTrustedDesktopRedirectUri(requestedRedirectUri)) {
+    return requestedRedirectUri;
+  }
+
   return configuredRedirectUri;
 }
 
