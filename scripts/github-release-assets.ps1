@@ -299,12 +299,12 @@ function Remove-GitHubReleaseAsset {
   $assetName = [string]$Asset.name
   $assetDisplayName = if ([string]::IsNullOrWhiteSpace($assetName)) { "<unnamed asset>" } else { $assetName }
 
-  Write-Host "Deleting existing release asset '$assetDisplayName' $Reason."
   $assetId = ConvertTo-GitHubReleaseId -ReleaseId $Asset.id -ParameterName "Asset.id"
   if ($null -eq $assetId) {
     throw "Cannot delete release asset '$assetDisplayName' without a valid asset id."
   }
 
+  Write-Host "Deleting existing release asset '$assetDisplayName' $Reason."
   $deleteResult = Invoke-GitHubCli -Headers $Headers -Arguments @(
     'api',
     '--method',
