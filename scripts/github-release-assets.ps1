@@ -190,7 +190,12 @@ query($owner:String!, $name:String!, $tag:String!) {
     return $null
   }
 
-  $releaseGraph = $releaseJson | ConvertFrom-Json
+  try {
+    $releaseGraph = $releaseJson | ConvertFrom-Json
+  } catch {
+    throw "Failed to parse release lookup response for tag '$tagValue' in repository '$repositoryValue'. $($_.Exception.Message)"
+  }
+
   if ($releaseGraph.errors -and @($releaseGraph.errors).Count -gt 0) {
     $graphErrors = ((@($releaseGraph.errors) | ForEach-Object { [string]$_.message }) -join "; ").Trim()
     throw "Failed to fetch release '$tagValue' in repository '$repositoryValue'. $graphErrors"
@@ -271,7 +276,22 @@ function Get-GitHubReleaseAssets {
     return @()
   }
 
-  $assetPages = $assetsPagesJson | ConvertFrom-Json
+  try {
+    $parsedAssets = $assetsPagesJson | ConvertFrom-Json
+  } catch {
+    throw "Failed to parse release assets response for release id '$releaseIdValue' in repository '$repositoryValue'. $($_.Exception.Message)"
+  }
+
+  if ($parsedAssets -is [System.Array]) {
+    if ($parsedAssets.Count -gt 0 -and -not ($parsedAssets[0] -is [System.Array])) {
+      $assetPages = @([object[]]$parsedAssets)
+    } else {
+      $assetPages = @($parsedAssets)
+    }
+  } else {
+    $assetPages = @(@($parsedAssets))
+  }
+
   foreach ($assetPage in $assetPages) {
     foreach ($asset in @($assetPage)) {
       $assets.Add($asset)
