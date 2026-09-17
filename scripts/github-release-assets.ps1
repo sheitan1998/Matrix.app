@@ -13,7 +13,7 @@ function New-GitHubReleaseHeaders {
   }
 
   if ($ContentType) {
-    $headers["Content-Type"] = $ContentType
+    $headers["Content-Type"] = [string]$ContentType
   }
 
   return $headers
@@ -66,7 +66,9 @@ function Get-GitHubReleaseByTag {
     [string]$TagName
   )
 
-  $releaseUrl = "https://api.github.com/repos/$Repository/releases/tags/$([System.Uri]::EscapeDataString([string]$TagName))"
+  $repositoryValue = [string]$Repository
+  $tagNameValue = [string]$TagName
+  $releaseUrl = "https://api.github.com/repos/$repositoryValue/releases/tags/$([System.Uri]::EscapeDataString($tagNameValue))"
 
   try {
     return Invoke-RestMethod -Uri $releaseUrl -Headers $Headers -Method Get -ErrorAction Stop
@@ -98,7 +100,9 @@ function Get-GitHubReleaseId {
     return $explicitReleaseId
   }
 
-  $release = Get-GitHubReleaseByTag -Repository ([string]$Repository) -Headers $Headers -TagName ([string]$TagName)
+  $repositoryValue = [string]$Repository
+  $tagNameValue = [string]$TagName
+  $release = Get-GitHubReleaseByTag -Repository $repositoryValue -Headers $Headers -TagName $tagNameValue
   if ($release) {
     return (ConvertTo-GitHubReleaseId -ReleaseId $release.id -ParameterName "release.id")
   }
@@ -118,6 +122,7 @@ function Get-GitHubReleaseAssets {
     [object]$ReleaseId
   )
 
+  $repositoryValue = [string]$Repository
   $releaseIdValue = ConvertTo-GitHubReleaseId -ReleaseId $ReleaseId -ParameterName "ReleaseId"
   if ($null -eq $releaseIdValue) {
     throw "ReleaseId is required to list GitHub release assets."
@@ -127,7 +132,7 @@ function Get-GitHubReleaseAssets {
   $assetPageNumber = 1
 
   while ($true) {
-    $assetListUrl = "https://api.github.com/repos/$Repository/releases/$releaseIdValue/assets?per_page=100&page=$assetPageNumber"
+    $assetListUrl = "https://api.github.com/repos/$repositoryValue/releases/$releaseIdValue/assets?per_page=100&page=$assetPageNumber"
     $assetPage = @(Invoke-RestMethod -Uri $assetListUrl -Headers $Headers -Method Get -ErrorAction Stop)
 
     foreach ($asset in $assetPage) {
@@ -158,8 +163,9 @@ function Remove-GitHubReleaseAsset {
     [string]$Reason = "before upload"
   )
 
+  $repositoryValue = [string]$Repository
   $assetId = ConvertTo-GitHubReleaseId -ReleaseId $Asset.id -ParameterName "Asset.id"
-  $deleteUrl = "https://api.github.com/repos/$Repository/releases/assets/$assetId"
+  $deleteUrl = "https://api.github.com/repos/$repositoryValue/releases/assets/$assetId"
   Write-Host "Deleting existing release asset '$($Asset.name)' (id=$assetId) $Reason."
   Invoke-RestMethod -Uri $deleteUrl -Headers $Headers -Method Delete -ErrorAction Stop
 }
@@ -181,6 +187,7 @@ function Remove-GitHubReleaseAssetsByName {
     [object[]]$ReleaseAssets
   )
 
+  $repositoryValue = [string]$Repository
   $releaseIdValue = ConvertTo-GitHubReleaseId -ReleaseId $ReleaseId -ParameterName "ReleaseId"
   if ($null -eq $releaseIdValue) {
     throw "ReleaseId is required to remove GitHub release assets."
@@ -196,11 +203,11 @@ function Remove-GitHubReleaseAssetsByName {
   $existingAssets = if ($PSBoundParameters.ContainsKey('ReleaseAssets') -and $null -ne $ReleaseAssets) {
     @($ReleaseAssets | Where-Object { $assetNameSet.Contains([string]$_.name) })
   } else {
-    @(Get-GitHubReleaseAssets -Repository ([string]$Repository) -Headers $Headers -ReleaseId $releaseIdValue | Where-Object { $assetNameSet.Contains([string]$_.name) })
+    @(Get-GitHubReleaseAssets -Repository $repositoryValue -Headers $Headers -ReleaseId $releaseIdValue | Where-Object { $assetNameSet.Contains([string]$_.name) })
   }
 
   foreach ($asset in $existingAssets) {
-    Remove-GitHubReleaseAsset -Repository ([string]$Repository) -Headers $Headers -Asset $asset
+    Remove-GitHubReleaseAsset -Repository $repositoryValue -Headers $Headers -Asset $asset
   }
 }
 
@@ -213,8 +220,10 @@ function Get-TauriWindowsExpectedAssetNames {
     [string]$Version
   )
 
-  $productFileName = ([string]$ProductName) -replace '\s+', '_'
-  $baseName = "${productFileName}_${Version}_x64"
+  $productNameValue = [string]$ProductName
+  $versionValue = [string]$Version
+  $productFileName = $productNameValue -replace '\s+', '_'
+  $baseName = "${productFileName}_${versionValue}_x64"
 
   return @(
     "${baseName}_en-US.msi",
