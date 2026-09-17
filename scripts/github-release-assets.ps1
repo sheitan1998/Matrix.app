@@ -142,42 +142,32 @@ function Get-GitHubReleaseAssets {
   $releaseIdValue = ConvertTo-GitHubReleaseId -ReleaseId $ReleaseId -ParameterName "ReleaseId"
   $assets = New-Object System.Collections.Generic.List[object]
 
-  if ($releaseIdValue) {
-    $assetsPagesOutput = gh api --paginate --slurp "repos/$repositoryValue/releases/$releaseIdValue/assets?per_page=100" 2>&1
-    if ($LASTEXITCODE -ne 0) {
-      $errorText = ([string]::Join("`n", @($assetsPagesOutput))).Trim()
-      throw "Failed to list release assets for release id '$releaseIdValue' in repository '$repositoryValue'. $errorText"
-    }
-
-    $assetsPagesJson = [string]::Join("`n", @($assetsPagesOutput))
-    if ([string]::IsNullOrWhiteSpace($assetsPagesJson)) {
+  if (-not $releaseIdValue) {
+    $release = Get-GitHubReleaseByTag -Repository $repositoryValue -Headers $Headers -TagName (Resolve-GitHubReleaseTag)
+    if (-not $release) {
       return @()
     }
 
-    $assetPages = @($assetsPagesJson | ConvertFrom-Json)
-    foreach ($assetPage in $assetPages) {
-      foreach ($asset in @($assetPage)) {
-        $assets.Add($asset)
-      }
-    }
-  } else {
-    $tagValue = Resolve-GitHubReleaseTag
-    if (-not $tagValue) {
+    $releaseIdValue = ConvertTo-GitHubReleaseId -ReleaseId $release.id -ParameterName "release.id"
+    if (-not $releaseIdValue) {
       return @()
     }
+  }
 
-    $assetsOutput = gh release view "$tagValue" --repo "$repositoryValue" --json assets --jq '.assets' 2>&1
-    if ($LASTEXITCODE -ne 0) {
-      $errorText = ([string]::Join("`n", @($assetsOutput))).Trim()
-      throw "Failed to list release assets for tag '$tagValue' in repository '$repositoryValue'. $errorText"
-    }
+  $assetsPagesOutput = gh api --paginate --slurp "repos/$repositoryValue/releases/$releaseIdValue/assets?per_page=100" 2>&1
+  if ($LASTEXITCODE -ne 0) {
+    $errorText = ([string]::Join("`n", @($assetsPagesOutput))).Trim()
+    throw "Failed to list release assets for release id '$releaseIdValue' in repository '$repositoryValue'. $errorText"
+  }
 
-    $assetsJson = [string]::Join("`n", @($assetsOutput))
-    if ([string]::IsNullOrWhiteSpace($assetsJson)) {
-      return @()
-    }
+  $assetsPagesJson = [string]::Join("`n", @($assetsPagesOutput))
+  if ([string]::IsNullOrWhiteSpace($assetsPagesJson)) {
+    return @()
+  }
 
-    foreach ($asset in @($assetsJson | ConvertFrom-Json)) {
+  $assetPages = @($assetsPagesJson | ConvertFrom-Json)
+  foreach ($assetPage in $assetPages) {
+    foreach ($asset in @($assetPage)) {
       $assets.Add($asset)
     }
   }
@@ -211,15 +201,17 @@ function Remove-GitHubReleaseAsset {
   }
 
   Write-Host "Deleting existing release asset '$assetName' $Reason."
+  $deleteOutput = @()
   $assetId = ConvertTo-GitHubReleaseId -ReleaseId $Asset.id -ParameterName "Asset.id"
   if ($assetId) {
-    gh api --method DELETE "repos/$repositoryValue/releases/assets/$assetId" 1>$null 2>&1
+    $deleteOutput = gh api --method DELETE "repos/$repositoryValue/releases/assets/$assetId" 2>&1
   } else {
-    gh release delete-asset "$tagValue" "$assetName" --repo "$repositoryValue" --yes 1>$null 2>&1
+    $deleteOutput = gh release delete-asset "$tagValue" "$assetName" --repo "$repositoryValue" --yes 2>&1
   }
 
   if ($LASTEXITCODE -ne 0) {
-    throw "Failed to delete release asset '$assetName' from tag '$tagValue'."
+    $errorText = ([string]::Join("`n", @($deleteOutput))).Trim()
+    throw "Failed to delete release asset '$assetName' from tag '$tagValue'. $errorText"
   }
 }
 
