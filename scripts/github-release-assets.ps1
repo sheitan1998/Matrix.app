@@ -265,9 +265,9 @@ function Get-GitHubReleaseAssets {
     return @()
   }
 
-  $assetPages = @($assetsPagesJson | ConvertFrom-Json)
+  $assetPages = $assetsPagesJson | ConvertFrom-Json
   foreach ($assetPage in $assetPages) {
-    foreach ($asset in @($assetPage)) {
+    foreach ($asset in $assetPage) {
       $assets.Add($asset)
     }
   }
