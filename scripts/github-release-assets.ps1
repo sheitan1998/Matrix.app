@@ -81,6 +81,52 @@ function ConvertTo-GitHubReleaseId {
   }
 }
 
+function Get-GitHubTokenFromHeaders {
+  param(
+    [Parameter(Mandatory = $true)]
+    [hashtable]$Headers
+  )
+
+  $authorization = [string]$Headers.Authorization
+  if ([string]::IsNullOrWhiteSpace($authorization)) {
+    return $null
+  }
+
+  if ($authorization -match '^[Tt]oken\s+(.+)$') {
+    return $matches[1].Trim()
+  }
+
+  return $authorization.Trim()
+}
+
+function Invoke-GitHubCli {
+  param(
+    [Parameter(Mandatory = $true)]
+    [hashtable]$Headers,
+
+    [Parameter(Mandatory = $true)]
+    [string[]]$Arguments
+  )
+
+  $token = Get-GitHubTokenFromHeaders -Headers $Headers
+  $previousGhToken = $env:GH_TOKEN
+  $hadPreviousGhToken = Test-Path Env:GH_TOKEN
+
+  try {
+    if (-not [string]::IsNullOrWhiteSpace($token)) {
+      $env:GH_TOKEN = $token
+    }
+
+    return & gh @Arguments 2>&1
+  } finally {
+    if ($hadPreviousGhToken) {
+      $env:GH_TOKEN = $previousGhToken
+    } else {
+      Remove-Item Env:GH_TOKEN -ErrorAction SilentlyContinue
+    }
+  }
+}
+
 function Get-GitHubReleaseByTag {
   param(
     [Parameter(Mandatory = $true)]
@@ -112,7 +158,14 @@ query($owner:String!, $name:String!, $tag:String!) {
 }
 '@
 
-  $releaseOutput = gh api graphql -f query="$releaseQuery" -f owner="$($repositoryParts.Owner)" -f name="$($repositoryParts.Name)" -f tag="$tagValue" 2>&1
+  $releaseOutput = Invoke-GitHubCli -Headers $Headers -Arguments @(
+    'api',
+    'graphql',
+    '-f', "query=$releaseQuery",
+    '-f', "owner=$($repositoryParts.Owner)",
+    '-f', "name=$($repositoryParts.Name)",
+    '-f', "tag=$tagValue"
+  )
   if ($LASTEXITCODE -ne 0) {
     $errorText = ([string]::Join("`n", @($releaseOutput))).Trim()
     throw "Failed to fetch release '$tagValue' in repository '$repositoryValue'. $errorText"
@@ -183,7 +236,12 @@ function Get-GitHubReleaseAssets {
     throw "ReleaseId is required to list GitHub release assets."
   }
 
-  $assetsPagesOutput = gh api --paginate --slurp "repos/$repositoryValue/releases/$releaseIdValue/assets?per_page=100" 2>&1
+  $assetsPagesOutput = Invoke-GitHubCli -Headers $Headers -Arguments @(
+    'api',
+    '--paginate',
+    '--slurp',
+    "repos/$repositoryValue/releases/$releaseIdValue/assets?per_page=100"
+  )
   if ($LASTEXITCODE -ne 0) {
     $errorText = ([string]::Join("`n", @($assetsPagesOutput))).Trim()
     throw "Failed to list release assets for release id '$releaseIdValue' in repository '$repositoryValue'. $errorText"
@@ -230,7 +288,12 @@ function Remove-GitHubReleaseAsset {
     throw "Cannot delete release asset '$assetName' without a valid asset id."
   }
 
-  $deleteOutput = gh api --method DELETE "repos/$repositoryValue/releases/assets/$assetId" 2>&1
+  $deleteOutput = Invoke-GitHubCli -Headers $Headers -Arguments @(
+    'api',
+    '--method',
+    'DELETE',
+    "repos/$repositoryValue/releases/assets/$assetId"
+  )
   if ($LASTEXITCODE -ne 0) {
     $errorText = ([string]::Join("`n", @($deleteOutput))).Trim()
     throw "Failed to delete release asset '$assetName'. $errorText"
