@@ -81,22 +81,28 @@ function Get-GitHubReleaseByTag {
     return $null
   }
 
-  $releaseOutput = gh release view "$tagValue" --repo "$repositoryValue" --json id,tagName,url 2>&1
+  $releaseListOutput = gh release list --repo "$repositoryValue" --limit 1000 --json tagName,databaseId,url 2>&1
   if ($LASTEXITCODE -ne 0) {
-    $errorText = ([string]::Join("`n", @($releaseOutput))).Trim()
-    if ($errorText -match '(?i)(not found|404)') {
-      return $null
-    }
-
-    throw "Failed to fetch release '$tagValue' in repository '$repositoryValue'. $errorText"
+    $errorText = ([string]::Join("`n", @($releaseListOutput))).Trim()
+    throw "Failed to list releases in repository '$repositoryValue'. $errorText"
   }
 
-  $releaseJson = [string]::Join("`n", @($releaseOutput))
-  if ([string]::IsNullOrWhiteSpace($releaseJson)) {
+  $releaseListJson = [string]::Join("`n", @($releaseListOutput))
+  if ([string]::IsNullOrWhiteSpace($releaseListJson)) {
     return $null
   }
 
-  return ($releaseJson | ConvertFrom-Json)
+  $releaseList = @($releaseListJson | ConvertFrom-Json)
+  $release = @($releaseList | Where-Object { [string]$_.tagName -eq $tagValue } | Select-Object -First 1)
+  if ($release.Count -eq 0) {
+    return $null
+  }
+
+  return [PSCustomObject]@{
+    id = [System.Convert]::ToInt64([string]$release[0].databaseId, [System.Globalization.CultureInfo]::InvariantCulture)
+    tagName = [string]$release[0].tagName
+    url = [string]$release[0].url
+  }
 }
 
 function Get-GitHubReleaseId {
@@ -143,15 +149,7 @@ function Get-GitHubReleaseAssets {
   $assets = New-Object System.Collections.Generic.List[object]
 
   if (-not $releaseIdValue) {
-    $release = Get-GitHubReleaseByTag -Repository $repositoryValue -Headers $Headers -TagName (Resolve-GitHubReleaseTag)
-    if (-not $release) {
-      return @()
-    }
-
-    $releaseIdValue = ConvertTo-GitHubReleaseId -ReleaseId $release.id -ParameterName "release.id"
-    if (-not $releaseIdValue) {
-      return @()
-    }
+    throw "ReleaseId is required to list GitHub release assets."
   }
 
   $assetsPagesOutput = gh api --paginate --slurp "repos/$repositoryValue/releases/$releaseIdValue/assets?per_page=100" 2>&1
