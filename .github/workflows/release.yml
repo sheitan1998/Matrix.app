@@ -69,8 +69,8 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          tagName: v__VERSION__
-          releaseName: 'Matrix v__VERSION__'
+          tagName: ${{ steps.release-metadata.outputs.release_tag }}
+          releaseName: Matrix v${{ steps.release-metadata.outputs.app_version }}
           releaseBody: 'Nouvelle mise à jour de Matrix.'
           releaseDraft: false
           prerelease: false
