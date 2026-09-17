@@ -130,10 +130,20 @@ function Get-GitHubReleaseAssets {
 
   $repositoryValue = [string]$Repository
   $releaseIdValue = ConvertTo-GitHubReleaseId -ReleaseId $ReleaseId -ParameterName "ReleaseId"
-  $assetsJson = $null
+  $assets = New-Object System.Collections.Generic.List[object]
 
   if ($releaseIdValue) {
-    $assetsJson = gh api "repos/$repositoryValue/releases/$releaseIdValue/assets?per_page=100" 2>$null
+    $assetsPagesJson = gh api --paginate --slurp "repos/$repositoryValue/releases/$releaseIdValue/assets?per_page=100" 2>$null
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace([string]$assetsPagesJson)) {
+      return @()
+    }
+
+    $assetPages = @($assetsPagesJson | ConvertFrom-Json)
+    foreach ($assetPage in $assetPages) {
+      foreach ($asset in @($assetPage)) {
+        $assets.Add($asset)
+      }
+    }
   } else {
     $tagValue = Resolve-GitHubReleaseTag
     if (-not $tagValue) {
@@ -141,13 +151,16 @@ function Get-GitHubReleaseAssets {
     }
 
     $assetsJson = gh release view "$tagValue" --repo "$repositoryValue" --json assets --jq '.assets' 2>$null
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace([string]$assetsJson)) {
+      return @()
+    }
+
+    foreach ($asset in @($assetsJson | ConvertFrom-Json)) {
+      $assets.Add($asset)
+    }
   }
 
-  if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace([string]$assetsJson)) {
-    return @()
-  }
-
-  return @($assetsJson | ConvertFrom-Json)
+  return @($assets)
 }
 
 function Remove-GitHubReleaseAsset {
@@ -177,6 +190,9 @@ function Remove-GitHubReleaseAsset {
 
   Write-Host "Deleting existing release asset '$assetName' $Reason."
   gh release delete-asset "$tagValue" "$assetName" --repo "$repositoryValue" --yes 2>$null
+  if ($LASTEXITCODE -ne 0) {
+    throw "Failed to delete release asset '$assetName' from tag '$tagValue'."
+  }
 }
 
 function Remove-GitHubReleaseAssetsByName {
@@ -209,8 +225,14 @@ function Remove-GitHubReleaseAssetsByName {
     }
   }
 
-  foreach ($assetName in $assetNameSet) {
-    gh release delete-asset "$tagValue" "$assetName" --repo "$repositoryValue" --yes 2>$null
+  $existingAssets = if ($PSBoundParameters.ContainsKey('ReleaseAssets') -and $null -ne $ReleaseAssets) {
+    @($ReleaseAssets | Where-Object { $assetNameSet.Contains([string]$_.name) })
+  } else {
+    @(Get-GitHubReleaseAssets -Repository $repositoryValue -Headers $Headers -ReleaseId $ReleaseId | Where-Object { $assetNameSet.Contains([string]$_.name) })
+  }
+
+  foreach ($asset in $existingAssets) {
+    Remove-GitHubReleaseAsset -Repository $repositoryValue -Headers $Headers -Asset $asset
   }
 }
 
