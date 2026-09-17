@@ -2,23 +2,7 @@ import React, { useState } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-const GITHUB_LATEST_API = "https://api.github.com/repos/sheitan1998/Matrix.app/releases/latest";
-
-/**
- * Récupère l'URL directe du fichier .msi depuis la dernière release GitHub
- */
-async function fetchLatestMsiUrl() {
-  const res = await fetch(GITHUB_LATEST_API, {
-    headers: { Accept: "application/vnd.github+json" },
-  });
-  if (!res.ok) throw new Error(`GitHub API ${res.status}`);
-  const release = await res.json();
-  const msiAsset = (release.assets || []).find(
-    (a) => a.name.toLowerCase().endsWith(".msi") && a.browser_download_url
-  );
-  if (!msiAsset) throw new Error("Aucun fichier .msi trouvé dans la dernière release");
-  return msiAsset.browser_download_url;
-}
+const MSI_DIRECT_URL = "https://github.com/sheitan1998/Matrix.app/releases/latest/download/Matrix_x64-en-US.msi";
 
 /**
  * Bouton de téléchargement — déclenche directement le téléchargement du .msi
@@ -26,23 +10,16 @@ async function fetchLatestMsiUrl() {
 export default function DesktopDownloadButton({ className = "" }) {
   const [loading, setLoading] = useState(false);
 
-  const handleDownload = async () => {
+  const handleDownload = () => {
     setLoading(true);
-    try {
-      const url = await fetchLatestMsiUrl();
-      const link = document.createElement("a");
-      link.href = url;
-      link.rel = "noopener noreferrer";
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      toast.success("Téléchargement du fichier .msi démarré !");
-    } catch (error) {
-      console.error("Erreur téléchargement:", error);
-      toast.error("Impossible de récupérer le fichier d'installation. Réessayez plus tard.");
-    } finally {
-      setLoading(false);
-    }
+    const link = document.createElement("a");
+    link.href = MSI_DIRECT_URL;
+    link.rel = "noopener noreferrer";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    toast.success("Téléchargement du fichier .msi démarré !");
+    setTimeout(() => setLoading(false), 1500);
   };
 
   return (
