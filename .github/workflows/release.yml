@@ -265,6 +265,11 @@ jobs:
                 exit 1
               }
             } else {
+              if (-not $releaseView) {
+                Write-Error "GitHub CLI returned no release asset payload for tag '$env:RELEASE_TAG'."
+                exit 1
+              }
+
               $releaseAssets = @((ConvertFrom-Json -InputObject $releaseView).assets)
               Write-Host "Local updater artifacts incomplete, checking uploaded release assets for tag '$env:RELEASE_TAG'."
             }
