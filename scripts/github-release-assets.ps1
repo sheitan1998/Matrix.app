@@ -111,18 +111,31 @@ function Invoke-GitHubCli {
   $token = Get-GitHubTokenFromHeaders -Headers $Headers
   $previousGhToken = $env:GH_TOKEN
   $hadPreviousGhToken = Test-Path Env:GH_TOKEN
+  $errorFile = Join-Path ([System.IO.Path]::GetTempPath()) ("gh-stderr-{0}.log" -f [System.Guid]::NewGuid().ToString("N"))
 
   try {
     if (-not [string]::IsNullOrWhiteSpace($token)) {
       $env:GH_TOKEN = $token
     }
 
-    return & gh @Arguments 2>&1
+    $standardOutput = & gh @Arguments 2> $errorFile
+    $standardError = if (Test-Path $errorFile) { Get-Content -Path $errorFile -Raw } else { "" }
+    $exitCode = $LASTEXITCODE
+
+    return [PSCustomObject]@{
+      ExitCode = $exitCode
+      StdOut = [string]::Join("`n", @($standardOutput))
+      StdErr = [string]$standardError
+    }
   } finally {
     if ($hadPreviousGhToken) {
       $env:GH_TOKEN = $previousGhToken
     } else {
       Remove-Item Env:GH_TOKEN -ErrorAction SilentlyContinue
+    }
+
+    if (Test-Path $errorFile) {
+      Remove-Item $errorFile -ErrorAction SilentlyContinue
     }
   }
 }
@@ -158,7 +171,7 @@ query($owner:String!, $name:String!, $tag:String!) {
 }
 '@
 
-  $releaseOutput = Invoke-GitHubCli -Headers $Headers -Arguments @(
+  $releaseResult = Invoke-GitHubCli -Headers $Headers -Arguments @(
     'api',
     'graphql',
     '-f', "query=$releaseQuery",
@@ -166,12 +179,12 @@ query($owner:String!, $name:String!, $tag:String!) {
     '-f', "name=$($repositoryParts.Name)",
     '-f', "tag=$tagValue"
   )
-  if ($LASTEXITCODE -ne 0) {
-    $errorText = ([string]::Join("`n", @($releaseOutput))).Trim()
+  if ($releaseResult.ExitCode -ne 0) {
+    $errorText = ([string]$releaseResult.StdErr).Trim()
     throw "Failed to fetch release '$tagValue' in repository '$repositoryValue'. $errorText"
   }
 
-  $releaseJson = [string]::Join("`n", @($releaseOutput))
+  $releaseJson = [string]$releaseResult.StdOut
   if ([string]::IsNullOrWhiteSpace($releaseJson)) {
     return $null
   }
@@ -236,18 +249,18 @@ function Get-GitHubReleaseAssets {
     throw "ReleaseId is required to list GitHub release assets."
   }
 
-  $assetsPagesOutput = Invoke-GitHubCli -Headers $Headers -Arguments @(
+  $assetsResult = Invoke-GitHubCli -Headers $Headers -Arguments @(
     'api',
     '--paginate',
     '--slurp',
     "repos/$repositoryValue/releases/$releaseIdValue/assets?per_page=100"
   )
-  if ($LASTEXITCODE -ne 0) {
-    $errorText = ([string]::Join("`n", @($assetsPagesOutput))).Trim()
+  if ($assetsResult.ExitCode -ne 0) {
+    $errorText = ([string]$assetsResult.StdErr).Trim()
     throw "Failed to list release assets for release id '$releaseIdValue' in repository '$repositoryValue'. $errorText"
   }
 
-  $assetsPagesJson = [string]::Join("`n", @($assetsPagesOutput))
+  $assetsPagesJson = [string]$assetsResult.StdOut
   if ([string]::IsNullOrWhiteSpace($assetsPagesJson)) {
     return @()
   }
@@ -278,25 +291,23 @@ function Remove-GitHubReleaseAsset {
 
   $repositoryValue = [string]$Repository
   $assetName = [string]$Asset.name
-  if ([string]::IsNullOrWhiteSpace($assetName)) {
-    return
-  }
+  $assetDisplayName = if ([string]::IsNullOrWhiteSpace($assetName)) { "<unnamed asset>" } else { $assetName }
 
-  Write-Host "Deleting existing release asset '$assetName' $Reason."
+  Write-Host "Deleting existing release asset '$assetDisplayName' $Reason."
   $assetId = ConvertTo-GitHubReleaseId -ReleaseId $Asset.id -ParameterName "Asset.id"
   if ($null -eq $assetId) {
-    throw "Cannot delete release asset '$assetName' without a valid asset id."
+    throw "Cannot delete release asset '$assetDisplayName' without a valid asset id."
   }
 
-  $deleteOutput = Invoke-GitHubCli -Headers $Headers -Arguments @(
+  $deleteResult = Invoke-GitHubCli -Headers $Headers -Arguments @(
     'api',
     '--method',
     'DELETE',
     "repos/$repositoryValue/releases/assets/$assetId"
   )
-  if ($LASTEXITCODE -ne 0) {
-    $errorText = ([string]::Join("`n", @($deleteOutput))).Trim()
-    throw "Failed to delete release asset '$assetName'. $errorText"
+  if ($deleteResult.ExitCode -ne 0) {
+    $errorText = ([string]$deleteResult.StdErr).Trim()
+    throw "Failed to delete release asset '$assetDisplayName'. $errorText"
   }
 }
 
