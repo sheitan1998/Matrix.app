@@ -152,23 +152,25 @@ jobs:
             exit 1
           }
 
-          function Test-InstallerFile([string]$fileName) {
-            $lowerName = $fileName.ToLowerInvariant()
-            return (
-              $lowerName.EndsWith(".msi") -or
-              $lowerName.EndsWith(".exe") -or
-              $lowerName.EndsWith(".appimage") -or
-              $lowerName.EndsWith(".deb") -or
-              $lowerName.EndsWith(".rpm") -or
-              $lowerName.EndsWith(".dmg") -or
-              $lowerName.EndsWith(".app.tar.gz")
-            )
+          function Test-InstallerFile([System.IO.FileInfo]$file) {
+            $lowerName = $file.Name.ToLowerInvariant()
+            $normalizedPath = $file.FullName.ToLowerInvariant().Replace('\', '/')
+
+            if ($normalizedPath -match '/bundle/msi/' -and $lowerName.EndsWith('.msi')) { return $true }
+            if ($normalizedPath -match '/bundle/nsis/' -and $lowerName.EndsWith('-setup.exe')) { return $true }
+            if ($normalizedPath -match '/bundle/dmg/' -and $lowerName.EndsWith('.dmg')) { return $true }
+            if ($normalizedPath -match '/bundle/app/' -and $lowerName.EndsWith('.app.tar.gz')) { return $true }
+            if ($normalizedPath -match '/bundle/appimage/' -and $lowerName.EndsWith('.appimage')) { return $true }
+            if ($normalizedPath -match '/bundle/deb/' -and $lowerName.EndsWith('.deb')) { return $true }
+            if ($normalizedPath -match '/bundle/rpm/' -and $lowerName.EndsWith('.rpm')) { return $true }
+
+            return $false
           }
 
           $installers = @(
             foreach ($root in $candidateRoots) {
               Get-ChildItem -Path $root -Recurse -File -ErrorAction SilentlyContinue | Where-Object {
-                (Test-InstallerFile $_.Name) -and -not $_.Name.ToLowerInvariant().EndsWith(".sig")
+                (Test-InstallerFile $_) -and -not $_.Name.ToLowerInvariant().EndsWith(".sig")
               }
             }
           )
