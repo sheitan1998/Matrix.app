@@ -150,43 +150,48 @@ jobs:
         env:
           TAURI_ARTIFACT_PATHS: ${{ steps.tauri-build.outputs.artifactPaths }}
         run: |
-          $candidateRootsJson = ./scripts/tauri-artifact-roots.ps1
-          if ($LASTEXITCODE -ne 0) {
-            exit $LASTEXITCODE
-          }
-
-          $candidateRoots = if ($candidateRootsJson) { @(ConvertFrom-Json -InputObject $candidateRootsJson) } else { @() }
-          if ($candidateRoots.Count -eq 0) {
-            Write-Error "No Tauri build output directory found while staging release assets."
+          if (-not $env:TAURI_ARTIFACT_PATHS) {
+            Write-Error "tauri-action did not expose any artifactPaths output."
             exit 1
           }
 
-          function Test-InstallerFile([System.IO.FileInfo]$file) {
-            $lowerName = $file.Name.ToLowerInvariant()
-            $normalizedPath = $file.FullName.ToLowerInvariant().Replace('\', '/')
+          try {
+            $artifactPaths = @(ConvertFrom-Json -InputObject $env:TAURI_ARTIFACT_PATHS)
+          } catch {
+            Write-Error "Unable to parse tauri-action artifactPaths output: $($_.Exception.Message)"
+            exit 1
+          }
 
-            if ($normalizedPath -match '/bundle/msi/' -and $lowerName.EndsWith('.msi')) { return $true }
-            if ($normalizedPath -match '/bundle/nsis/' -and $lowerName.EndsWith('-setup.exe')) { return $true }
-            if ($normalizedPath -match '/bundle/dmg/' -and $lowerName.EndsWith('.dmg')) { return $true }
-            if ($normalizedPath -match '/bundle/app/' -and $lowerName.EndsWith('.app.tar.gz')) { return $true }
-            if ($normalizedPath -match '/bundle/appimage/' -and $lowerName.EndsWith('.appimage')) { return $true }
-            if ($normalizedPath -match '/bundle/deb/' -and $lowerName.EndsWith('.deb')) { return $true }
-            if ($normalizedPath -match '/bundle/rpm/' -and $lowerName.EndsWith('.rpm')) { return $true }
+          function Test-InstallerPath([string]$path) {
+            $normalizedPath = $path.ToLowerInvariant().Replace('\', '/')
+
+            if ($normalizedPath.EndsWith('.msi')) { return $true }
+            if ($normalizedPath.EndsWith('-setup.exe')) { return $true }
+            if ($normalizedPath.EndsWith('.dmg')) { return $true }
+            if ($normalizedPath.EndsWith('.app.tar.gz')) { return $true }
+            if ($normalizedPath.EndsWith('.appimage')) { return $true }
+            if ($normalizedPath.EndsWith('.deb')) { return $true }
+            if ($normalizedPath.EndsWith('.rpm')) { return $true }
 
             return $false
           }
 
           $installers = @(
-            foreach ($root in $candidateRoots) {
-              Get-ChildItem -Path $root -Recurse -File -ErrorAction SilentlyContinue | Where-Object {
-                (Test-InstallerFile $_) -and -not $_.Name.ToLowerInvariant().EndsWith(".sig")
+            foreach ($artifactPath in $artifactPaths) {
+              if (
+                $artifactPath -and
+                (Test-Path $artifactPath -PathType Leaf) -and
+                (Test-InstallerPath $artifactPath) -and
+                -not $artifactPath.ToLowerInvariant().EndsWith(".sig")
+              ) {
+                Get-Item -LiteralPath $artifactPath
               }
             }
           )
           $installers = @($installers | Sort-Object FullName -Unique)
 
           if ($installers.Count -eq 0) {
-            Write-Error "No installer binary was found in the Tauri build outputs."
+            Write-Error "No installer binary was found in tauri-action artifactPaths: $env:TAURI_ARTIFACT_PATHS"
             exit 1
           }
 
@@ -208,7 +213,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: release-assets-${{ matrix.artifact_name }}
-          path: ${{ runner.temp }}/release-assets/*
+          path: ${{ runner.temp }}/release-assets
           if-no-files-found: error
 
   publish-release-assets:
