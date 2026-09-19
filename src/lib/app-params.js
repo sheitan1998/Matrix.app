@@ -1,7 +1,7 @@
 const isNode = typeof window === 'undefined';
 const windowObj = isNode ? { localStorage: new Map(), location: { href: '', search: '', pathname: '/', hash: '' } } : window;
 const storage = windowObj.localStorage;
-const DEFAULT_APP_BASE_URL = 'https://matrix-hub.base44.app';
+const DEFAULT_APP_BASE_URL = 'https://matrix-hub.app';
 
 const ABSOLUTE_URL_PROTOCOL = /^[a-zA-Z][a-zA-Z\d+\-.]*:/;
 

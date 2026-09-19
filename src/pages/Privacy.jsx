@@ -79,7 +79,7 @@ const SECTIONS = [
     icon: Server,
     title: "7. Hébergement et Données techniques",
     content: [
-      "L'application MATRIX est hébergée sur le domaine matrix-hub.base44.app et ses sous-domaines associés.",
+      "L'application MATRIX est hébergée sur le domaine matrix-hub.app et ses sous-domaines associés.",
       "À des fins de sécurité, de stabilité et de bon fonctionnement technique, nous collectons des journaux de connexion techniques (notamment l'adresse IP de manière sécurisée et les horodatages de connexion).",
       "Ces données techniques sont utilisées exclusivement pour la détection des fraudes, la prévention des abus, le débogage et l'optimisation des performances de la plateforme. Elles ne sont jamais utilisées à des fins commerciales ni revendues à des tiers.",
     ],
