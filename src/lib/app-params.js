@@ -61,12 +61,8 @@ export function resolveAssetUrl(assetUrl, appBaseUrl = DEFAULT_APP_BASE_URL) {
   if (isAbsoluteUrl(trimmed) || trimmed.startsWith('data:') || trimmed.startsWith('blob:')) {
     return trimmed;
   }
-  // Local paths (e.g. /media/...) are bundled in the frontend dist and must
-  // resolve locally in both web and Tauri — never rewrite them to a remote URL.
-  if (trimmed.startsWith('/media/')) {
-    return trimmed;
-  }
-  // All other relative paths (e.g. /uploads/...) must resolve to the production server
+  // All relative paths (including /media/...) resolve to the production server
+  // so they load correctly in the Tauri desktop webview as well as the web app.
   const base = normalizeBaseUrl(appBaseUrl) || DEFAULT_APP_BASE_URL;
   const normalizedPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
   return `${base}${normalizedPath}`;
