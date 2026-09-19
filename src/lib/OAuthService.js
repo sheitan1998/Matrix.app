@@ -77,11 +77,14 @@ class OAuthService {
   }
 
   /**
-   * Détecte si l'app s'exécute dans Tauri
+   * Détecte si l'app s'exécute dans Tauri en mode bundlé (frontendDist).
+   * Lorsque le desktop charge l'URL distante (https://matrix-hub.app),
+   * on utilise le flux OAuth web standard pour rester identique au site web.
    */
   detectTauriApp() {
     try {
-      return Boolean(window.__TAURI__ || window.__TAURI_INTERNALS__);
+      if (!window.__TAURI__ && !window.__TAURI_INTERNALS__) return false;
+      return window.location.origin !== 'https://matrix-hub.app';
     } catch {
       return false;
     }
