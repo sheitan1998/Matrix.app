@@ -224,7 +224,7 @@ jobs:
           node-version: 20
 
       - name: Download staged installer assets
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.1.3
         with:
           pattern: release-assets-*
           merge-multiple: true
