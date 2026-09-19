@@ -224,7 +224,11 @@ class OAuthService {
       return true;
     } catch (error) {
       console.error("❌ Erreur lors du démarrage du flux OAuth:", error);
-      throw new Error(`OAuth flow failed: ${error.message}`);
+      const errorMsg =
+        error?.message ||
+        (typeof error === "string" ? error : "") ||
+        "Erreur inconnue lors du démarrage du flux OAuth.";
+      throw new Error(`OAuth flow failed: ${errorMsg}`);
     }
   }
 
