@@ -16,8 +16,15 @@ export default function OAuthCallback() {
   const [desktopDeepLink, setDesktopDeepLink] = useState("");
   const [isCustomExchangeComplete, setIsCustomExchangeComplete] = useState(false);
   const redirectTarget = useMemo(() => {
-    const target = safeReturnTo();
-    return target === "/oauth/callback" ? "/" : target;
+    const urlTarget = safeReturnTo();
+    if (urlTarget !== "/" && urlTarget !== "/oauth/callback") {
+      return urlTarget;
+    }
+    const stored = sessionStorage.getItem("oauth_return_to");
+    if (stored && stored !== "/oauth/callback") {
+      return stored;
+    }
+    return "/";
   }, []);
 
   useEffect(() => {
@@ -115,6 +122,7 @@ export default function OAuthCallback() {
         }
       } finally {
         oauthService.clearOAuthSession();
+        sessionStorage.removeItem("oauth_return_to");
       }
     };
 

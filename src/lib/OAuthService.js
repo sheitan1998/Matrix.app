@@ -212,7 +212,13 @@ class OAuthService {
           window.open(fullAuthUrl, "_blank");
         }
       } else {
-        window.open(fullAuthUrl, "oauth_popup", "width=500,height=600");
+        // Web: full-page redirect (no popup — popups leave the main window
+        // stuck on the login page, causing an apparent "login loop").
+        sessionStorage.setItem(
+          "oauth_return_to",
+          window.location.pathname + window.location.search
+        );
+        window.location.href = fullAuthUrl;
       }
 
       return true;
