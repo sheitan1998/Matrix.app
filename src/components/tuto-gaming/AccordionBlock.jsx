@@ -1,9 +1,17 @@
 import React, { useState } from "react";
 import { ChevronDown, ExternalLink } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { normalizeAppAssetUrl, normalizeExternalUrl } from "@/lib/urlUtils";
 
 export default function AccordionBlock({ title, content, image_url, link_url, link_label, buttons = [], defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen);
+  const normalizedImageUrl = normalizeAppAssetUrl(image_url);
+  const normalizedPrimaryLink = (() => {
+    const rawLink = typeof link_url === "string" ? link_url.trim() : "";
+    if (!rawLink) return "";
+    if (rawLink.startsWith("/")) return rawLink;
+    return normalizeExternalUrl(rawLink);
+  })();
 
   return (
     <div
@@ -39,9 +47,9 @@ export default function AccordionBlock({ title, content, image_url, link_url, li
               <ReactMarkdown breaks>{content}</ReactMarkdown>
             </div>
           }
-          {image_url &&
+          {normalizedImageUrl &&
           <img
-            src={image_url}
+            src={normalizedImageUrl}
             alt={title}
             className="rounded-lg w-full block mx-32 pl-64 pr-64"
             loading="lazy"
@@ -49,10 +57,10 @@ export default function AccordionBlock({ title, content, image_url, link_url, li
 
           }
           {/* Primary link (legacy single link) */}
-          {link_url &&
+          {normalizedPrimaryLink &&
           <a
-            href={link_url}
-            target="_blank"
+            href={normalizedPrimaryLink}
+            target={normalizedPrimaryLink.startsWith("http") ? "_blank" : undefined}
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 mt-2 text-xs font-bold text-[#7DA627] hover:underline">
             

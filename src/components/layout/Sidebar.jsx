@@ -1,6 +1,26 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Flame, Radio, Clapperboard, Heart, Music2, Gamepad2, GraduationCap, Newspaper, Cpu, Tv2 } from "lucide-react";
+import {
+  Home,
+  Flame,
+  Radio,
+  Clapperboard,
+  Heart,
+  Music2,
+  Gamepad2,
+  GraduationCap,
+  Newspaper,
+  Cpu,
+  Tv2,
+  MessageCircle,
+  Sparkles,
+  Dices,
+  ShoppingBag,
+  Search,
+  Wrench,
+  BarChart3,
+  User
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const mainNav = [
@@ -17,6 +37,18 @@ const categories = [
   { to: "/category/education", label: "Éducation", icon: GraduationCap },
   { to: "/category/news", label: "Actualité", icon: Newspaper },
   { to: "/category/tech", label: "Tech", icon: Cpu },
+];
+
+const universes = [
+  { to: "/community", label: "Communauté", icon: MessageCircle },
+  { to: "/ai", label: "AI Studio", icon: Sparkles },
+  { to: "/casino", label: "Casino", icon: Dices },
+  { to: "/market", label: "Marketplace", icon: ShoppingBag },
+  { to: "/prospecteurs", label: "Prospecteurs", icon: Search },
+  { to: "/playlists", label: "Playlists", icon: Music2 },
+  { to: "/outils", label: "Outils", icon: Wrench },
+  { to: "/sondages", label: "Sondages", icon: BarChart3 },
+  { to: "/mon-profil", label: "Mon profil", icon: User },
 ];
 
 function NavItem({ to, label, icon: Icon, active }) {
@@ -55,6 +87,15 @@ export default function Sidebar() {
       <div className="flex flex-col gap-0.5">
         {categories.map((item) => (
           <NavItem key={item.to} {...item} active={pathname === item.to} />
+        ))}
+      </div>
+
+      <div className="h-px bg-border my-3" />
+
+      <p className="px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Univers</p>
+      <div className="flex flex-col gap-0.5">
+        {universes.map((item) => (
+          <NavItem key={item.to} {...item} active={isActive(item.to)} />
         ))}
       </div>
 

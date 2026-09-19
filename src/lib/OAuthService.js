@@ -1,10 +1,10 @@
-import { invoke } from "@tauri-apps/api/core";
+import { appParams, resolveFromUrl } from "@/lib/app-params";
+import { getTauriInvoke } from "@/lib/tauriInvoke";
 
 /**
  * Service pour gérer le flux OAuth dans une application Tauri desktop
  * Compatible avec Base44 SDK et les fournisseurs OAuth standard
  */
-
 class OAuthService {
   constructor() {
     this.isDesktopApp = this.detectTauriApp();
@@ -12,12 +12,95 @@ class OAuthService {
     this.oauthCodeVerifier = null;
   }
 
+  getCallbackBaseUrl() {
+    try {
+      const resolvedUrl = resolveFromUrl(appParams.appBaseUrl) || window.location.href;
+      return new URL(resolvedUrl).origin;
+    } catch {
+      return window.location.origin;
+    }
+  }
+
+  normalizeRedirectUri(redirectUri = "/oauth/callback") {
+    const rawValue = typeof redirectUri === "string" ? redirectUri.trim() : "";
+    const baseUrl = this.getCallbackBaseUrl();
+    const fallbackUrl = this.isDesktopApp
+      ? "matrix://oauth/callback"
+      : new URL("/oauth/callback", baseUrl).toString();
+
+    if (!rawValue) {
+      return fallbackUrl;
+    }
+
+    try {
+      return new URL(rawValue, baseUrl).toString();
+    } catch {
+      return fallbackUrl;
+    }
+  }
+
+  async resolveDesktopRedirectUri(redirectUri) {
+    const fallbackRedirectUri = this.normalizeRedirectUri(redirectUri);
+    if (!this.isDesktopApp) {
+      return fallbackRedirectUri;
+    }
+
+    const invoke = await getTauriInvoke();
+    if (!invoke) {
+      return fallbackRedirectUri;
+    }
+
+    try {
+      const bridgeRedirectUri = await invoke("start_oauth_bridge");
+      return this.normalizeRedirectUri(bridgeRedirectUri);
+    } catch (error) {
+      console.warn("Unable to start OAuth localhost bridge, fallback on deep-link URL.", error);
+      return fallbackRedirectUri;
+    }
+  }
+
+  normalizeProviderName(providerName) {
+    return typeof providerName === "string" ? providerName.trim().toLowerCase() : "";
+  }
+
+  normalizeScopes(scopes = []) {
+    if (Array.isArray(scopes)) {
+      return scopes.map((scope) => String(scope || "").trim()).filter(Boolean).join(" ");
+    }
+
+    if (typeof scopes === "string") {
+      return scopes.trim();
+    }
+
+    return "";
+  }
+
+  getStoredOAuthSession() {
+    const provider = this.normalizeProviderName(sessionStorage.getItem("oauth_provider"));
+    const state = sessionStorage.getItem("oauth_state") || "";
+    const codeVerifier = sessionStorage.getItem("oauth_code_verifier") || "";
+    const redirectUri = this.normalizeRedirectUri(
+      sessionStorage.getItem("oauth_redirect_uri") || "/oauth/callback"
+    );
+
+    if (!provider && !state && !codeVerifier) {
+      return null;
+    }
+
+    return {
+      provider,
+      state,
+      codeVerifier,
+      redirectUri,
+    };
+  }
+
   /**
    * Détecte si l'app s'exécute dans Tauri
    */
   detectTauriApp() {
     try {
-      return typeof window.__TAURI__ !== "undefined";
+      return Boolean(window.__TAURI__ || window.__TAURI_INTERNALS__);
     } catch {
       return false;
     }
@@ -66,8 +149,33 @@ class OAuthService {
    * Démarre le flux d'authentification OAuth
    * Dans Tauri, ouvre le popup dans le navigateur par défaut
    */
-  async startOAuthFlow(providerName, authUrl, clientId, redirectUri, scopes = []) {
+  async startOAuthFlow(
+    providerName,
+    authUrl,
+    clientId,
+    redirectUri,
+    scopes = [],
+    authorizationParams = {}
+  ) {
     try {
+      const normalizedProvider = this.normalizeProviderName(providerName);
+      const normalizedAuthUrl = typeof authUrl === "string" ? authUrl.trim() : "";
+      const normalizedClientId = typeof clientId === "string" ? clientId.trim() : "";
+      const normalizedRedirectUri = await this.resolveDesktopRedirectUri(redirectUri);
+      const normalizedScopes = this.normalizeScopes(scopes) || "openid profile email";
+
+      if (!normalizedProvider) {
+        throw new Error("OAuth provider is required");
+      }
+
+      if (!normalizedAuthUrl) {
+        throw new Error("OAuth authorization URL is required");
+      }
+
+      if (!normalizedClientId) {
+        throw new Error("OAuth client_id is required");
+      }
+
       // Générer état et code verifier
       this.oauthState = this.generateRandomState();
       this.oauthCodeVerifier = this.generateCodeVerifier();
@@ -78,25 +186,40 @@ class OAuthService {
       // Stocker temporairement (sera validé au callback)
       sessionStorage.setItem("oauth_state", this.oauthState);
       sessionStorage.setItem("oauth_code_verifier", this.oauthCodeVerifier);
-      sessionStorage.setItem("oauth_provider", providerName);
+      sessionStorage.setItem("oauth_provider", normalizedProvider);
+      sessionStorage.setItem("oauth_redirect_uri", normalizedRedirectUri);
 
       // Construire l'URL d'autorisation
       const params = new URLSearchParams({
-        client_id: clientId,
-        redirect_uri: redirectUri,
+        client_id: normalizedClientId,
+        redirect_uri: normalizedRedirectUri,
         response_type: "code",
-        scope: scopes.join(" ") || "openid profile email",
+        scope: normalizedScopes,
         state: this.oauthState,
         code_challenge: codeChallenge,
         code_challenge_method: "S256",
       });
 
-      const fullAuthUrl = `${authUrl}?${params.toString()}`;
+      Object.entries(authorizationParams || {}).forEach(([key, value]) => {
+        const normalizedKey = String(key || "").trim();
+        const normalizedValue = typeof value === "string" ? value.trim() : value;
+        if (!normalizedKey || normalizedValue === undefined || normalizedValue === null || normalizedValue === "") {
+          return;
+        }
+        params.set(normalizedKey, String(normalizedValue));
+      });
+
+      const fullAuthUrl = `${normalizedAuthUrl}?${params.toString()}`;
 
       // Si c'est une application Tauri, ouvrir dans le navigateur par défaut
       if (this.isDesktopApp) {
-        await invoke("open_auth_window", { url: fullAuthUrl });
-        console.log("✅ OAuth popup ouvert dans le navigateur (Tauri)");
+        const invoke = await getTauriInvoke();
+        if (invoke) {
+          await invoke("open_auth_window", { url: fullAuthUrl });
+          console.log("✅ OAuth popup ouvert dans le navigateur (Tauri)");
+        } else {
+          window.open(fullAuthUrl, "oauth_popup", "width=500,height=600");
+        }
       } else {
         // Sinon, ouvrir un popup standard
         window.open(fullAuthUrl, "oauth_popup", "width=500,height=600");
@@ -115,14 +238,14 @@ class OAuthService {
    */
   async handleOAuthCallback(callbackUrl) {
     try {
-      const url = new URL(callbackUrl);
-      const code = url.searchParams.get("code");
-      const state = url.searchParams.get("state");
-      const error = url.searchParams.get("error");
+      const params = this.getOAuthCallbackParams(callbackUrl);
+      const code = params?.code;
+      const state = params?.state;
+      const error = params?.error;
 
       // Vérifier les erreurs OAuth
       if (error) {
-        const errorDescription = url.searchParams.get("error_description");
+        const errorDescription = params?.error_description;
         throw new Error(`OAuth Error: ${error} - ${errorDescription || ""}`);
       }
 
@@ -131,13 +254,14 @@ class OAuthService {
       }
 
       // Valider l'état CSRF
-      const savedState = sessionStorage.getItem("oauth_state");
+      const storedSession = this.getStoredOAuthSession();
+      const savedState = storedSession?.state || "";
       if (state !== savedState) {
         throw new Error("OAuth state mismatch - potential CSRF attack");
       }
 
       // Récupérer le code verifier
-      const codeVerifier = sessionStorage.getItem("oauth_code_verifier");
+      const codeVerifier = storedSession?.codeVerifier || "";
       if (!codeVerifier) {
         throw new Error("Code verifier not found");
       }
@@ -157,6 +281,7 @@ class OAuthService {
     sessionStorage.removeItem("oauth_state");
     sessionStorage.removeItem("oauth_code_verifier");
     sessionStorage.removeItem("oauth_provider");
+    sessionStorage.removeItem("oauth_redirect_uri");
     this.oauthState = null;
     this.oauthCodeVerifier = null;
   }
@@ -164,23 +289,38 @@ class OAuthService {
   /**
    * Vérifier si on est en train de revenir d'un OAuth callback
    */
-  isOAuthCallback() {
-    const params = new URLSearchParams(window.location.search);
-    return params.has("code") && params.has("state");
+  isOAuthCallback(callbackUrl = window.location.href) {
+    const params = this.getOAuthCallbackParams(callbackUrl);
+    return Boolean(params?.error || params?.access_token || params?.code || params?.state);
   }
 
   /**
    * Extraire les paramètres du callback depuis l'URL actuelle
    */
-  getOAuthCallbackParams() {
-    if (!this.isOAuthCallback()) return null;
+  getOAuthCallbackParams(callbackUrl = window.location.href) {
+    const url = new URL(callbackUrl);
+    const hashParams = new URLSearchParams(url.hash.startsWith("#") ? url.hash.slice(1) : "");
+    const readParam = (key) => url.searchParams.get(key) ?? hashParams.get(key);
+    const params = {
+      code: readParam("code"),
+      state: readParam("state"),
+      error: readParam("error"),
+      error_description: readParam("error_description"),
+      access_token: readParam("access_token"),
+      token_type: readParam("token_type"),
+    };
 
-    const params = new URLSearchParams(window.location.search);
+    if (!params.code && !params.state && !params.error && !params.access_token) {
+      return null;
+    }
+
     return {
-      code: params.get("code"),
-      state: params.get("state"),
-      error: params.get("error"),
-      error_description: params.get("error_description"),
+      code: params.code,
+      state: params.state,
+      error: params.error,
+      error_description: params.error_description,
+      access_token: params.access_token,
+      token_type: params.token_type,
     };
   }
 }

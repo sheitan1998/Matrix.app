@@ -48,7 +48,7 @@ export default function AddWikiItem() {
     if (!file) return;
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
       setUrl(file_url);
       toast.success("Image uploadée avec succès.");
     } catch {

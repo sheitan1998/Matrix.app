@@ -3,6 +3,7 @@ import { Plus, Trash2, ChevronUp, ChevronDown, Pencil, Loader2, X, Upload } from
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import ConfirmDeleteModal from "@/components/admin/ConfirmDeleteModal";
+import { normalizeAppAssetUrl } from "@/lib/urlUtils";
 
 export default function CategoryManager() {
   const [categories, setCategories] = useState([]);
@@ -41,8 +42,8 @@ export default function CategoryManager() {
     if (!file) return;
     setUploadingSubImg(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setNewSubImg(file_url);
+      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
+      setNewSubImg(normalizeAppAssetUrl(file_url));
     } catch {
       toast.error("Erreur lors de l'upload.");
     } finally {
@@ -254,7 +255,7 @@ export default function CategoryManager() {
                   </button>
                   {sub.img && (
                     <div className="w-8 h-8 rounded overflow-hidden shrink-0" style={{ background: "#262626" }}>
-                      <img src={sub.img} alt={sub.title} className="w-full h-full object-cover" />
+                      <img src={normalizeAppAssetUrl(sub.img)} alt={sub.title} className="w-full h-full object-cover" />
                     </div>
                   )}
                   <span className="flex-1 text-xs text-white/70">{sub.title}</span>
@@ -279,7 +280,7 @@ export default function CategoryManager() {
                     <label className="flex items-center gap-1.5 cursor-pointer text-[10px] text-white/40 hover:text-white">
                       {newSubImg ? (
                         <div className="w-8 h-8 rounded overflow-hidden">
-                          <img src={newSubImg} alt="" className="w-full h-full object-cover" />
+                          <img src={normalizeAppAssetUrl(newSubImg)} alt="" className="w-full h-full object-cover" />
                         </div>
                       ) : uploadingSubImg ? (
                         <Loader2 className="w-4 h-4 animate-spin" />

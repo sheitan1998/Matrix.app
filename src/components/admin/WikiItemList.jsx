@@ -5,6 +5,7 @@ import { FARMING_SIM_CATEGORIES } from "@/components/tuto-gaming/farmingSimData"
 import { toast } from "sonner";
 import WikiItemEditModal from "@/components/admin/WikiItemEditModal";
 import ConfirmDeleteModal from "@/components/admin/ConfirmDeleteModal";
+import { normalizeAppAssetUrl } from "@/lib/urlUtils";
 
 const WIKI_GAMES = [
   { slug: "farming-simulator-25", name: "Farming Simulator 25" },
@@ -123,7 +124,9 @@ export default function WikiItemList() {
         <span className="text-[10px] text-white/30">{items.length} entrée{items.length > 1 ? "s" : ""}</span>
       </div>
 
-      {items.map((item, index) => (
+      {items.map((item, index) => {
+        const thumbnailUrl = normalizeAppAssetUrl(item.thumbnail_url);
+        return (
         <div
           key={item.id}
           className="flex items-center gap-3 rounded-lg border border-white/5 px-4 py-3"
@@ -131,8 +134,8 @@ export default function WikiItemList() {
         >
           {/* Thumbnail */}
           <div className="w-12 h-12 rounded overflow-hidden shrink-0" style={{ background: "#262626" }}>
-            {item.thumbnail_url && (
-              <img src={item.thumbnail_url} alt={item.title} className="w-full h-full object-cover" />
+            {thumbnailUrl && (
+              <img src={thumbnailUrl} alt={item.title} className="w-full h-full object-cover" />
             )}
           </div>
 
@@ -174,7 +177,8 @@ export default function WikiItemList() {
             </button>
           </div>
         </div>
-      ))}
+        );
+      })}
 
       {editingItem && (
         <WikiItemEditModal

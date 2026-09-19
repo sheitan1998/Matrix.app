@@ -69,7 +69,7 @@ export default function Channel() {
   };
 
   const uploadImg = async (file, key) => {
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
     setEditForm((f) => ({ ...f, [key]: file_url }));
     toast.success("Image téléversée");
   };

@@ -5,7 +5,7 @@
 // Trophies: 1–10, XP: 100–1000.
 // ============================================================
 
-const TROPHY_IMG = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/6e448bdc9_Gemini_Generated_Image_9q71zn9q71zn9q71-removebg-preview.png";
+const TROPHY_IMG = "/media/tuto-gaming/6e448bdc9_Gemini_Generated_Image_9q71zn9q71zn9q71-removebg-preview.png";
 
 // Each seed: { name, stat, baseVal, tiers:[{mult, suffix}] }
 const SEEDS = [

@@ -20,13 +20,21 @@ Any change pushed to the repo will also be reflected in the Base44 Builder.
 ```
 VITE_BASE44_APP_ID=your_app_id
 VITE_BASE44_APP_BASE_URL=your_backend_url
+VITE_BASE44_FUNCTIONS_VERSION=prod
 
 e.g.
 VITE_BASE44_APP_ID=cbef744a8545c389ef439ea6
-VITE_BASE44_APP_BASE_URL=https://my-to-do-list-81bfaad7.base44.app
+VITE_BASE44_APP_BASE_URL=https://matrix-hub.app
+VITE_BASE44_FUNCTIONS_VERSION=prod
 ```
 
 Run the app: `npm run dev`
+
+### Desktop OAuth & OTA updates (Tauri)
+
+- OAuth desktop callback now uses a localhost bridge (`http://127.0.0.1:48923/oauth/callback`) that redirects to deep link `matrix://oauth/callback`.
+- Tauri updater checks `https://matrix-hub.app/updates/latest.json` first.
+- During release workflow, `latest.json` is generated automatically with `npm run tauri:generate-latest-json` and uploaded as a release asset.
 
 **Publish your changes**
 

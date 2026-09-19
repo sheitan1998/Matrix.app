@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { X, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
+import { normalizeCosmeticAssetUrl, normalizeCosmeticIcon } from "@/lib/cosmeticAssetUrl";
 
 const CATEGORIES = [
   { value: "badge", label: "Badge" },
@@ -65,9 +66,9 @@ export default function CosmeticEditModal({ item, onClose, onSaved }) {
         category: form.category,
         rarity: form.rarity,
         price_euros: parseFloat(form.price_euros) || undefined,
-        icon: form.icon.trim(),
-        preview_image: form.preview_image,
-        video_url: form.video_url,
+        icon: normalizeCosmeticIcon(form.icon),
+        preview_image: normalizeCosmeticAssetUrl(form.preview_image),
+        video_url: normalizeCosmeticAssetUrl(form.video_url),
         is_active: form.is_active,
         anim_config,
       });

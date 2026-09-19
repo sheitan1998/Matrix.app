@@ -50,7 +50,7 @@ export default function NitroAvatarPicker({ user, onSave, onClose }) {
       return;
     }
     setUploading(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
     setSelected(file_url);
     setUploading(false);
     toast.success("GIF uploadé !");

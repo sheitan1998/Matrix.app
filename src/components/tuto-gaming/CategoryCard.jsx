@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { normalizeAppAssetUrl } from "@/lib/urlUtils";
 
 export default function CategoryCard({ card, basePath = "/tuto-gaming/farming-simulator-25" }) {
   return (
@@ -10,7 +11,7 @@ export default function CategoryCard({ card, basePath = "/tuto-gaming/farming-si
     >
       <div className="relative h-40 sm:h-44 overflow-hidden">
         <img
-          src={card.img}
+          src={normalizeAppAssetUrl(card.img)}
           alt={card.title}
           className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
           loading="lazy"

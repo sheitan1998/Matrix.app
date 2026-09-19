@@ -1,6 +1,6 @@
 import React from "react";
 
-const SPACE_IMG = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/e20a0d5be_ChatGPTImage2juil202604_45_31.png";
+const SPACE_IMG = "/media/tuto-gaming/e20a0d5be_ChatGPTImage2juil202604_45_31.png";
 
 export default function SpaceBackground({ children, overlay = 0.55 }) {
   return (

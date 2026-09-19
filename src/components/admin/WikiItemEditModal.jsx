@@ -4,6 +4,7 @@ import { X, Upload, Loader2, Check } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { FARMING_SIM_CATEGORIES } from "@/components/tuto-gaming/farmingSimData";
 import { toast } from "sonner";
+import { normalizeAppAssetUrl } from "@/lib/urlUtils";
 
 export default function WikiItemEditModal({ item, onClose, onSaved }) {
   const [category, setCategory] = useState(item.category || "");
@@ -22,8 +23,8 @@ export default function WikiItemEditModal({ item, onClose, onSaved }) {
     if (!file) return;
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setUrl(file_url);
+      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
+      setUrl(normalizeAppAssetUrl(file_url));
       toast.success("Image uploadée.");
     } catch {
       toast.error("Erreur lors de l'upload.");

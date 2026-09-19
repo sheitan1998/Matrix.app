@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import AccordionBlock from "@/components/tuto-gaming/AccordionBlock";
 import ReactMarkdown from "react-markdown";
+import { normalizeAppAssetUrl } from "@/lib/urlUtils";
 
 export default function BlockRenderer({ gameSlug, pageKey, className = "" }) {
   const [blocks, setBlocks] = useState([]);
@@ -42,6 +43,7 @@ export default function BlockRenderer({ gameSlug, pageKey, className = "" }) {
         }}
       >
         {blocks.map((block) => {
+          const normalizedImageUrl = normalizeAppAssetUrl(block.image_url);
           const colSpan = Math.min(12, Math.max(1, block.col_span || 12));
           const gridCol = (block.grid_col || 0) + 1; // CSS grid is 1-indexed
           const rowSpan = Math.max(1, block.row_span || 1);
@@ -71,18 +73,18 @@ export default function BlockRenderer({ gameSlug, pageKey, className = "" }) {
                   defaultOpen={block.default_open !== false}
                 />
               )}
-              {block.block_type === "banner" && block.image_url && (
+              {block.block_type === "banner" && normalizedImageUrl && (
                 <a
                   href={block.link_url || "#"}
                   target={block.link_url ? "_blank" : undefined}
                   rel="noopener noreferrer"
                   className="block rounded-lg overflow-hidden"
                 >
-                  <img src={block.image_url} alt={block.title} className="w-full block" loading="lazy" />
+                  <img src={normalizedImageUrl} alt={block.title} className="w-full block" loading="lazy" />
                 </a>
               )}
-              {block.block_type === "image" && block.image_url && (
-                <img src={block.image_url} alt={block.title} className="w-full rounded-lg block" loading="lazy" />
+              {block.block_type === "image" && normalizedImageUrl && (
+                <img src={normalizedImageUrl} alt={block.title} className="w-full rounded-lg block" loading="lazy" />
               )}
               {block.block_type === "text" && (
                 <div className="p-4 rounded-lg" style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.08)" }}>

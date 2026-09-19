@@ -1,7 +1,8 @@
-import React from "react";
-import { base44 } from "@/api/base44Client";
+import React, { useState } from "react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import GoogleIcon from "@/components/GoogleIcon";
+import { startOAuthLogin } from "@/lib/startOAuthLogin";
 
 const MicrosoftIcon = ({ className = "w-5 h-5" }) => (
   <svg className={className} viewBox="0 0 23 23" aria-hidden="true">
@@ -31,7 +32,34 @@ const PROVIDERS = [
   { id: "apple", label: "Apple", Icon: AppleIcon },
 ];
 
+function getOAuthReturnPath() {
+  return "/oauth/callback";
+}
+
 export default function SocialAuthButtons() {
+  const oauthReturnPath = getOAuthReturnPath();
+  const [loadingProvider, setLoadingProvider] = useState("");
+  const [error, setError] = useState("");
+
+  const handleOAuthLogin = async (providerId) => {
+    setError("");
+    setLoadingProvider(providerId);
+
+    try {
+      await startOAuthLogin(providerId, oauthReturnPath);
+    } catch (oauthError) {
+      setError(
+        oauthError?.response?.data?.provider_message ||
+          oauthError?.response?.data?.error_description ||
+          oauthError?.response?.data?.error ||
+          oauthError?.message ||
+          "Impossible de démarrer la connexion OAuth."
+      );
+    } finally {
+      setLoadingProvider("");
+    }
+  };
+
   return (
     <>
       <div className="space-y-3 mb-6">
@@ -40,13 +68,27 @@ export default function SocialAuthButtons() {
             key={id}
             variant="outline"
             className="w-full h-12 text-sm font-medium"
-            onClick={() => base44.auth.loginWithProvider(id, "/")}
+            disabled={Boolean(loadingProvider)}
+            onClick={() => handleOAuthLogin(id)}
           >
-            <Icon className="w-5 h-5 mr-2" />
+            {loadingProvider === id ? (
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+            ) : (
+              <Icon className="w-5 h-5 mr-2" />
+            )}
             Continue with {label}
           </Button>
         ))}
       </div>
+
+      {error && (
+        <div className="mb-6 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        </div>
+      )}
 
       <div className="relative mb-6">
         <div className="absolute inset-0 flex items-center">

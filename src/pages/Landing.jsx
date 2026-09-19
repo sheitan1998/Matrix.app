@@ -13,7 +13,7 @@ import {
 "lucide-react";
 
 const LEFT_CARDS = [
-{ path: "/stream", label: "Youtube", desc: "Vidéos, lives, shorts. Crée ta chaîne et partage ton contenu.", icon: Youtube, iconUrl: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/c4e71cf23_yt_icon_red_digital.png", color: "#FF0000" },
+{ path: "/stream", label: "Youtube", desc: "Vidéos, lives, shorts. Crée ta chaîne et partage ton contenu.", icon: Youtube, iconUrl: "/media/tuto-gaming/c4e71cf23_yt_icon_red_digital.png", color: "#FF0000" },
 { path: "/twitch", label: "Twitch", desc: "Streams en direct, clips, discussions et rencontres.", icon: Radio, color: "#9146FF" },
 { path: "/community", label: "Nexus", desc: "Discute, réagis, commente. Rejoins ou crée des salons vocaux.", icon: MessageCircle, color: "#3B82F6" },
 
@@ -45,7 +45,7 @@ export default function Landing() {
   return (
     <div className="min-h-screen relative overflow-y-auto overflow-x-hidden" style={{ backgroundColor: "#0a050f" }}>
       {/* Space background image */}
-      <div className="fixed inset-0 pointer-events-none" style={{ backgroundImage: "url(https://media.base44.com/images/public/69e14a987a927963a9924d5a/891f5968b_Gemini_Generated_Image_vsevw4vsevw4vsev.png)", backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed" }} />
+      <div className="fixed inset-0 pointer-events-none" style={{ backgroundImage: "url(/media/tuto-gaming/891f5968b_Gemini_Generated_Image_vsevw4vsevw4vsev.png)", backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed" }} />
       <div className="fixed inset-0 pointer-events-none" style={{ background: "rgba(10,5,15,0.5)" }} />
 
       <div className="relative z-10 min-h-screen flex flex-col px-4 sm:px-6 lg:px-10 py-4">

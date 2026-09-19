@@ -5,7 +5,7 @@ export const SLOT_WORLDS = [
   {
     id: "incredibulls",
     name: "INCREDIBULLS",
-    img: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/6c7ee7ecd_generated_image.png",
+    img: "/media/tuto-gaming/6c7ee7ecd_generated_image.png",
     jackpot: "13 898 773 995 259",
     bgGradient: "linear-gradient(160deg, #8b1a0e 0%, #ff4500 50%, #b22222 100%)",
     themeColor: "#ff4500",
@@ -15,7 +15,7 @@ export const SLOT_WORLDS = [
   {
     id: "god_of_sky",
     name: "GOD OF SKY",
-    img: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/15218a259_generated_image.png",
+    img: "/media/tuto-gaming/15218a259_generated_image.png",
     jackpot: "8 472 193 004 817",
     bgGradient: "linear-gradient(160deg, #1a0a4a 0%, #4169e1 50%, #2a1a6b 100%)",
     themeColor: "#4169e1",
@@ -25,7 +25,7 @@ export const SLOT_WORLDS = [
   {
     id: "classic_hot_40",
     name: "CLASSIC HOT 40",
-    img: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/e2ff2dd91_generated_image.png",
+    img: "/media/tuto-gaming/e2ff2dd91_generated_image.png",
     jackpot: "5 621 884 330 002",
     bgGradient: "linear-gradient(160deg, #4a0a0a 0%, #cc0000 50%, #660000 100%)",
     themeColor: "#cc0000",
@@ -35,7 +35,7 @@ export const SLOT_WORLDS = [
   {
     id: "charming_beasts",
     name: "CHARMING BEASTS",
-    img: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/35da7a99e_generated_image.png",
+    img: "/media/tuto-gaming/35da7a99e_generated_image.png",
     jackpot: "9 034 552 118 446",
     bgGradient: "linear-gradient(160deg, #2a0a4a 0%, #9370db 50%, #4b0082 100%)",
     themeColor: "#9370db",
@@ -45,7 +45,7 @@ export const SLOT_WORLDS = [
   {
     id: "diamonds_pearls",
     name: "DIAMONDS & PEARLS",
-    img: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/8ebb214ad_generated_image.png",
+    img: "/media/tuto-gaming/8ebb214ad_generated_image.png",
     jackpot: "31 898 704 830",
     bgGradient: "linear-gradient(160deg, #1a0a4a 0%, #4169e1 50%, #2a1a6b 100%)",
     themeColor: "#4169e1",
@@ -55,7 +55,7 @@ export const SLOT_WORLDS = [
   {
     id: "camelot_cash",
     name: "CAMELOT CASH",
-    img: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/1261b8925_generated_image.png",
+    img: "/media/tuto-gaming/1261b8925_generated_image.png",
     jackpot: "7 209 441 665 123",
     bgGradient: "linear-gradient(160deg, #0a1a3a 0%, #4682b4 50%, #1a2a5a 100%)",
     themeColor: "#4682b4",
@@ -65,7 +65,7 @@ export const SLOT_WORLDS = [
   {
     id: "radiant_rainbows",
     name: "RADIANT RAINBOWS",
-    img: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/29f2d4504_generated_image.png",
+    img: "/media/tuto-gaming/29f2d4504_generated_image.png",
     jackpot: "4 118 772 009 335",
     bgGradient: "linear-gradient(160deg, #0a4a1a 0%, #32cd32 50%, #228b22 100%)",
     themeColor: "#32cd32",
@@ -75,7 +75,7 @@ export const SLOT_WORLDS = [
   {
     id: "super_classic",
     name: "SUPER CLASSIC",
-    img: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/b969cb4ae_generated_image.png",
+    img: "/media/tuto-gaming/b969cb4ae_generated_image.png",
     jackpot: "2 556 990 441 778",
     bgGradient: "linear-gradient(160deg, #0a1a4a 0%, #1e90ff 50%, #0a0a6a 100%)",
     themeColor: "#1e90ff",
@@ -86,7 +86,7 @@ export const SLOT_WORLDS = [
   {
     id: "king_of_kings",
     name: "KING OF KINGS",
-    img: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/10218c8f7_generated_image.png",
+    img: "/media/tuto-gaming/10218c8f7_generated_image.png",
     jackpot: "15 442 009 883 117",
     bgGradient: "linear-gradient(160deg, #4a3a0a 0%, #daa520 50%, #8b6914 100%)",
     themeColor: "#daa520",
@@ -96,7 +96,7 @@ export const SLOT_WORLDS = [
   {
     id: "phoenix_garden",
     name: "PHOENIX GARDEN",
-    img: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/558be125f_generated_image.png",
+    img: "/media/tuto-gaming/558be125f_generated_image.png",
     jackpot: "12 887 331 440 902",
     bgGradient: "linear-gradient(160deg, #4a1a0a 0%, #ff8c00 50%, #cc4400 100%)",
     themeColor: "#ff8c00",
@@ -106,7 +106,7 @@ export const SLOT_WORLDS = [
   {
     id: "buffalo_rush",
     name: "BUFFALO RUSH",
-    img: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/379b618fa_generated_image.png",
+    img: "/media/tuto-gaming/379b618fa_generated_image.png",
     jackpot: "6 559 004 118 773",
     bgGradient: "linear-gradient(160deg, #4a0a0a 0%, #cd5c5c 50%, #8b1a1a 100%)",
     themeColor: "#cd5c5c",
@@ -116,7 +116,7 @@ export const SLOT_WORLDS = [
   {
     id: "call_of_the_wild",
     name: "CALL OF THE WILD",
-    img: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/ed0c1289e_generated_image.png",
+    img: "/media/tuto-gaming/ed0c1289e_generated_image.png",
     jackpot: "3 772 559 004 118",
     bgGradient: "linear-gradient(160deg, #0a2a0a 0%, #228b22 50%, #0a1a0a 100%)",
     themeColor: "#228b22",

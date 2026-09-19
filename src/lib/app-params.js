@@ -1,6 +1,60 @@
 const isNode = typeof window === 'undefined';
-const windowObj = isNode ? { localStorage: new Map() } : window;
+const windowObj = isNode ? { localStorage: new Map(), location: { href: '', search: '', pathname: '/', hash: '' } } : window;
 const storage = windowObj.localStorage;
+const DEFAULT_APP_BASE_URL = 'https://matrix-hub.app';
+
+const ABSOLUTE_URL_PROTOCOL = /^[a-zA-Z][a-zA-Z\d+\-.]*:/;
+
+const isAbsoluteUrl = (value) => ABSOLUTE_URL_PROTOCOL.test(value);
+
+const normalizeBaseUrl = (value) => {
+  if (!value || typeof value !== 'string') return '';
+  const trimmed = value.trim();
+  if (!trimmed || !isAbsoluteUrl(trimmed)) return '';
+  try {
+    return new URL(trimmed).origin;
+  } catch {
+    return '';
+  }
+};
+
+const isNativeWebviewHost = (host) =>
+  host === 'tauri.localhost' || host.endsWith('.tauri.localhost');
+
+/**
+ * In Tauri production, the webview origin (tauri://localhost or http://tauri.localhost)
+ * is not a valid redirect target for OAuth or post-login returnTo. Use the published
+ * web app URL as the base for all auth redirect flows.
+ */
+export function resolveFromUrl(appBaseUrl = DEFAULT_APP_BASE_URL) {
+  if (isNode) return '';
+  const host = window.location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('.base44.app') || !isNativeWebviewHost(host)) {
+    return window.location.href;
+  }
+  return normalizeBaseUrl(appBaseUrl) || DEFAULT_APP_BASE_URL;
+}
+
+export function resolveBase44ServerUrl(appBaseUrl = DEFAULT_APP_BASE_URL) {
+  if (typeof window === 'undefined') return '';
+  const host = window.location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('.base44.app') || !isNativeWebviewHost(host)) {
+    return '';
+  }
+  return normalizeBaseUrl(appBaseUrl) || DEFAULT_APP_BASE_URL;
+}
+
+export function resolveAssetUrl(assetUrl, appBaseUrl = DEFAULT_APP_BASE_URL) {
+  if (!assetUrl || typeof assetUrl !== 'string') return assetUrl;
+  const trimmed = assetUrl.trim();
+  if (!trimmed) return trimmed;
+  if (isAbsoluteUrl(trimmed) || trimmed.startsWith('data:') || trimmed.startsWith('blob:')) {
+    return trimmed;
+  }
+  // Local paths (e.g. /media/...) are bundled in the frontend dist and must
+  // resolve locally in both web and Tauri — never rewrite them to a remote URL.
+  return trimmed;
+}
 
 const toSnakeCase = (str) => {
 	return str.replace(/([A-Z])/g, '_$1').toLowerCase();
@@ -39,12 +93,14 @@ const getAppParams = () => {
 		storage.removeItem('base44_access_token');
 		storage.removeItem('token');
 	}
+	const appBaseUrlValue = getAppParamValue("app_base_url", { defaultValue: import.meta.env.VITE_BASE44_APP_BASE_URL });
+	const appBaseUrl = normalizeBaseUrl(appBaseUrlValue) || DEFAULT_APP_BASE_URL;
 	return {
 		appId: getAppParamValue("app_id", { defaultValue: import.meta.env.VITE_BASE44_APP_ID }),
 		token: getAppParamValue("access_token", { removeFromUrl: true }),
-		fromUrl: getAppParamValue("from_url", { defaultValue: window.location.href }),
+		fromUrl: getAppParamValue("from_url", { defaultValue: resolveFromUrl(appBaseUrl) }),
 		functionsVersion: getAppParamValue("functions_version", { defaultValue: import.meta.env.VITE_BASE44_FUNCTIONS_VERSION }),
-		appBaseUrl: getAppParamValue("app_base_url", { defaultValue: import.meta.env.VITE_BASE44_APP_BASE_URL }),
+		appBaseUrl,
 	}
 }
 

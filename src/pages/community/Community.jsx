@@ -161,7 +161,7 @@ export default function Community() {
 
   const uploadIcon = async (file) => {
     setUploadingIcon(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
     await updateServer({ icon_url: file_url });
     setUploadingIcon(false);
     toast.success("Icône mise à jour !");
@@ -169,7 +169,7 @@ export default function Community() {
 
   const uploadBanner = async (file) => {
     setUploadingBanner(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
     await updateServer({ banner_url: file_url });
     setUploadingBanner(false);
     toast.success("Bannière mise à jour !");

@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { appParams } from '@/lib/app-params';
+import { appParams, resolveBase44ServerUrl } from '@/lib/app-params';
 import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
 
 const AuthContext = createContext();
@@ -22,11 +22,12 @@ export const AuthProvider = ({ children }) => {
     try {
       setIsLoadingPublicSettings(true);
       setAuthError(null);
+      const serverUrl = resolveBase44ServerUrl(appParams.appBaseUrl);
       
       // First, check app public settings (with token if available)
       // This will tell us if auth is required, user not registered, etc.
       const appClient = createAxiosClient({
-        baseURL: `/api/apps/public`,
+        baseURL: serverUrl ? `${serverUrl}/api/apps/public` : `/api/apps/public`,
         headers: {
           'X-App-Id': appParams.appId
         },
@@ -106,6 +107,9 @@ export const AuthProvider = ({ children }) => {
       
       // If user auth fails, it might be an expired token
       if (error.status === 401 || error.status === 403) {
+        base44.auth.logout();
+        localStorage.removeItem("base44_access_token");
+        localStorage.removeItem("token");
         setAuthError({
           type: 'auth_required',
           message: 'Authentication required'
@@ -120,7 +124,7 @@ export const AuthProvider = ({ children }) => {
     
     if (shouldRedirect) {
       // Use the SDK's logout method which handles token cleanup and redirect
-      base44.auth.logout(window.location.href);
+      base44.auth.logout(appParams.fromUrl || window.location.href);
     } else {
       // Just remove the token without redirect
       base44.auth.logout();
@@ -129,7 +133,7 @@ export const AuthProvider = ({ children }) => {
 
   const navigateToLogin = () => {
     // Use the SDK's redirectToLogin method
-    base44.auth.redirectToLogin(window.location.href);
+    base44.auth.redirectToLogin(appParams.fromUrl || window.location.href);
   };
 
   return (

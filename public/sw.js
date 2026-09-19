@@ -1,82 +1,48 @@
-// MATRIX PWA Service Worker
-// Strategy: Network-first for everything. Cache only static assets (JS/CSS/images/fonts).
-// NEVER cache API requests or data — always pass through to the server.
-
-const CACHE_VERSION = 'matrix-v3';
-const STATIC_CACHE = `${CACHE_VERSION}-static`;
-
-// Only cache requests for static assets from same-origin
-const STATIC_ASSET_PATTERNS = [
-  /\.(?:js|jsx|ts|tsx|css|png|jpg|jpeg|gif|webp|svg|ico|woff|woff2|ttf|eot|mp4|webm|mp3)$/,
-];
-
-// NEVER intercept these — always go to network
-const NEVER_CACHE_PATTERNS = [
-  /\/api\//,
-  /\/auth\//,
-  /base44\./,
-  /googleapis\.com/,
-  /base44\.com/,
+// Matrix Service Worker — production only
+// Cache-first for static assets, network-first for everything else
+const CACHE_NAME = 'matrix-v1.0.4';
+const STATIC_ASSETS = [
+  '/',
+  '/index.html',
+  '/manifest.json',
 ];
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => cache.addAll([
-      '/',
-      '/index.html',
-    ]).catch(() => {}))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS).catch(() => {}))
   );
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((key) => !key.startsWith(CACHE_VERSION))
-          .map((key) => caches.delete(key))
-      )
-    ).then(() => self.clients.claim())
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+    )
   );
+  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-
-  // Only handle GET requests
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
 
-  // NEVER cache API/auth/data requests — always pass through to server
-  if (NEVER_CACHE_PATTERNS.some((pattern) => pattern.test(url.href))) {
-    return; // Let the browser handle it normally (no cache)
-  }
-
-  // For navigation requests: network-first, fall back to cached index.html
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(STATIC_CACHE).then((cache) => cache.put(request, copy)).catch(() => {});
-          return response;
-        })
-        .catch(() => caches.match(request).then((cached) => cached || caches.match('/index.html')))
-    );
+  // Never cache API calls, auth, or Vite dev chunks
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/auth/') || url.hostname !== self.location.hostname) {
     return;
   }
 
-  // For static assets: cache-first, then network
-  if (STATIC_ASSET_PATTERNS.some((pattern) => pattern.test(url.href))) {
+  // Cache-first for static assets
+  if (/\.(js|css|png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|eot|mp4|webm|mov)$/.test(url.pathname)) {
     event.respondWith(
       caches.match(request).then((cached) => {
         if (cached) return cached;
         return fetch(request).then((response) => {
-          if (response && response.status === 200) {
-            const copy = response.clone();
-            caches.open(STATIC_CACHE).then((cache) => cache.put(request, copy)).catch(() => {});
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           }
           return response;
         });
@@ -85,13 +51,20 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For everything else: network-first, no caching of responses
-  event.respondWith(
-    fetch(request).catch(() => caches.match(request))
-  );
+  // Network-first for navigation (SPA fallback)
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request).then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        }
+        return response;
+      }).catch(() => caches.match(request).then((cached) => cached || caches.match('/index.html')))
+    );
+  }
 });
 
-// Handle messages from the client (e.g., force update)
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();

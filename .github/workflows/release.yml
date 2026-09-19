@@ -13,12 +13,86 @@ on:
         type: string
 
 jobs:
-  release:
+  prepare-release:
     permissions:
       contents: write
+    runs-on: ubuntu-latest
+    outputs:
+      app_version: ${{ steps.release-metadata.outputs.app_version }}
+      product_name: ${{ steps.release-metadata.outputs.product_name }}
+      release_tag: ${{ steps.release-metadata.outputs.release_tag }}
+      release_name: ${{ steps.release-metadata.outputs.release_name }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.sha }}
+
+      - name: Resolve release metadata
+        id: release-metadata
+        shell: pwsh
+        run: |
+          $tauriConfig = Get-Content "src-tauri/tauri.conf.json" -Raw | ConvertFrom-Json
+          $version = $tauriConfig.version
+          $productName = $tauriConfig.productName
+          $releaseTag = if ($env:GITHUB_REF_TYPE -eq "tag" -and $env:GITHUB_REF_NAME) {
+            $env:GITHUB_REF_NAME
+          } else {
+            "v$version"
+          }
+          $releaseName = "$productName $releaseTag"
+
+          "app_version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "product_name=$productName" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "release_tag=$releaseTag" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "release_name=$releaseName" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Ensure target release exists
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.release-metadata.outputs.release_tag }}
+          RELEASE_NAME: ${{ steps.release-metadata.outputs.release_name }}
+        run: |
+          gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY *> $null
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "Release '$env:RELEASE_TAG' already exists."
+            exit 0
+          }
+
+          gh release create $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --title $env:RELEASE_NAME --notes "Nouvelle mise à jour de Matrix."
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+      - name: Remove existing assets from target release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.release-metadata.outputs.release_tag }}
+          TAURI_APP_VERSION: ${{ steps.release-metadata.outputs.app_version }}
+          TAURI_PRODUCT_NAME: ${{ steps.release-metadata.outputs.product_name }}
+        run: |
+          ./scripts/github-release-assets.ps1
+
+  build-tauri:
+    needs: prepare-release
+    permissions:
+      contents: read
     strategy:
+      fail-fast: false
       matrix:
-        platform: [windows-latest]
+        include:
+          - platform: windows-latest
+            bundles: nsis,msi
+            artifact_name: windows
+          - platform: macos-latest
+            bundles: app,dmg
+            artifact_name: macos
+          - platform: ubuntu-22.04
+            bundles: appimage,deb,rpm
+            artifact_name: linux
     runs-on: ${{ matrix.platform }}
 
     steps:
@@ -38,15 +112,223 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Build Tauri App & Create Installer
+      - name: Install Linux system dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            curl \
+            file \
+            libayatana-appindicator3-dev \
+            libglib2.0-dev \
+            libgtk-3-dev \
+            librsvg2-dev \
+            libssl-dev \
+            libwebkit2gtk-4.1-dev \
+            patchelf
+
+      - name: Build Tauri App
+        id: tauri-build
         uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          tagName: v__VERSION__
-          releaseName: 'Matrix v__VERSION__'
+          args: --bundles ${{ matrix.bundles }}
+          tagName: ${{ steps.release-metadata.outputs.release_tag }}
+          releaseName: Matrix v${{ steps.release-metadata.outputs.app_version }}
           releaseBody: 'Nouvelle mise à jour de Matrix.'
           releaseDraft: false
           prerelease: false
+          uploadUpdaterJson: false
+          uploadUpdaterSignatures: false
+
+      - name: Stage generated installer assets
+        shell: pwsh
+        env:
+          TAURI_ARTIFACT_PATHS: ${{ steps.tauri-build.outputs.artifactPaths }}
+        run: |
+          if (-not $env:TAURI_ARTIFACT_PATHS) {
+            Write-Error "tauri-action did not expose any artifactPaths output."
+            exit 1
+          }
+
+          try {
+            $artifactPaths = @(ConvertFrom-Json -InputObject $env:TAURI_ARTIFACT_PATHS)
+          } catch {
+            Write-Error "Unable to parse tauri-action artifactPaths output: $($_.Exception.Message)"
+            exit 1
+          }
+
+          function Test-InstallerPath([string]$path) {
+            $normalizedPath = $path.ToLowerInvariant().Replace('\', '/')
+
+            if ($normalizedPath.EndsWith('.msi')) { return $true }
+            if ($normalizedPath.EndsWith('-setup.exe')) { return $true }
+            if ($normalizedPath.EndsWith('.dmg')) { return $true }
+            if ($normalizedPath.EndsWith('.app.tar.gz')) { return $true }
+            if ($normalizedPath.EndsWith('.appimage')) { return $true }
+            if ($normalizedPath.EndsWith('.deb')) { return $true }
+            if ($normalizedPath.EndsWith('.rpm')) { return $true }
+
+            return $false
+          }
+
+          $installers = @(
+            foreach ($artifactPath in $artifactPaths) {
+              if (
+                $artifactPath -and
+                (Test-Path $artifactPath -PathType Leaf) -and
+                (Test-InstallerPath $artifactPath) -and
+                -not $artifactPath.ToLowerInvariant().EndsWith(".sig")
+              ) {
+                Get-Item -LiteralPath $artifactPath
+              }
+            }
+          )
+          $installers = @($installers | Sort-Object FullName -Unique)
+
+          if ($installers.Count -eq 0) {
+            Write-Error "No installer binary was found in tauri-action artifactPaths: $env:TAURI_ARTIFACT_PATHS"
+            exit 1
+          }
+
+          $stagingDir = Join-Path $env:RUNNER_TEMP "release-assets"
+          New-Item -ItemType Directory -Path $stagingDir -Force | Out-Null
+
+          foreach ($installer in $installers) {
+            Copy-Item -Path $installer.FullName -Destination (Join-Path $stagingDir $installer.Name) -Force
+            $signaturePath = "$($installer.FullName).sig"
+            if (Test-Path $signaturePath -PathType Leaf) {
+              Copy-Item -Path $signaturePath -Destination (Join-Path $stagingDir "$($installer.Name).sig") -Force
+            }
+          }
+
+          Write-Host "Staged release assets:"
+          Get-ChildItem -Path $stagingDir -File | Sort-Object Name | ForEach-Object { Write-Host " - $($_.Name)" }
+
+      - name: Upload staged installer assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets-${{ matrix.artifact_name }}
+          path: ${{ runner.temp }}/release-assets
+          if-no-files-found: error
+
+  publish-release-assets:
+    needs:
+      - prepare-release
+      - build-tauri
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.sha }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Download staged installer assets
+        uses: actions/download-artifact@v4.1.3
+        with:
+          pattern: release-assets-*
+          merge-multiple: true
+          path: src-tauri/target/release/bundle/release-assets
+
+      - name: Create stable Windows aliases
+        shell: pwsh
+        env:
+          TAURI_PRODUCT_NAME: ${{ needs.prepare-release.outputs.product_name }}
+        run: |
+          $releaseAssetRoot = Resolve-Path "src-tauri/target/release/bundle/release-assets"
+          $productName = if ($env:TAURI_PRODUCT_NAME) {
+            $env:TAURI_PRODUCT_NAME -replace '\s+', '_'
+          } else {
+            'Matrix'
+          }
+
+          $msiInstaller = Get-ChildItem -Path $releaseAssetRoot -File | Where-Object {
+            $_.Name -match '_x64(_en-US)?\.msi$'
+          } | Sort-Object Name | Select-Object -First 1
+          $exeInstaller = Get-ChildItem -Path $releaseAssetRoot -File | Where-Object {
+            $_.Name.ToLowerInvariant().EndsWith("-setup.exe")
+          } | Sort-Object Name | Select-Object -First 1
+
+          if ($msiInstaller) {
+            Copy-Item -Path $msiInstaller.FullName -Destination (Join-Path $releaseAssetRoot "${productName}-Setup.msi") -Force
+            $msiSigPath = "$($msiInstaller.FullName).sig"
+            if (Test-Path $msiSigPath -PathType Leaf) {
+              Copy-Item -Path $msiSigPath -Destination (Join-Path $releaseAssetRoot "${productName}-Setup.msi.sig") -Force
+            }
+          }
+
+          if ($exeInstaller) {
+            Copy-Item -Path $exeInstaller.FullName -Destination (Join-Path $releaseAssetRoot "${productName}-Setup.exe") -Force
+            $exeSigPath = "$($exeInstaller.FullName).sig"
+            if (Test-Path $exeSigPath -PathType Leaf) {
+              Copy-Item -Path $exeSigPath -Destination (Join-Path $releaseAssetRoot "${productName}-Setup.exe.sig") -Force
+            }
+          }
+
+      - name: Generate latest.json for matrix-hub updater
+        shell: pwsh
+        env:
+          TAURI_APP_VERSION: ${{ needs.prepare-release.outputs.app_version }}
+        run: |
+          node scripts/generate-latest-json.mjs --version=$env:TAURI_APP_VERSION --base-url=https://matrix-hub.app/downloads
+
+      - name: Upload release assets
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.prepare-release.outputs.release_tag }}
+        run: |
+          $assetRoot = Resolve-Path "src-tauri/target/release/bundle/release-assets"
+          $assetPaths = @(
+            Get-ChildItem -Path $assetRoot -File -ErrorAction Stop | Sort-Object Name | ForEach-Object { $_.FullName }
+          )
+          $assetPaths += (Resolve-Path "latest.json").Path
+
+          foreach ($assetPath in $assetPaths) {
+            gh release upload $env:RELEASE_TAG $assetPath --repo $env:GITHUB_REPOSITORY --clobber
+            if ($LASTEXITCODE -ne 0) {
+              exit $LASTEXITCODE
+            }
+
+            $assetName = Split-Path -Leaf $assetPath
+            Write-Host "Published release asset '$assetName'."
+          }
+
+      - name: Verify uploaded release assets
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.prepare-release.outputs.release_tag }}
+        run: |
+          $assetRoot = Resolve-Path "src-tauri/target/release/bundle/release-assets"
+          $expectedAssets = @(
+            Get-ChildItem -Path $assetRoot -File -ErrorAction Stop | ForEach-Object { $_.Name }
+          )
+          $expectedAssets += "latest.json"
+          $expectedAssets = @($expectedAssets | Sort-Object -Unique)
+
+          $uploadedAssets = @(gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --json assets --jq '.assets[].name')
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+          $missingAssets = @($expectedAssets | Where-Object { $uploadedAssets -notcontains $_ })
+          if ($missingAssets.Count -gt 0) {
+            Write-Error "Missing release assets: $($missingAssets -join ', ')"
+            exit 1
+          }
+
+          Write-Host "Verified uploaded release assets:"
+          $expectedAssets | ForEach-Object { Write-Host " - $_" }

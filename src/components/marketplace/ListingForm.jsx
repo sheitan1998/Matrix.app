@@ -46,7 +46,7 @@ export default function ListingForm({ onClose }) {
 
   const uploadPhoto = async (file) => {
     setUploading(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
     setPhotos((p) => [...p, file_url]);
     setUploading(false);
   };

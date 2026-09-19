@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { X, Loader2, Upload, Trash2, Plus, Bold, Italic, List, Link2, Heading } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
+import { normalizeAppAssetUrl } from "@/lib/urlUtils";
 
 function insertAtCursor(textarea, text) {
   const start = textarea.selectionStart;
@@ -34,8 +35,8 @@ export default function BlockEditModal({ block, blockType, pageSlug, onClose, on
     if (!file) return;
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setImageUrl(file_url);
+      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
+      setImageUrl(normalizeAppAssetUrl(file_url));
       toast.success("Image uploadée.");
     } catch {
       toast.error("Erreur lors de l'upload.");

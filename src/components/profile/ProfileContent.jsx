@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Edit3, Check, X, Camera, Zap, Coins, Clapperboard, Award, Users, ShoppingBag, Lock, ChevronRight, ArrowLeft, Trophy, Zap as ZapIcon, LifeBuoy, Rocket, Backpack } from "lucide-react";
+import { appParams, resolveAssetUrl } from "@/lib/app-params";
+import { Edit3, Check, X, Camera, Zap, Coins, Clapperboard, Award, Users, ShoppingBag, Lock, ChevronRight, ArrowLeft, Trophy, LifeBuoy, Backpack } from "lucide-react";
 import { ACHIEVEMENTS as ALL_ACHIEVEMENTS } from "@/lib/achievementsData";
 import { toast } from "sonner";
 import { formatTrix } from "@/lib/format";
@@ -81,6 +82,10 @@ export default function ProfileContent({ onClose }) {
   const equippedAnimation = cosmetics.find((c) => c.is_equipped && c.category === "avatar_animation");
   const equippedCover = cosmetics.find((c) => c.is_equipped && c.category === "profile_cover");
   const equippedCount = cosmetics.filter((c) => c.is_equipped).length;
+  const coverVideoUrl = resolveAssetUrl(equippedCover?.video_url, appParams.appBaseUrl);
+  const coverPreviewUrl = resolveAssetUrl(equippedCover?.preview_image, appParams.appBaseUrl);
+  const bannerUrl = resolveAssetUrl(user?.banner_url, appParams.appBaseUrl);
+  const avatarUrl = resolveAssetUrl(user?.avatar_url, appParams.appBaseUrl);
 
   const goTo = (path) => {
     if (onClose) onClose();
@@ -103,7 +108,7 @@ export default function ProfileContent({ onClose }) {
   const uploadImage = async (file, field) => {
     setUploading(field);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
       await base44.auth.updateMe({ [field]: file_url });
       setUser((u) => ({ ...u, [field]: file_url }));
       toast.success(field === "avatar_url" ? "Photo de profil mise à jour" : "Bannière mise à jour");
@@ -163,12 +168,12 @@ export default function ProfileContent({ onClose }) {
 
         {/* Banner / Profile cover */}
         <div className="relative mx-auto rounded-2xl overflow-hidden" style={{ width: "100%", maxWidth: "1200px", height: "300px", background: "rgba(168,85,247,0.1)" }}>
-          {equippedCover?.video_url ?
-          <video src={equippedCover.video_url} autoPlay loop muted playsInline className="w-full h-full" style={{ objectFit: "cover", objectPosition: "center" }} /> :
-          equippedCover?.preview_image ?
-          <img src={equippedCover.preview_image} alt="" className="w-full h-full object-cover" /> :
-          user.banner_url ?
-          <img src={user.banner_url} alt="" className="w-full h-full object-cover" /> :
+          {coverVideoUrl ?
+          <video src={coverVideoUrl} autoPlay loop muted playsInline className="w-full h-full" style={{ objectFit: "cover", objectPosition: "center" }} /> :
+          coverPreviewUrl ?
+          <img src={coverPreviewUrl} alt="" className="w-full h-full object-cover" /> :
+          bannerUrl ?
+          <img src={bannerUrl} alt="" className="w-full h-full object-cover" /> :
 
           <div className="w-full h-full" style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.15), rgba(109,40,217,0.1))" }} />
           }
@@ -188,8 +193,8 @@ export default function ProfileContent({ onClose }) {
                 boxShadow: equippedFrame ? "0 0 20px rgba(168,85,247,0.4)" : "none"
               }}>
                 <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center" style={{ background: "rgba(168,85,247,0.2)" }}>
-                  {user.avatar_url ?
-                  <img src={user.avatar_url} alt="" className="w-full h-full object-cover" /> :
+                  {avatarUrl ?
+                  <img src={avatarUrl} alt="" className="w-full h-full object-cover" /> :
 
                   <span className="text-3xl font-black text-white">{user.full_name?.[0]?.toUpperCase() || "U"}</span>
                   }

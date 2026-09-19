@@ -1,9 +1,9 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Shield, Users, FileText, Mail, Database, Cookie, Share2 } from "lucide-react";
+import { ArrowLeft, Shield, Users, FileText, Mail, Database, Cookie, Share2, CreditCard, Server } from "lucide-react";
 
 // Official YouTube icon
-const YT_ICON_RED = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/7b7c491be_yt_icon_red_digital.png";
+const YT_ICON_RED = "/media/tuto-gaming/7b7c491be_yt_icon_red_digital.png";
 
 const SECTIONS = [
   {
@@ -13,7 +13,7 @@ const SECTIONS = [
     content: [
       "MATRIX est une plateforme communautaire de streaming, de divertissement et de services interactifs. La présente Politique de Confidentialité décrit la manière dont nous collectons, utilisons et protégeons vos données personnelles lorsque vous utilisez l'application.",
       "Nous nous engageons à protéger votre vie privée et à traiter vos données conformément aux lois en vigueur, notamment le Règlement Général sur la Protection des Données (RGPD).",
-      "Les fonctionnalités de base de MATRIX — navigation, communauté, casino virtuel, outils, progression — sont accessibles sans traitement de données personnelles sensibles.",
+      "Les fonctionnalités de base de MATRIX — navigation, communauté, Nexus Game, outils, progression — sont accessibles sans traitement de données personnelles sensibles.",
     ],
   },
   {
@@ -49,7 +49,7 @@ const SECTIONS = [
     content: [
       "MATRIX est accessible à tous les utilisateurs pour les fonctionnalités de base de la plateforme, sans restriction d'âge.",
       "Cependant, l'accès aux fonctions nécessitant une connexion Google / YouTube ou un traitement de données personnelles est réservé aux utilisateurs ayant l'âge légal requis dans leur pays de résidence, ou disposant de l'accord parental d'un titulaire de l'autorité parentale.",
-      "Si un utilisateur n'accepte pas les conditions ou n'a pas l'âge requis, il conserve un accès complet au reste de l'application (communauté, casino, outils, progression, tuto-gaming, etc.), à l'exclusion des fonctionnalités YouTube connectées.",
+      "Si un utilisateur n'accepte pas les conditions ou n'a pas l'âge requis, il conserve un accès complet au reste de l'application (communauté, Nexus Game, outils, progression, tuto-gaming, etc.), à l'exclusion des fonctionnalités YouTube connectées.",
     ],
   },
   {
@@ -65,9 +65,29 @@ const SECTIONS = [
     ],
   },
   {
+    id: "payments",
+    icon: CreditCard,
+    title: "6. Paiements et Transactions",
+    content: [
+      "Pour la gestion des transactions au sein de MATRIX — notamment l'achat de jetons « TRIX » et les abonnements VIP — l'application fait appel à un prestataire de paiement tiers sécurisé (Stripe).",
+      "Vos données bancaires (numéro de carte, code de sécurité) ne transitent à aucun moment par nos serveurs. Elles sont collectées et traitées directement par Stripe, qui assure la conformité aux normes de sécurité PCI-DSS.",
+      "MATRIX conserve uniquement les historiques d'achats et les données de transaction nécessaires (montant, date, référence de commande) pour assurer le suivi de vos achats, la gestion des abonnements et le support client.",
+    ],
+  },
+  {
+    id: "hosting",
+    icon: Server,
+    title: "7. Hébergement et Données techniques",
+    content: [
+      "L'application MATRIX est hébergée sur le domaine matrix-hub.app et ses sous-domaines associés.",
+      "À des fins de sécurité, de stabilité et de bon fonctionnement technique, nous collectons des journaux de connexion techniques (notamment l'adresse IP de manière sécurisée et les horodatages de connexion).",
+      "Ces données techniques sont utilisées exclusivement pour la détection des fraudes, la prévention des abus, le débogage et l'optimisation des performances de la plateforme. Elles ne sont jamais utilisées à des fins commerciales ni revendues à des tiers.",
+    ],
+  },
+  {
     id: "contact",
     icon: Mail,
-    title: "6. Contact — Droits sur vos données",
+    title: "8. Contact — Droits sur vos données",
     content: [
       "Conformément au RGPD, vous disposez d'un droit d'accès, de rectification, d'effacement, de portabilité et d'opposition concernant vos données personnelles.",
       "Pour toute demande, question ou préoccupation relative à vos données personnelles ou à la présente politique, vous pouvez nous contacter via l'adresse e-mail ci-dessous. Nous traiterons votre demande dans un délai de 30 jours.",
@@ -122,7 +142,7 @@ export default function Privacy() {
             </div>
           </div>
           <p className="text-xs text-white/40 font-mono">
-            Dernière mise à jour : 11 août 2026
+            Dernière mise à jour : 17 septembre 2026
           </p>
         </div>
 
