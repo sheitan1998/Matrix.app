@@ -24,7 +24,7 @@ VITE_BASE44_FUNCTIONS_VERSION=prod
 
 e.g.
 VITE_BASE44_APP_ID=cbef744a8545c389ef439ea6
-VITE_BASE44_APP_BASE_URL=https://my-to-do-list-81bfaad7.base44.app
+VITE_BASE44_APP_BASE_URL=https://matrix-hub.app
 VITE_BASE44_FUNCTIONS_VERSION=prod
 ```
 

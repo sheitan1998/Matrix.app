@@ -9,7 +9,7 @@ export default function TwitchPlayer({ channel, autoplay = true, muted = false, 
   if (!channel) return <div className={`w-full h-full bg-black ${className}`} />;
 
   // Twitch embed requires parent to match the actual page hostname.
-  // In production this resolves to matrix-hub.base44.app; in Base44 preview
+  // In production this resolves to matrix-hub.app; in Base44 preview
   // it resolves to the preview domain — both work correctly.
   const parent = window.location.hostname;
   const params = new URLSearchParams({

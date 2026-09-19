@@ -1,6 +1,6 @@
 // Matrix Service Worker — production only
 // Cache-first for static assets, network-first for everything else
-const CACHE_NAME = 'matrix-v1.0.3';
+const CACHE_NAME = 'matrix-v1.0.4';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
