@@ -40,10 +40,7 @@
     "category": "Entertainment",
     "shortDescription": "Matrix, plateforme vidéo et communautaire",
     "longDescription": "Matrix rassemble streaming vidéo, communauté, casino et outils créatifs.",
-    "createUpdaterArtifacts": true,
-    "resources": [
-      "../public/media/**/*"
-    ]
+    "createUpdaterArtifacts": true
   },
   "plugins": {
     "updater": {
