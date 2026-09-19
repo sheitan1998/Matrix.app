@@ -27,8 +27,6 @@ const AppleIcon = ({ className = "w-5 h-5" }) => (
 
 const PROVIDERS = [
   { id: "google", label: "Google", Icon: GoogleIcon },
-  { id: "microsoft", label: "Microsoft", Icon: MicrosoftIcon },
-  { id: "facebook", label: "Facebook", Icon: FacebookIcon },
   { id: "apple", label: "Apple", Icon: AppleIcon },
 ];
 

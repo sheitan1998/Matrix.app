@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { motion } from "framer-motion";
 import { Star, ArrowRight, Search } from "lucide-react";
 import { normalizeAppAssetUrl, normalizeExternalUrl } from "@/lib/urlUtils";
+import { getTauriInvoke } from "@/lib/tauriInvoke";
 
 const PARTNERS = [
 {
@@ -80,10 +81,23 @@ function PartnerCard({ p, index }) {
 
   if (href) {
     return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className="block hover:scale-[1.02] transition-transform">
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={async (e) => {
+          e.preventDefault();
+          const invoke = await getTauriInvoke();
+          if (invoke) {
+            await invoke("open_auth_window", { url: href });
+          } else {
+            window.open(href, "_blank", "noopener,noreferrer");
+          }
+        }}
+        className="block hover:scale-[1.02] transition-transform"
+      >
         {inner}
       </a>);
-
   }
   return inner;
 }
