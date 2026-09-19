@@ -78,6 +78,8 @@ jobs:
 
   build-tauri:
     needs: prepare-release
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
