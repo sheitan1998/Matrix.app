@@ -2,6 +2,7 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { FARMING_SIM_CATEGORIES } from "@/components/tuto-gaming/farmingSimData";
+import { normalizeAppAssetUrl } from "@/lib/urlUtils";
 
 export default function WikiItemModal({ item, onClose }) {
   if (!item) return null;
@@ -42,7 +43,7 @@ export default function WikiItemModal({ item, onClose }) {
         {item.spec_sheet_url && (
           <div className="p-4">
             <img
-              src={item.spec_sheet_url}
+              src={normalizeAppAssetUrl(item.spec_sheet_url)}
               alt={item.title}
               className="w-full h-auto rounded-lg object-contain"
               style={{ background: "#262626" }}

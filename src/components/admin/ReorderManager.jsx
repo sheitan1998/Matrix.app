@@ -3,6 +3,7 @@ import { ChevronUp, ChevronDown, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { FARMING_SIM_CATEGORIES } from "@/components/tuto-gaming/farmingSimData";
 import { toast } from "sonner";
+import { normalizeAppAssetUrl } from "@/lib/urlUtils";
 
 export default function ReorderManager() {
   const [items, setItems] = useState([]);
@@ -103,7 +104,7 @@ export default function ReorderManager() {
             {items.map((item, index) => (
               <div key={item.id} className="flex items-center gap-3 rounded-lg border border-white/5 px-4 py-2.5" style={{ background: "#1a1a1a" }}>
                 <div className="w-10 h-10 rounded overflow-hidden shrink-0" style={{ background: "#262626" }}>
-                  {item.thumbnail_url && <img src={item.thumbnail_url} alt="" className="w-full h-full object-cover" />}
+                  {item.thumbnail_url && <img src={normalizeAppAssetUrl(item.thumbnail_url)} alt="" className="w-full h-full object-cover" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-white truncate">{item.title}</p>
@@ -158,7 +159,7 @@ export default function ReorderManager() {
                         </button>
                         {sub.img && (
                           <div className="w-7 h-7 rounded overflow-hidden shrink-0" style={{ background: "#262626" }}>
-                            <img src={sub.img} alt="" className="w-full h-full object-cover" />
+                            <img src={normalizeAppAssetUrl(sub.img)} alt="" className="w-full h-full object-cover" />
                           </div>
                         )}
                         <span className="flex-1 text-xs text-white/70">{sub.title}</span>

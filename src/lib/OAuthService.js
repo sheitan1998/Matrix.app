@@ -13,12 +13,10 @@ class OAuthService {
   }
 
   getCallbackBaseUrl() {
-    try {
-      const resolvedUrl = resolveFromUrl(appParams.appBaseUrl) || window.location.href;
-      return new URL(resolvedUrl).origin;
-    } catch {
-      return window.location.origin;
-    }
+    // Always use the production server URL — in Tauri, window.location.origin
+    // is tauri://localhost or http://tauri.localhost which is not a valid
+    // callback base for OAuth.
+    return 'https://matrix-hub.app';
   }
 
   normalizeRedirectUri(redirectUri = "/oauth/callback") {

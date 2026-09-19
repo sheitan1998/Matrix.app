@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { BookOpen, Lock } from "lucide-react";
+import { normalizeAppAssetUrl } from "@/lib/urlUtils";
 
 export default function GameCard({ game, guideCount = 0, index = 0 }) {
   const isActive = game.is_active !== false;
@@ -26,7 +27,7 @@ export default function GameCard({ game, guideCount = 0, index = 0 }) {
       <div className="relative h-40 sm:h-48 overflow-hidden" style={{ background: gradient }}>
         {game.image_url && (
           <img
-            src={game.image_url}
+            src={normalizeAppAssetUrl(game.image_url)}
             alt={game.name}
             className="absolute inset-0 w-full h-full object-cover"
           />
