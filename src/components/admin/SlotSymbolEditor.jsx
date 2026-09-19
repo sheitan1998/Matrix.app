@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { SLOT_THEMES } from "@/components/casino/slotThemes";
 import { Plus, Trash2, Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { normalizeAppAssetUrl } from "@/lib/urlUtils";
 
 export default function SlotSymbolEditor({ themeKey }) {
   const [symbols, setSymbols] = useState([]);
@@ -65,7 +66,7 @@ export default function SlotSymbolEditor({ themeKey }) {
     if (!file) return;
     try {
       const result = await base44.integrations.Core.UploadPublicFile({ file });
-      await base44.entities.SlotSymbol.update(symbolId, { image_url: result.file_url });
+      await base44.entities.SlotSymbol.update(symbolId, { image_url: normalizeAppAssetUrl(result.file_url) });
       toast.success("Image uploadée");
     } catch {
       toast.error("Erreur d'upload");
@@ -113,7 +114,7 @@ export default function SlotSymbolEditor({ themeKey }) {
             {/* Image preview */}
             {sym.image_url ? (
               <img
-                src={sym.image_url}
+                src={normalizeAppAssetUrl(sym.image_url)}
                 alt=""
                 className="w-8 h-8 object-contain rounded"
                 onError={(e) => { e.target.style.display = "none"; }}

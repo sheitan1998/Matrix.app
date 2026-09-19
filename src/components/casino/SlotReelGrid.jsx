@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { pickRandom } from "./slotThemes";
 import WinLineOverlay from "./WinLineOverlay";
+import { normalizeAppAssetUrl } from "@/lib/urlUtils";
 
 export const DEFAULT_GRID_CONFIG = {
   grid_width: 70,
@@ -26,7 +27,7 @@ function SymbolCell({ sym, isWinning, symbolSize }) {
     >
       {sym.image_url ? (
         <img
-          src={sym.image_url}
+          src={normalizeAppAssetUrl(sym.image_url)}
           alt={sym.label || sym.s}
           draggable={false}
           onContextMenu={(e) => e.preventDefault()}
