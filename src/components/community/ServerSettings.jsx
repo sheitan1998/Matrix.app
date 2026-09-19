@@ -8,6 +8,7 @@ import { VISUAL_THEMES } from "@/lib/visualThemes";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useProgression } from "@/context/ProgressionContext";
+import { canonicalAppUrl } from "@/lib/canonicalOrigin";
 
 const ROLES = [
   { key: "member", label: "Membre", color: "#888" },
@@ -94,7 +95,7 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
     return code;
   };
 
-  const buildInviteUrl = (code) => code ? `${window.location.origin}/nexus/invite/${code}` : "";
+  const buildInviteUrl = (code) => code ? canonicalAppUrl(`/nexus/invite/${code}`) : "";
 
   const handleSaveInvite = async () => {
     const code = inviteInput.trim() || generateInviteCode();

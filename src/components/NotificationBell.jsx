@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Bell, BellOff, AtSign, Shield, Radio, Check, X } from "lucide-react";
+import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useNotifications } from "@/hooks/useNotifications";
 import { cn } from "@/lib/utils";
@@ -50,7 +51,7 @@ export default function NotificationBell({ user }) {
                 </button>
               )}
               <div className="flex items-center gap-2">
-                <a href="/notifications" className="text-[10px] text-primary hover:underline font-semibold">Voir tout</a>
+                <Link to="/notifications" className="text-[10px] text-primary hover:underline font-semibold">Voir tout</Link>
                 <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground">
                   <X className="w-4 h-4" />
                 </button>

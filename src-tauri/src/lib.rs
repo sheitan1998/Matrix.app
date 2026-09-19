@@ -1,13 +1,8 @@
-use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::Manager;
 use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_updater::UpdaterExt;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::{TcpListener, TcpStream};
 
-const OAUTH_BRIDGE_PORT: u16 = 48923;
 const OAUTH_DEEP_LINK_SCHEME: &str = "matrix";
-static OAUTH_BRIDGE_STARTED: AtomicBool = AtomicBool::new(false);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -22,7 +17,6 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             open_auth_window,
-            start_oauth_bridge,
             handle_oauth_callback,
             check_for_updates,
             install_update,
@@ -120,103 +114,6 @@ async fn open_auth_window(url: String) -> Result<String, String> {
             Err(format!("Failed to open OAuth URL: {}", e))
         }
     }
-}
-
-/// Démarre un bridge localhost pour récupérer le callback OAuth puis rediriger vers matrix://oauth/callback
-#[tauri::command]
-async fn start_oauth_bridge() -> Result<String, String> {
-    let redirect_uri = format!("http://127.0.0.1:{}/oauth/callback", OAUTH_BRIDGE_PORT);
-
-    if OAUTH_BRIDGE_STARTED
-        .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
-        .is_err()
-    {
-        return Ok(redirect_uri);
-    }
-
-    let listener = TcpListener::bind(("127.0.0.1", OAUTH_BRIDGE_PORT))
-        .await
-        .map_err(|e| {
-            OAUTH_BRIDGE_STARTED.store(false, Ordering::SeqCst);
-            format!("Unable to start OAuth localhost bridge: {}", e)
-        })?;
-
-    tokio::spawn(async move {
-        loop {
-            let (mut stream, _) = match listener.accept().await {
-                Ok(connection) => connection,
-                Err(error) => {
-                    eprintln!("OAuth bridge accept error: {}", error);
-                    break;
-                }
-            };
-
-            if let Err(error) = handle_oauth_bridge_connection(&mut stream).await {
-                eprintln!("OAuth bridge connection error: {}", error);
-            }
-        }
-
-        OAUTH_BRIDGE_STARTED.store(false, Ordering::SeqCst);
-    });
-
-    Ok(redirect_uri)
-}
-
-async fn handle_oauth_bridge_connection(stream: &mut TcpStream) -> Result<(), std::io::Error> {
-    let mut buffer = [0u8; 8192];
-    let bytes_read = stream.read(&mut buffer).await?;
-    if bytes_read == 0 {
-        return Ok(());
-    }
-
-    let request = String::from_utf8_lossy(&buffer[..bytes_read]);
-    let first_line = request.lines().next().unwrap_or_default();
-    let mut request_parts = first_line.split_whitespace();
-    let method = request_parts.next().unwrap_or_default();
-    let path = request_parts.next().unwrap_or_default();
-
-    let response = if method.eq_ignore_ascii_case("GET") && path.starts_with("/oauth/callback") {
-        let deep_link = format!(
-            "{OAUTH_DEEP_LINK_SCHEME}://oauth/callback{}",
-            &path["/oauth/callback".len()..]
-        );
-        let deep_link_json = serde_json::to_string(&deep_link)
-            .unwrap_or_else(|_| "\"matrix://oauth/callback\"".to_string());
-        let deep_link_href = escape_html_attribute(&deep_link);
-
-        let body = format!(
-            "<!doctype html><html><head><meta charset=\"utf-8\"><title>Matrix OAuth</title></head>\
-            <body><p>Connexion validée. Retour vers Matrix…</p>\
-            <script>window.location.replace({deep_link_json});</script>\
-            <noscript><a href=\"{deep_link_href}\">Retourner vers Matrix</a></noscript></body></html>"
-        );
-
-        format!(
-            "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
-            body.len(),
-            body
-        )
-    } else {
-        let body = "Not found";
-        format!(
-            "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
-            body.len(),
-            body
-        )
-    };
-
-    stream.write_all(response.as_bytes()).await?;
-    stream.flush().await?;
-    Ok(())
-}
-
-fn escape_html_attribute(value: &str) -> String {
-    value
-        .replace('&', "&amp;")
-        .replace('"', "&quot;")
-        .replace('\'', "&#39;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
 }
 
 /// Traite le callback OAuth après l'authentification
