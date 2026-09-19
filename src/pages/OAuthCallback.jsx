@@ -7,9 +7,13 @@ import { safeReturnTo } from "@/lib/authReturnTo";
 import { oauthService } from "@/lib/OAuthService";
 import { getTauriInvoke } from "@/lib/tauriInvoke";
 
+const DESKTOP_OAUTH_STATE_PREFIX = "desktop_";
+const DESKTOP_OAUTH_DEEP_LINK_BASE = "matrix://oauth/callback";
+
 export default function OAuthCallback() {
   const { isAuthenticated, isLoadingAuth, isLoadingPublicSettings, checkUserAuth } = useAuth();
   const [error, setError] = useState("");
+  const [desktopDeepLink, setDesktopDeepLink] = useState("");
   const [isCustomExchangeComplete, setIsCustomExchangeComplete] = useState(false);
   const redirectTarget = useMemo(() => {
     const target = safeReturnTo();
@@ -24,6 +28,23 @@ export default function OAuthCallback() {
       const storedSession = oauthService.getStoredOAuthSession();
       const hasStoredBase44Token = Boolean(localStorage.getItem("base44_access_token"));
       const isCustomOAuthFlow = Boolean(storedSession?.provider && storedSession?.codeVerifier);
+      const isDesktopCallbackInBrowser =
+        !oauthService.isDesktopApp &&
+        Boolean(callbackParams?.code || callbackParams?.error) &&
+        typeof callbackParams?.state === "string" &&
+        callbackParams.state.startsWith(DESKTOP_OAUTH_STATE_PREFIX);
+
+      if (isDesktopCallbackInBrowser) {
+        const deepLink = new URL(DESKTOP_OAUTH_DEEP_LINK_BASE);
+        if (callbackParams?.code) deepLink.searchParams.set("code", callbackParams.code);
+        if (callbackParams?.state) deepLink.searchParams.set("state", callbackParams.state);
+        if (callbackParams?.error) deepLink.searchParams.set("error", callbackParams.error);
+        if (callbackParams?.error_description) {
+          deepLink.searchParams.set("error_description", callbackParams.error_description);
+        }
+        setDesktopDeepLink(deepLink.toString());
+        return;
+      }
 
       if (callbackParams?.error) {
         const description = callbackParams.error_description;
@@ -135,6 +156,28 @@ export default function OAuthCallback() {
       >
         <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
           {error}
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  if (desktopDeepLink) {
+    return (
+      <AuthLayout
+        icon={Loader2}
+        title="Continuer dans Matrix"
+        subtitle="L’authentification est terminée dans le navigateur."
+      >
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Ouvrez maintenant l’application Matrix pour terminer la connexion.
+          </p>
+          <a
+            href={desktopDeepLink}
+            className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90"
+          >
+            Revenir dans Matrix
+          </a>
         </div>
       </AuthLayout>
     );

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Sparkles, Trash2, AlertTriangle, X } from "lucide-react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import CosmeticPreview from "@/components/cosmetics/CosmeticPreview";
 
@@ -80,9 +81,9 @@ export default function CosmeticsPanel({ user }) {
       <div className="text-center py-16">
         <Sparkles className="w-12 h-12 mx-auto mb-3" style={{ color: "rgba(255,255,255,0.2)" }} />
         <p className="text-white/40 text-sm mb-4">Aucun cosmétique pour le moment.</p>
-        <a href="/boutique-matrix" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white" style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
+        <Link to="/boutique-matrix" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white" style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
           <Sparkles className="w-4 h-4" /> Visiter la Boutique Matrix
-        </a>
+        </Link>
       </div>
     );
   }

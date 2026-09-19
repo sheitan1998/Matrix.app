@@ -23,6 +23,7 @@ import { VISUAL_THEMES, getTheme } from "@/lib/visualThemes";
 import { useProgression } from "@/context/ProgressionContext";
 import { getRank } from "@/lib/progressionData";
 import { stripPseudoTag } from "@/lib/format";
+import { canonicalAppUrl } from "@/lib/canonicalOrigin";
 import { Gamepad2, Cpu, Music, Palette, Film, Newspaper } from "lucide-react";
 
 const CATEGORIES = [
@@ -176,7 +177,7 @@ export default function Community() {
   };
 
   const copyInvite = (code) => {
-    const url = `${window.location.origin}/nexus/invite/${code}`;
+    const url = canonicalAppUrl(`/nexus/invite/${code}`);
     navigator.clipboard.writeText(url);
     toast.success("Lien copié !");
   };
@@ -217,7 +218,7 @@ export default function Community() {
 
   const inviteToServer = (server) => {
     if (!server.invite_code) {toast.error("Ce serveur n'a pas de lien d'invitation");return;}
-    const url = `${window.location.origin}/nexus/invite/${server.invite_code}`;
+    const url = canonicalAppUrl(`/nexus/invite/${server.invite_code}`);
     navigator.clipboard.writeText(url);
     toast.success("Lien d'invitation copié !");
   };

@@ -32,7 +32,7 @@ Run the app: `npm run dev`
 
 ### Desktop OAuth & OTA updates (Tauri)
 
-- OAuth desktop callback now uses a localhost bridge (`http://127.0.0.1:48923/oauth/callback`) that redirects to deep link `matrix://oauth/callback`.
+- OAuth desktop flow now uses the canonical callback `https://matrix-hub.app/oauth/callback`, then forwards desktop returns via deep link `matrix://oauth/callback`.
 - Tauri updater checks `https://matrix-hub.app/updates/latest.json` first.
 - During release workflow, `latest.json` is generated automatically with `npm run tauri:generate-latest-json` and uploaded as a release asset.
 

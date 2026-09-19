@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import ServerCreator from "./ServerCreator";
+import { canonicalAppUrl } from "@/lib/canonicalOrigin";
 
 export default function ServerList() {
   const [showCreator, setShowCreator] = useState(false);
@@ -23,7 +24,7 @@ export default function ServerList() {
   const publicServers = servers.filter((s) => s.is_public && s.owner_email !== user?.email);
 
   const copyInvite = (code) => {
-    const url = `${window.location.origin}/nexus/invite/${code}`;
+    const url = canonicalAppUrl(`/nexus/invite/${code}`);
     navigator.clipboard.writeText(url);
     toast.success("Lien d'invitation copié !");
   };

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
+import { canonicalAppUrl } from "@/lib/canonicalOrigin";
 
 const STORAGE_KEY = "twitch_access_token";
 const TwitchAuthContext = createContext(null);
@@ -88,7 +89,7 @@ export function TwitchAuthProvider({ children }) {
       alert("Configuration Twitch manquante. Ajoutez TWITCH_CLIENT_ID et TWITCH_CLIENT_SECRET dans Dashboard → Settings → Environment Variables pour activer la connexion Twitch.");
       return;
     }
-    const redirectUri = `${window.location.origin}/twitch`;
+    const redirectUri = canonicalAppUrl("/twitch");
     const scope = "user:read:email user:read:follows";
     window.location.href = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(scope)}`;
   }, [clientId]);

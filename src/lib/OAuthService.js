@@ -1,4 +1,5 @@
 import { appParams, resolveFromUrl } from "@/lib/app-params";
+import { CANONICAL_APP_ORIGIN } from "@/lib/canonicalOrigin";
 import { getTauriInvoke } from "@/lib/tauriInvoke";
 
 /**
@@ -13,18 +14,16 @@ class OAuthService {
   }
 
   getCallbackBaseUrl() {
-    // Always use the production server URL — in Tauri, window.location.origin
+    // Always use the canonical app URL — in Tauri, window.location.origin
     // is tauri://localhost or http://tauri.localhost which is not a valid
     // callback base for OAuth.
-    return 'https://matrix-hub.app';
+    return CANONICAL_APP_ORIGIN;
   }
 
   normalizeRedirectUri(redirectUri = "/oauth/callback") {
     const rawValue = typeof redirectUri === "string" ? redirectUri.trim() : "";
     const baseUrl = this.getCallbackBaseUrl();
-    const fallbackUrl = this.isDesktopApp
-      ? "matrix://oauth/callback"
-      : new URL("/oauth/callback", baseUrl).toString();
+    const fallbackUrl = new URL("/oauth/callback", baseUrl).toString();
 
     if (!rawValue) {
       return fallbackUrl;
@@ -38,23 +37,7 @@ class OAuthService {
   }
 
   async resolveDesktopRedirectUri(redirectUri) {
-    const fallbackRedirectUri = this.normalizeRedirectUri(redirectUri);
-    if (!this.isDesktopApp) {
-      return fallbackRedirectUri;
-    }
-
-    const invoke = await getTauriInvoke();
-    if (!invoke) {
-      return fallbackRedirectUri;
-    }
-
-    try {
-      const bridgeRedirectUri = await invoke("start_oauth_bridge");
-      return this.normalizeRedirectUri(bridgeRedirectUri);
-    } catch (error) {
-      console.warn("Unable to start OAuth localhost bridge, fallback on deep-link URL.", error);
-      return fallbackRedirectUri;
-    }
+    return this.normalizeRedirectUri(redirectUri);
   }
 
   normalizeProviderName(providerName) {
@@ -175,7 +158,8 @@ class OAuthService {
       }
 
       // Générer état et code verifier
-      this.oauthState = this.generateRandomState();
+      const randomState = this.generateRandomState();
+      this.oauthState = this.isDesktopApp ? `desktop_${randomState}` : randomState;
       this.oauthCodeVerifier = this.generateCodeVerifier();
       const codeChallenge = await this.generateCodeChallenge(
         this.oauthCodeVerifier

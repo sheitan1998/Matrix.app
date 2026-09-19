@@ -1,9 +1,8 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { appParams } from '@/lib/app-params';
+import { CANONICAL_APP_ORIGIN } from '@/lib/canonicalOrigin';
 import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
-
-const PRODUCTION_SERVER_URL = 'https://matrix-hub.app';
 
 const AuthContext = createContext();
 
@@ -24,7 +23,7 @@ export const AuthProvider = ({ children }) => {
     try {
       setIsLoadingPublicSettings(true);
       setAuthError(null);
-      const serverUrl = PRODUCTION_SERVER_URL;
+      const serverUrl = CANONICAL_APP_ORIGIN;
       
       // First, check app public settings (with token if available)
       // This will tell us if auth is required, user not registered, etc.

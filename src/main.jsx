@@ -3,12 +3,20 @@ import ReactDOM from 'react-dom/client'
 import App from '@/App.jsx'
 import '@/index.css'
 import '@/lib/pwa'
+import { initRuntimeAssetUrlPatch } from '@/lib/runtimeAssetUrlPatch'
+
+const isTauriWebview = () => {
+  const { protocol, hostname } = window.location
+  return protocol === 'tauri:' || hostname === 'tauri.localhost' || hostname.endsWith('.tauri.localhost')
+}
+
+initRuntimeAssetUrlPatch()
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <App />
 )
 
-if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator && !isTauriWebview()) {
   if (import.meta.env.DEV) {
     // In dev, unregister any stale service workers and clear caches
     // to prevent stale JS chunks from causing React null errors
