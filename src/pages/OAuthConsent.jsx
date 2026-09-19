@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { appParams, resolveBase44ServerUrl } from "@/lib/app-params";
+import { appParams } from "@/lib/app-params";
 import { toAbsoluteApiUrl } from "@/lib/urlUtils";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
+
+const PRODUCTION_SERVER_URL = 'https://matrix-hub.app';
 
 // App-side OAuth consent page for the app's MCP server. The platform redirects
 // AI clients here (see base44/mcp/config.json `consent_path`) with an opaque
@@ -14,7 +16,7 @@ import AuthLayout from "@/components/AuthLayout";
 // and copy are safe to edit.
 export default function OAuthConsent() {
   const ctx = new URLSearchParams(window.location.search).get("ctx");
-  const apiBaseUrl = resolveBase44ServerUrl(appParams.appBaseUrl);
+  const apiBaseUrl = PRODUCTION_SERVER_URL;
   const [info, setInfo] = useState(null);
   const [checking, setChecking] = useState(true);
   const [submitting, setSubmitting] = useState(false);
