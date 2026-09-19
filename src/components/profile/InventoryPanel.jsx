@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { useProgression } from "@/context/ProgressionContext";
 import { useWallet } from "@/hooks/useWallet";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
 import { Zap, Coins, Award, ShoppingBag, Sparkles, Check, Trash2, AlertTriangle, X, Star, Rocket, Search, Clock } from "lucide-react";
 import { BADGES, RARITIES } from "@/lib/progressionData";
 import CosmeticPreview from "@/components/cosmetics/CosmeticPreview";
@@ -287,9 +288,9 @@ export default function InventoryPanel({ user }) {
       <div className="text-center py-16">
           <ShoppingBag className="w-12 h-12 mx-auto mb-3" style={{ color: "rgba(255,255,255,0.2)" }} />
           <p className="text-white/40 text-sm mb-4">Votre inventaire est vide pour le moment.</p>
-          <a href="/boutique-matrix" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white" style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
+          <Link to="/boutique-matrix" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white" style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
             <Sparkles className="w-4 h-4" /> Visiter la Boutique Matrix
-          </a>
+          </Link>
         </div> :
 
       <div className="text-center py-12">

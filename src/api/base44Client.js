@@ -1,15 +1,14 @@
 import { createClient } from '@base44/sdk';
 import { appParams } from '@/lib/app-params';
+import { CANONICAL_APP_ORIGIN } from '@/lib/canonicalOrigin';
 
-const PRODUCTION_SERVER_URL = 'https://matrix-hub.app';
-
-const { appId, token, functionsVersion, appBaseUrl } = appParams;
+const { appId, token, functionsVersion } = appParams;
 
 export const base44 = createClient({
   appId,
   token,
   functionsVersion,
-  serverUrl: PRODUCTION_SERVER_URL,
+  serverUrl: CANONICAL_APP_ORIGIN,
   requiresAuth: false,
-  appBaseUrl: PRODUCTION_SERVER_URL
+  appBaseUrl: CANONICAL_APP_ORIGIN
 });

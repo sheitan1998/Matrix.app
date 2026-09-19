@@ -61,7 +61,7 @@ const SECTIONS = [
     ],
     links: [
       { label: "Conditions d'utilisation de YouTube", url: "https://www.youtube.com/t/terms" },
-      { label: "Politique de confidentialité de Google", url: "http://www.google.com/policies/privacy" },
+      { label: "Politique de confidentialité de Google", url: "https://www.google.com/policies/privacy" },
     ],
   },
   {
@@ -243,7 +243,7 @@ export default function Privacy() {
             MATRIX utilise les YouTube API Services conformément aux{" "}
             <a href="https://developers.google.com/youtube/terms/api-services-terms-of-service" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/80">Conditions d'utilisation des Services API YouTube</a>.
             En utilisant les fonctionnalités YouTube de MATRIX, vous acceptez également la{" "}
-            <a href="http://www.google.com/policies/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/80">Politique de confidentialité de Google</a> et les{" "}
+            <a href="https://www.google.com/policies/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/80">Politique de confidentialité de Google</a> et les{" "}
             <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/80">Conditions d'utilisation de YouTube</a>.
           </p>
         </div>
