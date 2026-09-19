@@ -1,6 +1,5 @@
 import { appParams, resolveFromUrl } from "@/lib/app-params";
 import { CANONICAL_APP_ORIGIN } from "@/lib/canonicalOrigin";
-import { getTauriInvoke } from "@/lib/tauriInvoke";
 
 /**
  * Service pour gérer le flux OAuth dans une application Tauri desktop
@@ -77,14 +76,12 @@ class OAuthService {
   }
 
   /**
-   * Détecte si l'app s'exécute dans Tauri en mode bundlé (frontendDist).
-   * Lorsque le desktop charge l'URL distante (https://matrix-hub.app),
-   * on utilise le flux OAuth web standard pour rester identique au site web.
+   * Détecte si l'app s'exécute dans le webview Tauri.
+   * Le desktop charge https://matrix-hub.app mais window.__TAURI__ reste présent.
    */
   detectTauriApp() {
     try {
-      if (!window.__TAURI__ && !window.__TAURI_INTERNALS__) return false;
-      return window.location.origin !== 'https://matrix-hub.app';
+      return Boolean(window.__TAURI__ || window.__TAURI_INTERNALS__);
     } catch {
       return false;
     }
@@ -162,7 +159,7 @@ class OAuthService {
 
       // Générer état et code verifier
       const randomState = this.generateRandomState();
-      this.oauthState = this.isDesktopApp ? `desktop_${randomState}` : randomState;
+      this.oauthState = randomState;
       this.oauthCodeVerifier = this.generateCodeVerifier();
       const codeChallenge = await this.generateCodeChallenge(
         this.oauthCodeVerifier
@@ -196,19 +193,13 @@ class OAuthService {
 
       const fullAuthUrl = `${normalizedAuthUrl}?${params.toString()}`;
 
-      // Si c'est une application Tauri, ouvrir dans le navigateur par défaut
       if (this.isDesktopApp) {
-        const invoke = await getTauriInvoke();
-        if (invoke) {
-          await invoke("open_auth_window", { url: fullAuthUrl });
-          console.log("✅ OAuth popup ouvert dans le navigateur (Tauri)");
-        } else {
-          window.open(fullAuthUrl, "oauth_popup", "width=500,height=600");
-        }
+        // Tauri: redirection pleine page dans le webview.
+        // Le fournisseur OAuth redirige vers https://matrix-hub.app/oauth/callback
+        // dans le même webview — identique au flux web, aucun popup bloqué.
+        window.location.href = fullAuthUrl;
       } else {
-        // Sinon, ouvrir un popup standard
         window.open(fullAuthUrl, "oauth_popup", "width=500,height=600");
-        console.log("✅ OAuth popup ouvert (Browser)");
       }
 
       return true;
