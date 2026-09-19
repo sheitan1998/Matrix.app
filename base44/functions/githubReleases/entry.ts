@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 
-const GITHUB_REPO = 'sheitan1998/Matrix';
+const GITHUB_REPO = 'sheitan1998/Matrix.app';
 const GITHUB_API_BASE = `https://api.github.com/repos/${GITHUB_REPO}`;
 
 const GITHUB_HEADERS = {
