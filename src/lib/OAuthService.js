@@ -1,5 +1,6 @@
 import { appParams, resolveFromUrl } from "@/lib/app-params";
 import { CANONICAL_APP_ORIGIN } from "@/lib/canonicalOrigin";
+import { getTauriInvoke } from "@/lib/tauriInvoke";
 
 /**
  * Service pour gérer le flux OAuth dans une application Tauri desktop
@@ -36,6 +37,12 @@ class OAuthService {
   }
 
   async resolveDesktopRedirectUri(redirectUri) {
+    // In Tauri, always use the canonical web callback URL to avoid
+    // redirect_uri mismatches (e.g. if the backend secret points to a
+    // different domain). On the web, resolve normally.
+    if (this.isDesktopApp) {
+      return new URL("/oauth/callback", CANONICAL_APP_ORIGIN).toString();
+    }
     return this.normalizeRedirectUri(redirectUri);
   }
 
@@ -159,7 +166,7 @@ class OAuthService {
 
       // Générer état et code verifier
       const randomState = this.generateRandomState();
-      this.oauthState = randomState;
+      this.oauthState = this.isDesktopApp ? `desktop_${randomState}` : randomState;
       this.oauthCodeVerifier = this.generateCodeVerifier();
       const codeChallenge = await this.generateCodeChallenge(
         this.oauthCodeVerifier
@@ -194,10 +201,16 @@ class OAuthService {
       const fullAuthUrl = `${normalizedAuthUrl}?${params.toString()}`;
 
       if (this.isDesktopApp) {
-        // Tauri: redirection pleine page dans le webview.
-        // Le fournisseur OAuth redirige vers https://matrix-hub.app/oauth/callback
-        // dans le même webview — identique au flux web, aucun popup bloqué.
-        window.location.href = fullAuthUrl;
+        // Tauri: open in the system default browser to avoid webview popup
+        // blocking and redirect_uri mismatches. The browser redirects to
+        // https://matrix-hub.app/oauth/callback, which generates a deep-link
+        // (matrix://) back to the desktop app.
+        const invoke = await getTauriInvoke();
+        if (invoke) {
+          await invoke("open_auth_window", { url: fullAuthUrl });
+        } else {
+          window.open(fullAuthUrl, "_blank");
+        }
       } else {
         window.open(fullAuthUrl, "oauth_popup", "width=500,height=600");
       }
