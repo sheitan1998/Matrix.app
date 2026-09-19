@@ -22,26 +22,36 @@ const isNativeWebviewHost = (host) =>
   host === 'tauri.localhost' || host.endsWith('.tauri.localhost');
 
 /**
+ * Detects Tauri production webview across all platforms:
+ * - macOS: protocol is "tauri:" and hostname is "localhost"
+ * - Windows/Linux: hostname is "tauri.localhost"
+ */
+const isTauriWebview = () => {
+  if (typeof window === 'undefined') return false;
+  if (window.location.protocol === 'tauri:') return true;
+  const host = window.location.hostname;
+  return isNativeWebviewHost(host);
+};
+
+/**
  * In Tauri production, the webview origin (tauri://localhost or http://tauri.localhost)
  * is not a valid redirect target for OAuth or post-login returnTo. Use the published
  * web app URL as the base for all auth redirect flows.
  */
 export function resolveFromUrl(appBaseUrl = DEFAULT_APP_BASE_URL) {
   if (isNode) return '';
-  const host = window.location.hostname;
-  if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('.base44.app') || !isNativeWebviewHost(host)) {
-    return window.location.href;
+  if (isTauriWebview()) {
+    return normalizeBaseUrl(appBaseUrl) || DEFAULT_APP_BASE_URL;
   }
-  return normalizeBaseUrl(appBaseUrl) || DEFAULT_APP_BASE_URL;
+  return window.location.href;
 }
 
 export function resolveBase44ServerUrl(appBaseUrl = DEFAULT_APP_BASE_URL) {
   if (typeof window === 'undefined') return '';
-  const host = window.location.hostname;
-  if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('.base44.app') || !isNativeWebviewHost(host)) {
-    return '';
+  if (isTauriWebview()) {
+    return normalizeBaseUrl(appBaseUrl) || DEFAULT_APP_BASE_URL;
   }
-  return normalizeBaseUrl(appBaseUrl) || DEFAULT_APP_BASE_URL;
+  return '';
 }
 
 export function resolveAssetUrl(assetUrl, appBaseUrl = DEFAULT_APP_BASE_URL) {
