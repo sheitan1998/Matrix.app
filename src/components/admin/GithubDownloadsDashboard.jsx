@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { Download, RefreshCw, TrendingUp, Package, AlertCircle } from "lucide-react";
+import { Download, RefreshCw, TrendingUp, Package, AlertCircle, ExternalLink } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 const CHART_COLORS = ["#a855f7", "#8b5cf6", "#6366f1", "#3b82f6", "#06b6d4", "#10b981", "#f59e0b", "#ef4444", "#ec4899", "#84cc16"];
@@ -15,6 +15,13 @@ function formatNumber(n) {
 function formatDate(iso) {
   if (!iso) return "—";
   return new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function formatSize(bytes) {
+  if (!bytes) return "—";
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+  return (bytes / (1024 * 1024)).toFixed(1) + " MB";
 }
 
 export default function GithubDownloadsDashboard() {
@@ -65,6 +72,10 @@ export default function GithubDownloadsDashboard() {
     .slice(0, 10)
     .map((v) => ({ name: v.tag, downloads: v.download_count }));
 
+  // Find latest version and its primary download asset (setup.exe)
+  const latestVersion = (data.versions || []).find((v) => v.tag === data.latest_version);
+  const latestAsset = latestVersion?.assets?.find((a) => a.name?.endsWith("-setup.exe") || a.name?.endsWith(".exe")) || latestVersion?.assets?.[0] || null;
+
   return (
     <div className="space-y-4">
       {/* Header + refresh */}
@@ -101,6 +112,30 @@ export default function GithubDownloadsDashboard() {
           <p className="text-sm font-black text-white">{formatDate(data.latest_published_at)}</p>
         </div>
       </div>
+
+      {/* Latest version download */}
+      {latestAsset && (
+        <div className="rounded-2xl border p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3" style={{ background: "rgba(168,85,247,0.06)", borderColor: "rgba(168,85,247,0.25)" }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(168,85,247,0.15)" }}>
+            <Download className="w-5 h-5 text-purple-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] text-white/40 uppercase">Dernière version — {data.latest_version}</p>
+            <p className="text-sm font-bold text-white truncate">{latestAsset.name}</p>
+            <p className="text-[10px] text-white/40">{formatSize(latestAsset.size)} · {formatDate(latestVersion.published_at)}</p>
+          </div>
+          <a
+            href={latestAsset.download_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg text-xs font-bold text-white transition hover:opacity-90 tap-sm shrink-0"
+            style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}
+          >
+            <Download className="w-3.5 h-3.5" />
+            Télécharger
+          </a>
+        </div>
+      )}
 
       {/* Chart */}
       {chartData.length > 0 && (
@@ -157,7 +192,12 @@ export default function GithubDownloadsDashboard() {
                     <tr key={asset.name} className="border-b border-white/5 hover:bg-white/[0.02]">
                       <td className="px-3 py-1.5"></td>
                       <td className="px-3 py-1.5"></td>
-                      <td className="px-3 py-1.5 text-white/70 truncate max-w-[200px]">{asset.name}</td>
+                      <td className="px-3 py-1.5 truncate max-w-[200px]">
+                        <a href={asset.download_url} target="_blank" rel="noopener noreferrer" className="text-purple-300 hover:text-purple-200 inline-flex items-center gap-1 transition">
+                          {asset.name}
+                          <ExternalLink className="w-2.5 h-2.5 opacity-50" />
+                        </a>
+                      </td>
                       <td className="px-3 py-1.5 text-right text-white/60">{formatNumber(asset.download_count)}</td>
                     </tr>
                   ))}
