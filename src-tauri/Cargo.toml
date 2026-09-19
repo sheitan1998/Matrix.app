@@ -1,6 +1,6 @@
 [package]
 name = "matrix"
-version = "1.0.3"
+version = "1.0.4"
 description = "Matrix desktop application"
 authors = ["Matrix"]
 edition = "2021"

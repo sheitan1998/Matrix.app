@@ -24,7 +24,7 @@ export async function installUpdate() {
 
 /**
  * Récupère la version actuelle de l'application
- * @returns {Promise<string>} Version actuelle (ex: "1.0.3")
+ * @returns {Promise<string>} Version actuelle (ex: "1.0.4")
  */
 export async function getCurrentVersion() {
   const invoke = await getTauriInvoke();

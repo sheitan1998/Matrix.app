@@ -48,7 +48,7 @@ export default async function(req: Request): Promise<Response> {
         // If admin responds, send internal DM as "Support Matrix" (individual admin never exposed)
         if (user.role === 'admin') {
           await base44.asServiceRole.entities.DirectMessage.create({
-            sender_email: 'support@matrix-hub.base44.app',
+            sender_email: 'support@matrix-hub.app',
             sender_name: 'Support Matrix',
             sender_avatar: '',
             recipient_email: ticket.user_email,

@@ -1,4 +1,5 @@
 import React from "react";
+import { normalizeAppAssetUrl } from "@/lib/urlUtils";
 
 export default function WikiItemCard({ item, onClick }) {
   return (
@@ -9,7 +10,7 @@ export default function WikiItemCard({ item, onClick }) {
     >
       <div className="relative h-40 sm:h-44 overflow-hidden">
         <img
-          src={item.thumbnail_url || item.image_url}
+          src={normalizeAppAssetUrl(item.thumbnail_url || item.image_url)}
           alt={item.title}
           className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
