@@ -134,6 +134,102 @@ class OAuthService {
   }
 
   /**
+   * Crée une sous-fenêtre Tauri (WebviewWindow) pour l'authentification OAuth.
+   * Surveille la navigation et détecte le callback pour fermer la fenêtre
+   * et rediriger la fenêtre principale.
+   */
+  async openAuthInWebviewWindow(authUrl) {
+    try {
+      const { WebviewWindow } = await import("@tauri-apps/api/webview");
+
+      // Fermer une éventuelle fenêtre précédente
+      try {
+        const existing = await WebviewWindow.getByLabel("oauth-auth");
+        if (existing) {
+          await existing.close();
+        }
+      } catch {
+        // Ignorer si la fenêtre n'existe pas
+      }
+
+      const authWindow = new WebviewWindow("oauth-auth", {
+        url: authUrl,
+        title: "Connexion Matrix",
+        width: 800,
+        height: 600,
+        resizable: true,
+        center: true,
+      });
+
+      // Attendre que la fenêtre soit créée
+      await new Promise((resolve) => {
+        authWindow.once("tauri://created", resolve);
+        authWindow.once("tauri://error", resolve);
+        // Timeout de sécurité: ne pas bloquer indéfiniment
+        setTimeout(resolve, 3000);
+      });
+
+      // Surveiller l'URL pour détecter le callback OAuth
+      const callbackUrl = await new Promise((resolve) => {
+        const pollInterval = setInterval(async () => {
+          try {
+            const currentUrl = await authWindow.url();
+            if (
+              currentUrl &&
+              (currentUrl.includes("/oauth/callback") ||
+                currentUrl.startsWith("matrix://"))
+            ) {
+              clearInterval(pollInterval);
+              clearTimeout(timeout);
+              resolve(currentUrl);
+            }
+          } catch {
+            // La fenêtre a peut-être été fermée manuellement
+          }
+        }, 500);
+
+        const timeout = setTimeout(() => {
+          clearInterval(pollInterval);
+          resolve(null);
+        }, 120000); // 2 minutes max
+
+        // Si la fenêtre est fermée manuellement, arrêter le polling
+        authWindow.once("tauri://destroyed", () => {
+          clearInterval(pollInterval);
+          clearTimeout(timeout);
+          resolve(null);
+        });
+      });
+
+      if (callbackUrl) {
+        // Fermer la fenêtre d'authentification
+        try {
+          await authWindow.close();
+        } catch {
+          // Ignorer
+        }
+
+        // Si c'est une URL de callback web, rediriger la fenêtre principale
+        if (callbackUrl.startsWith("http")) {
+          const url = new URL(callbackUrl);
+          const redirectPath =
+            url.pathname + url.search + url.hash;
+          window.location.replace(redirectPath);
+        }
+        // Si c'est un deep-link (matrix://), le handler deep-link de Tauri
+        // s'en occupera automatiquement
+        return true;
+      }
+
+      // La fenêtre a été fermée sans callback — pas une erreur fatale
+      return true;
+    } catch (error) {
+      console.warn("[OAuth] WebviewWindow creation failed:", error?.message || error);
+      return false;
+    }
+  }
+
+  /**
    * Démarre le flux d'authentification OAuth
    * Dans Tauri, ouvre le popup dans le navigateur par défaut
    */
@@ -201,40 +297,48 @@ class OAuthService {
       const fullAuthUrl = `${normalizedAuthUrl}?${params.toString()}`;
 
       if (this.isDesktopApp) {
-        // Tauri: open in the system default browser to avoid webview popup
-        // blocking and redirect_uri mismatches. The browser redirects to
-        // https://matrix-hub.app/oauth/callback, which generates a deep-link
-        // (matrix://) back to the desktop app.
+        // Tauri desktop: try multiple strategies to open the OAuth URL.
+        // 1. tauri-plugin-opener (opens in system default browser — best option)
+        // 2. WebviewWindow (creates a Tauri child window — works without plugin)
+        // 3. open_auth_window custom command (uses Rust `open` crate)
+        // 4. window.open (last resort — often blocked in webview)
         const invoke = await getTauriInvoke();
-        if (invoke) {
-          // Use tauri-plugin-opener — the official Tauri plugin that opens
-          // URLs in the system's default browser reliably across all platforms.
-          // Falls back to the custom open_auth_window command for older builds.
-          let authWindowOpened = false;
+        let authWindowOpened = false;
+
+        // Strategy 1: tauri-plugin-opener
+        if (!authWindowOpened && invoke) {
           try {
             await invoke("plugin:opener|open_url", { url: fullAuthUrl });
             authWindowOpened = true;
           } catch (openerError) {
             console.warn("[OAuth] tauri-plugin-opener unavailable:", openerError?.message || openerError);
           }
-          if (!authWindowOpened) {
-            try {
-              await invoke("open_auth_window", { url: fullAuthUrl });
-              authWindowOpened = true;
-            } catch (fallbackError) {
-              console.warn("[OAuth] open_auth_window also failed:", fallbackError?.message || fallbackError);
-            }
+        }
+
+        // Strategy 2: WebviewWindow (Tauri child window — no extra plugin needed,
+        // core:default includes allow-create-webview-window)
+        if (!authWindowOpened) {
+          authWindowOpened = await this.openAuthInWebviewWindow(fullAuthUrl);
+        }
+
+        // Strategy 3: open_auth_window custom command
+        if (!authWindowOpened && invoke) {
+          try {
+            await invoke("open_auth_window", { url: fullAuthUrl });
+            authWindowOpened = true;
+          } catch (cmdError) {
+            console.warn("[OAuth] open_auth_window command failed:", cmdError?.message || cmdError);
           }
-          if (!authWindowOpened) {
-            const popup = window.open(fullAuthUrl, "_blank");
-            if (!popup) {
-              throw new Error(
-                "Impossible d'ouvrir la fenêtre d'authentification. Vérifiez que l'application est à jour ou autorisez les popups."
-              );
-            }
+        }
+
+        // Strategy 4: window.open (last resort)
+        if (!authWindowOpened) {
+          const popup = window.open(fullAuthUrl, "_blank");
+          if (!popup) {
+            throw new Error(
+              "Impossible d'ouvrir la fenêtre d'authentification. Vérifiez que l'application est à jour ou autorisez les popups."
+            );
           }
-        } else {
-          window.open(fullAuthUrl, "_blank");
         }
       } else {
         // Web: full-page redirect (no popup — popups leave the main window
