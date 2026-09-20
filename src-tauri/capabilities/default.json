@@ -9,6 +9,13 @@
     "deep-link:default",
     "opener:default",
     {
+      "identifier": "opener:allow-open-url",
+      "allow": [
+        { "url": "https://*" },
+        { "url": "http://*" }
+      ]
+    },
+    {
       "identifier": "allow-open-auth-window",
       "description": "Allow the open_auth_window command to open OAuth URLs in the system browser",
       "commands": {

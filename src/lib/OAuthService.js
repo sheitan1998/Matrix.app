@@ -214,7 +214,12 @@ class OAuthService {
             await invoke("plugin:opener|open_url", { url: fullAuthUrl });
           } catch (openerError) {
             console.warn("tauri-plugin-opener unavailable, falling back to open_auth_window:", openerError);
-            await invoke("open_auth_window", { url: fullAuthUrl });
+            try {
+              await invoke("open_auth_window", { url: fullAuthUrl });
+            } catch (fallbackError) {
+              console.warn("open_auth_window also failed, falling back to window.open:", fallbackError);
+              window.open(fullAuthUrl, "_blank");
+            }
           }
         } else {
           window.open(fullAuthUrl, "_blank");
