@@ -3,5 +3,45 @@
   "identifier": "default",
   "description": "Capability for the Matrix main window",
   "windows": ["main"],
-  "permissions": ["core:default", "updater:default", "deep-link:default", "opener:default"]
+  "permissions": [
+    "core:default",
+    "updater:default",
+    "deep-link:default",
+    "opener:default",
+    {
+      "identifier": "allow-open-auth-window",
+      "description": "Allow the open_auth_window command to open OAuth URLs in the system browser",
+      "commands": {
+        "allow": ["open_auth_window"]
+      }
+    },
+    {
+      "identifier": "allow-handle-oauth-callback",
+      "description": "Allow the handle_oauth_callback command to validate OAuth callback data",
+      "commands": {
+        "allow": ["handle_oauth_callback"]
+      }
+    },
+    {
+      "identifier": "allow-check-for-updates",
+      "description": "Allow the check_for_updates command",
+      "commands": {
+        "allow": ["check_for_updates"]
+      }
+    },
+    {
+      "identifier": "allow-install-update",
+      "description": "Allow the install_update command",
+      "commands": {
+        "allow": ["install_update"]
+      }
+    },
+    {
+      "identifier": "allow-get-current-version",
+      "description": "Allow the get_current_version command",
+      "commands": {
+        "allow": ["get_current_version"]
+      }
+    }
+  ]
 }
