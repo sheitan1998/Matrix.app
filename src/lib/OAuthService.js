@@ -210,15 +210,27 @@ class OAuthService {
           // Use tauri-plugin-opener — the official Tauri plugin that opens
           // URLs in the system's default browser reliably across all platforms.
           // Falls back to the custom open_auth_window command for older builds.
+          let authWindowOpened = false;
           try {
             await invoke("plugin:opener|open_url", { url: fullAuthUrl });
+            authWindowOpened = true;
           } catch (openerError) {
-            console.warn("tauri-plugin-opener unavailable, falling back to open_auth_window:", openerError);
+            console.warn("[OAuth] tauri-plugin-opener unavailable:", openerError?.message || openerError);
+          }
+          if (!authWindowOpened) {
             try {
               await invoke("open_auth_window", { url: fullAuthUrl });
+              authWindowOpened = true;
             } catch (fallbackError) {
-              console.warn("open_auth_window also failed, falling back to window.open:", fallbackError);
-              window.open(fullAuthUrl, "_blank");
+              console.warn("[OAuth] open_auth_window also failed:", fallbackError?.message || fallbackError);
+            }
+          }
+          if (!authWindowOpened) {
+            const popup = window.open(fullAuthUrl, "_blank");
+            if (!popup) {
+              throw new Error(
+                "Impossible d'ouvrir la fenêtre d'authentification. Vérifiez que l'application est à jour ou autorisez les popups."
+              );
             }
           }
         } else {
