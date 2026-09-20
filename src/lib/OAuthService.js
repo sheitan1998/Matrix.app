@@ -207,7 +207,15 @@ class OAuthService {
         // (matrix://) back to the desktop app.
         const invoke = await getTauriInvoke();
         if (invoke) {
-          await invoke("open_auth_window", { url: fullAuthUrl });
+          // Use tauri-plugin-opener — the official Tauri plugin that opens
+          // URLs in the system's default browser reliably across all platforms.
+          // Falls back to the custom open_auth_window command for older builds.
+          try {
+            await invoke("plugin:opener|open_url", { url: fullAuthUrl });
+          } catch (openerError) {
+            console.warn("tauri-plugin-opener unavailable, falling back to open_auth_window:", openerError);
+            await invoke("open_auth_window", { url: fullAuthUrl });
+          }
         } else {
           window.open(fullAuthUrl, "_blank");
         }
