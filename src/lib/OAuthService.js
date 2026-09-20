@@ -135,10 +135,14 @@ class OAuthService {
 
   /**
    * Crée une sous-fenêtre Tauri (WebviewWindow) pour l'authentification OAuth.
-   * Surveille la navigation et détecte le callback pour fermer la fenêtre
-   * et rediriger la fenêtre principale.
+   * L'utilisateur s'authentifie dans cette fenêtre intégrée, et quand le
+   * callback est détecté, la fenêtre est fermée et la fenêtre principale
+   * est redirigée vers /oauth/callback pour l'échange de jeton.
    */
   async openAuthInWebviewWindow(authUrl) {
+    let authWindow = null;
+    let unlistenDestroyed = null;
+
     try {
       const { WebviewWindow } = await import("@tauri-apps/api/webview");
 
@@ -147,12 +151,13 @@ class OAuthService {
         const existing = await WebviewWindow.getByLabel("oauth-auth");
         if (existing) {
           await existing.close();
+          await new Promise((r) => setTimeout(r, 300));
         }
       } catch {
         // Ignorer si la fenêtre n'existe pas
       }
 
-      const authWindow = new WebviewWindow("oauth-auth", {
+      authWindow = new WebviewWindow("oauth-auth", {
         url: authUrl,
         title: "Connexion Matrix",
         width: 800,
@@ -161,17 +166,33 @@ class OAuthService {
         center: true,
       });
 
-      // Attendre que la fenêtre soit créée
-      await new Promise((resolve) => {
-        authWindow.once("tauri://created", resolve);
-        authWindow.once("tauri://error", resolve);
+      // Attendre que la fenêtre soit créée ou qu'une erreur survienne
+      const created = await new Promise((resolve) => {
+        authWindow.once("tauri://created", () => resolve(true));
+        authWindow.once("tauri://error", (e) => {
+          console.error("[OAuth] WebviewWindow error event:", e);
+          resolve(false);
+        });
         // Timeout de sécurité: ne pas bloquer indéfiniment
-        setTimeout(resolve, 3000);
+        setTimeout(() => resolve(false), 8000);
       });
+
+      if (!created) {
+        console.error("[OAuth] WebviewWindow was not created within timeout");
+        return false;
+      }
 
       // Surveiller l'URL pour détecter le callback OAuth
       const callbackUrl = await new Promise((resolve) => {
+        let resolved = false;
+
+        const cleanup = () => {
+          clearInterval(pollInterval);
+          clearTimeout(timeout);
+        };
+
         const pollInterval = setInterval(async () => {
+          if (resolved) return;
           try {
             const currentUrl = await authWindow.url();
             if (
@@ -179,8 +200,8 @@ class OAuthService {
               (currentUrl.includes("/oauth/callback") ||
                 currentUrl.startsWith("matrix://"))
             ) {
-              clearInterval(pollInterval);
-              clearTimeout(timeout);
+              resolved = true;
+              cleanup();
               resolve(currentUrl);
             }
           } catch {
@@ -189,16 +210,19 @@ class OAuthService {
         }, 500);
 
         const timeout = setTimeout(() => {
-          clearInterval(pollInterval);
+          if (resolved) return;
+          resolved = true;
+          cleanup();
           resolve(null);
-        }, 120000); // 2 minutes max
+        }, 180000); // 3 minutes max
 
-        // Si la fenêtre est fermée manuellement, arrêter le polling
-        authWindow.once("tauri://destroyed", () => {
-          clearInterval(pollInterval);
-          clearTimeout(timeout);
+        const unlisten = authWindow.once("tauri://destroyed", () => {
+          if (resolved) return;
+          resolved = true;
+          cleanup();
           resolve(null);
         });
+        unlistenDestroyed = unlisten;
       });
 
       if (callbackUrl) {
@@ -210,10 +234,12 @@ class OAuthService {
         }
 
         // Si c'est une URL de callback web, rediriger la fenêtre principale
+        // vers /oauth/callback — la page OAuthCallback.jsx gérera l'échange
+        // de code et la création de session dans le contexte de la fenêtre
+        // principale.
         if (callbackUrl.startsWith("http")) {
           const url = new URL(callbackUrl);
-          const redirectPath =
-            url.pathname + url.search + url.hash;
+          const redirectPath = url.pathname + url.search + url.hash;
           window.location.replace(redirectPath);
         }
         // Si c'est un deep-link (matrix://), le handler deep-link de Tauri
@@ -224,8 +250,16 @@ class OAuthService {
       // La fenêtre a été fermée sans callback — pas une erreur fatale
       return true;
     } catch (error) {
-      console.warn("[OAuth] WebviewWindow creation failed:", error?.message || error);
+      console.error("[OAuth] WebviewWindow creation failed:", error?.message || error);
       return false;
+    } finally {
+      if (unlistenDestroyed && typeof unlistenDestroyed === "function") {
+        try {
+          unlistenDestroyed();
+        } catch {
+          // Ignore
+        }
+      }
     }
   }
 
@@ -297,48 +331,13 @@ class OAuthService {
       const fullAuthUrl = `${normalizedAuthUrl}?${params.toString()}`;
 
       if (this.isDesktopApp) {
-        // Tauri desktop: try multiple strategies to open the OAuth URL.
-        // 1. tauri-plugin-opener (opens in system default browser — best option)
-        // 2. WebviewWindow (creates a Tauri child window — works without plugin)
-        // 3. open_auth_window custom command (uses Rust `open` crate)
-        // 4. window.open (last resort — often blocked in webview)
-        const invoke = await getTauriInvoke();
-        let authWindowOpened = false;
-
-        // Strategy 1: tauri-plugin-opener
-        if (!authWindowOpened && invoke) {
-          try {
-            await invoke("plugin:opener|open_url", { url: fullAuthUrl });
-            authWindowOpened = true;
-          } catch (openerError) {
-            console.warn("[OAuth] tauri-plugin-opener unavailable:", openerError?.message || openerError);
-          }
-        }
-
-        // Strategy 2: WebviewWindow (Tauri child window — no extra plugin needed,
-        // core:default includes allow-create-webview-window)
-        if (!authWindowOpened) {
-          authWindowOpened = await this.openAuthInWebviewWindow(fullAuthUrl);
-        }
-
-        // Strategy 3: open_auth_window custom command
-        if (!authWindowOpened && invoke) {
-          try {
-            await invoke("open_auth_window", { url: fullAuthUrl });
-            authWindowOpened = true;
-          } catch (cmdError) {
-            console.warn("[OAuth] open_auth_window command failed:", cmdError?.message || cmdError);
-          }
-        }
-
-        // Strategy 4: window.open (last resort)
-        if (!authWindowOpened) {
-          const popup = window.open(fullAuthUrl, "_blank");
-          if (!popup) {
-            throw new Error(
-              "Impossible d'ouvrir la fenêtre d'authentification. Vérifiez que l'application est à jour ou autorisez les popups."
-            );
-          }
+        // Tauri desktop: use an embedded WebviewWindow for the entire OAuth
+        // flow. The user authenticates inside the app — no external browser.
+        const opened = await this.openAuthInWebviewWindow(fullAuthUrl);
+        if (!opened) {
+          throw new Error(
+            "Impossible d'ouvrir la fenêtre d'authentification. Vérifiez que l'application est à jour."
+          );
         }
       } else {
         // Web: full-page redirect (no popup — popups leave the main window
