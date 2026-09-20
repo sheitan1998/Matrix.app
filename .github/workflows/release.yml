@@ -90,7 +90,7 @@ jobs:
           - platform: macos-latest
             bundles: app,dmg
             artifact_name: macos
-          - platform: ubuntu-22.04
+          - platform: ubuntu-24.04
             bundles: appimage,deb,rpm
             artifact_name: linux
     runs-on: ${{ matrix.platform }}
@@ -113,7 +113,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install Linux system dependencies
-        if: matrix.platform == 'ubuntu-22.04'
+        if: matrix.platform == 'ubuntu-24.04'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
