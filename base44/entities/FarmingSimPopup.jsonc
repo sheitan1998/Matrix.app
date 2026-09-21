@@ -26,6 +26,11 @@
       "type": "number",
       "default": 0
     },
+    "is_standalone": {
+      "type": "boolean",
+      "default": false,
+      "description": "Image autonome affichee directement sans categorie"
+    },
     "game_slug": {
       "type": "string",
       "default": "farming-simulator-25"

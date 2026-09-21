@@ -32,8 +32,11 @@ export default function FarmingSimPopupModal({ popupKey, title, onClose }) {
     return () => { if (unsub) unsub(); };
   }, [popupKey, fetchCategories]);
 
+  const standalone = categories
+    .filter((c) => c.is_standalone && !c.parent_slug)
+    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
   const topCats = categories
-    .filter((c) => !c.parent_slug)
+    .filter((c) => !c.parent_slug && !c.is_standalone)
     .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
   const getSubs = (parentSlug) =>
     categories
@@ -83,6 +86,41 @@ export default function FarmingSimPopupModal({ popupKey, title, onClose }) {
               </div>
             ) : (
               <div className="space-y-6">
+                {/* Standalone images (no category) */}
+                {standalone.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="block w-1 h-4 rounded-full" style={{ background: "#7DA627" }} />
+                      <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white">Images</h3>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {standalone.map((img) => (
+                        <button
+                          key={img.id}
+                          onClick={() => setLightbox(img)}
+                          className="group rounded-lg overflow-hidden border border-white/10 hover:border-[#7DA627]/40 transition"
+                          style={{ background: "#262626" }}
+                        >
+                          <div className="relative overflow-hidden">
+                            <img
+                              src={normalizeAppAssetUrl(img.img)}
+                              alt={img.title}
+                              className="w-full h-auto max-h-64 object-contain"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition flex items-end p-2">
+                              <span className="text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition uppercase tracking-wider">
+                                {img.title}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="px-2 py-1.5 border-t border-white/5">
+                            <span className="text-[10px] font-bold text-white/70 uppercase tracking-wider truncate block">{img.title}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {topCats.map((cat) => {
                   const subs = getSubs(cat.slug);
                   return (

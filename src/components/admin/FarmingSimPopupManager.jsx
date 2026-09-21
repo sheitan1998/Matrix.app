@@ -29,6 +29,11 @@ export default function FarmingSimPopupManager() {
   const [editingTitle, setEditingTitle] = useState("");
   const [deletingCat, setDeletingCat] = useState(null);
   const [deletingSub, setDeletingSub] = useState(null);
+  const [addingStandalone, setAddingStandalone] = useState(false);
+  const [newStandaloneTitle, setNewStandaloneTitle] = useState("");
+  const [newStandaloneImg, setNewStandaloneImg] = useState("");
+  const [uploadingStandalone, setUploadingStandalone] = useState(false);
+  const [deletingStandalone, setDeletingStandalone] = useState(null);
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
@@ -47,7 +52,8 @@ export default function FarmingSimPopupManager() {
   }, [fetchItems]);
 
   const filtered = items.filter((i) => i.popup_key === activePopup);
-  const topCats = filtered.filter((c) => !c.parent_slug).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  const standalone = filtered.filter((c) => c.is_standalone && !c.parent_slug).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  const topCats = filtered.filter((c) => !c.parent_slug && !c.is_standalone).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
   const getSubs = (parentSlug) => filtered.filter((c) => c.parent_slug === parentSlug).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
 
   const handleUploadSubImg = async (file) => {
@@ -179,6 +185,56 @@ export default function FarmingSimPopupManager() {
     }
   };
 
+  const handleUploadStandaloneImg = async (file) => {
+    if (!file) return;
+    setUploadingStandalone(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
+      setNewStandaloneImg(normalizeAppAssetUrl(file_url));
+    } catch {
+      toast.error("Erreur lors de l'upload.");
+    } finally {
+      setUploadingStandalone(false);
+    }
+  };
+
+  const handleAddStandalone = async () => {
+    if (!newStandaloneTitle.trim() || !newStandaloneImg) return;
+    const slug = `${activePopup}-img-${slugify(newStandaloneTitle)}`;
+    try {
+      await base44.entities.FarmingSimPopup.create({
+        popup_key: activePopup,
+        title: newStandaloneTitle.trim(),
+        slug,
+        parent_slug: null,
+        img: newStandaloneImg,
+        sort_order: standalone.length,
+        is_standalone: true,
+        game_slug: "farming-simulator-25",
+      });
+      toast.success("Image ajoutée.");
+      setNewStandaloneTitle("");
+      setNewStandaloneImg("");
+      setAddingStandalone(false);
+      fetchItems();
+    } catch {
+      toast.error("Erreur lors de l'ajout.");
+    }
+  };
+
+  const handleDeleteStandalone = async () => {
+    if (!deletingStandalone) return;
+    try {
+      await base44.entities.FarmingSimPopup.delete(deletingStandalone.id);
+      toast.success("Image supprimée.");
+    } catch {
+      toast.error("Erreur lors de la suppression.");
+    } finally {
+      setDeletingStandalone(null);
+      fetchItems();
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Popup selector */}
@@ -201,6 +257,56 @@ export default function FarmingSimPopupManager() {
         </div>
       ) : (
         <>
+          {/* Standalone images section */}
+          <div className="rounded-lg border border-white/5 overflow-hidden" style={{ background: "#1a1a1a" }}>
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
+              <span className="text-sm font-bold text-white uppercase tracking-tight">Images directes</span>
+              <span className="text-[10px] text-white/30">{standalone.length} image{standalone.length > 1 ? "s" : ""}</span>
+            </div>
+            <div className="px-4 py-2 space-y-1">
+              {standalone.map((img) => (
+                <div key={img.id} className="flex items-center gap-2 py-1.5">
+                  <div className="w-8 h-8 rounded overflow-hidden shrink-0" style={{ background: "#262626" }}>
+                    <img src={normalizeAppAssetUrl(img.img)} alt={img.title} className="w-full h-full object-cover" />
+                  </div>
+                  <span className="flex-1 text-xs text-white/70">{img.title}</span>
+                  <button onClick={() => setDeletingStandalone(img)} className="w-6 h-6 rounded flex items-center justify-center text-white/30 hover:text-red-500 transition">
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+
+              {addingStandalone ? (
+                <div className="flex flex-col gap-2 py-2">
+                  <input type="text" value={newStandaloneTitle} onChange={(e) => setNewStandaloneTitle(e.target.value)} placeholder="Titre de l'image" className="w-full h-8 px-2 rounded text-xs text-white border border-white/10 outline-none placeholder:text-white/20" style={{ background: "#0d0518" }} />
+                  <div className="flex gap-2 items-center">
+                    <label className="flex items-center gap-1.5 cursor-pointer text-[10px] text-white/40 hover:text-white">
+                      {newStandaloneImg ? (
+                        <div className="w-8 h-8 rounded overflow-hidden">
+                          <img src={normalizeAppAssetUrl(newStandaloneImg)} alt="" className="w-full h-full object-cover" />
+                        </div>
+                      ) : uploadingStandalone ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Upload className="w-4 h-4" />
+                      )}
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => handleUploadStandaloneImg(e.target.files[0])} />
+                      <span>Image</span>
+                    </label>
+                    <button onClick={handleAddStandalone} className="h-8 px-3 rounded text-[10px] font-bold text-white" style={{ background: "#7DA627" }}>Ajouter</button>
+                    <button onClick={() => { setAddingStandalone(false); setNewStandaloneTitle(""); setNewStandaloneImg(""); }} className="w-8 h-8 rounded flex items-center justify-center text-white/40 hover:text-white">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button onClick={() => setAddingStandalone(true)} className="inline-flex items-center gap-1 text-[10px] text-white/30 hover:text-white/60 transition py-1">
+                  <Plus className="w-3 h-3" /> Ajouter une image directe
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* Add category */}
           {addingCat ? (
             <div className="rounded-lg border border-white/10 p-4" style={{ background: "#1a1a1a" }}>
@@ -329,6 +435,9 @@ export default function FarmingSimPopupManager() {
       )}
       {deletingSub && (
         <ConfirmDeleteModal title={deletingSub.title} onConfirm={handleDeleteSub} onCancel={() => setDeletingSub(null)} />
+      )}
+      {deletingStandalone && (
+        <ConfirmDeleteModal title={deletingStandalone.title} onConfirm={handleDeleteStandalone} onCancel={() => setDeletingStandalone(null)} />
       )}
     </div>
   );
