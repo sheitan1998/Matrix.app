@@ -80,7 +80,7 @@ export default function FarmingSimPopupModal({ popupKey, title, onClose }) {
               <div className="flex justify-center py-12">
                 <Loader2 className="w-6 h-6 animate-spin text-white/30" />
               </div>
-            ) : topCats.length === 0 ? (
+            ) : topCats.length === 0 && standalone.length === 0 ? (
               <div className="rounded-lg border border-dashed border-white/10 py-12 text-center">
                 <span className="text-xs text-white/30 uppercase tracking-wider">Aucun contenu pour le moment</span>
               </div>
