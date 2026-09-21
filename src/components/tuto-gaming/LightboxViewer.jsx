@@ -13,6 +13,27 @@ export default function LightboxViewer({ image, onClose }) {
   const dragStart = useRef(null);
   const containerRef = useRef(null);
 
+  const clampOffset = useCallback((x, y, z) => {
+    const container = containerRef.current;
+    if (!container || z <= 1) return { x: 0, y: 0 };
+    const cw = container.clientWidth;
+    const ch = container.clientHeight;
+    const img = container.querySelector("img");
+    if (!img) return { x: 0, y: 0 };
+    const iw = img.naturalWidth;
+    const ih = img.naturalHeight;
+    if (!iw || !ih) return { x: 0, y: 0 };
+    const scale = Math.min(cw / iw, ch / ih);
+    const dispW = iw * scale * z;
+    const dispH = ih * scale * z;
+    const maxX = Math.max(0, (dispW - cw) / 2);
+    const maxY = Math.max(0, (dispH - ch) / 2);
+    return {
+      x: Math.max(-maxX, Math.min(maxX, x)),
+      y: Math.max(-maxY, Math.min(maxY, y)),
+    };
+  }, []);
+
   const resetView = useCallback(() => {
     setZoom(1);
     setOffset({ x: 0, y: 0 });
@@ -74,11 +95,11 @@ export default function LightboxViewer({ image, onClose }) {
 
   const handlePointerMove = useCallback((e) => {
     if (!dragRef.current) return;
-    setOffset({
-      x: e.clientX - dragStart.current.x,
-      y: e.clientY - dragStart.current.y,
-    });
-  }, []);
+    const rawX = e.clientX - dragStart.current.x;
+    const rawY = e.clientY - dragStart.current.y;
+    const clamped = clampOffset(rawX, rawY, zoom);
+    setOffset(clamped);
+  }, [zoom, clampOffset]);
 
   const handlePointerUp = useCallback(() => {
     dragRef.current = false;
@@ -99,14 +120,14 @@ export default function LightboxViewer({ image, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-center justify-center"
+      className="fixed inset-0 z-[70] flex flex-col"
       style={{ background: "rgba(0,0,0,0.95)" }}
       onClick={onClose}
     >
       {/* Top bar */}
       <div
-        className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-3"
-        style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.7), transparent)" }}
+        className="shrink-0 flex items-center justify-between px-4 py-3 z-10"
+        style={{ background: "rgba(0,0,0,0.6)" }}
         onClick={(e) => e.stopPropagation()}
       >
         <span className="text-xs font-bold text-white/80 uppercase tracking-wider truncate max-w-[50%]">
@@ -147,10 +168,10 @@ export default function LightboxViewer({ image, onClose }) {
         </div>
       </div>
 
-      {/* Image container */}
+      {/* Image container — fills remaining space, properly constrains image */}
       <div
         ref={containerRef}
-        className="w-full h-full flex items-center justify-center overflow-hidden"
+        className="flex-1 min-h-0 min-w-0 flex items-center justify-center overflow-hidden relative"
         onWheel={handleWheel}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -162,11 +183,8 @@ export default function LightboxViewer({ image, onClose }) {
           src={normalizeAppAssetUrl(image.img)}
           alt={image.title}
           draggable={false}
-          className="select-none"
+          className="select-none max-w-full max-h-full"
           style={{
-            maxWidth: "100%",
-            maxHeight: "100%",
-            width: isFullView ? "auto" : "auto",
             objectFit: "contain",
             transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
             transformOrigin: "center center",
