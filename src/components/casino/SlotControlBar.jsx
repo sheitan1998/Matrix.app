@@ -4,23 +4,118 @@ import CasinoToken from "./CasinoToken";
 import { formatBet, BET_STEPS } from "./slotThemes";
 
 const DEFAULT_POSITIONS = {
-  credits_display: { x: 12, y: 90 },
-  spin: { x: 85, y: 85 },
-  auto: { x: 85, y: 75 },
-  bet_minus: { x: 28, y: 90 },
-  bet_display: { x: 36, y: 90 },
-  bet_plus: { x: 44, y: 90 },
-  max_bet: { x: 52, y: 90 },
-  win_display: { x: 62, y: 90 },
-  paytable: { x: 72, y: 90 },
+  counter_panel: { x: 28, y: 90 },
+  spin: { x: 85, y: 88 },
+  action_group: { x: 60, y: 90 },
 };
+
+/* ─── Reusable SVG button texture: brushed metal with gold beveled border ─── */
+function MetalButtonSVG({ children, onClick, disabled, variant = "default", size = "md", whileTap }) {
+  const variants = {
+    default: { c1: "#3a3a42", c2: "#1e1e24", c3: "#0d0d11", glow: "rgba(212,175,55,0.15)" },
+    gold:    { c1: "#f5d77a", c2: "#c9a227", c3: "#8b6914", glow: "rgba(255,215,0,0.3)" },
+    red:     { c1: "#b8362f", c2: "#8b1a14", c3: "#5a0d09", glow: "rgba(220,38,38,0.25)" },
+    green:   { c1: "#4a8c3a", c2: "#2d6b1f", c3: "#1a4d10", glow: "rgba(34,197,94,0.2)" },
+    purple:  { c1: "#6b4a8c", c2: "#4a2d6b", c3: "#2d1a4d", glow: "rgba(168,85,247,0.2)" },
+  };
+  const v = variants[variant] || variants.default;
+  const sizes = { sm: "h-7", md: "h-9", lg: "h-12", xl: "h-14" };
+
+  return (
+    <motion.button
+      onClick={onClick}
+      disabled={disabled}
+      whileTap={whileTap ? { scale: 0.92 } : undefined}
+      className={`relative ${sizes[size]} px-3 flex items-center justify-center gap-1.5 font-black text-white transition disabled:opacity-40`}
+      style={{
+        background: `linear-gradient(180deg, ${v.c1} 0%, ${v.c2} 45%, ${v.c3} 100%)`,
+        border: "1.5px solid #d4af37",
+        borderRadius: "10px",
+        boxShadow: `
+          inset 0 1px 1px rgba(255,255,255,0.25),
+          inset 0 -2px 4px rgba(0,0,0,0.6),
+          inset 0 0 8px ${v.glow},
+          0 2px 4px rgba(0,0,0,0.5),
+          0 0 12px ${v.glow}
+        `,
+        textShadow: "0 1px 2px rgba(0,0,0,0.8), 0 0 8px rgba(212,175,55,0.4)",
+        clipPath: "polygon(8% 0, 92% 0, 100% 15%, 100% 85%, 92% 100%, 8% 100%, 0 85%, 0 15%)",
+      }}
+    >
+      {/* Gold beveled top highlight */}
+      <span
+        className="absolute inset-x-1 top-0 h-1/3 pointer-events-none"
+        style={{
+          background: "linear-gradient(180deg, rgba(255,255,255,0.18) 0%, transparent 100%)",
+          borderRadius: "8px 8px 0 0",
+        }}
+      />
+      {children}
+    </motion.button>
+  );
+}
+
+/* ─── LED-style gold digit display ─── */
+function LEDDisplay({ label, value, token }) {
+  return (
+    <div className="flex flex-col items-center min-w-[60px]">
+      <span
+        className="text-[7px] font-black uppercase tracking-widest"
+        style={{ color: "#d4af37", textShadow: "0 0 4px rgba(212,175,55,0.6)" }}
+      >
+        {label}
+      </span>
+      <div className="flex items-center justify-center gap-0.5 mt-0.5">
+        {token && <CasinoToken size={11} />}
+        <span
+          className="text-sm font-mono font-black"
+          style={{
+            color: "#ffd700",
+            textShadow: "0 0 6px rgba(255,215,0,0.7), 0 0 12px rgba(255,215,0,0.4), 0 1px 2px rgba(0,0,0,0.9)",
+          }}
+        >
+          {value}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Engraved metal counter panel ─── */
+function CounterPanel({ balance, bet, lastWin }) {
+  return (
+    <div
+      className="flex items-center gap-3 px-4 py-1.5"
+      style={{
+        background: "linear-gradient(180deg, #1a1a20 0%, #0a0a0e 100%)",
+        borderRadius: "12px",
+        border: "1.5px solid #d4af37",
+        boxShadow: `
+          inset 0 2px 6px rgba(0,0,0,0.8),
+          inset 0 -1px 2px rgba(212,175,55,0.15),
+          inset 0 0 16px rgba(212,175,55,0.06),
+          0 1px 3px rgba(0,0,0,0.5)
+        `,
+      }}
+    >
+      <LEDDisplay label="Crédits" value={formatBet(balance)} token />
+      <span className="w-px h-7" style={{ background: "linear-gradient(180deg, transparent, #d4af3740, transparent)" }} />
+      <LEDDisplay label="Mise" value={formatBet(bet)} token />
+      <span className="w-px h-7" style={{ background: "linear-gradient(180deg, transparent, #d4af3740, transparent)" }} />
+      <LEDDisplay
+        label="Victoire"
+        value={lastWin > 0 ? lastWin.toLocaleString() : "—"}
+        token={lastWin > 0}
+      />
+    </div>
+  );
+}
 
 export default function SlotControlBar({
   balance, bet, lastWin, spinning, autoSpinning, autoCount,
   onSpin, onToggleAuto, onBetChange, onPaytable, theme, buttonStyles
 }) {
   const styles = buttonStyles || {};
-
   const containerRef = useRef(null);
   const [scale, setScale] = useState(1);
 
@@ -29,7 +124,7 @@ export default function SlotControlBar({
     if (!el) return;
     const update = () => {
       const w = el.clientWidth;
-      setScale(Math.min(1.3, Math.max(0.5, w / 1200)));
+      setScale(Math.min(1.4, Math.max(0.55, w / 1200)));
     };
     update();
     const ro = new ResizeObserver(update);
@@ -37,30 +132,21 @@ export default function SlotControlBar({
     return () => ro.disconnect();
   }, []);
 
-  const btnStyle = (key, defaults, isMotion = false) => {
+  const posStyle = (key, defaults) => {
     const s = styles[key] || {};
     const pos = DEFAULT_POSITIONS[key];
-    const base = {
+    return {
       position: "absolute",
       left: `${s.pos_x ?? pos.x}%`,
       top: `${s.pos_y ?? pos.y}%`,
-      background: s.bg || defaults.bg,
-      color: s.text_color || defaults.text,
-      border: s.border_color ? `1px solid ${s.border_color}` : defaults.border,
-      borderRadius: `${s.radius ?? defaults.radius}px`,
-      opacity: (s.opacity ?? 100) / 100,
+      transform: `translate(-50%, -50%) scale(${scale})`,
       zIndex: 20,
-      transition: "all 0.15s ease",
     };
-    if (isMotion) {
-      return { ...base, x: "-50%", y: "-50%", scale };
-    }
-    return { ...base, transform: `translate(-50%, -50%) scale(${scale})` };
   };
 
   const decreaseBet = () => {
     const idx = BET_STEPS.indexOf(bet);
-    onBetChange(idx > 0 ? BET_STEPS[idx - 1] : BET_STEPS[BET_STEPS.length - 1]);
+    onBetChange(idx > 0 ? BET_STEPS[idx - 1] : BET_STEPS[BET_STEPS - 1]);
   };
   const increaseBet = () => {
     const idx = BET_STEPS.indexOf(bet);
@@ -70,110 +156,63 @@ export default function SlotControlBar({
 
   return (
     <div ref={containerRef} className="absolute inset-0" style={{ zIndex: 15 }}>
-      {/* Credits display — masks the painted "CREDITS" label in the bg image */}
-      <div
-        style={btnStyle("credits_display", { bg: theme.controlBg, text: "#fff", border: `1px solid ${theme.controlBorderColor}`, radius: 8 })}
-        className="text-center min-w-[70px] pointer-events-none px-2 py-0.5"
-      >
-        <p className="text-[8px] font-bold text-white/50 uppercase">Crédits</p>
-        <div className="flex items-center justify-center gap-0.5">
-          <CasinoToken size={12} />
-          <p className="text-sm font-mono font-black text-white">{formatBet(balance)}</p>
-        </div>
+
+      {/* ─── Engraved counter panel (Credits | Bet | Win) ─── */}
+      <div style={posStyle("counter_panel")} className="pointer-events-none">
+        <CounterPanel balance={balance} bet={bet} lastWin={lastWin} />
       </div>
 
-      {/* Bet minus */}
-      <button
-        style={btnStyle("bet_minus", { bg: theme.minusBg, text: "#fff", border: "none", radius: 50 })}
-        onClick={decreaseBet}
-        disabled={spinning || autoSpinning}
-        className="w-9 h-9 flex items-center justify-center font-black text-lg transition hover:scale-105 disabled:opacity-40"
-      >
-        −
-      </button>
-
-      {/* Bet display — masks the painted "BET" label in the bg image */}
-      <div
-        style={btnStyle("bet_display", { bg: theme.controlBg, text: "#fff", border: `1px solid ${theme.controlBorderColor}`, radius: 8 })}
-        className="text-center min-w-[55px] pointer-events-none px-2 py-0.5"
-      >
-        <p className="text-[8px] font-bold text-white/50 uppercase">Mise</p>
-        <div className="flex items-center justify-center gap-0.5">
-          <CasinoToken size={12} />
-          <p className="text-sm font-mono font-black text-white">{formatBet(bet)}</p>
-        </div>
+      {/* ─── Compact action button group ─── */}
+      <div style={posStyle("action_group")} className="flex items-center gap-2">
+        <MetalButtonSVG onClick={decreaseBet} disabled={spinning || autoSpinning} variant="red" size="sm" whileTap>
+          <span className="text-base leading-none">−</span>
+        </MetalButtonSVG>
+        <MetalButtonSVG onClick={increaseBet} disabled={spinning || autoSpinning} variant="green" size="sm" whileTap>
+          <span className="text-base leading-none">+</span>
+        </MetalButtonSVG>
+        <MetalButtonSVG onClick={maxBet} disabled={spinning || autoSpinning} variant="default" size="sm" whileTap>
+          MAX
+        </MetalButtonSVG>
+        <MetalButtonSVG onClick={onPaytable} disabled={spinning} variant="purple" size="sm" whileTap>
+          <span className="text-[10px]">☰</span>
+        </MetalButtonSVG>
+        <MetalButtonSVG
+          onClick={onToggleAuto}
+          disabled={spinning && !autoSpinning}
+          variant={autoSpinning ? "red" : "default"}
+          size="sm"
+          whileTap
+        >
+          <span className="text-[10px]">{autoSpinning ? `■ ${autoCount}` : "▶ A"}</span>
+        </MetalButtonSVG>
       </div>
 
-      {/* Bet plus */}
-      <button
-        style={btnStyle("bet_plus", { bg: theme.plusBg, text: "#fff", border: "none", radius: 50 })}
-        onClick={increaseBet}
-        disabled={spinning || autoSpinning}
-        className="w-9 h-9 flex items-center justify-center font-black text-lg transition hover:scale-105 disabled:opacity-40"
-      >
-        +
-      </button>
-
-      {/* MAX BET */}
-      <button
-        style={btnStyle("max_bet", { bg: "linear-gradient(135deg, #4a6c88, #243644)", text: "#fff", border: "none", radius: 12 })}
-        onClick={maxBet}
-        disabled={spinning || autoSpinning}
-        className="px-3 h-9 text-xs font-black transition hover:scale-105 disabled:opacity-40"
-      >
-        MAX MISE
-      </button>
-
-      {/* Win display */}
-      <div
-        style={btnStyle("win_display", { bg: "transparent", text: "#fff", border: "none", radius: 0 })}
-        className="text-center min-w-[70px] pointer-events-none"
-      >
-        <p className="text-[8px] font-bold text-white/50 uppercase">Victoire</p>
-        <div className="flex items-center justify-center gap-0.5">
-          <CasinoToken size={12} />
-          <p className="text-sm font-mono font-black" style={{ color: lastWin > 0 ? "#4caf50" : "rgba(255,255,255,0.3)" }}>
-            {lastWin.toLocaleString()}
-          </p>
-        </div>
-      </div>
-
-      {/* PAYTABLE */}
-      <button
-        style={btnStyle("paytable", { bg: "linear-gradient(135deg, #4a3a6a, #2a1a4a)", text: "#fff", border: `1px solid ${theme.frameAccent}40`, radius: 12 })}
-        onClick={onPaytable}
-        disabled={spinning}
-        className="px-3 h-9 text-xs font-black transition hover:scale-105 disabled:opacity-40"
-      >
-        PAYTABLE
-      </button>
-
-      {/* SPIN */}
+      {/* ─── SPIN button (centerpiece) ─── */}
       <motion.button
-        style={btnStyle("spin", {
-          bg: spinning || autoSpinning ? "linear-gradient(135deg, #333, #222)" : theme.spinBg,
-          text: "#fff", border: "none", radius: 16,
-        }, true)}
+        style={{
+          ...posStyle("spin"),
+          background: spinning || autoSpinning
+            ? "linear-gradient(180deg, #555 0%, #333 50%, #222 100%)"
+            : "linear-gradient(180deg, #f5d77a 0%, #d4af37 40%, #8b6914 100%)",
+          border: "2px solid #ffd700",
+          borderRadius: "14px",
+          boxShadow: `
+            inset 0 2px 2px rgba(255,255,255,0.4),
+            inset 0 -3px 6px rgba(0,0,0,0.5),
+            inset 0 0 12px rgba(255,215,0,0.2),
+            0 3px 6px rgba(0,0,0,0.6),
+            0 0 20px rgba(255,215,0,0.3)
+          `,
+          textShadow: "0 1px 3px rgba(0,0,0,0.8), 0 0 10px rgba(255,215,0,0.5)",
+          clipPath: "polygon(6% 0, 94% 0, 100% 12%, 100% 88%, 94% 100%, 6% 100%, 0 88%, 0 12%)",
+          color: "#fff",
+        }}
         onClick={onSpin}
         disabled={spinning || autoSpinning}
         whileTap={{ scale: 0.92 }}
-        className="px-6 h-11 font-black text-base transition"
+        className="px-6 h-12 font-black text-base flex items-center justify-center transition"
       >
-        {spinning ? "..." : "SPIN"}
-      </motion.button>
-
-      {/* AUTO PLAY */}
-      <motion.button
-        style={btnStyle("auto", {
-          bg: autoSpinning ? "linear-gradient(135deg, #ff4444, #cc2222)" : `linear-gradient(135deg, ${theme.frameAccent}, ${theme.frameAccent}cc)`,
-          text: "#fff", border: `1px solid ${theme.frameAccent}50`, radius: 12,
-        }, true)}
-        onClick={onToggleAuto}
-        whileTap={{ scale: 0.92 }}
-        disabled={spinning && !autoSpinning}
-        className="px-4 h-8 text-xs font-black flex items-center gap-1.5 transition disabled:opacity-40"
-      >
-        {autoSpinning ? `■ STOP ×${autoCount}` : "▶ AUTO PLAY"}
+        {spinning ? "···" : "SPIN"}
       </motion.button>
     </div>
   );
