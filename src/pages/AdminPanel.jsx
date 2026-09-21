@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Shield, Users, Ticket, AlertTriangle, FileText, FolderTree, ArrowUpDown, LayoutGrid, FileCode, ShoppingBag, BarChart3, Coins, Download } from "lucide-react";
+import { ArrowLeft, Shield, Users, Ticket, AlertTriangle, FileText, FolderTree, ArrowUpDown, LayoutGrid, FileCode, ShoppingBag, BarChart3, Coins, Download, Fence } from "lucide-react";
 import HeaderActions from "@/components/layout/HeaderActions";
 import AdminUserList from "@/components/admin/AdminUserList";
 import AdminTicketList from "@/components/admin/AdminTicketList";
@@ -16,6 +16,7 @@ import CosmeticItemList from "@/components/admin/CosmeticItemList";
 import CosmeticSalesDashboard from "@/components/admin/CosmeticSalesDashboard";
 import GithubDownloadsDashboard from "@/components/admin/GithubDownloadsDashboard";
 import SlotConfigPanel from "@/components/admin/SlotConfigPanel";
+import FarmingSimPopupManager from "@/components/admin/FarmingSimPopupManager";
 
 export default function AdminPanel() {
   const nav = useNavigate();
@@ -87,6 +88,7 @@ export default function AdminPanel() {
     { id: "downloads", label: "Téléchargements", icon: Download },
     { id: "dashboard", label: "Statistiques", icon: BarChart3 },
     { id: "slots", label: "Slots Nexus Game", icon: Coins },
+    { id: "fs-popups", label: "Pop-ups Farming Sim", icon: Fence },
   ];
 
   return (
@@ -196,6 +198,7 @@ export default function AdminPanel() {
         {tab === "dashboard" && <CosmeticSalesDashboard />}
         {tab === "downloads" && <GithubDownloadsDashboard />}
         {tab === "slots" && <SlotConfigPanel />}
+        {tab === "fs-popups" && <FarmingSimPopupManager />}
           </div>
         </div>
       </div>
