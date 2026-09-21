@@ -85,14 +85,13 @@ function PartnerCard({ p, index }) {
         target="_blank"
         rel="noopener noreferrer"
         onClick={(e) => {
-          const isTauri = typeof window !== "undefined" && !!(window.__TAURI_INTERNALS__ || window.__TAURI__);
-          if (isTauri) {
+          const tauriInternals = typeof window !== "undefined" && (window.__TAURI_INTERNALS__ || window.__TAURI__?.core);
+          if (tauriInternals && typeof tauriInternals.invoke === "function") {
             e.preventDefault();
-            import("@tauri-apps/api/core")
-              .then(({ invoke }) => invoke("open_auth_window", { url: href }))
+            tauriInternals.invoke("open_auth_window", { url: href })
               .catch(() => window.open(href, "_blank", "noopener,noreferrer"));
           }
-          // On web, let the default <a> behavior handle it (no preventDefault)
+          // On web (no Tauri runtime), let the default <a> behavior handle it
         }}
         className="block hover:scale-[1.02] transition-transform"
       >

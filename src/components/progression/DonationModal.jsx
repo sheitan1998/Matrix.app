@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { base44 } from "@/api/base44Client";
 import { Heart, X } from "lucide-react";
 import { toast } from "sonner";
@@ -34,7 +35,7 @@ export default function DonationModal({ open, onClose }) {
     setLoading(false);
   };
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[90] flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.8)", backdropFilter: "blur(8px)" }}
@@ -120,6 +121,7 @@ export default function DonationModal({ open, onClose }) {
           {loading ? "Redirection..." : `Soutenir avec ${amount}€`}
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

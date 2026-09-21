@@ -5,7 +5,6 @@ import { useLocation } from "react-router-dom";
 const variants = {
   initial: { opacity: 0 },
   animate: { opacity: 1 },
-  exit: { opacity: 0 },
 };
 
 export default function AnimatedRoutes({ children }) {
@@ -17,8 +16,7 @@ export default function AnimatedRoutes({ children }) {
         variants={variants}
         initial="initial"
         animate="animate"
-        exit="exit"
-        transition={{ duration: 0.18, ease: "easeInOut" }}
+        transition={{ duration: 0.15, ease: "easeOut" }}
         style={{ minHeight: "100%" }}
       >
         {children}
