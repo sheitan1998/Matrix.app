@@ -12,10 +12,11 @@ export default function DesktopDownloadButton({ className = "" }) {
 
     const fetchLatest = async () => {
       try {
-        const data = await base44.functions.invoke("getLatestRelease");
+        const resp = await base44.functions.invoke("getLatestRelease", {});
+        const data = resp?.data || resp;
         if (cancelled) return;
         setVersion(data.version || null);
-        setDownloadUrl(data.download_url || data.release_page || null);
+        setDownloadUrl(data.download_url || null);
       } catch {
         if (!cancelled) setDownloadUrl(null);
       } finally {
