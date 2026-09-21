@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { X, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { normalizeAppAssetUrl } from "@/lib/urlUtils";
+import LightboxViewer from "@/components/tuto-gaming/LightboxViewer";
 
 export default function FarmingSimPopupModal({ popupKey, title, onClose }) {
   const [categories, setCategories] = useState([]);
@@ -202,26 +203,12 @@ export default function FarmingSimPopupModal({ popupKey, title, onClose }) {
         </div>
       </div>
 
-      {/* Lightbox for full-size image view */}
+      {/* Lightbox for full-size image view with zoom */}
       {lightbox && (
-        <div
-          className="fixed inset-0 z-[70] flex items-center justify-center p-4"
-          style={{ background: "rgba(0,0,0,0.92)" }}
-          onClick={() => setLightbox(null)}
-        >
-          <button
-            className="absolute top-4 right-4 w-10 h-10 rounded-lg flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition"
-            onClick={() => setLightbox(null)}
-          >
-            <X className="w-5 h-5" />
-          </button>
-          <img
-            src={normalizeAppAssetUrl(lightbox.img)}
-            alt={lightbox.title}
-            className="max-w-full max-h-full object-contain rounded-lg"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
+        <LightboxViewer
+          image={lightbox}
+          onClose={() => setLightbox(null)}
+        />
       )}
     </>
   );
