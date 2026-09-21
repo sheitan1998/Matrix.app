@@ -2,7 +2,6 @@ import React, { useCallback } from "react";
 import { motion } from "framer-motion";
 import { Star, ArrowRight, Search } from "lucide-react";
 import { normalizeAppAssetUrl, normalizeExternalUrl } from "@/lib/urlUtils";
-import { getTauriInvoke } from "@/lib/tauriInvoke";
 
 const PARTNERS = [
 {
@@ -85,14 +84,15 @@ function PartnerCard({ p, index }) {
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        onClick={async (e) => {
-          e.preventDefault();
-          const invoke = await getTauriInvoke();
-          if (invoke) {
-            await invoke("open_auth_window", { url: href });
-          } else {
-            window.open(href, "_blank", "noopener,noreferrer");
+        onClick={(e) => {
+          const isTauri = typeof window !== "undefined" && !!(window.__TAURI_INTERNALS__ || window.__TAURI__);
+          if (isTauri) {
+            e.preventDefault();
+            import("@tauri-apps/api/core")
+              .then(({ invoke }) => invoke("open_auth_window", { url: href }))
+              .catch(() => window.open(href, "_blank", "noopener,noreferrer"));
           }
+          // On web, let the default <a> behavior handle it (no preventDefault)
         }}
         className="block hover:scale-[1.02] transition-transform"
       >

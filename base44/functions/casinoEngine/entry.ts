@@ -251,14 +251,19 @@ export default async function(req: Request): Promise<Response> {
         const newLevel = computeLevel(newTotalXp);
         const newXpInLevel = computeXpInLevel(newTotalXp);
 
-        // Update global profile XP (1 XP per win)
+        // Update global profile XP (1 XP per win, boosted by active XP booster)
+        // The XP boost multiplier applies ONLY to XP earned during actions —
+        // never to casino token payouts or casino XP (which stay independent).
         if (globalXpGained > 0) {
           try {
             const progressRecords = await base44.asServiceRole.entities.UserProgress.filter({ user_email: user.email });
             if (progressRecords.length > 0) {
               const progress = progressRecords[0];
+              const boost = progress.active_xp_boost;
+              const boostMultiplier = (boost && new Date(boost.expires_at).getTime() > Date.now()) ? boost.multiplier : 1;
+              const boostedXp = Math.round(globalXpGained * boostMultiplier);
               await base44.asServiceRole.entities.UserProgress.update(progress.id, {
-                total_xp: (progress.total_xp || 0) + globalXpGained,
+                total_xp: (progress.total_xp || 0) + boostedXp,
               });
             }
           } catch {}
