@@ -30,9 +30,7 @@ export default function DesktopDownloadButton({ className = "" }) {
 
   const label = loading
     ? "Récupération de la version..."
-    : version
-    ? `⬇️ Télécharger — v${version}`
-    : "⬇️ Télécharger l'application";
+    : "Télécharger l'application";
 
   const href = downloadUrl || "https://github.com/sheitan1998/Matrix.app/releases/latest";
 

@@ -2,6 +2,7 @@ import React, { useCallback } from "react";
 import { motion } from "framer-motion";
 import { Star, ArrowRight, Search } from "lucide-react";
 import { normalizeAppAssetUrl, normalizeExternalUrl } from "@/lib/urlUtils";
+import { getTauriInvoke } from "@/lib/tauriInvoke";
 
 const PARTNERS = [
 {
@@ -84,11 +85,11 @@ function PartnerCard({ p, index }) {
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        onClick={(e) => {
-          const tauriInternals = typeof window !== "undefined" && (window.__TAURI_INTERNALS__ || window.__TAURI__?.core);
-          if (tauriInternals && typeof tauriInternals.invoke === "function") {
+        onClick={async (e) => {
+          const invoke = await getTauriInvoke();
+          if (invoke) {
             e.preventDefault();
-            tauriInternals.invoke("open_auth_window", { url: href })
+            invoke("plugin:opener|open_url", { url: href })
               .catch(() => window.open(href, "_blank", "noopener,noreferrer"));
           }
           // On web (no Tauri runtime), let the default <a> behavior handle it
