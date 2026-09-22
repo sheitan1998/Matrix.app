@@ -78,7 +78,7 @@ export default async function(req: Request): Promise<Response> {
     const stripeKey = secrets.get('STRIPE_SECRET_KEY');
     const webhookSecret = secrets.get('STRIPE_WEBHOOK_SECRET');
     const STRIPE_PUBLISHABLE_KEY = secrets.get('STRIPE_PUBLISHABLE_KEY');
-    const ALLOWED_ORIGINS = ['https://matrix-hub.app', 'https://www.matrix-hub.app'];
+    const ALLOWED_ORIGINS = ['https://matrix-hub.app', 'https://www.matrix-hub.app', 'https://matrix-hub.base44.app'];
     const requestOrigin = req.headers.get('origin') || '';
     const origin = ALLOWED_ORIGINS.includes(requestOrigin) ? requestOrigin : 'https://matrix-hub.app';
 
@@ -650,15 +650,13 @@ export default async function(req: Request): Promise<Response> {
       const params = new URLSearchParams();
       params.append('payment_method_types[]', 'card');
       params.append('mode', 'payment');
-      params.append('ui_mode', 'embedded');
-      params.append('return_url', `${origin}`);
+      params.append('success_url', `${origin}/?donation=success&session_id={CHECKOUT_SESSION_ID}`);
+      params.append('cancel_url', `${origin}/?donation=canceled`);
       params.append('customer_email', user.email);
       params.append('line_items[0][price_data][currency]', 'eur');
       params.append('line_items[0][price_data][product_data][name]', 'Don - MATRIX');
       params.append('line_items[0][price_data][unit_amount]', String(amount));
       params.append('line_items[0][quantity]', '1');
-      // params.append('success_url', `${origin}/?donation=success&session_id={CHECKOUT_SESSION_ID}`);
-      // params.append('cancel_url', `${origin}/?donation=canceled`);
       params.append('metadata[type]', 'donation');
       params.append('metadata[user_email]', user.email);
       params.append('metadata[user_id]', user.id);
@@ -670,7 +668,7 @@ export default async function(req: Request): Promise<Response> {
       });
       const session = await res.json();
       if (session.error) return Response.json({ error: session.error.message }, { status: 400 });
-      return Response.json({ clientSecret: session.client_secret, publishableKey: STRIPE_PUBLISHABLE_KEY });
+      return Response.json({ url: session.url });
     }
 
     // ---- createTrixPurchase ----
