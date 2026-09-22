@@ -1,7 +1,6 @@
 import React, { useCallback } from "react";
 import { motion } from "framer-motion";
 import { Star, ArrowRight, Search } from "lucide-react";
-import { openUrl } from "@tauri-apps/plugin-opener";
 import { normalizeAppAssetUrl, normalizeExternalUrl } from "@/lib/urlUtils";
 
 const PARTNERS = [
@@ -85,13 +84,6 @@ function PartnerCard({ p, index }) {
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        onClick={(e) => {
-          const isTauri = typeof window !== "undefined" &&
-            !!(window.__TAURI_INTERNALS__ || window.__TAURI__?.core);
-          if (!isTauri) return;
-          e.preventDefault();
-          openUrl(href).catch(() => window.open(href, "_blank", "noopener,noreferrer"));
-        }}
         className="block hover:scale-[1.02] transition-transform"
       >
         {inner}
