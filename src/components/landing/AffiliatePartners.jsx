@@ -85,14 +85,13 @@ function PartnerCard({ p, index }) {
         target="_blank"
         rel="noopener noreferrer"
         onClick={(e) => {
-          // Synchronous Tauri detection — must call preventDefault before any await
-          const tauriInternals = typeof window !== "undefined" && (window.__TAURI_INTERNALS__ || window.__TAURI__?.core);
-          if (tauriInternals && typeof tauriInternals.invoke === "function") {
-            e.preventDefault();
-            tauriInternals.invoke("plugin:opener|open_url", { url: href })
-              .catch(() => window.open(href, "_blank", "noopener,noreferrer"));
-          }
-          // On web (no Tauri runtime), let the default <a> behavior handle it
+          // Synchronous Tauri detection — preventDefault must fire before any async work
+          const isTauri = typeof window !== "undefined" && !!(window.__TAURI_INTERNALS__ || window.__TAURI__?.core);
+          if (!isTauri) return; // Web: let the default <a> behavior handle it
+          e.preventDefault();
+          import("@tauri-apps/plugin-opener")
+            .then(({ openUrl }) => openUrl(href))
+            .catch(() => window.open(href, "_blank", "noopener,noreferrer"));
         }}
         className="block hover:scale-[1.02] transition-transform"
       >
