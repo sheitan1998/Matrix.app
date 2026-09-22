@@ -3,9 +3,7 @@ import { motion } from "framer-motion";
 import { Star, ArrowRight, Search } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { normalizeAppAssetUrl, normalizeExternalUrl } from "@/lib/urlUtils";
-import PartnerWebModal from "./PartnerWebModal";
-
-const isTauri = typeof window !== "undefined" && !!(window.__TAURI_INTERNALS__ || window.__TAURI__?.core);
+import { getTauriInvoke } from "@/lib/tauriInvoke";
 
 const FALLBACK_PARTNERS = [
   {
@@ -39,7 +37,7 @@ const FALLBACK_PARTNERS = [
   }
 ];
 
-function PartnerCard({ p, index, onOpenModal }) {
+function PartnerCard({ p, index }) {
   const href = normalizeExternalUrl(p.href);
   const imageUrl = normalizeAppAssetUrl(p.image);
   const extraSearch = p.extra_search || p.extraSearch;
@@ -89,10 +87,17 @@ function PartnerCard({ p, index, onOpenModal }) {
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        onClick={isTauri ? (e) => {
+        onClick={async (e) => {
+          const isTauri = typeof window !== "undefined" && !!(window.__TAURI_INTERNALS__ || window.__TAURI__?.core);
+          if (!isTauri) return;
           e.preventDefault();
-          onOpenModal(p);
-        } : undefined}
+          try {
+            const invoke = await getTauriInvoke();
+            if (invoke) await invoke("open_auth_window", { url: href });
+          } catch (err) {
+            console.error("[AffiliatePartners] Failed to open URL:", err);
+          }
+        }}
         className="block hover:scale-[1.02] transition-transform"
       >
         {inner}
@@ -104,7 +109,6 @@ function PartnerCard({ p, index, onOpenModal }) {
 
 export default function AffiliatePartners() {
   const [partners, setPartners] = useState(FALLBACK_PARTNERS);
-  const [selected, setSelected] = useState(null);
 
   useEffect(() => {
     base44.entities.AffiliatePartner.list("sort_order", 50)
@@ -123,12 +127,9 @@ export default function AffiliatePartners() {
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
         {partners.map((p, i) => (
-          <PartnerCard key={p.id || p.name} p={p} index={i} onOpenModal={setSelected} />
+          <PartnerCard key={p.id || p.name} p={p} index={i} />
         ))}
       </div>
-      {selected && (
-        <PartnerWebModal partner={selected} onClose={() => setSelected(null)} />
-      )}
     </div>
   );
 }
