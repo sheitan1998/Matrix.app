@@ -9,8 +9,9 @@ import TranslationButton from "@/components/landing/TranslationButton";
 import {
   Youtube, Radio, MessageCircle, Cpu, Dices, Search, GraduationCap,
   Wrench, BarChart3, Clapperboard, TrendingUp, ShoppingBag,
-  Gem, Shield, Star, User, ArrowRight } from
+  Gem, Shield, Star, User, ArrowRight, HelpCircle } from
 "lucide-react";
+import FaqPanel from "@/components/landing/FaqPanel";
 
 const LEFT_CARDS = [
 { path: "/stream", label: "Youtube", desc: "Vidéos, lives, shorts. Crée ta chaîne et partage ton contenu.", icon: Youtube, iconUrl: "/media/tuto-gaming/c4e71cf23_yt_icon_red_digital.png", color: "#FF0000" },
@@ -37,6 +38,7 @@ export default function Landing() {
   const nav = useNavigate();
   const [user, setUser] = useState(null);
   const [showAuth, setShowAuth] = useState(false);
+  const [showFaq, setShowFaq] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -67,6 +69,15 @@ export default function Landing() {
 
           <div className="flex items-center gap-2">
             <TranslationButton />
+            <motion.button
+              initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.15 }}
+              onClick={() => setShowFaq(true)}
+              className="flex items-center justify-center w-9 h-9 rounded-full transition tap-sm"
+              style={{ border: "1.5px solid rgba(168,85,247,0.4)", background: "rgba(168,85,247,0.05)" }}
+              title="FAQ"
+            >
+              <HelpCircle className="w-4 h-4" style={{ color: "#a855f7" }} />
+            </motion.button>
             {!user &&
             <motion.button
               initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}
@@ -82,6 +93,7 @@ export default function Landing() {
           </div>
 
           <AuthModal open={showAuth} onClose={() => setShowAuth(false)} />
+          <FaqPanel open={showFaq} onClose={() => setShowFaq(false)} />
         </header>
 
         {/* Main content */}
