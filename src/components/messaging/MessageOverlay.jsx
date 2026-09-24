@@ -161,8 +161,9 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
     }).catch(() => {});
   }, [selectedContact, user, freshUsers]);
 
-  // Determine if the current conversation is read-only (e.g. welcome message from Support)
-  const isReadOnlyConversation = messages.some(m => m.is_read_only);
+  // Determine if the current conversation is read-only (e.g. closed ticket from Support)
+  // Checks the LAST message only — a new message without read-only reopens the conversation
+  const isReadOnlyConversation = messages.length > 0 && messages[messages.length - 1].is_read_only;
 
   // Real-time subscription for new messages in the current conversation
   useEffect(() => {

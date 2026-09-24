@@ -66,7 +66,15 @@ export default function SupportTicketModal({ user, onClose }) {
         attachments,
       });
 
-      toast.success("Ticket envoyé ! L'équipe support vous répondra dans la messagerie.");
+      // Open a DM conversation with Support in the user's messaging
+      await base44.functions.invoke("ticketSystem", {
+        action: "openTicket",
+        ticket_id: ticket.id,
+        subject: subject.trim(),
+        message: message.trim(),
+      });
+
+      toast.success("Ticket envoyé ! Une conversation avec le Support a été ouverte dans votre messagerie.");
       trackActivity("tickets_created");
       trackActivity("help_community");
       onClose();
