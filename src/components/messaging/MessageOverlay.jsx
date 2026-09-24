@@ -222,6 +222,26 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
       content,
       is_read: false,
     };
+
+    // If messaging Support, route through the ticket system
+    if (contactEmail.toLowerCase() === SUPPORT_EMAIL) {
+      const ticketMsg = [...messages].reverse().find(m => m.ticket_id);
+      if (ticketMsg) {
+        setMessages(prev => [...prev, { ...msgData, id: tempId, created_date: new Date().toISOString(), ticket_id: ticketMsg.ticket_id }]);
+        try {
+          await base44.functions.invoke("ticketSystem", {
+            action: "sendMessage",
+            ticket_id: ticketMsg.ticket_id,
+            content,
+          });
+        } catch (e) {
+          toast.error("Erreur d'envoi du message");
+          setMessages(prev => prev.filter(m => m.id !== tempId));
+        }
+        return;
+      }
+    }
+
     setMessages(prev => [...prev, { ...msgData, id: tempId, created_date: new Date().toISOString() }]);
     try {
       await base44.entities.DirectMessage.create(msgData);
