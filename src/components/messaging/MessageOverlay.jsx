@@ -9,6 +9,10 @@ import UserProfilePopup from "@/components/profile/UserProfilePopup";
 
 const EMOJI_LIST = ["😀", "😂", "🥰", "😍", "😎", "🤔", "😅", "😭", "😡", "👍", "👎", "❤️", "🔥", "✨", "🎉", "💯", "🤝", "👋", "🙏", "💀", "🤡", "👀", "💪", "🫶", "😴", "🥳", "😇", "🤗", "😌", "🙃"];
 
+const SUPPORT_EMAIL = "support@matrix-hub.app";
+const SUPPORT_NAME = "Équipe Matrix";
+const SUPPORT_AVATAR = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/7f40ce19c_ChatGPT_Image_23_sept_2026_20260923195119.jpeg";
+
 export default function MessageOverlay({ user, preselectedEmail, onClose, onMessagesRead }) {
   const [contacts, setContacts] = useState([]);
   const [freshUsers, setFreshUsers] = useState({});
@@ -48,12 +52,14 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
         const key = (otherEmail || "").toLowerCase();
         if (key && !friendEmails.has(key) && !seenEmails.has(key)) {
           seenEmails.add(key);
+          const isOfficial = key === SUPPORT_EMAIL;
           dmContacts.push({
             id: "dm_" + key,
             friend_user_id: null,
             friend_email: otherEmail,
-            friend_name: otherName || otherEmail?.split("@")[0] || "Contact",
-            is_dm_contact: true,
+            friend_name: isOfficial ? SUPPORT_NAME : (otherName || otherEmail?.split("@")[0] || "Contact"),
+            is_dm_contact: false,
+            is_official: isOfficial,
             last_dm_date: dm.created_date,
           });
         }
@@ -103,13 +109,15 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
   // Resolve contact info from fresh user data or DM contact fallback
   const resolveContact = (contact) => {
     const fresh = contact?.friend_user_id ? freshUsers[contact.friend_user_id] : null;
+    const isOfficial = contact?.is_official || (contact?.friend_email?.toLowerCase() === SUPPORT_EMAIL);
     return {
       email: fresh?.email || contact?.friend_email || "",
-      name: stripPseudoTag(fresh?.pseudo) || stripPseudoTag(fresh?.full_name) || contact?.friend_name || "Utilisateur",
-      pseudo: stripPseudoTag(fresh?.pseudo) || stripPseudoTag(fresh?.full_name) || contact?.friend_name || "Utilisateur",
+      name: isOfficial ? SUPPORT_NAME : (stripPseudoTag(fresh?.pseudo) || stripPseudoTag(fresh?.full_name) || contact?.friend_name || "Utilisateur"),
+      pseudo: isOfficial ? SUPPORT_NAME : (stripPseudoTag(fresh?.pseudo) || stripPseudoTag(fresh?.full_name) || contact?.friend_name || "Utilisateur"),
       rawUserId: contact?.friend_user_id || fresh?.id || "",
-      avatar: fresh?.avatar_url || "",
-      online: isUserOnline(fresh?.last_seen),
+      avatar: isOfficial ? SUPPORT_AVATAR : (fresh?.avatar_url || contact?.sender_avatar || ""),
+      online: isOfficial ? true : isUserOnline(fresh?.last_seen),
+      isOfficial,
     };
   };
 
@@ -297,7 +305,8 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
               </div>
             ) : (
               (() => {
-                const friendContacts = dedupedContacts.filter(c => !c.is_dm_contact);
+                const officialContacts = dedupedContacts.filter(c => c.is_official);
+                const friendContacts = dedupedContacts.filter(c => !c.is_dm_contact && !c.is_official);
                 const requestContacts = dedupedContacts.filter(c => c.is_dm_contact);
                 const renderContact = (contact) => {
                   const info = resolveContact(contact);
@@ -327,6 +336,12 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
                 };
                 return (
                   <>
+                    {officialContacts.length > 0 && (
+                      <>
+                        <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider" style={{ color: "#a855f7" }}>Équipe Matrix</p>
+                        {officialContacts.map(renderContact)}
+                      </>
+                    )}
                     {friendContacts.length > 0 && (
                       <>
                         <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white/30">Amis</p>
