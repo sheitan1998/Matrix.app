@@ -118,18 +118,17 @@ export default function TranslationButton() {
   };
 
   return (
-    <div className="relative pl-16" ref={ref}>
+    <div className="relative shrink-0" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 rounded-full transition tap-sm pt-2 pr-3 pb-2 pl-3 ml-32 mt-10 mb-16"
+        className="flex items-center justify-center gap-1.5 w-9 h-9 rounded-full transition tap-sm"
         style={{
           border: "1.5px solid rgba(168,85,247,0.4)",
           background: "rgba(168,85,247,0.05)"
         }}
         title="Changer de langue">
         
-        <Globe className="w-3.5 h-3.5 text-white" />
-        <span className="text-xs font-bold text-white">{currentLang.toUpperCase()}</span>
+        <Globe className="w-4 h-4" style={{ color: "#a855f7" }} />
       </button>
 
       {open &&
@@ -158,6 +157,7 @@ export default function TranslationButton() {
 
       {/* Hidden Google Translate element */}
       <div id="google_translate_element" style={{ display: "none" }} />
-    </div>);
+    </div>
+  );
 
 }
