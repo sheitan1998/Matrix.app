@@ -23,7 +23,26 @@ export default function TranslationButton() {
 
   useEffect(() => {
     const stored = localStorage.getItem("matrix_lang");
-    if (stored) setCurrentLang(stored);
+    if (stored) {
+      setCurrentLang(stored);
+      return;
+    }
+    // No stored preference — detect browser language on first visit
+    const browserLang = navigator.language || (navigator.languages && navigator.languages[0]) || "fr";
+    const fullLang = browserLang.toLowerCase();
+    const baseLang = fullLang.split("-")[0];
+
+    // Match against supported languages (try exact match first, then base language)
+    const supported =
+      LANGUAGES.find((l) => l.code === fullLang) ||
+      LANGUAGES.find((l) => l.code === baseLang);
+
+    if (supported && supported.code !== "fr") {
+      selectLanguage(supported.code);
+    } else {
+      setCurrentLang("fr");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
