@@ -100,6 +100,14 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(true);
       setIsLoadingAuth(false);
       setAuthChecked(true);
+
+      // Send welcome message for new users (idempotent — backend checks if already sent)
+      if (currentUser?.email) {
+        base44.functions.invoke('sendWelcomeMessage', {
+          user_email: currentUser.email,
+          user_pseudo: currentUser.pseudo || currentUser.full_name || '',
+        }).catch(() => {});
+      }
     } catch (error) {
       console.error('User auth check failed:', error);
       setIsLoadingAuth(false);

@@ -35,6 +35,16 @@
       "default": false,
       "description": "Statut de lecture"
     },
+    "is_read_only": {
+      "type": "boolean",
+      "default": false,
+      "description": "Fil de discussion en lecture seule (l'utilisateur ne peut pas repondre)"
+    },
+    "is_welcome_message": {
+      "type": "boolean",
+      "default": false,
+      "description": "Message de bienvenue systeme"
+    },
     "ticket_id": {
       "type": "string",
       "description": "ID du ticket de support associe (pour suppression a la fermeture du ticket)"

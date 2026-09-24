@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Send, Search, X, Mail, User, Smile, Trash2 } from "lucide-react";
+import { ArrowLeft, Send, Search, X, Mail, User, Smile, Trash2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { playMessageSound } from "@/lib/messageSound";
 import { isUserOnline } from "@/hooks/usePresence";
@@ -152,6 +152,9 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
       }
     }).catch(() => {});
   }, [selectedContact, user, freshUsers]);
+
+  // Determine if the current conversation is read-only (e.g. welcome message from Support)
+  const isReadOnlyConversation = messages.some(m => m.is_read_only);
 
   // Real-time subscription for new messages in the current conversation
   useEffect(() => {
@@ -429,46 +432,55 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
 
             {/* Input */}
             <div className="px-4 py-3 shrink-0 relative" style={{ borderTop: "1px solid rgba(168,85,247,0.1)" }}>
-              {isBlocked && (
-                <p className="text-xs text-red-400 mb-2 text-center">⛔ Vous ne pouvez pas envoyer de message à cet utilisateur (bloqué).</p>
-              )}
-              {showEmojis && (
-                <div className="absolute bottom-full left-4 mb-2 p-2 rounded-xl flex flex-wrap gap-1 max-w-[280px]" style={{ background: "#13101a", border: "1px solid rgba(168,85,247,0.2)" }}>
-                  {EMOJI_LIST.map(emoji => (
-                    <button key={emoji} onClick={() => setInput(prev => prev + emoji)} className="w-7 h-7 text-lg hover:bg-white/10 rounded transition tap-sm">{emoji}</button>
-                  ))}
+              {isReadOnlyConversation ? (
+                <div className="flex items-center justify-center gap-2 py-2.5 rounded-xl" style={{ background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.15)" }}>
+                  <Lock className="w-3.5 h-3.5" style={{ color: "#a855f7" }} />
+                  <p className="text-xs font-medium text-white/50">Ce fil de discussion est en lecture seule</p>
                 </div>
+              ) : (
+                <>
+                  {isBlocked && (
+                    <p className="text-xs text-red-400 mb-2 text-center">⛔ Vous ne pouvez pas envoyer de message à cet utilisateur (bloqué).</p>
+                  )}
+                  {showEmojis && (
+                    <div className="absolute bottom-full left-4 mb-2 p-2 rounded-xl flex flex-wrap gap-1 max-w-[280px]" style={{ background: "#13101a", border: "1px solid rgba(168,85,247,0.2)" }}>
+                      {EMOJI_LIST.map(emoji => (
+                        <button key={emoji} onClick={() => setInput(prev => prev + emoji)} className="w-7 h-7 text-lg hover:bg-white/10 rounded transition tap-sm">{emoji}</button>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setShowEmojis(!showEmojis)}
+                      className="w-10 h-10 rounded-xl flex items-center justify-center text-white/60 hover:text-white transition shrink-0 tap-sm"
+                      style={{ background: "rgba(255,255,255,0.04)" }}
+                    >
+                      <Smile className="w-4 h-4" />
+                    </button>
+                    <input
+                      value={input}
+                      onChange={e => setInput(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          sendMessage();
+                        }
+                      }}
+                      placeholder={isBlocked ? "Messages bloqués" : "Écris un message..."}
+                      disabled={isBlocked}
+                      className="flex-1 px-4 py-2.5 rounded-xl bg-black/40 border border-white/5 text-white placeholder:text-white/30 outline-none text-sm disabled:opacity-50"
+                    />
+                    <button
+                      onClick={sendMessage}
+                      disabled={!input.trim() || isBlocked}
+                      className="w-10 h-10 rounded-xl flex items-center justify-center text-white transition disabled:opacity-40 shrink-0"
+                      style={{ background: "linear-gradient(135deg, #7c3aed, #6d28d9)", boxShadow: "0 2px 12px rgba(124,58,237,0.3)" }}
+                    >
+                      <Send className="w-4 h-4" />
+                    </button>
+                  </div>
+                </>
               )}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setShowEmojis(!showEmojis)}
-                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white/60 hover:text-white transition shrink-0 tap-sm"
-                  style={{ background: "rgba(255,255,255,0.04)" }}
-                >
-                  <Smile className="w-4 h-4" />
-                </button>
-                <input
-                  value={input}
-                  onChange={e => setInput(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      sendMessage();
-                    }
-                  }}
-                  placeholder={isBlocked ? "Messages bloqués" : "Écris un message..."}
-                  disabled={isBlocked}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-black/40 border border-white/5 text-white placeholder:text-white/30 outline-none text-sm disabled:opacity-50"
-                />
-                <button
-                  onClick={sendMessage}
-                  disabled={!input.trim() || isBlocked}
-                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white transition disabled:opacity-40 shrink-0"
-                  style={{ background: "linear-gradient(135deg, #7c3aed, #6d28d9)", boxShadow: "0 2px 12px rgba(124,58,237,0.3)" }}
-                >
-                  <Send className="w-4 h-4" />
-                </button>
-              </div>
             </div>
           </div>
         ) : (
