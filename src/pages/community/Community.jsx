@@ -17,12 +17,12 @@ import NexusVIPShop from "@/components/nexus/NexusVIPShop";
 import ServerBoostButton from "@/components/community/ServerBoostButton";
 import UserProfilePopup from "@/components/profile/UserProfilePopup";
 import ProfileContent from "@/components/profile/ProfileContent";
+import UserBar from "@/components/community/UserBar";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { VISUAL_THEMES, getTheme } from "@/lib/visualThemes";
 import { useProgression } from "@/context/ProgressionContext";
 import { getRank } from "@/lib/progressionData";
-import { stripPseudoTag } from "@/lib/format";
 import { canonicalAppUrl } from "@/lib/canonicalOrigin";
 import { Gamepad2, Cpu, Music, Palette, Film, Newspaper } from "lucide-react";
 
@@ -399,25 +399,11 @@ export default function Community() {
             })}
             </div>
 
-            {/* User widget with XP — clickable to open profile */}
-            {user && progress && rank &&
-          <button onClick={() => setShowProfile(true)}
-          className="mx-2 mt-3 p-3 rounded-2xl w-[calc(100%-1rem)] text-left transition hover:opacity-80"
-          style={{ background: "rgba(18,18,21,0.8)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-9 h-9 rounded-full overflow-hidden shrink-0" style={{ border: `1.5px solid ${rank.color}40` }}>
-                    {user.avatar_url ? <img src={user.avatar_url} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full flex items-center justify-center text-xs font-bold bg-secondary">{user.full_name?.[0] || "U"}</div>}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-white truncate">{stripPseudoTag(user.full_name) || user.email?.split("@")[0]}</p>
-                    <p className="text-[10px]" style={{ color: rank.color }}>{rank.icon} Niv. {progress.level}</p>
-                  </div>
-                </div>
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
-                  <div className="h-full rounded-full" style={{ width: `${Math.min(100, progress.xp / (100 * Math.pow(progress.level, 1.4)) * 100)}%`, background: "linear-gradient(90deg, #a855f7, #6d28d9)" }} />
-                </div>
-                <p className="text-[9px] text-white/30 mt-1 font-mono">{progress.xp.toLocaleString()} XP</p>
-              </button>
+            {/* Discord-like user bar at the bottom */}
+            {user &&
+          <div className="mt-auto">
+                <UserBar user={user} progress={progress} rank={rank} onOpenProfile={() => setShowProfile(true)} />
+              </div>
           }
           </div>
         }
@@ -469,7 +455,7 @@ export default function Community() {
               }}
             />
 
-
+            <UserBar user={user} progress={progress} rank={rank} onOpenProfile={() => setShowProfile(true)} />
           </div>
         }
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { base44 } from "@/api/base44Client";
 import { X, MessageCircle, UserPlus, UserMinus, Ban, Shield, Crown, Send } from "lucide-react";
@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { ACHIEVEMENTS } from "@/lib/achievementsData";
 import ProfileAnimationLayer from "@/components/profile/ProfileAnimationLayer";
 import { getCosmeticIconImageUrl } from "@/lib/cosmeticAssetUrl";
+
+const PANEL_ID = "user-profile-side-panel";
 
 const RARITY_COLORS = {
   common: "#9ca3af", rare: "#3b82f6", epic: "#a855f7", legendary: "#f59e0b",
@@ -66,6 +68,23 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
     };
     fetchProfile();
   }, [open, userId, userEmail]);
+
+  const panelRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleEscape = (e) => { if (e.key === "Escape") onClose(); };
+    const handleClickOutside = (e) => {
+      if (panelRef.current && !panelRef.current.contains(e.target)) onClose();
+    };
+    document.addEventListener("keydown", handleEscape);
+    const timer = setTimeout(() => document.addEventListener("click", handleClickOutside), 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("keydown", handleEscape);
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, [open, onClose]);
 
   if (!open) return null;
 
@@ -145,7 +164,11 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
 
   if (loading) {
     return createPortal(
-      <div className="fixed inset-0 z-[90] flex items-center justify-center" style={{ background: "rgba(0,0,0,0.8)", backdropFilter: "blur(8px)" }}>
+      <div
+        id={PANEL_ID}
+        className="fixed right-0 top-0 bottom-0 z-[90] w-full max-w-sm flex items-center justify-center"
+        style={{ background: "#18191c", borderLeft: "1px solid rgba(168,85,247,0.2)", boxShadow: "-8px 0 24px rgba(0,0,0,0.4)" }}
+      >
         <div className="w-9 h-9 border-4 border-white/10 rounded-full animate-spin" style={{ borderTopColor: "#a855f7" }} />
       </div>,
       document.body
@@ -154,14 +177,13 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[90] flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.8)", backdropFilter: "blur(8px)" }}
-      onClick={onClose}
+      ref={panelRef}
+      id={PANEL_ID}
+      className="fixed right-0 top-0 bottom-0 z-[90] w-full max-w-sm overflow-y-auto scrollbar-thin"
+      style={{ background: "#18191c", borderLeft: "1px solid rgba(168,85,247,0.2)", boxShadow: "-8px 0 24px rgba(0,0,0,0.4)" }}
     >
       <div
-        className="w-full max-w-sm rounded-3xl overflow-hidden flex flex-col"
-        style={{ background: "#18191c", border: "1px solid rgba(168,85,247,0.2)" }}
-        onClick={(e) => e.stopPropagation()}
+        className="w-full flex flex-col"
       >
         {/* Header banner */}
         <div className="h-20 relative" style={{ background: "linear-gradient(135deg, #a5a1d7, #8b87c4)" }}>
