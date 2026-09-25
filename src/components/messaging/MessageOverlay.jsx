@@ -13,6 +13,17 @@ const SUPPORT_EMAIL = "support@matrix-hub.app";
 const SUPPORT_NAME = "Équipe Matrix";
 const SUPPORT_AVATAR = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/7f40ce19c_ChatGPT_Image_23_sept_2026_20260923195119.jpeg";
 
+const TICKET_SUPPORT_EMAIL = "support-tickets@matrix-hub.app";
+const TICKET_SUPPORT_NAME = "Support";
+const TICKET_SUPPORT_AVATAR = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/7f40ce19c_ChatGPT_Image_23_sept_2026_20260923195119.jpeg";
+
+function resolveOfficialIdentity(emailKey) {
+  const key = (emailKey || "").toLowerCase();
+  if (key === TICKET_SUPPORT_EMAIL) return { name: TICKET_SUPPORT_NAME, avatar: TICKET_SUPPORT_AVATAR, isTicket: true };
+  if (key === SUPPORT_EMAIL) return { name: SUPPORT_NAME, avatar: SUPPORT_AVATAR, isTicket: false };
+  return null;
+}
+
 export default function MessageOverlay({ user, preselectedEmail, onClose, onMessagesRead }) {
   const [contacts, setContacts] = useState([]);
   const [freshUsers, setFreshUsers] = useState({});
@@ -52,12 +63,13 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
         const key = (otherEmail || "").toLowerCase();
         if (key && !friendEmails.has(key) && !seenEmails.has(key)) {
           seenEmails.add(key);
-          const isOfficial = key === SUPPORT_EMAIL;
+          const official = resolveOfficialIdentity(key);
+          const isOfficial = !!official;
           dmContacts.push({
             id: "dm_" + key,
             friend_user_id: null,
             friend_email: otherEmail,
-            friend_name: isOfficial ? SUPPORT_NAME : (otherName || otherEmail?.split("@")[0] || "Contact"),
+            friend_name: official ? official.name : (otherName || otherEmail?.split("@")[0] || "Contact"),
             is_dm_contact: false,
             is_official: isOfficial,
             last_dm_date: dm.created_date,
@@ -109,13 +121,16 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
   // Resolve contact info from fresh user data or DM contact fallback
   const resolveContact = (contact) => {
     const fresh = contact?.friend_user_id ? freshUsers[contact.friend_user_id] : null;
-    const isOfficial = contact?.is_official || (contact?.friend_email?.toLowerCase() === SUPPORT_EMAIL);
+    const official = resolveOfficialIdentity(contact?.friend_email);
+    const isOfficial = !!official;
+    const officialName = official?.name || SUPPORT_NAME;
+    const officialAvatar = official?.avatar || SUPPORT_AVATAR;
     return {
       email: fresh?.email || contact?.friend_email || "",
-      name: isOfficial ? SUPPORT_NAME : (stripPseudoTag(fresh?.pseudo) || stripPseudoTag(fresh?.full_name) || contact?.friend_name || "Utilisateur"),
-      pseudo: isOfficial ? SUPPORT_NAME : (stripPseudoTag(fresh?.pseudo) || stripPseudoTag(fresh?.full_name) || contact?.friend_name || "Utilisateur"),
+      name: isOfficial ? officialName : (stripPseudoTag(fresh?.pseudo) || stripPseudoTag(fresh?.full_name) || contact?.friend_name || "Utilisateur"),
+      pseudo: isOfficial ? officialName : (stripPseudoTag(fresh?.pseudo) || stripPseudoTag(fresh?.full_name) || contact?.friend_name || "Utilisateur"),
       rawUserId: contact?.friend_user_id || fresh?.id || "",
-      avatar: isOfficial ? SUPPORT_AVATAR : (fresh?.avatar_url || contact?.sender_avatar || ""),
+      avatar: isOfficial ? officialAvatar : (fresh?.avatar_url || contact?.sender_avatar || ""),
       online: isOfficial ? true : isUserOnline(fresh?.last_seen),
       isOfficial,
     };
@@ -223,8 +238,8 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
       is_read: false,
     };
 
-    // If messaging Support, route through the ticket system
-    if (contactEmail.toLowerCase() === SUPPORT_EMAIL) {
+    // If messaging Support (tickets), route through the ticket system
+    if (contactEmail.toLowerCase() === TICKET_SUPPORT_EMAIL) {
       const ticketMsg = [...messages].reverse().find(m => m.ticket_id);
       if (ticketMsg) {
         setMessages(prev => [...prev, { ...msgData, id: tempId, created_date: new Date().toISOString(), ticket_id: ticketMsg.ticket_id }]);
@@ -327,6 +342,8 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
             ) : (
               (() => {
                 const officialContacts = dedupedContacts.filter(c => c.is_official);
+                const teamContacts = officialContacts.filter(c => c.friend_email?.toLowerCase() === SUPPORT_EMAIL);
+                const ticketContacts = officialContacts.filter(c => c.friend_email?.toLowerCase() === TICKET_SUPPORT_EMAIL);
                 const friendContacts = dedupedContacts.filter(c => !c.is_dm_contact && !c.is_official);
                 const requestContacts = dedupedContacts.filter(c => c.is_dm_contact);
                 const renderContact = (contact) => {
@@ -357,10 +374,16 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
                 };
                 return (
                   <>
-                    {officialContacts.length > 0 && (
+                    {teamContacts.length > 0 && (
                       <>
                         <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider" style={{ color: "#a855f7" }}>Équipe Matrix</p>
-                        {officialContacts.map(renderContact)}
+                        {teamContacts.map(renderContact)}
+                      </>
+                    )}
+                    {ticketContacts.length > 0 && (
+                      <>
+                        <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider" style={{ color: "#a855f7" }}>Support</p>
+                        {ticketContacts.map(renderContact)}
                       </>
                     )}
                     {friendContacts.length > 0 && (

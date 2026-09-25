@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { SUPPORT_EMAIL, SUPPORT_NAME, SUPPORT_AVATAR } from '../../shared/supportAccount.ts';
+import { TICKET_SUPPORT_EMAIL as SUPPORT_EMAIL, TICKET_SUPPORT_NAME as SUPPORT_NAME, TICKET_SUPPORT_AVATAR as SUPPORT_AVATAR } from '../../shared/supportAccount.ts';
 
 // Strip HTML tags and limit length to sanitize user-controlled strings before
 // embedding them into system-generated messages (prevents XSS / content injection).
