@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ACHIEVEMENTS } from "@/lib/achievementsData";
 import ProfileAnimationLayer from "@/components/profile/ProfileAnimationLayer";
 import { getCosmeticIconImageUrl } from "@/lib/cosmeticAssetUrl";
+import { isUserOnline, getActivityIcon } from "@/hooks/usePresence";
 
 const PANEL_ID = "user-profile-side-panel";
 
@@ -238,13 +239,33 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
             </div>
           </div>
 
-          {/* Mutual connections (placeholder) */}
-          <div className="flex items-center gap-1.5 mt-3">
-            <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.08)" }}>
-              <span className="text-[8px] text-white/40">?</span>
-            </div>
-            <p className="text-[10px] text-white/40">Profil Matrix · Niveau {level}</p>
-          </div>
+          {/* Activity status (Discord-style) */}
+          {(() => {
+            const online = isUserOnline(profile?.last_seen);
+            const activity = profile?.current_activity;
+            const activityType = profile?.current_activity_type || "idle";
+            if (online && activity) {
+              return (
+                <div className="mt-3 p-2.5 rounded-xl flex items-center gap-2" style={{ background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.15)" }}>
+                  <span className="text-base shrink-0">{getActivityIcon(activityType)}</span>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold text-white/80 truncate">{activity}</p>
+                    <p className="text-[9px] text-white/40">Activité en cours</p>
+                  </div>
+                  <span className="ml-auto w-2 h-2 rounded-full shrink-0" style={{ background: "#44ff88" }} />
+                </div>
+              );
+            }
+            return (
+              <div className="mt-3 p-2.5 rounded-xl flex items-center gap-2" style={{ background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.04)" }}>
+                <span className="text-base shrink-0 opacity-50">💤</span>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold text-white/50">{online ? "En ligne" : "Hors ligne"}</p>
+                  <p className="text-[9px] text-white/30">{online ? "Aucune activité" : "Inactif"}</p>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Stats card (activity-like section) */}
           <div className="mt-3 p-3 rounded-xl" style={{ background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.04)" }}>

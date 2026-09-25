@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Crown, Shield, MessageCircle } from "lucide-react";
 import UserProfilePopup from "@/components/profile/UserProfilePopup";
 import { stripPseudoTag } from "@/lib/format";
+import { isUserOnline, getActivityIcon } from "@/hooks/usePresence";
 
 const ROLE_ICONS = {
   admin: { icon: Crown, color: "#f59e0b" },
@@ -20,6 +21,26 @@ export default function MembersList({ server, theme, currentUserEmail, onOpenDm 
   });
 
   const accent = theme?.accent || "hsl(var(--primary))";
+
+  // Fetch fresh user data (activity, last_seen, avatar) for all members
+  const memberEmails = members.map((m) => m.user_email).filter(Boolean);
+  const { data: userData = [] } = useQuery({
+    queryKey: ["member-activities", memberEmails.join(",")],
+    queryFn: () =>
+      base44.functions.invoke("serverSearch", {
+        action: "getUsersByEmails",
+        emails: memberEmails,
+      }),
+    enabled: memberEmails.length > 0,
+    refetchInterval: 15000,
+    select: (res) => res?.data?.users || [],
+  });
+
+  // Build email → user data map
+  const userMap = {};
+  (userData || []).forEach((u) => {
+    if (u.email) userMap[u.email.toLowerCase()] = u;
+  });
 
   // Separate owner, admins, mods, members
   const owner = members.find((m) => m.user_email === server.owner_email);
@@ -55,6 +76,10 @@ export default function MembersList({ server, theme, currentUserEmail, onOpenDm 
                 const isOwner = m.user_email === server.owner_email;
                 const isMe = m.user_email === currentUserEmail;
                 const customRole = m.custom_role;
+                const freshUser = userMap[(m.user_email || "").toLowerCase()];
+                const online = isUserOnline(freshUser?.last_seen);
+                const activity = freshUser?.current_activity;
+                const activityType = freshUser?.current_activity_type || "idle";
 
                 return (
                   <div key={m.id}
@@ -71,7 +96,7 @@ export default function MembersList({ server, theme, currentUserEmail, onOpenDm 
                         }
                       </div>
                       <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border border-black"
-                        style={{ background: "#44ff88" }} />
+                        style={{ background: online ? "#44ff88" : "#444" }} />
                     </button>
 
                     <div className="flex-1 min-w-0">
@@ -84,7 +109,17 @@ export default function MembersList({ server, theme, currentUserEmail, onOpenDm 
                           {isMe && " (toi)"}
                         </button>
                       </div>
-                      {customRole && (
+                      {/* Activity status line (Discord-style) */}
+                      {online && activity ? (
+                        <p className="text-[8px] truncate leading-none mt-0.5 flex items-center gap-0.5"
+                          style={{ color: accent + "aa" }}>
+                          <span className="text-[8px]">{getActivityIcon(activityType)}</span>
+                          <span className="truncate">{activity}</span>
+                        </p>
+                      ) : !online ? (
+                        <p className="text-[8px] text-white/20 truncate leading-none mt-0.5">Hors ligne</p>
+                      ) : null}
+                      {customRole && !activity && (
                         <p className="text-[9px] truncate leading-none mt-0.5"
                           style={{ color: accent + "cc" }}>
                           {customRole}

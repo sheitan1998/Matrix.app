@@ -85,6 +85,24 @@
       "format": "date-time",
       "description": "Derniere fois que l'utilisateur etait actif"
     },
+    "current_activity": {
+      "type": "string",
+      "description": "Activite en cours de l'utilisateur (ex: Joue au Casino, Regarde des Shorts)"
+    },
+    "current_activity_type": {
+      "type": "string",
+      "enum": [
+        "gaming",
+        "streaming",
+        "browsing",
+        "creating",
+        "social",
+        "shopping",
+        "idle"
+      ],
+      "default": "idle",
+      "description": "Categorie d'activite pour l'affichage d'icone"
+    },
     "is_muted": {
       "type": "boolean",
       "default": false,

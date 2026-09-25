@@ -325,6 +325,9 @@ export default async function(req: Request): Promise<Response> {
             pseudo: displayPseudo,
             pseudo_tag: target.pseudo_tag || '',
             avatar_url: target.avatar_url || '',
+            last_seen: target.last_seen || '',
+            current_activity: target.current_activity || '',
+            current_activity_type: target.current_activity_type || 'idle',
           },
         });
       }
@@ -351,9 +354,40 @@ export default async function(req: Request): Promise<Response> {
               pseudo: displayPseudo,
               avatar_url: u.avatar_url || '',
               last_seen: u.last_seen || '',
+              current_activity: u.current_activity || '',
+              current_activity_type: u.current_activity_type || 'idle',
             };
           });
         console.log('[getUsersByIds] requested:', ids.length, '| found:', users.length);
+        return Response.json({ users });
+      }
+
+      // ---- Fetch user profiles by email (for member lists) ----
+      case 'getUsersByEmails': {
+        const { emails } = params;
+        if (!emails || !Array.isArray(emails) || emails.length === 0) {
+          return Response.json({ users: [] });
+        }
+        const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
+        const emailSet = new Set(emails.map((e: string) => e.toLowerCase()));
+        const users = allUsers
+          .filter(u => u.email && emailSet.has(u.email.toLowerCase()))
+          .map(u => {
+            let displayPseudo = u.pseudo || '';
+            if (!displayPseudo.includes('#') && u.pseudo_tag) {
+              displayPseudo = `${displayPseudo}#${u.pseudo_tag}`;
+            }
+            return {
+              id: u.id,
+              email: u.email,
+              full_name: u.full_name || '',
+              pseudo: displayPseudo,
+              avatar_url: u.avatar_url || '',
+              last_seen: u.last_seen || '',
+              current_activity: u.current_activity || '',
+              current_activity_type: u.current_activity_type || 'idle',
+            };
+          });
         return Response.json({ users });
       }
 
