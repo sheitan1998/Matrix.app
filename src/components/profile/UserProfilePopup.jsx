@@ -166,10 +166,12 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
     return createPortal(
       <div
         id={PANEL_ID}
-        className="fixed right-0 top-0 bottom-0 z-[90] w-full max-w-sm flex items-center justify-center"
-        style={{ background: "#18191c", borderLeft: "1px solid rgba(168,85,247,0.2)", boxShadow: "-8px 0 24px rgba(0,0,0,0.4)" }}
+        className="fixed right-4 top-20 z-[90] w-80 max-w-[calc(100vw-2rem)]"
+        style={{ background: "#18191c", borderRadius: "16px", border: "1px solid rgba(168,85,247,0.2)", boxShadow: "0 8px 32px rgba(0,0,0,0.5)", padding: "24px" }}
       >
-        <div className="w-9 h-9 border-4 border-white/10 rounded-full animate-spin" style={{ borderTopColor: "#a855f7" }} />
+        <div className="flex items-center justify-center">
+          <div className="w-9 h-9 border-4 border-white/10 rounded-full animate-spin" style={{ borderTopColor: "#a855f7" }} />
+        </div>
       </div>,
       document.body
     );
@@ -179,8 +181,8 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
     <div
       ref={panelRef}
       id={PANEL_ID}
-      className="fixed right-0 top-0 bottom-0 z-[90] w-full max-w-sm overflow-y-auto scrollbar-thin"
-      style={{ background: "#18191c", borderLeft: "1px solid rgba(168,85,247,0.2)", boxShadow: "-8px 0 24px rgba(0,0,0,0.4)" }}
+      className="fixed right-4 top-20 z-[90] w-80 max-w-[calc(100vw-2rem)] max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-thin rounded-2xl"
+      style={{ background: "#18191c", border: "1px solid rgba(168,85,247,0.2)", boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}
     >
       <div
         className="w-full flex flex-col"
