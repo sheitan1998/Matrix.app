@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
@@ -7,7 +7,7 @@ import { DETECTABLE_GAMES } from "@/lib/detectedGames";
 
 const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
 const VISIBILITY_UPDATE_DELAY = 2000; // 2 seconds after tab becomes visible
-const GAME_DETECTION_INTERVAL = 60 * 1000; // 60 seconds
+const GAME_DETECTION_INTERVAL = 15 * 1000; // 15 seconds — responsive detection
 
 /**
  * Maps a route path to a human-readable activity label.
@@ -73,7 +73,7 @@ async function detectRunningGame() {
       const key = result[0].toLowerCase().replace(/\.exe$/i, "").trim();
       return DETECTABLE_GAMES[key] || null;
     }
-  } catch {
+  } catch (e) {
     // Not in Tauri environment or command not available — silently ignore
   }
   return null;
@@ -88,9 +88,8 @@ async function detectRunningGame() {
  * 2. Detected game (via Tauri process detection)
  * 3. Route-based activity
  *
- * Updates every 30 seconds while the app is open, immediately when the tab
- * becomes visible again, and whenever the route changes.
- * Game detection runs every 60 seconds.
+ * Game detection runs every 15 seconds and triggers an immediate presence
+ * push when the detected game changes.
  */
 export function usePresence() {
   const { isAuthenticated, user } = useAuth();
@@ -100,65 +99,66 @@ export function usePresence() {
   const lastActivityRef = useRef(null);
   const detectedGameRef = useRef(null);
 
-  // Game detection loop — runs independently of route changes
+  const updatePresence = useCallback(() => {
+    // Priority: custom status > detected game > route-based activity
+    let label, type;
+
+    if (user?.custom_status) {
+      label = user.custom_status;
+      type = "custom";
+    } else if (detectedGameRef.current) {
+      label = `Joue à ${detectedGameRef.current.label}`;
+      type = "gaming";
+    } else {
+      const routeActivity = getActivityFromPath(location.pathname);
+      label = routeActivity.label;
+      type = routeActivity.type;
+    }
+
+    const activityKey = label + "|" + type;
+    if (activityKey !== lastActivityRef.current) {
+      lastActivityRef.current = activityKey;
+    }
+
+    base44.auth
+      .updateMe({
+        last_seen: new Date().toISOString(),
+        current_activity: label,
+        current_activity_type: type,
+      })
+      .catch(() => {});
+  }, [user?.custom_status, location.pathname]);
+
+  // Game detection loop — detects games and immediately pushes presence update
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    const detectGame = async () => {
+    const detectAndPush = async () => {
       const game = await detectRunningGame();
+      const prevLabel = detectedGameRef.current?.label || null;
+      const newLabel = game?.label || null;
       detectedGameRef.current = game;
+      // Immediately push a presence update if the detected game changed
+      if (prevLabel !== newLabel) {
+        updatePresence();
+      }
     };
 
-    detectGame();
-    gameDetectionRef.current = setInterval(detectGame, GAME_DETECTION_INTERVAL);
+    detectAndPush();
+    gameDetectionRef.current = setInterval(detectAndPush, GAME_DETECTION_INTERVAL);
 
     return () => {
       if (gameDetectionRef.current) clearInterval(gameDetectionRef.current);
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, updatePresence]);
 
-  // Presence update loop
+  // Presence update loop — route-based + periodic refresh
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    const updatePresence = () => {
-      // Priority: custom status > detected game > route-based activity
-      let label, type;
-
-      if (user?.custom_status) {
-        label = user.custom_status;
-        type = "custom";
-      } else if (detectedGameRef.current) {
-        label = `Joue à ${detectedGameRef.current.label}`;
-        type = "gaming";
-      } else {
-        const routeActivity = getActivityFromPath(location.pathname);
-        label = routeActivity.label;
-        type = routeActivity.type;
-      }
-
-      const activityKey = label + "|" + type;
-      const shouldUpdateActivity = activityKey !== lastActivityRef.current;
-      if (shouldUpdateActivity) {
-        lastActivityRef.current = activityKey;
-      }
-
-      base44.auth
-        .updateMe({
-          last_seen: new Date().toISOString(),
-          current_activity: label,
-          current_activity_type: type,
-        })
-        .catch(() => {});
-    };
-
-    // Update immediately
     updatePresence();
-
-    // Set up interval
     intervalRef.current = setInterval(updatePresence, PRESENCE_UPDATE_INTERVAL);
 
-    // Update when tab becomes visible again
     const handleVisibility = () => {
       if (!document.hidden) {
         setTimeout(updatePresence, VISIBILITY_UPDATE_DELAY);
@@ -170,7 +170,7 @@ export function usePresence() {
       if (intervalRef.current) clearInterval(intervalRef.current);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [isAuthenticated, location.pathname, user?.custom_status]);
+  }, [isAuthenticated, updatePresence]);
 }
 
 /**
