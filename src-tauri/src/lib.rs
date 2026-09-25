@@ -21,7 +21,8 @@ pub fn run() {
             handle_oauth_callback,
             check_for_updates,
             install_update,
-            get_current_version
+            get_current_version,
+            detect_running_games
         ])
         .run(tauri::generate_context!())
         .expect("error while running Matrix");
@@ -201,4 +202,38 @@ async fn install_update(app: tauri::AppHandle) -> Result<serde_json::Value, Stri
 #[tauri::command]
 fn get_current_version(app: tauri::AppHandle) -> Result<String, String> {
     Ok(app.package_info().version.to_string())
+}
+
+/// Détecte les jeux en cours d'exécution à partir d'une liste de noms de processus.
+/// Retourne les noms de processus correspondants trouvés parmi ceux en cours.
+#[tauri::command]
+fn detect_running_games(process_names: Vec<String>) -> Result<Vec<String>, String> {
+    use sysinfo::{ProcessRefreshKind, RefreshKind, System};
+
+    let mut system = System::new();
+    system.refresh_processes_specifics(
+        RefreshKind::everything().with_processes(ProcessRefreshKind::everything()),
+    );
+
+    // Build a lowercase set of target process names (without .exe extension)
+    let targets: std::collections::HashSet<String> = process_names
+        .iter()
+        .map(|name| name.to_lowercase().replace(".exe", ""))
+        .collect();
+
+    let mut found: Vec<String> = Vec::new();
+
+    for (_, process) in system.processes() {
+        let proc_name = process
+            .name()
+            .to_string_lossy()
+            .to_lowercase()
+            .replace(".exe", "");
+
+        if targets.contains(&proc_name) && !found.contains(&proc_name) {
+            found.push(proc_name);
+        }
+    }
+
+    Ok(found)
 }

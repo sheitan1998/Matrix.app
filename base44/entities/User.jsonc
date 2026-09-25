@@ -98,10 +98,16 @@
         "creating",
         "social",
         "shopping",
-        "idle"
+        "idle",
+        "custom"
       ],
       "default": "idle",
       "description": "Categorie d'activite pour l'affichage d'icone"
+    },
+    "custom_status": {
+      "type": "string",
+      "maxLength": 80,
+      "description": "Statut personnalise defini par l'utilisateur (prioritaire sur la detection automatique)"
     },
     "is_muted": {
       "type": "boolean",

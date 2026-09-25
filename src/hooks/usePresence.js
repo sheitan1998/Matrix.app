@@ -2,9 +2,12 @@ import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
+import { getTauriInvoke } from "@/lib/tauriInvoke";
+import { DETECTABLE_GAMES } from "@/lib/detectedGames";
 
 const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
 const VISIBILITY_UPDATE_DELAY = 2000; // 2 seconds after tab becomes visible
+const GAME_DETECTION_INTERVAL = 60 * 1000; // 60 seconds
 
 /**
  * Maps a route path to a human-readable activity label.
@@ -12,7 +15,6 @@ const VISIBILITY_UPDATE_DELAY = 2000; // 2 seconds after tab becomes visible
 function getActivityFromPath(pathname) {
   if (!pathname) return { label: "En ligne", type: "idle" };
 
-  // Order matters — more specific routes first
   const map = [
     { match: "/casino", label: "Joue au Casino", type: "gaming" },
     { match: "/shorts", label: "Regarde des Shorts", type: "streaming" },
@@ -56,28 +58,91 @@ function getActivityFromPath(pathname) {
 }
 
 /**
+ * Detects running games by calling the Tauri command `detect_running_games`.
+ * Returns the display info of the first detected game, or null if no game is running
+ * or if not running in a Tauri environment.
+ */
+async function detectRunningGame() {
+  const invoke = await getTauriInvoke();
+  if (!invoke) return null;
+
+  try {
+    const processNames = Object.keys(DETECTABLE_GAMES);
+    const result = await invoke("detect_running_games", { processNames });
+    if (result && Array.isArray(result) && result.length > 0) {
+      const key = result[0].toLowerCase().replace(/\.exe$/i, "").trim();
+      return DETECTABLE_GAMES[key] || null;
+    }
+  } catch {
+    // Not in Tauri environment or command not available — silently ignore
+  }
+  return null;
+}
+
+/**
  * Hook that tracks the user's presence and current activity by updating
  * `last_seen` and `current_activity` on the User entity.
+ *
+ * Activity priority:
+ * 1. Custom status (if set by user)
+ * 2. Detected game (via Tauri process detection)
+ * 3. Route-based activity
+ *
  * Updates every 30 seconds while the app is open, immediately when the tab
  * becomes visible again, and whenever the route changes.
+ * Game detection runs every 60 seconds.
  */
 export function usePresence() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const location = useLocation();
   const intervalRef = useRef(null);
+  const gameDetectionRef = useRef(null);
   const lastActivityRef = useRef(null);
+  const detectedGameRef = useRef(null);
 
+  // Game detection loop — runs independently of route changes
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const detectGame = async () => {
+      const game = await detectRunningGame();
+      detectedGameRef.current = game;
+    };
+
+    detectGame();
+    gameDetectionRef.current = setInterval(detectGame, GAME_DETECTION_INTERVAL);
+
+    return () => {
+      if (gameDetectionRef.current) clearInterval(gameDetectionRef.current);
+    };
+  }, [isAuthenticated]);
+
+  // Presence update loop
   useEffect(() => {
     if (!isAuthenticated) return;
 
     const updatePresence = () => {
-      const { label, type } = getActivityFromPath(location.pathname);
+      // Priority: custom status > detected game > route-based activity
+      let label, type;
+
+      if (user?.custom_status) {
+        label = user.custom_status;
+        type = "custom";
+      } else if (detectedGameRef.current) {
+        label = `Joue à ${detectedGameRef.current.label}`;
+        type = "gaming";
+      } else {
+        const routeActivity = getActivityFromPath(location.pathname);
+        label = routeActivity.label;
+        type = routeActivity.type;
+      }
+
       const activityKey = label + "|" + type;
-      // Only update activity if it changed, but always update last_seen
       const shouldUpdateActivity = activityKey !== lastActivityRef.current;
       if (shouldUpdateActivity) {
         lastActivityRef.current = activityKey;
       }
+
       base44.auth
         .updateMe({
           last_seen: new Date().toISOString(),
@@ -105,7 +170,7 @@ export function usePresence() {
       if (intervalRef.current) clearInterval(intervalRef.current);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [isAuthenticated, location.pathname]);
+  }, [isAuthenticated, location.pathname, user?.custom_status]);
 }
 
 /**
@@ -130,6 +195,7 @@ export function getActivityIcon(type) {
     social: "💬",
     shopping: "🛒",
     idle: "🟢",
+    custom: "✏️",
   };
   return icons[type] || icons.idle;
 }

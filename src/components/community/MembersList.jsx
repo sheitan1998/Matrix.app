@@ -110,7 +110,13 @@ export default function MembersList({ server, theme, currentUserEmail, onOpenDm 
                         </button>
                       </div>
                       {/* Activity status line (Discord-style) */}
-                      {online && activity ? (
+                      {online && freshUser?.custom_status ? (
+                        <p className="text-[8px] truncate leading-none mt-0.5 flex items-center gap-0.5"
+                          style={{ color: "#c084fc" }}>
+                          <span className="text-[8px]">{getActivityIcon("custom")}</span>
+                          <span className="truncate">{freshUser.custom_status}</span>
+                        </p>
+                      ) : online && activity ? (
                         <p className="text-[8px] truncate leading-none mt-0.5 flex items-center gap-0.5"
                           style={{ color: accent + "aa" }}>
                           <span className="text-[8px]">{getActivityIcon(activityType)}</span>

@@ -38,6 +38,12 @@
       "commands": {
         "allow": ["get_current_version"]
       }
+    },
+    {
+      "identifier": "allow-detect-running-games",
+      "commands": {
+        "allow": ["detect_running_games"]
+      }
     }
   ]
 }

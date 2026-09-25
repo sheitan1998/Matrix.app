@@ -328,6 +328,7 @@ export default async function(req: Request): Promise<Response> {
             last_seen: target.last_seen || '',
             current_activity: target.current_activity || '',
             current_activity_type: target.current_activity_type || 'idle',
+            custom_status: target.custom_status || '',
           },
         });
       }
@@ -356,6 +357,7 @@ export default async function(req: Request): Promise<Response> {
               last_seen: u.last_seen || '',
               current_activity: u.current_activity || '',
               current_activity_type: u.current_activity_type || 'idle',
+              custom_status: u.custom_status || '',
             };
           });
         console.log('[getUsersByIds] requested:', ids.length, '| found:', users.length);
@@ -386,6 +388,7 @@ export default async function(req: Request): Promise<Response> {
               last_seen: u.last_seen || '',
               current_activity: u.current_activity || '',
               current_activity_type: u.current_activity_type || 'idle',
+              custom_status: u.custom_status || '',
             };
           });
         return Response.json({ users });

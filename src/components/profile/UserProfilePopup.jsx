@@ -244,13 +244,29 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
             const online = isUserOnline(profile?.last_seen);
             const activity = profile?.current_activity;
             const activityType = profile?.current_activity_type || "idle";
-            if (online && activity) {
+            const customStatus = profile?.custom_status;
+            const isCustom = activityType === "custom" || !!customStatus;
+
+            if (online && customStatus) {
               return (
-                <div className="mt-3 p-2.5 rounded-xl flex items-center gap-2" style={{ background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.15)" }}>
+                <div className="mt-3 p-2.5 rounded-xl flex items-center gap-2" style={{ background: "rgba(168,85,247,0.12)", border: "1px solid rgba(168,85,247,0.25)" }}>
+                  <span className="text-base shrink-0">{getActivityIcon("custom")}</span>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold truncate" style={{ color: "#c084fc" }}>{customStatus}</p>
+                    <p className="text-[9px] text-white/40">Statut personnalisé</p>
+                  </div>
+                  <span className="ml-auto w-2 h-2 rounded-full shrink-0" style={{ background: "#44ff88" }} />
+                </div>
+              );
+            }
+            if (online && activity) {
+              const isGaming = activityType === "gaming";
+              return (
+                <div className="mt-3 p-2.5 rounded-xl flex items-center gap-2" style={{ background: isGaming ? "rgba(59,130,246,0.08)" : "rgba(168,85,247,0.08)", border: isGaming ? "1px solid rgba(59,130,246,0.15)" : "1px solid rgba(168,85,247,0.15)" }}>
                   <span className="text-base shrink-0">{getActivityIcon(activityType)}</span>
                   <div className="min-w-0">
                     <p className="text-[10px] font-bold text-white/80 truncate">{activity}</p>
-                    <p className="text-[9px] text-white/40">Activité en cours</p>
+                    <p className="text-[9px] text-white/40">{isGaming ? "En jeu" : "Activité en cours"}</p>
                   </div>
                   <span className="ml-auto w-2 h-2 rounded-full shrink-0" style={{ background: "#44ff88" }} />
                 </div>
