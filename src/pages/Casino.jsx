@@ -2,13 +2,14 @@ import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Home, ShoppingBag, User, Sparkles, Ticket } from "lucide-react";
+import { ArrowLeft, Home, ShoppingBag, User, Sparkles, Ticket, CircleDashed } from "lucide-react";
 import { casinoGetBalance, casinoGetProfile, casinoGetWon24h } from "@/hooks/useCasinoJackpot";
 import SlotsGame from "@/components/casino/SlotsGame";
 import CasinoToken from "@/components/casino/CasinoToken";
 import CasinoShop from "@/pages/casino/CasinoShop";
 import CasinoProfile from "@/pages/casino/CasinoProfile";
 import ScratchGameScreen from "@/components/casino/ScratchGameScreen";
+import WheelOfFortuneScreen from "@/components/casino/WheelOfFortuneScreen";
 import { formatBet } from "@/components/casino/slotThemes";
 import { toast } from "sonner";
 import { useProgression } from "@/context/ProgressionContext";
@@ -17,6 +18,7 @@ import ThemeSelectionModal from "@/components/casino/ThemeSelectionModal";
 const CASINO_BALANCE_KEY = "matrix_casino_coins";
 const SLOTS_CARD_IMG = "/media/tuto-gaming/62275f2a2_generated_image.png";
 const SCRATCH_CARD_IMG = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/f1890072f_ChatGPTImage28sept202617_21_27.png";
+const WHEEL_CARD_IMG = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/f4b6e77c6_ChatGPTImage28sept202617_28_25.png";
 
 function useCasinoCoins() {
   const [coins, setCoinsState] = useState(() => {
@@ -45,7 +47,7 @@ function useCasinoCoins() {
 
 export default function Casino() {
   const { trackActivity } = useProgression();
-  const [screen, setScreen] = useState("home"); // "home" | "slots" | "scratch" | "shop" | "profile"
+  const [screen, setScreen] = useState("home"); // "home" | "slots" | "scratch" | "wheel" | "shop" | "profile"
   const [casinoCoins, setCasinoCoins] = useCasinoCoins();
   const [won24h, setWon24h] = useState(0);
   const [newAchievements, setNewAchievements] = useState([]);
@@ -163,7 +165,7 @@ export default function Casino() {
           <motion.div key="home"
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.3 }}>
-              <CasinoHome balance={casinoCoins} onPlay={() => setShowThemeSelect(true)} onScratch={() => { setScreen("scratch"); trackActivity("nexus_games"); }} />
+              <CasinoHome balance={casinoCoins} onPlay={() => setShowThemeSelect(true)} onScratch={() => { setScreen("scratch"); trackActivity("nexus_games"); }} onWheel={() => { setScreen("wheel"); trackActivity("nexus_games"); }} />
             </motion.div> :
           screen === "shop" ?
           <motion.div key="shop"
@@ -182,6 +184,15 @@ export default function Casino() {
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.3 }}>
               <ScratchGameScreen
+              balance={casinoCoins}
+              setBalance={setCasinoCoins}
+              onBack={() => setScreen("home")} />
+            </motion.div> :
+          screen === "wheel" ?
+          <motion.div key="wheel"
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.3 }}>
+              <WheelOfFortuneScreen
               balance={casinoCoins}
               setBalance={setCasinoCoins}
               onBack={() => setScreen("home")} />
@@ -236,7 +247,7 @@ export default function Casino() {
 }
 
 // ─── Casino Home (lobby) ───
-function CasinoHome({ balance, onPlay, onScratch }) {
+function CasinoHome({ balance, onPlay, onScratch, onWheel }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-100px)] px-4 py-8">
       {/* Game cards grid */}
@@ -303,6 +314,38 @@ function CasinoHome({ balance, onPlay, onScratch }) {
         style={{ background: "rgba(10,5,15,0.8)", backdropFilter: "blur(8px)", border: "1px solid rgba(168,85,247,0.3)" }}>
           <Ticket className="w-4 h-4" style={{ color: "#a855f7" }} />
           <span className="text-sm font-black" style={{ color: "#a855f7" }}>GRATTER</span>
+        </div>
+      </motion.button>
+
+      {/* Wheel of Fortune vignette */}
+      <motion.button
+        initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.5 }}
+        whileHover={{ scale: 1.02, y: -4 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={onWheel}
+        className="relative overflow-hidden rounded-2xl text-left w-full max-w-sm group"
+        style={{
+          border: "2px solid rgba(0,242,255,0.35)",
+          boxShadow: "0 0 30px rgba(0,242,255,0.15), 0 8px 30px rgba(0,0,0,0.5)"
+        }}>
+
+        {/* The image fills the entire card */}
+        <img
+          src={WHEEL_CARD_IMG}
+          alt="Roue de la Fortune"
+          className="w-full h-auto block"
+          style={{ objectFit: "contain" }} />
+
+        {/* Subtle hover glow overlay */}
+        <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        style={{ background: "linear-gradient(135deg, rgba(0,242,255,0.1) 0%, transparent 50%, rgba(255,0,255,0.12) 100%)" }} />
+
+        {/* Play indicator */}
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl flex items-center gap-2 transition group-hover:scale-105"
+        style={{ background: "rgba(10,5,15,0.8)", backdropFilter: "blur(8px)", border: "1px solid rgba(0,242,255,0.3)" }}>
+          <CircleDashed className="w-4 h-4" style={{ color: "#00ffff" }} />
+          <span className="text-sm font-black" style={{ color: "#00ffff" }}>LANCEZ</span>
         </div>
       </motion.button>
       </div>

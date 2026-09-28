@@ -1,0 +1,220 @@
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { base44 } from "@/api/base44Client";
+import { RefreshCw, Sparkles } from "lucide-react";
+import { toast } from "sonner";
+import { formatBet } from "@/components/casino/slotThemes";
+import CasinoToken from "@/components/casino/CasinoToken";
+
+const SEGMENTS = [
+  { color: "#3a3a3a", glow: "#666", icon: "💀", label: "Perdu" },
+  { color: "#00bfff", glow: "#00ffff", icon: "🪙", label: "1K" },
+  { color: "#ff00ff", glow: "#ff44ff", icon: "💰", label: "20K" },
+  { color: "#8b5cf6", glow: "#a855f7", icon: "💎", label: "50K" },
+  { color: "#ffd700", glow: "#ffed4e", icon: "⭐", label: "100K" },
+  { color: "#ff1493", glow: "#ff69b4", icon: "🎰", label: "1M" },
+  { color: "#00ff7f", glow: "#00ffaa", icon: "🌟", label: "100T" },
+];
+
+const SEGMENT_ANGLE = 360 / SEGMENTS.length;
+const SPIN_DURATION = 4500; // ms
+
+function polarToCartesian(cx, cy, r, angleDeg) {
+  const rad = (angleDeg - 90) * Math.PI / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
+
+function describeArc(cx, cy, r, startAngle, endAngle) {
+  const start = polarToCartesian(cx, cy, r, endAngle);
+  const end = polarToCartesian(cx, cy, r, startAngle);
+  const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+  return [
+    "M", cx, cy,
+    "L", start.x, start.y,
+    "A", r, r, 0, largeArcFlag, 0, end.x, end.y,
+    "Z"
+  ].join(" ");
+}
+
+/**
+ * Écran du mini-jeu "Roue de la Fortune" intégré au Casino.
+ * Synchronise le solde avec le Casino via les props balance/setBalance.
+ */
+export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
+  const [spinning, setSpinning] = useState(false);
+  const [rotation, setRotation] = useState(0);
+  const [result, setResult] = useState(null);
+  const [showResult, setShowResult] = useState(false);
+  const wheelRef = useRef(null);
+
+  const handleSpin = useCallback(async () => {
+    if (spinning) return;
+    setSpinning(true);
+    setShowResult(false);
+    setResult(null);
+    try {
+      const res = await base44.functions.invoke("wheelOfFortune", { action: "spin" });
+      const data = res?.data || res;
+      if (data.error) {
+        toast.error(data.error);
+        setSpinning(false);
+        return;
+      }
+      const winResult = data.result;
+      setResult(winResult);
+      if (data.balance !== undefined) setBalance(data.balance);
+
+      // Calculer l'angle cible pour aligner le segment gagnant sous le pointeur
+      const targetAngle = 360 - (winResult.index * SEGMENT_ANGLE + SEGMENT_ANGLE / 2);
+      const currentMod = rotation % 360;
+      let delta = 360 * 5 + (targetAngle - currentMod);
+      if (delta < 360 * 4) delta += 360;
+      setRotation(prev => prev + delta);
+
+      // Afficher le résultat après la fin de l'animation
+      setTimeout(() => {
+        setSpinning(false);
+        setShowResult(true);
+        if (winResult.type === "lose") {
+          toast.error("Perdu ! Réessayez.");
+        } else if (winResult.type === "trix") {
+          toast.success("🌟 INCROYABLE ! 100 Trix gagnés !");
+        } else {
+          toast.success(`Gagné : ${winResult.label} !`);
+        }
+      }, SPIN_DURATION + 200);
+    } catch {
+      toast.error("Erreur lors du lancer");
+      setSpinning(false);
+    }
+  }, [spinning, rotation, setBalance]);
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-100px)] px-4 py-8">
+      {/* Title */}
+      <div className="text-center mb-4">
+        <h2 className="text-lg font-black tracking-wider" style={{
+          background: "linear-gradient(135deg, #00ffff, #ff00ff)",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          textShadow: "0 0 20px rgba(168,85,247,0.3)",
+        }}>ROUE DE LA FORTUNE</h2>
+      </div>
+
+      {/* Wheel container */}
+      <div className="relative w-full max-w-sm mb-6">
+        {/* Pointer */}
+        <div className="absolute left-1/2 -translate-x-1/2 -top-1 z-20 flex flex-col items-center">
+          <div className="w-0 h-0" style={{
+            borderLeft: "12px solid transparent",
+            borderRight: "12px solid transparent",
+            borderTop: "20px solid #ffd700",
+            filter: "drop-shadow(0 0 6px rgba(255,215,0,0.6))",
+          }} />
+        </div>
+
+        {/* SVG Wheel */}
+        <div ref={wheelRef} className="relative" style={{
+          transition: `transform ${SPIN_DURATION}ms cubic-bezier(0.17, 0.67, 0.12, 0.99)`,
+          transform: `rotate(${rotation}deg)`,
+        }}>
+          <svg viewBox="0 0 300 300" className="w-full h-full" style={{ filter: "drop-shadow(0 0 20px rgba(168,85,247,0.3))" }}>
+            {/* Outer ring */}
+            <circle cx="150" cy="150" r="148" fill="none" stroke="#2a1a3e" strokeWidth="4" />
+            <circle cx="150" cy="150" r="144" fill="none" stroke="rgba(168,85,247,0.4)" strokeWidth="2" />
+
+            {/* Segments */}
+            {SEGMENTS.map((seg, i) => {
+              const startAngle = i * SEGMENT_ANGLE;
+              const endAngle = (i + 1) * SEGMENT_ANGLE;
+              const path = describeArc(150, 150, 140, startAngle, endAngle);
+              const textPos = polarToCartesian(150, 150, 90, startAngle + SEGMENT_ANGLE / 2);
+              return (
+                <g key={i}>
+                  <path d={path} fill={seg.color} stroke="rgba(0,0,0,0.3)" strokeWidth="1" />
+                  {/* Glow border */}
+                  <path d={path} fill="none" stroke={seg.glow} strokeWidth="0.5" opacity="0.6" />
+                  {/* Icon */}
+                  <text
+                    x={textPos.x}
+                    y={textPos.y}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fontSize="22"
+                    style={{ filter: `drop-shadow(0 0 4px ${seg.glow})` }}
+                  >
+                    {seg.icon}
+                  </text>
+                  {/* Label */}
+                  <text
+                    x={textPos.x}
+                    y={textPos.y + 22}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fontSize="9"
+                    fontWeight="bold"
+                    fill="rgba(255,255,255,0.7)"
+                  >
+                    {seg.label}
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* Center hub */}
+            <circle cx="150" cy="150" r="30" fill="#1a0a2e" stroke="#a855f7" strokeWidth="2" />
+            <circle cx="150" cy="150" r="26" fill="none" stroke="rgba(0,242,255,0.4)" strokeWidth="1" />
+            <text x="150" y="150" textAnchor="middle" dominantBaseline="middle" fontSize="20" fontWeight="black" fill="#a855f7" style={{ filter: "drop-shadow(0 0 6px rgba(168,85,247,0.8))" }}>T</text>
+          </svg>
+        </div>
+      </div>
+
+      {/* Result display */}
+      {showResult && result && (
+        <div className="mb-4 text-center animate-in fade-in zoom-in duration-500">
+          <div className="text-4xl mb-1">
+            {result.type === "lose" ? "😢" : result.type === "trix" ? "🌟" : result.amount >= 1000000 ? "💎" : "💰"}
+          </div>
+          <p className="text-lg font-black" style={{ color: result.type === "lose" ? "#ef4444" : result.type === "trix" ? "#00ff7f" : "#22c55e" }}>
+            {result.label}
+          </p>
+          {result.desc && <p className="text-xs text-white/50">{result.desc}</p>}
+        </div>
+      )}
+
+      {/* Spin button */}
+      <button
+        onClick={handleSpin}
+        disabled={spinning}
+        className="px-8 py-3 rounded-xl text-sm font-black text-white transition hover:opacity-90 disabled:opacity-40 tap-sm flex items-center gap-2"
+        style={{
+          background: spinning ? "rgba(255,255,255,0.1)" : "linear-gradient(135deg, #00ffff, #ff00ff)",
+          boxShadow: spinning ? "none" : "0 0 20px rgba(168,85,247,0.4)",
+        }}
+      >
+        {spinning ? (
+          <><RefreshCw className="w-4 h-4 animate-spin" /> Rotation...</>
+        ) : (
+          <><Sparkles className="w-4 h-4" /> LANCER LA ROUE</>
+        )}
+      </button>
+
+      {/* Balance + rewards table */}
+      <div className="mt-6 flex items-center gap-2 px-4 py-2 rounded-xl" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(197,160,89,0.15)" }}>
+        <CasinoToken size={18} />
+        <span className="text-sm font-mono font-black" style={{ color: "#C5A059" }}>{formatBet(balance)}</span>
+        <span className="text-[9px] text-white/40 uppercase">Solde</span>
+      </div>
+
+      <div className="mt-3 px-4 py-2 rounded-xl w-full max-w-sm" style={{ background: "rgba(15,10,25,0.4)", border: "1px solid rgba(255,255,255,0.04)" }}>
+        <p className="text-[10px] font-bold text-white/50 mb-1.5 text-center">Récompenses possibles :</p>
+        <div className="flex flex-wrap justify-center gap-1.5">
+          {SEGMENTS.map((s, i) => (
+            <span key={i} className="px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: `${s.color}30`, border: `1px solid ${s.glow}40`, color: s.glow }}>
+              {s.icon} {s.label}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
