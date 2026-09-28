@@ -44,6 +44,7 @@ import MarketSubscription from '@/pages/marketplace/MarketSubscription';
 import ListingDetail from '@/pages/marketplace/ListingDetail';
 
 import Casino from '@/pages/Casino';
+import NexusGames from '@/pages/NexusGames';
 import Prospecteurs from '@/pages/prospecteurs/Prospecteurs';
 import CommunitySubscription from '@/pages/community/CommunitySubscription';
 import Wallet from '@/pages/Wallet';
@@ -159,6 +160,7 @@ const AuthenticatedApp = () => {
         <Route path="/market/:id" element={<ListingDetail />} />
 
         <Route path="/casino" element={<Casino />} />
+        <Route path="/nexus-games" element={<NexusGames />} />
         <Route path="/prospecteurs" element={<Prospecteurs />} />
         <Route path="/community/subscription" element={<CommunitySubscription />} />
           <Route path="/wallet" element={<Wallet />} />

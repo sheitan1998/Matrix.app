@@ -66,6 +66,16 @@
       },
       "default": []
     },
+    "free_ticket_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date d'utilisation du ticket gratuit quotidien (null si disponible)"
+    },
+    "purchased_tickets": {
+      "type": "number",
+      "default": 0,
+      "description": "Nombre de tickets \u00e0 gratter achet\u00e9s disponibles"
+    },
     "description": {
       "type": "string",
       "maxLength": 1000
