@@ -164,6 +164,29 @@
       ],
       "default": "everyone",
       "description": "Qui peut envoyer des messages prives a l'utilisateur (everyone = tout le monde, friends = uniquement les amis)"
+    },
+    "interface_language": {
+      "type": "string",
+      "enum": [
+        "fr",
+        "en",
+        "es",
+        "de",
+        "it",
+        "pt",
+        "nl",
+        "ru",
+        "ja",
+        "zh",
+        "ar"
+      ],
+      "default": "fr",
+      "description": "Langue d'affichage de l'interface Matrix"
+    },
+    "timezone": {
+      "type": "string",
+      "default": "UTC",
+      "description": "Fuseau horaire de l'utilisateur (ex: Europe/Paris, America/New_York, UTC)"
     }
   },
   "required": []

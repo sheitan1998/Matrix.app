@@ -1,18 +1,128 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { base44 } from "@/api/base44Client";
-import { X, Bell, Gift, UserPlus, MessageSquare, Loader2 } from "lucide-react";
+import {
+  X, Bell, Gift, UserPlus, MessageSquare, Loader2,
+  Globe, Clock, Shield, Check,
+} from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
+const LANGUAGES = [
+  { code: "fr", label: "Français", flag: "🇫🇷" },
+  { code: "en", label: "English", flag: "🇬🇧" },
+  { code: "es", label: "Español", flag: "🇪🇸" },
+  { code: "de", label: "Deutsch", flag: "🇩🇪" },
+  { code: "it", label: "Italiano", flag: "🇮🇹" },
+  { code: "pt", label: "Português", flag: "🇵🇹" },
+  { code: "nl", label: "Nederlands", flag: "🇳🇱" },
+  { code: "ru", label: "Русский", flag: "🇷🇺" },
+  { code: "ja", label: "日本語", flag: "🇯🇵" },
+  { code: "zh", label: "中文", flag: "🇨🇳" },
+  { code: "ar", label: "العربية", flag: "🇸🇦" },
+];
+
+const COMMON_TIMEZONES = [
+  "UTC",
+  "Europe/Paris",
+  "Europe/London",
+  "Europe/Berlin",
+  "Europe/Madrid",
+  "Europe/Rome",
+  "Europe/Brussels",
+  "Europe/Amsterdam",
+  "Europe/Lisbon",
+  "Europe/Zurich",
+  "America/New_York",
+  "America/Chicago",
+  "America/Denver",
+  "America/Los_Angeles",
+  "America/Toronto",
+  "America/Mexico_City",
+  "America/Sao_Paulo",
+  "Asia/Tokyo",
+  "Asia/Shanghai",
+  "Asia/Dubai",
+  "Asia/Kolkata",
+  "Asia/Singapore",
+  "Australia/Sydney",
+  "Pacific/Auckland",
+];
+
+const TABS = [
+  { id: "notifications", label: "Notifications", icon: Bell, color: "#3b82f6" },
+  { id: "privacy", label: "Confidentialité", icon: Shield, color: "#22c55e" },
+  { id: "preferences", label: "Préférences", icon: Globe, color: "#a855f7" },
+];
+
+function Toggle({ checked, onChange, disabled }) {
+  return (
+    <button
+      onClick={() => !disabled && onChange(!checked)}
+      disabled={disabled}
+      className={cn(
+        "w-11 h-6 rounded-full transition shrink-0 relative tap-sm",
+        checked ? "bg-green-500" : "bg-white/20",
+        disabled && "opacity-40 cursor-not-allowed"
+      )}
+    >
+      <div className={cn(
+        "w-5 h-5 rounded-full bg-white transition-transform absolute top-0.5",
+        checked ? "translate-x-5" : "translate-x-0.5"
+      )} />
+    </button>
+  );
+}
+
+function SettingRow({ icon: Icon, color, title, desc, children }) {
+  return (
+    <div className="p-4 rounded-xl flex items-start gap-3" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+      <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: color + "15" }}>
+        <Icon className="w-4 h-4" style={{ color: color }} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-bold text-white">{title}</p>
+        <p className="text-xs text-white/40 mt-0.5 leading-relaxed">{desc}</p>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function ChoicePills({ options, value, onChange }) {
+  return (
+    <div className="grid grid-cols-2 gap-2 ml-12">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          onClick={() => onChange(opt.value)}
+          className={cn(
+            "px-3 py-2.5 rounded-xl text-xs font-bold transition",
+            value === opt.value ? "text-white" : "text-white/40 hover:text-white/60"
+          )}
+          style={value === opt.value
+            ? { background: "rgba(168,85,247,0.2)", border: "1px solid #a855f7" }
+            : { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function UserSettingsModal({ open, onClose, user }) {
+  const [activeTab, setActiveTab] = useState("notifications");
   const [settings, setSettings] = useState({
     notif_messages: true,
     notif_free_rewards: true,
     allow_friend_requests: true,
     dm_privacy: "everyone",
+    interface_language: "fr",
+    timezone: "UTC",
   });
-  const [saving, setSaving] = useState(false);
+  const [savingKey, setSavingKey] = useState(null);
+  const [showAllTimezones, setShowAllTimezones] = useState(false);
 
   useEffect(() => {
     if (open && user) {
@@ -21,68 +131,59 @@ export default function UserSettingsModal({ open, onClose, user }) {
         notif_free_rewards: user.notif_free_rewards !== false,
         allow_friend_requests: user.allow_friend_requests !== false,
         dm_privacy: user.dm_privacy || "everyone",
+        interface_language: user.interface_language || "fr",
+        timezone: user.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
       });
+      // Set default timezone from browser if not set
+      if (!user.timezone) {
+        const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+        setSettings(prev => ({ ...prev, timezone: browserTz }));
+        updateSetting("timezone", browserTz, false);
+      }
     }
   }, [open, user]);
 
+  useEffect(() => {
+    if (!open) return;
+    const handleEscape = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [open, onClose]);
+
   if (!open) return null;
 
-  const updateSetting = async (key, value) => {
+  const updateSetting = async (key, value, showToast = true) => {
     setSettings(prev => ({ ...prev, [key]: value }));
-    setSaving(true);
+    setSavingKey(key);
     try {
       await base44.auth.updateMe({ [key]: value });
-      toast.success("Paramètre mis à jour");
+      if (showToast) toast.success("Paramètre mis à jour");
     } catch {
       toast.error("Erreur lors de la mise à jour");
-      // revert
-      setSettings(prev => ({ ...prev, [key]: !value }));
+      // revert on error
+      setSettings(prev => {
+        const reverted = { ...prev };
+        if (typeof prev[key] === "boolean") reverted[key] = !value;
+        else reverted[key] = prev[key];
+        return reverted;
+      });
     }
-    setSaving(false);
+    setSavingKey(null);
   };
 
-  const Toggle = ({ checked, onChange }) => (
-    <button
-      onClick={() => onChange(!checked)}
-      className={cn("w-11 h-6 rounded-full transition shrink-0 relative", checked ? "bg-green-500" : "bg-white/20")}
-    >
-      <div className={cn("w-5 h-5 rounded-full bg-white transition-transform absolute top-0.5", checked ? "translate-x-5" : "translate-x-0.5")} />
-    </button>
-  );
-
-  const sections = [
-    {
-      icon: Bell,
-      color: "#3b82f6",
-      title: "Notifications de messages",
-      desc: "Recevoir des alertes quand vous recevez un nouveau message privé ou dans un serveur.",
-      toggleKey: "notif_messages",
-    },
-    {
-      icon: Gift,
-      color: "#fbbf24",
-      title: "Rappels de récompenses gratuites",
-      desc: "Être notifié lorsque la Roue de la Fortune gratuite ou le Ticket Quotidien gratuit sont disponibles.",
-      toggleKey: "notif_free_rewards",
-    },
-    {
-      icon: UserPlus,
-      color: "#22c55e",
-      title: "Demandes d'amis",
-      desc: "Autoriser les autres utilisateurs à vous ajouter en tant qu'ami.",
-      toggleKey: "allow_friend_requests",
-    },
-  ];
+  const allTimezones = showAllTimezones
+    ? Intl.supportedValuesOf?.("timeZone") || COMMON_TIMEZONES
+    : COMMON_TIMEZONES;
 
   return createPortal(
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)" }} onClick={onClose}>
       <div
-        className="w-full max-w-lg max-h-[85vh] overflow-y-auto scrollbar-thin rounded-2xl"
+        className="w-full max-w-lg max-h-[85vh] flex flex-col rounded-2xl overflow-hidden"
         style={{ background: "#18191c", border: "1px solid rgba(168,85,247,0.2)", boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+        <div className="flex items-center justify-between p-5 border-b shrink-0" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: "rgba(168,85,247,0.15)" }}>
               <Bell className="w-4 h-4" style={{ color: "#a855f7" }} />
@@ -93,66 +194,185 @@ export default function UserSettingsModal({ open, onClose, user }) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {saving && <Loader2 className="w-4 h-4 animate-spin text-white/40" />}
-            <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center text-white/40 hover:text-white transition" style={{ background: "rgba(255,255,255,0.05)" }}>
+            {savingKey && <Loader2 className="w-4 h-4 animate-spin text-white/40" />}
+            <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center text-white/40 hover:text-white transition tap-sm" style={{ background: "rgba(255,255,255,0.05)" }}>
               <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Toggle sections */}
-        <div className="p-5 space-y-3">
-          {sections.map((s) => {
-            const Icon = s.icon;
+        {/* Tab bar */}
+        <div className="flex shrink-0 border-b" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+          {TABS.map((tab) => {
+            const TabIcon = tab.icon;
+            const active = activeTab === tab.id;
             return (
-              <div key={s.toggleKey} className="p-4 rounded-xl flex items-start gap-3" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: s.color + "15" }}>
-                  <Icon className="w-4 h-4" style={{ color: s.color }} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-white">{s.title}</p>
-                  <p className="text-xs text-white/40 mt-0.5 leading-relaxed">{s.desc}</p>
-                </div>
-                <Toggle checked={settings[s.toggleKey]} onChange={(v) => updateSetting(s.toggleKey, v)} />
-              </div>
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-bold transition relative",
+                  active ? "text-white" : "text-white/40 hover:text-white/60"
+                )}
+              >
+                <TabIcon className="w-3.5 h-3.5" style={{ color: active ? tab.color : undefined }} />
+                {tab.label}
+                {active && (
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full" style={{ background: tab.color }} />
+                )}
+              </button>
             );
           })}
+        </div>
 
-          {/* DM Privacy */}
-          <div className="p-4 rounded-xl" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
-            <div className="flex items-start gap-3 mb-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(168,85,247,0.15)" }}>
-                <MessageSquare className="w-4 h-4" style={{ color: "#a855f7" }} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-white">Réception des messages</p>
-                <p className="text-xs text-white/40 mt-0.5">Choisissez qui peut vous envoyer des messages privés.</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2 ml-12">
-              <button
-                onClick={() => updateSetting("dm_privacy", "everyone")}
-                className={cn("px-3 py-2.5 rounded-xl text-xs font-bold transition", settings.dm_privacy === "everyone" ? "text-white" : "text-white/40 hover:text-white/60")}
-                style={settings.dm_privacy === "everyone" ? { background: "rgba(168,85,247,0.2)", border: "1px solid #a855f7" } : { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+        {/* Tab content */}
+        <div className="flex-1 overflow-y-auto scrollbar-thin p-5 space-y-3">
+
+          {/* ===== NOTIFICATIONS TAB ===== */}
+          {activeTab === "notifications" && (
+            <>
+              <SettingRow
+                icon={Bell}
+                color="#3b82f6"
+                title="Notifications de messages"
+                desc="Recevoir des alertes quand vous recevez un nouveau message privé ou dans un serveur."
               >
-                Tout le monde
-              </button>
-              <button
-                onClick={() => updateSetting("dm_privacy", "friends")}
-                className={cn("px-3 py-2.5 rounded-xl text-xs font-bold transition", settings.dm_privacy === "friends" ? "text-white" : "text-white/40 hover:text-white/60")}
-                style={settings.dm_privacy === "friends" ? { background: "rgba(168,85,247,0.2)", border: "1px solid #a855f7" } : { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+                <Toggle
+                  checked={settings.notif_messages}
+                  onChange={(v) => updateSetting("notif_messages", v)}
+                  disabled={savingKey === "notif_messages"}
+                />
+              </SettingRow>
+
+              <SettingRow
+                icon={Gift}
+                color="#fbbf24"
+                title="Rappels de récompenses gratuites"
+                desc="Être notifié lorsque le Ticket Quotidien gratuit (reset à 15h) ou la Roue de la Fortune gratuite (reset à 12h) sont disponibles."
               >
-                Amis uniquement
-              </button>
-            </div>
-          </div>
+                <Toggle
+                  checked={settings.notif_free_rewards}
+                  onChange={(v) => updateSetting("notif_free_rewards", v)}
+                  disabled={savingKey === "notif_free_rewards"}
+                />
+              </SettingRow>
+            </>
+          )}
+
+          {/* ===== PRIVACY & SOCIAL TAB ===== */}
+          {activeTab === "privacy" && (
+            <>
+              <SettingRow
+                icon={UserPlus}
+                color="#22c55e"
+                title="Demandes d'amis"
+                desc="Autoriser les autres utilisateurs à vous ajouter en tant qu'ami. Si désactivé, votre profil n'apparaîtra pas dans les résultats de recherche d'amis."
+              >
+                <Toggle
+                  checked={settings.allow_friend_requests}
+                  onChange={(v) => updateSetting("allow_friend_requests", v)}
+                  disabled={savingKey === "allow_friend_requests"}
+                />
+              </SettingRow>
+
+              <div className="p-4 rounded-xl" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(168,85,247,0.15)" }}>
+                    <MessageSquare className="w-4 h-4" style={{ color: "#a855f7" }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-white">Réception des messages</p>
+                    <p className="text-xs text-white/40 mt-0.5">Choisissez qui peut vous envoyer des messages privés.</p>
+                  </div>
+                </div>
+                <ChoicePills
+                  options={[
+                    { value: "everyone", label: "Tout le monde" },
+                    { value: "friends", label: "Amis uniquement" },
+                  ]}
+                  value={settings.dm_privacy}
+                  onChange={(v) => updateSetting("dm_privacy", v)}
+                />
+              </div>
+            </>
+          )}
+
+          {/* ===== PREFERENCES TAB ===== */}
+          {activeTab === "preferences" && (
+            <>
+              <div className="p-4 rounded-xl" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(168,85,247,0.15)" }}>
+                    <Globe className="w-4 h-4" style={{ color: "#a855f7" }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-white">Langue de l'interface</p>
+                    <p className="text-xs text-white/40 mt-0.5">Choisissez la langue d'affichage de MATRIX.</p>
+                  </div>
+                </div>
+                <div className="ml-12 grid grid-cols-3 gap-2">
+                  {LANGUAGES.map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => updateSetting("interface_language", lang.code)}
+                      className={cn(
+                        "flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-bold transition",
+                        settings.interface_language === lang.code ? "text-white" : "text-white/40 hover:text-white/60"
+                      )}
+                      style={settings.interface_language === lang.code
+                        ? { background: "rgba(168,85,247,0.2)", border: "1px solid #a855f7" }
+                        : { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+                    >
+                      <span>{lang.flag}</span>
+                      <span className="truncate">{lang.label}</span>
+                      {settings.interface_language === lang.code && (
+                        <Check className="w-3 h-3 ml-auto shrink-0" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(59,130,246,0.15)" }}>
+                    <Clock className="w-4 h-4" style={{ color: "#3b82f6" }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-white">Fuseau horaire</p>
+                    <p className="text-xs text-white/40 mt-0.5">Définit l'heure utilisée pour les rappels de récompenses et l'affichage des horodatages.</p>
+                  </div>
+                </div>
+                <div className="ml-12">
+                  <select
+                    value={settings.timezone}
+                    onChange={(e) => updateSetting("timezone", e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl text-sm text-white outline-none cursor-pointer"
+                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(168,85,247,0.3)" }}
+                  >
+                    {allTimezones.map((tz) => (
+                      <option key={tz} value={tz} style={{ background: "#18191c", color: "#fff" }}>{tz}</option>
+                    ))}
+                  </select>
+                  {!showAllTimezones && (
+                    <button
+                      onClick={() => setShowAllTimezones(true)}
+                      className="mt-2 text-[10px] text-white/40 hover:text-white/60 transition"
+                    >
+                      Voir tous les fuseaux horaires ({Intl.supportedValuesOf?.("timeZone")?.length || 400}+)
+                    </button>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+        <div className="p-4 border-t shrink-0" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
           <button
             onClick={onClose}
-            className="w-full py-3 rounded-xl text-sm font-bold text-white transition hover:opacity-80"
+            className="w-full py-3 rounded-xl text-sm font-bold text-white transition hover:opacity-80 tap-sm"
             style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}
           >
             Terminé

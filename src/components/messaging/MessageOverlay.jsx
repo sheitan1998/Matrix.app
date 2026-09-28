@@ -224,6 +224,16 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
       toast.error("Vous ne pouvez pas envoyer de message à cet utilisateur.");
       return;
     }
+    // Check DM privacy — does the recipient allow messages from non-friends?
+    if (!info.isOfficial) {
+      try {
+        const privacyRes = await base44.functions.invoke("serverSearch", { action: "checkDmPrivacy", target_email: contactEmail });
+        if (privacyRes?.data?.can_dm === false) {
+          toast.error("Cet utilisateur n'accepte les messages que de ses amis.");
+          return;
+        }
+      } catch { /* fail open — allow if service unreachable */ }
+    }
     const content = input.trim();
     setInput("");
     setShowEmojis(false);

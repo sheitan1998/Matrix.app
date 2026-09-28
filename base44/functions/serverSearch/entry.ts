@@ -488,6 +488,11 @@ export default async function(req: Request): Promise<Response> {
 
         const targetEmail = target.email;
 
+        // Check if target allows friend requests
+        if (target.allow_friend_requests === false) {
+          return Response.json({ error: 'Cet utilisateur n\'accepte pas les demandes d\'amis.' }, { status: 403 });
+        }
+
         // Check if a relationship already exists in either direction (by user_id)
         const existing = await base44.asServiceRole.entities.Friend.filter({
           $or: [
@@ -734,6 +739,34 @@ export default async function(req: Request): Promise<Response> {
         }
 
         return Response.json({ error: 'Not authorized' }, { status: 403 });
+      }
+
+      // ---- Check if the current user can DM the target (based on target's dm_privacy setting) ----
+      case 'checkDmPrivacy': {
+        const { target_email } = params;
+        if (!target_email) return Response.json({ can_dm: true });
+
+        // Official support accounts always accept DMs
+        const officialEmails = ['support@matrix.app', 'contact@matrix.app', 'official@matrix.app'];
+        if (officialEmails.includes(target_email.toLowerCase())) {
+          return Response.json({ can_dm: true });
+        }
+
+        const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
+        const target = allUsers.find(u => u.email?.toLowerCase() === target_email.toLowerCase());
+
+        if (!target) return Response.json({ can_dm: true }); // Default allow if user not found
+
+        const dmPrivacy = target.dm_privacy || 'everyone';
+        if (dmPrivacy === 'everyone') return Response.json({ can_dm: true });
+
+        // dm_privacy === 'friends' — check if they are friends
+        const friendRecords = await base44.asServiceRole.entities.Friend.filter({
+          user_email: target_email,
+          friend_user_id: user.id,
+          status: 'accepted',
+        });
+        return Response.json({ can_dm: friendRecords.length > 0, reason: friendRecords.length > 0 ? '' : 'friends_only' });
       }
 
       // ---- Check if a user has blocked the current user ----
