@@ -6,6 +6,8 @@ import { playMessageSound } from "@/lib/messageSound";
 import { isUserOnline } from "@/hooks/usePresence";
 import { stripPseudoTag } from "@/lib/format";
 import UserProfilePopup from "@/components/profile/UserProfilePopup";
+import VoiceRecorder from "@/components/chat/VoiceRecorder";
+import VoiceMessagePlayer from "@/components/chat/VoiceMessagePlayer";
 
 const EMOJI_LIST = ["😀", "😂", "🥰", "😍", "😎", "🤔", "😅", "😭", "😡", "👍", "👎", "❤️", "🔥", "✨", "🎉", "💯", "🤝", "👋", "🙏", "💀", "🤡", "👀", "💪", "🫶", "😴", "🥳", "😇", "🤗", "😌", "🙃"];
 
@@ -210,8 +212,8 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const sendMessage = async () => {
-    if (!input.trim() || !selectedContact) return;
+  const sendMessage = async (attachment = null, messageType = null) => {
+    if ((!input.trim() && !attachment) || !selectedContact) return;
     const info = resolveContact(selectedContact);
     const contactEmail = info.email;
     if (!contactEmail) {
@@ -227,6 +229,7 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
     setShowEmojis(false);
     const tempId = Date.now().toString();
     const senderPseudo = user.pseudo || user.full_name || "Utilisateur";
+    const type = messageType || (attachment ? "voice" : "text");
     const msgData = {
       sender_email: user.email,
       sender_name: senderPseudo,
@@ -234,7 +237,9 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
       recipient_email: contactEmail,
       recipient_name: info.pseudo || info.name,
       recipient_avatar: info.avatar,
-      content,
+      content: content || (attachment ? "Message vocal" : ""),
+      type,
+      file_url: attachment?.url || "",
       is_read: false,
     };
 
@@ -467,7 +472,11 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
                               : { background: "rgba(30,20,45,0.8)", border: "1px solid rgba(168,85,247,0.15)", borderBottomLeftRadius: "4px" }
                           }
                         >
-                          <p className="text-sm text-white break-words">{msg.content}</p>
+                          {msg.type === "voice" && msg.file_url ? (
+                            <VoiceMessagePlayer src={msg.file_url} accent="#a855f7" />
+                          ) : (
+                            <p className="text-sm text-white break-words">{msg.content}</p>
+                          )}
                           <p className={`text-[9px] mt-1 ${isSent ? "text-white/50" : "text-white/30"}`}>
                             {new Date(msg.created_date).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
                           </p>
@@ -529,9 +538,14 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
                       disabled={isBlocked}
                       className="flex-1 px-4 py-2.5 rounded-xl bg-black/40 border border-white/5 text-white placeholder:text-white/30 outline-none text-sm disabled:opacity-50"
                     />
+                    <VoiceRecorder
+                      disabled={isBlocked}
+                      accent="#a855f7"
+                      onSend={(voice) => sendMessage({ url: voice.url, name: voice.name }, "voice")}
+                    />
                     <button
-                      onClick={sendMessage}
-                      disabled={!input.trim() || isBlocked}
+                      onClick={() => sendMessage()}
+                      disabled={(!input.trim() || isBlocked)}
                       className="w-10 h-10 rounded-xl flex items-center justify-center text-white transition disabled:opacity-40 shrink-0"
                       style={{ background: "linear-gradient(135deg, #7c3aed, #6d28d9)", boxShadow: "0 2px 12px rgba(124,58,237,0.3)" }}
                     >

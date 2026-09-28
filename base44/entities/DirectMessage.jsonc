@@ -30,6 +30,19 @@
       "type": "string",
       "description": "Contenu du message"
     },
+    "type": {
+      "type": "string",
+      "enum": [
+        "text",
+        "voice"
+      ],
+      "default": "text",
+      "description": "Type de message (text ou voice)"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL du fichier audio (messages vocaux)"
+    },
     "is_read": {
       "type": "boolean",
       "default": false,
