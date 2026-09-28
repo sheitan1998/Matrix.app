@@ -6,6 +6,8 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { useProgression } from "@/context/ProgressionContext";
 import { cn } from "@/lib/utils";
+import VoiceRecorder from "@/components/chat/VoiceRecorder";
+import VoiceMessagePlayer from "@/components/chat/VoiceMessagePlayer";
 
 const REACTIONS = ["❤️", "😂", "🔥", "👏", "😮", "😢"];
 
@@ -68,26 +70,32 @@ export default function PrivateChat({ user, friend, onClose }) {
     setContextMenu({ msg, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 220) });
   };
 
-  const send = async () => {
+  const send = async (attachment = null, messageType = null) => {
     const content = input.trim();
-    if (!content || sending) return;
+    if ((!content && !attachment) || sending) return;
     setSending(true);
+    const type = messageType || (attachment ? "file" : "text");
     await base44.entities.ServerMessage.create({
       server_id: dmId,
       channel_id: "dm",
       author_email: user.email,
       author_name: user.full_name || user.email.split("@")[0],
       author_avatar: user.avatar_url || "",
-      content,
-      type: "text",
+      content: content || (attachment ? attachment.name : ""),
+      type,
+      file_url: attachment?.url || "",
+      file_name: attachment?.name || "",
+      reply_to_id: replyingTo?.id || "",
+      reply_to_name: replyingTo?.author_name || "",
+      reply_to_content: replyingTo?.content || "",
     });
     // Send notification to the friend
     base44.entities.Notification.create({
       user_email: friend.friend_email || friend.email,
       type: "new_message",
       title: `Nouveau message de ${user.full_name || "Quelqu'un"}`,
-      body: content.slice(0, 100),
-      icon: "💬",
+      body: type === "voice" ? "🎙️ Message vocal" : content.slice(0, 100),
+      icon: type === "voice" ? "🎙️" : "💬",
       is_read: false,
     });
     setInput("");
@@ -155,7 +163,16 @@ export default function PrivateChat({ user, friend, onClose }) {
                 ) : (
                   <div className={cn("px-3 py-2 rounded-2xl text-sm",
                     isMe ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-secondary text-white rounded-bl-sm")}>
-                    {msg.content}
+                    {msg.type === "voice" && msg.file_url ? (
+                      <VoiceMessagePlayer src={msg.file_url} accent="hsl(135 100% 50%)" />
+                    ) : null}
+                    {msg.type === "file" && msg.file_url ? (
+                      <a href={msg.file_url} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-xs underline">
+                        {msg.file_name || "Fichier"}
+                      </a>
+                    ) : null}
+                    {msg.content && msg.content !== msg.file_name && <p>{msg.content}</p>}
                     <p className={cn("text-[9px] mt-0.5", isMe ? "text-primary-foreground/60" : "text-muted-foreground")}>
                       {format(new Date(msg.created_date), "HH:mm")}
                     </p>
@@ -191,7 +208,12 @@ export default function PrivateChat({ user, friend, onClose }) {
             placeholder={`Message à ${friendName}...`}
             className="flex-1 bg-transparent py-3 text-sm text-white placeholder:text-white/30 outline-none"
           />
-          <button onClick={send} disabled={!input.trim() || sending}
+          <VoiceRecorder
+            disabled={sending}
+            accent="hsl(135 100% 50%)"
+            onSend={(voice) => send({ url: voice.url, name: voice.name }, "voice")}
+          />
+          <button onClick={() => send()} disabled={(!input.trim() || sending)}
             className="w-8 h-8 rounded-xl flex items-center justify-center transition disabled:opacity-30 bg-primary/20 text-primary">
             <Send className="w-4 h-4" />
           </button>
