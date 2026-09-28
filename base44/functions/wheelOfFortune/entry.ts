@@ -1,12 +1,11 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 
-// ===== Configuration =====
+// ===== Default Configuration (fallback if no entity record) =====
 const INITIAL_BALANCE = 5000;
-const SPIN_COST = 20000; // Coût d'un lancer supplémentaire (après le gratuit quotidien)
+const DEFAULT_SPIN_COST = 20000;
+const DEFAULT_RESET_HOUR = 12;
 
-// Récompenses avec poids relatifs (normalisés côté serveur)
-// L'ordre des index correspond à la position sur la roue (sens horaire depuis le haut)
-const REWARDS = [
+const DEFAULT_REWARDS = [
   { index: 0, id: "perdu",     label: "Perdu",           desc: "Réessayez !",         amount: 0,       weight: 65,    type: "lose" },
   { index: 1, id: "1000",      label: "1 000 jetons",    desc: "Petit gain",           amount: 1000,    weight: 55,    type: "tokens" },
   { index: 2, id: "20000",     label: "20 000 jetons",   desc: "Beau gain",            amount: 20000,   weight: 35,    type: "tokens" },
@@ -18,34 +17,26 @@ const REWARDS = [
 
 // ===== Helpers =====
 
-function selectReward() {
-  const totalWeight = REWARDS.reduce((s, r) => s + r.weight, 0);
+function selectReward(rewards) {
+  const totalWeight = rewards.reduce((s, r) => s + r.weight, 0);
   let roll = Math.random() * totalWeight;
-  for (const reward of REWARDS) {
+  for (const reward of rewards) {
     roll -= reward.weight;
     if (roll <= 0) return reward;
   }
-  return REWARDS[0];
+  return rewards[0];
 }
 
-/**
- * Retourne la limite de réinitialisation (midi UTC) la plus récente déjà passée.
- * Le lancer gratuit se réinitialise chaque jour à 12h00 (midi) UTC.
- */
-function getNoonBoundaryUTC() {
+function getResetBoundary(resetHour) {
+  const hour = resetHour !== undefined ? resetHour : DEFAULT_RESET_HOUR;
   const now = new Date();
-  const todayNoon = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 12, 0, 0, 0));
-  // Si on est avant midi aujourd'hui, la limite est midi hier
-  return now.getTime() >= todayNoon.getTime() ? todayNoon : new Date(todayNoon.getTime() - 24 * 60 * 60 * 1000);
+  const todayBoundary = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), hour, 0, 0, 0));
+  return now.getTime() >= todayBoundary.getTime() ? todayBoundary : new Date(todayBoundary.getTime() - 24 * 60 * 60 * 1000);
 }
 
-/**
- * Détermine si le lancer gratuit est disponible.
- * Disponible si jamais utilisé OU si le dernier lancer est antérieur à la limite de midi la plus récente.
- */
-function isFreeSpinAvailable(lastFreeSpinISO) {
+function isFreeSpinAvailable(lastFreeSpinISO, resetHour) {
   if (!lastFreeSpinISO) return true;
-  const boundary = getNoonBoundaryUTC();
+  const boundary = getResetBoundary(resetHour);
   return new Date(lastFreeSpinISO).getTime() < boundary.getTime();
 }
 
@@ -59,6 +50,21 @@ async function getPlayer(base44, user) {
   });
 }
 
+async function getGameConfig(base44) {
+  try {
+    const records = await base44.asServiceRole.entities.CasinoGameConfig.filter({ game_key: "wheel" });
+    if (records.length > 0) return records[0];
+  } catch { /* entity may not exist yet */ }
+  return null;
+}
+
+function buildRewards(config) {
+  if (config?.rewards && Array.isArray(config.rewards) && config.rewards.length > 0) {
+    return config.rewards.map((r, i) => ({ ...r, index: i }));
+  }
+  return DEFAULT_REWARDS;
+}
+
 // ===== Handler =====
 
 export default async function(req) {
@@ -70,12 +76,16 @@ export default async function(req) {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const player = await getPlayer(base44, user);
+    const config = await getGameConfig(base44);
+    const SPIN_COST = config?.spin_cost || DEFAULT_SPIN_COST;
+    const RESET_HOUR = config?.reset_hour_utc !== undefined ? config.reset_hour_utc : DEFAULT_RESET_HOUR;
+    const rewards = buildRewards(config);
 
     switch (action) {
 
       case 'getStatus': {
-        const freeAvailable = isFreeSpinAvailable(player.last_free_wheel_spin);
-        const nextReset = new Date(getNoonBoundaryUTC().getTime() + 24 * 60 * 60 * 1000);
+        const freeAvailable = isFreeSpinAvailable(player.last_free_wheel_spin, RESET_HOUR);
+        const nextReset = new Date(getResetBoundary(RESET_HOUR).getTime() + 24 * 60 * 60 * 1000);
         return Response.json({
           balance: player.balance || 0,
           freeSpinAvailable: freeAvailable,
@@ -85,22 +95,18 @@ export default async function(req) {
       }
 
       case 'spin': {
-        const freeAvailable = isFreeSpinAvailable(player.last_free_wheel_spin);
+        const freeAvailable = isFreeSpinAvailable(player.last_free_wheel_spin, RESET_HOUR);
         let isFree = freeAvailable;
 
-        // Si pas de lancer gratuit, vérifier le solde pour un lancer payant
         if (!isFree) {
           if ((player.balance || 0) < SPIN_COST) {
             return Response.json({ error: `Solde insuffisant. Il faut ${SPIN_COST} jetons pour un lancer supplémentaire.` }, { status: 400 });
           }
-          isFree = false;
         }
 
-        // 1. Déterminer le résultat (pondéré, sécurisé côté serveur)
-        const result = selectReward();
+        const result = selectReward(rewards);
         const updates = {};
 
-        // 2. Appliquer la récompense
         if (result.type === 'tokens' && result.amount > 0) {
           updates.balance = (player.balance || 0) + result.amount;
           updates.total_won = (player.total_won || 0) + result.amount;
@@ -109,22 +115,17 @@ export default async function(req) {
           }
         }
 
-        // 3. Gérer le coût du lancer
         if (freeAvailable) {
-          // Lancer gratuit : enregistrer la date d'utilisation
           updates.last_free_wheel_spin = new Date().toISOString();
         } else {
-          // Lancer payant : déduire le coût
           updates.balance = (updates.balance !== undefined ? updates.balance : (player.balance || 0)) - SPIN_COST;
           updates.total_wagered = (player.total_wagered || 0) + SPIN_COST;
         }
 
-        // 4. Appliquer les mises à jour
         if (Object.keys(updates).length > 0) {
           await base44.asServiceRole.entities.CasinoPlayer.update(player.id, updates);
         }
 
-        // 5. Créer une transaction Trix pour la récompense rare
         if (result.type === 'trix' && result.amount > 0) {
           await base44.asServiceRole.entities.TrixTransaction.create({
             user_email: user.email,
@@ -148,7 +149,7 @@ export default async function(req) {
           },
           balance: updates.balance !== undefined ? updates.balance : (player.balance || 0),
           freeSpinUsed: freeAvailable,
-          nextFreeSpinAvailable: false, // Le gratuit vient d'être utilisé
+          nextFreeSpinAvailable: false,
         });
       }
 

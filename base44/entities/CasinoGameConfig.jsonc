@@ -1,0 +1,115 @@
+{
+  "name": "CasinoGameConfig",
+  "type": "object",
+  "properties": {
+    "game_key": {
+      "type": "string",
+      "enum": [
+        "scratch",
+        "wheel"
+      ],
+      "description": "Cle du jeu de casino (scratch = tickets a gratter, wheel = roue de la fortune)"
+    },
+    "title": {
+      "type": "string",
+      "description": "Titre affiche aux joueurs"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description affichee aux joueurs"
+    },
+    "rules": {
+      "type": "string",
+      "description": "Regles affichees aux joueurs (texte libre)"
+    },
+    "banner_image": {
+      "type": "string",
+      "description": "URL de la banniere visuelle du jeu"
+    },
+    "icon": {
+      "type": "string",
+      "description": "Emoji ou URL de l'icone du jeu"
+    },
+    "ticket_price": {
+      "type": "number",
+      "default": 10000,
+      "description": "Prix d'achat d'un ticket a gratter (jetons)"
+    },
+    "spin_cost": {
+      "type": "number",
+      "default": 20000,
+      "description": "Cout d'un lancer supplementaire de la roue (jetons)"
+    },
+    "win_rate": {
+      "type": "number",
+      "default": 30,
+      "description": "Taux de victoire en pourcentage (0-100)"
+    },
+    "reset_hour_utc": {
+      "type": "number",
+      "default": 12,
+      "description": "Heure UTC de reset quotidien du lancer/ticket gratuit (0-23)"
+    },
+    "rewards": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "desc": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number",
+            "default": 0
+          },
+          "weight": {
+            "type": "number",
+            "default": 1
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "lose",
+              "tokens",
+              "trix",
+              "relance"
+            ]
+          }
+        }
+      },
+      "default": [],
+      "description": "Configuration des recompenses (poids relatifs, montants, types)"
+    },
+    "description_long": {
+      "type": "string",
+      "maxLength": 1000
+    }
+  },
+  "required": [
+    "game_key"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {},
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

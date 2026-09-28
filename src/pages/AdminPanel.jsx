@@ -1,23 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Shield, Users, Ticket, AlertTriangle, FileText, FolderTree, ArrowUpDown, LayoutGrid, FileCode, ShoppingBag, BarChart3, Coins, Download, Fence, Megaphone } from "lucide-react";
+import { ArrowLeft, Shield, Users, Ticket, AlertTriangle, FileCode, ShoppingBag, BarChart3, Download, Megaphone, Dices, Gamepad2 } from "lucide-react";
 import HeaderActions from "@/components/layout/HeaderActions";
 import AdminUserList from "@/components/admin/AdminUserList";
 import AdminTicketList from "@/components/admin/AdminTicketList";
-import AddWikiItemForm from "@/components/admin/AddWikiItemForm";
-import WikiItemList from "@/components/admin/WikiItemList";
-import CategoryManager from "@/components/admin/CategoryManager";
-import ReorderManager from "@/components/admin/ReorderManager";
-import BlockManager from "@/components/admin/BlockManager";
 import DynamicPageManager from "@/components/admin/DynamicPageManager";
 import CosmeticItemForm from "@/components/admin/CosmeticItemForm";
 import CosmeticItemList from "@/components/admin/CosmeticItemList";
 import CosmeticSalesDashboard from "@/components/admin/CosmeticSalesDashboard";
 import GithubDownloadsDashboard from "@/components/admin/GithubDownloadsDashboard";
-import SlotConfigPanel from "@/components/admin/SlotConfigPanel";
-import FarmingSimPopupManager from "@/components/admin/FarmingSimPopupManager";
 import BroadcastPanel from "@/components/admin/BroadcastPanel";
+import CasinoManager from "@/components/admin/CasinoManager";
+import TutoGamingManager from "@/components/admin/TutoGamingManager";
 
 export default function AdminPanel() {
   const nav = useNavigate();
@@ -78,18 +73,14 @@ export default function AdminPanel() {
   const mutedUsers = users.filter(u => u.is_muted).length;
 
   const tabs = [
-    { id: "tickets", label: "Support & Tickets", icon: Ticket },
+    { id: "tickets", label: "Support & Tickets", icon: Ticket, section: "Général" },
     { id: "users", label: "Utilisateurs", icon: Users },
-    { id: "wiki", label: "Contenu Wiki", icon: FileText },
-    { id: "categories", label: "Catégories", icon: FolderTree },
-    { id: "reorder", label: "Ordre & Réorganisation", icon: ArrowUpDown },
-    { id: "blocks", label: "Blocs Jeux", icon: LayoutGrid },
-    { id: "pages", label: "Pages Dynamiques", icon: FileCode },
-    { id: "shop", label: "Boutique", icon: ShoppingBag },
+    { id: "casino", label: "Gestion du Casino", icon: Dices, section: "Casino & Mini-jeux" },
+    { id: "tuto", label: "Tuto & Entraide Gaming", icon: Gamepad2, section: "Guides & Tutoriels" },
+    { id: "shop", label: "Boutique", icon: ShoppingBag, section: "Système" },
     { id: "downloads", label: "Téléchargements", icon: Download },
     { id: "dashboard", label: "Statistiques", icon: BarChart3 },
-    { id: "slots", label: "Slots Nexus Game", icon: Coins },
-    { id: "fs-popups", label: "Pop-ups Farming Sim", icon: Fence },
+    { id: "pages", label: "Pages Dynamiques", icon: FileCode },
     { id: "broadcast", label: "Annonces", icon: Megaphone },
   ];
 
@@ -145,21 +136,26 @@ export default function AdminPanel() {
         <div className="flex gap-4">
           {/* Vertical tabs sidebar */}
           <div className="w-44 sm:w-48 shrink-0 space-y-1">
-            {tabs.map((t) => {
+            {tabs.map((t, idx) => {
               const Icon = t.icon;
+              const showSectionHeader = (idx === 0 && t.section) || (idx > 0 && t.section && tabs[idx - 1]?.section !== t.section);
               return (
-                <button
-                  key={t.id}
-                  onClick={() => setTab(t.id)}
-                  className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition ${tab === t.id ? "text-white" : "text-white/40 hover:text-white/60"}`}
-                  style={tab === t.id ? { background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)" } : { background: "rgba(255,255,255,0.03)", border: "1px solid transparent" }}
-                >
-                  <Icon className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">{t.label}</span>
-                  {t.id === "tickets" && openTickets > 0 && (
-                    <span className="ml-auto px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white" style={{ background: "#a855f7" }}>{openTickets}</span>
+                <React.Fragment key={t.id}>
+                  {showSectionHeader && (
+                    <p className="text-[8px] font-black uppercase tracking-widest text-white/20 px-3 pt-3 pb-1">{t.section}</p>
                   )}
-                </button>
+                  <button
+                    onClick={() => setTab(t.id)}
+                    className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition ${tab === t.id ? "text-white" : "text-white/40 hover:text-white/60"}`}
+                    style={tab === t.id ? { background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)" } : { background: "rgba(255,255,255,0.03)", border: "1px solid transparent" }}
+                  >
+                    <Icon className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">{t.label}</span>
+                    {t.id === "tickets" && openTickets > 0 && (
+                      <span className="ml-auto px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white" style={{ background: "#a855f7" }}>{openTickets}</span>
+                    )}
+                  </button>
+                </React.Fragment>
               );
             })}
           </div>
@@ -168,21 +164,8 @@ export default function AdminPanel() {
           <div className="flex-1 min-w-0">
         {tab === "tickets" && <AdminTicketList tickets={tickets} user={user} onRefresh={loadData} />}
         {tab === "users" && <AdminUserList users={users} onRefresh={loadData} />}
-        {tab === "wiki" && (
-          <div className="space-y-6">
-            <div className="rounded-2xl border border-white/10 p-5" style={{ background: "rgba(15,10,25,0.6)" }}>
-              <h3 className="text-sm font-black text-white uppercase tracking-tight mb-4">Ajouter un élément</h3>
-              <AddWikiItemForm onSaved={() => setTab("wiki")} />
-            </div>
-            <div>
-              <h3 className="text-sm font-black text-white uppercase tracking-tight mb-3">Éléments existants</h3>
-              <WikiItemList />
-            </div>
-          </div>
-        )}
-        {tab === "categories" && <CategoryManager />}
-        {tab === "reorder" && <ReorderManager />}
-        {tab === "blocks" && <BlockManager />}
+        {tab === "casino" && <CasinoManager />}
+        {tab === "tuto" && <TutoGamingManager />}
         {tab === "pages" && <DynamicPageManager />}
         {tab === "shop" && (
           <div className="space-y-6">
@@ -199,8 +182,6 @@ export default function AdminPanel() {
         )}
         {tab === "dashboard" && <CosmeticSalesDashboard />}
         {tab === "downloads" && <GithubDownloadsDashboard />}
-        {tab === "slots" && <SlotConfigPanel />}
-        {tab === "fs-popups" && <FarmingSimPopupManager />}
         {tab === "broadcast" && <BroadcastPanel />}
           </div>
         </div>

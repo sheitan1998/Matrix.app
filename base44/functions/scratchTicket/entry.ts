@@ -1,12 +1,12 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 
-// ===== Configuration =====
+// ===== Default Configuration (fallback if no entity record) =====
 const INITIAL_BALANCE = 5000;
-const TICKET_PRICE = 10000;
-const WIN_RATE = 0.30; // 30% de chances de gagner
+const DEFAULT_TICKET_PRICE = 10000;
+const DEFAULT_WIN_RATE = 0.30;
+const DEFAULT_RESET_HOUR = 15;
 
-// Récompenses possibles parmi les 30% gagnants (poids relatifs)
-const REWARDS = [
+const DEFAULT_REWARDS = [
   { type: "relance",  label: "🎯 Relance !",            desc: "Un nouveau ticket gratuit pour rejouer", weight: 40, amount: 0 },
   { type: "tokens",   label: "💰 10 000 jetons",         desc: "Petit gain",                             weight: 30, amount: 10000 },
   { type: "tokens",   label: "💰 50 000 jetons",         desc: "Beau gain",                              weight: 20, amount: 50000 },
@@ -16,35 +16,24 @@ const REWARDS = [
 
 // ===== Helpers =====
 
-/**
- * Calcule l'horodatage du dernier réarmement du ticket gratuit (15h00 UTC).
- * Si l'heure actuelle est avant 15h00, le dernier réarmement était hier à 15h00.
- * Si l'heure actuelle est après 15h00, le dernier réarmement était aujourd'hui à 15h00.
- */
-function getLastResetTime(): Date {
+function getLastResetTime(resetHour) {
+  const hour = resetHour !== undefined ? resetHour : DEFAULT_RESET_HOUR;
   const now = new Date();
   const reset = new Date(now);
-  reset.setUTCHours(15, 0, 0, 0);
+  reset.setUTCHours(hour, 0, 0, 0);
   if (now.getTime() < reset.getTime()) {
     reset.setUTCDate(reset.getUTCDate() - 1);
   }
   return reset;
 }
 
-/**
- * Vérifie si le ticket gratuit quotidien est disponible.
- * Disponible si: jamais utilisé, ou utilisé avant le dernier réarmement à 15h00.
- */
-function isFreeTicketAvailable(freeTicketDate: string | null | undefined): boolean {
+function isFreeTicketAvailable(freeTicketDate, resetHour) {
   if (!freeTicketDate) return true;
-  const lastReset = getLastResetTime();
+  const lastReset = getLastResetTime(resetHour);
   return new Date(freeTicketDate).getTime() < lastReset.getTime();
 }
 
-/**
- * Récupère ou crée le profil CasinoPlayer de l'utilisateur.
- */
-async function getPlayer(base44: any, user: any) {
+async function getPlayer(base44, user) {
   const records = await base44.asServiceRole.entities.CasinoPlayer.filter({ user_email: user.email });
   if (records.length > 0) return records[0];
   return await base44.asServiceRole.entities.CasinoPlayer.create({
@@ -65,22 +54,34 @@ async function getPlayer(base44: any, user: any) {
   });
 }
 
-/**
- * Sélectionne une récompense aléatoirement parmi les gagnants (pondéré).
- */
-function selectReward() {
-  const totalWeight = REWARDS.reduce((s, r) => s + r.weight, 0);
+async function getGameConfig(base44) {
+  try {
+    const records = await base44.asServiceRole.entities.CasinoGameConfig.filter({ game_key: "scratch" });
+    if (records.length > 0) return records[0];
+  } catch { /* entity may not exist yet */ }
+  return null;
+}
+
+function buildRewards(config) {
+  if (config?.rewards && Array.isArray(config.rewards) && config.rewards.length > 0) {
+    return config.rewards;
+  }
+  return DEFAULT_REWARDS;
+}
+
+function selectReward(rewards) {
+  const totalWeight = rewards.reduce((s, r) => s + r.weight, 0);
   let roll = Math.random() * totalWeight;
-  for (const reward of REWARDS) {
+  for (const reward of rewards) {
     roll -= reward.weight;
     if (roll <= 0) return reward;
   }
-  return REWARDS[0];
+  return rewards[0];
 }
 
 // ===== Handler =====
 
-export default async function(req: Request): Promise<Response> {
+export default async function(req) {
   try {
     const body = await req.json().catch(() => ({}));
     const { action, ticketType } = body;
@@ -89,14 +90,18 @@ export default async function(req: Request): Promise<Response> {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const player = await getPlayer(base44, user);
+    const config = await getGameConfig(base44);
+    const TICKET_PRICE = config?.ticket_price || DEFAULT_TICKET_PRICE;
+    const WIN_RATE = config?.win_rate !== undefined ? config.win_rate / 100 : DEFAULT_WIN_RATE;
+    const RESET_HOUR = config?.reset_hour_utc !== undefined ? config.reset_hour_utc : DEFAULT_RESET_HOUR;
+    const rewards = buildRewards(config);
 
     switch (action) {
 
-      // ---- Statut des tickets ----
       case 'getTicketStatus': {
-        const freeAvailable = isFreeTicketAvailable(player.free_ticket_date);
-        const nextReset = getLastResetTime();
-        nextReset.setUTCDate(nextReset.getUTCDate() + 1); // prochain réarmement
+        const freeAvailable = isFreeTicketAvailable(player.free_ticket_date, RESET_HOUR);
+        const nextReset = getLastResetTime(RESET_HOUR);
+        nextReset.setUTCDate(nextReset.getUTCDate() + 1);
         return Response.json({
           balance: player.balance || 0,
           freeTicketAvailable: freeAvailable,
@@ -105,7 +110,6 @@ export default async function(req: Request): Promise<Response> {
         });
       }
 
-      // ---- Acheter un ticket (10 000 jetons) ----
       case 'buyTicket': {
         const currentBalance = player.balance || 0;
         if (currentBalance < TICKET_PRICE) {
@@ -125,15 +129,13 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ success: true, balance: newBalance, purchasedTickets: newTickets });
       }
 
-      // ---- Gratter un ticket (logique sécurisée côté serveur) ----
       case 'scratch': {
-        const updates: any = {};
-        const freeAvailable = isFreeTicketAvailable(player.free_ticket_date);
+        const updates = {};
+        const freeAvailable = isFreeTicketAvailable(player.free_ticket_date, RESET_HOUR);
 
-        // 1. Valider et consommer le ticket
         if (ticketType === 'free') {
           if (!freeAvailable) {
-            return Response.json({ error: 'Ticket quotidien déjà utilisé. Revenez à 15h00.' }, { status: 400 });
+            return Response.json({ error: 'Ticket quotidien déjà utilisé. Revenez plus tard.' }, { status: 400 });
           }
           updates.free_ticket_date = new Date().toISOString();
         } else if (ticketType === 'purchased') {
@@ -145,15 +147,12 @@ export default async function(req: Request): Promise<Response> {
           return Response.json({ error: 'Type de ticket invalide' }, { status: 400 });
         }
 
-        // 2. Déterminer le résultat (30% de gain)
         const isWin = Math.random() < WIN_RATE;
         let result;
 
         if (isWin) {
-          result = selectReward();
-          // 3. Appliquer la récompense
+          result = selectReward(rewards);
           if (result.type === 'relance') {
-            // Relance = un nouveau ticket gratuit (free_ticket_date remis à null)
             updates.free_ticket_date = null;
           } else if (result.type === 'tokens') {
             updates.balance = (player.balance || 0) + result.amount;
@@ -163,10 +162,9 @@ export default async function(req: Request): Promise<Response> {
             }
           }
         } else {
-          result = { type: 'lose', label: 'Perdu', desc: 'Réessayez demain !', amount: 0 };
+          result = { type: 'lose', label: 'Perdu', desc: 'Réessayez !', amount: 0 };
         }
 
-        // 4. Appliquer les mises à jour en une seule opération
         await base44.asServiceRole.entities.CasinoPlayer.update(player.id, updates);
 
         const newBalance = updates.balance !== undefined ? updates.balance : (player.balance || 0);
