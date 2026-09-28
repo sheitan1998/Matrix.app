@@ -71,6 +71,11 @@
       "format": "date-time",
       "description": "Date d'utilisation du ticket gratuit quotidien (null si disponible)"
     },
+    "last_free_wheel_spin": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date du dernier lancer gratuit de la Roue de la Fortune (null si jamais utilis\u00e9)"
+    },
     "purchased_tickets": {
       "type": "number",
       "default": 0,

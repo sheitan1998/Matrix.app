@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 
 // ===== Configuration =====
 const INITIAL_BALANCE = 5000;
+const SPIN_COST = 20000; // Coût d'un lancer supplémentaire (après le gratuit quotidien)
 
 // Récompenses avec poids relatifs (normalisés côté serveur)
 // L'ordre des index correspond à la position sur la roue (sens horaire depuis le haut)
@@ -25,6 +26,27 @@ function selectReward() {
     if (roll <= 0) return reward;
   }
   return REWARDS[0];
+}
+
+/**
+ * Retourne la limite de réinitialisation (midi UTC) la plus récente déjà passée.
+ * Le lancer gratuit se réinitialise chaque jour à 12h00 (midi) UTC.
+ */
+function getNoonBoundaryUTC() {
+  const now = new Date();
+  const todayNoon = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 12, 0, 0, 0));
+  // Si on est avant midi aujourd'hui, la limite est midi hier
+  return now.getTime() >= todayNoon.getTime() ? todayNoon : new Date(todayNoon.getTime() - 24 * 60 * 60 * 1000);
+}
+
+/**
+ * Détermine si le lancer gratuit est disponible.
+ * Disponible si jamais utilisé OU si le dernier lancer est antérieur à la limite de midi la plus récente.
+ */
+function isFreeSpinAvailable(lastFreeSpinISO) {
+  if (!lastFreeSpinISO) return true;
+  const boundary = getNoonBoundaryUTC();
+  return new Date(lastFreeSpinISO).getTime() < boundary.getTime();
 }
 
 async function getPlayer(base44, user) {
@@ -52,10 +74,28 @@ export default async function(req) {
     switch (action) {
 
       case 'getStatus': {
-        return Response.json({ balance: player.balance || 0 });
+        const freeAvailable = isFreeSpinAvailable(player.last_free_wheel_spin);
+        const nextReset = new Date(getNoonBoundaryUTC().getTime() + 24 * 60 * 60 * 1000);
+        return Response.json({
+          balance: player.balance || 0,
+          freeSpinAvailable: freeAvailable,
+          spinCost: SPIN_COST,
+          nextResetAt: nextReset.toISOString(),
+        });
       }
 
       case 'spin': {
+        const freeAvailable = isFreeSpinAvailable(player.last_free_wheel_spin);
+        let isFree = freeAvailable;
+
+        // Si pas de lancer gratuit, vérifier le solde pour un lancer payant
+        if (!isFree) {
+          if ((player.balance || 0) < SPIN_COST) {
+            return Response.json({ error: `Solde insuffisant. Il faut ${SPIN_COST} jetons pour un lancer supplémentaire.` }, { status: 400 });
+          }
+          isFree = false;
+        }
+
         // 1. Déterminer le résultat (pondéré, sécurisé côté serveur)
         const result = selectReward();
         const updates = {};
@@ -69,11 +109,22 @@ export default async function(req) {
           }
         }
 
+        // 3. Gérer le coût du lancer
+        if (freeAvailable) {
+          // Lancer gratuit : enregistrer la date d'utilisation
+          updates.last_free_wheel_spin = new Date().toISOString();
+        } else {
+          // Lancer payant : déduire le coût
+          updates.balance = (updates.balance !== undefined ? updates.balance : (player.balance || 0)) - SPIN_COST;
+          updates.total_wagered = (player.total_wagered || 0) + SPIN_COST;
+        }
+
+        // 4. Appliquer les mises à jour
         if (Object.keys(updates).length > 0) {
           await base44.asServiceRole.entities.CasinoPlayer.update(player.id, updates);
         }
 
-        // 3. Créer une transaction Trix pour la récompense rare
+        // 5. Créer une transaction Trix pour la récompense rare
         if (result.type === 'trix' && result.amount > 0) {
           await base44.asServiceRole.entities.TrixTransaction.create({
             user_email: user.email,
@@ -83,7 +134,7 @@ export default async function(req) {
           });
         }
 
-        console.log('[wheelOfFortune] spin by', user.email, '| result:', result.label, '| index:', result.index);
+        console.log('[wheelOfFortune] spin by', user.email, '| result:', result.label, '| index:', result.index, '| free:', freeAvailable);
 
         return Response.json({
           success: true,
@@ -96,6 +147,8 @@ export default async function(req) {
             type: result.type,
           },
           balance: updates.balance !== undefined ? updates.balance : (player.balance || 0),
+          freeSpinUsed: freeAvailable,
+          nextFreeSpinAvailable: false, // Le gratuit vient d'être utilisé
         });
       }
 

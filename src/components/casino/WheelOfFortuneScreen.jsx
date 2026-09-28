@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { RefreshCw, Sparkles } from "lucide-react";
+import { RefreshCw, Sparkles, Clock, Gift, Coins } from "lucide-react";
 import { toast } from "sonner";
 import { formatBet } from "@/components/casino/slotThemes";
 import CasinoToken from "@/components/casino/CasinoToken";
@@ -17,6 +17,7 @@ const SEGMENTS = [
 
 const SEGMENT_ANGLE = 360 / SEGMENTS.length;
 const SPIN_DURATION = 4500; // ms
+const SPIN_COST = 20000;
 
 function polarToCartesian(cx, cy, r, angleDeg) {
   const rad = (angleDeg - 90) * Math.PI / 180;
@@ -35,16 +36,50 @@ function describeArc(cx, cy, r, startAngle, endAngle) {
   ].join(" ");
 }
 
+function formatTimeUntil(isoString) {
+  if (!isoString) return "";
+  const diff = new Date(isoString).getTime() - Date.now();
+  if (diff <= 0) return "Disponible";
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  if (hours > 0) return `${hours}h${mins.toString().padStart(2, "0")}`;
+  return `${mins} min`;
+}
+
 /**
  * Écran du mini-jeu "Roue de la Fortune" intégré au Casino.
- * Synchronise le solde avec le Casino via les props balance/setBalance.
+ * - 1 lancer gratuit par jour (reset à 12h00 UTC, non cumulable)
+ * - Lancers supplémentaires : 20 000 jetons par tour
  */
 export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [result, setResult] = useState(null);
   const [showResult, setShowResult] = useState(false);
+  const [freeSpinAvailable, setFreeSpinAvailable] = useState(false);
+  const [nextResetAt, setNextResetAt] = useState(null);
+  const [statusLoading, setStatusLoading] = useState(true);
   const wheelRef = useRef(null);
+
+  // Charger le statut (lancer gratuit disponible + prochain reset)
+  const loadStatus = useCallback(async () => {
+    try {
+      const res = await base44.functions.invoke("wheelOfFortune", { action: "getStatus" });
+      const data = res?.data || res;
+      if (!data.error) {
+        setFreeSpinAvailable(data.freeSpinAvailable || false);
+        setNextResetAt(data.nextResetAt || null);
+        if (data.balance !== undefined) setBalance(data.balance);
+      }
+    } catch {
+      /* silent */
+    }
+    setStatusLoading(false);
+  }, [setBalance]);
+
+  useEffect(() => {
+    loadStatus();
+  }, [loadStatus]);
 
   const handleSpin = useCallback(async () => {
     if (spinning) return;
@@ -62,6 +97,10 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
       const winResult = data.result;
       setResult(winResult);
       if (data.balance !== undefined) setBalance(data.balance);
+      // Le lancer gratuit vient d'être utilisé
+      if (data.freeSpinUsed) {
+        setFreeSpinAvailable(false);
+      }
 
       // Calculer l'angle cible pour aligner le segment gagnant sous le pointeur
       const targetAngle = 360 - (winResult.index * SEGMENT_ANGLE + SEGMENT_ANGLE / 2);
@@ -87,6 +126,10 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
       setSpinning(false);
     }
   }, [spinning, rotation, setBalance]);
+
+  const canSpinFree = freeSpinAvailable && !spinning;
+  const canSpinPaid = !freeSpinAvailable && !spinning && balance >= SPIN_COST;
+  const canSpin = canSpinFree || canSpinPaid;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-100px)] px-4 py-8">
@@ -184,19 +227,32 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
       {/* Spin button */}
       <button
         onClick={handleSpin}
-        disabled={spinning}
+        disabled={!canSpin || statusLoading}
         className="px-8 py-3 rounded-xl text-sm font-black text-white transition hover:opacity-90 disabled:opacity-40 tap-sm flex items-center gap-2"
         style={{
-          background: spinning ? "rgba(255,255,255,0.1)" : "linear-gradient(135deg, #00ffff, #ff00ff)",
-          boxShadow: spinning ? "none" : "0 0 20px rgba(168,85,247,0.4)",
+          background: spinning ? "rgba(255,255,255,0.1)" : canSpinFree
+            ? "linear-gradient(135deg, #22c55e, #16a34a)"
+            : "linear-gradient(135deg, #00ffff, #ff00ff)",
+          boxShadow: spinning ? "none" : canSpinFree ? "0 0 20px rgba(34,197,94,0.4)" : "0 0 20px rgba(168,85,247,0.4)",
         }}
       >
         {spinning ? (
           <><RefreshCw className="w-4 h-4 animate-spin" /> Rotation...</>
+        ) : canSpinFree ? (
+          <><Gift className="w-4 h-4" /> LANCER GRATUIT</>
         ) : (
-          <><Sparkles className="w-4 h-4" /> LANCER LA ROUE</>
+          <><Sparkles className="w-4 h-4" /> LANCER ({formatBet(SPIN_COST)})</>
         )}
       </button>
+
+      {/* Free spin status / countdown */}
+      {!freeSpinAvailable && !spinning && nextResetAt && (
+        <div className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg" style={{ background: "rgba(15,10,25,0.5)", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <Clock className="w-3 h-3 text-white/40" />
+          <span className="text-[10px] text-white/50">Prochain lancer gratuit dans</span>
+          <span className="text-[10px] font-bold" style={{ color: "#22c55e" }}>{formatTimeUntil(nextResetAt)}</span>
+        </div>
+      )}
 
       {/* Balance + rewards table */}
       <div className="mt-6 flex items-center gap-2 px-4 py-2 rounded-xl" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(197,160,89,0.15)" }}>
@@ -214,6 +270,15 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
             </span>
           ))}
         </div>
+      </div>
+
+      {/* Rules summary */}
+      <div className="mt-3 px-4 py-2 rounded-xl w-full max-w-sm text-center" style={{ background: "rgba(15,10,25,0.3)", border: "1px solid rgba(255,255,255,0.03)" }}>
+        <p className="text-[9px] text-white/40 leading-relaxed">
+          🎁 1 lancer gratuit par jour (reset à 12h00 UTC, non cumulable).
+          <br />
+          <Coins className="w-2.5 h-2.5 inline" /> Lancers supplémentaires : {formatBet(SPIN_COST)} jetons par tour.
+        </p>
       </div>
     </div>
   );
