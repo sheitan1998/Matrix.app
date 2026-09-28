@@ -43,6 +43,10 @@
       "type": "string",
       "description": "URL du fichier audio (messages vocaux)"
     },
+    "transcript": {
+      "type": "string",
+      "description": "Transcription automatique du message vocal (generee localement via Web Speech API)"
+    },
     "is_read": {
       "type": "boolean",
       "default": false,

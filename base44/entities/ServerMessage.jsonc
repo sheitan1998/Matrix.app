@@ -37,6 +37,10 @@
       "type": "string",
       "description": "Nom du fichier joint"
     },
+    "transcript": {
+      "type": "string",
+      "description": "Transcription automatique du message vocal (generee localement via Web Speech API)"
+    },
     "reactions": {
       "type": "array",
       "items": {

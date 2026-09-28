@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Sparkles, Plus, Hash, Volume2, Megaphone, Settings, Trash2, Search, UserPlus, Link2, MessageCircle, X, Zap, ArrowRight, Folder, MessageSquare } from "lucide-react";
+import { ArrowLeft, Sparkles, Plus, Hash, Volume2, Megaphone, Settings, Trash2, Search, UserPlus, Link2, MessageCircle, X, Zap, ArrowRight, Folder, MessageSquare, SlidersHorizontal } from "lucide-react";
 import ChannelCreateModal from "@/components/community/ChannelCreateModal";
 import ChannelList from "@/components/community/ChannelList";
 import ForumChannel from "@/components/community/ForumChannel";
@@ -17,6 +17,7 @@ import NexusVIPShop from "@/components/nexus/NexusVIPShop";
 import ServerBoostButton from "@/components/community/ServerBoostButton";
 import UserProfilePopup from "@/components/profile/UserProfilePopup";
 import ProfileContent from "@/components/profile/ProfileContent";
+import UserSettingsModal from "@/components/profile/UserSettingsModal";
 import UserBar from "@/components/community/UserBar";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -62,6 +63,7 @@ export default function Community() {
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [showVIPShop, setShowVIPShop] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [showUserSettings, setShowUserSettings] = useState(false);
   const [flashBoosts, setFlashBoosts] = useState(0);
   const [joinConfirmServer, setJoinConfirmServer] = useState(null);
   const [showChannelModal, setShowChannelModal] = useState(false);
@@ -295,6 +297,11 @@ export default function Community() {
                 <Settings className="w-4 h-4" />
               </button>
           }
+          <button onClick={() => setShowUserSettings(true)}
+            className="p-2 rounded-xl transition text-muted-foreground hover:text-white"
+            title="Paramètres utilisateur">
+            <SlidersHorizontal className="w-4 h-4" />
+          </button>
           </> :
 
         <>
@@ -688,6 +695,13 @@ export default function Community() {
           </div>
         </div>
       }
+
+      {/* User Settings Modal */}
+      <UserSettingsModal
+        open={showUserSettings}
+        onClose={() => setShowUserSettings(false)}
+        user={user}
+      />
     </div>);
 
 }

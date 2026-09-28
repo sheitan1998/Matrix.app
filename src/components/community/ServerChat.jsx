@@ -82,6 +82,7 @@ export default function ServerChat({ server, channel, theme, user }) {
       type,
       file_url: attachment?.url || "",
       file_name: attachment?.name || "",
+      transcript: type === "voice" ? (attachment?.transcript || "") : "",
       reply_to_id: replyTo?.id || "",
       reply_to_name: replyTo?.author_name || "",
       reply_to_content: replyTo?.content || "",
@@ -302,7 +303,7 @@ export default function ServerChat({ server, channel, theme, user }) {
                     </div>
                   )}
                   {msg.type === "voice" && msg.file_url ? (
-                    <VoiceMessagePlayer src={msg.file_url} accent={accent} />
+                    <VoiceMessagePlayer src={msg.file_url} accent={accent} transcript={msg.transcript} />
                   ) : null}
                   {msg.type === "file" && msg.file_url ? (
                     msg.file_url.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i) ? (

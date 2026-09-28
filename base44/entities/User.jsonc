@@ -140,6 +140,30 @@
       "type": "string",
       "format": "date-time",
       "description": "Ban expiration date"
+    },
+    "notif_messages": {
+      "type": "boolean",
+      "default": true,
+      "description": "Recevoir des notifications pour les messages"
+    },
+    "notif_free_rewards": {
+      "type": "boolean",
+      "default": true,
+      "description": "Recevoir des rappels pour les recompenses gratuites (Roue de la Fortune, Ticket Quotidien)"
+    },
+    "allow_friend_requests": {
+      "type": "boolean",
+      "default": true,
+      "description": "Autoriser les autres utilisateurs a ajouter l'utilisateur en ami"
+    },
+    "dm_privacy": {
+      "type": "string",
+      "enum": [
+        "everyone",
+        "friends"
+      ],
+      "default": "everyone",
+      "description": "Qui peut envoyer des messages prives a l'utilisateur (everyone = tout le monde, friends = uniquement les amis)"
     }
   },
   "required": []

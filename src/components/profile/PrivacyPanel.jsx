@@ -1,13 +1,15 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { Mail, Lock, Eye, EyeOff, Shield, Check, Save } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Shield, Check, Save, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
+import UserSettingsModal from "@/components/profile/UserSettingsModal";
 
 export default function PrivacyPanel({ user, onUpdate }) {
   const [editingEmail, setEditingEmail] = useState(false);
   const [emailValue, setEmailValue] = useState(user?.email || "");
   const [saving, setSaving] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const saveEmail = async () => {
     if (!emailValue.trim()) return;
@@ -84,6 +86,13 @@ export default function PrivacyPanel({ user, onUpdate }) {
       <button onClick={() => base44.auth.logout("/")} className="w-full p-4 rounded-2xl text-sm font-bold text-red-400 transition" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)" }}>
         Se déconnecter
       </button>
+
+      {/* User Settings */}
+      <button onClick={() => setShowSettings(true)} className="w-full p-4 rounded-2xl text-sm font-bold text-white flex items-center justify-center gap-2 transition hover:opacity-90" style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.15), rgba(109,40,217,0.1))", border: "1px solid rgba(168,85,247,0.3)" }}>
+        <SlidersHorizontal className="w-4 h-4" style={{ color: "#a855f7" }} /> Paramètres de notification et confidentialité
+      </button>
+
+      <UserSettingsModal open={showSettings} onClose={() => setShowSettings(false)} user={user} />
     </div>
   );
 }

@@ -240,6 +240,7 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
       content: content || (attachment ? "Message vocal" : ""),
       type,
       file_url: attachment?.url || "",
+      transcript: type === "voice" ? (attachment?.transcript || "") : "",
       is_read: false,
     };
 
@@ -473,7 +474,7 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
                           }
                         >
                           {msg.type === "voice" && msg.file_url ? (
-                            <VoiceMessagePlayer src={msg.file_url} accent="#a855f7" />
+                            <VoiceMessagePlayer src={msg.file_url} accent="#a855f7" transcript={msg.transcript} />
                           ) : (
                             <p className="text-sm text-white break-words">{msg.content}</p>
                           )}
