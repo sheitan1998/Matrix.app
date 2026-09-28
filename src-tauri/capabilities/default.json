@@ -44,6 +44,7 @@
       "commands": {
         "allow": ["detect_running_games"]
       }
-    }
+    },
+    "core:webview:allow-microphone"
   ]
 }

@@ -8,6 +8,8 @@ import { format } from "date-fns";
 import { NitroAvatar } from "@/components/NitroAvatarPicker";
 import { useProgression } from "@/context/ProgressionContext";
 import UserProfilePopup from "@/components/profile/UserProfilePopup";
+import VoiceRecorder from "@/components/chat/VoiceRecorder";
+import VoiceMessagePlayer from "@/components/chat/VoiceMessagePlayer";
 
 const EMOJI_LIST = ["😀","😂","🥰","😎","🤔","😢","😡","👍","👎","❤️","🔥","🎉","🎮","🏆","✨","💎","🚀","💯","🤣","😍","🤝","👏","🙌","💀","🫡","😴","🤯","🥳","😱","🤩"];
 
@@ -59,7 +61,7 @@ export default function ServerChat({ server, channel, theme, user }) {
   const canSendImages = settings.embed_links !== false; // reuse embed_links for images
   const canMentionEveryone = settings.mention_everyone !== false;
 
-  const send = async (attachment = null) => {
+  const send = async (attachment = null, messageType = null) => {
     const content = input.trim();
     if ((!content && !attachment) || sending) return;
     if (!canSendMessages) { toast.error("Envoi de messages désactivé dans ce salon"); return; }
@@ -69,6 +71,7 @@ export default function ServerChat({ server, channel, theme, user }) {
       return;
     }
     setSending(true);
+    const type = messageType || (attachment ? "file" : "text");
     await base44.entities.ServerMessage.create({
       server_id: server.id,
       channel_id: channel.id,
@@ -76,7 +79,7 @@ export default function ServerChat({ server, channel, theme, user }) {
       author_name: user.full_name || user.email.split("@")[0],
       author_avatar: user.animated_avatar || user.avatar_url || "",
       content: content || (attachment ? attachment.name : ""),
-      type: attachment ? "file" : "text",
+      type,
       file_url: attachment?.url || "",
       file_name: attachment?.name || "",
       reply_to_id: replyTo?.id || "",
@@ -298,6 +301,9 @@ export default function ServerChat({ server, channel, theme, user }) {
                       <span className="text-[11px] text-white/40 truncate max-w-[200px]">{msg.reply_to_content}</span>
                     </div>
                   )}
+                  {msg.type === "voice" && msg.file_url ? (
+                    <VoiceMessagePlayer src={msg.file_url} accent={accent} />
+                  ) : null}
                   {msg.type === "file" && msg.file_url ? (
                     msg.file_url.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i) ? (
                       <img src={msg.file_url} alt="Uploaded" className="max-w-xs max-h-64 rounded-xl mb-1 border border-white/10" />
@@ -432,6 +438,11 @@ export default function ServerChat({ server, channel, theme, user }) {
             title="Emojis">
             <Smile className="w-4 h-4" />
           </button>
+          <VoiceRecorder
+            disabled={!canSendMessages || sending}
+            accent={accent}
+            onSend={(voice) => send({ url: voice.url, name: voice.name }, "voice")}
+          />
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}

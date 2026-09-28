@@ -25,7 +25,8 @@
       "enum": [
         "text",
         "system",
-        "file"
+        "file",
+        "voice"
       ],
       "default": "text"
     },
