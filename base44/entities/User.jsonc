@@ -65,6 +65,10 @@
     "avatar_url": {
       "type": "string"
     },
+    "banner_url": {
+      "type": "string",
+      "description": "URL de la banni\u00e8re de profil"
+    },
     "bio": {
       "type": "string"
     },
@@ -138,10 +142,5 @@
       "description": "Ban expiration date"
     }
   },
-  "required": [
-    "premium_until",
-    "avatar_url",
-    "bio",
-    "channel_id"
-  ]
+  "required": []
 }

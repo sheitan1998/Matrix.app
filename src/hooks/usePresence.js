@@ -71,10 +71,12 @@ async function detectRunningGame() {
     const result = await invoke("detect_running_games", { processNames });
     if (result && Array.isArray(result) && result.length > 0) {
       const key = result[0].toLowerCase().replace(/\.exe$/i, "").trim();
-      return DETECTABLE_GAMES[key] || null;
+      const game = DETECTABLE_GAMES[key] || null;
+      if (game) console.log("[usePresence] Game detected:", game.label);
+      return game;
     }
   } catch (e) {
-    // Not in Tauri environment or command not available — silently ignore
+    console.warn("[usePresence] detect_running_games failed:", e);
   }
   return null;
 }
@@ -126,7 +128,7 @@ export function usePresence() {
         current_activity: label,
         current_activity_type: type,
       })
-      .catch(() => {});
+      .catch((e) => console.warn("[usePresence] updateMe failed:", e));
   }, [user?.custom_status, location.pathname]);
 
   // Game detection loop — detects games and immediately pushes presence update
