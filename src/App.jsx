@@ -78,6 +78,7 @@ import QuestDetailPage from '@/pages/tuto-gaming/QuestDetailPage';
 import WikiEntryDetailPage from '@/pages/tuto-gaming/WikiEntryDetailPage';
 import FarmingSimulator25 from '@/pages/tuto-gaming/FarmingSimulator25';
 import FarmingSimCategory from '@/pages/tuto-gaming/FarmingSimCategory';
+import FortniteMaps from '@/pages/tuto-gaming/FortniteMaps';
 import DynamicPage from '@/pages/DynamicPage';
 import TwitchHome from '@/pages/twitch/TwitchHome';
 import TwitchWatch from '@/pages/twitch/TwitchWatch';
@@ -152,6 +153,7 @@ const AuthenticatedApp = () => {
           <Route path="/tuto-gaming/:gameSlug/wiki/:entryId" element={<WikiEntryDetailPage />} />
           <Route path="/tuto-gaming/farming-simulator-25" element={<FarmingSimulator25 />} />
           <Route path="/tuto-gaming/farming-simulator-25/:categoryId" element={<FarmingSimCategory />} />
+          <Route path="/tuto-gaming/fortnite" element={<FortniteMaps />} />
         </Route>
         <Route element={<ProtectedRoute unauthenticatedElement={<AuthGate />} />}>
           <Route path="/community" element={<Community />} />

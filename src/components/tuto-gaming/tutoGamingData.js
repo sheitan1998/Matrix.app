@@ -58,12 +58,17 @@ export const FEATURED_GAMES = [
     image_url: "/media/tuto-gaming/5a7d6231a_Farming-Simulator-25.jpg",
     is_active: true,
   },
+  {
+    name: "Fortnite",
+    slug: "fortnite",
+    image_url: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/719de61e0_Gemini_Generated_Image_q2fpd6q2fpd6q2fp.jpg",
+    is_active: true,
+  },
 ];
 
 export const COMING_SOON_GAMES = [
   { name: "Minecraft", slug: "minecraft", card_gradient: "linear-gradient(135deg, #0D2818 0%, #1A5C3A 50%, #0D2818 100%)" },
   { name: "World of Warcraft", slug: "wow", card_gradient: "linear-gradient(135deg, #1A0A0A 0%, #4A1A0A 50%, #1A0A0A 100%)" },
-  { name: "Fortnite", slug: "fortnite", card_gradient: "linear-gradient(135deg, #0A1A2A 0%, #1A3A5A 50%, #0A1A2A 100%)" },
   { name: "League of Legends", slug: "lol", card_gradient: "linear-gradient(135deg, #0A1525 0%, #1A3555 50%, #0A1525 100%)" },
   { name: "Genshin Impact", slug: "genshin", card_gradient: "linear-gradient(135deg, #0D1A2A 0%, #1A3555 50%, #0D1A2A 100%)" },
 ];

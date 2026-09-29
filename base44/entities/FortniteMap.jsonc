@@ -1,0 +1,89 @@
+{
+  "name": "FortniteMap",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Titre de la map"
+    },
+    "creator_name": {
+      "type": "string",
+      "description": "Nom / pseudo du cr\u00e9ateur de la map"
+    },
+    "map_code": {
+      "type": "string",
+      "description": "Code officiel de la map (format XXXX-XXXX-XXXX)"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "tycoon",
+        "horreur",
+        "deathrun",
+        "battle_royale",
+        "parkour",
+        "pve",
+        "rp",
+        "music",
+        "puzzle",
+        "autre"
+      ],
+      "default": "autre",
+      "description": "Cat\u00e9gorie / genre de la map"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Description d\u00e9taill\u00e9e de la map"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "URL de l'image miniature de la map"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email de l'utilisateur ayant soumis la map"
+    },
+    "is_approved": {
+      "type": "boolean",
+      "default": true,
+      "description": "Indique si la map est approuv\u00e9e et visible dans le catalogue"
+    }
+  },
+  "required": [
+    "title",
+    "creator_name",
+    "map_code",
+    "category"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {},
+    "update": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
