@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { base44 } from "@/api/base44Client";
 import {
@@ -124,6 +124,25 @@ export default function UserSettingsModal({ open, onClose, user }) {
   const [savingKey, setSavingKey] = useState(null);
   const [showAllTimezones, setShowAllTimezones] = useState(false);
 
+  const updateSetting = useCallback(async (key, value, showToast = true) => {
+    setSettings(prev => {
+      const prevValue = prev[key];
+      setSavingKey(key);
+      base44.auth.updateMe({ [key]: value })
+        .then(() => {
+          if (showToast) toast.success("Paramètre mis à jour");
+        })
+        .catch((err) => {
+          console.error("updateSetting error:", key, err);
+          toast.error("Erreur lors de la mise à jour");
+          // revert to previous value
+          setSettings(p => ({ ...p, [key]: prevValue }));
+        })
+        .finally(() => setSavingKey(null));
+      return { ...prev, [key]: value };
+    });
+  }, []);
+
   useEffect(() => {
     if (open && user) {
       setSettings({
@@ -134,12 +153,6 @@ export default function UserSettingsModal({ open, onClose, user }) {
         interface_language: user.interface_language || "fr",
         timezone: user.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
       });
-      // Set default timezone from browser if not set
-      if (!user.timezone) {
-        const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-        setSettings(prev => ({ ...prev, timezone: browserTz }));
-        updateSetting("timezone", browserTz, false);
-      }
     }
   }, [open, user]);
 
@@ -151,25 +164,6 @@ export default function UserSettingsModal({ open, onClose, user }) {
   }, [open, onClose]);
 
   if (!open) return null;
-
-  const updateSetting = async (key, value, showToast = true) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
-    setSavingKey(key);
-    try {
-      await base44.auth.updateMe({ [key]: value });
-      if (showToast) toast.success("Paramètre mis à jour");
-    } catch {
-      toast.error("Erreur lors de la mise à jour");
-      // revert on error
-      setSettings(prev => {
-        const reverted = { ...prev };
-        if (typeof prev[key] === "boolean") reverted[key] = !value;
-        else reverted[key] = prev[key];
-        return reverted;
-      });
-    }
-    setSavingKey(null);
-  };
 
   const allTimezones = showAllTimezones
     ? Intl.supportedValuesOf?.("timeZone") || COMMON_TIMEZONES

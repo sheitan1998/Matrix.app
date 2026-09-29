@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Mic, MicOff, Headphones, HeadphoneOff, Settings, Pencil, X, Trash2 } from "lucide-react";
-import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { stripPseudoTag } from "@/lib/format";
 import { toast } from "sonner";
 import { isUserOnline, getActivityIcon } from "@/hooks/usePresence";
+import UserSettingsModal from "@/components/profile/UserSettingsModal";
 
 const QUICK_STATUSES = [
   { label: "En ligne", value: "", icon: "🟢" },
@@ -19,6 +19,7 @@ export default function UserBar({ user, progress, rank, onOpenProfile }) {
   const [showStatusEditor, setShowStatusEditor] = useState(false);
   const [customStatus, setCustomStatus] = useState("");
   const [savingStatus, setSavingStatus] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const displayName = stripPseudoTag(user?.full_name) || user?.email?.split("@")[0] || "Utilisateur";
   const online = isUserOnline(user?.last_seen);
@@ -164,14 +165,16 @@ export default function UserBar({ user, progress, rank, onOpenProfile }) {
         >
           {deafened ? <HeadphoneOff className="w-3.5 h-3.5 text-red-400" /> : <Headphones className="w-3.5 h-3.5 text-white/60" />}
         </button>
-        <Link
-          to="/mon-profil"
+        <button
+          onClick={() => setShowSettings(true)}
           className="w-7 h-7 rounded-md flex items-center justify-center transition hover:bg-white/10 shrink-0 tap-sm"
           title="Paramètres du compte"
         >
           <Settings className="w-3.5 h-3.5 text-white/60" />
-        </Link>
+        </button>
       </div>
+
+      <UserSettingsModal open={showSettings} onClose={() => setShowSettings(false)} user={user} />
     </div>
   );
 }
