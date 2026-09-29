@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import ScratchCard from "@/components/nexus/ScratchCard";
 import { formatBet } from "@/components/casino/slotThemes";
 import CasinoToken from "@/components/casino/CasinoToken";
+import { bustImageCache } from "@/lib/casinoImageCache";
 
 const TICKET_PRICE = 10000;
 
@@ -21,12 +22,23 @@ export default function ScratchGameScreen({ balance, setBalance, onBack }) {
   const [scratchResult, setScratchResult] = useState(null);
   const [scratchKey, setScratchKey] = useState(0);
   const [revealed, setRevealed] = useState(false);
-  const [gameTitle, setGameTitle] = useState('Tickets à Gratter');
+  const [gameConfig, setGameConfig] = useState(null);
 
   useEffect(() => {
-    base44.entities.CasinoGameConfig.filter({ game_key: 'scratch' })
-      .then(records => { if (records[0]?.title) setGameTitle(records[0].title); })
-      .catch(() => {});
+    const loadConfig = async () => {
+      try {
+        const records = await base44.entities.CasinoGameConfig.filter({ game_key: 'scratch' });
+        setGameConfig(records[0] || null);
+      } catch { /* silent */ }
+    };
+    loadConfig();
+    // Realtime: refresh config instantly when admin saves changes
+    const unsubscribe = base44.entities.CasinoGameConfig.subscribe((event) => {
+      if (event.type === 'delete') { setGameConfig(null); return; }
+      const rec = event.data;
+      if (rec?.game_key === 'scratch') setGameConfig(rec);
+    });
+    return () => { unsubscribe(); };
   }, []);
 
   const fetchStatus = useCallback(async () => {
@@ -110,12 +122,28 @@ export default function ScratchGameScreen({ balance, setBalance, onBack }) {
 
   const canScratch = freeTicketAvailable || purchasedTickets > 0;
   const isScratching = scratchResult && !revealed;
+  const gameTitle = gameConfig?.title || 'Tickets à Gratter';
+  const gameIcon = gameConfig?.icon;
+  const bgImage = gameConfig?.background_image;
+  const bgColor = gameConfig?.background_color || '#0a050f';
+  const rewards = gameConfig?.rewards?.length ? gameConfig.rewards : [
+    { icon: "🎯", label: "Relance" },
+    { icon: "💰", label: "10K" },
+    { icon: "💰", label: "50K" },
+    { icon: "💰", label: "100K" },
+    { icon: "💎", label: "1M" },
+    { icon: "😢", label: "Perdu" },
+  ];
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-100px)] px-4 py-8">
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-100px)] px-4 py-8" style={bgImage ? { backgroundImage: `url(${bustImageCache(bgImage, gameConfig?.updated_date)})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: bgColor }}>
       {/* Title */}
       <div className="flex items-center gap-2 mb-6">
-        <Sparkles className="w-5 h-5" style={{ color: "#a855f7" }} />
+        {gameIcon && /^https?:\/\//i.test(gameIcon) ? (
+          <img src={bustImageCache(gameIcon, gameConfig?.updated_date)} alt="" className="w-6 h-6 object-contain" />
+        ) : (
+          <Sparkles className="w-5 h-5" style={{ color: "#a855f7" }} />
+        )}
         <h2 className="text-xl font-black text-white">{gameTitle}</h2>
       </div>
 
@@ -237,18 +265,17 @@ export default function ScratchGameScreen({ balance, setBalance, onBack }) {
 
       {/* Rewards table */}
       <div className="mt-5 p-3 rounded-xl w-full max-w-md" style={{ background: "rgba(15,10,25,0.4)", border: "1px solid rgba(255,255,255,0.04)" }}>
-        <p className="text-[11px] font-bold text-white/60 mb-2">Récompenses (30% de chances de gain) :</p>
+        <p className="text-[11px] font-bold text-white/60 mb-2">Récompenses ({Number(gameConfig?.win_rate ?? 30)}% de chances de gain) :</p>
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
-          {[
-            { icon: "🎯", label: "Relance" },
-            { icon: "💰", label: "10K" },
-            { icon: "💰", label: "50K" },
-            { icon: "💰", label: "100K" },
-            { icon: "💎", label: "1M" },
-            { icon: "😢", label: "Perdu" },
-          ].map((r, i) => (
+          {rewards.map((r, i) => (
             <div key={i} className="p-1.5 rounded-lg text-center" style={{ background: "rgba(255,255,255,0.02)" }}>
-              <div className="text-sm">{r.icon}</div>
+              <div className="text-sm">
+                {r.icon && /^https?:\/\//i.test(r.icon) ? (
+                  <img src={bustImageCache(r.icon, gameConfig?.updated_date)} alt="" className="w-5 h-5 object-contain mx-auto" />
+                ) : (
+                  r.icon || "✨"
+                )}
+              </div>
               <p className="text-[8px] font-bold text-white/70">{r.label}</p>
             </div>
           ))}

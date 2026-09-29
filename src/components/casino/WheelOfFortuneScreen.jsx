@@ -4,6 +4,7 @@ import { RefreshCw, Sparkles, Clock, Gift, Coins } from "lucide-react";
 import { toast } from "sonner";
 import { formatBet } from "@/components/casino/slotThemes";
 import CasinoToken from "@/components/casino/CasinoToken";
+import { bustImageCache } from "@/lib/casinoImageCache";
 
 const SEGMENTS = [
   { color: "#3a3a3a", glow: "#666", icon: "💀", label: "Perdu" },
@@ -83,10 +84,21 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
 
   useEffect(() => {
     loadStatus();
-    base44.entities.CasinoGameConfig.filter({ game_key: 'wheel' })
-      .then(records => setGameConfig(records[0] || null))
-      .catch(() => {})
-      .finally(() => setConfigLoading(false));
+    const loadConfig = async () => {
+      try {
+        const records = await base44.entities.CasinoGameConfig.filter({ game_key: 'wheel' });
+        setGameConfig(records[0] || null);
+      } catch { /* silent */ }
+      setConfigLoading(false);
+    };
+    loadConfig();
+    // Realtime: refresh config instantly when admin saves changes
+    const unsubscribe = base44.entities.CasinoGameConfig.subscribe((event) => {
+      if (event.type === 'delete') { setGameConfig(null); return; }
+      const rec = event.data;
+      if (rec?.game_key === 'wheel') setGameConfig(rec);
+    });
+    return () => { unsubscribe(); };
   }, [loadStatus]);
 
   const handleSpin = useCallback(async () => {
@@ -186,7 +198,7 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
                   <path d={path} fill="none" stroke={seg.glow} strokeWidth="0.5" opacity="0.6" />
                   {/* Icon */}
                   {/^https?:\/\//i.test(seg.icon) ? (
-                    <image href={seg.icon} x={textPos.x - 16} y={textPos.y - 16} width="32" height="32" preserveAspectRatio="xMidYMid meet" />
+                    <image href={bustImageCache(seg.icon, gameConfig?.updated_date)} x={textPos.x - 16} y={textPos.y - 16} width="32" height="32" preserveAspectRatio="xMidYMid meet" />
                   ) : (
                     <text x={textPos.x} y={textPos.y} textAnchor="middle" dominantBaseline="middle" fontSize="22"
                       style={{ filter: `drop-shadow(0 0 4px ${seg.glow})` }}>{seg.icon}</text>
@@ -210,7 +222,13 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
             {/* Center hub */}
             <circle cx="150" cy="150" r="30" fill="#1a0a2e" stroke="#a855f7" strokeWidth="2" />
             <circle cx="150" cy="150" r="26" fill="none" stroke="rgba(0,242,255,0.4)" strokeWidth="1" />
-            <text x="150" y="150" textAnchor="middle" dominantBaseline="middle" fontSize="20" fontWeight="black" fill="#a855f7" style={{ filter: "drop-shadow(0 0 6px rgba(168,85,247,0.8))" }}>T</text>
+            {(() => {
+              const ci = gameConfig?.center_icon;
+              if (ci && /^https?:\/\//i.test(ci)) {
+                return <image href={bustImageCache(ci, gameConfig?.updated_date)} x="134" y="134" width="32" height="32" preserveAspectRatio="xMidYMid meet" />;
+              }
+              return <text x="150" y="150" textAnchor="middle" dominantBaseline="middle" fontSize="20" fontWeight="black" fill="#a855f7" style={{ filter: "drop-shadow(0 0 6px rgba(168,85,247,0.8))" }}>{ci || 'T'}</text>;
+            })()}
           </svg>
         </div>
       </div>
@@ -270,7 +288,7 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
         <div className="flex flex-wrap justify-center gap-1.5">
           {segments.map((s, i) => (
             <span key={i} className="px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: `${s.color}30`, border: `1px solid ${s.glow}40`, color: s.glow }}>
-              {/^https?:\/\//i.test(s.icon) ? <img src={s.icon} alt="" className="inline-block h-4 w-4 object-contain align-middle" /> : s.icon} {s.label}
+              {/^https?:\/\//i.test(s.icon) ? <img src={bustImageCache(s.icon, gameConfig?.updated_date)} alt="" className="inline-block h-4 w-4 object-contain align-middle" /> : s.icon} {s.label}
             </span>
           ))}
         </div>
