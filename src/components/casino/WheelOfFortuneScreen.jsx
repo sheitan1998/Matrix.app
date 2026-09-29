@@ -3,8 +3,10 @@ import { base44 } from "@/api/base44Client";
 import { RefreshCw, Sparkles, Clock, Gift, Coins } from "lucide-react";
 import { toast } from "sonner";
 import { formatBet } from "@/components/casino/slotThemes";
-import CasinoToken, { TOKEN_URL } from "@/components/casino/CasinoToken";
+import CasinoToken from "@/components/casino/CasinoToken";
 import { bustImageCache } from "@/lib/casinoImageCache";
+
+const WHEEL_CENTER_LOGO = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/bb5bd4f44_generated_image.png";
 
 const SEGMENTS = [
   { color: "#3a3a3a", glow: "#666", icon: "💀", label: "Perdu" },
@@ -220,19 +222,19 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
             })}
 
             {/* Center hub */}
-            <circle cx="150" cy="150" r="30" fill="#1a0a2e" stroke="#a855f7" strokeWidth="2" />
+            <circle cx="150" cy="150" r="30" fill="rgba(10,5,15,0.6)" stroke="#a855f7" strokeWidth="2" />
             <circle cx="150" cy="150" r="27" fill="none" stroke="rgba(0,242,255,0.4)" strokeWidth="1" />
             {(() => {
               const ci = gameConfig?.center_icon;
               const isImg = ci && /^https?:\/\//i.test(ci);
-              const src = isImg ? bustImageCache(ci, gameConfig?.updated_date) : TOKEN_URL;
+              const src = isImg ? bustImageCache(ci, gameConfig?.updated_date) : WHEEL_CENTER_LOGO;
               return (
                 <image
                   href={src}
-                  x="122"
-                  y="122"
-                  width="56"
-                  height="56"
+                  x="118"
+                  y="118"
+                  width="64"
+                  height="64"
                   preserveAspectRatio="xMidYMid meet"
                   style={{ filter: "drop-shadow(0 0 8px rgba(168,85,247,0.6))" }}
                 />
