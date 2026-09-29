@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { LANGUAGES, changeLanguage, getPreferredLanguage } from '@/lib/languagePreference';
 import { createPortal } from "react-dom";
 import { base44 } from "@/api/base44Client";
 import {
@@ -7,20 +8,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-
-const LANGUAGES = [
-  { code: "fr", label: "Français", flag: "🇫🇷" },
-  { code: "en", label: "English", flag: "🇬🇧" },
-  { code: "es", label: "Español", flag: "🇪🇸" },
-  { code: "de", label: "Deutsch", flag: "🇩🇪" },
-  { code: "it", label: "Italiano", flag: "🇮🇹" },
-  { code: "pt", label: "Português", flag: "🇵🇹" },
-  { code: "nl", label: "Nederlands", flag: "🇳🇱" },
-  { code: "ru", label: "Русский", flag: "🇷🇺" },
-  { code: "ja", label: "日本語", flag: "🇯🇵" },
-  { code: "zh", label: "中文", flag: "🇨🇳" },
-  { code: "ar", label: "العربية", flag: "🇸🇦" },
-];
 
 const COMMON_TIMEZONES = [
   "UTC",
@@ -89,13 +76,14 @@ function SettingRow({ icon: Icon, color, title, desc, children }) {
   );
 }
 
-function ChoicePills({ options, value, onChange }) {
+function ChoicePills({ options, value, onChange, disabled }) {
   return (
     <div className="grid grid-cols-2 gap-2 ml-12">
       {options.map((opt) => (
         <button
           key={opt.value}
           onClick={() => onChange(opt.value)}
+          disabled={disabled}
           className={cn(
             "px-3 py-2.5 rounded-xl text-xs font-bold transition",
             value === opt.value ? "text-white" : "text-white/40 hover:text-white/60"
@@ -122,39 +110,53 @@ export default function UserSettingsModal({ open, onClose, user }) {
     timezone: "UTC",
   });
   const [savingKey, setSavingKey] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [showAllTimezones, setShowAllTimezones] = useState(false);
+  const settingsRef = useRef(settings);
 
-  const updateSetting = useCallback(async (key, value, showToast = true) => {
-    setSettings(prev => {
-      const prevValue = prev[key];
-      setSavingKey(key);
-      base44.auth.updateMe({ [key]: value })
-        .then(() => {
-          if (showToast) toast.success("Paramètre mis à jour");
-        })
-        .catch((err) => {
-          console.error("updateSetting error:", key, err);
-          toast.error("Erreur lors de la mise à jour");
-          // revert to previous value
-          setSettings(p => ({ ...p, [key]: prevValue }));
-        })
-        .finally(() => setSavingKey(null));
-      return { ...prev, [key]: value };
-    });
-  }, []);
+  const updateSetting = async (key, value) => {
+    if (savingKey || settingsRef.current[key] === value) return;
+    const previous = settingsRef.current;
+    const next = { ...previous, [key]: value };
+    settingsRef.current = next;
+    setSettings(next);
+    setSavingKey(key);
+    try {
+      await base44.auth.updateMe({ [key]: value });
+      if (key === 'interface_language') changeLanguage(value);
+      if (key === 'notif_messages') localStorage.setItem('matrix_notif_messages', String(value));
+      window.dispatchEvent(new Event('matrix-settings-updated'));
+      toast.success('Paramètre mis à jour');
+    } catch {
+      settingsRef.current = previous;
+      setSettings(previous);
+      toast.error('Erreur lors de la mise à jour');
+    } finally {
+      setSavingKey(null);
+    }
+  };
 
   useEffect(() => {
-    if (open && user) {
-      setSettings({
-        notif_messages: user.notif_messages !== false,
-        notif_free_rewards: user.notif_free_rewards !== false,
-        allow_friend_requests: user.allow_friend_requests !== false,
-        dm_privacy: user.dm_privacy || "everyone",
-        interface_language: user.interface_language || "fr",
-        timezone: user.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
-      });
-    }
-  }, [open, user]);
+    if (!open) return;
+    let cancelled = false;
+    setLoading(true);
+    base44.auth.me().then(current => {
+      if (cancelled) return;
+      const next = {
+        notif_messages: current.notif_messages !== false,
+        notif_free_rewards: current.notif_free_rewards !== false,
+        allow_friend_requests: current.allow_friend_requests !== false,
+        dm_privacy: current.dm_privacy || 'everyone',
+        interface_language: current.interface_language || getPreferredLanguage(),
+        timezone: current.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+      };
+      settingsRef.current = next;
+      setSettings(next);
+      localStorage.setItem('matrix_notif_messages', String(next.notif_messages));
+    }).catch(() => { if (!cancelled) toast.error('Impossible de charger les paramètres'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -168,6 +170,7 @@ export default function UserSettingsModal({ open, onClose, user }) {
   const allTimezones = showAllTimezones
     ? Intl.supportedValuesOf?.("timeZone") || COMMON_TIMEZONES
     : COMMON_TIMEZONES;
+  const timezones = allTimezones.includes(settings.timezone) ? allTimezones : [settings.timezone, ...allTimezones];
 
   return createPortal(
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)" }} onClick={onClose}>
@@ -221,6 +224,7 @@ export default function UserSettingsModal({ open, onClose, user }) {
 
         {/* Tab content */}
         <div className="flex-1 overflow-y-auto scrollbar-thin p-5 space-y-3">
+          {loading && <p className="text-xs text-white/50">Chargement des paramètres…</p>}
 
           {/* ===== NOTIFICATIONS TAB ===== */}
           {activeTab === "notifications" && (
@@ -234,7 +238,7 @@ export default function UserSettingsModal({ open, onClose, user }) {
                 <Toggle
                   checked={settings.notif_messages}
                   onChange={(v) => updateSetting("notif_messages", v)}
-                  disabled={savingKey === "notif_messages"}
+                  disabled={loading || !!savingKey || savingKey === "notif_messages"}
                 />
               </SettingRow>
 
@@ -242,12 +246,12 @@ export default function UserSettingsModal({ open, onClose, user }) {
                 icon={Gift}
                 color="#fbbf24"
                 title="Rappels de récompenses gratuites"
-                desc="Être notifié lorsque le Ticket Quotidien gratuit (reset à 15h) ou la Roue de la Fortune gratuite (reset à 12h) sont disponibles."
+                desc="Autoriser les rappels de récompenses gratuites lorsqu'ils sont disponibles."
               >
                 <Toggle
                   checked={settings.notif_free_rewards}
                   onChange={(v) => updateSetting("notif_free_rewards", v)}
-                  disabled={savingKey === "notif_free_rewards"}
+                  disabled={loading || !!savingKey || savingKey === "notif_free_rewards"}
                 />
               </SettingRow>
             </>
@@ -265,7 +269,7 @@ export default function UserSettingsModal({ open, onClose, user }) {
                 <Toggle
                   checked={settings.allow_friend_requests}
                   onChange={(v) => updateSetting("allow_friend_requests", v)}
-                  disabled={savingKey === "allow_friend_requests"}
+                  disabled={loading || !!savingKey || savingKey === "allow_friend_requests"}
                 />
               </SettingRow>
 
@@ -285,6 +289,7 @@ export default function UserSettingsModal({ open, onClose, user }) {
                     { value: "friends", label: "Amis uniquement" },
                   ]}
                   value={settings.dm_privacy}
+                  disabled={loading || !!savingKey}
                   onChange={(v) => updateSetting("dm_privacy", v)}
                 />
               </div>
@@ -309,6 +314,7 @@ export default function UserSettingsModal({ open, onClose, user }) {
                     <button
                       key={lang.code}
                       onClick={() => updateSetting("interface_language", lang.code)}
+                      disabled={loading || !!savingKey}
                       className={cn(
                         "flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-bold transition",
                         settings.interface_language === lang.code ? "text-white" : "text-white/40 hover:text-white/60"
@@ -340,11 +346,12 @@ export default function UserSettingsModal({ open, onClose, user }) {
                 <div className="ml-12">
                   <select
                     value={settings.timezone}
+                    disabled={loading || !!savingKey}
                     onChange={(e) => updateSetting("timezone", e.target.value)}
                     className="w-full px-3 py-2.5 rounded-xl text-sm text-white outline-none cursor-pointer"
                     style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(168,85,247,0.3)" }}
                   >
-                    {allTimezones.map((tz) => (
+                    {timezones.map((tz) => (
                       <option key={tz} value={tz} style={{ background: "#18191c", color: "#fff" }}>{tz}</option>
                     ))}
                   </select>

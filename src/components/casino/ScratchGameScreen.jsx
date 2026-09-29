@@ -21,6 +21,13 @@ export default function ScratchGameScreen({ balance, setBalance, onBack }) {
   const [scratchResult, setScratchResult] = useState(null);
   const [scratchKey, setScratchKey] = useState(0);
   const [revealed, setRevealed] = useState(false);
+  const [gameTitle, setGameTitle] = useState('Tickets à Gratter');
+
+  useEffect(() => {
+    base44.entities.CasinoGameConfig.filter({ game_key: 'scratch' })
+      .then(records => { if (records[0]?.title) setGameTitle(records[0].title); })
+      .catch(() => {});
+  }, []);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -109,7 +116,7 @@ export default function ScratchGameScreen({ balance, setBalance, onBack }) {
       {/* Title */}
       <div className="flex items-center gap-2 mb-6">
         <Sparkles className="w-5 h-5" style={{ color: "#a855f7" }} />
-        <h2 className="text-xl font-black text-white">Tickets à Gratter</h2>
+        <h2 className="text-xl font-black text-white">{gameTitle}</h2>
       </div>
 
       {/* Balance + Tickets summary */}

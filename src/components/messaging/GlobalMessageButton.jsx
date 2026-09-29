@@ -5,6 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { Mail } from "lucide-react";
 import MessageOverlay from "@/components/messaging/MessageOverlay";
 import { playMessageSound } from "@/lib/messageSound";
+import { messageAlertsEnabled } from '@/lib/notificationPreferences';
 
 const EXCLUDED_PREFIXES = [
   "/twitch", "/community", "/mon-profil", "/login", "/register",
@@ -54,7 +55,7 @@ export default function GlobalMessageButton() {
       if (event.type === "create") {
         const msg = event.data;
         if (msg.recipient_email === user.email) {
-          playMessageSound();
+          if (messageAlertsEnabled(user)) playMessageSound();
           if (!msg.is_read) {
             setUnreadCount(prev => prev + 1);
           }

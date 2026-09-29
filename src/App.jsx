@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import LanguageBridge from '@/components/profile/LanguageBridge';
 import AuthGate from '@/components/AuthGate';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -124,6 +125,7 @@ const AuthenticatedApp = () => {
 
   return (
     <>
+      <LanguageBridge />
       <ProgressionProvider>
       <NotificationProvider>
       <MiniPlayerProvider>

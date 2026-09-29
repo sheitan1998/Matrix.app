@@ -12,6 +12,7 @@ import MessageOverlay from "@/components/messaging/MessageOverlay";
 import ProfileContent from "@/components/profile/ProfileContent";
 import TranslationButton from "@/components/landing/TranslationButton";
 import { playMessageSound } from "@/lib/messageSound";
+import { messageAlertsEnabled } from '@/lib/notificationPreferences';
 
 export default function HeaderActions() {
   const nav = useNavigate();
@@ -55,7 +56,7 @@ export default function HeaderActions() {
       if (event.type === "create") {
         const msg = event.data;
         if (msg.recipient_email === user.email) {
-          playMessageSound();
+          if (messageAlertsEnabled(user)) playMessageSound();
           if (!msg.is_read) setUnreadCount(prev => prev + 1);
         }
       }

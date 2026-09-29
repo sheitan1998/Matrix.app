@@ -15,7 +15,6 @@ const SEGMENTS = [
   { color: "#00ff7f", glow: "#00ffaa", icon: "🌟", label: "100T" },
 ];
 
-const SEGMENT_ANGLE = 360 / SEGMENTS.length;
 const SPIN_DURATION = 4500; // ms
 const SPIN_COST = 20000;
 
@@ -59,7 +58,12 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
   const [freeSpinAvailable, setFreeSpinAvailable] = useState(false);
   const [nextResetAt, setNextResetAt] = useState(null);
   const [statusLoading, setStatusLoading] = useState(true);
+  const [gameConfig, setGameConfig] = useState(null);
+  const [configLoading, setConfigLoading] = useState(true);
   const wheelRef = useRef(null);
+  const segments = gameConfig?.rewards?.length ? gameConfig.rewards.map((reward, i) => ({ ...SEGMENTS[i % SEGMENTS.length], icon: reward.icon || SEGMENTS[i % SEGMENTS.length].icon, label: reward.label || SEGMENTS[i % SEGMENTS.length].label })) : SEGMENTS;
+  const segmentAngle = 360 / segments.length;
+  const spinCost = Number(gameConfig?.spin_cost ?? SPIN_COST);
 
   // Charger le statut (lancer gratuit disponible + prochain reset)
   const loadStatus = useCallback(async () => {
@@ -79,6 +83,10 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
 
   useEffect(() => {
     loadStatus();
+    base44.entities.CasinoGameConfig.filter({ game_key: 'wheel' })
+      .then(records => setGameConfig(records[0] || null))
+      .catch(() => {})
+      .finally(() => setConfigLoading(false));
   }, [loadStatus]);
 
   const handleSpin = useCallback(async () => {
@@ -103,7 +111,7 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
       }
 
       // Calculer l'angle cible pour aligner le segment gagnant sous le pointeur
-      const targetAngle = 360 - (winResult.index * SEGMENT_ANGLE + SEGMENT_ANGLE / 2);
+      const targetAngle = 360 - (winResult.index * segmentAngle + segmentAngle / 2);
       const currentMod = rotation % 360;
       let delta = 360 * 5 + (targetAngle - currentMod);
       if (delta < 360 * 4) delta += 360;
@@ -125,10 +133,10 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
       toast.error("Erreur lors du lancer");
       setSpinning(false);
     }
-  }, [spinning, rotation, setBalance]);
+  }, [spinning, rotation, setBalance, segmentAngle]);
 
   const canSpinFree = freeSpinAvailable && !spinning;
-  const canSpinPaid = !freeSpinAvailable && !spinning && balance >= SPIN_COST;
+  const canSpinPaid = !freeSpinAvailable && !spinning && balance >= spinCost;
   const canSpin = canSpinFree || canSpinPaid;
 
   return (
@@ -140,7 +148,7 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
           WebkitBackgroundClip: "text",
           WebkitTextFillColor: "transparent",
           textShadow: "0 0 20px rgba(168,85,247,0.3)",
-        }}>ROUE DE LA FORTUNE</h2>
+        }}>{gameConfig?.title || 'ROUE DE LA FORTUNE'}</h2>
       </div>
 
       {/* Wheel container */}
@@ -166,27 +174,23 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
             <circle cx="150" cy="150" r="144" fill="none" stroke="rgba(168,85,247,0.4)" strokeWidth="2" />
 
             {/* Segments */}
-            {SEGMENTS.map((seg, i) => {
-              const startAngle = i * SEGMENT_ANGLE;
-              const endAngle = (i + 1) * SEGMENT_ANGLE;
+            {segments.map((seg, i) => {
+              const startAngle = i * segmentAngle;
+              const endAngle = (i + 1) * segmentAngle;
               const path = describeArc(150, 150, 140, startAngle, endAngle);
-              const textPos = polarToCartesian(150, 150, 90, startAngle + SEGMENT_ANGLE / 2);
+              const textPos = polarToCartesian(150, 150, 90, startAngle + segmentAngle / 2);
               return (
                 <g key={i}>
                   <path d={path} fill={seg.color} stroke="rgba(0,0,0,0.3)" strokeWidth="1" />
                   {/* Glow border */}
                   <path d={path} fill="none" stroke={seg.glow} strokeWidth="0.5" opacity="0.6" />
                   {/* Icon */}
-                  <text
-                    x={textPos.x}
-                    y={textPos.y}
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    fontSize="22"
-                    style={{ filter: `drop-shadow(0 0 4px ${seg.glow})` }}
-                  >
-                    {seg.icon}
-                  </text>
+                  {/^https?:\/\//i.test(seg.icon) ? (
+                    <image href={seg.icon} x={textPos.x - 16} y={textPos.y - 16} width="32" height="32" preserveAspectRatio="xMidYMid meet" />
+                  ) : (
+                    <text x={textPos.x} y={textPos.y} textAnchor="middle" dominantBaseline="middle" fontSize="22"
+                      style={{ filter: `drop-shadow(0 0 4px ${seg.glow})` }}>{seg.icon}</text>
+                  )}
                   {/* Label */}
                   <text
                     x={textPos.x}
@@ -227,7 +231,7 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
       {/* Spin button */}
       <button
         onClick={handleSpin}
-        disabled={!canSpin || statusLoading}
+        disabled={!canSpin || statusLoading || configLoading}
         className="px-8 py-3 rounded-xl text-sm font-black text-white transition hover:opacity-90 disabled:opacity-40 tap-sm flex items-center gap-2"
         style={{
           background: spinning ? "rgba(255,255,255,0.1)" : canSpinFree
@@ -241,7 +245,7 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
         ) : canSpinFree ? (
           <><Gift className="w-4 h-4" /> LANCER GRATUIT</>
         ) : (
-          <><Sparkles className="w-4 h-4" /> LANCER ({formatBet(SPIN_COST)})</>
+          <><Sparkles className="w-4 h-4" /> LANCER ({formatBet(spinCost)})</>
         )}
       </button>
 
@@ -264,9 +268,9 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
       <div className="mt-3 px-4 py-2 rounded-xl w-full max-w-sm" style={{ background: "rgba(15,10,25,0.4)", border: "1px solid rgba(255,255,255,0.04)" }}>
         <p className="text-[10px] font-bold text-white/50 mb-1.5 text-center">Récompenses possibles :</p>
         <div className="flex flex-wrap justify-center gap-1.5">
-          {SEGMENTS.map((s, i) => (
+          {segments.map((s, i) => (
             <span key={i} className="px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: `${s.color}30`, border: `1px solid ${s.glow}40`, color: s.glow }}>
-              {s.icon} {s.label}
+              {/^https?:\/\//i.test(s.icon) ? <img src={s.icon} alt="" className="inline-block h-4 w-4 object-contain align-middle" /> : s.icon} {s.label}
             </span>
           ))}
         </div>
@@ -277,7 +281,7 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
         <p className="text-[9px] text-white/40 leading-relaxed">
           🎁 1 lancer gratuit par jour (reset à 12h00 UTC, non cumulable).
           <br />
-          <Coins className="w-2.5 h-2.5 inline" /> Lancers supplémentaires : {formatBet(SPIN_COST)} jetons par tour.
+          <Coins className="w-2.5 h-2.5 inline" /> Lancers supplémentaires : {formatBet(spinCost)} jetons par tour.
         </p>
       </div>
     </div>

@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { ArrowLeft, Send, Search, X, Mail, User, Smile, Trash2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { playMessageSound } from "@/lib/messageSound";
+import { messageAlertsEnabled } from '@/lib/notificationPreferences';
 import { isUserOnline } from "@/hooks/usePresence";
 import { stripPseudoTag } from "@/lib/format";
 import UserProfilePopup from "@/components/profile/UserProfilePopup";
@@ -200,7 +201,7 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
             base44.entities.DirectMessage.update(msg.id, { is_read: true });
             if (onMessagesRead) onMessagesRead(1);
           }
-          playMessageSound();
+          if (messageAlertsEnabled(user)) playMessageSound();
         }
       }
     });

@@ -16,6 +16,13 @@ export default function NexusGames() {
   const [scratchResult, setScratchResult] = useState(null);
   const [scratchKey, setScratchKey] = useState(0);
   const [revealed, setRevealed] = useState(false);
+  const [gameTitle, setGameTitle] = useState('Tickets à Gratter');
+
+  useEffect(() => {
+    base44.entities.CasinoGameConfig.filter({ game_key: 'scratch' })
+      .then(records => { if (records[0]?.title) setGameTitle(records[0].title); })
+      .catch(() => {});
+  }, []);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -112,7 +119,7 @@ export default function NexusGames() {
           </a>
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-purple-400" />
-            <h1 className="text-2xl font-black text-white">Nexus Games</h1>
+            <h1 className="text-2xl font-black text-white">{gameTitle}</h1>
           </div>
         </div>
 

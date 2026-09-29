@@ -21,7 +21,7 @@ const DEFAULT_CONFIG = {
   spin_cost: 20000,
   reset_hour_utc: 12,
   rewards: [
-    { id: "perdu", label: "Perdu", desc: "Réessayez !", amount: 0, weight: 65, type: "lose" },
+    { id: "perdu", label: "Perdu", desc: "Réessayez !", icon: "💀", amount: 0, weight: 65, type: "lose" },
     { id: "1000", label: "1 000 jetons", desc: "Petit gain", amount: 1000, weight: 55, type: "tokens" },
     { id: "20000", label: "20 000 jetons", desc: "Beau gain", amount: 20000, weight: 35, type: "tokens" },
     { id: "50000", label: "50 000 jetons", desc: "Gros gain", amount: 50000, weight: 30, type: "tokens" },
@@ -238,8 +238,7 @@ export default function WheelConfigPanel() {
                 </button>
               </div>
               <div className="flex gap-2 items-center pl-5">
-                <input type="text" value={r.icon || ""} onChange={e => updateReward(i, "icon", e.target.value)} placeholder="Icône (emoji ou URL)"
-                  className="flex-1 px-2 py-1.5 rounded text-[10px] bg-white/5 border border-white/10 text-white" />
+                <div className="flex-1 min-w-0"><ImageUploadField label={`Image / icône de la case ${i + 1}`} value={r.icon || ""} onChange={v => updateReward(i, "icon", v)} hint="Emoji, URL ou image importée. Position identique sur la roue." aspect="square" /></div>
                 <input type="text" value={r.desc || ""} onChange={e => updateReward(i, "desc", e.target.value)} placeholder="Description (ex: Gros gain)"
                   className="flex-1 px-2 py-1.5 rounded text-[10px] bg-white/5 border border-white/10 text-white" />
               </div>
