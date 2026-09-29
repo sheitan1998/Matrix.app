@@ -14,9 +14,22 @@
       "type": "string",
       "description": "Titre affiche aux joueurs"
     },
+    "subtitle": {
+      "type": "string",
+      "description": "Sous-titre affiche sous le titre du jeu"
+    },
     "description": {
       "type": "string",
       "description": "Description affichee aux joueurs"
+    },
+    "description_long": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Description longue / banniere de presentation affichee aux joueurs"
+    },
+    "info_message": {
+      "type": "string",
+      "description": "Message d'information affiche aux joueurs (ex: conditions, astuces)"
     },
     "rules": {
       "type": "string",
@@ -29,6 +42,19 @@
     "icon": {
       "type": "string",
       "description": "Emoji ou URL de l'icone du jeu"
+    },
+    "center_icon": {
+      "type": "string",
+      "description": "URL ou emoji de l'icone centrale de la roue (wheel uniquement)"
+    },
+    "background_image": {
+      "type": "string",
+      "description": "URL de l'image de fond de la page de jeu"
+    },
+    "background_color": {
+      "type": "string",
+      "default": "#0a050f",
+      "description": "Couleur de fond de la page de jeu (utilisee si pas d'image de fond)"
     },
     "ticket_price": {
       "type": "number",
@@ -64,6 +90,10 @@
           "desc": {
             "type": "string"
           },
+          "icon": {
+            "type": "string",
+            "description": "Emoji ou URL de l'icone de la recompense"
+          },
           "amount": {
             "type": "number",
             "default": 0
@@ -84,11 +114,7 @@
         }
       },
       "default": [],
-      "description": "Configuration des recompenses (poids relatifs, montants, types)"
-    },
-    "description_long": {
-      "type": "string",
-      "maxLength": 1000
+      "description": "Configuration des recompenses (poids relatifs, montants, types, icones)"
     }
   },
   "required": [
