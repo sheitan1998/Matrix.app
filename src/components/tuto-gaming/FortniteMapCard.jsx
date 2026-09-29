@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Copy, Check, User } from "lucide-react";
+import { Copy, Check, User, Images } from "lucide-react";
 import { getCategoryMeta } from "@/components/tuto-gaming/fortniteMapsData";
 
-export default function FortniteMapCard({ map, index = 0 }) {
+export default function FortniteMapCard({ map, index = 0, onClick }) {
   const [copied, setCopied] = useState(false);
   const cat = getCategoryMeta(map.category);
+  const imageCount = (map.gallery?.length || 0) || (map.image_url ? 1 : 0);
 
   const handleCopy = async (e) => {
     e.preventDefault();
@@ -24,7 +25,8 @@ export default function FortniteMapCard({ map, index = 0 }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.4 }}
-      className="group rounded-xl overflow-hidden flex flex-col"
+      onClick={() => onClick?.(map)}
+      className="group rounded-xl overflow-hidden flex flex-col cursor-pointer transition hover:border-purple-500/40"
       style={{
         background: "#0D0518",
         border: "1px solid rgba(191,90,242,0.15)",
@@ -51,6 +53,15 @@ export default function FortniteMapCard({ map, index = 0 }) {
         >
           {cat.label}
         </span>
+        {/* Gallery count badge */}
+        {imageCount > 1 && (
+          <span
+            className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold text-white/80"
+            style={{ background: "rgba(0,0,0,0.6)" }}
+          >
+            <Images className="w-2.5 h-2.5" /> {imageCount}
+          </span>
+        )}
       </div>
 
       {/* Content */}

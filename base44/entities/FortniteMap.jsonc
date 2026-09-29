@@ -38,7 +38,15 @@
     },
     "image_url": {
       "type": "string",
-      "description": "URL de l'image miniature de la map"
+      "description": "URL de l'image principale / miniature de la map"
+    },
+    "gallery": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Galerie d'images de la map (URLs publiques)"
     },
     "user_email": {
       "type": "string",

@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Search, Loader2, ArrowLeft, Plus, Map as MapIcon, User } from "lucide-react";
 import FortniteMapCard from "@/components/tuto-gaming/FortniteMapCard";
 import SubmitMapModal from "@/components/tuto-gaming/SubmitMapModal";
+import MapDetailModal from "@/components/tuto-gaming/MapDetailModal";
 import { FORTNITE_BANNER, MAP_CATEGORIES } from "@/components/tuto-gaming/fortniteMapsData";
 
 export default function FortniteMaps() {
@@ -13,6 +14,7 @@ export default function FortniteMaps() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [showSubmit, setShowSubmit] = useState(false);
   const [showMyMaps, setShowMyMaps] = useState(false);
+  const [selectedMap, setSelectedMap] = useState(null);
   const [user, setUser] = useState(null);
 
   const fetchMaps = useCallback(async () => {
@@ -121,7 +123,7 @@ export default function FortniteMaps() {
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {myMaps.map((m, i) => (
-                <FortniteMapCard key={m.id} map={m} index={i} />
+                <FortniteMapCard key={m.id} map={m} index={i} onClick={setSelectedMap} />
               ))}
             </div>
           )}
@@ -182,19 +184,25 @@ export default function FortniteMaps() {
           <Loader2 className="w-6 h-6 animate-spin text-white/30" />
         </div>
       ) : filteredMaps.length === 0 ? (
-        <div className="text-center py-12">
-          <MapIcon className="w-8 h-8 text-white/10 mx-auto mb-3" />
-          <p className="text-sm text-white/30">
-            {search ? `Aucune map trouvée pour "${search}"` : "Aucune map dans cette catégorie pour le moment"}
+        <div className="text-center py-16">
+          <MapIcon className="w-12 h-12 text-white/10 mx-auto mb-4" />
+          <p className="text-sm text-white/40 mb-2">
+            {search ? `Aucune map trouvée pour "${search}"` : "Aucune map disponible pour le moment."}
           </p>
+          {!search && (
+            <p className="text-xs text-white/30">Soyez le premier à en ajouter une !</p>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
           {filteredMaps.map((m, i) => (
-            <FortniteMapCard key={m.id} map={m} index={i} />
+            <FortniteMapCard key={m.id} map={m} index={i} onClick={setSelectedMap} />
           ))}
         </div>
       )}
+
+      {/* Detail modal */}
+      <MapDetailModal map={selectedMap} onClose={() => setSelectedMap(null)} />
 
       {/* Submit modal */}
       <SubmitMapModal open={showSubmit} onClose={() => setShowSubmit(false)} onSuccess={fetchMaps} userEmail={user?.email} />

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { X, Loader2, Upload, ImageIcon } from "lucide-react";
+import { X, Loader2, Upload, ImageIcon, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { CATEGORY_OPTIONS, validateMapCode, formatMapCode } from "@/components/tuto-gaming/fortniteMapsData";
 
@@ -12,8 +12,7 @@ export default function SubmitMapModal({ open, onClose, onSuccess, userEmail }) 
     category: "tycoon",
     description: "",
   });
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState("");
+  const [imageFiles, setImageFiles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
 
   if (!open) return null;
@@ -26,17 +25,21 @@ export default function SubmitMapModal({ open, onClose, onSuccess, userEmail }) 
     setForm((f) => ({ ...f, map_code: formatMapCode(e.target.value) }));
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image trop lourde (max 5 Mo)");
-      return;
+  const handleImagesChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    for (const file of files) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name} est trop lourd (max 5 Mo)`);
+        return;
+      }
     }
-    setImageFile(file);
-    const reader = new FileReader();
-    reader.onload = () => setImagePreview(reader.result);
-    reader.readAsDataURL(file);
+    setImageFiles((prev) => [...prev, ...files]);
+    // Reset input so selecting the same file again works
+    e.target.value = "";
+  };
+
+  const removeImage = (idx) => {
+    setImageFiles((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const handleSubmit = async (e) => {
@@ -53,10 +56,10 @@ export default function SubmitMapModal({ open, onClose, onSuccess, userEmail }) 
 
     setSubmitting(true);
     try {
-      let imageUrl = "";
-      if (imageFile) {
-        const res = await base44.integrations.Core.UploadPublicFile({ file: imageFile });
-        imageUrl = res?.file_url || "";
+      const gallery = [];
+      for (const file of imageFiles) {
+        const res = await base44.integrations.Core.UploadPublicFile({ file });
+        if (res?.file_url) gallery.push(res.file_url);
       }
 
       await base44.entities.FortniteMap.create({
@@ -65,15 +68,15 @@ export default function SubmitMapModal({ open, onClose, onSuccess, userEmail }) 
         map_code: form.map_code.trim(),
         category: form.category,
         description: form.description.trim(),
-        image_url: imageUrl,
+        image_url: gallery[0] || "",
+        gallery,
         user_email: userEmail || "",
         is_approved: true,
       });
 
       toast.success("Map publiée avec succès !");
       setForm({ title: "", creator_name: "", map_code: "", category: "tycoon", description: "" });
-      setImageFile(null);
-      setImagePreview("");
+      setImageFiles([]);
       onSuccess?.();
       onClose();
     } catch {
@@ -95,7 +98,7 @@ export default function SubmitMapModal({ open, onClose, onSuccess, userEmail }) 
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: "rgba(191,90,242,0.15)" }}>
+        <div className="flex items-center justify-between p-5 border-b sticky top-0 z-10" style={{ background: "#0D0518", borderColor: "rgba(191,90,242,0.15)" }}>
           <h2 className="text-lg font-black text-white">Ajouter ma map</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center tap-sm" style={{ background: "rgba(255,255,255,0.05)" }}>
             <X className="w-4 h-4 text-white/50" />
@@ -172,27 +175,43 @@ export default function SubmitMapModal({ open, onClose, onSuccess, userEmail }) 
             />
           </div>
 
-          {/* Image upload */}
+          {/* Image gallery upload */}
           <div>
-            <label className="text-[10px] font-bold uppercase tracking-wider text-white/40 block mb-1.5">Image / Miniature</label>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-white/40 block mb-1.5">
+              Images / Galerie <span className="text-white/20 normal-case">({imageFiles.length} sélectionnée{imageFiles.length > 1 ? "s" : ""})</span>
+            </label>
             <label
-              className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition"
+              className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition mb-2"
               style={{ background: "rgba(191,90,242,0.05)", border: "1px dashed rgba(191,90,242,0.3)" }}
             >
               <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: "rgba(191,90,242,0.1)" }}>
-                {imagePreview ? (
-                  <img src={imagePreview} alt="" className="w-full h-full object-cover rounded-lg" />
-                ) : (
-                  <ImageIcon className="w-5 h-5" style={{ color: "#BF5AF2" }} />
-                )}
+                <ImageIcon className="w-5 h-5" style={{ color: "#BF5AF2" }} />
               </div>
               <div className="flex-1 min-w-0">
-                <span className="text-xs font-bold text-white/70">{imageFile ? imageFile.name : "Cliquez pour téléverser une image"}</span>
-                <span className="text-[10px] text-white/30 block">JPG, PNG, WebP — max 5 Mo</span>
+                <span className="text-xs font-bold text-white/70">Cliquez pour ajouter des images</span>
+                <span className="text-[10px] text-white/30 block">JPG, PNG, WebP — max 5 Mo par image</span>
               </div>
               <Upload className="w-4 h-4 text-white/30 shrink-0" />
-              <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+              <input type="file" accept="image/*" multiple onChange={handleImagesChange} className="hidden" />
             </label>
+            {/* Preview thumbnails */}
+            {imageFiles.length > 0 && (
+              <div className="grid grid-cols-4 gap-2">
+                {imageFiles.map((file, idx) => (
+                  <div key={idx} className="relative group rounded-lg overflow-hidden h-16" style={{ background: "rgba(191,90,242,0.05)" }}>
+                    <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(idx)}
+                      className="absolute top-0.5 right-0.5 w-5 h-5 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition tap-sm"
+                      style={{ background: "rgba(0,0,0,0.7)" }}
+                    >
+                      <Trash2 className="w-3 h-3 text-red-400" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Submit */}
