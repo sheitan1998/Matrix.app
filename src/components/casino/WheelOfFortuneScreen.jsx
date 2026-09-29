@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { RefreshCw, Sparkles, Clock, Gift, Coins } from "lucide-react";
 import { toast } from "sonner";
 import { formatBet } from "@/components/casino/slotThemes";
-import CasinoToken from "@/components/casino/CasinoToken";
+import CasinoToken, { TOKEN_URL } from "@/components/casino/CasinoToken";
 import { bustImageCache } from "@/lib/casinoImageCache";
 
 const SEGMENTS = [
@@ -221,13 +221,22 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
 
             {/* Center hub */}
             <circle cx="150" cy="150" r="30" fill="#1a0a2e" stroke="#a855f7" strokeWidth="2" />
-            <circle cx="150" cy="150" r="26" fill="none" stroke="rgba(0,242,255,0.4)" strokeWidth="1" />
+            <circle cx="150" cy="150" r="27" fill="none" stroke="rgba(0,242,255,0.4)" strokeWidth="1" />
             {(() => {
               const ci = gameConfig?.center_icon;
-              if (ci && /^https?:\/\//i.test(ci)) {
-                return <image href={bustImageCache(ci, gameConfig?.updated_date)} x="134" y="134" width="32" height="32" preserveAspectRatio="xMidYMid meet" />;
-              }
-              return <text x="150" y="150" textAnchor="middle" dominantBaseline="middle" fontSize="20" fontWeight="black" fill="#a855f7" style={{ filter: "drop-shadow(0 0 6px rgba(168,85,247,0.8))" }}>{ci || 'T'}</text>;
+              const isImg = ci && /^https?:\/\//i.test(ci);
+              const src = isImg ? bustImageCache(ci, gameConfig?.updated_date) : TOKEN_URL;
+              return (
+                <image
+                  href={src}
+                  x="122"
+                  y="122"
+                  width="56"
+                  height="56"
+                  preserveAspectRatio="xMidYMid meet"
+                  style={{ filter: "drop-shadow(0 0 8px rgba(168,85,247,0.6))" }}
+                />
+              );
             })()}
           </svg>
         </div>
