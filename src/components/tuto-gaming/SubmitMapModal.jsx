@@ -56,6 +56,15 @@ export default function SubmitMapModal({ open, onClose, onSuccess, userEmail }) 
 
     setSubmitting(true);
     try {
+      // Vérifier l'unicité du code de map (globale, insensible à la casse)
+      const normalizedCode = form.map_code.trim().toUpperCase();
+      const existing = await base44.entities.FortniteMap.filter({ map_code: normalizedCode }, "-created_date", 1);
+      if (existing && existing.length > 0) {
+        toast.error("Une map avec ce code existe déjà !");
+        setSubmitting(false);
+        return;
+      }
+
       const gallery = [];
       for (const file of imageFiles) {
         const res = await base44.integrations.Core.UploadPublicFile({ file });
