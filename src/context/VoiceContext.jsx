@@ -18,6 +18,7 @@ export function VoiceProvider({ children }) {
   const [speakerOn, setSpeakerOn] = useState(true);
   const [sharing, setSharing] = useState(false);
   const [screenStream, setScreenStream] = useState(null);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [participants, setParticipants] = useState([]);
   const [voiceRoomId, setVoiceRoomId] = useState(null);
   const localStreamRef = useRef(null);
@@ -270,6 +271,16 @@ export function VoiceProvider({ children }) {
     toast.success(switching ? "Source de partage mise à jour" : "Partage d'écran démarré");
   }, [stopScreenShare]);
 
+  // Open the custom screen-share modal (picker + preview + controls)
+  const openShareModal = useCallback(() => setShowShareModal(true), []);
+  const closeShareModal = useCallback(() => setShowShareModal(false), []);
+
+  // Called by the modal once the user picks a source
+  const handleShareStart = useCallback((s) => {
+    applyScreenStream(s);
+    setShowShareModal(false);
+  }, [applyScreenStream]);
+
   // Opens the browser's native source picker. Used both to start sharing and to switch source:
   // the current share is only replaced once a new source has actually been chosen.
   const startScreenShare = useCallback(async () => {
@@ -291,6 +302,7 @@ export function VoiceProvider({ children }) {
     connected, channel, server, theme, user,
     micOn, speakerOn, sharing, screenStream, participants: displayParticipants,
     localStreamRef, localSpeaking: micOn && localSpeaking,
+    showShareModal, openShareModal, closeShareModal, handleShareStart,
     connect, disconnect, toggleMic, toggleSpeaker,
     startScreenShare, stopScreenShare,
   };

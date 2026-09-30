@@ -4,14 +4,16 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useVoice } from "@/context/VoiceContext";
 import ScreenShareView from "@/components/community/ScreenShareView";
+import ScreenShareModal from "@/components/community/ScreenShareModal";
 import VoiceParticipants from "@/components/community/VoiceParticipants";
 
 export default function VoiceChannel({ channel, server, theme, user }) {
   const {
     connected, channel: activeChannel,
     micOn, speakerOn, sharing, screenStream, participants,
+    showShareModal, openShareModal, closeShareModal, handleShareStart,
     connect, disconnect, toggleMic, toggleSpeaker,
-    startScreenShare, stopScreenShare,
+    stopScreenShare,
   } = useVoice();
   const isActive = connected && activeChannel?.id === channel.id;
   const accent = theme?.accent || "#00ff41";
@@ -87,7 +89,7 @@ export default function VoiceChannel({ channel, server, theme, user }) {
           </button>
           {isSharing ? (
             <>
-              <button onClick={startScreenShare}
+              <button onClick={openShareModal}
                 title="Changer de source de partage"
                 className="h-12 px-4 rounded-2xl flex items-center gap-2 text-xs font-bold text-green-400 transition border border-green-500/40 bg-green-500/20 hover:bg-green-500/30">
                 <RefreshCw className="w-4 h-4" /> Changer de source
@@ -99,7 +101,7 @@ export default function VoiceChannel({ channel, server, theme, user }) {
               </button>
             </>
           ) : (
-            <button onClick={startScreenShare}
+            <button onClick={openShareModal}
               title="Partager l'écran"
               className="w-12 h-12 rounded-2xl flex items-center justify-center transition border border-white/20 bg-white/10 hover:bg-white/15">
               <ScreenShare className="w-5 h-5 text-white" />
@@ -112,6 +114,14 @@ export default function VoiceChannel({ channel, server, theme, user }) {
           </button>
         </div>
       </div>
+
+      <ScreenShareModal
+        open={showShareModal}
+        onClose={closeShareModal}
+        onStreamStart={handleShareStart}
+        onStreamStop={stopScreenShare}
+        accent={accent}
+      />
     </div>
   );
 }
