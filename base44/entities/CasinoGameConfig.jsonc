@@ -92,6 +92,21 @@
       "default": "#0a050f",
       "description": "Couleur de fond de la page de jeu (utilisee si pas d'image de fond)"
     },
+    "background_scale": {
+      "type": "number",
+      "default": 100,
+      "description": "Echelle fixe de l'image de fond en pourcentage (100 = taille naturelle, cover si 0)"
+    },
+    "background_pos_x": {
+      "type": "number",
+      "default": 50,
+      "description": "Position horizontale de l'image de fond en pourcentage (0-100, 50 = centre)"
+    },
+    "background_pos_y": {
+      "type": "number",
+      "default": 50,
+      "description": "Position verticale de l'image de fond en pourcentage (0-100, 50 = centre)"
+    },
     "wheel_border": {
       "type": "object",
       "properties": {

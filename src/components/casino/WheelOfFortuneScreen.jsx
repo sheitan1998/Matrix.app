@@ -155,15 +155,19 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
 
   const bgImage = gameConfig?.background_image ? bustImageCache(gameConfig.background_image, gameConfig?.updated_date) : "";
   const bgColor = gameConfig?.background_color || "#0a050f";
+  const bgScale = Number(gameConfig?.background_scale ?? 100);
+  const bgPosX = Number(gameConfig?.background_pos_x ?? 50);
+  const bgPosY = Number(gameConfig?.background_pos_y ?? 50);
 
   return (
     <div
       className="flex flex-col items-center justify-center min-h-[calc(100vh-100px)] px-4 py-8"
       style={{
         backgroundImage: bgImage ? `url("${bgImage}")` : "none",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
+        backgroundSize: bgScale === 0 ? "cover" : `${bgScale}%`,
+        backgroundPosition: `${bgPosX}% ${bgPosY}%`,
         backgroundRepeat: "no-repeat",
+        backgroundAttachment: bgImage ? "fixed" : "scroll",
         backgroundColor: bgColor,
       }}
     >

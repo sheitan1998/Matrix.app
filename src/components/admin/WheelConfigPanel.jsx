@@ -32,6 +32,9 @@ const DEFAULT_CONFIG = {
   center_icon: "🎡",
   background_image: "",
   background_color: "#0a050f",
+  background_scale: 100,
+  background_pos_x: 50,
+  background_pos_y: 50,
   spin_cost: 20000,
   reset_hour_utc: 12,
   wheel_border: { width: 4, style: "solid", color: "#a855f7", color2: "#00ffff", image: "" },
@@ -122,6 +125,9 @@ export default function WheelConfigPanel() {
         center_icon: config.center_icon,
         background_image: config.background_image,
         background_color: config.background_color,
+        background_scale: Number(config.background_scale),
+        background_pos_x: Number(config.background_pos_x),
+        background_pos_y: Number(config.background_pos_y),
         wheel_border: config.wheel_border,
         spin_cost: Number(config.spin_cost),
         reset_hour_utc: Number(config.reset_hour_utc),
@@ -269,6 +275,33 @@ export default function WheelConfigPanel() {
               className="w-10 h-9 rounded-lg border border-white/10 bg-transparent cursor-pointer" />
             <input type="text" value={config.background_color || "#0a050f"} onChange={e => updateField("background_color", e.target.value)}
               className="flex-1 px-3 py-2 rounded-lg text-xs bg-white/5 border border-white/10 text-white font-mono" />
+          </div>
+        </div>
+        {/* Background calibration */}
+        <div className="pt-2 border-t border-white/5">
+          <p className="text-[10px] font-bold text-white/40 mb-2">Calibration du fond (fixe, sans zoom pendant la rotation)</p>
+          <div>
+            <label className="text-[10px] font-bold text-white/50 mb-1 block">Échelle ({config.background_scale ?? 100}%) — 0 = cover</label>
+            <input type="range" min="0" max="200" value={config.background_scale ?? 100} onChange={e => updateField("background_scale", Number(e.target.value))}
+              className="w-full accent-cyan-400" />
+          </div>
+          <div className="grid grid-cols-2 gap-3 mt-2">
+            <div>
+              <label className="text-[10px] font-bold text-white/50 mb-1 block">Position X ({config.background_pos_x ?? 50}%)</label>
+              <input type="range" min="0" max="100" value={config.background_pos_x ?? 50} onChange={e => updateField("background_pos_x", Number(e.target.value))}
+                className="w-full accent-fuchsia-400" />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-white/50 mb-1 block">Position Y ({config.background_pos_y ?? 50}%)</label>
+              <input type="range" min="0" max="100" value={config.background_pos_y ?? 50} onChange={e => updateField("background_pos_y", Number(e.target.value))}
+                className="w-full accent-fuchsia-400" />
+            </div>
+          </div>
+          <div className="flex gap-2 mt-2">
+            <button onClick={() => { updateField("background_scale", 100); updateField("background_pos_x", 50); updateField("background_pos_y", 50); }}
+              className="px-2 py-1 rounded-lg text-[10px] font-bold text-white/60 border border-white/10 hover:bg-white/5">
+              Centrer / Réinitialiser
+            </button>
           </div>
         </div>
       </div>
