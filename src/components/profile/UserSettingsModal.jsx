@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import AudioSettingsPanel from "@/components/profile/AudioSettingsPanel";
 import GamePicker from "@/components/profile/GamePicker";
+import { useAuth } from "@/lib/AuthContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -119,6 +120,7 @@ export default function UserSettingsModal({ open, onClose, user }) {
   const [loading, setLoading] = useState(false);
   const [showAllTimezones, setShowAllTimezones] = useState(false);
   const settingsRef = useRef(settings);
+  const { checkUserAuth } = useAuth();
 
   const updateSetting = async (key, value) => {
     if (savingKey || settingsRef.current[key] === value) return;
@@ -133,6 +135,12 @@ export default function UserSettingsModal({ open, onClose, user }) {
       if (key === 'notif_messages') localStorage.setItem('matrix_notif_messages', String(value));
       window.dispatchEvent(new Event('matrix-settings-updated'));
       toast.success('Paramètre mis à jour');
+      // Rafraîchir le user dans le contexte d'auth pour que le hook usePresence
+      // voie immédiatement le nouveau manual_game / show_game_activity et pousse
+      // le bon current_activity en base (Rich Presence temps réel).
+      if (key === 'manual_game' || key === 'show_game_activity' || key === 'custom_status') {
+        checkUserAuth();
+      }
     } catch {
       settingsRef.current = previous;
       setSettings(previous);
@@ -338,7 +346,7 @@ export default function UserSettingsModal({ open, onClose, user }) {
                 <div className="ml-12">
                   <GamePicker
                     value={settings.manual_game}
-                    onChange={(val) => {
+                    onSave={(val) => {
                       setSettings(prev => ({ ...prev, manual_game: val }));
                       updateSetting("manual_game", val.trim());
                     }}

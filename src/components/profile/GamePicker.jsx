@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Search, X, Gamepad2 } from "lucide-react";
 
 // Liste des jeux populaires proposés en accès rapide
@@ -31,8 +31,14 @@ const GAME_PICKER_GAMES = [
   { label: "Microsoft Flight Simulator", icon: "✈️" },
 ];
 
-export default function GamePicker({ value, onChange, disabled }) {
+export default function GamePicker({ value, onSave, disabled }) {
   const [search, setSearch] = useState("");
+  const [customText, setCustomText] = useState(value || "");
+
+  // Sync local text when external value changes (e.g. after quick-pick or clear)
+  useEffect(() => {
+    setCustomText(value || "");
+  }, [value]);
 
   const filteredGames = useMemo(() => {
     if (!search.trim()) return GAME_PICKER_GAMES;
@@ -41,8 +47,15 @@ export default function GamePicker({ value, onChange, disabled }) {
   }, [search]);
 
   const selectGame = (label) => {
-    onChange(label);
     setSearch("");
+    onSave(label);
+  };
+
+  const commitCustom = () => {
+    const trimmed = customText.trim();
+    if (trimmed !== (value || "").trim()) {
+      onSave(trimmed);
+    }
   };
 
   return (
@@ -63,8 +76,10 @@ export default function GamePicker({ value, onChange, disabled }) {
         </div>
         <input
           type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
+          value={customText}
+          onChange={(e) => setCustomText(e.target.value)}
+          onBlur={commitCustom}
+          onKeyDown={(e) => { if (e.key === "Enter") e.target.blur(); }}
           disabled={disabled}
           placeholder="ou saisir un jeu personnalisé"
           maxLength={80}
@@ -73,7 +88,7 @@ export default function GamePicker({ value, onChange, disabled }) {
         />
         {value && (
           <button
-            onClick={() => onChange("")}
+            onClick={() => onSave("")}
             disabled={disabled}
             className="px-2.5 py-2 rounded-xl text-xs font-bold text-red-400 transition hover:bg-red-500/10 disabled:opacity-40 tap-sm"
             title="Effacer"
