@@ -7,6 +7,7 @@ import { X, Upload, Plus } from "lucide-react";
 import { useProgression } from "@/context/ProgressionContext";
 import MobileSelect from "./MobileSelect";
 import { toast } from "sonner";
+import { uploadImageWithToast } from "@/lib/imageModeration";
 
 const CATEGORIES = [
   { key: "vetements_femme", label: "Vêtements Femme" },
@@ -46,8 +47,10 @@ export default function ListingForm({ onClose }) {
 
   const uploadPhoto = async (file) => {
     setUploading(true);
-    const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
-    setPhotos((p) => [...p, file_url]);
+    try {
+      const { file_url } = await uploadImageWithToast(file);
+      setPhotos((p) => [...p, file_url]);
+    } catch { /* error already toasted */ }
     setUploading(false);
   };
 

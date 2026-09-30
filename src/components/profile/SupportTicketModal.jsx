@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { X, Send, Bug, UserCircle, CreditCard, ShieldAlert, HelpCircle, Paperclip, Loader2, Download } from "lucide-react";
 import { useProgression } from "@/context/ProgressionContext";
+import { uploadImageWithToast } from "@/lib/imageModeration";
 
 const CATEGORIES = [
   { id: "bug", label: "Bug / Technique", icon: Bug, color: "#ef4444" },
@@ -27,12 +28,11 @@ export default function SupportTicketModal({ user, onClose }) {
     setUploading(true);
     try {
       for (const file of Array.from(files)) {
-        const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
+        const { file_url } = await uploadImageWithToast(file);
         setAttachments(prev => [...prev, { file_url, file_name: file.name }]);
       }
-    } catch {
-      toast.error("Erreur lors de l'upload du fichier.");
-    } finally {
+    } catch { /* error already toasted */ }
+    finally {
       setUploading(false);
     }
   };

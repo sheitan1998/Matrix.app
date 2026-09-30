@@ -19,6 +19,7 @@ import UserProfilePopup from "@/components/profile/UserProfilePopup";
 import ProfileContent from "@/components/profile/ProfileContent";
 import UserSettingsModal from "@/components/profile/UserSettingsModal";
 import UserBar from "@/components/community/UserBar";
+import { uploadImageWithToast } from "@/lib/imageModeration";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { VISUAL_THEMES, getTheme } from "@/lib/visualThemes";
@@ -164,18 +165,22 @@ export default function Community() {
 
   const uploadIcon = async (file) => {
     setUploadingIcon(true);
-    const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
-    await updateServer({ icon_url: file_url });
+    try {
+      const { file_url } = await uploadImageWithToast(file);
+      await updateServer({ icon_url: file_url });
+      toast.success("Icône mise à jour !");
+    } catch { /* error already toasted */ }
     setUploadingIcon(false);
-    toast.success("Icône mise à jour !");
   };
 
   const uploadBanner = async (file) => {
     setUploadingBanner(true);
-    const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
-    await updateServer({ banner_url: file_url });
+    try {
+      const { file_url } = await uploadImageWithToast(file);
+      await updateServer({ banner_url: file_url });
+      toast.success("Bannière mise à jour !");
+    } catch { /* error already toasted */ }
     setUploadingBanner(false);
-    toast.success("Bannière mise à jour !");
   };
 
   const copyInvite = (code) => {

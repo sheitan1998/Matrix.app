@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import { X, Gamepad2, Image as ImageIcon, Upload, Users, Clock, User } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
+import { uploadImageWithToast } from "@/lib/imageModeration";
 
 const GAMES = ["Valorant", "League of Legends", "Fortnite", "CS2", "Apex Legends", "Minecraft", "Rocket League", "Autre"];
 const CATEGORIES = ["Gaming", "RP", "Communauté", "Compétitif", "Casual", "Créatif", "Autre"];
@@ -36,16 +37,14 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
     if (!file) return;
     setUploadingField(type);
     try {
-      const result = await base44.integrations.Core.UploadPublicFile({ file });
+      const result = await uploadImageWithToast(file);
       if (type === "profile") {
         setProfileImage(result.file_url);
       } else {
         setCoverImage(result.file_url);
       }
-      toast.success("Image téléchargée");
-    } catch {
-      toast.error("Erreur lors de l'upload");
-    } finally {
+    } catch { /* error already toasted */ }
+    finally {
       setUploadingField("");
     }
   };

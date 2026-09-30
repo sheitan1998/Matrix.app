@@ -4,6 +4,7 @@ import { Crown, Upload, X, Check, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { uploadImageWithToast } from "@/lib/imageModeration";
 
 const PRESET_GIFS = [
   { url: "https://media.giphy.com/media/3o7aCTPPm4OHfRLSH6/giphy.gif", label: "Feu" },
@@ -50,10 +51,12 @@ export default function NitroAvatarPicker({ user, onSave, onClose }) {
       return;
     }
     setUploading(true);
-    const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
-    setSelected(file_url);
+    try {
+      const { file_url } = await uploadImageWithToast(file);
+      setSelected(file_url);
+      toast.success("GIF uploadé !");
+    } catch { /* error already toasted */ }
     setUploading(false);
-    toast.success("GIF uploadé !");
   };
 
   const save = async () => {

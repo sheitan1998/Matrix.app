@@ -3,12 +3,14 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, MessageCircle, ImagePlus, X, Trash2, Pencil, Check, Video as VideoIcon } from "lucide-react";
+import { Heart, MessageCircle, ImagePlus, X, Trash2, Pencil, Check, Video as VideoIcon, Flag } from "lucide-react";
 import { formatTimeAgo } from "@/lib/format";
 import PostComments from "./PostComments";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useProgression } from "@/context/ProgressionContext";
+import { uploadImageWithToast } from "@/lib/imageModeration";
+import ReportContentModal from "@/components/admin/ReportContentModal";
 
 const REACTIONS = ["❤️", "😂", "🔥", "👏", "😮", "😢"];
 
@@ -17,6 +19,7 @@ export default function PostFeed() {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null); // base64
   const [videoPreview, setVideoPreview] = useState(null);
+  const [reportTarget, setReportTarget] = useState(null);
   const [reactions, setReactions] = useState({});
   const [myReactions, setMyReactions] = useState(() => {
     try { return JSON.parse(localStorage.getItem("matrix_my_reactions") || "{}"); } catch { return {}; }
@@ -82,22 +85,14 @@ export default function PostFeed() {
     },
   });
 
-  const handleImageSelect = (e) => {
+  const handleImageSelect = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const img = new window.Image();
-    const objUrl = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(objUrl);
-      const MAX = 1200;
-      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.round(img.width * scale);
-      canvas.height = Math.round(img.height * scale);
-      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-      setImagePreview(canvas.toDataURL("image/jpeg", 0.8));
-    };
-    img.src = objUrl;
+    try {
+      toast.info("Modération de l'image en cours...");
+      const { file_url } = await uploadImageWithToast(file);
+      setImagePreview(file_url);
+    } catch { /* error already toasted */ }
     if (fileRef.current) fileRef.current.value = "";
   };
 
@@ -385,7 +380,27 @@ export default function PostFeed() {
             className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition">
             <Trash2 className="w-4 h-4" /> Supprimer
           </button>
+          {contextMenu.post.author_email !== user?.email && (
+            <button
+              onClick={() => { setReportTarget(contextMenu.post); setContextMenu(null); }}
+              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-orange-400 hover:bg-orange-500/10 transition">
+              <Flag className="w-4 h-4" /> Signaler
+            </button>
+          )}
         </div>
+      )}
+
+      {reportTarget && (
+        <ReportContentModal
+          open={!!reportTarget}
+          onClose={() => setReportTarget(null)}
+          contentType="post"
+          contentId={reportTarget.id}
+          contentPreview={reportTarget.content || reportTarget.image_url}
+          authorEmail={reportTarget.author_email}
+          authorName={reportTarget.author_name}
+          reporterUser={user}
+        />
       )}
     </div>
   );

@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { X, Loader2, Upload, ImageIcon, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { CATEGORY_OPTIONS, validateMapCode, formatMapCode } from "@/components/tuto-gaming/fortniteMapsData";
+import { uploadImageWithToast } from "@/lib/imageModeration";
 
 export default function SubmitMapModal({ open, onClose, onSuccess, userEmail }) {
   const [form, setForm] = useState({
@@ -67,7 +68,7 @@ export default function SubmitMapModal({ open, onClose, onSuccess, userEmail }) 
 
       const gallery = [];
       for (const file of imageFiles) {
-        const res = await base44.integrations.Core.UploadPublicFile({ file });
+        const res = await uploadImageWithToast(file);
         if (res?.file_url) gallery.push(res.file_url);
       }
 

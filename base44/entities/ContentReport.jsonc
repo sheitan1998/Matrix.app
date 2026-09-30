@@ -1,0 +1,136 @@
+{
+  "name": "ContentReport",
+  "type": "object",
+  "properties": {
+    "reporter_email": {
+      "type": "string",
+      "description": "Email de l'utilisateur qui a signale le contenu"
+    },
+    "reporter_name": {
+      "type": "string",
+      "description": "Pseudo de l'utilisateur qui a signale"
+    },
+    "content_type": {
+      "type": "string",
+      "enum": [
+        "post",
+        "server_message",
+        "direct_message",
+        "profile_avatar",
+        "profile_banner",
+        "server_icon",
+        "server_banner",
+        "short",
+        "video",
+        "comment",
+        "listing",
+        "fortnite_map",
+        "other"
+      ],
+      "default": "other",
+      "description": "Type de contenu signale"
+    },
+    "content_id": {
+      "type": "string",
+      "description": "ID de l'entite ou identifiant du contenu signale"
+    },
+    "content_url": {
+      "type": "string",
+      "description": "URL ou reference du contenu (image, message, etc.)"
+    },
+    "content_preview": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "Apercu du contenu signale (texte ou URL d'image)"
+    },
+    "author_email": {
+      "type": "string",
+      "description": "Email de l'auteur du contenu signale"
+    },
+    "author_name": {
+      "type": "string",
+      "description": "Pseudo de l'auteur du contenu signale"
+    },
+    "reason": {
+      "type": "string",
+      "enum": [
+        "nudity",
+        "violence",
+        "hate_speech",
+        "harassment",
+        "spam",
+        "illegal",
+        "other"
+      ],
+      "default": "other",
+      "description": "Raison du signalement"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Description detaillee du signalement par l'utilisateur"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "reviewing",
+        "actioned",
+        "dismissed"
+      ],
+      "default": "pending",
+      "description": "Statut du signalement"
+    },
+    "admin_notes": {
+      "type": "string",
+      "description": "Notes internes de l'admin"
+    },
+    "action_taken": {
+      "type": "string",
+      "enum": [
+        "none",
+        "content_removed",
+        "user_warned",
+        "user_banned",
+        "user_muted"
+      ],
+      "default": "none",
+      "description": "Action entreprise par l'admin"
+    },
+    "resolved_by": {
+      "type": "string",
+      "description": "Email de l'admin ayant resolu le signalement"
+    },
+    "resolved_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date de resolution"
+    }
+  },
+  "required": [
+    "reporter_email",
+    "content_type",
+    "content_id",
+    "reason"
+  ],
+  "rls": {
+    "create": {
+      "data.reporter_email": "{{user.email}}"
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

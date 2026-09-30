@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Send, Hash, Image, Trash2, Pencil, Check, X, Smile, Paperclip, File, Download, Reply, Heart } from "lucide-react";
+import { Send, Hash, Image, Trash2, Pencil, Check, X, Smile, Paperclip, File, Download, Reply, Heart, Flag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -11,6 +11,8 @@ import UserProfilePopup from "@/components/profile/UserProfilePopup";
 import VoiceRecorder from "@/components/chat/VoiceRecorder";
 import VoiceMessagePlayer from "@/components/chat/VoiceMessagePlayer";
 import { stripPseudoTag } from "@/lib/format";
+import { uploadImageWithToast } from "@/lib/imageModeration";
+import ReportContentModal from "@/components/admin/ReportContentModal";
 
 const EMOJI_LIST = ["😀","😂","🥰","😎","🤔","😢","😡","👍","👎","❤️","🔥","🎉","🎮","🏆","✨","💎","🚀","💯","🤣","😍","🤝","👏","🙌","💀","🫡","😴","🤯","🥳","😱","🤩"];
 
@@ -25,6 +27,7 @@ export default function ServerChat({ server, channel, theme, user }) {
   const [profileUser, setProfileUser] = useState(null); // { userId, email }
   const [replyTo, setReplyTo] = useState(null); // message being replied to
   const [showReactionPicker, setShowReactionPicker] = useState(null); // message id
+  const [reportTarget, setReportTarget] = useState(null); // message to report
   const fileInputRef = useRef(null);
   const docFileInputRef = useRef(null);
   const bottomRef = useRef(null);
@@ -163,24 +166,12 @@ export default function ServerChat({ server, channel, theme, user }) {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingImage(true);
-    // Compress image to stay within field size limits
-    const img = new window.Image();
-    const objectUrl = URL.createObjectURL(file);
-    img.onload = async () => {
-      URL.revokeObjectURL(objectUrl);
-      const MAX = 600;
-      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.round(img.width * scale);
-      canvas.height = Math.round(img.height * scale);
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.6);
-      await send(dataUrl);
-      setUploadingImage(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    };
-    img.src = objectUrl;
+    try {
+      const { file_url } = await uploadImageWithToast(file);
+      await send(file_url);
+    } catch { /* error already toasted */ }
+    setUploadingImage(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleFileUpload = async (e) => {
@@ -517,6 +508,13 @@ export default function ServerChat({ server, channel, theme, user }) {
               <Trash2 className="w-4 h-4" /> Supprimer
             </button>
           )}
+          {contextMenu.msg.author_email !== user?.email && (
+            <button
+              onClick={() => { setReportTarget(contextMenu.msg); setContextMenu(null); }}
+              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-orange-400 hover:bg-orange-500/10 transition">
+              <Flag className="w-4 h-4" /> Signaler
+            </button>
+          )}
         </div>
       )}
 
@@ -528,6 +526,19 @@ export default function ServerChat({ server, channel, theme, user }) {
           open={!!profileUser}
           onClose={() => setProfileUser(null)}
           onOpenDm={() => setProfileUser(null)}
+        />
+      )}
+
+      {reportTarget && (
+        <ReportContentModal
+          open={!!reportTarget}
+          onClose={() => setReportTarget(null)}
+          contentType="server_message"
+          contentId={reportTarget.id}
+          contentPreview={reportTarget.content}
+          authorEmail={reportTarget.author_email}
+          authorName={reportTarget.author_name}
+          reporterUser={user}
         />
       )}
     </div>
