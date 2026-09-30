@@ -368,11 +368,11 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
       }
 
       {/* Balance + rewards table */}
-      <div className="mt-6 flex items-center gap-2 px-4 py-2 rounded-xl hidden" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(197,160,89,0.15)" }}>
-        <CasinoToken size={18} />
-        <span className="text-sm font-mono font-black" style={{ color: "#C5A059" }}>{formatBet(balance)}</span>
-        <span className="text-[9px] text-white/40 uppercase">Solde</span>
-      </div>
+      
+
+
+
+      
 
       <div className="mt-3 px-4 py-2 rounded-xl w-full max-w-sm" style={{ background: "rgba(15,10,25,0.4)", border: "1px solid rgba(255,255,255,0.04)" }}>
         <p className="text-[10px] font-bold text-white/50 mb-1.5 text-center">Récompenses possibles :</p>
