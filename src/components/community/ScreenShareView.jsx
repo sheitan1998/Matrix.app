@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
  *   onStop: () => void         — called when user clicks the stop button
  *   compact?: boolean          — smaller preview (for floating panels)
  */
-export default function ScreenShareView({ stream, accent = "#00ff41", onStop, compact = false }) {
+export default function ScreenShareView({ stream, accent = "#00ff41", onStop, compact = false, large = false }) {
   const containerRef = useRef(null);
   const videoRef = useRef(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -20,6 +20,7 @@ export default function ScreenShareView({ stream, accent = "#00ff41", onStop, co
     const video = videoRef.current;
     if (!video) return;
     if (stream) {
+      video.muted = true;
       video.srcObject = stream;
       video.play().catch(() => {});
     } else {
@@ -65,7 +66,8 @@ export default function ScreenShareView({ stream, accent = "#00ff41", onStop, co
     <div
       ref={containerRef}
       className={cn(
-        "relative rounded-xl overflow-hidden bg-black group",
+        large ? "absolute inset-0" : "relative",
+        "rounded-xl overflow-hidden bg-black group",
         isFullscreen && "rounded-none"
       )}
       style={{ border: `1px solid ${accent}40` }}
@@ -75,9 +77,10 @@ export default function ScreenShareView({ stream, accent = "#00ff41", onStop, co
         autoPlay
         playsInline
         muted
+        onLoadedMetadata={(e) => e.currentTarget.play().catch(() => {})}
         className={cn(
-          "w-full bg-black",
-          compact ? "max-h-32 object-contain" : "max-h-[60vh] object-contain",
+          "w-full bg-black object-contain",
+          large ? "h-full" : compact ? "max-h-32" : "max-h-[60vh]",
           isFullscreen && "max-h-none h-screen"
         )}
       />

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { useServerVoice } from "@/hooks/useServerVoice";
+import SpeakingRing from "@/components/community/SpeakingRing";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Hash, Volume2, Megaphone, MessageSquare, Folder, ChevronDown, ChevronRight, Trash2, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -16,13 +16,8 @@ const CHANNEL_TYPES = [
 export default function ChannelList({ channels, activeChannel, setActiveChannel, canManage, theme, onReorder, onRemove, onContextMenu, serverId }) {
   const [collapsed, setCollapsed] = useState({});
 
-  // Fetch voice room participants for this server
-  const { data: voiceRooms = [] } = useQuery({
-    queryKey: ["voice-rooms-server", serverId],
-    queryFn: () => base44.entities.VoiceRoom.filter({ server_id: serverId }, "-created_date", 50),
-    enabled: !!serverId,
-    refetchInterval: 5000,
-  });
+  // Live voice rooms for this server (realtime) + who is speaking
+  const { rooms: voiceRooms, speakingEmails } = useServerVoice(serverId);
 
   const getParticipantsForChannel = (channelId) => {
     const room = voiceRooms.find((r) => r.channel_id === channelId);
@@ -130,15 +125,7 @@ export default function ChannelList({ channels, activeChannel, setActiveChannel,
                 {voiceParticipants.map((p, i) => (
                   <div key={i} className="flex items-center gap-1.5 py-0.5">
                     <div className="relative shrink-0">
-                      {p.speaking && p.micOn && (
-                        <span
-                          className="absolute inset-0 rounded-full animate-pulse"
-                          style={{
-                            boxShadow: `0 0 0 1.5px ${theme.accent}, 0 0 6px ${theme.accent}80`,
-                            animationDuration: "1.2s",
-                          }}
-                        />
-                      )}
+                      <SpeakingRing speaking={speakingEmails.has((p.email || "").toLowerCase())} width={1.5} />
                       <div className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white overflow-hidden"
                         style={{ background: p.avatar ? "transparent" : theme.accent + "40" }}>
                         {p.avatar ? (

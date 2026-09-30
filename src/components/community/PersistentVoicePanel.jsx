@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
-import { Mic, MicOff, Volume2, VolumeX, PhoneOff, Monitor, MonitorOff, ChevronUp, ChevronDown } from "lucide-react";
+import { Mic, MicOff, Volume2, VolumeX, PhoneOff, ScreenShare, ScreenShareOff, RefreshCw, ChevronUp, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useVoice } from "@/context/VoiceContext";
 import ScreenShareView from "@/components/community/ScreenShareView";
-import ScreenShareModal from "@/components/community/ScreenShareModal";
+import SpeakingRing from "@/components/community/SpeakingRing";
 
 export default function PersistentVoicePanel() {
   const {
@@ -13,7 +13,6 @@ export default function PersistentVoicePanel() {
     toggleMic, toggleSpeaker,
     startScreenShare, stopScreenShare,
     disconnect,
-    showShareModal, closeShareModal, handleShareStart,
   } = useVoice();
   const [expanded, setExpanded] = useState(true);
 
@@ -54,17 +53,8 @@ export default function PersistentVoicePanel() {
             {participants.map((p, i) => (
               <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded-lg"
                 style={{ background: p.isSelf ? accent + "10" : "rgba(255,255,255,0.03)" }}>
-                <div className="relative shrink-0">
-                  {/* Speaking ring */}
-                  {p.speaking && p.micOn && (
-                    <span
-                      className="absolute inset-0 rounded-full animate-pulse"
-                      style={{
-                        boxShadow: `0 0 0 2px ${accent}, 0 0 8px ${accent}80`,
-                        animationDuration: "1.2s",
-                      }}
-                    />
-                  )}
+                <div className="relative shrink-0 w-7 h-7 rounded-full">
+                  <SpeakingRing speaking={!!p.speaking && p.micOn !== false} />
                   <div className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs text-white overflow-hidden"
                     style={{ background: accent + "30" }}>
                     {p.avatar ? (
@@ -96,11 +86,18 @@ export default function PersistentVoicePanel() {
               title={speakerOn ? "Couper le son" : "Activer le son"}>
               {speakerOn ? <Volume2 className="w-4 h-4 text-white" /> : <VolumeX className="w-4 h-4 text-red-400" />}
             </button>
+            {sharing && (
+              <button onClick={startScreenShare}
+                className="w-9 h-9 rounded-xl flex items-center justify-center transition border border-green-500/40 bg-green-500/20"
+                title="Changer de source de partage">
+                <RefreshCw className="w-4 h-4 text-green-400" />
+              </button>
+            )}
             <button onClick={sharing ? stopScreenShare : startScreenShare}
               className={cn("w-9 h-9 rounded-xl flex items-center justify-center transition border",
-                sharing ? "border-green-500/40 bg-green-500/20" : "border-white/20 bg-white/10")}
+                sharing ? "border-red-500/40 bg-red-500/20" : "border-white/20 bg-white/10")}
               title={sharing ? "Arrêter le partage" : "Partager l'écran"}>
-              {sharing ? <Monitor className="w-4 h-4 text-green-400" /> : <MonitorOff className="w-4 h-4 text-white" />}
+              {sharing ? <ScreenShareOff className="w-4 h-4 text-red-400" /> : <ScreenShare className="w-4 h-4 text-white" />}
             </button>
             <div className="flex-1" />
             <button onClick={disconnect}
@@ -116,15 +113,5 @@ export default function PersistentVoicePanel() {
     document.body
   );
 
-  return (
-    <>
-      {panel}
-      <ScreenShareModal
-        open={showShareModal}
-        onClose={closeShareModal}
-        onStart={handleShareStart}
-        accent={accent}
-      />
-    </>
-  );
+  return panel;
 }

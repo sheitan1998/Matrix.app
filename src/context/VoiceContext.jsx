@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from "react";
+import React, { createContext, useContext, useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAudioSettings } from "@/hooks/useAudioSettings";
 import { useSpeakingDetection } from "@/hooks/useSpeakingDetection";
@@ -22,14 +22,14 @@ export function VoiceProvider({ children }) {
   const [voiceRoomId, setVoiceRoomId] = useState(null);
   const localStreamRef = useRef(null);
   const screenStreamRef = useRef(null);
-  const [showShareModal, setShowShareModal] = useState(false);
+  const [localStream, setLocalStream] = useState(null);
   const lastSpeakingSynced = useRef(false);
+  const speakingWrite = useRef({ timer: null, lastWrite: 0 });
 
-  // Speaking detection on local mic stream
-  const { speaking: localSpeaking } = useSpeakingDetection(
-    micOn ? localStreamRef.current : null,
-    { threshold: 0.06, interval: 80 }
-  );
+  // Live voice-activity detection on the mic stream (a muted track is silent -> "not speaking")
+  const { speaking: localSpeaking } = useSpeakingDetection(localStream);
+  const localSpeakingRef = useRef(false);
+  localSpeakingRef.current = localSpeaking;
 
   // Sync participant state to DB
   const updateParticipantInDB = useCallback(async (roomId, email, patch) => {
@@ -57,16 +57,38 @@ export function VoiceProvider({ children }) {
     return unsubscribe;
   }, [voiceRoomId]);
 
-  // Sync speaking state to participants list (local) and to DB
+  // Share the local speaking state with the room (throttled) so other members see the ring
   useEffect(() => {
-    setParticipants((prev) =>
-      prev.map((p) => (p.isSelf ? { ...p, speaking: localSpeaking } : p))
-    );
-    if (voiceRoomId && user?.email && localSpeaking !== lastSpeakingSynced.current) {
-      lastSpeakingSynced.current = localSpeaking;
-      updateParticipantInDB(voiceRoomId, user.email, { speaking: localSpeaking });
-    }
+    if (!voiceRoomId || !user?.email) return;
+    const state = speakingWrite.current;
+    if (state.timer || localSpeaking === lastSpeakingSynced.current) return;
+    const wait = Math.max(0, 300 - (Date.now() - state.lastWrite));
+    state.timer = setTimeout(() => {
+      state.timer = null;
+      const value = localSpeakingRef.current;
+      if (value === lastSpeakingSynced.current) return;
+      lastSpeakingSynced.current = value;
+      state.lastWrite = Date.now();
+      updateParticipantInDB(voiceRoomId, user.email, { speaking: value });
+    }, wait);
   }, [localSpeaking, voiceRoomId, user, updateParticipantInDB]);
+
+  // Drop any pending speaking write when leaving a room
+  useEffect(() => () => {
+    clearTimeout(speakingWrite.current.timer);
+    speakingWrite.current.timer = null;
+  }, [voiceRoomId]);
+
+  // Participants shown in the UI: the local user's own mic/speaking state comes straight from the
+  // live audio analysis (no database round trip), so the ring reacts instantly.
+  const displayParticipants = useMemo(() => {
+    const me = user?.email?.toLowerCase();
+    return participants.map((p) =>
+      me && (p.email || "").toLowerCase() === me
+        ? { ...p, isSelf: true, micOn, speaking: micOn && localSpeaking }
+        : p
+    );
+  }, [participants, user, micOn, localSpeaking]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -95,6 +117,8 @@ export function VoiceProvider({ children }) {
 
       const stream = await navigator.mediaDevices.getUserMedia(getAudioConstraints());
       localStreamRef.current = stream;
+      setLocalStream(stream);
+      lastSpeakingSynced.current = false;
 
       const myName = userData?.pseudo?.split("#")[0] || userData?.full_name?.split(" ")[0] || "Utilisateur";
       const myParticipant = {
@@ -102,6 +126,7 @@ export function VoiceProvider({ children }) {
         name: myName,
         avatar: userData?.avatar_url || "",
         micOn: true,
+        speaking: false,
       };
 
       // Find or create VoiceRoom for this server+channel
@@ -111,8 +136,9 @@ export function VoiceProvider({ children }) {
           server_id: serverData?.id || "",
           channel_id: channelData?.id || "",
         });
-        if (existing.items && existing.items.length > 0) {
-          room = existing.items[0];
+        const existingRooms = Array.isArray(existing) ? existing : existing?.items || [];
+        if (existingRooms.length > 0) {
+          room = existingRooms[0];
           const current = room.participants || [];
           const filtered = current.filter((p) => p.email !== myParticipant.email);
           const updatedParticipants = [...filtered, myParticipant];
@@ -163,6 +189,8 @@ export function VoiceProvider({ children }) {
       screenStreamRef.current = null;
     }
     setScreenStream(null);
+    setLocalStream(null);
+    lastSpeakingSynced.current = false;
 
     // Remove user from DB
     const roomId = voiceRoomId;
@@ -195,19 +223,16 @@ export function VoiceProvider({ children }) {
   }, [voiceRoomId, user]);
 
   const toggleMic = useCallback(() => {
-    setMicOn((prev) => {
-      const next = !prev;
-      if (localStreamRef.current) {
-        localStreamRef.current.getAudioTracks().forEach((t) => { t.enabled = next; });
-      }
-      setParticipants((p) => p.map((m) => m.isSelf ? { ...m, micOn: next } : m));
-      if (voiceRoomId && user?.email) {
-        updateParticipantInDB(voiceRoomId, user.email, { micOn: next });
-      }
-      if (next) playMicUnmute(); else playMicMute();
-      return next;
-    });
-  }, [voiceRoomId, user, updateParticipantInDB]);
+    const next = !micOn;
+    setMicOn(next);
+    if (localStreamRef.current) {
+      localStreamRef.current.getAudioTracks().forEach((t) => { t.enabled = next; });
+    }
+    if (voiceRoomId && user?.email) {
+      updateParticipantInDB(voiceRoomId, user.email, { micOn: next });
+    }
+    if (next) playMicUnmute(); else playMicMute();
+  }, [micOn, voiceRoomId, user, updateParticipantInDB]);
 
   const toggleSpeaker = useCallback(() => {
     setSpeakerOn((prev) => {
@@ -226,51 +251,48 @@ export function VoiceProvider({ children }) {
     setSharing(false);
   }, []);
 
-  // Replace the current screen stream with a new one (source switching)
-  const replaceScreenShare = useCallback((newStream) => {
-    // Stop old tracks
+  // Show a freshly captured stream (first share, or a source switch replacing the old one)
+  const applyScreenStream = useCallback((newStream) => {
+    const switching = !!screenStreamRef.current;
     if (screenStreamRef.current) {
       screenStreamRef.current.getTracks().forEach((t) => t.stop());
     }
     screenStreamRef.current = newStream;
     setScreenStream(newStream);
     setSharing(true);
-    // Listen for the browser's native "stop sharing" button
+    // The browser's native "stop sharing" button ends the track
     const videoTrack = newStream.getVideoTracks()[0];
     if (videoTrack) {
-      videoTrack.onended = () => stopScreenShare();
+      videoTrack.onended = () => {
+        if (screenStreamRef.current === newStream) stopScreenShare();
+      };
     }
-    toast.success("Source de partage mise à jour !");
+    toast.success(switching ? "Source de partage mise à jour" : "Partage d'écran démarré");
   }, [stopScreenShare]);
 
-  // Open the custom share picker modal
-  const openShareModal = useCallback(() => {
-    setShowShareModal(true);
-  }, []);
-
-  // Close the share picker modal
-  const closeShareModal = useCallback(() => {
-    setShowShareModal(false);
-  }, []);
-
-  // Called when the user picks a source in the modal
-  const handleShareStart = useCallback((stream) => {
-    replaceScreenShare(stream);
-    setShowShareModal(false);
-  }, [replaceScreenShare]);
-
-  // Legacy direct call (kept for compatibility) — now opens the modal
-  const startScreenShare = useCallback(() => {
-    setShowShareModal(true);
-  }, []);
+  // Opens the browser's native source picker. Used both to start sharing and to switch source:
+  // the current share is only replaced once a new source has actually been chosen.
+  const startScreenShare = useCallback(async () => {
+    if (!navigator.mediaDevices?.getDisplayMedia) {
+      toast.error("Le partage d'écran n'est pas supporté par ce navigateur.");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" }, audio: true });
+      applyScreenStream(stream);
+    } catch (e) {
+      if (e?.name !== "NotAllowedError" && e?.name !== "AbortError") {
+        toast.error("Erreur lors du partage d'écran.");
+      }
+    }
+  }, [applyScreenStream]);
 
   const value = {
     connected, channel, server, theme, user,
-    micOn, speakerOn, sharing, screenStream, participants,
-    localStreamRef, localSpeaking,
-    showShareModal, openShareModal, closeShareModal, handleShareStart,
+    micOn, speakerOn, sharing, screenStream, participants: displayParticipants,
+    localStreamRef, localSpeaking: micOn && localSpeaking,
     connect, disconnect, toggleMic, toggleSpeaker,
-    startScreenShare, stopScreenShare, replaceScreenShare,
+    startScreenShare, stopScreenShare,
   };
 
   return (

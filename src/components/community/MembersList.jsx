@@ -5,6 +5,8 @@ import { Crown, Shield, MessageCircle } from "lucide-react";
 import UserProfilePopup from "@/components/profile/UserProfilePopup";
 import { stripPseudoTag } from "@/lib/format";
 import { isUserOnline, getActivityIcon } from "@/hooks/usePresence";
+import { useServerVoice } from "@/hooks/useServerVoice";
+import SpeakingRing from "@/components/community/SpeakingRing";
 
 const ROLE_ICONS = {
   admin: { icon: Crown, color: "#f59e0b" },
@@ -14,6 +16,7 @@ const ROLE_ICONS = {
 
 export default function MembersList({ server, theme, currentUserEmail, onOpenDm }) {
   const [profileEmail, setProfileEmail] = useState(null);
+  const { speakingEmails } = useServerVoice(server.id);
   const { data: members = [] } = useQuery({
     queryKey: ["server-members", server.id],
     queryFn: () => base44.entities.ServerMember.filter({ server_id: server.id }, "-created_date", 100),
@@ -90,6 +93,7 @@ export default function MembersList({ server, theme, currentUserEmail, onOpenDm 
                     {/* Avatar — clickable */}
                     <button onClick={() => !isMe && setProfileEmail(m.user_email)}
                       className="relative shrink-0 tap-sm" disabled={isMe}>
+                      <SpeakingRing speaking={speakingEmails.has((m.user_email || "").toLowerCase())} width={1.5} />
                       <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center text-xs font-bold text-white"
                         style={{ background: isOwner ? "#f59e0b30" : accent + "30", border: `1.5px solid ${isOwner ? "#f59e0b" : accent}80` }}>
                         {(freshUser?.avatar_url || m.user_avatar) ?
