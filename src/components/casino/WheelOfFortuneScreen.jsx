@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { formatBet } from "@/components/casino/slotThemes";
 import CasinoToken, { TOKEN_URL } from "@/components/casino/CasinoToken";
 import { bustImageCache } from "@/lib/casinoImageCache";
+import { getFontCss } from "@/components/admin/WheelConfigPanel";
 
 const SEGMENTS = [
   { color: "#3a3a3a", glow: "#666", icon: "💀", label: "Perdu" },
@@ -65,6 +66,7 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
   const segments = gameConfig?.rewards?.length ? gameConfig.rewards.map((reward, i) => ({ ...SEGMENTS[i % SEGMENTS.length], icon: reward.icon || SEGMENTS[i % SEGMENTS.length].icon, label: reward.label || SEGMENTS[i % SEGMENTS.length].label })) : SEGMENTS;
   const segmentAngle = 360 / segments.length;
   const spinCost = Number(gameConfig?.spin_cost ?? SPIN_COST);
+  const ts = gameConfig?.title_style;
 
   // Charger le statut (lancer gratuit disponible + prochain reset)
   const loadStatus = useCallback(async () => {
@@ -155,11 +157,23 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-100px)] px-4 py-8">
       {/* Title */}
       <div className="text-center mb-4">
-        <h2 className="text-lg font-black tracking-wider" style={{
-          background: "linear-gradient(135deg, #00ffff, #ff00ff)",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          textShadow: "0 0 20px rgba(168,85,247,0.3)",
+        <h2 style={{
+          fontFamily: getFontCss(ts?.font),
+          fontSize: `${ts?.size || 18}px`,
+          fontWeight: ts?.font === "Titan One" ? 400 : 900,
+          letterSpacing: "0.05em",
+          ...((!ts || ts?.color_style === "gradient") ? {
+            background: `linear-gradient(135deg, ${ts?.color || "#00ffff"}, ${ts?.color2 || "#ff00ff"})`,
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            textShadow: "none",
+          } : ts?.color_style === "neon" ? {
+            color: ts?.color || "#00ffff",
+            textShadow: `0 0 6px ${ts?.color || "#00ffff"}, 0 0 14px ${ts?.color || "#00ffff"}, 0 0 28px ${ts?.color2 || "#ff00ff"}`,
+          } : {
+            color: ts?.color || "#00ffff",
+            textShadow: "none",
+          }),
         }}>{gameConfig?.title || 'ROUE DE LA FORTUNE'}</h2>
       </div>
 

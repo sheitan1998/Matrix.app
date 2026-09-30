@@ -14,6 +14,42 @@
       "type": "string",
       "description": "Titre affiche aux joueurs"
     },
+    "title_style": {
+      "type": "object",
+      "properties": {
+        "font": {
+          "type": "string",
+          "default": "Inter",
+          "description": "Police du titre"
+        },
+        "size": {
+          "type": "number",
+          "default": 18,
+          "description": "Taille du titre en px"
+        },
+        "color_style": {
+          "type": "string",
+          "enum": [
+            "gradient",
+            "solid",
+            "neon"
+          ],
+          "default": "gradient"
+        },
+        "color": {
+          "type": "string",
+          "default": "#00ffff",
+          "description": "Couleur principale du titre"
+        },
+        "color2": {
+          "type": "string",
+          "default": "#ff00ff",
+          "description": "Couleur secondaire (pour le degrade)"
+        }
+      },
+      "default": {},
+      "description": "Style typographique du titre"
+    },
     "subtitle": {
       "type": "string",
       "description": "Sous-titre affiche sous le titre du jeu"

@@ -6,8 +6,22 @@ import ImageUploadField from "@/components/admin/ImageUploadField";
 
 const GAME_KEY = "wheel";
 
+const TITLE_FONTS = [
+  { value: "Inter", label: "Inter (Moderne)", css: "'Inter', sans-serif" },
+  { value: "Titan One", label: "Titan One (Gaming)", css: "'Titan One', cursive" },
+  { value: "JetBrains Mono", label: "JetBrains Mono (Mono)", css: "'JetBrains Mono', monospace" },
+  { value: "Impact", label: "Impact (Bold)", css: "Impact, sans-serif" },
+  { value: "Georgia", label: "Georgia (Serif)", css: "Georgia, serif" },
+  { value: "Courier New", label: "Courier New (Rétro)", css: "'Courier New', monospace" },
+];
+
+export function getFontCss(fontName) {
+  return TITLE_FONTS.find(f => f.value === fontName)?.css || "'Inter', sans-serif";
+}
+
 const DEFAULT_CONFIG = {
   title: "Roue de la Fortune",
+  title_style: { font: "Inter", size: 18, color_style: "gradient", color: "#00ffff", color2: "#ff00ff" },
   subtitle: "Tente ta chance une fois par jour gratuitement !",
   description: "Lancez la roue et tentez de gagner gros !",
   description_long: "",
@@ -58,6 +72,10 @@ export default function WheelConfigPanel() {
     setConfig(prev => prev ? { ...prev, [field]: value } : prev);
   }, []);
 
+  const updateTitleStyle = useCallback((field, value) => {
+    setConfig(prev => prev ? { ...prev, title_style: { ...(prev.title_style || {}), [field]: value } } : prev);
+  }, []);
+
   const updateReward = useCallback((index, field, value) => {
     setConfig(prev => {
       if (!prev) return prev;
@@ -101,6 +119,7 @@ export default function WheelConfigPanel() {
         background_color: config.background_color,
         spin_cost: Number(config.spin_cost),
         reset_hour_utc: Number(config.reset_hour_utc),
+        title_style: config.title_style,
         rewards: config.rewards,
       };
       if (config.id) {
@@ -149,6 +168,88 @@ export default function WheelConfigPanel() {
         <ImageUploadField label="Icône du jeu (emoji ou URL)" value={config.icon || ""} onChange={v => updateField("icon", v)} hint="Affichée à côté du titre et dans les cartes de jeu." />
         <ImageUploadField label="Icône centrale de la roue (emoji ou URL)" value={config.center_icon || ""} onChange={v => updateField("center_icon", v)} hint="Logo affiché au centre de la roue de la Fortune." aspect="square" />
         <ImageUploadField label="Bannière de présentation" value={config.banner_image || ""} onChange={v => updateField("banner_image", v)} hint="Image de présentation affichée en haut de la page du jeu." />
+      </div>
+
+      {/* Title typography */}
+      <div className="rounded-2xl border border-white/10 p-4 space-y-3" style={{ background: "rgba(15,10,25,0.6)" }}>
+        <p className="text-xs font-bold text-white/60 uppercase">Style du titre</p>
+        {/* Live preview */}
+        <div className="rounded-xl p-4 text-center" style={{ background: "rgba(0,0,0,0.3)" }}>
+          <span
+            style={{
+              fontFamily: getFontCss(config.title_style?.font),
+              fontSize: `${config.title_style?.size || 18}px`,
+              fontWeight: config.title_style?.font === "Titan One" ? 400 : 900,
+              letterSpacing: "0.05em",
+              ...(config.title_style?.color_style === "gradient" ? {
+                background: `linear-gradient(135deg, ${config.title_style?.color || "#00ffff"}, ${config.title_style?.color2 || "#ff00ff"})`,
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                textShadow: "none",
+              } : config.title_style?.color_style === "neon" ? {
+                color: config.title_style?.color || "#00ffff",
+                textShadow: `0 0 6px ${config.title_style?.color || "#00ffff"}, 0 0 14px ${config.title_style?.color || "#00ffff"}, 0 0 28px ${config.title_style?.color2 || "#ff00ff"}`,
+              } : {
+                color: config.title_style?.color || "#00ffff",
+                textShadow: "none",
+              }),
+            }}
+          >
+            {config.title || "Roue de la Fortune"}
+          </span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="text-[10px] font-bold text-white/50 mb-1 block">Police</label>
+            <select value={config.title_style?.font || "Inter"} onChange={e => updateTitleStyle("font", e.target.value)}
+              className="w-full px-3 py-2 rounded-lg text-xs bg-white/5 border border-white/10 text-white">
+              {TITLE_FONTS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-white/50 mb-1 block">Taille ({config.title_style?.size || 18}px)</label>
+            <input type="range" min="10" max="48" value={config.title_style?.size || 18} onChange={e => updateTitleStyle("size", Number(e.target.value))}
+              className="w-full accent-cyan-400" />
+          </div>
+        </div>
+        <div>
+          <label className="text-[10px] font-bold text-white/50 mb-1 block">Effet de style</label>
+          <div className="flex gap-2 flex-wrap">
+            {[
+              { v: "gradient", label: "Dégradé" },
+              { v: "solid", label: "Couleur unie" },
+              { v: "neon", label: "Néon" },
+            ].map(opt => (
+              <button key={opt.v} onClick={() => updateTitleStyle("color_style", opt.v)}
+                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition ${(config.title_style?.color_style || "gradient") === opt.v ? "text-white" : "text-white/40 border border-white/10"}`}
+                style={(config.title_style?.color_style || "gradient") === opt.v ? { background: "linear-gradient(135deg, #00ffff, #ff00ff)" } : {}}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="text-[10px] font-bold text-white/50 mb-1 block">Couleur principale</label>
+            <div className="flex gap-2 items-center">
+              <input type="color" value={config.title_style?.color || "#00ffff"} onChange={e => updateTitleStyle("color", e.target.value)}
+                className="w-10 h-9 rounded-lg border border-white/10 bg-transparent cursor-pointer" />
+              <input type="text" value={config.title_style?.color || "#00ffff"} onChange={e => updateTitleStyle("color", e.target.value)}
+                className="flex-1 px-3 py-2 rounded-lg text-xs bg-white/5 border border-white/10 text-white font-mono" />
+            </div>
+          </div>
+          {config.title_style?.color_style !== "solid" && (
+            <div>
+              <label className="text-[10px] font-bold text-white/50 mb-1 block">Couleur secondaire {config.title_style?.color_style === "neon" ? "(halo)" : "(dégradé)"}</label>
+              <div className="flex gap-2 items-center">
+                <input type="color" value={config.title_style?.color2 || "#ff00ff"} onChange={e => updateTitleStyle("color2", e.target.value)}
+                  className="w-10 h-9 rounded-lg border border-white/10 bg-transparent cursor-pointer" />
+                <input type="text" value={config.title_style?.color2 || "#ff00ff"} onChange={e => updateTitleStyle("color2", e.target.value)}
+                  className="flex-1 px-3 py-2 rounded-lg text-xs bg-white/5 border border-white/10 text-white font-mono" />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Backgrounds */}
