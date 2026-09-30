@@ -24,7 +24,7 @@ export default function VoiceChannel({ channel, server, theme, user }) {
       const stream = await navigator.mediaDevices.getUserMedia(getAudioConstraints());
       localStream.current = stream;
       setConnected(true);
-      setParticipants([{ name: user?.full_name || "Moi", isSelf: true, micOn: true }]);
+      setParticipants([{ name: user?.pseudo?.split("#")[0] || (user?.full_name ? user.full_name.split(" ")[0] : "Moi"), isSelf: true, micOn: true }]);
       toast.success(`Connecté à #${channel.name} 🎙️`);
     } catch (e) {
       toast.error("Impossible d'accéder au micro. Vérifiez les permissions.");
@@ -138,9 +138,9 @@ export default function VoiceChannel({ channel, server, theme, user }) {
                   style={{ borderColor: accent + "20", background: accent + "08" }}>
                   <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white"
                     style={{ background: accent + "30" }}>
-                    {p.name[0].toUpperCase()}
+                    {(p.name || "?")[0].toUpperCase()}
                   </div>
-                  <span className="font-semibold text-sm text-white flex-1">{p.name}</span>
+                  <span className="font-semibold text-sm text-white flex-1">{p.name || "—"}</span>
                   {!p.micOn && <MicOff className="w-4 h-4 text-red-400" />}
                   {p.micOn && <Mic className="w-4 h-4" style={{ color: accent }} />}
                 </div>

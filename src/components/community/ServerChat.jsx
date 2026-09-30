@@ -318,7 +318,7 @@ export default function ServerChat({ server, channel, theme, user }) {
                   ) : authorsLoading ? (
                     <div className="h-3.5 w-20 rounded animate-pulse" style={{ background: "rgba(255,255,255,0.08)" }} />
                   ) : (
-                    <span className="text-sm font-bold text-white/30 truncate">{msg.author_email?.split("@")[0]}</span>
+                    <span className="text-sm font-bold text-white/20 truncate">—</span>
                   )}
                   <span className="text-[10px] text-muted-foreground">
                     {format(new Date(msg.created_date), "HH:mm")}

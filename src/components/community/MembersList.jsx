@@ -86,7 +86,7 @@ export default function MembersList({ server, theme, currentUserEmail, onOpenDm 
                 return (
                   <div key={m.id}
                     className="flex items-center gap-2 px-1.5 py-1 rounded-lg group hover:bg-white/5 transition cursor-default"
-                    title={!isMe ? `Voir le profil de ${m.user_name || m.user_email}` : ""}>
+                    title={!isMe ? "Voir le profil" : ""}>
                     {/* Avatar — clickable */}
                     <button onClick={() => !isMe && setProfileEmail(m.user_email)}
                       className="relative shrink-0 tap-sm" disabled={isMe}>
@@ -94,7 +94,7 @@ export default function MembersList({ server, theme, currentUserEmail, onOpenDm 
                         style={{ background: isOwner ? "#f59e0b30" : accent + "30", border: `1.5px solid ${isOwner ? "#f59e0b" : accent}80` }}>
                         {(freshUser?.avatar_url || m.user_avatar) ?
                           <img src={freshUser?.avatar_url || m.user_avatar} className="w-full h-full object-cover" alt="" /> :
-                          <span>{(stripPseudoTag(freshUser?.pseudo) || m.user_name || "?")[0].toUpperCase()}</span>
+                          <span>{(pseudoResolved || "?")[0].toUpperCase()}</span>
                         }
                       </div>
                       <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border border-black"
@@ -114,7 +114,7 @@ export default function MembersList({ server, theme, currentUserEmail, onOpenDm 
                         ) : usersLoading ? (
                           <div className="h-2.5 w-16 rounded animate-pulse" style={{ background: "rgba(255,255,255,0.08)" }} />
                         ) : (
-                          <span className="text-[10px] font-semibold text-white/30 truncate">{m.user_email?.split("@")[0]}</span>
+                          <span className="text-[10px] font-semibold text-white/20 truncate">—</span>
                         )}
                       </div>
                       {/* Single status line — priority: custom_status > activity > customRole > offline */}
