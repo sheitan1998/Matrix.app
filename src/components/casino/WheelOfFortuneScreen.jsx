@@ -220,17 +220,17 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
                   transform={`rotate(${seg.icon_rotation} ${textPos.x} ${textPos.y})`}>{seg.icon}</text>
                   }
                   {/* Label */}
-                  <text
-                    x={textPos.x}
-                    y={textPos.y + 22}
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    fontSize="9"
-                    fontWeight="bold"
-                    fill="rgba(255,255,255,0.7)" className="hidden">
-                    
-                    {seg.label}
-                  </text>
+                  
+
+
+
+
+
+
+
+
+
+                  
                 </g>);
 
             })}
