@@ -9,6 +9,8 @@ export const DEFAULT_AUDIO_SETTINGS = {
   echoCancellation: true,
   autoGainControl: true,
   vadSensitivity: 30, // 0-100, lower = more sensitive
+  soundEffectsEnabled: true,
+  soundEffectsVolume: 0.5, // 0-1
 };
 
 function loadFromStorage() {

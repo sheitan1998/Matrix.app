@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Mic, MicOff, Volume2, VolumeX, PhoneOff, Phone } from "lucide-react";
 import { useAudioSettings } from "@/hooks/useAudioSettings";
 import { toast } from "sonner";
+import { playMicMute, playMicUnmute, playSpeakerOff, playSpeakerOn, playCallEnded, startOutgoingRing, stopOutgoingRing } from "@/lib/voiceSounds";
 
 /**
  * Direct voice call component for DM conversations.
@@ -22,10 +23,13 @@ export default function DirectVoiceCall({ contactName, contactAvatar, onEnd }) {
   const remoteAudioRef = useRef(null);
 
   const connect = useCallback(async () => {
+    // Play outgoing ring tone until "connected"
+    startOutgoingRing();
     try {
       const stream = await navigator.mediaDevices.getUserMedia(getAudioConstraints());
       streamRef.current = stream;
       setConnected(true);
+      stopOutgoingRing();
 
       // Setup analyser for local level meter
       try {
@@ -53,11 +57,14 @@ export default function DirectVoiceCall({ contactName, contactAvatar, onEnd }) {
       timerRef.current = setInterval(() => setCallDuration((s) => s + 1), 1000);
       toast.success(`Appel vocal démarré avec ${contactName}`);
     } catch (e) {
+      stopOutgoingRing();
       toast.error("Impossible d'accéder au microphone. Vérifiez les permissions.");
     }
   }, [getAudioConstraints, contactName]);
 
   const disconnect = useCallback(() => {
+    stopOutgoingRing();
+    playCallEnded();
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     if (timerRef.current) clearInterval(timerRef.current);
     if (streamRef.current) {
@@ -74,10 +81,12 @@ export default function DirectVoiceCall({ contactName, contactAvatar, onEnd }) {
   }, [onEnd]);
 
   const toggleMic = () => {
+    const next = !micOn;
     if (streamRef.current) {
-      streamRef.current.getAudioTracks().forEach((t) => { t.enabled = !micOn; });
+      streamRef.current.getAudioTracks().forEach((t) => { t.enabled = next; });
     }
-    setMicOn((v) => !v);
+    setMicOn(next);
+    if (next) playMicUnmute(); else playMicMute();
   };
 
   useEffect(() => {
@@ -153,7 +162,7 @@ export default function DirectVoiceCall({ contactName, contactAvatar, onEnd }) {
             {micOn ? <Mic className="w-5 h-5 text-white" /> : <MicOff className="w-5 h-5 text-red-400" />}
           </button>
           <button
-            onClick={() => setSpeakerOn((v) => !v)}
+            onClick={() => { const next = !speakerOn; setSpeakerOn(next); if (next) playSpeakerOn(); else playSpeakerOff(); }}
             className={`w-12 h-12 rounded-2xl flex items-center justify-center transition border ${
               speakerOn ? "border-white/20 bg-white/10 hover:bg-white/15" : "border-red-500/40 bg-red-500/20"
             }`}

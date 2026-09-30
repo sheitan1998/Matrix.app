@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Mic, Volume2, Loader2, Activity, Waves } from "lucide-react";
+import { Mic, Volume2, Loader2, Activity, Waves, Bell } from "lucide-react";
 import { useAudioSettings } from "@/hooks/useAudioSettings";
+import { playMicMute, playMicUnmute, playCallEnded, startOutgoingRing, stopOutgoingRing } from "@/lib/voiceSounds";
 
 function Toggle({ checked, onChange }) {
   return (
@@ -235,6 +236,41 @@ export default function AudioSettingsPanel() {
           </div>
           <Toggle checked={settings.autoGainControl} onChange={(v) => updateSetting("autoGainControl", v)} />
         </div>
+      </div>
+
+      {/* Sound effects */}
+      <div className="p-4 rounded-xl space-y-3" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(251,191,36,0.15)" }}>
+            <Bell className="w-4 h-4" style={{ color: "#fbbf24" }} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-white">Effets sonores</p>
+            <p className="text-xs text-white/40 mt-0.5">Bips de mute/unmute, sonneries d'appel et fin d'appel.</p>
+          </div>
+          <Toggle checked={settings.soundEffectsEnabled} onChange={(v) => updateSetting("soundEffectsEnabled", v)} />
+        </div>
+        {settings.soundEffectsEnabled && (
+          <div className="ml-12 space-y-2">
+            <div>
+              <p className="text-xs text-white/50 mb-1">Volume des effets</p>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={Math.round((settings.soundEffectsVolume ?? 0.5) * 100)}
+                onChange={(e) => updateSetting("soundEffectsVolume", Number(e.target.value) / 100)}
+                className="w-full accent-yellow-400"
+              />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={playMicMute} className="px-3 py-1.5 rounded-lg text-[10px] font-bold text-white/70 border border-white/10 hover:bg-white/5 tap-sm">Mute</button>
+              <button onClick={playMicUnmute} className="px-3 py-1.5 rounded-lg text-[10px] font-bold text-white/70 border border-white/10 hover:bg-white/5 tap-sm">Unmute</button>
+              <button onClick={() => { startOutgoingRing(); setTimeout(stopOutgoingRing, 3000); }} className="px-3 py-1.5 rounded-lg text-[10px] font-bold text-white/70 border border-white/10 hover:bg-white/5 tap-sm">Sonnerie</button>
+              <button onClick={playCallEnded} className="px-3 py-1.5 rounded-lg text-[10px] font-bold text-white/70 border border-white/10 hover:bg-white/5 tap-sm">Fin d'appel</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAudioSettings } from "@/hooks/useAudioSettings";
+import { playMicMute, playMicUnmute, playSpeakerOff, playSpeakerOn, playCallEnded } from "@/lib/voiceSounds";
 
 export default function VoiceChannel({ channel, server, theme, user }) {
   const { getAudioConstraints, attachOutputDevice } = useAudioSettings();
@@ -31,6 +32,7 @@ export default function VoiceChannel({ channel, server, theme, user }) {
   };
 
   const disconnect = () => {
+    playCallEnded();
     if (localStream.current) {
       localStream.current.getTracks().forEach((t) => t.stop());
       localStream.current = null;
@@ -46,11 +48,13 @@ export default function VoiceChannel({ channel, server, theme, user }) {
   };
 
   const toggleMic = () => {
+    const next = !micOn;
     if (localStream.current) {
-      localStream.current.getAudioTracks().forEach((t) => { t.enabled = !micOn; });
+      localStream.current.getAudioTracks().forEach((t) => { t.enabled = next; });
     }
-    setMicOn((v) => !v);
-    setParticipants((p) => p.map((m) => m.isSelf ? { ...m, micOn: !micOn } : m));
+    setMicOn(next);
+    setParticipants((p) => p.map((m) => m.isSelf ? { ...m, micOn: next } : m));
+    if (next) playMicUnmute(); else playMicMute();
   };
 
   const startScreenShare = async () => {
@@ -150,7 +154,7 @@ export default function VoiceChannel({ channel, server, theme, user }) {
                   micOn ? "border-white/20 bg-white/10 hover:bg-white/15" : "border-red-500/40 bg-red-500/20")}>
                 {micOn ? <Mic className="w-5 h-5 text-white" /> : <MicOff className="w-5 h-5 text-red-400" />}
               </button>
-              <button onClick={() => setSpeakerOn((v) => !v)}
+              <button onClick={() => { const next = !speakerOn; setSpeakerOn(next); if (next) playSpeakerOn(); else playSpeakerOff(); }}
                 className={cn("w-12 h-12 rounded-2xl flex items-center justify-center transition border",
                   speakerOn ? "border-white/20 bg-white/10 hover:bg-white/15" : "border-red-500/40 bg-red-500/20")}>
                 {speakerOn ? <Volume2 className="w-5 h-5 text-white" /> : <VolumeX className="w-5 h-5 text-red-400" />}
