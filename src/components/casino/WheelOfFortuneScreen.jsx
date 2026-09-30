@@ -210,118 +210,20 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
           }} />
         </div>
 
-        {/* SVG Wheel — fixed size, no scale animation */}
+        {/* SVG Wheel — skeleton pendant le chargement de la config admin */}
+        {configLoading ? (
+          <div className="w-full aspect-square rounded-full animate-pulse" style={{ background: "rgba(168,85,247,0.08)", border: "2px solid rgba(168,85,247,0.15)" }} />
+        ) : (
         <div ref={wheelRef} className="relative" style={{
           transition: `transform ${SPIN_DURATION}ms cubic-bezier(0.17, 0.67, 0.12, 0.99)`,
           transform: `rotate(${rotation}deg)`,
           willChange: "transform"
         }}>
           <svg viewBox="0 0 300 300" className="w-full h-full" style={{ filter: "drop-shadow(0 0 20px rgba(168,85,247,0.3))" }}>
-            {/* Outer ring — configurable wheel border */}
-            {(() => {
-              const wb = gameConfig?.wheel_border;
-              const w = wb?.width ?? 4;
-              const style = wb?.style || "solid";
-              const c1 = wb?.color || "#a855f7";
-              const c2 = wb?.color2 || "#00ffff";
-              if (wb?.image) {
-                return (
-                  <>
-                    <defs>
-                      <pattern id="wb-img" patternUnits="userSpaceOnUse" width="296" height="296" x="2" y="2">
-                        <image href={bustImageCache(wb.image, gameConfig?.updated_date)} x="0" y="0" width="296" height="296" preserveAspectRatio="xMidYMid slice" />
-                      </pattern>
-                    </defs>
-                    <circle cx="150" cy="150" r="148" fill="none" stroke="url(#wb-img)" strokeWidth={w} />
-                  </>);
-
-              }
-              if (style === "gradient") {
-                return (
-                  <>
-                    <defs>
-                      <linearGradient id="wb-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor={c1} />
-                        <stop offset="100%" stopColor={c2} />
-                      </linearGradient>
-                    </defs>
-                    <circle cx="150" cy="150" r="148" fill="none" stroke="url(#wb-grad)" strokeWidth={w} />
-                  </>);
-
-              }
-              if (style === "neon") {
-                return <circle cx="150" cy="150" r="148" fill="none" stroke={c1} strokeWidth={w} style={{ filter: `drop-shadow(0 0 6px ${c1}) drop-shadow(0 0 12px ${c2})` }} />;
-              }
-              return <circle cx="150" cy="150" r="148" fill="none" stroke={c1} strokeWidth={w} />;
-            })()}
-            <circle cx="150" cy="150" r="144" fill="none" stroke="rgba(168,85,247,0.4)" strokeWidth="2" />
-
-            {/* Segments */}
-            {segments.map((seg, i) => {
-              const startAngle = i * segmentAngle;
-              const endAngle = (i + 1) * segmentAngle;
-              const path = describeArc(150, 150, 140, startAngle, endAngle);
-              const textPos = polarToCartesian(150, 150, 90, startAngle + segmentAngle / 2);
-              const segImgId = `seg-bg-${i}`;
-              const segFill = seg.bg_image ? `url(#${segImgId})` : seg.bg_color || seg.color;
-              return (
-                <g key={i}>
-                  {seg.bg_image &&
-                  <defs>
-                      <pattern id={segImgId} patternUnits="userSpaceOnUse" width="280" height="280" x="10" y="10">
-                        <image href={bustImageCache(seg.bg_image, gameConfig?.updated_date)} x="0" y="0" width="280" height="280" preserveAspectRatio="xMidYMid slice" />
-                      </pattern>
-                    </defs>
-                  }
-                  <path d={path} fill={segFill} stroke="rgba(0,0,0,0.3)" strokeWidth="1" />
-                  {/* Glow border */}
-                  <path d={path} fill="none" stroke={seg.glow} strokeWidth="0.5" opacity="0.6" />
-                  {/* Icon */}
-                  {/^https?:\/\//i.test(seg.icon) ?
-                  <image href={bustImageCache(seg.icon, gameConfig?.updated_date)} x={textPos.x - seg.icon_size / 2} y={textPos.y - seg.icon_size / 2} width={seg.icon_size} height={seg.icon_size} preserveAspectRatio="xMidYMid meet"
-                  transform={`rotate(${seg.icon_rotation} ${textPos.x} ${textPos.y})`} /> :
-
-                  <text x={textPos.x} y={textPos.y} textAnchor="middle" dominantBaseline="middle" fontSize={seg.icon_size}
-                  style={{ filter: `drop-shadow(0 0 4px ${seg.glow})` }}
-                  transform={`rotate(${seg.icon_rotation} ${textPos.x} ${textPos.y})`}>{seg.icon}</text>
-                  }
-                  {/* Label */}
-                  
-
-
-
-
-
-
-
-
-
-                  
-                </g>);
-
-            })}
-
-            {/* Center hub */}
-            <circle cx="150" cy="150" r="30" fill="#1a0a2e" stroke="#a855f7" strokeWidth="2" />
-            <circle cx="150" cy="150" r="27" fill="none" stroke="rgba(0,242,255,0.4)" strokeWidth="1" />
-            {(() => {
-              const ci = gameConfig?.center_icon;
-              const isImg = ci && /^https?:\/\//i.test(ci);
-              const src = isImg ? bustImageCache(ci, gameConfig?.updated_date) : TOKEN_URL;
-              return (
-                <image
-                  href={src}
-                  x="122"
-                  y="122"
-                  width="56"
-                  height="56"
-                  preserveAspectRatio="xMidYMid meet"
-                  style={{ filter: "drop-shadow(0 0 8px rgba(168,85,247,0.6))" }} />);
-
-
-            })()}
+...
           </svg>
         </div>
+        )}
       </div>
 
       {/* Result display */}
