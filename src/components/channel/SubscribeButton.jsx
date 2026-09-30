@@ -23,7 +23,7 @@ export default function SubscribeButton({ channel, user, onSubscribed }) {
     if (sub) {
       await base44.entities.Subscription.delete(sub.id);
       await base44.entities.Channel.update(channel.id, {
-        subscribers_count: Math.max(0, (channel.subscribers_count || 0) - 1),
+        subscribers_count: Math.max(0, (channel.subscribers_count || 0) - 1)
       });
       setSub(null);
     } else {
@@ -39,10 +39,10 @@ export default function SubscribeButton({ channel, user, onSubscribed }) {
         channel_id: channel.id,
         channel_name: channel.name,
         tier: "free",
-        notifications_enabled: true,
+        notifications_enabled: true
       });
       await base44.entities.Channel.update(channel.id, {
-        subscribers_count: (channel.subscribers_count || 0) + 1,
+        subscribers_count: (channel.subscribers_count || 0) + 1
       });
       setSub(created);
     }
@@ -60,28 +60,28 @@ export default function SubscribeButton({ channel, user, onSubscribed }) {
         disabled={loading}
         className={cn(
           "rounded-full h-10 px-5 font-semibold",
-          isSubbed
-            ? "bg-secondary text-foreground hover:bg-secondary/80 border border-border"
-            : "bg-foreground text-background hover:bg-foreground/90"
-        )}
-      >
-        {isSubbed ? (
-          <>
+          isSubbed ?
+          "bg-secondary text-foreground hover:bg-secondary/80 border border-border" :
+          "bg-foreground text-background hover:bg-foreground/90"
+        )}>
+        
+        {isSubbed ?
+        <>
             <Bell className="w-4 h-4 mr-1.5" /> Abonné
-          </>
-        ) : (
-          "S'abonner"
-        )}
+          </> :
+
+        "S'abonner"
+        }
       </Button>
 
       <Button
         variant="outline"
         onClick={() => setTierOpen(true)}
         className={cn(
-          "rounded-full h-10 px-4 border-trix/40 hover:bg-trix/10",
+          "rounded-full h-10 px-4 border-trix/40 hover:bg-trix/10 hidden",
           paidTier ? "bg-trix/15 text-trix" : "text-trix"
-        )}
-      >
+        )}>
+        
         <Heart className="w-4 h-4 mr-1.5" />
         {paidTier ? `SUB ${sub.tier.toUpperCase()}` : "Soutenir"}
       </Button>
@@ -95,8 +95,8 @@ export default function SubscribeButton({ channel, user, onSubscribed }) {
         onDone={(newSub) => {
           setSub(newSub);
           onSubscribed?.();
-        }}
-      />
-    </div>
-  );
+        }} />
+      
+    </div>);
+
 }

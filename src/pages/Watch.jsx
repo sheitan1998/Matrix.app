@@ -37,7 +37,7 @@ export default function Watch() {
       const v = await base44.entities.Video.filter({ id });
       return v[0];
     },
-    enabled: !!id,
+    enabled: !!id
   });
 
   const { data: channel } = useQuery({
@@ -51,7 +51,7 @@ export default function Watch() {
       const c = await base44.entities.Channel.filter({ id: video.channel_id });
       return c[0];
     },
-    enabled: !!video?.channel_id,
+    enabled: !!video?.channel_id
   });
 
   const { data: related } = useQuery({
@@ -63,7 +63,7 @@ export default function Watch() {
       return base44.entities.Video.filter({ category: video?.category || "other" }, "-views", 15);
     },
     initialData: [],
-    enabled: !!video,
+    enabled: !!video
   });
 
   useEffect(() => {
@@ -88,9 +88,9 @@ export default function Watch() {
 
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Link to={channel ? `/channel/${channel.id}` : "#"} className="flex items-center gap-3 min-w-0 group">
-              {video.channel_avatar && (
-                <img src={video.channel_avatar} alt="" className="w-11 h-11 rounded-full object-cover" />
-              )}
+              {video.channel_avatar &&
+              <img src={video.channel_avatar} alt="" className="w-11 h-11 rounded-full object-cover" />
+              }
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
                   <span className="font-semibold group-hover:text-primary transition">{video.channel_name}</span>
@@ -112,15 +112,15 @@ export default function Watch() {
                     const newLikes = (video.likes || 0) + 1;
                     setOptimisticLikes(newLikes);
                     setLiked(true);
-                    if (disliked) { setDisliked(false); setOptimisticDislikes((video.dislikes || 0)); }
+                    if (disliked) {setDisliked(false);setOptimisticDislikes(video.dislikes || 0);}
                     if (video._source !== "youtube") {
                       base44.entities.Video.update(video.id, { likes: newLikes }).catch(() => {
-                        setOptimisticLikes(null); setLiked(false);
+                        setOptimisticLikes(null);setLiked(false);
                       });
                     }
                   }}
-                  className={cn("flex items-center gap-1.5 px-4 h-11 hover:bg-secondary/70 transition border-r border-border select-none", liked && "text-primary")}
-                >
+                  className={cn("flex items-center gap-1.5 px-4 h-11 hover:bg-secondary/70 transition border-r border-border select-none", liked && "text-primary")}>
+                  
                   <ThumbsUp className="w-4 h-4" />
                   <span className="text-sm font-semibold">{formatViews(optimisticLikes ?? (video.likes || 0))}</span>
                 </button>
@@ -130,15 +130,15 @@ export default function Watch() {
                     const newDislikes = (video.dislikes || 0) + 1;
                     setOptimisticDislikes(newDislikes);
                     setDisliked(true);
-                    if (liked) { setLiked(false); setOptimisticLikes((video.likes || 0)); }
+                    if (liked) {setLiked(false);setOptimisticLikes(video.likes || 0);}
                     if (video._source !== "youtube") {
                       base44.entities.Video.update(video.id, { dislikes: newDislikes }).catch(() => {
-                        setOptimisticDislikes(null); setDisliked(false);
+                        setOptimisticDislikes(null);setDisliked(false);
                       });
                     }
                   }}
-                  className={cn("px-4 h-11 hover:bg-secondary/70 transition select-none", disliked && "text-destructive")}
-                >
+                  className={cn("px-4 h-11 hover:bg-secondary/70 transition select-none", disliked && "text-destructive")}>
+                  
                   <ThumbsDown className="w-4 h-4" />
                 </button>
               </div>
@@ -146,8 +146,8 @@ export default function Watch() {
               <Button
                 variant="outline"
                 onClick={() => setDonateOpen(true)}
-                className="rounded-full h-10 border-trix/40 text-trix hover:bg-trix/10 hover:text-trix"
-              >
+                className="rounded-full h-10 border-trix/40 text-trix hover:bg-trix/10 hover:text-trix hidden">
+                
                 <Coins className="w-4 h-4 mr-1.5" />
                 TRIX
               </Button>
@@ -171,9 +171,9 @@ export default function Watch() {
         <div className="space-y-3">
           <h3 className="font-bold text-sm">Vidéos suggérées</h3>
           <div className="space-y-3">
-            {relatedFiltered.map((v) => (
-              <VideoCard key={v.id} video={v} />
-            ))}
+            {relatedFiltered.map((v) =>
+            <VideoCard key={v.id} video={v} />
+            )}
           </div>
         </div>
       </div>
@@ -186,8 +186,8 @@ export default function Watch() {
         video={video}
         channel={channel}
         user={user}
-        onSent={() => base44.auth.me().then(setUser)}
-      />
-    </div>
-  );
+        onSent={() => base44.auth.me().then(setUser)} />
+      
+    </div>);
+
 }
