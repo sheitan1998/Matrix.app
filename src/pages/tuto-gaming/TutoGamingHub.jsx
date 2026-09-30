@@ -15,15 +15,15 @@ export default function TutoGamingHub() {
 
   const fetchData = useCallback(async () => {
     try {
-      const allGames = await base44.entities.Game.list("sort_order", 50);
-      const activeGames = allGames.filter((g) => g.is_active !== false);
+      const page = await base44.entities.Game.filter({}, { sort: "sort_order", limit: 100 });
+      const activeGames = (page.items || []).filter((g) => g.is_active !== false);
 
       // Fetch quest counts for each game
       const counts = {};
       for (const game of activeGames) {
         try {
-          const quests = await base44.entities.Quest.filter({ game_slug: game.slug });
-          counts[game.slug] = quests.length;
+          const count = await base44.entities.Quest.count({ game_slug: game.slug });
+          counts[game.slug] = count;
         } catch {
           counts[game.slug] = 0;
         }
@@ -40,20 +40,22 @@ export default function TutoGamingHub() {
 
   useEffect(() => {
     fetchData();
+    const unsubscribe = base44.entities.Game.subscribe(() => fetchData());
+    return () => { unsubscribe(); };
   }, [fetchData]);
 
-  // Filter by search — merge DB-managed thumbnails into featured games
-  const featuredWithAssets = FEATURED_GAMES.map((g) => {
+  // Apply asset overrides to ALL games (DB + featured), then merge coming-soon
+  const applyAsset = (g) => {
     const assetKey = `game_${g.slug}`;
     return {
       ...g,
       image_url: getAssetUrl(assets, assetKey, g.image_url),
       name: getAssetField(assets, assetKey, "title", g.name),
     };
-  });
+  };
   const allDisplayGames = [
-    ...games,
-    ...featuredWithAssets,
+    ...games.map(applyAsset),
+    ...FEATURED_GAMES.map(applyAsset),
     ...COMING_SOON_GAMES.map((g) => ({ ...g, is_active: false })),
   ];
   const filteredGames = allDisplayGames.filter((g) =>
