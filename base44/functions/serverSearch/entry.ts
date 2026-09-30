@@ -390,14 +390,14 @@ export default async function(req: Request): Promise<Response> {
         const users = allUsers
           .filter(u => u.email && emailSet.has(u.email.toLowerCase()))
           .map(u => {
-            let displayPseudo = u.pseudo || '';
-            if (!displayPseudo.includes('#') && u.pseudo_tag) {
-              displayPseudo = `${displayPseudo}#${u.pseudo_tag}`;
-            }
+            // Pseudo brut du profil, sans le suffixe #XXXX
+            const cleanPseudo = String(u.pseudo || '').split('#')[0].trim();
             const showActivity = u.show_game_activity !== false;
             return {
               id: u.id,
-              pseudo: displayPseudo,
+              // Email renvoyé uniquement pour les adresses demandées par l'appelant (clé de correspondance côté interface)
+              email: u.email,
+              pseudo: cleanPseudo,
               avatar_url: u.avatar_url || '',
               last_seen: u.last_seen || '',
               current_activity: showActivity ? (u.current_activity || '') : '',

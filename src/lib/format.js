@@ -26,5 +26,5 @@ export function formatTrix(n) {
 
 export function stripPseudoTag(name) {
   if (!name) return "";
-  return String(name).replace(/#\d+$/, "").trim();
+  return String(name).replace(/\s*#[A-Za-z0-9]+$/, "").trim();
 }
