@@ -4,6 +4,8 @@ import { useAudioSettings } from "@/hooks/useAudioSettings";
 import { useSpeakingDetection } from "@/hooks/useSpeakingDetection";
 import { playMicMute, playMicUnmute, playSpeakerOff, playSpeakerOn, playCallEnded } from "@/lib/voiceSounds";
 import { toast } from "sonner";
+import ScreenSourcePicker from "@/components/community/ScreenSourcePicker";
+import { isTauriApp } from "@/lib/nativeScreenCapture";
 
 const VoiceContext = createContext(null);
 
@@ -18,7 +20,6 @@ export function VoiceProvider({ children }) {
   const [speakerOn, setSpeakerOn] = useState(true);
   const [sharing, setSharing] = useState(false);
   const [screenStream, setScreenStream] = useState(null);
-  const [showShareModal, setShowShareModal] = useState(false);
   const [showSourcePicker, setShowSourcePicker] = useState(false);
   const [participants, setParticipants] = useState([]);
   const [voiceRoomId, setVoiceRoomId] = useState(null);
@@ -272,37 +273,45 @@ export function VoiceProvider({ children }) {
     toast.success(switching ? "Source de partage mise à jour" : "Partage d'écran démarré");
   }, [stopScreenShare]);
 
-  // Close the preview modal (also stops the share, releasing all tracks)
-  const closeShareModal = useCallback(() => {
-    stopScreenShare();
-    setShowShareModal(false);
-  }, [stopScreenShare]);
-
-  // Click "Partager l'écran": open the custom source picker (Discord-style). The user chooses
-  // a source type there, which triggers getDisplayMedia pre-constrained to that surface.
-  const startScreenShare = useCallback(() => {
+  // Browser fallback (web app, or a desktop build without native capture): the browser's own
+  // picker is the only source chooser available there, so it opens directly — nothing in front.
+  const browserScreenShare = useCallback(async () => {
     if (!navigator.mediaDevices?.getDisplayMedia) {
       toast.error("Le partage d'écran n'est pas supporté par ce navigateur.");
       return;
     }
-    setShowSourcePicker(true);
-  }, []);
+    try {
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" }, audio: true });
+      applyScreenStream(stream);
+    } catch (e) {
+      if (e?.name !== "NotAllowedError" && e?.name !== "AbortError") {
+        toast.error("Erreur lors du partage d'écran.");
+      }
+    }
+  }, [applyScreenStream]);
 
-  // Called when the user picks a source type in the picker
+  // Desktop client: the in-app picker (with thumbnails) is the only chooser, no browser dialog.
+  const startScreenShare = useCallback(() => {
+    if (isTauriApp()) setShowSourcePicker(true);
+    else browserScreenShare();
+  }, [browserScreenShare]);
+
   const handleSourcePicked = useCallback((stream) => {
     setShowSourcePicker(false);
     applyScreenStream(stream);
-    setShowShareModal(true);
   }, [applyScreenStream]);
 
   const closeSourcePicker = useCallback(() => setShowSourcePicker(false), []);
+
+  const fallbackToBrowserShare = useCallback(() => {
+    setShowSourcePicker(false);
+    browserScreenShare();
+  }, [browserScreenShare]);
 
   const value = {
     connected, channel, server, theme, user,
     micOn, speakerOn, sharing, screenStream, participants: displayParticipants,
     localStreamRef, localSpeaking: micOn && localSpeaking,
-    showShareModal, closeShareModal,
-    showSourcePicker, closeSourcePicker, handleSourcePicked,
     connect, disconnect, toggleMic, toggleSpeaker,
     startScreenShare, stopScreenShare,
   };
@@ -310,6 +319,13 @@ export function VoiceProvider({ children }) {
   return (
     <VoiceContext.Provider value={value}>
       {children}
+      <ScreenSourcePicker
+        open={showSourcePicker}
+        accent={theme?.accent}
+        onSelect={handleSourcePicked}
+        onClose={closeSourcePicker}
+        onFallback={fallbackToBrowserShare}
+      />
     </VoiceContext.Provider>
   );
 }

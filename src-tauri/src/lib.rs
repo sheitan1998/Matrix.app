@@ -1,3 +1,5 @@
+mod screen_capture;
+
 use tauri::Manager;
 use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_updater::UpdaterExt;
@@ -22,7 +24,9 @@ pub fn run() {
             check_for_updates,
             install_update,
             get_current_version,
-            detect_running_games
+            detect_running_games,
+            screen_capture::list_capture_sources,
+            screen_capture::capture_source_frame
         ])
         .run(tauri::generate_context!())
         .expect("error while running Matrix");

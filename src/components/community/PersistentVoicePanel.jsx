@@ -5,8 +5,6 @@ import { cn } from "@/lib/utils";
 import { useVoice } from "@/context/VoiceContext";
 import ScreenShareView from "@/components/community/ScreenShareView";
 import SpeakingRing from "@/components/community/SpeakingRing";
-import ScreenShareModal from "@/components/community/ScreenShareModal";
-import ScreenSourcePicker from "@/components/community/ScreenSourcePicker";
 
 export default function PersistentVoicePanel() {
   const {
@@ -15,8 +13,6 @@ export default function PersistentVoicePanel() {
     toggleMic, toggleSpeaker,
     stopScreenShare, startScreenShare,
     disconnect,
-    showShareModal, closeShareModal,
-    showSourcePicker, closeSourcePicker, handleSourcePicked,
   } = useVoice();
   const [expanded, setExpanded] = useState(true);
 
@@ -117,22 +113,5 @@ export default function PersistentVoicePanel() {
     document.body
   );
 
-  return (
-    <>
-      {panel}
-      <ScreenShareModal
-        open={showShareModal}
-        stream={screenStream}
-        onClose={closeShareModal}
-        onStop={stopScreenShare}
-        accent={accent}
-      />
-      <ScreenSourcePicker
-        open={showSourcePicker}
-        accent={accent}
-        onSelect={handleSourcePicked}
-        onClose={closeSourcePicker}
-      />
-    </>
-  );
+  return panel;
 }

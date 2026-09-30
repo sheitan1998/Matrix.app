@@ -45,6 +45,18 @@
         "allow": ["detect_running_games"]
       }
     },
+    {
+      "identifier": "allow-list-capture-sources",
+      "commands": {
+        "allow": ["list_capture_sources"]
+      }
+    },
+    {
+      "identifier": "allow-capture-source-frame",
+      "commands": {
+        "allow": ["capture_source_frame"]
+      }
+    },
     "core:webview:allow-microphone"
   ]
 }

@@ -1,110 +1,135 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Monitor, AppWindow, Globe, Loader2 } from "lucide-react";
+import { Monitor, AppWindow, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { listCaptureSources, startNativeCapture } from "@/lib/nativeScreenCapture";
 
-const SOURCES = [
-  {
-    key: "monitor",
-    label: "Écran entier",
-    desc: "Partage tout votre écran",
-    icon: Monitor,
-    constraint: { displaySurface: "monitor" },
-  },
-  {
-    key: "window",
-    label: "Une fenêtre",
-    desc: "Partage une application",
-    icon: AppWindow,
-    constraint: { displaySurface: "window" },
-  },
-  {
-    key: "browser",
-    label: "Un onglet",
-    desc: "Partage un onglet du navigateur",
-    icon: Globe,
-    constraint: { displaySurface: "browser" },
-  },
+const TABS = [
+  { key: "screen", label: "Écrans", icon: Monitor },
+  { key: "window", label: "Fenêtres", icon: AppWindow },
 ];
 
-export default function ScreenSourcePicker({ open, accent = "#00ff41", onSelect, onClose }) {
-  const [loading, setLoading] = useState(null);
+/**
+ * In-app Discord-style source picker (desktop client). Shows live thumbnails of every screen and
+ * window; clicking one captures it natively and hands the stream back — no browser dialog.
+ * If the desktop build can't list sources, `onFallback` lets the app use the browser picker.
+ */
+export default function ScreenSourcePicker({ open, accent = "#00ff41", onSelect, onClose, onFallback }) {
+  const [sources, setSources] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [tab, setTab] = useState("screen");
+  const [startingId, setStartingId] = useState(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    setLoading(true);
+    setError("");
+    setStartingId(null);
+    setTab("screen");
+    listCaptureSources()
+      .then((list) => { if (!cancelled) setSources(list || []); })
+      .catch(() => { if (!cancelled) onFallback?.(); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!open) return null;
 
+  const visible = sources.filter((s) => s.kind === tab);
+
   const handlePick = async (source) => {
-    setLoading(source.key);
+    if (startingId) return;
+    setStartingId(source.id);
+    setError("");
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: { ...source.constraint, cursor: "always" },
-        audio: source.key === "browser" ? false : true,
-      });
-      onSelect(stream, source.key);
-    } catch (e) {
-      if (e?.name !== "NotAllowedError" && e?.name !== "AbortError") {
-        console.error("Screen share error:", e);
-      }
-    } finally {
-      setLoading(null);
+      const stream = await startNativeCapture(source.id);
+      onSelect(stream);
+    } catch {
+      setError("Impossible de capturer cette source. Elle a peut-être été fermée.");
+      setStartingId(null);
     }
   };
 
   return createPortal(
     <div className="fixed inset-0 z-[99] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={onClose}>
       <div
-        className="w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl"
+        className="w-full max-w-3xl max-h-[85vh] flex flex-col rounded-2xl overflow-hidden shadow-2xl"
         style={{ background: "#13101a", border: "1px solid " + accent + "30" }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between" style={{ background: accent + "0a" }}>
+        <div className="shrink-0 px-6 py-4 border-b border-white/10 flex items-center justify-between" style={{ background: accent + "0a" }}>
           <div>
             <h2 className="font-black text-white text-lg">Partager votre écran</h2>
-            <p className="text-xs text-white/50 mt-0.5">Choisissez ce que vous souhaitez partager</p>
+            <p className="text-xs text-white/50 mt-0.5">Clique sur ce que tu veux partager</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 transition tap-sm">
-            <span className="text-white/60 text-xl leading-none">×</span>
+            <X className="w-4 h-4 text-white/60" />
           </button>
         </div>
 
-        {/* Source cards */}
-        <div className="p-6 grid grid-cols-3 gap-4">
-          {SOURCES.map((s) => {
-            const Icon = s.icon;
-            const isLoading = loading === s.key;
+        <div className="shrink-0 flex gap-2 px-6 pt-4">
+          {TABS.map((t) => {
+            const Icon = t.icon;
+            const count = sources.filter((s) => s.kind === t.key).length;
+            const active = tab === t.key;
             return (
               <button
-                key={s.key}
-                onClick={() => handlePick(s)}
-                disabled={!!loading}
-                className={cn(
-                  "group relative flex flex-col items-center gap-3 p-5 rounded-xl border transition text-center",
-                  isLoading
-                    ? "border-white/30 bg-white/5"
-                    : "border-white/10 bg-white/[0.02] hover:border-white/25 hover:bg-white/5"
-                )}
-                style={isLoading ? { borderColor: accent + "60", background: accent + "08" } : {}}
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                className={cn("h-9 px-4 rounded-xl flex items-center gap-2 text-xs font-bold border transition tap-sm",
+                  active ? "text-white" : "border-white/10 text-white/50 hover:text-white hover:bg-white/5")}
+                style={active ? { background: accent + "20", borderColor: accent + "60" } : {}}
               >
-                <div
-                  className="w-14 h-14 rounded-xl flex items-center justify-center transition group-hover:scale-110"
-                  style={{ background: accent + "12", color: accent }}
-                >
-                  {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Icon className="w-6 h-6" />}
-                </div>
-                <div>
-                  <p className="font-bold text-white text-sm">{s.label}</p>
-                  <p className="text-[11px] text-white/40 mt-0.5">{s.desc}</p>
-                </div>
+                <Icon className="w-4 h-4" /> {t.label}
+                <span className="text-[10px] opacity-60">{count}</span>
               </button>
             );
           })}
         </div>
 
-        {/* Footer note */}
-        <div className="px-6 py-3 border-t border-white/10 bg-black/20">
-          <p className="text-[11px] text-white/40 text-center">
-            🔒 Le navigateur vous demandera de confirmer votre choix pour des raisons de sécurité.
-          </p>
+        <div className="flex-1 min-h-0 overflow-y-auto p-6">
+          {loading ? (
+            <div className="flex items-center justify-center gap-2 py-16 text-sm text-white/50">
+              <Loader2 className="w-5 h-5 animate-spin" /> Chargement des aperçus…
+            </div>
+          ) : visible.length === 0 ? (
+            <p className="py-16 text-center text-sm text-white/40">
+              {tab === "screen" ? "Aucun écran détecté." : "Aucune fenêtre disponible."}
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {visible.map((s) => {
+                const starting = startingId === s.id;
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => handlePick(s)}
+                    disabled={!!startingId}
+                    className="group text-left rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden transition hover:border-white/30 hover:bg-white/5 disabled:opacity-60"
+                    style={starting ? { borderColor: accent } : {}}
+                  >
+                    <div className="relative aspect-video bg-black">
+                      <img src={s.thumbnail} alt="" className="w-full h-full object-contain" />
+                      {starting && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                          <Loader2 className="w-6 h-6 animate-spin text-white" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="px-3 py-2">
+                      <p className="text-xs font-bold text-white truncate">{s.name}</p>
+                      {s.appName && s.appName !== s.name && (
+                        <p className="text-[10px] text-white/40 truncate">{s.appName}</p>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {error && <p className="mt-4 text-xs text-red-400 text-center">{error}</p>}
         </div>
       </div>
     </div>,

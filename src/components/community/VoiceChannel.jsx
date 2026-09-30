@@ -4,16 +4,12 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useVoice } from "@/context/VoiceContext";
 import ScreenShareView from "@/components/community/ScreenShareView";
-import ScreenShareModal from "@/components/community/ScreenShareModal";
-import ScreenSourcePicker from "@/components/community/ScreenSourcePicker";
 import VoiceParticipants from "@/components/community/VoiceParticipants";
 
 export default function VoiceChannel({ channel, server, theme, user }) {
   const {
     connected, channel: activeChannel,
     micOn, speakerOn, sharing, screenStream, participants,
-    showShareModal, closeShareModal,
-    showSourcePicker, closeSourcePicker, handleSourcePicked,
     connect, disconnect, toggleMic, toggleSpeaker,
     startScreenShare, stopScreenShare,
   } = useVoice();
@@ -117,19 +113,6 @@ export default function VoiceChannel({ channel, server, theme, user }) {
         </div>
       </div>
 
-      <ScreenShareModal
-        open={showShareModal}
-        stream={screenStream}
-        onClose={closeShareModal}
-        onStop={stopScreenShare}
-        accent={accent}
-      />
-      <ScreenSourcePicker
-        open={showSourcePicker}
-        accent={accent}
-        onSelect={handleSourcePicked}
-        onClose={closeSourcePicker}
-      />
     </div>
   );
 }
