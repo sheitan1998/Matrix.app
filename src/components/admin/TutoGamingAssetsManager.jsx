@@ -27,8 +27,8 @@ export default function TutoGamingAssetsManager() {
   const fetchAssets = useCallback(async () => {
     setLoading(true);
     try {
-      const items = await base44.entities.TutoGamingAsset.filter({}, { sort: "sort_order", limit: 100 });
-      setAssets(items);
+      const page = await base44.entities.TutoGamingAsset.filter({}, { sort: "sort_order", limit: 100 });
+      setAssets(page.items || []);
     } catch {
       setAssets([]);
     }
