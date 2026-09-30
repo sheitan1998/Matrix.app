@@ -7,6 +7,7 @@ import { Edit3, Check, X, Camera, Zap, Coins, Clapperboard, Award, Users, Shoppi
 import { ACHIEVEMENTS as ALL_ACHIEVEMENTS } from "@/lib/achievementsData";
 import { toast } from "sonner";
 import { formatTrix } from "@/lib/format";
+import { uploadImageWithToast } from "@/lib/imageModeration";
 import { useProgression } from "@/context/ProgressionContext";
 import FriendsPanel from "@/components/profile/FriendsPanel";
 import CosmeticsPanel from "@/components/profile/CosmeticsPanel";
