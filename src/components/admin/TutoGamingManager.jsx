@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FileText, FolderTree, LayoutGrid, Fence, ArrowUpDown, Gamepad2, Image as ImageIcon } from "lucide-react";
+import { FileText, FolderTree, LayoutGrid, Fence, ArrowUpDown, Gamepad2, Image as ImageIcon, Grid3x3 as GridIcon } from "lucide-react";
 import AddWikiItemForm from "@/components/admin/AddWikiItemForm";
 import WikiItemList from "@/components/admin/WikiItemList";
 import CategoryManager from "@/components/admin/CategoryManager";
@@ -7,8 +7,10 @@ import ReorderManager from "@/components/admin/ReorderManager";
 import BlockManager from "@/components/admin/BlockManager";
 import FarmingSimPopupManager from "@/components/admin/FarmingSimPopupManager";
 import TutoGamingAssetsManager from "@/components/admin/TutoGamingAssetsManager";
+import GameThumbnailsManager from "@/components/admin/GameThumbnailsManager";
 
 const SUB_TABS = [
+  { id: "game_thumbs", label: "Vignettes de jeux", icon: GridIcon, color: "#3b82f6" },
   { id: "assets", label: "Vignettes & Bannières", icon: ImageIcon, color: "#ec4899" },
   { id: "guides", label: "Guides & Fiches", icon: FileText, color: "#22c55e" },
   { id: "categories", label: "Catégories", icon: FolderTree, color: "#3b82f6" },
@@ -67,6 +69,7 @@ export default function TutoGamingManager() {
         )}
         {subTab === "categories" && <CategoryManager />}
         {subTab === "blocks" && <BlockManager />}
+        {subTab === "game_thumbs" && <GameThumbnailsManager />}
         {subTab === "assets" && <TutoGamingAssetsManager />}
         {subTab === "popups" && <FarmingSimPopupManager />}
         {subTab === "reorder" && <ReorderManager />}

@@ -12,7 +12,8 @@ export function useTutoGamingAssets() {
 
   const fetchAssets = useCallback(async () => {
     try {
-      const items = await base44.entities.TutoGamingAsset.filter({}, { sort: "sort_order", limit: 100 });
+      const page = await base44.entities.TutoGamingAsset.filter({}, { sort: "sort_order", limit: 100 });
+      const items = page.items || [];
       const map = {};
       for (const item of items) {
         if (item.asset_key) map[item.asset_key] = item;
