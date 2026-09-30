@@ -7,6 +7,7 @@ import { ACHIEVEMENTS } from "@/lib/achievementsData";
 import ProfileAnimationLayer from "@/components/profile/ProfileAnimationLayer";
 import { getCosmeticIconImageUrl } from "@/lib/cosmeticAssetUrl";
 import { isUserOnline, getActivityIcon } from "@/hooks/usePresence";
+import ReportContentModal from "@/components/admin/ReportContentModal";
 
 const PANEL_ID = "user-profile-side-panel";
 
@@ -23,6 +24,7 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
   const [actionLoading, setActionLoading] = useState(false);
   const [dmInput, setDmInput] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
     if (!open || (!userId && !userEmail)) return;
@@ -388,6 +390,11 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
           {friendStatus === "blocked" && (
             <p className="text-center text-[10px] text-white/30 mt-2">Cet utilisateur est bloqué.</p>
           )}
+          {friendStatus !== "blocked" && (
+            <button onClick={() => setShowReportModal(true)} className="text-[10px] text-white/30 hover:text-red-400 transition mx-auto block mt-1">
+              Signaler cet utilisateur
+            </button>
+          )}
         </div>
 
         {/* Footer — DM input */}
@@ -411,6 +418,19 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
           </div>
         )}
       </div>
+
+      {showReportModal && (
+        <ReportContentModal
+          open={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          contentType="other"
+          contentId={targetUserId}
+          contentPreview={`Profil utilisateur: ${displayName}#${pseudoTag}`}
+          authorEmail={targetEmail}
+          authorName={displayName}
+          reporterUser={currentUser}
+        />
+      )}
     </div>,
     document.body
   );

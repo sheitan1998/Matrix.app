@@ -3,7 +3,8 @@ import { Toaster as SonnerToaster } from "sonner"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
+import PageLoader from '@/components/PageLoader';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -15,77 +16,78 @@ import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import OAuthCallback from '@/pages/OAuthCallback';
 import OAuthConsent from '@/pages/OAuthConsent';
-import AIStudio from '@/pages/AIStudio';
-import AISubscription from '@/pages/AISubscription';
-import Playlists from '@/pages/Playlists';
-
+// Layout & app shell — eager (rendered immediately after auth)
 import MainLayout from '@/components/layout/MainLayout';
 import BottomTabs from '@/components/layout/BottomTabs';
 import AnimatedRoutes from '@/components/layout/AnimatedRoutes';
-import Landing from '@/pages/Landing';
-import Home from '@/pages/Home';
-import Trending from '@/pages/Trending';
-import LiveHub from '@/pages/LiveHub';
-import Subscriptions from '@/pages/Subscriptions';
-import Category from '@/pages/Category';
-import Search from '@/pages/Search';
-import Watch from '@/pages/Watch';
-import Live from '@/pages/Live';
-import Channel from '@/pages/Channel';
-import Premium from '@/pages/Premium';
-import TrixStore from '@/pages/TrixStore';
-import Upload from '@/pages/Upload';
-import StudioSetup from '@/pages/StudioSetup';
-import Dashboard from '@/pages/Dashboard';
-import Community from '@/pages/community/Community';
-import Shorts from '@/pages/Shorts';
-import Marketplace from '@/pages/marketplace/Marketplace';
-import MarketHome from '@/pages/marketplace/MarketHome';
-import MarketSubscription from '@/pages/marketplace/MarketSubscription';
-import ListingDetail from '@/pages/marketplace/ListingDetail';
-
-import Casino from '@/pages/Casino';
-import NexusGames from '@/pages/NexusGames';
-import Prospecteurs from '@/pages/prospecteurs/Prospecteurs';
-import CommunitySubscription from '@/pages/community/CommunitySubscription';
-import Wallet from '@/pages/Wallet';
-import VideoStudio from '@/pages/VideoStudio';
-import Progression from '@/pages/Progression';
-import Notifications from '@/pages/Notifications';
-import Outils from '@/pages/Outils';
-import Sondages from '@/pages/Sondages';
-import MonProfil from '@/pages/MonProfil';
-import BoutiqueMatrix from '@/pages/BoutiqueMatrix';
-import BoutiqueNexus from '@/pages/BoutiqueNexus';
-import NexusInvite from '@/pages/NexusInvite';
-import CreatorProfile from '@/pages/CreatorProfile';
-import AdminPanel from '@/pages/AdminPanel';
-import RechercheJoueur from '@/pages/prospecteurs/RechercheJoueur';
-import Privacy from '@/pages/Privacy';
-import About from '@/pages/About';
-import Contact from '@/pages/Contact';
 import GlobalProfileButton from '@/components/profile/GlobalProfileButton';
 import GlobalMessageButton from '@/components/messaging/GlobalMessageButton';
+import TwitchLayout from '@/components/twitch/TwitchLayout';
+import TutoGamingLayout from '@/components/tuto-gaming/TutoGamingLayout';
 import { ProgressionProvider } from '@/context/ProgressionContext';
 import { MiniPlayerProvider } from '@/context/MiniPlayerContext';
 import { NotificationProvider } from '@/context/NotificationContext';
 import { usePresence } from '@/hooks/usePresence';
-import TwitchLayout from '@/components/twitch/TwitchLayout';
-import TutoGamingLayout from '@/components/tuto-gaming/TutoGamingLayout';
-import TutoGamingHub from '@/pages/tuto-gaming/TutoGamingHub';
-import GameDetailPage from '@/pages/tuto-gaming/GameDetailPage';
-import QuestDetailPage from '@/pages/tuto-gaming/QuestDetailPage';
-import WikiEntryDetailPage from '@/pages/tuto-gaming/WikiEntryDetailPage';
-import FarmingSimulator25 from '@/pages/tuto-gaming/FarmingSimulator25';
-import FarmingSimCategory from '@/pages/tuto-gaming/FarmingSimCategory';
-import FortniteMaps from '@/pages/tuto-gaming/FortniteMaps';
-import DynamicPage from '@/pages/DynamicPage';
-import TwitchHome from '@/pages/twitch/TwitchHome';
-import TwitchWatch from '@/pages/twitch/TwitchWatch';
-import TwitchSearch from '@/pages/twitch/TwitchSearch';
-import TwitchCategoryPage from '@/pages/twitch/TwitchCategoryPage';
 
-// Import updater
+// Pages — lazy-loaded (code-split per route for instant initial bundle)
+const AIStudio = lazy(() => import('@/pages/AIStudio'));
+const AISubscription = lazy(() => import('@/pages/AISubscription'));
+const Playlists = lazy(() => import('@/pages/Playlists'));
+const Landing = lazy(() => import('@/pages/Landing'));
+const Home = lazy(() => import('@/pages/Home'));
+const Trending = lazy(() => import('@/pages/Trending'));
+const LiveHub = lazy(() => import('@/pages/LiveHub'));
+const Subscriptions = lazy(() => import('@/pages/Subscriptions'));
+const Category = lazy(() => import('@/pages/Category'));
+const Search = lazy(() => import('@/pages/Search'));
+const Watch = lazy(() => import('@/pages/Watch'));
+const Live = lazy(() => import('@/pages/Live'));
+const Channel = lazy(() => import('@/pages/Channel'));
+const Premium = lazy(() => import('@/pages/Premium'));
+const TrixStore = lazy(() => import('@/pages/TrixStore'));
+const Upload = lazy(() => import('@/pages/Upload'));
+const StudioSetup = lazy(() => import('@/pages/StudioSetup'));
+const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const Community = lazy(() => import('@/pages/community/Community'));
+const Shorts = lazy(() => import('@/pages/Shorts'));
+const Marketplace = lazy(() => import('@/pages/marketplace/Marketplace'));
+const MarketHome = lazy(() => import('@/pages/marketplace/MarketHome'));
+const MarketSubscription = lazy(() => import('@/pages/marketplace/MarketSubscription'));
+const ListingDetail = lazy(() => import('@/pages/marketplace/ListingDetail'));
+const Casino = lazy(() => import('@/pages/Casino'));
+const NexusGames = lazy(() => import('@/pages/NexusGames'));
+const Prospecteurs = lazy(() => import('@/pages/prospecteurs/Prospecteurs'));
+const CommunitySubscription = lazy(() => import('@/pages/community/CommunitySubscription'));
+const Wallet = lazy(() => import('@/pages/Wallet'));
+const VideoStudio = lazy(() => import('@/pages/VideoStudio'));
+const Progression = lazy(() => import('@/pages/Progression'));
+const Notifications = lazy(() => import('@/pages/Notifications'));
+const Outils = lazy(() => import('@/pages/Outils'));
+const Sondages = lazy(() => import('@/pages/Sondages'));
+const MonProfil = lazy(() => import('@/pages/MonProfil'));
+const BoutiqueMatrix = lazy(() => import('@/pages/BoutiqueMatrix'));
+const BoutiqueNexus = lazy(() => import('@/pages/BoutiqueNexus'));
+const NexusInvite = lazy(() => import('@/pages/NexusInvite'));
+const CreatorProfile = lazy(() => import('@/pages/CreatorProfile'));
+const AdminPanel = lazy(() => import('@/pages/AdminPanel'));
+const RechercheJoueur = lazy(() => import('@/pages/prospecteurs/RechercheJoueur'));
+const Privacy = lazy(() => import('@/pages/Privacy'));
+const About = lazy(() => import('@/pages/About'));
+const Contact = lazy(() => import('@/pages/Contact'));
+const TutoGamingHub = lazy(() => import('@/pages/tuto-gaming/TutoGamingHub'));
+const GameDetailPage = lazy(() => import('@/pages/tuto-gaming/GameDetailPage'));
+const QuestDetailPage = lazy(() => import('@/pages/tuto-gaming/QuestDetailPage'));
+const WikiEntryDetailPage = lazy(() => import('@/pages/tuto-gaming/WikiEntryDetailPage'));
+const FarmingSimulator25 = lazy(() => import('@/pages/tuto-gaming/FarmingSimulator25'));
+const FarmingSimCategory = lazy(() => import('@/pages/tuto-gaming/FarmingSimCategory'));
+const FortniteMaps = lazy(() => import('@/pages/tuto-gaming/FortniteMaps'));
+const DynamicPage = lazy(() => import('@/pages/DynamicPage'));
+const TwitchHome = lazy(() => import('@/pages/twitch/TwitchHome'));
+const TwitchWatch = lazy(() => import('@/pages/twitch/TwitchWatch'));
+const TwitchSearch = lazy(() => import('@/pages/twitch/TwitchSearch'));
+const TwitchCategoryPage = lazy(() => import('@/pages/twitch/TwitchCategoryPage'));
+
+// Updater — eager (runs on startup)
 import UpdateModal from '@/components/UpdateModal';
 import { checkForUpdates } from '@/lib/updater';
 
@@ -131,6 +133,7 @@ const AuthenticatedApp = () => {
       <NotificationProvider>
       <MiniPlayerProvider>
       <AnimatedRoutes>
+      <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/about" element={<About />} />
@@ -207,6 +210,7 @@ const AuthenticatedApp = () => {
         </Route>
         <Route path="*" element={<PageNotFound />} />
       </Routes>
+      </Suspense>
       </AnimatedRoutes>
       <GlobalProfileButton />
       <GlobalMessageButton />
