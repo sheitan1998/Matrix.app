@@ -9,7 +9,7 @@ import SpeakingRing from "@/components/community/SpeakingRing";
 export default function PersistentVoicePanel() {
   const {
     connected, channel, server, theme,
-    micOn, speakerOn, sharing, screenStream, participants,
+    micOn, speakerOn, sharing, screenStream, remoteScreenStreams, participants,
     toggleMic, toggleSpeaker,
     stopScreenShare, startScreenShare,
     disconnect,
@@ -41,10 +41,20 @@ export default function PersistentVoicePanel() {
 
       {expanded && (
         <>
-          {/* Screen share preview */}
-          {sharing && screenStream && (
-            <div className="px-2 pt-2">
-              <ScreenShareView stream={screenStream} accent={accent} onStop={stopScreenShare} compact />
+          {/* Screen share preview (local + remote) */}
+          {(sharing || remoteScreenStreams.length > 0) && (
+            <div className="px-2 pt-2 space-y-2">
+              {sharing && screenStream && (
+                <ScreenShareView stream={screenStream} accent={accent} onStop={stopScreenShare} compact />
+              )}
+              {remoteScreenStreams.map((rs) => (
+                <div key={rs.email} className="relative">
+                  <div className="absolute top-1 left-1 z-10 px-1.5 py-0.5 rounded bg-black/60 text-[9px] font-bold text-white">
+                    {rs.name}
+                  </div>
+                  <ScreenShareView stream={rs.stream} accent={accent} compact />
+                </div>
+              ))}
             </div>
           )}
 

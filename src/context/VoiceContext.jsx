@@ -6,6 +6,7 @@ import { playMicMute, playMicUnmute, playSpeakerOff, playSpeakerOn, playCallEnde
 import { toast } from "sonner";
 import ScreenSourcePicker from "@/components/community/ScreenSourcePicker";
 import { isTauriApp } from "@/lib/nativeScreenCapture";
+import { VoiceWebrtcManager } from "@/lib/voiceWebrtc";
 
 const VoiceContext = createContext(null);
 
@@ -28,6 +29,8 @@ export function VoiceProvider({ children }) {
   const [localStream, setLocalStream] = useState(null);
   const lastSpeakingSynced = useRef(false);
   const speakingWrite = useRef({ timer: null, lastWrite: 0 });
+  const webrtcManagerRef = useRef(null);
+  const [remoteScreenStreams, setRemoteScreenStreams] = useState([]);
 
   // Live voice-activity detection on the mic stream (a muted track is silent -> "not speaking")
   const { speaking: localSpeaking } = useSpeakingDetection(localStream);
@@ -105,6 +108,18 @@ export function VoiceProvider({ children }) {
     };
   }, []);
 
+  // Disconnect from the WebRTC actor when the page is closing (tab close, navigation)
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (webrtcManagerRef.current) {
+        webrtcManagerRef.current.disconnect();
+        webrtcManagerRef.current = null;
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
+
   const connect = useCallback(async (channelData, serverData, themeData, userData) => {
     try {
       // Clean up existing streams
@@ -117,6 +132,13 @@ export function VoiceProvider({ children }) {
         screenStreamRef.current = null;
       }
       setScreenStream(null);
+
+      // Clean up any existing WebRTC session before reconnecting
+      if (webrtcManagerRef.current) {
+        webrtcManagerRef.current.disconnect();
+        webrtcManagerRef.current = null;
+      }
+      setRemoteScreenStreams([]);
 
       const stream = await navigator.mediaDevices.getUserMedia(getAudioConstraints());
       localStreamRef.current = stream;
@@ -175,6 +197,29 @@ export function VoiceProvider({ children }) {
       setSpeakerOn(true);
       setSharing(false);
       setParticipants(room.participants || [myParticipant]);
+
+      // Connect to the WebRTC signaling actor for screen-share transmission
+      try {
+        const manager = new VoiceWebrtcManager(room.id, {
+          email: userData?.email || "",
+          name: myName,
+          avatar: userData?.avatar_url || "",
+        });
+        manager.onRemoteStream = (email, name, stream) => {
+          setRemoteScreenStreams((prev) => {
+            const filtered = prev.filter((s) => s.email !== email);
+            return [...filtered, { email, name, stream }];
+          });
+        };
+        manager.onRemoteStreamRemoved = (email) => {
+          setRemoteScreenStreams((prev) => prev.filter((s) => s.email !== email));
+        };
+        await manager.connect();
+        webrtcManagerRef.current = manager;
+      } catch (e) {
+        console.warn("WebRTC signaling unavailable:", e);
+      }
+
       toast.success(`Connecté à #${channelData.name} 🎙️`);
     } catch (e) {
       toast.error("Impossible d'accéder au micro. Vérifiez les permissions.");
@@ -183,6 +228,14 @@ export function VoiceProvider({ children }) {
 
   const disconnect = useCallback(() => {
     playCallEnded();
+
+    // 1. Close all WebRTC peer connections and disconnect from the signaling actor
+    if (webrtcManagerRef.current) {
+      webrtcManagerRef.current.disconnect();
+      webrtcManagerRef.current = null;
+    }
+
+    // 2. Stop all media tracks (mic + screen share)
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((t) => t.stop());
       localStreamRef.current = null;
@@ -191,11 +244,27 @@ export function VoiceProvider({ children }) {
       screenStreamRef.current.getTracks().forEach((t) => t.stop());
       screenStreamRef.current = null;
     }
+
+    // 3. Clear the speaking-state debounce timer
+    clearTimeout(speakingWrite.current.timer);
+    speakingWrite.current.timer = null;
+
+    // 4. Reset local state immediately (optimistic UI)
     setScreenStream(null);
     setLocalStream(null);
+    setRemoteScreenStreams([]);
     lastSpeakingSynced.current = false;
+    setConnected(false);
+    setSharing(false);
+    setParticipants([]);
+    setChannel(null);
+    setServer(null);
+    setTheme(null);
+    setUser(null);
+    setVoiceRoomId(null);
 
-    // Remove user from DB
+    // 5. Remove the user from the VoiceRoom entity — the actor already broadcast
+    //    "participant-left" to everyone, so real-time presence is instant.
     const roomId = voiceRoomId;
     const email = user?.email;
     if (roomId && email) {
@@ -213,15 +282,6 @@ export function VoiceProvider({ children }) {
       }).catch(() => {});
     }
 
-    setConnected(false);
-    setSharing(false);
-    setScreenStream(null);
-    setParticipants([]);
-    setChannel(null);
-    setServer(null);
-    setTheme(null);
-    setUser(null);
-    setVoiceRoomId(null);
     toast.info("Déconnecté du vocal");
   }, [voiceRoomId, user]);
 
@@ -246,6 +306,9 @@ export function VoiceProvider({ children }) {
   }, []);
 
   const stopScreenShare = useCallback(() => {
+    if (webrtcManagerRef.current) {
+      webrtcManagerRef.current.stopScreenShare();
+    }
     if (screenStreamRef.current) {
       screenStreamRef.current.getTracks().forEach((t) => t.stop());
       screenStreamRef.current = null;
@@ -269,6 +332,9 @@ export function VoiceProvider({ children }) {
       videoTrack.onended = () => {
         if (screenStreamRef.current === newStream) stopScreenShare();
       };
+    }
+    if (webrtcManagerRef.current) {
+      webrtcManagerRef.current.startScreenShare(newStream).catch(() => {});
     }
     toast.success(switching ? "Source de partage mise à jour" : "Partage d'écran démarré");
   }, [stopScreenShare]);
@@ -310,7 +376,7 @@ export function VoiceProvider({ children }) {
 
   const value = {
     connected, channel, server, theme, user,
-    micOn, speakerOn, sharing, screenStream, participants: displayParticipants,
+    micOn, speakerOn, sharing, screenStream, remoteScreenStreams, participants: displayParticipants,
     localStreamRef, localSpeaking: micOn && localSpeaking,
     connect, disconnect, toggleMic, toggleSpeaker,
     startScreenShare, stopScreenShare,

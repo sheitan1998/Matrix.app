@@ -9,7 +9,7 @@ import VoiceParticipants from "@/components/community/VoiceParticipants";
 export default function VoiceChannel({ channel, server, theme, user }) {
   const {
     connected, channel: activeChannel,
-    micOn, speakerOn, sharing, screenStream, participants,
+    micOn, speakerOn, sharing, screenStream, remoteScreenStreams, participants,
     connect, disconnect, toggleMic, toggleSpeaker,
     startScreenShare, stopScreenShare,
   } = useVoice();
@@ -46,7 +46,8 @@ export default function VoiceChannel({ channel, server, theme, user }) {
     );
   }
 
-  const isSharing = sharing && !!screenStream;
+  const isLocalSharing = sharing && !!screenStream;
+  const hasAnyShare = isLocalSharing || remoteScreenStreams.length > 0;
 
   // Connected state — big shared screen (when sharing), participants and controls
   return (
@@ -62,14 +63,27 @@ export default function VoiceChannel({ channel, server, theme, user }) {
         </span>
       </div>
 
-      <div className={cn("flex-1 min-h-0 flex flex-col", isSharing ? "p-3 gap-3" : "overflow-y-auto p-6")}>
-        {isSharing && (
-          <div className="relative flex-1 min-h-[200px]">
-            <ScreenShareView stream={screenStream} accent={accent} onStop={stopScreenShare} large />
+      <div className={cn("flex-1 min-h-0 flex flex-col", hasAnyShare ? "p-3 gap-3" : "overflow-y-auto p-6")}>
+        {hasAnyShare && (
+          <div className="flex-1 min-h-0 space-y-3 overflow-y-auto">
+            {isLocalSharing && (
+              <div className="relative min-h-[200px]">
+                <ScreenShareView stream={screenStream} accent={accent} onStop={stopScreenShare} large />
+              </div>
+            )}
+            {remoteScreenStreams.map((rs) => (
+              <div key={rs.email} className="relative min-h-[200px]">
+                <div className="absolute top-2 left-2 z-10 px-2 py-1 rounded-lg bg-black/60 text-xs font-bold text-white flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                  {rs.name}
+                </div>
+                <ScreenShareView stream={rs.stream} accent={accent} large />
+              </div>
+            ))}
           </div>
         )}
 
-        <VoiceParticipants participants={participants} accent={accent} compact={isSharing} />
+        <VoiceParticipants participants={participants} accent={accent} compact={hasAnyShare} />
 
         {/* Controls */}
         <div className="shrink-0 flex justify-center gap-3 flex-wrap">
@@ -85,7 +99,7 @@ export default function VoiceChannel({ channel, server, theme, user }) {
               speakerOn ? "border-white/20 bg-white/10 hover:bg-white/15" : "border-red-500/40 bg-red-500/20")}>
             {speakerOn ? <Volume2 className="w-5 h-5 text-white" /> : <VolumeX className="w-5 h-5 text-red-400" />}
           </button>
-          {isSharing ? (
+          {isLocalSharing ? (
             <>
               <button onClick={startScreenShare}
                 title="Changer de source de partage"
