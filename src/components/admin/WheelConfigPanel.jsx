@@ -343,6 +343,18 @@ export default function WheelConfigPanel() {
                 <input type="text" value={r.desc || ""} onChange={e => updateReward(i, "desc", e.target.value)} placeholder="Description (ex: Gros gain)"
                   className="flex-1 px-2 py-1.5 rounded text-[10px] bg-white/5 border border-white/10 text-white" />
               </div>
+              <div className="grid grid-cols-2 gap-2 pl-5">
+                <div>
+                  <label className="text-[9px] font-bold text-white/40 mb-0.5 block">Taille icône ({r.icon_size ?? 36}px)</label>
+                  <input type="range" min="16" max="64" value={r.icon_size ?? 36} onChange={e => updateReward(i, "icon_size", Number(e.target.value))}
+                    className="w-full accent-cyan-400" />
+                </div>
+                <div>
+                  <label className="text-[9px] font-bold text-white/40 mb-0.5 block">Rotation icône ({r.icon_rotation ?? 0}°)</label>
+                  <input type="range" min="-180" max="180" value={r.icon_rotation ?? 0} onChange={e => updateReward(i, "icon_rotation", Number(e.target.value))}
+                    className="w-full accent-fuchsia-400" />
+                </div>
+              </div>
             </div>
           ))}
         </div>

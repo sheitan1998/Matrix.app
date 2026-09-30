@@ -63,7 +63,7 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
   const [gameConfig, setGameConfig] = useState(null);
   const [configLoading, setConfigLoading] = useState(true);
   const wheelRef = useRef(null);
-  const segments = gameConfig?.rewards?.length ? gameConfig.rewards.map((reward, i) => ({ ...SEGMENTS[i % SEGMENTS.length], icon: reward.icon || SEGMENTS[i % SEGMENTS.length].icon, label: reward.label || SEGMENTS[i % SEGMENTS.length].label })) : SEGMENTS;
+  const segments = gameConfig?.rewards?.length ? gameConfig.rewards.map((reward, i) => ({ ...SEGMENTS[i % SEGMENTS.length], icon: reward.icon || SEGMENTS[i % SEGMENTS.length].icon, label: reward.label || SEGMENTS[i % SEGMENTS.length].label, icon_size: reward.icon_size ?? 36, icon_rotation: reward.icon_rotation ?? 0 })) : SEGMENTS.map(s => ({ ...s, icon_size: 36, icon_rotation: 0 }));
   const segmentAngle = 360 / segments.length;
   const spinCost = Number(gameConfig?.spin_cost ?? SPIN_COST);
   const ts = gameConfig?.title_style;
@@ -212,10 +212,12 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
                   <path d={path} fill="none" stroke={seg.glow} strokeWidth="0.5" opacity="0.6" />
                   {/* Icon */}
                   {/^https?:\/\//i.test(seg.icon) ? (
-                    <image href={bustImageCache(seg.icon, gameConfig?.updated_date)} x={textPos.x - 16} y={textPos.y - 16} width="32" height="32" preserveAspectRatio="xMidYMid meet" />
+                    <image href={bustImageCache(seg.icon, gameConfig?.updated_date)} x={textPos.x - seg.icon_size / 2} y={textPos.y - seg.icon_size / 2} width={seg.icon_size} height={seg.icon_size} preserveAspectRatio="xMidYMid meet"
+                      transform={`rotate(${seg.icon_rotation} ${textPos.x} ${textPos.y})`} />
                   ) : (
-                    <text x={textPos.x} y={textPos.y} textAnchor="middle" dominantBaseline="middle" fontSize="22"
-                      style={{ filter: `drop-shadow(0 0 4px ${seg.glow})` }}>{seg.icon}</text>
+                    <text x={textPos.x} y={textPos.y} textAnchor="middle" dominantBaseline="middle" fontSize={seg.icon_size}
+                      style={{ filter: `drop-shadow(0 0 4px ${seg.glow})` }}
+                      transform={`rotate(${seg.icon_rotation} ${textPos.x} ${textPos.y})`}>{seg.icon}</text>
                   )}
                   {/* Label */}
                   <text
