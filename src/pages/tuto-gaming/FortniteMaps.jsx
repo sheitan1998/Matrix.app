@@ -25,8 +25,8 @@ export default function FortniteMaps() {
       const all = await base44.entities.FortniteMap.list("-created_date", 200);
       setMaps(all.filter((m) => m.is_approved !== false));
     } catch {
-      /* silent */
-    } finally {
+
+      /* silent */} finally {
       setLoading(false);
     }
   }, []);
@@ -42,12 +42,12 @@ export default function FortniteMaps() {
       if (event.type === "create") {
         setMaps((prev) => [event.data, ...prev]);
       } else if (event.type === "update") {
-        setMaps((prev) => prev.map((m) => (m.id === event.data.id ? event.data : m)));
+        setMaps((prev) => prev.map((m) => m.id === event.data.id ? event.data : m));
       } else if (event.type === "delete") {
         setMaps((prev) => prev.filter((m) => m.id !== event.data.id));
       }
     });
-    return () => { unsubscribe(); };
+    return () => {unsubscribe();};
   }, []);
 
   // Filter maps
@@ -67,18 +67,18 @@ export default function FortniteMaps() {
       {/* Back */}
       <Link
         to="/tuto-gaming"
-        className="inline-flex items-center gap-1.5 text-white/40 hover:text-white transition mb-5 tap-sm"
-      >
+        className="inline-flex items-center gap-1.5 text-white/40 hover:text-white transition mb-5 tap-sm">
+        
         <ArrowLeft className="w-4 h-4" />
         <span className="text-xs font-bold">Retour au Hub</span>
       </Link>
 
       {/* Banner */}
       <div className="relative rounded-2xl overflow-hidden mb-6" style={{ border: "1px solid rgba(191,90,242,0.2)" }}>
-        <div className="relative h-48 sm:h-64 lg:h-72">
-          <img src={fortniteBanner} alt="Fortnite Maps" className="absolute inset-0 w-full h-full object-cover" />
-          <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(13,5,24,0.3) 0%, rgba(13,5,24,0.7) 70%, rgba(13,5,24,0.95) 100%)" }} />
-          <div className="absolute inset-0 flex flex-col justify-end p-5 sm:p-8">
+        <div className="relative h-48 sm:h-64 lg:h-72 hidden">
+          <img src={fortniteBanner} alt="Fortnite Maps" className="absolute inset-0 w-full h-full object-cover hidden" />
+          <div className="absolute inset-0 hidden" style={{ background: "linear-gradient(180deg, rgba(13,5,24,0.3) 0%, rgba(13,5,24,0.7) 70%, rgba(13,5,24,0.95) 100%)" }} />
+          <div className="absolute inset-0 flex flex-col justify-end p-5 sm:p-8 hidden">
             <div className="flex items-center gap-2 mb-2">
               <MapIcon className="w-5 h-5" style={{ color: "#7AC5FF" }} />
               <span className="text-[10px] font-black uppercase tracking-[0.25em] text-white/60">Section Communautaire</span>
@@ -98,40 +98,40 @@ export default function FortniteMaps() {
         <button
           onClick={() => setShowSubmit(true)}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-black text-white transition hover:opacity-90 tap-sm"
-          style={{ background: "linear-gradient(135deg, #BF5AF2, #7C3AED)" }}
-        >
+          style={{ background: "linear-gradient(135deg, #BF5AF2, #7C3AED)" }}>
+          
           <Plus className="w-4 h-4" /> Ajouter ma map
         </button>
-        {user && (
-          <button
-            onClick={() => setShowMyMaps(!showMyMaps)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition tap-sm"
-            style={
-              showMyMaps
-                ? { background: "rgba(191,90,242,0.15)", border: "1px solid rgba(191,90,242,0.3)", color: "#BF5AF2" }
-                : { background: "rgba(13,5,24,0.7)", border: "1px solid rgba(191,90,242,0.2)", color: "rgba(255,255,255,0.7)" }
-            }
-          >
+        {user &&
+        <button
+          onClick={() => setShowMyMaps(!showMyMaps)}
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition tap-sm"
+          style={
+          showMyMaps ?
+          { background: "rgba(191,90,242,0.15)", border: "1px solid rgba(191,90,242,0.3)", color: "#BF5AF2" } :
+          { background: "rgba(13,5,24,0.7)", border: "1px solid rgba(191,90,242,0.2)", color: "rgba(255,255,255,0.7)" }
+          }>
+          
             <User className="w-3.5 h-3.5" /> Mes publications {myMaps.length > 0 && `(${myMaps.length})`}
           </button>
-        )}
+        }
       </div>
 
       {/* My Maps section */}
-      {showMyMaps && user && (
-        <div className="mb-6 p-4 rounded-xl" style={{ background: "rgba(13,5,24,0.5)", border: "1px solid rgba(191,90,242,0.15)" }}>
+      {showMyMaps && user &&
+      <div className="mb-6 p-4 rounded-xl" style={{ background: "rgba(13,5,24,0.5)", border: "1px solid rgba(191,90,242,0.15)" }}>
           <h2 className="text-xs font-black uppercase tracking-wider text-white/60 mb-3">Mes publications</h2>
-          {myMaps.length === 0 ? (
-            <p className="text-xs text-white/30 text-center py-4">Vous n'avez pas encore publié de map.</p>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {myMaps.map((m, i) => (
-                <FortniteMapCard key={m.id} map={m} index={i} onClick={setSelectedMap} />
-              ))}
-            </div>
+          {myMaps.length === 0 ?
+        <p className="text-xs text-white/30 text-center py-4">Vous n'avez pas encore publié de map.</p> :
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {myMaps.map((m, i) =>
+          <FortniteMapCard key={m.id} map={m} index={i} onClick={setSelectedMap} />
           )}
+            </div>
+        }
         </div>
-      )}
+      }
 
       {/* Search */}
       <div className="max-w-xl mb-4">
@@ -140,16 +140,16 @@ export default function FortniteMaps() {
           style={{
             borderRadius: "9999px",
             background: "rgba(13,5,24,0.7)",
-            border: "1.5px solid rgba(191,90,242,0.25)",
-          }}
-        >
+            border: "1.5px solid rgba(191,90,242,0.25)"
+          }}>
+          
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Rechercher par titre ou créateur..."
-            className="w-full h-11 px-5 pr-11 bg-transparent text-sm text-white placeholder:text-white/30 outline-none"
-          />
+            className="w-full h-11 px-5 pr-11 bg-transparent text-sm text-white placeholder:text-white/30 outline-none" />
+          
           <div className="absolute right-4">
             <Search className="w-4 h-4" style={{ color: "#BF5AF2" }} />
           </div>
@@ -158,20 +158,20 @@ export default function FortniteMaps() {
 
       {/* Category filters */}
       <div className="flex items-center gap-1.5 mb-5 overflow-x-auto no-scrollbar pb-1">
-        {MAP_CATEGORIES.map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => setActiveCategory(cat.id)}
-            className="px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition tap-sm"
-            style={
-              activeCategory === cat.id
-                ? { background: `${cat.color}20`, color: cat.color, border: `1px solid ${cat.color}50` }
-                : { background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.4)", border: "1px solid rgba(255,255,255,0.06)" }
-            }
-          >
+        {MAP_CATEGORIES.map((cat) =>
+        <button
+          key={cat.id}
+          onClick={() => setActiveCategory(cat.id)}
+          className="px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition tap-sm"
+          style={
+          activeCategory === cat.id ?
+          { background: `${cat.color}20`, color: cat.color, border: `1px solid ${cat.color}50` } :
+          { background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.4)", border: "1px solid rgba(255,255,255,0.06)" }
+          }>
+          
             {cat.label}
           </button>
-        ))}
+        )}
       </div>
 
       {/* Results count */}
@@ -182,33 +182,33 @@ export default function FortniteMaps() {
       </div>
 
       {/* Maps grid */}
-      {loading ? (
-        <div className="flex justify-center py-12">
+      {loading ?
+      <div className="flex justify-center py-12">
           <Loader2 className="w-6 h-6 animate-spin text-white/30" />
-        </div>
-      ) : filteredMaps.length === 0 ? (
-        <div className="text-center py-16">
+        </div> :
+      filteredMaps.length === 0 ?
+      <div className="text-center py-16">
           <MapIcon className="w-12 h-12 text-white/10 mx-auto mb-4" />
           <p className="text-sm text-white/40 mb-2">
             {search ? `Aucune map trouvée pour "${search}"` : "Aucune map disponible pour le moment."}
           </p>
-          {!search && (
-            <p className="text-xs text-white/30">Soyez le premier à en ajouter une !</p>
-          )}
+          {!search &&
+        <p className="text-xs text-white/30">Soyez le premier à en ajouter une !</p>
+        }
+        </div> :
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+          {filteredMaps.map((m, i) =>
+        <FortniteMapCard key={m.id} map={m} index={i} onClick={setSelectedMap} />
+        )}
         </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-          {filteredMaps.map((m, i) => (
-            <FortniteMapCard key={m.id} map={m} index={i} onClick={setSelectedMap} />
-          ))}
-        </div>
-      )}
+      }
 
       {/* Detail modal */}
       <MapDetailModal map={selectedMap} onClose={() => setSelectedMap(null)} />
 
       {/* Submit modal */}
       <SubmitMapModal open={showSubmit} onClose={() => setShowSubmit(false)} onSuccess={fetchMaps} userEmail={user?.email} />
-    </div>
-  );
+    </div>);
+
 }
