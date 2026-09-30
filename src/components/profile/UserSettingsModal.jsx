@@ -4,8 +4,9 @@ import { createPortal } from "react-dom";
 import { base44 } from "@/api/base44Client";
 import {
   X, Bell, Gift, UserPlus, MessageSquare, Loader2,
-  Globe, Clock, Shield, Check,
+  Globe, Clock, Shield, Check, Headphones,
 } from "lucide-react";
+import AudioSettingsPanel from "@/components/profile/AudioSettingsPanel";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +41,7 @@ const TABS = [
   { id: "notifications", label: "Notifications", icon: Bell, color: "#3b82f6" },
   { id: "privacy", label: "Confidentialité", icon: Shield, color: "#22c55e" },
   { id: "preferences", label: "Préférences", icon: Globe, color: "#a855f7" },
+  { id: "audio", label: "Audio", icon: Headphones, color: "#22d3ee" },
 ];
 
 function Toggle({ checked, onChange, disabled }) {
@@ -294,6 +296,11 @@ export default function UserSettingsModal({ open, onClose, user }) {
                 />
               </div>
             </>
+          )}
+
+          {/* ===== AUDIO TAB ===== */}
+          {activeTab === "audio" && (
+            <AudioSettingsPanel />
           )}
 
           {/* ===== PREFERENCES TAB ===== */}

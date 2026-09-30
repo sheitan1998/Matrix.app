@@ -3,8 +3,10 @@ import { Mic, MicOff, Volume2, VolumeX, PhoneOff, Monitor, MonitorOff, Users } f
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useAudioSettings } from "@/hooks/useAudioSettings";
 
 export default function VoiceChannel({ channel, server, theme, user }) {
+  const { getAudioConstraints, attachOutputDevice } = useAudioSettings();
   const [connected, setConnected] = useState(false);
   const [micOn, setMicOn] = useState(true);
   const [speakerOn, setSpeakerOn] = useState(true);
@@ -13,11 +15,12 @@ export default function VoiceChannel({ channel, server, theme, user }) {
   const localStream = useRef(null);
   const screenStream = useRef(null);
   const videoRef = useRef(null);
+  const remoteAudioRef = useRef(null);
   const accent = theme?.accent || "#00ff41";
 
   const connect = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      const stream = await navigator.mediaDevices.getUserMedia(getAudioConstraints());
       localStream.current = stream;
       setConnected(true);
       setParticipants([{ name: user?.full_name || "Moi", isSelf: true, micOn: true }]);

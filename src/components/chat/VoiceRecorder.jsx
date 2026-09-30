@@ -2,10 +2,12 @@ import React, { useState, useRef, useEffect } from "react";
 import { Mic, Square, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
+import { useAudioSettings } from "@/hooks/useAudioSettings";
 
 const BAR_COUNT = 24;
 
 export default function VoiceRecorder({ onSend, disabled, accent = "hsl(135 100% 50%)" }) {
+  const { getAudioConstraints } = useAudioSettings();
   const [recording, setRecording] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [seconds, setSeconds] = useState(0);
@@ -37,7 +39,7 @@ export default function VoiceRecorder({ onSend, disabled, accent = "hsl(135 100%
   const startRecording = async () => {
     if (disabled) return;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia(getAudioConstraints());
       streamRef.current = stream;
       chunksRef.current = [];
 

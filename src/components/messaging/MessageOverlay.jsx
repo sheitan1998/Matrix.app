@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Send, Search, X, Mail, User, Smile, Trash2, Lock } from "lucide-react";
+import { ArrowLeft, Send, Search, X, Mail, User, Smile, Trash2, Lock, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { playMessageSound } from "@/lib/messageSound";
 import { messageAlertsEnabled } from '@/lib/notificationPreferences';
@@ -9,6 +9,7 @@ import { stripPseudoTag } from "@/lib/format";
 import UserProfilePopup from "@/components/profile/UserProfilePopup";
 import VoiceRecorder from "@/components/chat/VoiceRecorder";
 import VoiceMessagePlayer from "@/components/chat/VoiceMessagePlayer";
+import DirectVoiceCall from "@/components/messaging/DirectVoiceCall";
 
 const EMOJI_LIST = ["😀", "😂", "🥰", "😍", "😎", "🤔", "😅", "😭", "😡", "👍", "👎", "❤️", "🔥", "✨", "🎉", "💯", "🤝", "👋", "🙏", "💀", "🤡", "👀", "💪", "🫶", "😴", "🥳", "😇", "🤗", "😌", "🙃"];
 
@@ -38,6 +39,7 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
   const [profileUserId, setProfileUserId] = useState(null);
   const [showEmojis, setShowEmojis] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
+  const [voiceCallActive, setVoiceCallActive] = useState(false);
   const messagesEndRef = useRef(null);
 
   // Fetch contacts (accepted friends + DM contacts from DirectMessage records)
@@ -464,6 +466,16 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
                   {resolveContact(selectedContact).online ? "En ligne" : "Hors ligne"}
                 </p>
               </div>
+              {!isReadOnlyConversation && !voiceCallActive && (
+                <button
+                  onClick={() => setVoiceCallActive(true)}
+                  className="w-9 h-9 rounded-full flex items-center justify-center transition tap-sm shrink-0"
+                  style={{ background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)" }}
+                  title="Appel vocal"
+                >
+                  <Phone className="w-4 h-4 text-green-400" />
+                </button>
+              )}
             </div>
 
             {/* Messages */}
@@ -509,6 +521,17 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
               )}
               <div ref={messagesEndRef} />
             </div>
+
+            {/* Voice call panel */}
+            {voiceCallActive && (
+              <div className="shrink-0" style={{ borderTop: "1px solid rgba(34,197,94,0.2)", background: "rgba(34,197,94,0.05)" }}>
+                <DirectVoiceCall
+                  contactName={resolveContact(selectedContact).name}
+                  contactAvatar={resolveContact(selectedContact).avatar}
+                  onEnd={() => setVoiceCallActive(false)}
+                />
+              </div>
+            )}
 
             {/* Input */}
             <div className="px-4 py-3 shrink-0 relative" style={{ borderTop: "1px solid rgba(168,85,247,0.1)" }}>
