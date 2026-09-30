@@ -75,22 +75,22 @@ export default function FortniteMaps() {
 
       {/* Banner */}
       <div className="relative rounded-2xl overflow-hidden mb-6" style={{ border: "1px solid rgba(191,90,242,0.2)" }}>
-        <div className="relative h-48 sm:h-64 lg:h-72 hidden">
-          <img src={fortniteBanner} alt="Fortnite Maps" className="absolute inset-0 w-full h-full object-cover hidden" />
-          <div className="absolute inset-0 hidden" style={{ background: "linear-gradient(180deg, rgba(13,5,24,0.3) 0%, rgba(13,5,24,0.7) 70%, rgba(13,5,24,0.95) 100%)" }} />
-          <div className="absolute inset-0 flex flex-col justify-end p-5 sm:p-8 hidden">
-            <div className="flex items-center gap-2 mb-2">
-              <MapIcon className="w-5 h-5" style={{ color: "#7AC5FF" }} />
-              <span className="text-[10px] font-black uppercase tracking-[0.25em] text-white/60">Section Communautaire</span>
-            </div>
-            <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight uppercase" style={{ textShadow: "0 2px 20px rgba(0,0,0,0.8)" }}>
-              Fortnite Maps
-            </h1>
-            <p className="text-xs sm:text-sm text-white/60 mt-1 max-w-lg">
-              Découvrez et partagez les meilleures cartes créatives de la communauté
-            </p>
-          </div>
-        </div>
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
       </div>
 
       {/* Action buttons */}
