@@ -27,6 +27,8 @@ import TutoGamingLayout from '@/components/tuto-gaming/TutoGamingLayout';
 import { ProgressionProvider } from '@/context/ProgressionContext';
 import { MiniPlayerProvider } from '@/context/MiniPlayerContext';
 import { NotificationProvider } from '@/context/NotificationContext';
+import { VoiceProvider } from '@/context/VoiceContext';
+import PersistentVoicePanel from '@/components/community/PersistentVoicePanel';
 import { usePresence } from '@/hooks/usePresence';
 
 // Pages — lazy-loaded (code-split per route for instant initial bundle)
@@ -132,6 +134,7 @@ const AuthenticatedApp = () => {
       <ProgressionProvider>
       <NotificationProvider>
       <MiniPlayerProvider>
+      <VoiceProvider>
       <AnimatedRoutes>
       <Suspense fallback={<PageLoader />}>
       <Routes>
@@ -215,6 +218,8 @@ const AuthenticatedApp = () => {
       <GlobalProfileButton />
       <GlobalMessageButton />
       <BottomTabs />
+      <PersistentVoicePanel />
+      </VoiceProvider>
       </MiniPlayerProvider>
       </NotificationProvider>
       </ProgressionProvider>
