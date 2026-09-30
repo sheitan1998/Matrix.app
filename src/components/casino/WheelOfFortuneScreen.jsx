@@ -63,7 +63,7 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
   const [gameConfig, setGameConfig] = useState(null);
   const [configLoading, setConfigLoading] = useState(true);
   const wheelRef = useRef(null);
-  const segments = gameConfig?.rewards?.length ? gameConfig.rewards.map((reward, i) => ({ ...SEGMENTS[i % SEGMENTS.length], icon: reward.icon || SEGMENTS[i % SEGMENTS.length].icon, label: reward.label || SEGMENTS[i % SEGMENTS.length].label, icon_size: reward.icon_size ?? 36, icon_rotation: reward.icon_rotation ?? 0 })) : SEGMENTS.map((s) => ({ ...s, icon_size: 36, icon_rotation: 0 }));
+  const segments = gameConfig?.rewards?.length ? gameConfig.rewards.map((reward, i) => ({ ...SEGMENTS[i % SEGMENTS.length], icon: reward.icon || SEGMENTS[i % SEGMENTS.length].icon, label: reward.label || SEGMENTS[i % SEGMENTS.length].label, icon_size: reward.icon_size ?? 36, icon_rotation: reward.icon_rotation ?? 0, bg_color: reward.bg_color || "", bg_image: reward.bg_image || "" })) : SEGMENTS.map((s) => ({ ...s, icon_size: 36, icon_rotation: 0, bg_color: "", bg_image: "" }));
   const segmentAngle = 360 / segments.length;
   const spinCost = Number(gameConfig?.spin_cost ?? SPIN_COST);
   const ts = gameConfig?.title_style;
@@ -195,8 +195,43 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
           transform: `rotate(${rotation}deg)`
         }}>
           <svg viewBox="0 0 300 300" className="w-full h-full" style={{ filter: "drop-shadow(0 0 20px rgba(168,85,247,0.3))" }}>
-            {/* Outer ring */}
-            <circle cx="150" cy="150" r="148" fill="none" stroke="#2a1a3e" strokeWidth="4" />
+            {/* Outer ring — configurable wheel border */}
+            {(() => {
+              const wb = gameConfig?.wheel_border;
+              const w = wb?.width ?? 4;
+              const style = wb?.style || "solid";
+              const c1 = wb?.color || "#a855f7";
+              const c2 = wb?.color2 || "#00ffff";
+              if (wb?.image) {
+                return (
+                  <>
+                    <defs>
+                      <pattern id="wb-img" patternUnits="userSpaceOnUse" width="296" height="296" x="2" y="2">
+                        <image href={bustImageCache(wb.image, gameConfig?.updated_date)} x="0" y="0" width="296" height="296" preserveAspectRatio="xMidYMid slice" />
+                      </pattern>
+                    </defs>
+                    <circle cx="150" cy="150" r="148" fill="none" stroke="url(#wb-img)" strokeWidth={w} />
+                  </>
+                );
+              }
+              if (style === "gradient") {
+                return (
+                  <>
+                    <defs>
+                      <linearGradient id="wb-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor={c1} />
+                        <stop offset="100%" stopColor={c2} />
+                      </linearGradient>
+                    </defs>
+                    <circle cx="150" cy="150" r="148" fill="none" stroke="url(#wb-grad)" strokeWidth={w} />
+                  </>
+                );
+              }
+              if (style === "neon") {
+                return <circle cx="150" cy="150" r="148" fill="none" stroke={c1} strokeWidth={w} style={{ filter: `drop-shadow(0 0 6px ${c1}) drop-shadow(0 0 12px ${c2})` }} />;
+              }
+              return <circle cx="150" cy="150" r="148" fill="none" stroke={c1} strokeWidth={w} />;
+            })()}
             <circle cx="150" cy="150" r="144" fill="none" stroke="rgba(168,85,247,0.4)" strokeWidth="2" />
 
             {/* Segments */}
@@ -205,9 +240,18 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
               const endAngle = (i + 1) * segmentAngle;
               const path = describeArc(150, 150, 140, startAngle, endAngle);
               const textPos = polarToCartesian(150, 150, 90, startAngle + segmentAngle / 2);
+              const segImgId = `seg-bg-${i}`;
+              const segFill = seg.bg_image ? `url(#${segImgId})` : (seg.bg_color || seg.color);
               return (
                 <g key={i}>
-                  <path d={path} fill={seg.color} stroke="rgba(0,0,0,0.3)" strokeWidth="1" />
+                  {seg.bg_image && (
+                    <defs>
+                      <pattern id={segImgId} patternUnits="userSpaceOnUse" width="280" height="280" x="10" y="10">
+                        <image href={bustImageCache(seg.bg_image, gameConfig?.updated_date)} x="0" y="0" width="280" height="280" preserveAspectRatio="xMidYMid slice" />
+                      </pattern>
+                    </defs>
+                  )}
+                  <path d={path} fill={segFill} stroke="rgba(0,0,0,0.3)" strokeWidth="1" />
                   {/* Glow border */}
                   <path d={path} fill="none" stroke={seg.glow} strokeWidth="0.5" opacity="0.6" />
                   {/* Icon */}

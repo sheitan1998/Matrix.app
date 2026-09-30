@@ -92,6 +92,43 @@
       "default": "#0a050f",
       "description": "Couleur de fond de la page de jeu (utilisee si pas d'image de fond)"
     },
+    "wheel_border": {
+      "type": "object",
+      "properties": {
+        "width": {
+          "type": "number",
+          "default": 4,
+          "description": "Epaisseur du contour exterieur de la roue en px"
+        },
+        "style": {
+          "type": "string",
+          "enum": [
+            "solid",
+            "neon",
+            "gradient"
+          ],
+          "default": "solid",
+          "description": "Style du contour (uni, neon lumineux ou degrade)"
+        },
+        "color": {
+          "type": "string",
+          "default": "#a855f7",
+          "description": "Couleur principale du contour"
+        },
+        "color2": {
+          "type": "string",
+          "default": "#00ffff",
+          "description": "Couleur secondaire (pour le degrade ou le halo neon)"
+        },
+        "image": {
+          "type": "string",
+          "default": "",
+          "description": "URL d'une image de contour (surcharge la couleur si definie)"
+        }
+      },
+      "default": {},
+      "description": "Configuration du contour exterieur de la roue"
+    },
     "ticket_price": {
       "type": "number",
       "default": 10000,
@@ -140,6 +177,16 @@
             "default": 0,
             "description": "Angle de rotation de l'icone en degres"
           },
+          "bg_color": {
+            "type": "string",
+            "default": "",
+            "description": "Couleur de fond du segment (surcharge la couleur par defaut)"
+          },
+          "bg_image": {
+            "type": "string",
+            "default": "",
+            "description": "URL d'une image de fond du segment (surcharge la couleur)"
+          },
           "amount": {
             "type": "number",
             "default": 0
@@ -160,7 +207,7 @@
         }
       },
       "default": [],
-      "description": "Configuration des recompenses (poids relatifs, montants, types, icones, taille et rotation des icones)"
+      "description": "Configuration des recompenses (poids relatifs, montants, types, icones, taille, rotation, fond de segment)"
     }
   },
   "required": [

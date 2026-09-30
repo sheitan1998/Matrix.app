@@ -34,14 +34,15 @@ const DEFAULT_CONFIG = {
   background_color: "#0a050f",
   spin_cost: 20000,
   reset_hour_utc: 12,
+  wheel_border: { width: 4, style: "solid", color: "#a855f7", color2: "#00ffff", image: "" },
   rewards: [
-    { id: "perdu", label: "Perdu", desc: "Réessayez !", icon: "💀", amount: 0, weight: 65, type: "lose" },
-    { id: "1000", label: "1 000 jetons", desc: "Petit gain", amount: 1000, weight: 55, type: "tokens" },
-    { id: "20000", label: "20 000 jetons", desc: "Beau gain", amount: 20000, weight: 35, type: "tokens" },
-    { id: "50000", label: "50 000 jetons", desc: "Gros gain", amount: 50000, weight: 30, type: "tokens" },
-    { id: "100000", label: "100 000 jetons", desc: "Très gros gain", amount: 100000, weight: 20, type: "tokens" },
-    { id: "1000000", label: "1 000 000 jetons", desc: "Gain exceptionnel !", amount: 1000000, weight: 1, type: "tokens" },
-    { id: "trix100", label: "100 Trix", desc: "Gain ultra rare !", amount: 100, weight: 0.001, type: "trix" },
+    { id: "perdu", label: "Perdu", desc: "Réessayez !", icon: "💀", amount: 0, weight: 65, type: "lose", bg_color: "#3a3a3a", bg_image: "" },
+    { id: "1000", label: "1 000 jetons", desc: "Petit gain", amount: 1000, weight: 55, type: "tokens", bg_color: "#00bfff", bg_image: "" },
+    { id: "20000", label: "20 000 jetons", desc: "Beau gain", amount: 20000, weight: 35, type: "tokens", bg_color: "#ff00ff", bg_image: "" },
+    { id: "50000", label: "50 000 jetons", desc: "Gros gain", amount: 50000, weight: 30, type: "tokens", bg_color: "#8b5cf6", bg_image: "" },
+    { id: "100000", label: "100 000 jetons", desc: "Très gros gain", amount: 100000, weight: 20, type: "tokens", bg_color: "#ffd700", bg_image: "" },
+    { id: "1000000", label: "1 000 000 jetons", desc: "Gain exceptionnel !", amount: 1000000, weight: 1, type: "tokens", bg_color: "#ff1493", bg_image: "" },
+    { id: "trix100", label: "100 Trix", desc: "Gain ultra rare !", amount: 100, weight: 0.001, type: "trix", bg_color: "#00ff7f", bg_image: "" },
   ],
 };
 
@@ -85,10 +86,14 @@ export default function WheelConfigPanel() {
     });
   }, []);
 
+  const updateWheelBorder = useCallback((field, value) => {
+    setConfig(prev => prev ? { ...prev, wheel_border: { ...(prev.wheel_border || {}), [field]: value } } : prev);
+  }, []);
+
   const addReward = () => {
     setConfig(prev => {
       if (!prev) return prev;
-      return { ...prev, rewards: [...(prev.rewards || []), { id: `custom_${Date.now()}`, label: "Nouveau gain", desc: "", weight: 1, amount: 0, type: "tokens" }] };
+      return { ...prev, rewards: [...(prev.rewards || []), { id: `custom_${Date.now()}`, label: "Nouveau gain", desc: "", weight: 1, amount: 0, type: "tokens", bg_color: "#8b5cf6", bg_image: "" }] };
     });
   };
 
@@ -117,6 +122,7 @@ export default function WheelConfigPanel() {
         center_icon: config.center_icon,
         background_image: config.background_image,
         background_color: config.background_color,
+        wheel_border: config.wheel_border,
         spin_cost: Number(config.spin_cost),
         reset_hour_utc: Number(config.reset_hour_utc),
         title_style: config.title_style,
@@ -309,6 +315,57 @@ export default function WheelConfigPanel() {
         </div>
       </div>
 
+      {/* Wheel border config */}
+      <div className="rounded-2xl border border-white/10 p-4 space-y-3" style={{ background: "rgba(15,10,25,0.6)" }}>
+        <p className="text-xs font-bold text-white/60 uppercase">Contour de la roue</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="text-[10px] font-bold text-white/50 mb-1 block">Épaisseur ({config.wheel_border?.width ?? 4}px)</label>
+            <input type="range" min="0" max="20" value={config.wheel_border?.width ?? 4} onChange={e => updateWheelBorder("width", Number(e.target.value))}
+              className="w-full accent-cyan-400" />
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-white/50 mb-1 block">Style du contour</label>
+            <div className="flex gap-2 flex-wrap">
+              {[
+                { v: "solid", label: "Uni" },
+                { v: "neon", label: "Néon" },
+                { v: "gradient", label: "Dégradé" },
+              ].map(opt => (
+                <button key={opt.v} onClick={() => updateWheelBorder("style", opt.v)}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition ${(config.wheel_border?.style || "solid") === opt.v ? "text-white" : "text-white/40 border border-white/10"}`}
+                  style={(config.wheel_border?.style || "solid") === opt.v ? { background: "linear-gradient(135deg, #a855f7, #00ffff)" } : {}}>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="text-[10px] font-bold text-white/50 mb-1 block">Couleur principale</label>
+            <div className="flex gap-2 items-center">
+              <input type="color" value={config.wheel_border?.color || "#a855f7"} onChange={e => updateWheelBorder("color", e.target.value)}
+                className="w-10 h-9 rounded-lg border border-white/10 bg-transparent cursor-pointer" />
+              <input type="text" value={config.wheel_border?.color || "#a855f7"} onChange={e => updateWheelBorder("color", e.target.value)}
+                className="flex-1 px-3 py-2 rounded-lg text-xs bg-white/5 border border-white/10 text-white font-mono" />
+            </div>
+          </div>
+          {(config.wheel_border?.style || "solid") !== "solid" && (
+            <div>
+              <label className="text-[10px] font-bold text-white/50 mb-1 block">Couleur secondaire {config.wheel_border?.style === "neon" ? "(halo)" : "(dégradé)"}</label>
+              <div className="flex gap-2 items-center">
+                <input type="color" value={config.wheel_border?.color2 || "#00ffff"} onChange={e => updateWheelBorder("color2", e.target.value)}
+                  className="w-10 h-9 rounded-lg border border-white/10 bg-transparent cursor-pointer" />
+                <input type="text" value={config.wheel_border?.color2 || "#00ffff"} onChange={e => updateWheelBorder("color2", e.target.value)}
+                  className="flex-1 px-3 py-2 rounded-lg text-xs bg-white/5 border border-white/10 text-white font-mono" />
+              </div>
+            </div>
+          )}
+        </div>
+        <ImageUploadField label="Image de contour (optionnel)" value={config.wheel_border?.image || ""} onChange={v => updateWheelBorder("image", v)} hint="Image de contour de la roue. Surcharge la couleur si définie." aspect="square" />
+      </div>
+
       {/* Rewards config */}
       <div className="rounded-2xl border border-white/10 p-4 space-y-3" style={{ background: "rgba(15,10,25,0.6)" }}>
         <div className="flex items-center justify-between">
@@ -346,13 +403,27 @@ export default function WheelConfigPanel() {
               <div className="grid grid-cols-2 gap-2 pl-5">
                 <div>
                   <label className="text-[9px] font-bold text-white/40 mb-0.5 block">Taille icône ({r.icon_size ?? 36}px)</label>
-                  <input type="range" min="16" max="64" value={r.icon_size ?? 36} onChange={e => updateReward(i, "icon_size", Number(e.target.value))}
+                  <input type="range" min="16" max="200" value={r.icon_size ?? 36} onChange={e => updateReward(i, "icon_size", Number(e.target.value))}
                     className="w-full accent-cyan-400" />
                 </div>
                 <div>
                   <label className="text-[9px] font-bold text-white/40 mb-0.5 block">Rotation icône ({r.icon_rotation ?? 0}°)</label>
                   <input type="range" min="-180" max="180" value={r.icon_rotation ?? 0} onChange={e => updateReward(i, "icon_rotation", Number(e.target.value))}
                     className="w-full accent-fuchsia-400" />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-5">
+                <div>
+                  <label className="text-[9px] font-bold text-white/40 mb-0.5 block">Couleur de fond du segment</label>
+                  <div className="flex gap-2 items-center">
+                    <input type="color" value={r.bg_color || "#3a3a3a"} onChange={e => updateReward(i, "bg_color", e.target.value)}
+                      className="w-10 h-9 rounded-lg border border-white/10 bg-transparent cursor-pointer" />
+                    <input type="text" value={r.bg_color || ""} onChange={e => updateReward(i, "bg_color", e.target.value)} placeholder="#3a3a3a"
+                      className="flex-1 px-2 py-1.5 rounded text-[10px] bg-white/5 border border-white/10 text-white font-mono" />
+                  </div>
+                </div>
+                <div>
+                  <ImageUploadField label="Image de fond du segment" value={r.bg_image || ""} onChange={v => updateReward(i, "bg_image", v)} hint="Image de fond dédiée pour ce segment (surcharge la couleur)." aspect="square" />
                 </div>
               </div>
             </div>
