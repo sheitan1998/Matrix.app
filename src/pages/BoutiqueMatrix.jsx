@@ -101,36 +101,22 @@ export default function BoutiqueMatrix() {
   }, [searchParams]);
 
   const buyWithTrix = async (item) => {
-    const balance = user?.trix_balance || 0;
-    if (balance < item.price_trix) { toast.error("Solde TRIX insuffisant"); return; }
+    if ((user?.trix_balance || 0) < item.price_trix) { toast.error("Solde TRIX insuffisant"); return; }
     setBuyingTrix(item.id);
     try {
-      await base44.auth.updateMe({ trix_balance: balance - item.price_trix });
-      const existing = owned.find(o => o.item_id === item.id);
-      if (existing) {
-        // Increment quantity instead of duplicating
-        await base44.entities.UserCosmetic.update(existing.id, {
-          quantity: (existing.quantity || 1) + 1,
-        });
+      const res = await base44.functions.invoke("cosmeticShop", { action: "buyWithTrix", itemId: item.id });
+      if (res?.data?.success) {
+        qc.invalidateQueries({ queryKey: ["user-cosmetics"] });
+        checkUserAuth();
+        trackActivity("cosmetics_owned");
+        toast.success(`${item.name} acheté ! Équipez-le depuis votre profil.`);
+        setDetailItem(null);
       } else {
-        await base44.entities.UserCosmetic.create({
-          user_email: user.email, item_id: item.id, item_name: item.name,
-          category: item.category, icon: normalizeCosmeticIcon(item.icon), rarity: item.rarity, is_equipped: false,
-          quantity: 1,
-          video_url: normalizeCosmeticAssetUrl(item.video_url),
-          preview_image: normalizeCosmeticAssetUrl(item.preview_image),
-        });
+        toast.error(res?.data?.error || "Erreur lors de l'achat");
       }
-      await base44.entities.TrixTransaction.create({
-        user_email: user.email, type: "purchase", amount: -item.price_trix,
-        description: `Achat cosmétique: ${item.name} (-${item.price_trix} Trix)`,
-      });
-      qc.invalidateQueries({ queryKey: ["user-cosmetics"] });
-      checkUserAuth();
-      trackActivity("cosmetics_owned");
-      toast.success(`${item.name} acheté ! ${existing ? "Quantité augmentée" : "Équipez-le depuis votre profil"}.`);
-      setDetailItem(null);
-    } catch { toast.error("Erreur lors de l'achat"); }
+    } catch (e) {
+      toast.error(e?.message || "Erreur lors de l'achat");
+    }
     setBuyingTrix(null);
   };
 

@@ -47,13 +47,14 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
         if (u) {
           setProfile(u);
           const targetId = u.id || userId;
-          if (u.email) {
+          const lookupEmail = u.email || userEmail;
+          if (lookupEmail) {
             try {
-              const userCosmetics = await base44.entities.UserCosmetic.filter({ user_email: u.email, is_equipped: true }, "-created_date", 50);
+              const userCosmetics = await base44.entities.UserCosmetic.filter({ user_email: lookupEmail, is_equipped: true }, "-created_date", 50);
               setCosmetics(userCosmetics || []);
             } catch { setCosmetics([]); }
             try {
-              const progressRecords = await base44.entities.UserProgress.filter({ user_email: u.email });
+              const progressRecords = await base44.entities.UserProgress.filter({ user_email: lookupEmail });
               if (progressRecords.length > 0) setProgress(progressRecords[0]);
             } catch { /* silent */ }
           }

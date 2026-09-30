@@ -314,6 +314,59 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ success: true });
     }
 
+    // ---- buyWithTrix (server-side balance verification + cosmetic grant) ----
+    if (action === 'buyWithTrix') {
+      const user = await base44.auth.me();
+      if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+      const { itemId } = body;
+      if (!itemId) return Response.json({ error: 'Article manquant' }, { status: 400 });
+
+      const shopItem = await base44.asServiceRole.entities.MatrixShopItem.get(itemId);
+      if (!shopItem || !shopItem.is_active) {
+        return Response.json({ error: 'Article invalide' }, { status: 400 });
+      }
+
+      // Re-fetch user with asServiceRole for authoritative balance
+      const freshUser = await base44.asServiceRole.entities.User.get(user.id);
+      const balance = freshUser?.trix_balance || 0;
+      if (balance < shopItem.price_trix) {
+        return Response.json({ error: 'Solde TRIX insuffisant' }, { status: 400 });
+      }
+
+      // Deduct Trix server-side
+      const newBalance = balance - shopItem.price_trix;
+      await base44.asServiceRole.entities.User.update(user.id, { trix_balance: newBalance });
+
+      // Grant cosmetic server-side
+      const existingCosm = await base44.asServiceRole.entities.UserCosmetic.filter({
+        user_email: user.email, item_id: itemId,
+      });
+      if (existingCosm.length > 0) {
+        await base44.asServiceRole.entities.UserCosmetic.update(existingCosm[0].id, {
+          quantity: (existingCosm[0].quantity || 1) + 1,
+        });
+      } else {
+        await base44.asServiceRole.entities.UserCosmetic.create({
+          user_email: user.email, item_id: itemId, item_name: shopItem.name,
+          category: shopItem.category, icon: shopItem.icon || '',
+          rarity: shopItem.rarity || 'common', is_equipped: false,
+          quantity: 1,
+          video_url: shopItem.video_url || '',
+          preview_image: shopItem.preview_image || '',
+          anim_config: shopItem.anim_config || undefined,
+        });
+      }
+
+      // Log transaction
+      await base44.asServiceRole.entities.TrixTransaction.create({
+        user_email: user.email, type: 'purchase', amount: -shopItem.price_trix,
+        description: `Achat cosmétique: ${shopItem.name} (-${shopItem.price_trix} Trix)`,
+      });
+
+      return Response.json({ success: true, newBalance });
+    }
+
     // ---- createCheckout (user) ----
     if (action === 'createCheckout') {
       const user = await base44.auth.me();

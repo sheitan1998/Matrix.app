@@ -32,7 +32,7 @@ export default async function(req: Request): Promise<Response> {
     });
   } catch (err) {
     console.error("Moderation error:", err);
-    // Fail safe — if moderation service is down, allow the image
-    return Response.json({ safe: true, reason: "" });
+    // Fail closed — if moderation service is down, reject the image
+    return Response.json({ safe: false, reason: "Le service de modération est indisponible. Réessayez plus tard." });
   }
 }

@@ -51,24 +51,15 @@ export default function BoutiqueNexus() {
     if (!user) return;
     setLoading(`trix_${pack.id}`);
     try {
-      const balance = user.trix_balance || 0;
-      if (balance < pack.trixPrice) {
-        toast.error("Solde Trix insuffisant");
-        return;
+      const res = await base44.functions.invoke("stripePayment", { action: "buyFlashPackWithTrix", itemId: pack.id });
+      if (res?.data?.success) {
+        checkUserAuth();
+        toast.success(`${pack.label} acheté ! (${pack.count} boosts Flash)`);
+      } else {
+        toast.error(res?.data?.error || "Solde Trix insuffisant");
       }
-      const newBalance = balance - pack.trixPrice;
-      const newFlashBoosts = (user.flash_boosts || 0) + pack.count;
-      await base44.auth.updateMe({ trix_balance: newBalance, flash_boosts: newFlashBoosts });
-      await base44.entities.TrixTransaction.create({
-        user_email: user.email,
-        type: "flash_purchase",
-        amount: -pack.trixPrice,
-        description: `Achat ${pack.label} (-${pack.trixPrice} Trix)`,
-      });
-      checkUserAuth();
-      toast.success(`${pack.label} acheté ! (${pack.count} boosts Flash)`);
-    } catch {
-      toast.error("Erreur lors de l'achat");
+    } catch (e) {
+      toast.error(e?.message || "Erreur lors de l'achat");
     }
     setLoading(null);
   };

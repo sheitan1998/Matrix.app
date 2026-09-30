@@ -20,7 +20,21 @@ export default async function(req: Request): Promise<Response> {
       const servers = await base44.asServiceRole.entities.Server.list('-created_date', 200);
       const found = servers.find(s => s.invite_code === inviteCode);
       if (!found) return Response.json({ error: 'Not found' }, { status: 404 });
-      return Response.json(found);
+      // Return only public fields needed for the invite page
+      return Response.json({
+        id: found.id,
+        name: found.name,
+        description: found.description,
+        icon_emoji: found.icon_emoji,
+        icon_url: found.icon_url,
+        banner_url: found.banner_url,
+        banner_color: found.banner_color,
+        visual_theme: found.visual_theme,
+        theme: found.theme,
+        is_public: found.is_public,
+        members_count: found.members_count,
+        boosts: found.boosts,
+      });
     }
 
     const user = await base44.auth.me();
@@ -123,12 +137,13 @@ export default async function(req: Request): Promise<Response> {
 
         if (method === 'trix') {
           const TRIX_BOOST_COST = 200;
-          const userTrix = user.trix_balance || 0;
+          const freshUser = await base44.asServiceRole.entities.User.get(user.id);
+          const userTrix = freshUser?.trix_balance || 0;
           if (userTrix < TRIX_BOOST_COST) {
             return Response.json({ error: 'Trix insuffisants (200 requis)', balance: userTrix, cost: TRIX_BOOST_COST }, { status: 400 });
           }
           const newBalance = userTrix - TRIX_BOOST_COST;
-          await base44.auth.updateMe({ trix_balance: newBalance });
+          await base44.asServiceRole.entities.User.update(user.id, { trix_balance: newBalance });
 
           const boostUntil = new Date(Date.now() + BOOST_DURATION_HOURS * 60 * 60 * 1000).toISOString();
           const newBoosts = (ad.boosts || 0) + 1;
@@ -137,13 +152,14 @@ export default async function(req: Request): Promise<Response> {
           return Response.json({ success: true, boosts: newBoosts, newBalance });
         }
 
-        const currentFlashBoosts = user.flash_boosts || 0;
+        const freshUserBoost = await base44.asServiceRole.entities.User.get(user.id);
+        const currentFlashBoosts = freshUserBoost?.flash_boosts || 0;
         if (currentFlashBoosts < 1) {
           return Response.json({ error: 'Insufficient Flash Boosts', balance: currentFlashBoosts }, { status: 400 });
         }
 
         const newFlashBoosts = currentFlashBoosts - 1;
-        await base44.auth.updateMe({ flash_boosts: newFlashBoosts });
+        await base44.asServiceRole.entities.User.update(user.id, { flash_boosts: newFlashBoosts });
 
         const boostUntil = new Date(Date.now() + BOOST_DURATION_HOURS * 60 * 60 * 1000).toISOString();
         const newBoosts = (ad.boosts || 0) + 1;
@@ -160,7 +176,8 @@ export default async function(req: Request): Promise<Response> {
         const playerAd = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
         if (!playerAd) return Response.json({ error: 'Ad not found' }, { status: 404 });
 
-        const playerTrix = user.trix_balance || 0;
+        const freshPlayerUser = await base44.asServiceRole.entities.User.get(user.id);
+        const playerTrix = freshPlayerUser?.trix_balance || 0;
 
         if (playerTrix < PLAYER_BOOST_COST) {
           return Response.json({
@@ -171,7 +188,7 @@ export default async function(req: Request): Promise<Response> {
         }
 
         const playerNewBalance = playerTrix - PLAYER_BOOST_COST;
-        await base44.auth.updateMe({ trix_balance: playerNewBalance });
+        await base44.asServiceRole.entities.User.update(user.id, { trix_balance: playerNewBalance });
 
         const playerBoostUntil = new Date(Date.now() + BOOST_DURATION_HOURS * 60 * 60 * 1000).toISOString();
         const playerNewBoosts = (playerAd.boosts || 0) + 1;
@@ -320,8 +337,6 @@ export default async function(req: Request): Promise<Response> {
           success: true,
           user: {
             id: target.id,
-            email: target.email,
-            full_name: target.full_name,
             pseudo: displayPseudo,
             pseudo_tag: target.pseudo_tag || '',
             avatar_url: target.avatar_url || '',
@@ -350,8 +365,6 @@ export default async function(req: Request): Promise<Response> {
             }
             return {
               id: u.id,
-              email: u.email,
-              full_name: u.full_name || '',
               pseudo: displayPseudo,
               avatar_url: u.avatar_url || '',
               last_seen: u.last_seen || '',
@@ -381,8 +394,6 @@ export default async function(req: Request): Promise<Response> {
             }
             return {
               id: u.id,
-              email: u.email,
-              full_name: u.full_name || '',
               pseudo: displayPseudo,
               avatar_url: u.avatar_url || '',
               last_seen: u.last_seen || '',
@@ -681,7 +692,8 @@ export default async function(req: Request): Promise<Response> {
           return Response.json({ error: 'Ce serveur a atteint le niveau maximum de boosts (30)' }, { status: 400 });
         }
 
-        const currentFlashBoosts = user.flash_boosts || 0;
+        const freshBoostUser = await base44.asServiceRole.entities.User.get(user.id);
+        const currentFlashBoosts = freshBoostUser?.flash_boosts || 0;
         if (currentFlashBoosts < 1) {
           return Response.json({
             error: 'Tu n\'as pas de boost Flash. Va à la Boutique Nexus pour en acheter.',
@@ -691,7 +703,7 @@ export default async function(req: Request): Promise<Response> {
 
         // Deduct 1 flash boost from user
         const newFlashBoosts = currentFlashBoosts - 1;
-        await base44.auth.updateMe({ flash_boosts: newFlashBoosts });
+        await base44.asServiceRole.entities.User.update(user.id, { flash_boosts: newFlashBoosts });
 
         // Increment server boost count
         const newBoosts = currentBoosts + 1;

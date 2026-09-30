@@ -300,9 +300,11 @@ export default async function(req: Request): Promise<Response> {
       }
 
       // ---- customer.subscription.created / updated ----
+      // Only updates VIP status (is_vip, vip_until, vip_tier). Token/boost/XP credits
+      // are handled exclusively in checkout.session.completed (with idempotency) to
+      // prevent re-crediting on every subscription update (payment method change, etc.)
       if ((eventType === 'customer.subscription.created' || eventType === 'customer.subscription.updated') && data) {
         const userId = data.metadata?.user_id;
-        const userEmail = data.metadata?.user_email;
         const planId = data.metadata?.plan || 'monthly';
         const plan = VIP_PLANS[planId] || VIP_PLANS.monthly;
         if (userId) {
@@ -312,49 +314,14 @@ export default async function(req: Request): Promise<Response> {
 
           const isActive = data.status === 'active' || data.status === 'trialing';
 
-          // Credit tokens + XP on renewal (when status transitions to active)
-          if (isActive) {
-            const target = await base44.asServiceRole.entities.User.get(userId);
-            if (target) {
-              const currentTokens = target.nexus_tokens || 0;
-              const newTokens = currentTokens + plan.tokens;
-              const newFlashBoosts = (target.flash_boosts || 0) + (plan.flashBoosts || 0);
-              await base44.asServiceRole.entities.User.update(userId, {
-                is_vip: true,
-                vip_until: vipUntil,
-                vip_tier: plan.tier,
-                nexus_tokens: newTokens,
-                flash_boosts: newFlashBoosts,
-                stripe_customer_id: data.customer || undefined,
-              });
-
-              // Credit XP bonus
-              const progressRecords = await base44.asServiceRole.entities.UserProgress.filter({ user_email: userEmail });
-              if (progressRecords.length > 0) {
-                const p = progressRecords[0];
-                const newXp = (p.xp || 0) + (plan.xpBonus * 100);
-                const newTotalXp = (p.total_xp || 0) + (plan.xpBonus * 100);
-                await base44.asServiceRole.entities.UserProgress.update(p.id, {
-                  xp: newXp,
-                  total_xp: newTotalXp,
-                });
-              }
-
-              await base44.asServiceRole.entities.TrixTransaction.create({
-                user_email: userEmail,
-                type: 'vip_renewal',
-                amount: plan.tokens,
-                description: `Renouvellement ${plan.label} - ${plan.tokens} jetons + ${plan.flashBoosts} boosts Flash + ${plan.xpBonus}% XP bonus`,
-              });
-            }
-          } else {
-            await base44.asServiceRole.entities.User.update(userId, {
-              is_vip: isActive,
-              vip_until: vipUntil,
-              stripe_customer_id: data.customer || undefined,
-            });
-          }
-          console.log('[stripePayment] VIP updated:', userId, 'status:', data.status, 'plan:', planId);
+          // Only update VIP status — do NOT credit tokens/boosts/XP here
+          await base44.asServiceRole.entities.User.update(userId, {
+            is_vip: isActive,
+            vip_until: vipUntil,
+            vip_tier: isActive ? plan.tier : undefined,
+            stripe_customer_id: data.customer || undefined,
+          });
+          console.log('[stripePayment] VIP status updated:', userId, 'status:', data.status, 'plan:', planId);
         }
         return Response.json({ received: true });
       }
@@ -640,6 +607,36 @@ export default async function(req: Request): Promise<Response> {
       }
 
       return Response.json({ error: 'Unknown session type' }, { status: 400 });
+    }
+
+    // ---- buyFlashPackWithTrix (server-side balance verification) ----
+    if (action === 'buyFlashPackWithTrix') {
+      const { itemId } = body;
+      const item = itemId ? NEXUS_ITEMS[itemId] : null;
+      if (!item) return Response.json({ error: 'Article invalide' }, { status: 400 });
+
+      // Re-fetch user with asServiceRole for authoritative balance
+      const freshUser = await base44.asServiceRole.entities.User.get(user.id);
+      const balance = freshUser?.trix_balance || 0;
+      if (balance < item.trixPrice) {
+        return Response.json({ error: 'Solde Trix insuffisant' }, { status: 400 });
+      }
+
+      const newBalance = balance - item.trixPrice;
+      const newFlashBoosts = (freshUser?.flash_boosts || 0) + item.count;
+      await base44.asServiceRole.entities.User.update(user.id, {
+        trix_balance: newBalance,
+        flash_boosts: newFlashBoosts,
+      });
+
+      await base44.asServiceRole.entities.TrixTransaction.create({
+        user_email: user.email,
+        type: 'flash_purchase',
+        amount: -item.trixPrice,
+        description: `Achat ${item.label} (-${item.trixPrice} Trix)`,
+      });
+
+      return Response.json({ success: true, newBalance, newFlashBoosts });
     }
 
     // ---- createDonation ----

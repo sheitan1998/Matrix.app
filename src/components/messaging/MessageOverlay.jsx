@@ -125,10 +125,10 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
         setFreshUsers(map);
         // Auto-select preselected contact if provided
         if (preselectedEmail) {
-          const preselected = (res?.data?.users || []).find(u => u.email === preselectedEmail);
-          if (preselected) {
-            const friendRec = contacts.find(f => f.friend_user_id === preselected.id);
-            if (friendRec) setSelectedContact(friendRec);
+          const friendRec = contacts.find(f => f.friend_email?.toLowerCase() === preselectedEmail.toLowerCase());
+          if (friendRec) {
+            const preselected = (res?.data?.users || []).find(u => u.id === friendRec.friend_user_id);
+            if (preselected) setSelectedContact(friendRec);
           }
         }
       })
@@ -682,6 +682,7 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
       {profileUserId && (
         <UserProfilePopup
           userId={profileUserId}
+          userEmail={selectedInfo?.email}
           open={!!profileUserId}
           onClose={() => setProfileUserId(null)}
           onOpenDm={(contact) => {
