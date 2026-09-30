@@ -10,6 +10,7 @@ import { useProgression } from "@/context/ProgressionContext";
 import UserProfilePopup from "@/components/profile/UserProfilePopup";
 import VoiceRecorder from "@/components/chat/VoiceRecorder";
 import VoiceMessagePlayer from "@/components/chat/VoiceMessagePlayer";
+import { stripPseudoTag } from "@/lib/format";
 
 const EMOJI_LIST = ["😀","😂","🥰","😎","🤔","😢","😡","👍","👎","❤️","🔥","🎉","🎮","🏆","✨","💎","🚀","💯","🤣","😍","🤝","👏","🙌","💀","🫡","😴","🤯","🥳","😱","🤩"];
 
@@ -55,6 +56,31 @@ export default function ServerChat({ server, channel, theme, user }) {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
+
+  // Fetch fresh user data (pseudo, avatar) for all message authors
+  const authorEmails = [...new Set(messages.map((m) => m.author_email).filter(Boolean))];
+  const { data: authorData = [] } = useQuery({
+    queryKey: ["chat-authors", authorEmails.join(",")],
+    queryFn: () =>
+      base44.functions.invoke("serverSearch", {
+        action: "getUsersByEmails",
+        emails: authorEmails,
+      }),
+    enabled: authorEmails.length > 0,
+    refetchInterval: 30000,
+    select: (res) => res?.data?.users || [],
+  });
+
+  // Build email → user data map
+  const authorMap = {};
+  (authorData || []).forEach((u) => {
+    if (u.email) authorMap[u.email.toLowerCase()] = u;
+  });
+
+  const resolveAuthorName = (msg) => {
+    const fresh = authorMap[(msg.author_email || "").toLowerCase()];
+    return stripPseudoTag(fresh?.pseudo) || stripPseudoTag(fresh?.full_name) || stripPseudoTag(msg.author_name) || msg.author_email || "Utilisateur";
+  };
 
   const settings = channel.settings || {};
   const canSendMessages = settings.send_messages !== false;
@@ -265,15 +291,15 @@ export default function ServerChat({ server, channel, theme, user }) {
             className={cn("flex gap-3 group relative", msg.isContinuation ? "mt-0.5" : "mt-3")}
             onContextMenu={(e) => handleContextMenu(e, msg)}>
             {!msg.isContinuation ? (
-              <NitroAvatar url={msg.author_avatar} name={msg.author_name} size="sm" className="mt-0.5 shrink-0" />
+              <NitroAvatar url={authorMap[(msg.author_email || "").toLowerCase()]?.avatar_url || msg.author_avatar} name={resolveAuthorName(msg)} size="sm" className="mt-0.5 shrink-0" />
             ) : <div className="w-7 shrink-0" />}
             <div className="flex-1 min-w-0">
               {!msg.isContinuation && (
                 <div className="flex items-baseline gap-2 mb-0.5">
                   <button
                     onClick={() => setProfileUser({ email: msg.author_email })}
-                    className="text-sm font-bold text-white hover:underline">
-                    {msg.author_name || msg.author_email}
+                    className="text-sm font-bold text-white hover:underline truncate">
+                    {resolveAuthorName(msg)}
                   </button>
                   <span className="text-[10px] text-muted-foreground">
                     {format(new Date(msg.created_date), "HH:mm")}

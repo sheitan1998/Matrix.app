@@ -90,47 +90,43 @@ export default function MembersList({ server, theme, currentUserEmail, onOpenDm 
                       className="relative shrink-0 tap-sm" disabled={isMe}>
                       <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center text-xs font-bold text-white"
                         style={{ background: isOwner ? "#f59e0b30" : accent + "30", border: `1.5px solid ${isOwner ? "#f59e0b" : accent}80` }}>
-                        {m.user_avatar ?
-                          <img src={m.user_avatar} className="w-full h-full object-cover" alt="" /> :
-                          <span>{(m.user_name || "?")[0].toUpperCase()}</span>
+                        {(freshUser?.avatar_url || m.user_avatar) ?
+                          <img src={freshUser?.avatar_url || m.user_avatar} className="w-full h-full object-cover" alt="" /> :
+                          <span>{(stripPseudoTag(freshUser?.pseudo) || m.user_name || "?")[0].toUpperCase()}</span>
                         }
                       </div>
                       <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border border-black"
                         style={{ background: online ? "#44ff88" : "#444" }} />
                     </button>
 
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1">
+                    <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                      <div className="flex items-center gap-1 min-w-0">
                         {isOwner && <Crown className="w-2.5 h-2.5 shrink-0" style={{ color: "#f59e0b" }} />}
                         {!isOwner && RoleIcon && <RoleIcon className="w-2.5 h-2.5 shrink-0" style={{ color: roleInfo.color }} />}
                         <button onClick={() => !isMe && setProfileEmail(m.user_email)} disabled={isMe}
-                          className="text-[10px] font-semibold text-white/80 truncate leading-none hover:underline disabled:cursor-default">
-                          {stripPseudoTag(m.user_name) || m.user_email?.split("@")[0]}
+                          className="text-[10px] font-semibold text-white/80 truncate leading-tight hover:underline disabled:cursor-default min-w-0">
+                          <span className="truncate">{stripPseudoTag(freshUser?.pseudo) || stripPseudoTag(freshUser?.full_name) || stripPseudoTag(m.user_name) || m.user_email?.split("@")[0]}</span>
                           {isMe && " (toi)"}
                         </button>
                       </div>
-                      {/* Activity status line (Discord-style) */}
-                      {online && freshUser?.custom_status ? (
-                        <p className="text-[8px] truncate leading-none mt-0.5 flex items-center gap-0.5"
-                          style={{ color: "#c084fc" }}>
-                          <span className="text-[8px]">{getActivityIcon("custom")}</span>
-                          <span className="truncate">{freshUser.custom_status}</span>
-                        </p>
-                      ) : online && activity ? (
-                        <p className="text-[8px] truncate leading-none mt-0.5 flex items-center gap-0.5"
-                          style={{ color: accent + "aa" }}>
-                          <span className="text-[8px]">{getActivityIcon(activityType)}</span>
-                          <span className="truncate">{activity}</span>
-                        </p>
-                      ) : !online ? (
-                        <p className="text-[8px] text-white/20 truncate leading-none mt-0.5">Hors ligne</p>
-                      ) : null}
-                      {customRole && !activity && (
-                        <p className="text-[9px] truncate leading-none mt-0.5"
-                          style={{ color: accent + "cc" }}>
-                          {customRole}
-                        </p>
-                      )}
+                      {/* Single status line — priority: custom_status > activity > customRole > offline */}
+                      <p className="text-[9px] truncate leading-tight flex items-center gap-0.5 min-w-0">
+                        {online && freshUser?.custom_status ? (
+                          <>
+                            <span className="shrink-0">{getActivityIcon("custom")}</span>
+                            <span className="truncate" style={{ color: "#c084fc" }}>{freshUser.custom_status}</span>
+                          </>
+                        ) : online && activity ? (
+                          <>
+                            <span className="shrink-0">{getActivityIcon(activityType)}</span>
+                            <span className="truncate" style={{ color: accent + "aa" }}>{activity}</span>
+                          </>
+                        ) : online && customRole ? (
+                          <span className="truncate" style={{ color: accent + "cc" }}>{customRole}</span>
+                        ) : !online ? (
+                          <span className="text-white/20 truncate">Hors ligne</span>
+                        ) : null}
+                      </p>
                     </div>
                     {!isMe && onOpenDm && (
                       <button
