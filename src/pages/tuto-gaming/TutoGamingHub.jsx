@@ -57,7 +57,7 @@ export default function TutoGamingHub() {
     ...games.map(applyAsset),
     ...FEATURED_GAMES.map(applyAsset),
     ...COMING_SOON_GAMES.map((g) => ({ ...g, is_active: false })),
-  ];
+  ].filter((g, i, arr) => arr.findIndex((x) => x.slug === g.slug) === i);
   const filteredGames = allDisplayGames.filter((g) =>
     g.name.toLowerCase().includes(search.toLowerCase())
   );
