@@ -458,6 +458,7 @@ export default function Community() {
               setActiveChannel={setActiveChannel}
               canManage={canManageChannels}
               theme={theme}
+              serverId={selectedServer?.id}
               onReorder={reorderChannels}
               onRemove={removeChannel}
               onContextMenu={(e) => {

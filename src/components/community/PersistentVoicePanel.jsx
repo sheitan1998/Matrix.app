@@ -1,18 +1,27 @@
-import React, { useState } from "react";
-import { createPortal } from "react-dom";
-import { Mic, MicOff, Volume2, VolumeX, PhoneOff, Monitor, MonitorOff, Users, ChevronUp, ChevronDown } from "lucide-react";
+import React, { useState, useRef, useEffect, createPortal } from "react";
+import { Mic, MicOff, Volume2, VolumeX, PhoneOff, Monitor, MonitorOff, ChevronUp, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useVoice } from "@/context/VoiceContext";
 
 export default function PersistentVoicePanel() {
   const {
     connected, channel, server, theme,
-    micOn, speakerOn, sharing, participants,
+    micOn, speakerOn, sharing, screenStream, participants,
     toggleMic, toggleSpeaker,
     startScreenShare, stopScreenShare,
-    disconnect, videoRef,
+    disconnect,
   } = useVoice();
   const [expanded, setExpanded] = useState(true);
+  const videoRef = useRef(null);
+
+  // Attach screen stream to video element once it's mounted
+  useEffect(() => {
+    const el = videoRef.current;
+    if (el && screenStream) {
+      el.srcObject = screenStream;
+      el.play().catch(() => {});
+    }
+  }, [screenStream, sharing, expanded]);
 
   if (!connected) return null;
 
@@ -43,7 +52,13 @@ export default function PersistentVoicePanel() {
           {sharing && (
             <div className="px-2 pt-2">
               <div className="rounded-lg overflow-hidden bg-black" style={{ border: `1px solid ${accent}40` }}>
-                <video ref={videoRef} autoPlay muted className="w-full max-h-32 object-contain" />
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full max-h-32 object-contain"
+                />
               </div>
             </div>
           )}

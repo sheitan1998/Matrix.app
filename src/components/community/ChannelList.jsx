@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Hash, Volume2, Megaphone, MessageSquare, Folder, ChevronDown, ChevronRight, Trash2, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -11,8 +13,21 @@ const CHANNEL_TYPES = [
   { key: "category", icon: Folder },
 ];
 
-export default function ChannelList({ channels, activeChannel, setActiveChannel, canManage, theme, onReorder, onRemove, onContextMenu }) {
+export default function ChannelList({ channels, activeChannel, setActiveChannel, canManage, theme, onReorder, onRemove, onContextMenu, serverId }) {
   const [collapsed, setCollapsed] = useState({});
+
+  // Fetch voice room participants for this server
+  const { data: voiceRooms = [] } = useQuery({
+    queryKey: ["voice-rooms-server", serverId],
+    queryFn: () => base44.entities.VoiceRoom.filter({ server_id: serverId }, "-created_date", 50),
+    enabled: !!serverId,
+    refetchInterval: 5000,
+  });
+
+  const getParticipantsForChannel = (channelId) => {
+    const room = voiceRooms.find((r) => r.channel_id === channelId);
+    return room?.participants || [];
+  };
 
   const allChannels = channels?.length ? channels : [];
   const categories = allChannels.filter(c => c.type === "category");
@@ -70,6 +85,7 @@ export default function ChannelList({ channels, activeChannel, setActiveChannel,
   const renderChannel = (ch, index) => {
     const TypeIcon = CHANNEL_TYPES.find(t => t.key === ch.type)?.icon || Hash;
     const isActive = activeChannel?.id === ch.id;
+    const voiceParticipants = ch.type === "voice" ? getParticipantsForChannel(ch.id) : [];
     return (
       <Draggable key={ch.id} draggableId={ch.id} index={index} isDragDisabled={!canManage}>
         {(provided, snapshot) => (
@@ -77,7 +93,7 @@ export default function ChannelList({ channels, activeChannel, setActiveChannel,
             ref={provided.innerRef}
             {...provided.draggableProps}
             className={cn(
-              "flex items-center gap-1.5 px-2 py-1.5 rounded-xl cursor-pointer group transition",
+              "rounded-xl cursor-pointer group transition",
               isActive ? "text-white" : "text-muted-foreground hover:text-white",
               snapshot.isDragging && "ring-1 ring-primary/50 bg-secondary"
             )}
@@ -87,21 +103,45 @@ export default function ChannelList({ channels, activeChannel, setActiveChannel,
             }}
             onClick={() => setActiveChannel(ch)}
           >
-            {canManage && (
-              <span {...provided.dragHandleProps} className="opacity-0 group-hover:opacity-100 transition cursor-grab active:cursor-grabbing shrink-0">
-                <GripVertical className="w-3 h-3" />
-              </span>
-            )}
-            <TypeIcon className="w-3.5 h-3.5 shrink-0" />
-            <span className="text-xs font-semibold truncate flex-1">{ch.name}</span>
-            {ch.is_nsfw && <span className="text-[8px] font-bold text-red-400">NSFW</span>}
-            {canManage && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onRemove(ch.id); }}
-                className="opacity-0 group-hover:opacity-100 transition hover:text-destructive shrink-0"
-              >
-                <Trash2 className="w-3 h-3" />
-              </button>
+            <div className="flex items-center gap-1.5 px-2 py-1.5">
+              {canManage && (
+                <span {...provided.dragHandleProps} className="opacity-0 group-hover:opacity-100 transition cursor-grab active:cursor-grabbing shrink-0">
+                  <GripVertical className="w-3 h-3" />
+                </span>
+              )}
+              <TypeIcon className="w-3.5 h-3.5 shrink-0" />
+              <span className="text-xs font-semibold truncate flex-1">{ch.name}</span>
+              {ch.is_nsfw && <span className="text-[8px] font-bold text-red-400">NSFW</span>}
+              {voiceParticipants.length > 0 && (
+                <span className="text-[9px] font-bold text-green-400 shrink-0">{voiceParticipants.length}</span>
+              )}
+              {canManage && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onRemove(ch.id); }}
+                  className="opacity-0 group-hover:opacity-100 transition hover:text-destructive shrink-0"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+            {/* Voice participants list */}
+            {voiceParticipants.length > 0 && (
+              <div className="ml-5 mr-2 mb-1 space-y-0.5">
+                {voiceParticipants.map((p, i) => (
+                  <div key={i} className="flex items-center gap-1.5 py-0.5">
+                    <div className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white shrink-0 overflow-hidden"
+                      style={{ background: p.avatar ? "transparent" : theme.accent + "40" }}>
+                      {p.avatar ? (
+                        <img src={p.avatar} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        (p.name || "?")[0].toUpperCase()
+                      )}
+                    </div>
+                    <span className="text-[10px] text-white/50 truncate flex-1">{p.name}</span>
+                    {!p.micOn && <span className="text-[8px]">🔇</span>}
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         )}

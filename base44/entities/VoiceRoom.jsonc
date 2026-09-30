@@ -5,6 +5,14 @@
     "name": {
       "type": "string"
     },
+    "server_id": {
+      "type": "string",
+      "description": "ID du serveur (si salon vocal de serveur)"
+    },
+    "channel_id": {
+      "type": "string",
+      "description": "ID du canal vocal (si salon vocal de serveur)"
+    },
     "owner_email": {
       "type": "string"
     },
@@ -14,6 +22,29 @@
     "is_public": {
       "type": "boolean",
       "default": true
+    },
+    "participants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "avatar": {
+            "type": "string"
+          },
+          "micOn": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      },
+      "default": [],
+      "description": "Liste des participants connectes au salon vocal"
     },
     "participants_count": {
       "type": "number",
@@ -32,33 +63,8 @@
     "create": {
       "data.owner_email": "{{user.email}}"
     },
-    "read": {
-      "$or": [
-        {
-          "data.is_public": true
-        },
-        {
-          "data.owner_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "update": {
-      "$or": [
-        {
-          "data.owner_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
+    "read": {},
+    "update": {},
     "delete": {
       "$or": [
         {

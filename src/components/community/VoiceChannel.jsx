@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import { Mic, MicOff, Volume2, VolumeX, PhoneOff, Monitor, MonitorOff, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -7,13 +7,23 @@ import { useVoice } from "@/context/VoiceContext";
 export default function VoiceChannel({ channel, server, theme, user }) {
   const {
     connected, channel: activeChannel,
-    micOn, speakerOn, sharing, participants,
+    micOn, speakerOn, sharing, screenStream, participants,
     connect, disconnect, toggleMic, toggleSpeaker,
-    startScreenShare, stopScreenShare, videoRef,
+    startScreenShare, stopScreenShare,
   } = useVoice();
+  const videoRef = useRef(null);
 
   const isActive = connected && activeChannel?.id === channel.id;
   const accent = theme?.accent || "#00ff41";
+
+  // Attach screen stream to video element once it's mounted
+  useEffect(() => {
+    const el = videoRef.current;
+    if (el && screenStream) {
+      el.srcObject = screenStream;
+      el.play().catch(() => {});
+    }
+  }, [screenStream, sharing]);
 
   // Not connected state — show join button
   if (!isActive) {
@@ -62,7 +72,13 @@ export default function VoiceChannel({ channel, server, theme, user }) {
       <div className="flex-1 overflow-y-auto p-6">
         {sharing && (
           <div className="mb-4 rounded-2xl overflow-hidden border" style={{ borderColor: accent + "40" }}>
-            <video ref={videoRef} autoPlay muted className="w-full rounded-2xl bg-black" />
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="w-full rounded-2xl bg-black"
+            />
             <div className="px-3 py-1.5 text-xs font-bold flex items-center gap-2" style={{ color: accent, background: accent + "10" }}>
               <Monitor className="w-3.5 h-3.5" /> Partage d'écran en cours
             </div>
