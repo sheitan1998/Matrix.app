@@ -1,8 +1,9 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { Mic, MicOff, Volume2, VolumeX, PhoneOff, Monitor, MonitorOff, ChevronUp, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useVoice } from "@/context/VoiceContext";
+import ScreenShareView from "@/components/community/ScreenShareView";
 
 export default function PersistentVoicePanel() {
   const {
@@ -13,16 +14,6 @@ export default function PersistentVoicePanel() {
     disconnect,
   } = useVoice();
   const [expanded, setExpanded] = useState(true);
-  const videoRef = useRef(null);
-
-  // Attach screen stream to video element once it's mounted
-  useEffect(() => {
-    const el = videoRef.current;
-    if (el && screenStream) {
-      el.srcObject = screenStream;
-      el.play().catch(() => {});
-    }
-  }, [screenStream, sharing, expanded]);
 
   if (!connected) return null;
 
@@ -50,17 +41,9 @@ export default function PersistentVoicePanel() {
       {expanded && (
         <>
           {/* Screen share preview */}
-          {sharing && (
+          {sharing && screenStream && (
             <div className="px-2 pt-2">
-              <div className="rounded-lg overflow-hidden bg-black" style={{ border: `1px solid ${accent}40` }}>
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full max-h-32 object-contain"
-                />
-              </div>
+              <ScreenShareView stream={screenStream} accent={accent} onStop={stopScreenShare} compact />
             </div>
           )}
 
