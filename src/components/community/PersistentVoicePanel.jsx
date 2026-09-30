@@ -1,4 +1,5 @@
-import React, { useState, createPortal } from "react";
+import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { Mic, MicOff, Volume2, VolumeX, PhoneOff, Monitor, MonitorOff, Users, ChevronUp, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useVoice } from "@/context/VoiceContext";
