@@ -23,6 +23,7 @@ export function VoiceProvider({ children }) {
   const localStreamRef = useRef(null);
   const screenStreamRef = useRef(null);
   const [showShareModal, setShowShareModal] = useState(false);
+  const lastSpeakingSynced = useRef(false);
 
   // Speaking detection on local mic stream
   const { speaking: localSpeaking } = useSpeakingDetection(
@@ -30,22 +31,7 @@ export function VoiceProvider({ children }) {
     { threshold: 0.06, interval: 80 }
   );
 
-  // Track last speaking state to avoid redundant DB writes
-  const lastSpeakingSynced = useRef(false);
-
-  // Sync speaking state to participants list (local) and to DB (debounced)
-  useEffect(() => {
-    setParticipants((prev) =>
-      prev.map((p) => (p.isSelf ? { ...p, speaking: localSpeaking } : p))
-    );
-    // Only sync to DB when speaking state actually changes
-    if (voiceRoomId && user?.email && localSpeaking !== lastSpeakingSynced.current) {
-      lastSpeakingSynced.current = localSpeaking;
-      updateParticipantInDB(voiceRoomId, user.email, { speaking: localSpeaking });
-    }
-  }, [localSpeaking, voiceRoomId, user, updateParticipantInDB]);
-
-  // Sync participant micOn to DB (debounced via state)
+  // Sync participant state to DB
   const updateParticipantInDB = useCallback(async (roomId, email, patch) => {
     try {
       const room = await base44.entities.VoiceRoom.get(roomId);
@@ -70,6 +56,17 @@ export function VoiceProvider({ children }) {
     });
     return unsubscribe;
   }, [voiceRoomId]);
+
+  // Sync speaking state to participants list (local) and to DB
+  useEffect(() => {
+    setParticipants((prev) =>
+      prev.map((p) => (p.isSelf ? { ...p, speaking: localSpeaking } : p))
+    );
+    if (voiceRoomId && user?.email && localSpeaking !== lastSpeakingSynced.current) {
+      lastSpeakingSynced.current = localSpeaking;
+      updateParticipantInDB(voiceRoomId, user.email, { speaking: localSpeaking });
+    }
+  }, [localSpeaking, voiceRoomId, user, updateParticipantInDB]);
 
   // Cleanup on unmount
   useEffect(() => {
