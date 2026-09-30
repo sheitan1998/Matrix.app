@@ -19,6 +19,7 @@ export function VoiceProvider({ children }) {
   const [sharing, setSharing] = useState(false);
   const [screenStream, setScreenStream] = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showSourcePicker, setShowSourcePicker] = useState(false);
   const [participants, setParticipants] = useState([]);
   const [voiceRoomId, setVoiceRoomId] = useState(null);
   const localStreamRef = useRef(null);
@@ -277,29 +278,31 @@ export function VoiceProvider({ children }) {
     setShowShareModal(false);
   }, [stopScreenShare]);
 
-  // Click "Partager l'écran": the native browser picker opens immediately. Only after the user
-  // picks a source do we receive the stream, inject it, and reveal the preview modal.
-  const startScreenShare = useCallback(async () => {
+  // Click "Partager l'écran": open the custom source picker (Discord-style). The user chooses
+  // a source type there, which triggers getDisplayMedia pre-constrained to that surface.
+  const startScreenShare = useCallback(() => {
     if (!navigator.mediaDevices?.getDisplayMedia) {
       toast.error("Le partage d'écran n'est pas supporté par ce navigateur.");
       return;
     }
-    try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" }, audio: true });
-      applyScreenStream(stream);
-      setShowShareModal(true);
-    } catch (e) {
-      if (e?.name !== "NotAllowedError" && e?.name !== "AbortError") {
-        toast.error("Erreur lors du partage d'écran.");
-      }
-    }
+    setShowSourcePicker(true);
+  }, []);
+
+  // Called when the user picks a source type in the picker
+  const handleSourcePicked = useCallback((stream) => {
+    setShowSourcePicker(false);
+    applyScreenStream(stream);
+    setShowShareModal(true);
   }, [applyScreenStream]);
+
+  const closeSourcePicker = useCallback(() => setShowSourcePicker(false), []);
 
   const value = {
     connected, channel, server, theme, user,
     micOn, speakerOn, sharing, screenStream, participants: displayParticipants,
     localStreamRef, localSpeaking: micOn && localSpeaking,
     showShareModal, closeShareModal,
+    showSourcePicker, closeSourcePicker, handleSourcePicked,
     connect, disconnect, toggleMic, toggleSpeaker,
     startScreenShare, stopScreenShare,
   };
