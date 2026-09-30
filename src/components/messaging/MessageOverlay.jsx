@@ -10,6 +10,8 @@ import UserProfilePopup from "@/components/profile/UserProfilePopup";
 import VoiceRecorder from "@/components/chat/VoiceRecorder";
 import VoiceMessagePlayer from "@/components/chat/VoiceMessagePlayer";
 import DirectVoiceCall from "@/components/messaging/DirectVoiceCall";
+import IncomingCallNotification from "@/components/messaging/IncomingCallNotification";
+import { useIncomingCall } from "@/hooks/useIncomingCall";
 
 const EMOJI_LIST = ["😀", "😂", "🥰", "😍", "😎", "🤔", "😅", "😭", "😡", "👍", "👎", "❤️", "🔥", "✨", "🎉", "💯", "🤝", "👋", "🙏", "💀", "🤡", "👀", "💪", "🫶", "😴", "🥳", "😇", "🤗", "😌", "🙃"];
 
@@ -40,7 +42,18 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
   const [showEmojis, setShowEmojis] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const [voiceCallActive, setVoiceCallActive] = useState(false);
+  const [incomingCallContact, setIncomingCallContact] = useState(null);
   const messagesEndRef = useRef(null);
+
+  // Incoming call handling — when another user calls us
+  const { incomingCall, acceptCall, declineCall } = useIncomingCall(user, (callData) => {
+    setIncomingCallContact({
+      email: callData.caller_email,
+      name: callData.caller_name,
+      avatar: callData.caller_avatar,
+    });
+    setVoiceCallActive(true);
+  });
 
   // Fetch contacts (accepted friends + DM contacts from DirectMessage records)
   useEffect(() => {
@@ -468,7 +481,22 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
               </div>
               {!isReadOnlyConversation && !voiceCallActive && (
                 <button
-                  onClick={() => setVoiceCallActive(true)}
+                  onClick={async () => {
+                    const c = resolveContact(selectedContact);
+                    try {
+                      await base44.entities.VoiceCallSignal.create({
+                        caller_email: user.email,
+                        caller_name: user.full_name || user.email.split("@")[0],
+                        caller_avatar: user.avatar || "",
+                        recipient_email: c.email || c.friend_email,
+                        recipient_name: c.name,
+                        status: "ringing",
+                      });
+                      setVoiceCallActive(true);
+                    } catch {
+                      toast.error("Impossible de lancer l'appel");
+                    }
+                  }}
                   className="w-9 h-9 rounded-full flex items-center justify-center transition tap-sm shrink-0"
                   style={{ background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)" }}
                   title="Appel vocal"
@@ -526,12 +554,15 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
             {voiceCallActive && (
               <div className="shrink-0" style={{ borderTop: "1px solid rgba(34,197,94,0.2)", background: "rgba(34,197,94,0.05)" }}>
                 <DirectVoiceCall
-                  contactName={resolveContact(selectedContact).name}
-                  contactAvatar={resolveContact(selectedContact).avatar}
-                  onEnd={() => setVoiceCallActive(false)}
+                  contactName={incomingCallContact?.name || resolveContact(selectedContact).name}
+                  contactAvatar={incomingCallContact?.avatar || resolveContact(selectedContact).avatar}
+                  onEnd={() => {
+                    setVoiceCallActive(false);
+                    setIncomingCallContact(null);
+                  }}
                 />
               </div>
-            )}
+              )}
 
             {/* Input */}
             <div className="px-4 py-3 shrink-0 relative" style={{ borderTop: "1px solid rgba(168,85,247,0.1)" }}>
@@ -611,6 +642,13 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
           }}
         />
       )}
+
+      {/* Real-time incoming call notification */}
+      <IncomingCallNotification
+        call={incomingCall}
+        onAccept={acceptCall}
+        onDecline={declineCall}
+      />
     </div>
   );
 }

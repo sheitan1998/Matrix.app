@@ -1,0 +1,85 @@
+{
+  "name": "VoiceCallSignal",
+  "type": "object",
+  "properties": {
+    "caller_email": {
+      "type": "string",
+      "description": "Email de l'appelant"
+    },
+    "caller_name": {
+      "type": "string",
+      "description": "Pseudo de l'appelant"
+    },
+    "caller_avatar": {
+      "type": "string",
+      "description": "Avatar de l'appelant"
+    },
+    "recipient_email": {
+      "type": "string",
+      "description": "Email du destinataire de l'appel"
+    },
+    "recipient_name": {
+      "type": "string",
+      "description": "Pseudo du destinataire"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ringing",
+        "accepted",
+        "declined",
+        "ended",
+        "missed"
+      ],
+      "default": "ringing",
+      "description": "Statut du signal d'appel"
+    }
+  },
+  "required": [
+    "caller_email",
+    "recipient_email",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "data.caller_email": "{{user.email}}"
+        },
+        {
+          "data.recipient_email": "{{user.email}}"
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "data.caller_email": "{{user.email}}"
+        },
+        {
+          "data.recipient_email": "{{user.email}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.caller_email": "{{user.email}}"
+        },
+        {
+          "data.recipient_email": "{{user.email}}"
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.caller_email": "{{user.email}}"
+        },
+        {
+          "data.recipient_email": "{{user.email}}"
+        }
+      ]
+    }
+  }
+}
