@@ -143,14 +143,14 @@ export default function Watch() {
                 </button>
               </div>
 
-              <Button
-                variant="outline"
-                onClick={() => setDonateOpen(true)}
-                className="rounded-full h-10 border-trix/40 text-trix hover:bg-trix/10 hover:text-trix hidden">
-                
-                <Coins className="w-4 h-4 mr-1.5" />
-                TRIX
-              </Button>
+              
+
+
+
+
+
+
+              
 
               <Button variant="secondary" onClick={() => setShareOpen(true)} className="rounded-full h-10">
                 <Share2 className="w-4 h-4 mr-1.5" /> Partager

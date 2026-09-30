@@ -74,17 +74,17 @@ export default function SubscribeButton({ channel, user, onSubscribed }) {
         }
       </Button>
 
-      <Button
-        variant="outline"
-        onClick={() => setTierOpen(true)}
-        className={cn(
-          "rounded-full h-10 px-4 border-trix/40 hover:bg-trix/10 hidden",
-          paidTier ? "bg-trix/15 text-trix" : "text-trix"
-        )}>
-        
-        <Heart className="w-4 h-4 mr-1.5" />
-        {paidTier ? `SUB ${sub.tier.toUpperCase()}` : "Soutenir"}
-      </Button>
+      
+
+
+
+
+
+
+
+
+
+      
 
       <SubTierDialog
         open={tierOpen}
