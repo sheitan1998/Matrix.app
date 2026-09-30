@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Shield, Users, Ticket, AlertTriangle, FileCode, ShoppingBag, BarChart3, Download, Megaphone, Dices, Gamepad2, Flag } from "lucide-react";
+import { ArrowLeft, Shield, Users, Ticket, AlertTriangle, FileCode, ShoppingBag, BarChart3, Download, Megaphone, Dices, Gamepad2, Flag, Sticker } from "lucide-react";
 import HeaderActions from "@/components/layout/HeaderActions";
 import AdminUserList from "@/components/admin/AdminUserList";
 import AdminTicketList from "@/components/admin/AdminTicketList";
@@ -14,6 +14,7 @@ import BroadcastPanel from "@/components/admin/BroadcastPanel";
 import CasinoManager from "@/components/admin/CasinoManager";
 import TutoGamingManager from "@/components/admin/TutoGamingManager";
 import ContentModerationPanel from "@/components/admin/ContentModerationPanel";
+import StickerManager from "@/components/admin/StickerManager";
 
 export default function AdminPanel() {
   const nav = useNavigate();
@@ -83,6 +84,7 @@ export default function AdminPanel() {
     { id: "dashboard", label: "Statistiques", icon: BarChart3 },
     { id: "pages", label: "Pages Dynamiques", icon: FileCode },
     { id: "moderation", label: "Modération", icon: Flag, section: "Modération & Sécurité" },
+    { id: "stickers", label: "Stickers", icon: Sticker },
     { id: "broadcast", label: "Annonces", icon: Megaphone },
   ];
 
@@ -186,6 +188,7 @@ export default function AdminPanel() {
         {tab === "downloads" && <GithubDownloadsDashboard />}
         {tab === "broadcast" && <BroadcastPanel />}
         {tab === "moderation" && <ContentModerationPanel />}
+        {tab === "stickers" && <StickerManager />}
           </div>
         </div>
       </div>

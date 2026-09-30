@@ -13,14 +13,15 @@ import VoiceMessagePlayer from "@/components/chat/VoiceMessagePlayer";
 import { stripPseudoTag } from "@/lib/format";
 import { uploadImageWithToast } from "@/lib/imageModeration";
 import ReportContentModal from "@/components/admin/ReportContentModal";
-import { EMOJI_LIST, isEmojiOnly } from "@/lib/emojiUtils";
+import { isEmojiOnly } from "@/lib/emojiUtils";
+import UnifiedPicker from "@/components/chat/UnifiedPicker";
 
 export default function ServerChat({ server, channel, theme, user }) {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
-  const [showEmojis, setShowEmojis] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
   const [contextMenu, setContextMenu] = useState(null);
   const [editingMsg, setEditingMsg] = useState(null); // { id, content }
   const [profileUser, setProfileUser] = useState(null); // { userId, email }
@@ -155,6 +156,28 @@ export default function ServerChat({ server, channel, theme, user }) {
     }
 
     setInput("");
+    setReplyTo(null);
+    setSending(false);
+    trackActivity("send_message");
+    qc.invalidateQueries({ queryKey });
+  };
+
+  const handleSendMedia = async (url) => {
+    if (!url || sending || !canSendMessages) return;
+    setShowPicker(false);
+    setSending(true);
+    await base44.entities.ServerMessage.create({
+      server_id: server.id,
+      channel_id: channel.id,
+      author_email: user.email,
+      author_name: user.full_name || user.email.split("@")[0],
+      author_avatar: user.animated_avatar || user.avatar_url || "",
+      content: url,
+      type: "text",
+      reply_to_id: replyTo?.id || "",
+      reply_to_name: replyTo?.author_name || "",
+      reply_to_content: replyTo?.content || "",
+    });
     setReplyTo(null);
     setSending(false);
     trackActivity("send_message");
@@ -335,11 +358,15 @@ export default function ServerChat({ server, channel, theme, user }) {
                     )
                   ) : null}
                   {msg.content && msg.content !== msg.file_name && (
-                    <p className={isEmojiOnly(msg.content) ? "text-4xl leading-none" : ""}>{msg.content.split(/(@\S+)/g).map((part, i) =>
-                      part.startsWith("@")
-                        ? <span key={i} className="font-bold px-1 rounded" style={{ color: accent, background: accent + "20" }}>{part}</span>
-                        : <React.Fragment key={i}>{part}</React.Fragment>
-                    )}</p>
+                    /^https?:\/\/.+\.(gif|png|jpg|jpeg|webp)/i.test(msg.content) || msg.content?.includes("giphy.com/media") ? (
+                      <img src={msg.content} alt="" className="max-w-[200px] max-h-[200px] rounded-lg object-contain" />
+                    ) : (
+                      <p className={isEmojiOnly(msg.content) ? "text-4xl leading-none" : ""}>{msg.content.split(/(@\S+)/g).map((part, i) =>
+                        part.startsWith("@")
+                          ? <span key={i} className="font-bold px-1 rounded" style={{ color: accent, background: accent + "20" }}>{part}</span>
+                          : <React.Fragment key={i}>{part}</React.Fragment>
+                      )}</p>
+                    )
                   )}
                 </div>
               )}
@@ -423,15 +450,14 @@ export default function ServerChat({ server, channel, theme, user }) {
             <button onClick={() => setReplyTo(null)} className="text-white/40 hover:text-white"><X className="w-3.5 h-3.5" /></button>
           </div>
         )}
-        {showEmojis && (
-          <div className="absolute bottom-full left-4 mb-2 p-2 rounded-xl grid grid-cols-8 gap-1 z-50 max-h-[220px] overflow-y-auto scrollbar-thin"
-            style={{ background: "hsl(var(--card))", border: "1px solid rgba(255,255,255,0.1)" }}>
-            {EMOJI_LIST.map((emoji) => (
-              <button key={emoji} onClick={() => { setInput(prev => prev + emoji); }}
-                className="text-lg hover:scale-125 transition p-1">{emoji}</button>
-            ))}
-          </div>
-        )}
+        <UnifiedPicker
+          open={showPicker}
+          onClose={() => setShowPicker(false)}
+          accent={accent}
+          onSelectEmoji={(emoji) => setInput(prev => prev + emoji)}
+          onSelectGif={(url) => handleSendMedia(url)}
+          onSelectSticker={(url) => handleSendMedia(url)}
+        />
         <div className="flex items-center gap-2 px-4 rounded-2xl border"
           style={{ borderColor: theme?.border || "hsl(var(--border))", background: "rgba(255,255,255,0.05)" }}>
           <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageUpload} className="hidden" />
@@ -450,9 +476,9 @@ export default function ServerChat({ server, channel, theme, user }) {
               <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : <Paperclip className="w-4 h-4" />}
           </button>
-          <button onClick={() => setShowEmojis(!showEmojis)} disabled={!canSendMessages}
+          <button onClick={() => setShowPicker(!showPicker)} disabled={!canSendMessages}
             className="w-8 h-8 rounded-xl flex items-center justify-center transition text-white/40 hover:text-white disabled:opacity-30"
-            title="Emojis">
+            title="Emojis, GIFs & Stickers">
             <Smile className="w-4 h-4" />
           </button>
           <VoiceRecorder

@@ -13,7 +13,8 @@ import DirectVoiceCall from "@/components/messaging/DirectVoiceCall";
 import IncomingCallNotification from "@/components/messaging/IncomingCallNotification";
 import { useIncomingCall } from "@/hooks/useIncomingCall";
 import ContactSkeletonRow from "@/components/messaging/ContactSkeletonRow";
-import { EMOJI_LIST, isEmojiOnly } from "@/lib/emojiUtils";
+import { isEmojiOnly } from "@/lib/emojiUtils";
+import UnifiedPicker from "@/components/chat/UnifiedPicker";
 
 const SUPPORT_EMAIL = "support@matrix-hub.app";
 const SUPPORT_NAME = "Équipe Matrix";
@@ -41,7 +42,7 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
   const [profilesLoading, setProfilesLoading] = useState(false);
   const [profileFetchDone, setProfileFetchDone] = useState(false);
   const [profileUserId, setProfileUserId] = useState(null);
-  const [showEmojis, setShowEmojis] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const [voiceCallActive, setVoiceCallActive] = useState(false);
   const [incomingCallContact, setIncomingCallContact] = useState(null);
@@ -313,7 +314,7 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
     }
     const content = input.trim();
     setInput("");
-    setShowEmojis(false);
+    setShowPicker(false);
     const tempId = Date.now().toString();
     const senderPseudo = user.pseudo || user.full_name || user.email?.split("@")[0] || "Membre";
     const type = messageType || (attachment ? "voice" : "text");
@@ -355,6 +356,35 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
       await base44.entities.DirectMessage.create(msgData);
     } catch (e) {
       toast.error("Erreur d'envoi du message");
+      setMessages(prev => prev.filter(m => m.id !== tempId));
+    }
+  };
+
+  const handleSendMedia = async (url) => {
+    if (!url || !selectedContact) return;
+    const info = resolveContact(selectedContact);
+    const contactEmail = info.email;
+    if (!contactEmail) { toast.error("Contact en cours de chargement..."); return; }
+    if (isBlocked) { toast.error("Vous ne pouvez pas envoyer de message à cet utilisateur."); return; }
+    setShowPicker(false);
+    const tempId = Date.now().toString();
+    const senderPseudo = user.pseudo || user.full_name || user.email?.split("@")[0] || "Membre";
+    const msgData = {
+      sender_email: user.email,
+      sender_name: senderPseudo,
+      sender_avatar: user.avatar_url || "",
+      recipient_email: contactEmail,
+      recipient_name: info.pseudo || info.name,
+      recipient_avatar: info.avatar,
+      content: url,
+      type: "text",
+      is_read: false,
+    };
+    setMessages(prev => [...prev, { ...msgData, id: tempId, created_date: new Date().toISOString() }]);
+    try {
+      await base44.entities.DirectMessage.create(msgData);
+    } catch {
+      toast.error("Erreur d'envoi du média");
       setMessages(prev => prev.filter(m => m.id !== tempId));
     }
   };
@@ -600,6 +630,8 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
                         >
                           {msg.type === "voice" && msg.file_url ? (
                             <VoiceMessagePlayer src={msg.file_url} accent="#a855f7" transcript={msg.transcript} />
+                          ) : /^https?:\/\/.+\.(gif|png|jpg|jpeg|webp)/i.test(msg.content) || msg.content?.includes("giphy.com/media") ? (
+                            <img src={msg.content} alt="" className="max-w-[200px] max-h-[200px] rounded-lg object-contain" />
                           ) : (
                             <p className={`text-sm text-white break-words ${isEmojiOnly(msg.content) ? "text-4xl leading-none" : ""}`}>{msg.content}</p>
                           )}
@@ -650,16 +682,17 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
                   {isBlocked && (
                     <p className="text-xs text-red-400 mb-2 text-center">⛔ Vous ne pouvez pas envoyer de message à cet utilisateur (bloqué).</p>
                   )}
-                  {showEmojis && (
-                    <div className="absolute bottom-full left-4 mb-2 p-2 rounded-xl flex flex-wrap gap-1 max-w-[280px] max-h-[200px] overflow-y-auto scrollbar-thin" style={{ background: "#13101a", border: "1px solid rgba(168,85,247,0.2)" }}>
-                      {EMOJI_LIST.map(emoji => (
-                        <button key={emoji} onClick={() => setInput(prev => prev + emoji)} className="w-7 h-7 text-lg hover:bg-white/10 rounded transition tap-sm">{emoji}</button>
-                      ))}
-                    </div>
-                  )}
+                  <UnifiedPicker
+                    open={showPicker}
+                    onClose={() => setShowPicker(false)}
+                    accent="#a855f7"
+                    onSelectEmoji={(emoji) => setInput(prev => prev + emoji)}
+                    onSelectGif={(url) => handleSendMedia(url)}
+                    onSelectSticker={(url) => handleSendMedia(url)}
+                  />
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => setShowEmojis(!showEmojis)}
+                      onClick={() => setShowPicker(!showPicker)}
                       className="w-10 h-10 rounded-xl flex items-center justify-center text-white/60 hover:text-white transition shrink-0 tap-sm"
                       style={{ background: "rgba(255,255,255,0.04)" }}
                     >
