@@ -11,9 +11,9 @@ export default function VoiceChannel({ channel, server, theme, user }) {
   const {
     connected, channel: activeChannel,
     micOn, speakerOn, sharing, screenStream, participants,
-    showShareModal, openShareModal, closeShareModal, handleShareStart,
+    showShareModal, closeShareModal,
     connect, disconnect, toggleMic, toggleSpeaker,
-    stopScreenShare,
+    startScreenShare, stopScreenShare,
   } = useVoice();
   const isActive = connected && activeChannel?.id === channel.id;
   const accent = theme?.accent || "#00ff41";
@@ -89,7 +89,7 @@ export default function VoiceChannel({ channel, server, theme, user }) {
           </button>
           {isSharing ? (
             <>
-              <button onClick={openShareModal}
+              <button onClick={startScreenShare}
                 title="Changer de source de partage"
                 className="h-12 px-4 rounded-2xl flex items-center gap-2 text-xs font-bold text-green-400 transition border border-green-500/40 bg-green-500/20 hover:bg-green-500/30">
                 <RefreshCw className="w-4 h-4" /> Changer de source
@@ -101,7 +101,7 @@ export default function VoiceChannel({ channel, server, theme, user }) {
               </button>
             </>
           ) : (
-            <button onClick={openShareModal}
+            <button onClick={startScreenShare}
               title="Partager l'écran"
               className="w-12 h-12 rounded-2xl flex items-center justify-center transition border border-white/20 bg-white/10 hover:bg-white/15">
               <ScreenShare className="w-5 h-5 text-white" />
@@ -117,9 +117,9 @@ export default function VoiceChannel({ channel, server, theme, user }) {
 
       <ScreenShareModal
         open={showShareModal}
+        stream={screenStream}
         onClose={closeShareModal}
-        onStreamStart={handleShareStart}
-        onStreamStop={stopScreenShare}
+        onStop={stopScreenShare}
         accent={accent}
       />
     </div>

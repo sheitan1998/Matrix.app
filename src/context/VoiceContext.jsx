@@ -271,18 +271,14 @@ export function VoiceProvider({ children }) {
     toast.success(switching ? "Source de partage mise à jour" : "Partage d'écran démarré");
   }, [stopScreenShare]);
 
-  // Open the custom screen-share modal (picker + preview + controls)
-  const openShareModal = useCallback(() => setShowShareModal(true), []);
-  const closeShareModal = useCallback(() => setShowShareModal(false), []);
-
-  // Called by the modal once the user picks a source
-  const handleShareStart = useCallback((s) => {
-    applyScreenStream(s);
+  // Close the preview modal (also stops the share, releasing all tracks)
+  const closeShareModal = useCallback(() => {
+    stopScreenShare();
     setShowShareModal(false);
-  }, [applyScreenStream]);
+  }, [stopScreenShare]);
 
-  // Opens the browser's native source picker. Used both to start sharing and to switch source:
-  // the current share is only replaced once a new source has actually been chosen.
+  // Click "Partager l'écran": the native browser picker opens immediately. Only after the user
+  // picks a source do we receive the stream, inject it, and reveal the preview modal.
   const startScreenShare = useCallback(async () => {
     if (!navigator.mediaDevices?.getDisplayMedia) {
       toast.error("Le partage d'écran n'est pas supporté par ce navigateur.");
@@ -291,6 +287,7 @@ export function VoiceProvider({ children }) {
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" }, audio: true });
       applyScreenStream(stream);
+      setShowShareModal(true);
     } catch (e) {
       if (e?.name !== "NotAllowedError" && e?.name !== "AbortError") {
         toast.error("Erreur lors du partage d'écran.");
@@ -302,7 +299,7 @@ export function VoiceProvider({ children }) {
     connected, channel, server, theme, user,
     micOn, speakerOn, sharing, screenStream, participants: displayParticipants,
     localStreamRef, localSpeaking: micOn && localSpeaking,
-    showShareModal, openShareModal, closeShareModal, handleShareStart,
+    showShareModal, closeShareModal,
     connect, disconnect, toggleMic, toggleSpeaker,
     startScreenShare, stopScreenShare,
   };

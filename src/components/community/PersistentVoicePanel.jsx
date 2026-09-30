@@ -12,9 +12,9 @@ export default function PersistentVoicePanel() {
     connected, channel, server, theme,
     micOn, speakerOn, sharing, screenStream, participants,
     toggleMic, toggleSpeaker,
-    stopScreenShare,
+    stopScreenShare, startScreenShare,
     disconnect,
-    showShareModal, openShareModal, closeShareModal, handleShareStart,
+    showShareModal, closeShareModal,
   } = useVoice();
   const [expanded, setExpanded] = useState(true);
 
@@ -89,13 +89,13 @@ export default function PersistentVoicePanel() {
               {speakerOn ? <Volume2 className="w-4 h-4 text-white" /> : <VolumeX className="w-4 h-4 text-red-400" />}
             </button>
             {sharing && (
-              <button onClick={openShareModal}
+              <button onClick={startScreenShare}
                 className="w-9 h-9 rounded-xl flex items-center justify-center transition border border-green-500/40 bg-green-500/20"
                 title="Changer de source de partage">
                 <RefreshCw className="w-4 h-4 text-green-400" />
               </button>
             )}
-            <button onClick={sharing ? stopScreenShare : openShareModal}
+            <button onClick={sharing ? stopScreenShare : startScreenShare}
               className={cn("w-9 h-9 rounded-xl flex items-center justify-center transition border",
                 sharing ? "border-red-500/40 bg-red-500/20" : "border-white/20 bg-white/10")}
               title={sharing ? "Arrêter le partage" : "Partager l'écran"}>
@@ -120,9 +120,9 @@ export default function PersistentVoicePanel() {
       {panel}
       <ScreenShareModal
         open={showShareModal}
+        stream={screenStream}
         onClose={closeShareModal}
-        onStreamStart={handleShareStart}
-        onStreamStop={stopScreenShare}
+        onStop={stopScreenShare}
         accent={accent}
       />
     </>
