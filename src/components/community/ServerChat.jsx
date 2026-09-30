@@ -13,8 +13,7 @@ import VoiceMessagePlayer from "@/components/chat/VoiceMessagePlayer";
 import { stripPseudoTag } from "@/lib/format";
 import { uploadImageWithToast } from "@/lib/imageModeration";
 import ReportContentModal from "@/components/admin/ReportContentModal";
-
-const EMOJI_LIST = ["😀","😂","🥰","😎","🤔","😢","😡","👍","👎","❤️","🔥","🎉","🎮","🏆","✨","💎","🚀","💯","🤣","😍","🤝","👏","🙌","💀","🫡","😴","🤯","🥳","😱","🤩"];
+import { EMOJI_LIST, isEmojiOnly } from "@/lib/emojiUtils";
 
 export default function ServerChat({ server, channel, theme, user }) {
   const [input, setInput] = useState("");
@@ -336,7 +335,7 @@ export default function ServerChat({ server, channel, theme, user }) {
                     )
                   ) : null}
                   {msg.content && msg.content !== msg.file_name && (
-                    <p>{msg.content.split(/(@\S+)/g).map((part, i) =>
+                    <p className={isEmojiOnly(msg.content) ? "text-4xl leading-none" : ""}>{msg.content.split(/(@\S+)/g).map((part, i) =>
                       part.startsWith("@")
                         ? <span key={i} className="font-bold px-1 rounded" style={{ color: accent, background: accent + "20" }}>{part}</span>
                         : <React.Fragment key={i}>{part}</React.Fragment>
@@ -425,10 +424,10 @@ export default function ServerChat({ server, channel, theme, user }) {
           </div>
         )}
         {showEmojis && (
-          <div className="absolute bottom-full left-4 mb-2 p-2 rounded-xl grid grid-cols-8 gap-1 z-50"
+          <div className="absolute bottom-full left-4 mb-2 p-2 rounded-xl grid grid-cols-8 gap-1 z-50 max-h-[220px] overflow-y-auto scrollbar-thin"
             style={{ background: "hsl(var(--card))", border: "1px solid rgba(255,255,255,0.1)" }}>
             {EMOJI_LIST.map((emoji) => (
-              <button key={emoji} onClick={() => { setInput(prev => prev + emoji); setShowEmojis(false); }}
+              <button key={emoji} onClick={() => { setInput(prev => prev + emoji); }}
                 className="text-lg hover:scale-125 transition p-1">{emoji}</button>
             ))}
           </div>

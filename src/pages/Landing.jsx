@@ -64,7 +64,7 @@ export default function Landing() {
               </div>
               <div className="h-px w-8" style={{ background: "linear-gradient(to left, transparent, #a855f7)" }} />
             </div>
-            <p className="text-[10px] md:text-xs tracking-[0.3em] uppercase text-white/40 mt-1.5 font-mono">Choisissez votre univers</p>
+            <p className="text-[10px] md:text-xs tracking-[0.3em] uppercase text-white/40 mt-1.5 font-mono">Explorez la plateforme</p>
           </motion.div>
 
           <div className="flex items-center gap-2 shrink-0">

@@ -92,7 +92,7 @@ export default function Sidebar() {
 
       <div className="h-px bg-border my-3" />
 
-      <p className="px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Univers</p>
+      <p className="px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Plateforme</p>
       <div className="flex flex-col gap-0.5">
         {universes.map((item) => (
           <NavItem key={item.to} {...item} active={isActive(item.to)} />

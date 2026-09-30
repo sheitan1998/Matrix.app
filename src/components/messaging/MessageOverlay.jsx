@@ -13,8 +13,7 @@ import DirectVoiceCall from "@/components/messaging/DirectVoiceCall";
 import IncomingCallNotification from "@/components/messaging/IncomingCallNotification";
 import { useIncomingCall } from "@/hooks/useIncomingCall";
 import ContactSkeletonRow from "@/components/messaging/ContactSkeletonRow";
-
-const EMOJI_LIST = ["😀", "😂", "🥰", "😍", "😎", "🤔", "😅", "😭", "😡", "👍", "👎", "❤️", "🔥", "✨", "🎉", "💯", "🤝", "👋", "🙏", "💀", "🤡", "👀", "💪", "🫶", "😴", "🥳", "😇", "🤗", "😌", "🙃"];
+import { EMOJI_LIST, isEmojiOnly } from "@/lib/emojiUtils";
 
 const SUPPORT_EMAIL = "support@matrix-hub.app";
 const SUPPORT_NAME = "Équipe Matrix";
@@ -602,7 +601,7 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
                           {msg.type === "voice" && msg.file_url ? (
                             <VoiceMessagePlayer src={msg.file_url} accent="#a855f7" transcript={msg.transcript} />
                           ) : (
-                            <p className="text-sm text-white break-words">{msg.content}</p>
+                            <p className={`text-sm text-white break-words ${isEmojiOnly(msg.content) ? "text-4xl leading-none" : ""}`}>{msg.content}</p>
                           )}
                           <p className={`text-[9px] mt-1 ${isSent ? "text-white/50" : "text-white/30"}`}>
                             {new Date(msg.created_date).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
@@ -652,7 +651,7 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
                     <p className="text-xs text-red-400 mb-2 text-center">⛔ Vous ne pouvez pas envoyer de message à cet utilisateur (bloqué).</p>
                   )}
                   {showEmojis && (
-                    <div className="absolute bottom-full left-4 mb-2 p-2 rounded-xl flex flex-wrap gap-1 max-w-[280px]" style={{ background: "#13101a", border: "1px solid rgba(168,85,247,0.2)" }}>
+                    <div className="absolute bottom-full left-4 mb-2 p-2 rounded-xl flex flex-wrap gap-1 max-w-[280px] max-h-[200px] overflow-y-auto scrollbar-thin" style={{ background: "#13101a", border: "1px solid rgba(168,85,247,0.2)" }}>
                       {EMOJI_LIST.map(emoji => (
                         <button key={emoji} onClick={() => setInput(prev => prev + emoji)} className="w-7 h-7 text-lg hover:bg-white/10 rounded transition tap-sm">{emoji}</button>
                       ))}
