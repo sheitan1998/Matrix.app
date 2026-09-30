@@ -30,25 +30,29 @@ export function VoiceProvider({ children }) {
   const lastSpeakingSynced = useRef(false);
   const speakingWrite = useRef({ timer: null, lastWrite: 0 });
   const webrtcManagerRef = useRef(null);
+  const voiceRoomIdRef = useRef(null);
+  const userRef = useRef(null);
   const [remoteScreenStreams, setRemoteScreenStreams] = useState([]);
 
   // Live voice-activity detection on the mic stream (a muted track is silent -> "not speaking")
   const { speaking: localSpeaking } = useSpeakingDetection(localStream);
   const localSpeakingRef = useRef(false);
   localSpeakingRef.current = localSpeaking;
+  voiceRoomIdRef.current = voiceRoomId;
+  userRef.current = user;
 
-  // Sync participant state to DB
+  // Sync participant state to DB — atomic $set on the matched array element (no
+  // read-modify-write, so concurrent speaking/mic updates can't overwrite each other)
   const updateParticipantInDB = useCallback(async (roomId, email, patch) => {
     try {
-      const room = await base44.entities.VoiceRoom.get(roomId);
-      if (!room) return;
-      const updated = (room.participants || []).map((p) =>
-        p.email === email ? { ...p, ...patch } : p
+      const setFields = {};
+      for (const [key, value] of Object.entries(patch)) {
+        setFields[`participants.$.${key}`] = value;
+      }
+      await base44.entities.VoiceRoom.updateMany(
+        { id: roomId, "participants.email": email },
+        { $set: setFields }
       );
-      await base44.entities.VoiceRoom.update(roomId, {
-        participants: updated,
-        participants_count: updated.length,
-      });
     } catch { /* silent */ }
   }, []);
 
@@ -108,12 +112,22 @@ export function VoiceProvider({ children }) {
     };
   }, []);
 
-  // Disconnect from the WebRTC actor when the page is closing (tab close, navigation)
+  // Disconnect from the WebRTC actor and atomically remove the user from the
+  // VoiceRoom entity when the page is closing (tab close, navigation). Uses refs so
+  // the handler always sees the current room/user even though the effect runs once.
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (webrtcManagerRef.current) {
         webrtcManagerRef.current.disconnect();
         webrtcManagerRef.current = null;
+      }
+      const roomId = voiceRoomIdRef.current;
+      const email = userRef.current?.email;
+      if (roomId && email) {
+        base44.entities.VoiceRoom.updateMany(
+          { id: roomId },
+          { $pull: { participants: { email } } }
+        ).catch(() => {});
       }
     };
     window.addEventListener("beforeunload", handleBeforeUnload);
@@ -263,21 +277,20 @@ export function VoiceProvider({ children }) {
     setUser(null);
     setVoiceRoomId(null);
 
-    // 5. Remove the user from the VoiceRoom entity — the actor already broadcast
-    //    "participant-left" to everyone, so real-time presence is instant.
+    // 5. Atomically remove the user from the VoiceRoom participants array. $pull is a
+    //    single MongoDB operation — no read-modify-write, so it can't be overwritten
+    //    by a concurrent speaking/mic update from another member. The realtime
+    //    subscription in useServerVoice fires instantly → ChannelList removes the avatar.
     const roomId = voiceRoomId;
     const email = user?.email;
     if (roomId && email) {
-      base44.entities.VoiceRoom.get(roomId).then(async (room) => {
-        if (!room) return;
-        const updated = (room.participants || []).filter((p) => p.email !== email);
-        if (updated.length === 0) {
+      base44.entities.VoiceRoom.updateMany(
+        { id: roomId },
+        { $pull: { participants: { email } } }
+      ).then(async () => {
+        const room = await base44.entities.VoiceRoom.get(roomId);
+        if (room && (!room.participants || room.participants.length === 0)) {
           await base44.entities.VoiceRoom.delete(roomId);
-        } else {
-          await base44.entities.VoiceRoom.update(roomId, {
-            participants: updated,
-            participants_count: updated.length,
-          });
         }
       }).catch(() => {});
     }
