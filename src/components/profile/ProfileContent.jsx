@@ -108,11 +108,11 @@ export default function ProfileContent({ onClose }) {
   const uploadImage = async (file, field) => {
     setUploading(field);
     try {
-      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
+      const { file_url } = await uploadImageWithToast(file);
       await base44.auth.updateMe({ [field]: file_url });
       setUser((u) => ({ ...u, [field]: file_url }));
       toast.success(field === "avatar_url" ? "Photo de profil mise à jour" : "Bannière mise à jour");
-    } catch {toast.error("Erreur lors de l'upload");}
+    } catch { /* error already toasted by uploadImageWithToast */ }
     setUploading(null);
   };
 
