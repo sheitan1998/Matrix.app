@@ -12,6 +12,7 @@ import VoiceMessagePlayer from "@/components/chat/VoiceMessagePlayer";
 import DirectVoiceCall from "@/components/messaging/DirectVoiceCall";
 import IncomingCallNotification from "@/components/messaging/IncomingCallNotification";
 import { useIncomingCall } from "@/hooks/useIncomingCall";
+import ContactSkeletonRow from "@/components/messaging/ContactSkeletonRow";
 
 const EMOJI_LIST = ["😀", "😂", "🥰", "😍", "😎", "🤔", "😅", "😭", "😡", "👍", "👎", "❤️", "🔥", "✨", "🎉", "💯", "🤝", "👋", "🙏", "💀", "🤡", "👀", "💪", "🫶", "😴", "🥳", "😇", "🤗", "😌", "🙃"];
 
@@ -38,6 +39,8 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
   const [input, setInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [profilesLoading, setProfilesLoading] = useState(false);
+  const [profileFetchDone, setProfileFetchDone] = useState(false);
   const [profileUserId, setProfileUserId] = useState(null);
   const [showEmojis, setShowEmojis] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
@@ -67,7 +70,7 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
         id: "friend_" + f.id,
         friend_user_id: f.friend_user_id,
         friend_email: f.friend_email,
-        friend_name: f.friend_name || f.friend_email?.split("@")[0] || "Utilisateur",
+        friend_name: f.friend_name || f.friend_email?.split("@")[0] || "",
         is_dm_contact: false,
       }));
 
@@ -87,7 +90,7 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
             id: "dm_" + key,
             friend_user_id: null,
             friend_email: otherEmail,
-            friend_name: official ? official.name : (otherName || otherEmail?.split("@")[0] || "Contact"),
+            friend_name: official ? official.name : (otherName || otherEmail?.split("@")[0] || ""),
             is_dm_contact: false,
             is_official: isOfficial,
             last_dm_date: dm.created_date,
@@ -104,21 +107,17 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
   // Fetch fresh profile data for all friends by user_id
   useEffect(() => {
     if (!contacts || contacts.length === 0) return;
-    const userIds = [...new Set(contacts.map(f => f.friend_user_id).filter(Boolean))];
-    if (userIds.length === 0) return;
-    // Also try to auto-select a DM contact matching the preselected email
+
+    // Auto-select preselected DM contact
     if (preselectedEmail) {
       const dmContact = contacts.find(c => c.is_dm_contact && c.friend_email?.toLowerCase() === preselectedEmail.toLowerCase());
       if (dmContact) setSelectedContact(dmContact);
     }
-    if (userIds.length === 0) {
-      // Still check DM contacts for auto-select even if no friend user IDs
-      if (preselectedEmail) {
-        const dmContact = contacts.find(c => c.is_dm_contact && c.friend_email?.toLowerCase() === preselectedEmail.toLowerCase());
-        if (dmContact) setSelectedContact(dmContact);
-      }
-      return;
-    }
+
+    const userIds = [...new Set(contacts.map(f => f.friend_user_id).filter(Boolean))];
+    if (userIds.length === 0) return;
+
+    setProfilesLoading(true);
     base44.functions.invoke("serverSearch", { action: "getUsersByIds", ids: userIds })
       .then(res => {
         const map = {};
@@ -133,7 +132,11 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
           }
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        setProfilesLoading(false);
+        setProfileFetchDone(true);
+      });
   }, [contacts, preselectedEmail]);
 
   // Resolve contact info from fresh user data or DM contact fallback
@@ -141,16 +144,49 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
     const fresh = contact?.friend_user_id ? freshUsers[contact.friend_user_id] : null;
     const official = resolveOfficialIdentity(contact?.friend_email);
     const isOfficial = !!official;
-    const officialName = official?.name || SUPPORT_NAME;
-    const officialAvatar = official?.avatar || SUPPORT_AVATAR;
+
+    // Official contacts (Support / Team Matrix) are always resolved
+    if (isOfficial) {
+      return {
+        email: contact?.friend_email || "",
+        name: official.name,
+        pseudo: official.name,
+        rawUserId: contact?.friend_user_id || "",
+        avatar: official.avatar,
+        online: true,
+        isOfficial: true,
+        resolved: true,
+      };
+    }
+
+    // Friend contacts with a user_id — wait for fresh profile data
+    if (contact?.friend_user_id) {
+      const resolvedName = stripPseudoTag(fresh?.pseudo) || stripPseudoTag(fresh?.full_name) || "";
+      const isResolved = !!fresh || profileFetchDone;
+      const fallbackName = !fresh ? (stripPseudoTag(contact?.friend_name) || contact?.friend_email?.split("@")[0] || "") : "";
+      return {
+        email: fresh?.email || contact?.friend_email || "",
+        name: resolvedName || fallbackName,
+        pseudo: resolvedName || fallbackName,
+        rawUserId: contact?.friend_user_id || fresh?.id || "",
+        avatar: fresh?.avatar_url || "",
+        online: isUserOnline(fresh?.last_seen),
+        isOfficial: false,
+        resolved: isResolved,
+      };
+    }
+
+    // DM contacts — name comes from the message record itself
+    const dmName = stripPseudoTag(contact?.friend_name) || contact?.friend_email?.split("@")[0] || "";
     return {
-      email: fresh?.email || contact?.friend_email || "",
-      name: isOfficial ? officialName : (stripPseudoTag(fresh?.pseudo) || stripPseudoTag(fresh?.full_name) || contact?.friend_name || "Utilisateur"),
-      pseudo: isOfficial ? officialName : (stripPseudoTag(fresh?.pseudo) || stripPseudoTag(fresh?.full_name) || contact?.friend_name || "Utilisateur"),
-      rawUserId: contact?.friend_user_id || fresh?.id || "",
-      avatar: isOfficial ? officialAvatar : (fresh?.avatar_url || contact?.sender_avatar || ""),
-      online: isOfficial ? true : isUserOnline(fresh?.last_seen),
-      isOfficial,
+      email: contact?.friend_email || "",
+      name: dmName,
+      pseudo: dmName,
+      rawUserId: "",
+      avatar: contact?.sender_avatar || "",
+      online: false,
+      isOfficial: false,
+      resolved: !!dmName,
     };
   };
 
@@ -330,6 +366,8 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
     return Array.from(map.values());
   })();
 
+  const selectedInfo = selectedContact ? resolveContact(selectedContact) : null;
+
   return (
     <div className="h-screen flex flex-col" style={{ background: "#0a050f" }}>
       {/* Header */}
@@ -363,7 +401,11 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
           {/* Contacts */}
           <div className="flex-1 overflow-y-auto scrollbar-thin">
             {loading ? (
-              <p className="text-sm text-white/30 text-center py-8">Chargement...</p>
+              <>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <ContactSkeletonRow key={`skeleton-loading-${i}`} />
+                ))}
+              </>
             ) : filteredContacts.length === 0 ? (
               <div className="text-center py-8 px-4">
                 <Mail className="w-8 h-8 text-purple-400/30 mx-auto mb-2" />
@@ -380,6 +422,7 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
                 const requestContacts = dedupedContacts.filter(c => c.is_dm_contact);
                 const renderContact = (contact) => {
                   const info = resolveContact(contact);
+                  if (!info.resolved) return <ContactSkeletonRow key={contact.id} />;
                   return (
                     <button
                       key={contact.id}
@@ -453,33 +496,39 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
                   className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center shrink-0"
                   style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.2)" }}
                 >
-                  {(() => { const info = resolveContact(selectedContact); return info.avatar ? (
-                    <img src={info.avatar} className="w-full h-full object-cover" alt="" />
-                  ) : (
+                  {selectedInfo.avatar ? (
+                    <img src={selectedInfo.avatar} className="w-full h-full object-cover" alt="" />
+                  ) : selectedInfo.resolved ? (
                     <span className="text-sm font-bold text-purple-300">
-                      {info.name?.[0]?.toUpperCase() || "?"}
+                      {selectedInfo.name?.[0]?.toUpperCase() || "?"}
                     </span>
-                  ); })()}
+                  ) : (
+                    <div className="w-full h-full animate-pulse" style={{ background: "rgba(168,85,247,0.08)" }} />
+                  )}
                 </div>
                 <span
                   className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2"
                   style={{
-                    background: resolveContact(selectedContact).online ? "#22C55E" : "#6b7280",
+                    background: selectedInfo.online ? "#22C55E" : "#6b7280",
                     borderColor: "#0a050f",
                   }}
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <button
-                  onClick={() => resolveContact(selectedContact).rawUserId && setProfileUserId(resolveContact(selectedContact).rawUserId)}
-                  className="text-sm font-bold text-white truncate hover:underline text-left block">
-                  {resolveContact(selectedContact).name}
-                </button>
-                <p className="text-[10px] truncate" style={{ color: resolveContact(selectedContact).online ? "#22C55E" : "rgba(255,255,255,0.3)" }}>
-                  {resolveContact(selectedContact).online ? "En ligne" : "Hors ligne"}
+                {selectedInfo.resolved ? (
+                  <button
+                    onClick={() => selectedInfo.rawUserId && setProfileUserId(selectedInfo.rawUserId)}
+                    className="text-sm font-bold text-white truncate hover:underline text-left block">
+                    {selectedInfo.name}
+                  </button>
+                ) : (
+                  <div className="h-4 w-32 rounded animate-pulse" style={{ background: "rgba(168,85,247,0.1)" }} />
+                )}
+                <p className="text-[10px] truncate" style={{ color: selectedInfo.online ? "#22C55E" : "rgba(255,255,255,0.3)" }}>
+                  {selectedInfo.online ? "En ligne" : "Hors ligne"}
                 </p>
               </div>
-              {!isReadOnlyConversation && !voiceCallActive && (
+              {!isReadOnlyConversation && !voiceCallActive && selectedInfo.resolved && (
                 <button
                   onClick={async () => {
                     const c = resolveContact(selectedContact);
@@ -554,8 +603,8 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
             {voiceCallActive && (
               <div className="shrink-0" style={{ borderTop: "1px solid rgba(34,197,94,0.2)", background: "rgba(34,197,94,0.05)" }}>
                 <DirectVoiceCall
-                  contactName={incomingCallContact?.name || resolveContact(selectedContact).name}
-                  contactAvatar={incomingCallContact?.avatar || resolveContact(selectedContact).avatar}
+                  contactName={incomingCallContact?.name || selectedInfo.name}
+                  contactAvatar={incomingCallContact?.avatar || selectedInfo.avatar}
                   onEnd={() => {
                     setVoiceCallActive(false);
                     setIncomingCallContact(null);
