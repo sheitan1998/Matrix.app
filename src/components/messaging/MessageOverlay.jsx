@@ -161,23 +161,49 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
 
     // Friend contacts with a user_id — wait for fresh profile data
     if (contact?.friend_user_id) {
-      const resolvedName = stripPseudoTag(fresh?.pseudo) || stripPseudoTag(fresh?.full_name) || "";
-      const isResolved = !!fresh || profileFetchDone;
-      const fallbackName = !fresh ? (stripPseudoTag(contact?.friend_name) || contact?.friend_email?.split("@")[0] || "") : "";
+      const resolvedName = stripPseudoTag(fresh?.pseudo) || "";
+      // Profile found with a valid pseudo → fully resolved
+      if (resolvedName) {
+        return {
+          email: contact?.friend_email || "",
+          name: resolvedName,
+          pseudo: resolvedName,
+          rawUserId: contact?.friend_user_id || fresh?.id || "",
+          avatar: fresh?.avatar_url || "",
+          online: isUserOnline(fresh?.last_seen),
+          isOfficial: false,
+          resolved: true,
+        };
+      }
+      // Fetch still in progress → skeleton, no name displayed
+      if (!profileFetchDone) {
+        return {
+          email: contact?.friend_email || "",
+          name: "",
+          pseudo: "",
+          rawUserId: contact?.friend_user_id || "",
+          avatar: "",
+          online: false,
+          isOfficial: false,
+          resolved: false,
+        };
+      }
+      // Fetch done but no pseudo available → truncated email fallback (request completed)
+      const fallbackName = contact?.friend_email?.split("@")[0] || "Membre";
       return {
-        email: fresh?.email || contact?.friend_email || "",
-        name: resolvedName || fallbackName,
-        pseudo: resolvedName || fallbackName,
-        rawUserId: contact?.friend_user_id || fresh?.id || "",
-        avatar: fresh?.avatar_url || "",
-        online: isUserOnline(fresh?.last_seen),
+        email: contact?.friend_email || "",
+        name: fallbackName,
+        pseudo: fallbackName,
+        rawUserId: contact?.friend_user_id || "",
+        avatar: "",
+        online: false,
         isOfficial: false,
-        resolved: isResolved,
+        resolved: true,
       };
     }
 
-    // DM contacts — name comes from the message record itself
-    const dmName = stripPseudoTag(contact?.friend_name) || contact?.friend_email?.split("@")[0] || "";
+    // DM contacts — name comes from the message record itself (no fetch needed)
+    const dmName = stripPseudoTag(contact?.friend_name) || contact?.friend_email?.split("@")[0] || "Membre";
     return {
       email: contact?.friend_email || "",
       name: dmName,
@@ -186,7 +212,7 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
       avatar: contact?.sender_avatar || "",
       online: false,
       isOfficial: false,
-      resolved: !!dmName,
+      resolved: true,
     };
   };
 
@@ -290,7 +316,7 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
     setInput("");
     setShowEmojis(false);
     const tempId = Date.now().toString();
-    const senderPseudo = user.pseudo || user.full_name || "Utilisateur";
+    const senderPseudo = user.pseudo || user.full_name || user.email?.split("@")[0] || "Membre";
     const type = messageType || (attachment ? "voice" : "text");
     const msgData = {
       sender_email: user.email,
