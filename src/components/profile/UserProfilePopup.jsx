@@ -245,8 +245,9 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
           {/* Activity status (Discord-style) */}
           {(() => {
             const online = isUserOnline(profile?.last_seen);
-            const activity = profile?.current_activity;
-            const activityType = profile?.current_activity_type || "idle";
+            const showActivity = profile?.show_game_activity !== false;
+            const activity = showActivity ? profile?.current_activity : "";
+            const activityType = showActivity ? (profile?.current_activity_type || "idle") : "idle";
             const customStatus = profile?.custom_status;
             const isCustom = activityType === "custom" || !!customStatus;
 

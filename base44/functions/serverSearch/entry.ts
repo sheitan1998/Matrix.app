@@ -363,14 +363,16 @@ export default async function(req: Request): Promise<Response> {
             if (!displayPseudo.includes('#') && u.pseudo_tag) {
               displayPseudo = `${displayPseudo}#${u.pseudo_tag}`;
             }
+            const showActivity = u.show_game_activity !== false;
             return {
               id: u.id,
               pseudo: displayPseudo,
               avatar_url: u.avatar_url || '',
               last_seen: u.last_seen || '',
-              current_activity: u.current_activity || '',
-              current_activity_type: u.current_activity_type || 'idle',
+              current_activity: showActivity ? (u.current_activity || '') : '',
+              current_activity_type: showActivity ? (u.current_activity_type || 'idle') : 'idle',
               custom_status: u.custom_status || '',
+              show_game_activity: showActivity,
             };
           });
         console.log('[getUsersByIds] requested:', ids.length, '| found:', users.length);
@@ -392,14 +394,16 @@ export default async function(req: Request): Promise<Response> {
             if (!displayPseudo.includes('#') && u.pseudo_tag) {
               displayPseudo = `${displayPseudo}#${u.pseudo_tag}`;
             }
+            const showActivity = u.show_game_activity !== false;
             return {
               id: u.id,
               pseudo: displayPseudo,
               avatar_url: u.avatar_url || '',
               last_seen: u.last_seen || '',
-              current_activity: u.current_activity || '',
-              current_activity_type: u.current_activity_type || 'idle',
+              current_activity: showActivity ? (u.current_activity || '') : '',
+              current_activity_type: showActivity ? (u.current_activity_type || 'idle') : 'idle',
               custom_status: u.custom_status || '',
+              show_game_activity: showActivity,
             };
           });
         return Response.json({ users });

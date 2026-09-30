@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { base44 } from "@/api/base44Client";
 import {
   X, Bell, Gift, UserPlus, MessageSquare, Loader2,
-  Globe, Clock, Shield, Check, Headphones,
+  Globe, Clock, Shield, Check, Headphones, Gamepad2,
 } from "lucide-react";
 import AudioSettingsPanel from "@/components/profile/AudioSettingsPanel";
 import { toast } from "sonner";
@@ -42,6 +42,7 @@ const TABS = [
   { id: "privacy", label: "Confidentialité", icon: Shield, color: "#22c55e" },
   { id: "preferences", label: "Préférences", icon: Globe, color: "#a855f7" },
   { id: "audio", label: "Audio", icon: Headphones, color: "#22d3ee" },
+  { id: "activity", label: "Activité", icon: Gamepad2, color: "#f59e0b" },
 ];
 
 function Toggle({ checked, onChange, disabled }) {
@@ -110,6 +111,8 @@ export default function UserSettingsModal({ open, onClose, user }) {
     dm_privacy: "everyone",
     interface_language: "fr",
     timezone: "UTC",
+    show_game_activity: true,
+    manual_game: "",
   });
   const [savingKey, setSavingKey] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -151,6 +154,8 @@ export default function UserSettingsModal({ open, onClose, user }) {
         dm_privacy: current.dm_privacy || 'everyone',
         interface_language: current.interface_language || getPreferredLanguage(),
         timezone: current.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+        show_game_activity: current.show_game_activity !== false,
+        manual_game: current.manual_game || '',
       };
       settingsRef.current = next;
       setSettings(next);
@@ -301,6 +306,70 @@ export default function UserSettingsModal({ open, onClose, user }) {
           {/* ===== AUDIO TAB ===== */}
           {activeTab === "audio" && (
             <AudioSettingsPanel />
+          )}
+
+          {/* ===== ACTIVITY TAB ===== */}
+          {activeTab === "activity" && (
+            <>
+              <SettingRow
+                icon={Gamepad2}
+                color="#f59e0b"
+                title="Afficher mon activité de jeu"
+                desc="Partagez en temps réel le jeu auquel vous jouez (détection automatique ou manuelle) avec les membres de vos serveurs et sur votre profil."
+              >
+                <Toggle
+                  checked={settings.show_game_activity}
+                  onChange={(v) => updateSetting("show_game_activity", v)}
+                  disabled={loading || !!savingKey}
+                />
+              </SettingRow>
+
+              <div className="p-4 rounded-xl" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(245,158,11,0.15)" }}>
+                    <Gamepad2 className="w-4 h-4" style={{ color: "#f59e0b" }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-white">Jeu en cours</p>
+                    <p className="text-xs text-white/40 mt-0.5">Définissez manuellement le jeu auquel vous jouez. Ce champ surcharge la détection automatique. Laissez vide pour utiliser la détection automatique.</p>
+                  </div>
+                </div>
+                <div className="ml-12 flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={settings.manual_game}
+                    onChange={(e) => setSettings(prev => ({ ...prev, manual_game: e.target.value }))}
+                    onBlur={(e) => {
+                      if (settingsRef.current.manual_game !== e.target.value) {
+                        updateSetting("manual_game", e.target.value.trim());
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.target.blur();
+                      }
+                    }}
+                    disabled={!settings.show_game_activity || loading || !!savingKey}
+                    placeholder="ex: Farming Simulator 25"
+                    maxLength={80}
+                    className="flex-1 px-3 py-2.5 rounded-xl text-sm text-white placeholder:text-white/30 outline-none disabled:opacity-40"
+                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(168,85,247,0.3)" }}
+                  />
+                  {settings.manual_game && (
+                    <button
+                      onClick={() => updateSetting("manual_game", "")}
+                      disabled={loading || !!savingKey}
+                      className="px-3 py-2.5 rounded-xl text-xs font-bold text-red-400 transition hover:bg-red-500/10 disabled:opacity-40 tap-sm"
+                    >
+                      Effacer
+                    </button>
+                  )}
+                </div>
+                {!settings.show_game_activity && (
+                  <p className="ml-12 mt-2 text-[10px] text-white/30">Activez « Afficher mon activité de jeu » pour configurer un jeu manuel.</p>
+                )}
+              </div>
+            </>
           )}
 
           {/* ===== PREFERENCES TAB ===== */}

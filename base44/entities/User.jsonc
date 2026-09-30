@@ -113,6 +113,16 @@
       "maxLength": 80,
       "description": "Statut personnalise defini par l'utilisateur (prioritaire sur la detection automatique)"
     },
+    "show_game_activity": {
+      "type": "boolean",
+      "default": true,
+      "description": "Afficher l'activite de jeu (Rich Presence) aux autres utilisateurs dans les serveurs et le profil"
+    },
+    "manual_game": {
+      "type": "string",
+      "maxLength": 80,
+      "description": "Jeu defini manuellement par l'utilisateur (surcharge la detection automatique)"
+    },
     "is_muted": {
       "type": "boolean",
       "default": false,

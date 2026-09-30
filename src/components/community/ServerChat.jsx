@@ -62,7 +62,7 @@ export default function ServerChat({ server, channel, theme, user }) {
 
   // Fetch fresh user data (pseudo, avatar) for all message authors
   const authorEmails = [...new Set(messages.map((m) => m.author_email).filter(Boolean))];
-  const { data: authorData = [] } = useQuery({
+  const { data: authorData = [], isLoading: authorsLoading } = useQuery({
     queryKey: ["chat-authors", authorEmails.join(",")],
     queryFn: () =>
       base44.functions.invoke("serverSearch", {
@@ -82,7 +82,7 @@ export default function ServerChat({ server, channel, theme, user }) {
 
   const resolveAuthorName = (msg) => {
     const fresh = authorMap[(msg.author_email || "").toLowerCase()];
-    return stripPseudoTag(fresh?.pseudo) || stripPseudoTag(fresh?.full_name) || stripPseudoTag(msg.author_name) || msg.author_email || "Utilisateur";
+    return stripPseudoTag(fresh?.pseudo) || "";
   };
 
   const settings = channel.settings || {};
@@ -309,11 +309,17 @@ export default function ServerChat({ server, channel, theme, user }) {
             <div className="flex-1 min-w-0">
               {!msg.isContinuation && (
                 <div className="flex items-baseline gap-2 mb-0.5">
-                  <button
-                    onClick={() => setProfileUser({ email: msg.author_email })}
-                    className="text-sm font-bold text-white hover:underline truncate">
-                    {resolveAuthorName(msg)}
-                  </button>
+                  {resolveAuthorName(msg) ? (
+                    <button
+                      onClick={() => setProfileUser({ email: msg.author_email })}
+                      className="text-sm font-bold text-white hover:underline truncate">
+                      {resolveAuthorName(msg)}
+                    </button>
+                  ) : authorsLoading ? (
+                    <div className="h-3.5 w-20 rounded animate-pulse" style={{ background: "rgba(255,255,255,0.08)" }} />
+                  ) : (
+                    <span className="text-sm font-bold text-white/30 truncate">{msg.author_email?.split("@")[0]}</span>
+                  )}
                   <span className="text-[10px] text-muted-foreground">
                     {format(new Date(msg.created_date), "HH:mm")}
                   </span>

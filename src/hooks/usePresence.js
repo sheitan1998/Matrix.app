@@ -102,12 +102,29 @@ export function usePresence() {
   const detectedGameRef = useRef(null);
 
   const updatePresence = useCallback(() => {
-    // Priority: custom status > detected game > route-based activity
+    // If game activity display is disabled, only update last_seen
+    const showActivity = user?.show_game_activity !== false;
+
+    if (!showActivity) {
+      base44.auth
+        .updateMe({
+          last_seen: new Date().toISOString(),
+          current_activity: "",
+          current_activity_type: "idle",
+        })
+        .catch((e) => console.warn("[usePresence] updateMe failed:", e));
+      return;
+    }
+
+    // Priority: custom status > manual game > detected game > route-based activity
     let label, type;
 
     if (user?.custom_status) {
       label = user.custom_status;
       type = "custom";
+    } else if (user?.manual_game) {
+      label = `Joue à ${user.manual_game}`;
+      type = "gaming";
     } else if (detectedGameRef.current) {
       label = `Joue à ${detectedGameRef.current.label}`;
       type = "gaming";
@@ -129,11 +146,13 @@ export function usePresence() {
         current_activity_type: type,
       })
       .catch((e) => console.warn("[usePresence] updateMe failed:", e));
-  }, [user?.custom_status, location.pathname]);
+  }, [user?.custom_status, user?.manual_game, user?.show_game_activity, location.pathname]);
 
   // Game detection loop — detects games and immediately pushes presence update
+  // Skipped when show_game_activity is disabled or a manual game is set
   useEffect(() => {
     if (!isAuthenticated) return;
+    if (user?.show_game_activity === false || user?.manual_game) return;
 
     const detectAndPush = async () => {
       const game = await detectRunningGame();
@@ -152,7 +171,7 @@ export function usePresence() {
     return () => {
       if (gameDetectionRef.current) clearInterval(gameDetectionRef.current);
     };
-  }, [isAuthenticated, updatePresence]);
+  }, [isAuthenticated, user?.show_game_activity, user?.manual_game, updatePresence]);
 
   // Presence update loop — route-based + periodic refresh
   useEffect(() => {

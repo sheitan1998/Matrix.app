@@ -22,9 +22,9 @@ export default function MembersList({ server, theme, currentUserEmail, onOpenDm 
 
   const accent = theme?.accent || "hsl(var(--primary))";
 
-  // Fetch fresh user data (activity, last_seen, avatar) for all members
+  // Fetch fresh user data (pseudo, activity, last_seen, avatar) for all members
   const memberEmails = members.map((m) => m.user_email).filter(Boolean);
-  const { data: userData = [] } = useQuery({
+  const { data: userData = [], isLoading: usersLoading } = useQuery({
     queryKey: ["member-activities", memberEmails.join(",")],
     queryFn: () =>
       base44.functions.invoke("serverSearch", {
@@ -78,8 +78,10 @@ export default function MembersList({ server, theme, currentUserEmail, onOpenDm 
                 const customRole = m.custom_role;
                 const freshUser = userMap[(m.user_email || "").toLowerCase()];
                 const online = isUserOnline(freshUser?.last_seen);
-                const activity = freshUser?.current_activity;
-                const activityType = freshUser?.current_activity_type || "idle";
+                const showActivity = freshUser?.show_game_activity !== false;
+                const activity = showActivity ? freshUser?.current_activity : "";
+                const activityType = showActivity ? (freshUser?.current_activity_type || "idle") : "idle";
+                const pseudoResolved = stripPseudoTag(freshUser?.pseudo);
 
                 return (
                   <div key={m.id}
@@ -103,11 +105,17 @@ export default function MembersList({ server, theme, currentUserEmail, onOpenDm 
                       <div className="flex items-center gap-1 min-w-0">
                         {isOwner && <Crown className="w-2.5 h-2.5 shrink-0" style={{ color: "#f59e0b" }} />}
                         {!isOwner && RoleIcon && <RoleIcon className="w-2.5 h-2.5 shrink-0" style={{ color: roleInfo.color }} />}
-                        <button onClick={() => !isMe && setProfileEmail(m.user_email)} disabled={isMe}
-                          className="text-[10px] font-semibold text-white/80 truncate leading-tight hover:underline disabled:cursor-default min-w-0">
-                          <span className="truncate">{stripPseudoTag(freshUser?.pseudo) || stripPseudoTag(freshUser?.full_name) || stripPseudoTag(m.user_name) || m.user_email?.split("@")[0]}</span>
-                          {isMe && " (toi)"}
-                        </button>
+                        {pseudoResolved ? (
+                          <button onClick={() => !isMe && setProfileEmail(m.user_email)} disabled={isMe}
+                            className="text-[10px] font-semibold text-white/80 truncate leading-tight hover:underline disabled:cursor-default min-w-0">
+                            <span className="truncate">{pseudoResolved}</span>
+                            {isMe && " (toi)"}
+                          </button>
+                        ) : usersLoading ? (
+                          <div className="h-2.5 w-16 rounded animate-pulse" style={{ background: "rgba(255,255,255,0.08)" }} />
+                        ) : (
+                          <span className="text-[10px] font-semibold text-white/30 truncate">{m.user_email?.split("@")[0]}</span>
+                        )}
                       </div>
                       {/* Single status line — priority: custom_status > activity > customRole > offline */}
                       <p className="text-[9px] truncate leading-tight flex items-center gap-0.5 min-w-0">
