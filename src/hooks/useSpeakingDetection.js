@@ -1,111 +1,62 @@
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 
 /**
- * Hook: useSpeakingDetection
- * Analyzes a MediaStream's audio level via Web Audio API and returns
- * a boolean indicating whether the user is currently speaking.
+ * Live voice-activity detection on a MediaStream (Web Audio API).
+ * Measures the RMS volume of the raw microphone waveform ~20x per second.
  *
- * @param {MediaStream|null} stream — the mic stream to analyze
+ * @param {MediaStream|null} stream - the mic stream to analyze
  * @param {object} opts
- *   threshold: number  — volume 0-1 above which the user is "speaking" (default 0.08)
- *   interval:  number  — analysis interval in ms (default 100)
- * @returns {{ speaking: boolean, level: number }}
+ *   threshold: RMS volume (0-1) above which the user counts as speaking (default 0.02)
+ *   releaseMs: how long the volume must stay under the threshold before "speaking" turns off,
+ *              so the indicator does not flicker between syllables (default 150)
+ *   interval:  analysis period in ms (default 50)
+ * @returns {{ speaking: boolean }}
  */
 export function useSpeakingDetection(stream, opts = {}) {
-  const { threshold = 0.08, interval = 100 } = opts;
-  const audioCtxRef = useRef(null);
-  const analyserRef = useRef(null);
-  const sourceRef = useRef(null);
-  const rafRef = useRef(null);
+  const { threshold = 0.02, releaseMs = 150, interval = 50 } = opts;
   const [speaking, setSpeaking] = useState(false);
-  const [level, setLevel] = useState(0);
 
-  // Cleanup on unmount
   useEffect(() => {
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      if (sourceRef.current) {
-        try { sourceRef.current.disconnect(); } catch { /* noop */ }
-        sourceRef.current = null;
-      }
-      if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
-        audioCtxRef.current.close().catch(() => {});
-      }
-      audioCtxRef.current = null;
-      analyserRef.current = null;
-    };
-  }, []);
-
-  // Setup audio analysis when a stream is provided
-  useEffect(() => {
-    if (!stream) {
+    if (!stream || stream.getAudioTracks().length === 0) {
       setSpeaking(false);
-      setLevel(0);
       return;
     }
-
-    // Teardown previous
-    if (sourceRef.current) {
-      try { sourceRef.current.disconnect(); } catch { /* noop */ }
-    }
-    if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
-      audioCtxRef.current.close().catch(() => {});
-    }
-
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (!AudioCtx) return;
+
     const ctx = new AudioCtx();
     const analyser = ctx.createAnalyser();
-    analyser.fftSize = 256;
-    analyser.smoothingTimeConstant = 0.6;
+    analyser.fftSize = 512;
     const source = ctx.createMediaStreamSource(stream);
-    source.connect(analyser);
+    source.connect(analyser); // analysis only: not routed to the speakers, so no echo
 
-    audioCtxRef.current = ctx;
-    analyserRef.current = analyser;
-    sourceRef.current = source;
+    const samples = new Float32Array(analyser.fftSize);
+    let lastLoud = -Infinity;
+    let current = false;
 
-    const buffer = new Uint8Array(analyser.frequencyBinCount);
-    let lastUpdate = 0;
-
-    const tick = (time) => {
-      if (!analyserRef.current) return;
-      if (time - lastUpdate >= interval) {
-        analyser.getByteFrequencyData(buffer);
-        // Compute RMS-like average of the frequency data
-        let sum = 0;
-        for (let i = 0; i < buffer.length; i++) sum += buffer[i];
-        const avg = sum / buffer.length / 255; // normalize 0-1
-        setLevel(avg);
-        setSpeaking(avg > threshold);
-        lastUpdate = time;
+    const timer = setInterval(() => {
+      // Browsers can create the context suspended (autoplay policy): make sure it runs
+      if (ctx.state === "suspended") ctx.resume().catch(() => {});
+      analyser.getFloatTimeDomainData(samples);
+      let sum = 0;
+      for (let i = 0; i < samples.length; i++) sum += samples[i] * samples[i];
+      const rms = Math.sqrt(sum / samples.length);
+      const now = performance.now();
+      if (rms > threshold) lastLoud = now;
+      const next = now - lastLoud < releaseMs;
+      if (next !== current) {
+        current = next;
+        setSpeaking(next);
       }
-      rafRef.current = requestAnimationFrame(tick);
-    };
-    rafRef.current = requestAnimationFrame(tick);
+    }, interval);
 
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      clearInterval(timer);
       try { source.disconnect(); } catch { /* noop */ }
       if (ctx.state !== "closed") ctx.close().catch(() => {});
+      setSpeaking(false);
     };
-  }, [stream, threshold, interval]);
+  }, [stream, threshold, releaseMs, interval]);
 
-  return { speaking, level };
-}
-
-/**
- * Hook: useMultipleSpeaking
- * Given a list of participants (each with an optional streamRef),
- * returns a Set of emails currently speaking.
- *
- * For simplicity, this hook only analyzes the local user's stream
- * (remote participants' audio would need WebRTC peer connections,
- * which are not yet implemented in this app).
- *
- * @param {MediaStream|null} localStream
- * @returns {{ speaking: boolean, level: number }}
- */
-export function useLocalSpeaking(localStream) {
-  return useSpeakingDetection(localStream, { threshold: 0.06, interval: 80 });
+  return { speaking };
 }
