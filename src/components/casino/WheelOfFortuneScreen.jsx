@@ -191,6 +191,11 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
 
       {/* Wheel container */}
       <div className="relative w-full max-w-sm mb-6">
+        {/* Radial glow backdrop — integrates wheel with background */}
+        <div className="absolute inset-0 -z-10 rounded-full" style={{
+          background: "radial-gradient(circle at center, rgba(168,85,247,0.18) 0%, rgba(0,242,255,0.08) 45%, transparent 70%)",
+          transform: "scale(1.3)",
+        }} />
         {/* Pointer */}
         <div className="absolute left-1/2 -translate-x-1/2 -top-1 z-20 flex flex-col items-center">
           <div className="w-0 h-0" style={{
@@ -201,10 +206,11 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
           }} />
         </div>
 
-        {/* SVG Wheel */}
+        {/* SVG Wheel — fixed size, no scale animation */}
         <div ref={wheelRef} className="relative" style={{
           transition: `transform ${SPIN_DURATION}ms cubic-bezier(0.17, 0.67, 0.12, 0.99)`,
-          transform: `rotate(${rotation}deg)`
+          transform: `rotate(${rotation}deg)`,
+          willChange: "transform",
         }}>
           <svg viewBox="0 0 300 300" className="w-full h-full" style={{ filter: "drop-shadow(0 0 20px rgba(168,85,247,0.3))" }}>
             {/* Outer ring — configurable wheel border */}
@@ -316,7 +322,7 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
 
       {/* Result display */}
       {showResult && result &&
-      <div className="mb-4 text-center animate-in fade-in zoom-in duration-500">
+      <div className="mb-4 text-center animate-in fade-in duration-500">
           <div className="text-4xl mb-1">
             {result.type === "lose" ? "😢" : result.type === "trix" ? "🌟" : result.amount >= 1000000 ? "💎" : "💰"}
           </div>
