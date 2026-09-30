@@ -6,6 +6,7 @@ import FortniteMapCard from "@/components/tuto-gaming/FortniteMapCard";
 import SubmitMapModal from "@/components/tuto-gaming/SubmitMapModal";
 import MapDetailModal from "@/components/tuto-gaming/MapDetailModal";
 import { FORTNITE_BANNER, MAP_CATEGORIES } from "@/components/tuto-gaming/fortniteMapsData";
+import { useTutoGamingAssets, getAssetUrl } from "@/hooks/useTutoGamingAssets";
 
 export default function FortniteMaps() {
   const [maps, setMaps] = useState([]);
@@ -16,6 +17,8 @@ export default function FortniteMaps() {
   const [showMyMaps, setShowMyMaps] = useState(false);
   const [selectedMap, setSelectedMap] = useState(null);
   const [user, setUser] = useState(null);
+  const { assets } = useTutoGamingAssets();
+  const fortniteBanner = getAssetUrl(assets, "fortnite_banner", FORTNITE_BANNER);
 
   const fetchMaps = useCallback(async () => {
     try {
@@ -73,7 +76,7 @@ export default function FortniteMaps() {
       {/* Banner */}
       <div className="relative rounded-2xl overflow-hidden mb-6" style={{ border: "1px solid rgba(191,90,242,0.2)" }}>
         <div className="relative h-48 sm:h-64 lg:h-72">
-          <img src={FORTNITE_BANNER} alt="Fortnite Maps" className="absolute inset-0 w-full h-full object-cover" />
+          <img src={fortniteBanner} alt="Fortnite Maps" className="absolute inset-0 w-full h-full object-cover" />
           <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(13,5,24,0.3) 0%, rgba(13,5,24,0.7) 70%, rgba(13,5,24,0.95) 100%)" }} />
           <div className="absolute inset-0 flex flex-col justify-end p-5 sm:p-8">
             <div className="flex items-center gap-2 mb-2">

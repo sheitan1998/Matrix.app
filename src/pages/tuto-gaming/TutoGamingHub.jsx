@@ -4,12 +4,14 @@ import { Search, Loader2, ArrowLeft, Gamepad2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import GameCard from "@/components/tuto-gaming/GameCard";
 import { COMING_SOON_GAMES, FEATURED_GAMES } from "@/components/tuto-gaming/tutoGamingData";
+import { useTutoGamingAssets, getAssetUrl } from "@/hooks/useTutoGamingAssets";
 
 export default function TutoGamingHub() {
   const [games, setGames] = useState([]);
   const [questCounts, setQuestCounts] = useState({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const { assets } = useTutoGamingAssets();
 
   const fetchData = useCallback(async () => {
     try {
@@ -40,10 +42,14 @@ export default function TutoGamingHub() {
     fetchData();
   }, [fetchData]);
 
-  // Filter by search
+  // Filter by search — merge DB-managed thumbnails into featured games
+  const featuredWithAssets = FEATURED_GAMES.map((g) => ({
+    ...g,
+    image_url: getAssetUrl(assets, `game_${g.slug}`, g.image_url),
+  }));
   const allDisplayGames = [
     ...games,
-    ...FEATURED_GAMES,
+    ...featuredWithAssets,
     ...COMING_SOON_GAMES.map((g) => ({ ...g, is_active: false })),
   ];
   const filteredGames = allDisplayGames.filter((g) =>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Fence, TrendingUp, Factory } from "lucide-react";
 import { FARMING_SIM_POSTER, fetchFarmingSimCategories } from "@/components/tuto-gaming/farmingSimData";
+import { useTutoGamingAssets, getAssetUrl } from "@/hooks/useTutoGamingAssets";
 import CategoryCard from "@/components/tuto-gaming/CategoryCard";
 import BlockRenderer from "@/components/tuto-gaming/BlockRenderer";
 import FarmingSimPopupModal from "@/components/tuto-gaming/FarmingSimPopupModal";
@@ -16,6 +17,8 @@ export default function FarmingSimulator25() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activePopup, setActivePopup] = useState(null);
+  const { assets } = useTutoGamingAssets();
+  const farmingPoster = getAssetUrl(assets, "farming_sim_poster", FARMING_SIM_POSTER);
 
   useEffect(() => {
     fetchFarmingSimCategories().then((cats) => {
