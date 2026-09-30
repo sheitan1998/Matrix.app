@@ -168,9 +168,9 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
         backgroundPosition: `${bgPosX}% ${bgPosY}%`,
         backgroundRepeat: "no-repeat",
         backgroundAttachment: bgImage ? "fixed" : "scroll",
-        backgroundColor: bgColor,
-      }}
-    >
+        backgroundColor: bgColor
+      }}>
+      
       {/* Title */}
       <div className="text-center mb-4">
         <h2 style={{
@@ -198,7 +198,7 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
         {/* Radial glow backdrop — integrates wheel with background */}
         <div className="absolute inset-0 -z-10 rounded-full" style={{
           background: "radial-gradient(circle at center, rgba(168,85,247,0.18) 0%, rgba(0,242,255,0.08) 45%, transparent 70%)",
-          transform: "scale(1.3)",
+          transform: "scale(1.3)"
         }} />
         {/* Pointer */}
         <div className="absolute left-1/2 -translate-x-1/2 -top-1 z-20 flex flex-col items-center">
@@ -214,7 +214,7 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
         <div ref={wheelRef} className="relative" style={{
           transition: `transform ${SPIN_DURATION}ms cubic-bezier(0.17, 0.67, 0.12, 0.99)`,
           transform: `rotate(${rotation}deg)`,
-          willChange: "transform",
+          willChange: "transform"
         }}>
           <svg viewBox="0 0 300 300" className="w-full h-full" style={{ filter: "drop-shadow(0 0 20px rgba(168,85,247,0.3))" }}>
             {/* Outer ring — configurable wheel border */}
@@ -233,8 +233,8 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
                       </pattern>
                     </defs>
                     <circle cx="150" cy="150" r="148" fill="none" stroke="url(#wb-img)" strokeWidth={w} />
-                  </>
-                );
+                  </>);
+
               }
               if (style === "gradient") {
                 return (
@@ -246,8 +246,8 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
                       </linearGradient>
                     </defs>
                     <circle cx="150" cy="150" r="148" fill="none" stroke="url(#wb-grad)" strokeWidth={w} />
-                  </>
-                );
+                  </>);
+
               }
               if (style === "neon") {
                 return <circle cx="150" cy="150" r="148" fill="none" stroke={c1} strokeWidth={w} style={{ filter: `drop-shadow(0 0 6px ${c1}) drop-shadow(0 0 12px ${c2})` }} />;
@@ -263,16 +263,16 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
               const path = describeArc(150, 150, 140, startAngle, endAngle);
               const textPos = polarToCartesian(150, 150, 90, startAngle + segmentAngle / 2);
               const segImgId = `seg-bg-${i}`;
-              const segFill = seg.bg_image ? `url(#${segImgId})` : (seg.bg_color || seg.color);
+              const segFill = seg.bg_image ? `url(#${segImgId})` : seg.bg_color || seg.color;
               return (
                 <g key={i}>
-                  {seg.bg_image && (
-                    <defs>
+                  {seg.bg_image &&
+                  <defs>
                       <pattern id={segImgId} patternUnits="userSpaceOnUse" width="280" height="280" x="10" y="10">
                         <image href={bustImageCache(seg.bg_image, gameConfig?.updated_date)} x="0" y="0" width="280" height="280" preserveAspectRatio="xMidYMid slice" />
                       </pattern>
                     </defs>
-                  )}
+                  }
                   <path d={path} fill={segFill} stroke="rgba(0,0,0,0.3)" strokeWidth="1" />
                   {/* Glow border */}
                   <path d={path} fill="none" stroke={seg.glow} strokeWidth="0.5" opacity="0.6" />
@@ -368,7 +368,7 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
       }
 
       {/* Balance + rewards table */}
-      <div className="mt-6 flex items-center gap-2 px-4 py-2 rounded-xl" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(197,160,89,0.15)" }}>
+      <div className="mt-6 flex items-center gap-2 px-4 py-2 rounded-xl hidden" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(197,160,89,0.15)" }}>
         <CasinoToken size={18} />
         <span className="text-sm font-mono font-black" style={{ color: "#C5A059" }}>{formatBet(balance)}</span>
         <span className="text-[9px] text-white/40 uppercase">Solde</span>
