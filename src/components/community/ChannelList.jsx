@@ -129,13 +129,24 @@ export default function ChannelList({ channels, activeChannel, setActiveChannel,
               <div className="ml-5 mr-2 mb-1 space-y-0.5">
                 {voiceParticipants.map((p, i) => (
                   <div key={i} className="flex items-center gap-1.5 py-0.5">
-                    <div className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white shrink-0 overflow-hidden"
-                      style={{ background: p.avatar ? "transparent" : theme.accent + "40" }}>
-                      {p.avatar ? (
-                        <img src={p.avatar} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        (p.name || "?")[0].toUpperCase()
+                    <div className="relative shrink-0">
+                      {p.speaking && p.micOn && (
+                        <span
+                          className="absolute inset-0 rounded-full animate-pulse"
+                          style={{
+                            boxShadow: `0 0 0 1.5px ${theme.accent}, 0 0 6px ${theme.accent}80`,
+                            animationDuration: "1.2s",
+                          }}
+                        />
                       )}
+                      <div className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white overflow-hidden"
+                        style={{ background: p.avatar ? "transparent" : theme.accent + "40" }}>
+                        {p.avatar ? (
+                          <img src={p.avatar} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          (p.name || "?")[0].toUpperCase()
+                        )}
+                      </div>
                     </div>
                     <span className="text-[10px] text-white/50 truncate flex-1">{p.name}</span>
                     {!p.micOn && <span className="text-[8px]">🔇</span>}

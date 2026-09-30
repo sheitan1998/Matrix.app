@@ -40,6 +40,10 @@
           "micOn": {
             "type": "boolean",
             "default": true
+          },
+          "speaking": {
+            "type": "boolean",
+            "default": false
           }
         }
       },

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAudioSettings } from "@/hooks/useAudioSettings";
+import { useSpeakingDetection } from "@/hooks/useSpeakingDetection";
 import { playMicMute, playMicUnmute, playSpeakerOff, playSpeakerOn, playCallEnded } from "@/lib/voiceSounds";
 import { toast } from "sonner";
 
@@ -21,6 +22,28 @@ export function VoiceProvider({ children }) {
   const [voiceRoomId, setVoiceRoomId] = useState(null);
   const localStreamRef = useRef(null);
   const screenStreamRef = useRef(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+
+  // Speaking detection on local mic stream
+  const { speaking: localSpeaking } = useSpeakingDetection(
+    micOn ? localStreamRef.current : null,
+    { threshold: 0.06, interval: 80 }
+  );
+
+  // Track last speaking state to avoid redundant DB writes
+  const lastSpeakingSynced = useRef(false);
+
+  // Sync speaking state to participants list (local) and to DB (debounced)
+  useEffect(() => {
+    setParticipants((prev) =>
+      prev.map((p) => (p.isSelf ? { ...p, speaking: localSpeaking } : p))
+    );
+    // Only sync to DB when speaking state actually changes
+    if (voiceRoomId && user?.email && localSpeaking !== lastSpeakingSynced.current) {
+      lastSpeakingSynced.current = localSpeaking;
+      updateParticipantInDB(voiceRoomId, user.email, { speaking: localSpeaking });
+    }
+  }, [localSpeaking, voiceRoomId, user, updateParticipantInDB]);
 
   // Sync participant micOn to DB (debounced via state)
   const updateParticipantInDB = useCallback(async (roomId, email, patch) => {
@@ -206,25 +229,51 @@ export function VoiceProvider({ children }) {
     setSharing(false);
   }, []);
 
-  const startScreenShare = useCallback(async () => {
-    try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
-      screenStreamRef.current = stream;
-      setScreenStream(stream);
-      setSharing(true);
-      stream.getVideoTracks()[0].onended = () => stopScreenShare();
-      toast.success("Partage d'écran démarré !");
-    } catch (e) {
-      toast.error("Partage d'écran annulé");
+  // Replace the current screen stream with a new one (source switching)
+  const replaceScreenShare = useCallback((newStream) => {
+    // Stop old tracks
+    if (screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach((t) => t.stop());
     }
+    screenStreamRef.current = newStream;
+    setScreenStream(newStream);
+    setSharing(true);
+    // Listen for the browser's native "stop sharing" button
+    const videoTrack = newStream.getVideoTracks()[0];
+    if (videoTrack) {
+      videoTrack.onended = () => stopScreenShare();
+    }
+    toast.success("Source de partage mise à jour !");
   }, [stopScreenShare]);
+
+  // Open the custom share picker modal
+  const openShareModal = useCallback(() => {
+    setShowShareModal(true);
+  }, []);
+
+  // Close the share picker modal
+  const closeShareModal = useCallback(() => {
+    setShowShareModal(false);
+  }, []);
+
+  // Called when the user picks a source in the modal
+  const handleShareStart = useCallback((stream) => {
+    replaceScreenShare(stream);
+    setShowShareModal(false);
+  }, [replaceScreenShare]);
+
+  // Legacy direct call (kept for compatibility) — now opens the modal
+  const startScreenShare = useCallback(() => {
+    setShowShareModal(true);
+  }, []);
 
   const value = {
     connected, channel, server, theme, user,
     micOn, speakerOn, sharing, screenStream, participants,
-    localStreamRef,
+    localStreamRef, localSpeaking,
+    showShareModal, openShareModal, closeShareModal, handleShareStart,
     connect, disconnect, toggleMic, toggleSpeaker,
-    startScreenShare, stopScreenShare,
+    startScreenShare, stopScreenShare, replaceScreenShare,
   };
 
   return (

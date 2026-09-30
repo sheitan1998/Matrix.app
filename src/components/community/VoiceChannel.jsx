@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useVoice } from "@/context/VoiceContext";
 import ScreenShareView from "@/components/community/ScreenShareView";
+import ScreenShareModal from "@/components/community/ScreenShareModal";
 
 export default function VoiceChannel({ channel, server, theme, user }) {
   const {
@@ -11,6 +12,7 @@ export default function VoiceChannel({ channel, server, theme, user }) {
     micOn, speakerOn, sharing, screenStream, participants,
     connect, disconnect, toggleMic, toggleSpeaker,
     startScreenShare, stopScreenShare,
+    showShareModal, closeShareModal, handleShareStart,
   } = useVoice();
   const isActive = connected && activeChannel?.id === channel.id;
   const accent = theme?.accent || "#00ff41";
@@ -73,10 +75,26 @@ export default function VoiceChannel({ channel, server, theme, user }) {
           </p>
           {participants.map((p, i) => (
             <div key={i} className="flex items-center gap-3 p-3 rounded-2xl border"
-              style={{ borderColor: accent + "20", background: accent + "08" }}>
-              <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white"
-                style={{ background: accent + "30" }}>
-                {(p.name || "?")[0].toUpperCase()}
+              style={{ borderColor: p.speaking && p.micOn ? accent + "60" : accent + "20", background: accent + "08" }}>
+              <div className="relative shrink-0">
+                {/* Speaking ring */}
+                {p.speaking && p.micOn && (
+                  <span
+                    className="absolute inset-0 rounded-full animate-pulse"
+                    style={{
+                      boxShadow: `0 0 0 2px ${accent}, 0 0 12px ${accent}80`,
+                      animationDuration: "1.2s",
+                    }}
+                  />
+                )}
+                <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white overflow-hidden"
+                  style={{ background: accent + "30" }}>
+                  {p.avatar ? (
+                    <img src={p.avatar} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    (p.name || "?")[0].toUpperCase()
+                  )}
+                </div>
               </div>
               <span className="font-semibold text-sm text-white flex-1">{p.name || "—"}</span>
               {!p.micOn && <MicOff className="w-4 h-4 text-red-400" />}
@@ -108,6 +126,13 @@ export default function VoiceChannel({ channel, server, theme, user }) {
           </button>
         </div>
       </div>
+
+      <ScreenShareModal
+        open={showShareModal}
+        onClose={closeShareModal}
+        onStart={handleShareStart}
+        accent={accent}
+      />
     </div>
   );
 }

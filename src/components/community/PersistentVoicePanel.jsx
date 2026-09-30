@@ -4,6 +4,7 @@ import { Mic, MicOff, Volume2, VolumeX, PhoneOff, Monitor, MonitorOff, ChevronUp
 import { cn } from "@/lib/utils";
 import { useVoice } from "@/context/VoiceContext";
 import ScreenShareView from "@/components/community/ScreenShareView";
+import ScreenShareModal from "@/components/community/ScreenShareModal";
 
 export default function PersistentVoicePanel() {
   const {
@@ -12,6 +13,7 @@ export default function PersistentVoicePanel() {
     toggleMic, toggleSpeaker,
     startScreenShare, stopScreenShare,
     disconnect,
+    showShareModal, closeShareModal, handleShareStart,
   } = useVoice();
   const [expanded, setExpanded] = useState(true);
 
@@ -19,7 +21,7 @@ export default function PersistentVoicePanel() {
 
   const accent = theme?.accent || "#00ff41";
 
-  return createPortal(
+  const panel = createPortal(
     <div className="fixed bottom-20 right-4 z-[80] w-72 max-w-[calc(100vw-2rem)] rounded-2xl overflow-hidden shadow-2xl"
       style={{ background: "#13101a", border: "1px solid rgba(168,85,247,0.2)" }}>
       {/* Header */}
@@ -52,9 +54,25 @@ export default function PersistentVoicePanel() {
             {participants.map((p, i) => (
               <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded-lg"
                 style={{ background: p.isSelf ? accent + "10" : "rgba(255,255,255,0.03)" }}>
-                <div className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs text-white shrink-0"
-                  style={{ background: accent + "30" }}>
-                  {(p.name || "?")[0].toUpperCase()}
+                <div className="relative shrink-0">
+                  {/* Speaking ring */}
+                  {p.speaking && p.micOn && (
+                    <span
+                      className="absolute inset-0 rounded-full animate-pulse"
+                      style={{
+                        boxShadow: `0 0 0 2px ${accent}, 0 0 8px ${accent}80`,
+                        animationDuration: "1.2s",
+                      }}
+                    />
+                  )}
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs text-white overflow-hidden"
+                    style={{ background: accent + "30" }}>
+                    {p.avatar ? (
+                      <img src={p.avatar} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      (p.name || "?")[0].toUpperCase()
+                    )}
+                  </div>
                 </div>
                 <span className="text-[11px] font-semibold text-white/80 flex-1 truncate">
                   {p.name || "—"}{p.isSelf && " (toi)"}
@@ -96,5 +114,17 @@ export default function PersistentVoicePanel() {
       )}
     </div>,
     document.body
+  );
+
+  return (
+    <>
+      {panel}
+      <ScreenShareModal
+        open={showShareModal}
+        onClose={closeShareModal}
+        onStart={handleShareStart}
+        accent={accent}
+      />
+    </>
   );
 }
