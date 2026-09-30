@@ -7,6 +7,7 @@ import {
   Globe, Clock, Shield, Check, Headphones, Gamepad2,
 } from "lucide-react";
 import AudioSettingsPanel from "@/components/profile/AudioSettingsPanel";
+import GamePicker from "@/components/profile/GamePicker";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -334,36 +335,15 @@ export default function UserSettingsModal({ open, onClose, user }) {
                     <p className="text-xs text-white/40 mt-0.5">Définissez manuellement le jeu auquel vous jouez. Ce champ surcharge la détection automatique. Laissez vide pour utiliser la détection automatique.</p>
                   </div>
                 </div>
-                <div className="ml-12 flex items-center gap-2">
-                  <input
-                    type="text"
+                <div className="ml-12">
+                  <GamePicker
                     value={settings.manual_game}
-                    onChange={(e) => setSettings(prev => ({ ...prev, manual_game: e.target.value }))}
-                    onBlur={(e) => {
-                      if (settingsRef.current.manual_game !== e.target.value) {
-                        updateSetting("manual_game", e.target.value.trim());
-                      }
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.target.blur();
-                      }
+                    onChange={(val) => {
+                      setSettings(prev => ({ ...prev, manual_game: val }));
+                      updateSetting("manual_game", val.trim());
                     }}
                     disabled={!settings.show_game_activity || loading || !!savingKey}
-                    placeholder="ex: Farming Simulator 25"
-                    maxLength={80}
-                    className="flex-1 px-3 py-2.5 rounded-xl text-sm text-white placeholder:text-white/30 outline-none disabled:opacity-40"
-                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(168,85,247,0.3)" }}
                   />
-                  {settings.manual_game && (
-                    <button
-                      onClick={() => updateSetting("manual_game", "")}
-                      disabled={loading || !!savingKey}
-                      className="px-3 py-2.5 rounded-xl text-xs font-bold text-red-400 transition hover:bg-red-500/10 disabled:opacity-40 tap-sm"
-                    >
-                      Effacer
-                    </button>
-                  )}
                 </div>
                 {!settings.show_game_activity && (
                   <p className="ml-12 mt-2 text-[10px] text-white/30">Activez « Afficher mon activité de jeu » pour configurer un jeu manuel.</p>
