@@ -1,5 +1,5 @@
-import React from "react";
-import { Download, User } from "lucide-react";
+import React, { useState } from "react";
+import { Download, User, ChevronLeft, ChevronRight, X } from "lucide-react";
 
 const CATEGORY_LABELS = {
   vehicles: "Véhicules",
@@ -12,11 +12,50 @@ const CATEGORY_LABELS = {
 };
 
 export default function FarmingModCard({ mod, onDownload }) {
+  const images = mod.images || [];
+  const [galleryIdx, setGalleryIdx] = useState(0);
+  const [lightbox, setLightbox] = useState(null);
+
+  const hasImages = images.length > 0;
+
   return (
     <div
       className="rounded-xl overflow-hidden border border-white/10 flex flex-col"
       style={{ background: "#1e1e1e" }}
     >
+      {/* Image gallery */}
+      {hasImages && (
+        <div className="relative w-full h-40 bg-black overflow-hidden">
+          <img
+            src={images[galleryIdx]}
+            alt=""
+            className="w-full h-full object-cover cursor-pointer"
+            onClick={() => setLightbox(galleryIdx)}
+          />
+          {images.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={() => setGalleryIdx((i) => (i === 0 ? images.length - 1 : i - 1))}
+                className="absolute left-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center text-white/80 hover:text-white transition tap-sm"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setGalleryIdx((i) => (i === images.length - 1 ? 0 : i + 1))}
+                className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center text-white/80 hover:text-white transition tap-sm"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+              <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded-full bg-black/60 text-[9px] font-bold text-white">
+                {galleryIdx + 1} / {images.length}
+              </span>
+            </>
+          )}
+        </div>
+      )}
+
       {/* Header */}
       <div className="p-3 border-b border-white/5 flex items-start gap-2">
         <div className="flex-1 min-w-0">
@@ -64,6 +103,47 @@ export default function FarmingModCard({ mod, onDownload }) {
           Download
         </button>
       </div>
+
+      {/* Lightbox */}
+      {lightbox !== null && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.92)" }}
+          onClick={() => setLightbox(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setLightbox(null)}
+            className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition tap-sm"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <img
+            src={images[lightbox]}
+            alt=""
+            className="max-w-full max-h-[85vh] object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
+          {images.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setLightbox((i) => (i === 0 ? images.length - 1 : i - 1)); }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition tap-sm"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setLightbox((i) => (i === images.length - 1 ? 0 : i + 1)); }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition tap-sm"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }

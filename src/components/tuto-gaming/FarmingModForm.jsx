@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { X, Upload, Loader2, FileArchive, Trash2 } from "lucide-react";
+import { X, Upload, Loader2, FileArchive, Trash2, ImagePlus } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 
@@ -20,8 +20,11 @@ export default function FarmingModForm({ mod, userEmail, userName, userAvatar, o
   const [category, setCategory] = useState(mod?.category || "vehicles");
   const [isFree, setIsFree] = useState(mod?.is_free ?? true);
   const [file, setFile] = useState(null);
+  const [images, setImages] = useState([]); // new File objects selected
+  const [existingImages, setExistingImages] = useState(mod?.images || []); // already-uploaded URLs (edit mode)
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [uploadingZip, setUploadingZip] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   const handleFileChange = (e) => {
     const f = e.target.files?.[0];
@@ -30,11 +33,21 @@ export default function FarmingModForm({ mod, userEmail, userName, userAvatar, o
       toast.error("Le fichier doit être un .zip");
       return;
     }
-    if (f.size > 200 * 1024 * 1024) {
-      toast.error("Le fichier ne doit pas dépasser 200 Mo");
-      return;
-    }
     setFile(f);
+  };
+
+  const handleImagesChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    setImages((prev) => [...prev, ...files]);
+  };
+
+  const removeNewImage = (idx) => {
+    setImages((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const removeExistingImage = (idx) => {
+    setExistingImages((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const handleSubmit = async (e) => {
@@ -48,13 +61,27 @@ export default function FarmingModForm({ mod, userEmail, userName, userAvatar, o
       let fileUrl = mod?.file_url || "";
       let fileName = mod?.file_name || "";
 
+      // Upload .zip (no size limit — large maps / packs supported)
       if (file) {
-        setUploading(true);
+        setUploadingZip(true);
         const res = await base44.integrations.Core.UploadPublicFile({ file });
         fileUrl = res.file_url;
         fileName = file.name;
-        setUploading(false);
+        setUploadingZip(false);
       }
+
+      // Upload new images (public, no size limit)
+      let uploadedImageUrls = [];
+      if (images.length > 0) {
+        setUploadingImages(true);
+        const results = await Promise.all(
+          images.map((img) => base44.integrations.Core.UploadPublicFile({ file: img }))
+        );
+        uploadedImageUrls = results.map((r) => r.file_url);
+        setUploadingImages(false);
+      }
+
+      const finalImages = [...existingImages, ...uploadedImageUrls];
 
       const payload = {
         title: title.trim(),
@@ -63,6 +90,7 @@ export default function FarmingModForm({ mod, userEmail, userName, userAvatar, o
         is_free: isFree,
         file_url: fileUrl,
         file_name: fileName,
+        images: finalImages,
         creator_email: userEmail,
         creator_name: userName || "Créateur",
         creator_avatar: userAvatar || "",
@@ -80,9 +108,12 @@ export default function FarmingModForm({ mod, userEmail, userName, userAvatar, o
       toast.error("Erreur lors de l'enregistrement");
     } finally {
       setSaving(false);
-      setUploading(false);
+      setUploadingZip(false);
+      setUploadingImages(false);
     }
   };
+
+  const isUploading = uploadingZip || uploadingImages;
 
   return (
     <div
@@ -158,7 +189,7 @@ export default function FarmingModForm({ mod, userEmail, userName, userAvatar, o
             />
           </div>
 
-          {/* File upload */}
+          {/* File upload — no size limit */}
           <div>
             <label className="block text-[11px] font-bold uppercase tracking-wider text-white/50 mb-1.5">
               Fichier .zip {isEdit ? "(laisser vide pour garder l'actuel)" : "*"}
@@ -183,11 +214,69 @@ export default function FarmingModForm({ mod, userEmail, userName, userAvatar, o
                 <>
                   <Upload className="w-8 h-8 text-white/30" />
                   <span className="text-xs text-white/50">Cliquer pour sélectionner un .zip</span>
-                  <span className="text-[10px] text-white/30">Max 200 Mo</span>
+                  <span className="text-[10px] text-white/30">Taille illimitée</span>
                 </>
               )}
               <input type="file" accept=".zip" onChange={handleFileChange} className="hidden" />
             </label>
+          </div>
+
+          {/* Image upload — multiple screenshots, no size limit */}
+          <div>
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-white/50 mb-1.5">
+              Captures d'écran
+            </label>
+            <label
+              className="flex flex-col items-center justify-center gap-2 px-4 py-5 rounded-lg cursor-pointer transition border border-dashed"
+              style={{ background: "#262626", borderColor: "rgba(125,166,39,0.3)" }}
+            >
+              <ImagePlus className="w-7 h-7 text-white/30" />
+              <span className="text-xs text-white/50">Ajouter des captures d'écran</span>
+              <span className="text-[10px] text-white/30">Taille illimitée — plusieurs images</span>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImagesChange}
+                className="hidden"
+              />
+            </label>
+
+            {/* Existing images (edit mode) */}
+            {existingImages.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                {existingImages.map((url, idx) => (
+                  <div key={idx} className="relative group rounded-lg overflow-hidden" style={{ background: "#262626" }}>
+                    <img src={url} alt="" className="w-full h-20 object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeExistingImage(idx)}
+                      className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center bg-red-500/80 text-white opacity-0 group-hover:opacity-100 transition tap-sm"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* New images (preview before upload) */}
+            {images.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                {images.map((f, idx) => (
+                  <div key={idx} className="relative group rounded-lg overflow-hidden" style={{ background: "#262626" }}>
+                    <img src={URL.createObjectURL(f)} alt="" className="w-full h-20 object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeNewImage(idx)}
+                      className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center bg-red-500/80 text-white opacity-0 group-hover:opacity-100 transition tap-sm"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* License */}
@@ -226,11 +315,11 @@ export default function FarmingModForm({ mod, userEmail, userName, userAvatar, o
           </button>
           <button
             type="submit"
-            disabled={saving || uploading}
+            disabled={saving || isUploading}
             className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-bold transition tap-sm disabled:opacity-50"
             style={{ background: "#7DA627", color: "#0a0a0a" }}
           >
-            {uploading ? (
+            {isUploading ? (
               <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Upload…</>
             ) : saving ? (
               <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Enregistrement…</>

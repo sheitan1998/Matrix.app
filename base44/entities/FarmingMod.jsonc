@@ -45,6 +45,14 @@
       "type": "string",
       "description": "Nom original du fichier uploade"
     },
+    "images": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Captures d'ecran du mod (URLs publiques)"
+    },
     "is_free": {
       "type": "boolean",
       "default": true,
