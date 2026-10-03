@@ -169,6 +169,140 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ success: true });
       }
 
+      // ---- Approve a creator status request (admin only) ----
+      case 'approveCreatorRequest': {
+        if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
+
+        const { ticket_id } = params;
+        if (!ticket_id) return Response.json({ error: 'Missing ticket_id' }, { status: 400 });
+
+        const ticket = await base44.asServiceRole.entities.SupportTicket.get(ticket_id);
+        if (!ticket) return Response.json({ error: 'Ticket not found' }, { status: 404 });
+        if (ticket.category !== 'creator_request')
+          return Response.json({ error: 'Not a creator request' }, { status: 400 });
+
+        // 1. Grant the creator badge on UserProgress
+        const progressRes = await base44.asServiceRole.entities.UserProgress.filter({ user_email: ticket.user_email }, '-created_date', 1);
+        const progress = Array.isArray(progressRes) ? progressRes[0] : progressRes?.items?.[0];
+        if (progress) {
+          const badges = Array.isArray(progress.badges) ? [...progress.badges] : [];
+          if (!badges.includes('creator')) badges.push('creator');
+          await base44.asServiceRole.entities.UserProgress.update(progress.id, {
+            badges,
+            equipped: { ...(progress.equipped || {}), badge: 'creator', creator_category: ticket.creator_category || '' },
+          });
+        }
+
+        // 2. Close and lock the ticket
+        await base44.asServiceRole.entities.SupportTicket.update(ticket_id, {
+          status: 'closed',
+          is_locked: true,
+          admin_response: 'Statut Créateur accordé',
+        });
+
+        // 3. Mark associated DMs as read-only
+        const dms = await base44.asServiceRole.entities.DirectMessage.filter({ ticket_id });
+        for (const dm of dms) {
+          await base44.asServiceRole.entities.DirectMessage.update(dm.id, { is_read_only: true });
+        }
+
+        // 4. System message in the conversation
+        await base44.asServiceRole.entities.TicketMessage.create({
+          ticket_id,
+          author_email: user.email,
+          author_name: user.full_name || 'Système',
+          author_role: 'admin',
+          content: '✅ Demande acceptée — Le statut de Créateur vous a été accordé.',
+          is_system: true,
+        });
+
+        // 5. DM the user
+        await base44.asServiceRole.entities.DirectMessage.create({
+          sender_email: SUPPORT_EMAIL,
+          sender_name: SUPPORT_NAME,
+          sender_avatar: SUPPORT_AVATAR,
+          recipient_email: ticket.user_email,
+          recipient_name: ticket.user_name || '',
+          recipient_avatar: ticket.user_avatar || '',
+          content: `🎨 Félicitations ! Votre demande de statut Créateur a été acceptée.\n\nVous pouvez désormais publier du contenu créateur (mods, maps, designs) sur la plateforme.\n\nCatégorie: ${ticket.creator_category || 'Non spécifiée'}`,
+          ticket_id,
+          is_read: false,
+          is_read_only: true,
+        });
+
+        // 6. Notification
+        await base44.asServiceRole.entities.Notification.create({
+          user_email: ticket.user_email,
+          type: 'role_assigned',
+          title: 'Statut Créateur accordé !',
+          body: 'Votre demande a été acceptée. Vous pouvez maintenant publier du contenu créateur.',
+          icon: '🎨',
+          is_read: false,
+        });
+
+        return Response.json({ success: true });
+      }
+
+      // ---- Reject a creator status request (admin only) ----
+      case 'rejectCreatorRequest': {
+        if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
+
+        const { ticket_id, reason } = params;
+        if (!ticket_id) return Response.json({ error: 'Missing ticket_id' }, { status: 400 });
+
+        const ticket = await base44.asServiceRole.entities.SupportTicket.get(ticket_id);
+        if (!ticket) return Response.json({ error: 'Ticket not found' }, { status: 404 });
+
+        // 1. Close and lock the ticket
+        await base44.asServiceRole.entities.SupportTicket.update(ticket_id, {
+          status: 'closed',
+          is_locked: true,
+          admin_response: reason ? `Demande refusée: ${sanitize(reason, 500)}` : 'Demande refusée',
+        });
+
+        // 2. Mark associated DMs as read-only
+        const dms = await base44.asServiceRole.entities.DirectMessage.filter({ ticket_id });
+        for (const dm of dms) {
+          await base44.asServiceRole.entities.DirectMessage.update(dm.id, { is_read_only: true });
+        }
+
+        // 3. System message
+        await base44.asServiceRole.entities.TicketMessage.create({
+          ticket_id,
+          author_email: user.email,
+          author_name: user.full_name || 'Système',
+          author_role: 'admin',
+          content: `❌ Demande refusée${reason ? ` — Motif: ${sanitize(reason, 500)}` : ''}.`,
+          is_system: true,
+        });
+
+        // 4. DM the user
+        await base44.asServiceRole.entities.DirectMessage.create({
+          sender_email: SUPPORT_EMAIL,
+          sender_name: SUPPORT_NAME,
+          sender_avatar: SUPPORT_AVATAR,
+          recipient_email: ticket.user_email,
+          recipient_name: ticket.user_name || '',
+          recipient_avatar: ticket.user_avatar || '',
+          content: `Votre demande de statut Créateur n'a pas été acceptée.${reason ? `\n\nMotif: ${sanitize(reason, 500)}` : ''}\n\nVous pouvez soumettre une nouvelle demande à tout moment.`,
+          ticket_id,
+          is_read: false,
+          is_read_only: true,
+        });
+
+        // 5. Notification
+        await base44.asServiceRole.entities.Notification.create({
+          user_email: ticket.user_email,
+          type: 'role_assigned',
+          title: 'Demande Créateur refusée',
+          body: reason || 'Votre demande de statut Créateur n\'a pas été acceptée pour le moment.',
+          icon: 'ℹ️',
+          is_read: false,
+        });
+
+        return Response.json({ success: true });
+      }
+
       // ---- Permanently delete a ticket and all associated data (admin only) ----
       case 'deleteTicket': {
         if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });

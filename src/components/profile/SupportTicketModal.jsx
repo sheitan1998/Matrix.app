@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
-import { X, Send, Bug, UserCircle, CreditCard, ShieldAlert, HelpCircle, Paperclip, Loader2, Download } from "lucide-react";
+import { X, Send, Bug, UserCircle, CreditCard, ShieldAlert, HelpCircle, Paperclip, Loader2, Download, Palette, Gamepad2, Map, Brush } from "lucide-react";
 import { useProgression } from "@/context/ProgressionContext";
 import { uploadImageWithToast } from "@/lib/imageModeration";
 
@@ -11,7 +11,15 @@ const CATEGORIES = [
   { id: "account", label: "Compte / Profil", icon: UserCircle, color: "#3b82f6" },
   { id: "payment", label: "Paiement / Boutique", icon: CreditCard, color: "#f59e0b" },
   { id: "harassment", label: "Harcèlement / Signalement", icon: ShieldAlert, color: "#ec4899" },
+  { id: "creator_request", label: "Statut Créateur", icon: Palette, color: "#22c55e" },
   { id: "other", label: "Autre", icon: HelpCircle, color: "#a855f7" },
+];
+
+const CREATOR_CATEGORIES = [
+  { id: "mods", label: "Mods de jeux / Véhicules", icon: Gamepad2 },
+  { id: "fortnite_maps", label: "Créateur de maps Fortnite", icon: Map },
+  { id: "design", label: "Design / Cosmétiques", icon: Brush },
+  { id: "other", label: "Autre", icon: HelpCircle },
 ];
 
 export default function SupportTicketModal({ user, onClose }) {
@@ -22,6 +30,19 @@ export default function SupportTicketModal({ user, onClose }) {
   const [attachments, setAttachments] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [creatorCategory, setCreatorCategory] = useState("mods");
+  const [portfolioLinks, setPortfolioLinks] = useState("");
+  const [creatorDescription, setCreatorDescription] = useState("");
+
+  const isCreatorRequest = category === "creator_request";
+
+  // Auto-fill subject when switching to creator request
+  const handleCategorySelect = (catId) => {
+    setCategory(catId);
+    if (catId === "creator_request" && !subject.trim()) {
+      setSubject("Demande de statut Créateur");
+    }
+  };
 
   const handleUpload = async (files) => {
     if (!files || files.length === 0) return;
@@ -38,22 +59,47 @@ export default function SupportTicketModal({ user, onClose }) {
   };
 
   const submit = async () => {
-    if (!subject.trim() || !message.trim()) {
-      toast.error("Veuillez remplir le sujet et le message");
+    if (!subject.trim()) {
+      toast.error("Veuillez remplir le sujet");
+      return;
+    }
+    if (isCreatorRequest) {
+      if (!portfolioLinks.trim() || !creatorDescription.trim()) {
+        toast.error("Veuillez fournir vos liens et une description de vos créations");
+        return;
+      }
+    } else if (!message.trim()) {
+      toast.error("Veuillez remplir le message");
       return;
     }
     setLoading(true);
     try {
-      const ticket = await base44.entities.SupportTicket.create({
+      const links = isCreatorRequest
+        ? portfolioLinks.split("\n").map(l => l.trim()).filter(l => l.length > 0)
+        : [];
+
+      const formattedMessage = isCreatorRequest
+        ? `🎨 Demande de statut Créateur\n\nCatégorie: ${CREATOR_CATEGORIES.find(c => c.id === creatorCategory)?.label || creatorCategory}\n\nLiens / Portfolio:\n${links.map(l => `• ${l}`).join("\n")}\n\nDescription:\n${creatorDescription.trim()}`
+        : message.trim();
+
+      const ticketData = {
         user_email: user.email,
         user_name: user.full_name || user.pseudo || user.email,
         user_avatar: user.avatar_url || "",
         subject: subject.trim(),
         category,
-        message: message.trim(),
+        message: formattedMessage,
         status: "open",
         priority: category === "harassment" ? "urgent" : "medium",
-      });
+      };
+
+      if (isCreatorRequest) {
+        ticketData.creator_category = creatorCategory;
+        ticketData.portfolio_links = links;
+        ticketData.creator_description = creatorDescription.trim();
+      }
+
+      const ticket = await base44.entities.SupportTicket.create(ticketData);
 
       // Create the first TicketMessage with attachments
       await base44.entities.TicketMessage.create({
@@ -62,7 +108,7 @@ export default function SupportTicketModal({ user, onClose }) {
         author_name: user.full_name || user.pseudo || user.email,
         author_avatar: user.avatar_url || "",
         author_role: "user",
-        content: message.trim(),
+        content: formattedMessage,
         attachments,
       });
 
@@ -71,10 +117,13 @@ export default function SupportTicketModal({ user, onClose }) {
         action: "openTicket",
         ticket_id: ticket.id,
         subject: subject.trim(),
-        message: message.trim(),
+        message: formattedMessage,
       });
 
-      toast.success("Ticket envoyé ! Une conversation avec le Support a été ouverte dans votre messagerie.");
+      toast.success(isCreatorRequest
+        ? "Demande envoyée ! Vous serez notifié dès qu'un administrateur aura traité votre demande."
+        : "Ticket envoyé ! Une conversation avec le Support a été ouverte dans votre messagerie."
+      );
       trackActivity("tickets_created");
       trackActivity("help_community");
       onClose();
@@ -125,7 +174,7 @@ export default function SupportTicketModal({ user, onClose }) {
               {CATEGORIES.map(c => (
                 <button
                   key={c.id}
-                  onClick={() => setCategory(c.id)}
+                  onClick={() => handleCategorySelect(c.id)}
                   className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition"
                   style={{
                     background: category === c.id ? `${c.color}20` : "rgba(255,255,255,0.03)",
@@ -140,20 +189,76 @@ export default function SupportTicketModal({ user, onClose }) {
             </div>
           </div>
 
-          {/* Message */}
-          <div>
-            <label className="text-xs font-bold text-white/60 mb-1.5 block">Message détaillé</label>
-            <textarea
-              value={message}
-              onChange={e => setMessage(e.target.value)}
-              placeholder="Expliquez en détail la raison de votre contact..."
-              rows={5}
-              maxLength={2000}
-              className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder:text-white/30 outline-none resize-none"
-              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
-            />
-            <p className="text-[10px] text-white/30 mt-1 text-right">{message.length}/2000</p>
-          </div>
+          {/* Creator request fields */}
+          {isCreatorRequest ? (
+            <>
+              {/* Creator category */}
+              <div>
+                <label className="text-xs font-bold text-white/60 mb-1.5 block">Catégorie de création</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {CREATOR_CATEGORIES.map(c => (
+                    <button
+                      key={c.id}
+                      onClick={() => setCreatorCategory(c.id)}
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition"
+                      style={{
+                        background: creatorCategory === c.id ? "rgba(34,197,94,0.15)" : "rgba(255,255,255,0.03)",
+                        border: creatorCategory === c.id ? "1px solid rgba(34,197,94,0.5)" : "1px solid rgba(255,255,255,0.06)",
+                        color: creatorCategory === c.id ? "#22c55e" : "rgba(255,255,255,0.5)",
+                      }}
+                    >
+                      <c.icon className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">{c.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Portfolio links */}
+              <div>
+                <label className="text-xs font-bold text-white/60 mb-1.5 block">Liens / Portfolio</label>
+                <textarea
+                  value={portfolioLinks}
+                  onChange={e => setPortfolioLinks(e.target.value)}
+                  placeholder="Un lien par ligne :&#10;https://www.epicgames.com/creator/...&#10;https://www.kingmods.net/...&#10;https://twitter.com/..."
+                  rows={4}
+                  className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder:text-white/30 outline-none resize-none"
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                />
+                <p className="text-[10px] text-white/30 mt-1">Profil Epic Creator, KingMods, ModHub, réseaux sociaux...</p>
+              </div>
+
+              {/* Creator description */}
+              <div>
+                <label className="text-xs font-bold text-white/60 mb-1.5 block">Description de vos créations</label>
+                <textarea
+                  value={creatorDescription}
+                  onChange={e => setCreatorDescription(e.target.value)}
+                  placeholder="Décrivez les types de contenus ou de maps que vous créez..."
+                  rows={4}
+                  maxLength={1000}
+                  className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder:text-white/30 outline-none resize-none"
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                />
+                <p className="text-[10px] text-white/30 mt-1 text-right">{creatorDescription.length}/1000</p>
+              </div>
+            </>
+          ) : (
+            /* Message */
+            <div>
+              <label className="text-xs font-bold text-white/60 mb-1.5 block">Message détaillé</label>
+              <textarea
+                value={message}
+                onChange={e => setMessage(e.target.value)}
+                placeholder="Expliquez en détail la raison de votre contact..."
+                rows={5}
+                maxLength={2000}
+                className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder:text-white/30 outline-none resize-none"
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+              />
+              <p className="text-[10px] text-white/30 mt-1 text-right">{message.length}/2000</p>
+            </div>
+          )}
 
           {/* Attachments */}
           <div>
@@ -184,7 +289,7 @@ export default function SupportTicketModal({ user, onClose }) {
           </button>
           <button
             onClick={submit}
-            disabled={loading || uploading || !subject.trim() || !message.trim()}
+            disabled={loading || uploading || !subject.trim() || (isCreatorRequest ? (!portfolioLinks.trim() || !creatorDescription.trim()) : !message.trim())}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-40 flex items-center justify-center gap-2"
             style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}
           >

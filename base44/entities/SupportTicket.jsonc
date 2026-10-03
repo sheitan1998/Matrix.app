@@ -25,6 +25,7 @@
         "account",
         "payment",
         "harassment",
+        "creator_request",
         "other"
       ],
       "default": "other",
@@ -69,6 +70,29 @@
       "type": "boolean",
       "default": false,
       "description": "Verrouille le ticket en lecture seule (cl\u00f4ture)"
+    },
+    "creator_category": {
+      "type": "string",
+      "enum": [
+        "mods",
+        "fortnite_maps",
+        "design",
+        "other"
+      ],
+      "description": "Categorie de creation (pour les demandes de statut Createur)"
+    },
+    "portfolio_links": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Liens vers le portfolio / plateformes du createur"
+    },
+    "creator_description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Description des types de contenus crees"
     },
     "description": {
       "type": "string",

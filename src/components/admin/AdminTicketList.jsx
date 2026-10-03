@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
-import { Clock, CheckCircle2, AlertCircle, X, Lock, Trash2 } from "lucide-react";
+import { Clock, CheckCircle2, AlertCircle, X, Lock, Trash2, Palette, Check, XCircle, ExternalLink } from "lucide-react";
 import TicketConversation from "@/components/admin/TicketConversation";
 import ConfirmDeleteModal from "@/components/admin/ConfirmDeleteModal";
 
@@ -17,6 +17,14 @@ const CATEGORY_LABELS = {
   account: "Compte / Profil",
   payment: "Paiement / Boutique",
   harassment: "Harcèlement",
+  creator_request: "Statut Créateur",
+  other: "Autre",
+};
+
+const CREATOR_CATEGORY_LABELS = {
+  mods: "Mods de jeux / Véhicules",
+  fortnite_maps: "Créateur de maps Fortnite",
+  design: "Design / Cosmétiques",
   other: "Autre",
 };
 
@@ -31,7 +39,11 @@ const STATUS_FILTERS = [
 export default function AdminTicketList({ tickets, user, onRefresh }) {
   const [expanded, setExpanded] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [creatorFilterOnly, setCreatorFilterOnly] = useState(false);
   const [deletingTicket, setDeletingTicket] = useState(null);
+  const [rejectingTicket, setRejectingTicket] = useState(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
 
   const updateStatus = async (ticket, status) => {
     try {
@@ -39,6 +51,34 @@ export default function AdminTicketList({ tickets, user, onRefresh }) {
       toast.success("Statut mis à jour");
       onRefresh();
     } catch { toast.error("Erreur"); }
+  };
+
+  const approveCreator = async (ticket) => {
+    setActionLoading(true);
+    try {
+      await base44.functions.invoke("ticketSystem", { action: "approveCreatorRequest", ticket_id: ticket.id });
+      toast.success("Statut Créateur accordé !");
+      onRefresh();
+    } catch { toast.error("Erreur lors de l'acceptation"); }
+    setActionLoading(false);
+  };
+
+  const confirmReject = async () => {
+    if (!rejectingTicket) return;
+    setActionLoading(true);
+    try {
+      await base44.functions.invoke("ticketSystem", {
+        action: "rejectCreatorRequest",
+        ticket_id: rejectingTicket.id,
+        reason: rejectReason.trim(),
+      });
+      toast.success("Demande refusée");
+      setExpanded(null);
+      onRefresh();
+    } catch { toast.error("Erreur lors du refus"); }
+    setActionLoading(false);
+    setRejectingTicket(null);
+    setRejectReason("");
   };
 
   const confirmDelete = async () => {
@@ -52,7 +92,9 @@ export default function AdminTicketList({ tickets, user, onRefresh }) {
     setDeletingTicket(null);
   };
 
-  const filtered = statusFilter === "all" ? tickets : tickets.filter(t => t.status === statusFilter);
+  const filtered = tickets
+    .filter(t => statusFilter === "all" || t.status === statusFilter)
+    .filter(t => !creatorFilterOnly || t.category === "creator_request");
 
   const sorted = [...filtered].sort((a, b) => {
     const order = { open: 0, in_progress: 1, resolved: 2, closed: 3 };
@@ -67,8 +109,8 @@ export default function AdminTicketList({ tickets, user, onRefresh }) {
         <p className="text-[10px] text-white/40 mt-0.5">Messagerie interne · pièces jointes · verrouillage</p>
       </div>
 
-      {/* Status filters */}
-      <div className="flex gap-1 px-4 py-2 overflow-x-auto no-scrollbar" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+      {/* Status + creator filters */}
+      <div className="flex gap-1 px-4 py-2 overflow-x-auto no-scrollbar items-center" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
         {STATUS_FILTERS.map(f => (
           <button
             key={f.value}
@@ -79,6 +121,14 @@ export default function AdminTicketList({ tickets, user, onRefresh }) {
             {f.label}
           </button>
         ))}
+        <div className="w-px h-4 bg-white/10 mx-1" />
+        <button
+          onClick={() => setCreatorFilterOnly(prev => !prev)}
+          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition whitespace-nowrap tap-sm flex items-center gap-1 ${creatorFilterOnly ? "text-white" : "text-white/40 hover:text-white/60"}`}
+          style={creatorFilterOnly ? { background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.4)" } : { background: "rgba(255,255,255,0.03)", border: "1px solid transparent" }}
+        >
+          <Palette className="w-3 h-3" /> Créateur
+        </button>
       </div>
 
       <div className="max-h-[600px] overflow-y-auto scrollbar-thin">
@@ -111,6 +161,63 @@ export default function AdminTicketList({ tickets, user, onRefresh }) {
               {isOpen && (
                 <div className="px-3 pb-4">
                   <TicketConversation ticket={ticket} user={user} isAdmin={true} onRefresh={onRefresh} />
+
+                  {/* Creator request details */}
+                  {ticket.category === "creator_request" && (
+                    <div className="mt-3 p-3 rounded-xl space-y-2" style={{ background: "rgba(34,197,94,0.05)", border: "1px solid rgba(34,197,94,0.15)" }}>
+                      <div className="flex items-center gap-1.5">
+                        <Palette className="w-3.5 h-3.5 text-green-400" />
+                        <p className="text-xs font-black text-green-400">Demande de statut Créateur</p>
+                      </div>
+                      {ticket.creator_category && (
+                        <div>
+                          <p className="text-[10px] font-bold text-white/40 mb-0.5">Catégorie</p>
+                          <p className="text-xs text-white/80">{CREATOR_CATEGORY_LABELS[ticket.creator_category] || ticket.creator_category}</p>
+                        </div>
+                      )}
+                      {ticket.portfolio_links && ticket.portfolio_links.length > 0 && (
+                        <div>
+                          <p className="text-[10px] font-bold text-white/40 mb-0.5">Liens / Portfolio</p>
+                          <div className="space-y-1">
+                            {ticket.portfolio_links.map((link, i) => (
+                              <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition">
+                                <ExternalLink className="w-3 h-3 shrink-0" />
+                                <span className="truncate">{link}</span>
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {ticket.creator_description && (
+                        <div>
+                          <p className="text-[10px] font-bold text-white/40 mb-0.5">Description</p>
+                          <p className="text-xs text-white/80 whitespace-pre-wrap">{ticket.creator_description}</p>
+                        </div>
+                      )}
+
+                      {/* Approve / Reject buttons — only if not already closed */}
+                      {!isLocked && (
+                        <div className="flex gap-2 pt-1">
+                          <button
+                            onClick={() => approveCreator(ticket)}
+                            disabled={actionLoading}
+                            className="flex-1 py-2 rounded-lg text-xs font-bold text-white transition hover:opacity-90 disabled:opacity-40 flex items-center justify-center gap-1.5"
+                            style={{ background: "linear-gradient(135deg, #22c55e, #16a34a)" }}
+                          >
+                            <Check className="w-3.5 h-3.5" /> Accepter
+                          </button>
+                          <button
+                            onClick={() => { setRejectingTicket(ticket); setRejectReason(""); }}
+                            disabled={actionLoading}
+                            className="flex-1 py-2 rounded-lg text-xs font-bold text-red-400 transition hover:bg-red-500/10 disabled:opacity-40 flex items-center justify-center gap-1.5"
+                            style={{ border: "1px solid rgba(239,68,68,0.4)" }}
+                          >
+                            <XCircle className="w-3.5 h-3.5" /> Refuser
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Status buttons */}
                   <div className="flex gap-1.5 flex-wrap mt-3 items-center">
@@ -152,6 +259,46 @@ export default function AdminTicketList({ tickets, user, onRefresh }) {
           onConfirm={confirmDelete}
           onCancel={() => setDeletingTicket(null)}
         />
+      )}
+
+      {rejectingTicket && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.8)", backdropFilter: "blur(8px)" }} onClick={() => setRejectingTicket(null)}>
+          <div className="w-full max-w-md rounded-2xl overflow-hidden" style={{ background: "#13101a", border: "1px solid rgba(239,68,68,0.3)" }} onClick={e => e.stopPropagation()}>
+            <div className="px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <h3 className="text-sm font-black text-white flex items-center gap-2">
+                <XCircle className="w-4 h-4 text-red-400" /> Refuser la demande Créateur
+              </h3>
+              <p className="text-[10px] text-white/40 mt-0.5">{rejectingTicket.user_name} — {rejectingTicket.subject}</p>
+            </div>
+            <div className="p-5">
+              <label className="text-xs font-bold text-white/60 mb-1.5 block">Motif du refus (optionnel)</label>
+              <textarea
+                value={rejectReason}
+                onChange={e => setRejectReason(e.target.value)}
+                placeholder="Expliquez pourquoi la demande est refusée..."
+                rows={4}
+                maxLength={500}
+                className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder:text-white/30 outline-none resize-none"
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+              />
+              <p className="text-[10px] text-white/30 mt-1 text-right">{rejectReason.length}/500</p>
+            </div>
+            <div className="px-5 py-4 flex gap-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+              <button onClick={() => setRejectingTicket(null)} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white/60 hover:text-white transition" style={{ background: "rgba(255,255,255,0.05)" }}>
+                Annuler
+              </button>
+              <button
+                onClick={confirmReject}
+                disabled={actionLoading}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-40 flex items-center justify-center gap-2"
+                style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}
+              >
+                {actionLoading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <XCircle className="w-4 h-4" />}
+                Confirmer le refus
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
