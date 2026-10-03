@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Fence, TrendingUp, Factory } from "lucide-react";
+import { ArrowLeft, Fence, TrendingUp, Factory, Package } from "lucide-react";
 import { FARMING_SIM_POSTER, fetchFarmingSimCategories } from "@/components/tuto-gaming/farmingSimData";
 import { useTutoGamingAssets, getAssetUrl } from "@/hooks/useTutoGamingAssets";
 import CategoryCard from "@/components/tuto-gaming/CategoryCard";
@@ -54,6 +54,14 @@ export default function FarmingSimulator25() {
               </button>
             );
           })}
+          <Link
+            to="/tuto-gaming/farming-simulator-25/mods"
+            className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition tap-sm"
+            style={{ background: "#7DA627", color: "#0a0a0a" }}
+          >
+            <Package className="w-3.5 h-3.5" />
+            Mods
+          </Link>
         </div>
       </div>
 

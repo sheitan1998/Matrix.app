@@ -82,6 +82,7 @@ const QuestDetailPage = lazy(() => import('@/pages/tuto-gaming/QuestDetailPage')
 const WikiEntryDetailPage = lazy(() => import('@/pages/tuto-gaming/WikiEntryDetailPage'));
 const FarmingSimulator25 = lazy(() => import('@/pages/tuto-gaming/FarmingSimulator25'));
 const FarmingSimCategory = lazy(() => import('@/pages/tuto-gaming/FarmingSimCategory'));
+const FarmingMods = lazy(() => import('@/pages/tuto-gaming/FarmingMods'));
 const FortniteMaps = lazy(() => import('@/pages/tuto-gaming/FortniteMaps'));
 const DynamicPage = lazy(() => import('@/pages/DynamicPage'));
 const TwitchHome = lazy(() => import('@/pages/twitch/TwitchHome'));
@@ -158,6 +159,7 @@ const AuthenticatedApp = () => {
           <Route path="/tuto-gaming/:gameSlug/quest/:questId" element={<QuestDetailPage />} />
           <Route path="/tuto-gaming/:gameSlug/wiki/:entryId" element={<WikiEntryDetailPage />} />
           <Route path="/tuto-gaming/farming-simulator-25" element={<FarmingSimulator25 />} />
+          <Route path="/tuto-gaming/farming-simulator-25/mods" element={<FarmingMods />} />
           <Route path="/tuto-gaming/farming-simulator-25/:categoryId" element={<FarmingSimCategory />} />
           <Route path="/tuto-gaming/fortnite" element={<FortniteMaps />} />
         </Route>

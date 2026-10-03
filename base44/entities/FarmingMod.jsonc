@@ -1,0 +1,95 @@
+{
+  "name": "FarmingMod",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Titre du mod"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Description detaillee du mod"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "vehicles",
+        "maps",
+        "tools",
+        "factories",
+        "animals",
+        "scripts",
+        "others"
+      ],
+      "default": "others",
+      "description": "Categorie du mod"
+    },
+    "creator_email": {
+      "type": "string",
+      "description": "Email du createur"
+    },
+    "creator_name": {
+      "type": "string",
+      "description": "Pseudo du createur"
+    },
+    "creator_avatar": {
+      "type": "string",
+      "description": "Avatar du createur"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL publique du fichier .zip"
+    },
+    "file_name": {
+      "type": "string",
+      "description": "Nom original du fichier uploade"
+    },
+    "is_free": {
+      "type": "boolean",
+      "default": true,
+      "description": "Libre de droit (true) ou droits reserves (false)"
+    },
+    "download_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Nombre de telechargements"
+    }
+  },
+  "required": [
+    "title",
+    "category",
+    "creator_email",
+    "file_url"
+  ],
+  "rls": {
+    "create": {
+      "data.creator_email": "{{user.email}}"
+    },
+    "read": {},
+    "update": {
+      "$or": [
+        {
+          "data.creator_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.creator_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
