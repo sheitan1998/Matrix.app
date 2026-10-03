@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Download, User, ChevronLeft, ChevronRight, X } from "lucide-react";
+import VoteButtons from "@/components/tuto-gaming/VoteButtons";
 
 const CATEGORY_LABELS = {
   vehicles: "Véhicules",
@@ -11,7 +12,7 @@ const CATEGORY_LABELS = {
   others: "Autres",
 };
 
-export default function FarmingModCard({ mod, onDownload }) {
+export default function FarmingModCard({ mod, onDownload, user }) {
   const images = mod.images || [];
   const [galleryIdx, setGalleryIdx] = useState(0);
   const [lightbox, setLightbox] = useState(null);
@@ -90,18 +91,27 @@ export default function FarmingModCard({ mod, onDownload }) {
       </div>
 
       {/* Footer */}
-      <div className="p-3 pt-0 flex items-center justify-between gap-2">
-        <span className="text-[10px] text-white/30 uppercase tracking-wider">
-          {CATEGORY_LABELS[mod.category] || "Autres"}
-        </span>
-        <button
-          onClick={() => onDownload(mod)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition tap-sm"
-          style={{ background: "#7DA627", color: "#0a0a0a" }}
-        >
-          <Download className="w-3.5 h-3.5" />
-          Download
-        </button>
+      <div className="p-3 pt-0 space-y-2">
+        <VoteButtons
+          contentType="farming_mod"
+          contentId={mod.id}
+          likes={mod.likes || 0}
+          dislikes={mod.dislikes || 0}
+          user={user}
+        />
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10px] text-white/30 uppercase tracking-wider">
+            {CATEGORY_LABELS[mod.category] || "Autres"} · {mod.views || 0} vues
+          </span>
+          <button
+            onClick={() => onDownload(mod)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition tap-sm"
+            style={{ background: "#7DA627", color: "#0a0a0a" }}
+          >
+            <Download className="w-3.5 h-3.5" />
+            Download
+          </button>
+        </div>
       </div>
 
       {/* Lightbox */}

@@ -1,0 +1,48 @@
+{
+  "name": "ContentVote",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email de l'utilisateur ayant vote"
+    },
+    "content_type": {
+      "type": "string",
+      "enum": [
+        "farming_mod",
+        "fortnite_map"
+      ],
+      "description": "Type de contenu vote"
+    },
+    "content_id": {
+      "type": "string",
+      "description": "ID de la publication votee"
+    },
+    "vote": {
+      "type": "string",
+      "enum": [
+        "like",
+        "dislike"
+      ],
+      "description": "Type de vote"
+    }
+  },
+  "required": [
+    "user_email",
+    "content_type",
+    "content_id",
+    "vote"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {},
+    "update": {
+      "data.user_email": "{{user.email}}"
+    },
+    "delete": {
+      "data.user_email": "{{user.email}}"
+    }
+  }
+}

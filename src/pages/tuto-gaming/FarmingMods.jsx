@@ -156,7 +156,7 @@ export default function FarmingMods() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {mods.map((mod) => (
-              <FarmingModCard key={mod.id} mod={mod} onDownload={handleDownload} />
+              <FarmingModCard key={mod.id} mod={mod} onDownload={handleDownload} user={user} />
             ))}
           </div>
         )}

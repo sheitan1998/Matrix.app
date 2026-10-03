@@ -28,12 +28,6 @@ export default function SubmitMapModal({ open, onClose, onSuccess, userEmail }) 
 
   const handleImagesChange = (e) => {
     const files = Array.from(e.target.files || []);
-    for (const file of files) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error(`${file.name} est trop lourd (max 5 Mo)`);
-        return;
-      }
-    }
     setImageFiles((prev) => [...prev, ...files]);
     // Reset input so selecting the same file again works
     e.target.value = "";
@@ -199,7 +193,7 @@ export default function SubmitMapModal({ open, onClose, onSuccess, userEmail }) 
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-xs font-bold text-white/70">Cliquez pour ajouter des images</span>
-                <span className="text-[10px] text-white/30 block">JPG, PNG, WebP — max 5 Mo par image</span>
+                <span className="text-[10px] text-white/30 block">JPG, PNG, WebP — taille illimitée</span>
               </div>
               <Upload className="w-4 h-4 text-white/30 shrink-0" />
               <input type="file" accept="image/*" multiple onChange={handleImagesChange} className="hidden" />

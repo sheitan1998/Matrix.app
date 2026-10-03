@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Copy, Check, User, Images } from "lucide-react";
 import { getCategoryMeta } from "@/components/tuto-gaming/fortniteMapsData";
+import VoteButtons from "@/components/tuto-gaming/VoteButtons";
 
-export default function FortniteMapCard({ map, index = 0, onClick }) {
+export default function FortniteMapCard({ map, index = 0, onClick, user }) {
   const [copied, setCopied] = useState(false);
   const cat = getCategoryMeta(map.category);
   const imageCount = (map.gallery?.length || 0) || (map.image_url ? 1 : 0);
@@ -102,6 +103,13 @@ export default function FortniteMapCard({ map, index = 0, onClick }) {
         {copied && (
           <span className="text-[9px] text-green-400 text-center mt-1 font-bold">Copié !</span>
         )}
+        <VoteButtons
+          contentType="fortnite_map"
+          contentId={map.id}
+          likes={map.likes || 0}
+          dislikes={map.dislikes || 0}
+          user={user}
+        />
       </div>
     </motion.div>
   );

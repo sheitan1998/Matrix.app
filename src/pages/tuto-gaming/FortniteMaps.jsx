@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Search, Loader2, ArrowLeft, Plus, Map as MapIcon, User } from "lucide-react";
+import { Search, Loader2, ArrowLeft, Plus, Map as MapIcon, User, Lock } from "lucide-react";
+import { toast } from "sonner";
 import FortniteMapCard from "@/components/tuto-gaming/FortniteMapCard";
 import SubmitMapModal from "@/components/tuto-gaming/SubmitMapModal";
 import MapDetailModal from "@/components/tuto-gaming/MapDetailModal";
@@ -17,6 +18,7 @@ export default function FortniteMaps() {
   const [showMyMaps, setShowMyMaps] = useState(false);
   const [selectedMap, setSelectedMap] = useState(null);
   const [user, setUser] = useState(null);
+  const [isCreator, setIsCreator] = useState(false);
   const { assets } = useTutoGamingAssets();
   const fortniteBanner = getAssetUrl(assets, "fortnite_banner", FORTNITE_BANNER);
 
@@ -33,7 +35,23 @@ export default function FortniteMaps() {
 
   useEffect(() => {
     fetchMaps();
-    base44.auth.me().then(setUser).catch(() => {});
+    (async () => {
+      try {
+        const me = await base44.auth.me();
+        setUser(me);
+        if (me?.email) {
+          const progressRes = await base44.entities.UserProgress.filter(
+            { user_email: me.email },
+            { limit: 1 }
+          );
+          const progress = progressRes?.items?.[0] || progressRes?.[0];
+          const badges = Array.isArray(progress?.badges) ? progress.badges : [];
+          setIsCreator(badges.includes("creator") || me.role === "admin");
+        }
+      } catch {
+        setIsCreator(false);
+      }
+    })();
   }, [fetchMaps]);
 
   // Realtime subscription
@@ -96,11 +114,11 @@ export default function FortniteMaps() {
       {/* Action buttons */}
       <div className="flex items-center gap-2 mb-5 flex-wrap">
         <button
-          onClick={() => setShowSubmit(true)}
+          onClick={() => isCreator ? setShowSubmit(true) : toast.error("Réservé aux créateurs. Demandez le statut créateur via le support.")}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-black text-white transition hover:opacity-90 tap-sm"
           style={{ background: "linear-gradient(135deg, #BF5AF2, #7C3AED)" }}>
           
-          <Plus className="w-4 h-4" /> Ajouter ma map
+          {isCreator ? <Plus className="w-4 h-4" /> : <Lock className="w-4 h-4" />} Ajouter ma map
         </button>
         {user &&
         <button
@@ -126,7 +144,7 @@ export default function FortniteMaps() {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {myMaps.map((m, i) =>
-          <FortniteMapCard key={m.id} map={m} index={i} onClick={setSelectedMap} />
+          <FortniteMapCard key={m.id} map={m} index={i} onClick={setSelectedMap} user={user} />
           )}
             </div>
         }
@@ -199,10 +217,10 @@ export default function FortniteMaps() {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
           {filteredMaps.map((m, i) =>
-        <FortniteMapCard key={m.id} map={m} index={i} onClick={setSelectedMap} />
+        <FortniteMapCard key={m.id} map={m} index={i} onClick={setSelectedMap} user={user} />
         )}
         </div>
-      }
+        }
 
       {/* Detail modal */}
       <MapDetailModal map={selectedMap} onClose={() => setSelectedMap(null)} />

@@ -56,6 +56,21 @@
       "type": "boolean",
       "default": true,
       "description": "Indique si la map est approuv\u00e9e et visible dans le catalogue"
+    },
+    "likes": {
+      "type": "number",
+      "default": 0,
+      "description": "Nombre de likes"
+    },
+    "dislikes": {
+      "type": "number",
+      "default": 0,
+      "description": "Nombre de dislikes"
+    },
+    "views": {
+      "type": "number",
+      "default": 0,
+      "description": "Nombre de vues"
     }
   },
   "required": [

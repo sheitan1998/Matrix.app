@@ -14,6 +14,7 @@ import CosmeticsPanel from "@/components/profile/CosmeticsPanel";
 import InventoryPanel from "@/components/profile/InventoryPanel";
 import TransactionHistory from "@/components/profile/TransactionHistory";
 import PrivacyPanel from "@/components/profile/PrivacyPanel";
+import CreatorDashboard from "@/components/profile/CreatorDashboard";
 import ProfileAnimationLayer from "@/components/profile/ProfileAnimationLayer";
 import TrixIcon from "@/components/TrixIcon";
 import DesktopDownloadButton from "@/components/DesktopDownloadButton";
@@ -26,7 +27,8 @@ const TABS = [
 { key: "inventory", label: "Inventaire", icon: Backpack },
 { key: "cosmetics", label: "Cosmétiques", icon: Award },
 { key: "wallet", label: "Transactions", icon: Coins },
-{ key: "privacy", label: "Confidentialité", icon: Lock }];
+{ key: "privacy", label: "Confidentialité", icon: Lock },
+{ key: "creator", label: "Creator", icon: Clapperboard }];
 
 
 export default function ProfileContent({ onClose }) {
@@ -42,12 +44,24 @@ export default function ProfileContent({ onClose }) {
   const [editPseudo, setEditPseudo] = useState("");
   const [showSupport, setShowSupport] = useState(false);
   const [cropModal, setCropModal] = useState(null);
+  const [isCreator, setIsCreator] = useState(false);
 
   useEffect(() => {
-    base44.auth.me().then((me) => {
+    base44.auth.me().then(async (me) => {
       setUser(me);
       setEditBio(me?.bio || "");
       setEditPseudo(me?.pseudo || "");
+      if (me?.email) {
+        try {
+          const progressRes = await base44.entities.UserProgress.filter(
+            { user_email: me.email },
+            { limit: 1 }
+          );
+          const progress = progressRes?.items?.[0] || progressRes?.[0];
+          const badges = Array.isArray(progress?.badges) ? progress.badges : [];
+          setIsCreator(badges.includes("creator") || me.role === "admin");
+        } catch { setIsCreator(false); }
+      }
     }).catch(() => {});
   }, []);
 
@@ -354,7 +368,7 @@ export default function ProfileContent({ onClose }) {
 
           {/* Tabs */}
           <div className="flex gap-1 mb-4 overflow-x-auto no-scrollbar border-b border-white/5 pb-1">
-            {TABS.map((t) =>
+            {TABS.filter((t) => t.key !== "creator" || isCreator).map((t) =>
             <button key={t.key} onClick={() => setTab(t.key)}
             className={`relative px-3 py-2.5 font-bold whitespace-nowrap transition text-base [font-family:'Inter',_system-ui,_sans-serif] ${tab === t.key ? "text-white" : "text-white/40 hover:text-white/60"}`}>
                 <t.icon className="w-3.5 h-3.5 inline mr-1" /> {t.label}
@@ -413,6 +427,7 @@ export default function ProfileContent({ onClose }) {
             {tab === "cosmetics" && <CosmeticsPanel user={user} />}
             {tab === "wallet" && <TransactionHistory user={user} />}
             {tab === "privacy" && <PrivacyPanel user={user} onUpdate={setUser} />}
+            {tab === "creator" && isCreator && <CreatorDashboard user={user} />}
           </div>
         </div>
       </div>
