@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Coins, Sparkles, Crown, CreditCard } from "lucide-react";
+import { Coins, Sparkles, Crown } from "lucide-react";
 import TrixIcon from "@/components/TrixIcon";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -31,7 +31,6 @@ export default function TrixStore() {
   const { user, checkUserAuth } = useAuth();
   const [loading, setLoading] = useState(null);
   const [vipLoading, setVipLoading] = useState(null);
-  const [portalLoading, setPortalLoading] = useState(false);
   const [searchParams] = useSearchParams();
   const [checkout, setCheckout] = useState(null);
 
@@ -83,23 +82,6 @@ export default function TrixStore() {
       params: { action: "createVIPSubscription", plan: plan.plan }
     });
     setVipLoading(null);
-  };
-
-  const openCustomerPortal = async () => {
-    if (!user) return;
-    setPortalLoading(true);
-    try {
-      const res = await base44.functions.invoke("stripePayment", { action: "createCustomerPortal" });
-      const url = res?.data?.url;
-      if (!url) {
-        toast.error(res?.data?.error || "Aucun abonnement actif trouvé");
-        return;
-      }
-      window.location.href = url;
-    } catch (err) {
-      toast.error(err?.response?.data?.error || err?.message || "Erreur");
-    }
-    setPortalLoading(false);
   };
 
   const buy = (pack) => {
@@ -229,23 +211,6 @@ export default function TrixStore() {
               </Button>
             </div>
             )}
-        </div>
-
-        {/* Customer Portal */}
-        <div className="mt-6 p-4 rounded-2xl flex items-center gap-3" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <CreditCard className="w-5 h-5 text-white/50 shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm font-bold text-white">Gérer mon abonnement</p>
-            <p className="text-xs text-white/50">Modifier, annuler ou télécharger vos factures via le portail Stripe</p>
-          </div>
-          <Button
-              onClick={openCustomerPortal}
-              disabled={portalLoading || !user}
-              variant="outline"
-              className="shrink-0 text-gray-50">
-              
-            {portalLoading ? "..." : "Portail Client"}
-          </Button>
         </div>
       </div>
       </div>

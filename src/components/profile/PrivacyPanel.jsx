@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { Mail, Lock, Eye, EyeOff, Shield, Check, Save, SlidersHorizontal } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Shield, Check, Save, SlidersHorizontal, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import UserSettingsModal from "@/components/profile/UserSettingsModal";
+import StripePortalModal from "@/components/profile/StripePortalModal";
 
 export default function PrivacyPanel({ user, onUpdate }) {
   const [editingEmail, setEditingEmail] = useState(false);
@@ -11,6 +12,9 @@ export default function PrivacyPanel({ user, onUpdate }) {
   const [saving, setSaving] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [savingPrivacy, setSavingPrivacy] = useState(false);
+  const [showPortal, setShowPortal] = useState(false);
+
+  const hasActiveSubscription = user?.is_vip || user?.is_premium || user?.stripe_customer_id;
 
   const togglePrivate = async () => {
     setSavingPrivacy(true);
@@ -112,6 +116,21 @@ export default function PrivacyPanel({ user, onUpdate }) {
         </div>
       </div>
 
+      {/* Stripe subscription management */}
+      {hasActiveSubscription && (
+        <div className="p-4 rounded-2xl" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(168,85,247,0.15)" }}>
+          <h3 className="text-sm font-bold text-white flex items-center gap-2 mb-2"><CreditCard className="w-4 h-4" style={{ color: "#a855f7" }} /> Abonnements & facturation</h3>
+          <p className="text-xs text-white/50 mb-3">Gérez vos abonnements, moyens de paiement et factures via le portail client sécurisé Stripe.</p>
+          <button
+            onClick={() => setShowPortal(true)}
+            className="w-full py-2.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 transition hover:opacity-90"
+            style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}
+          >
+            <CreditCard className="w-4 h-4" /> Gérer mes abonnements
+          </button>
+        </div>
+      )}
+
       {/* Logout */}
       <button onClick={() => base44.auth.logout("/")} className="w-full p-4 rounded-2xl text-sm font-bold text-red-400 transition" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)" }}>
         Se déconnecter
@@ -123,6 +142,7 @@ export default function PrivacyPanel({ user, onUpdate }) {
       </button>
 
       <UserSettingsModal open={showSettings} onClose={() => setShowSettings(false)} user={user} />
+      <StripePortalModal open={showPortal} onClose={() => setShowPortal(false)} user={user} />
     </div>
   );
 }
