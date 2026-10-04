@@ -6,6 +6,7 @@ import ServerBoostsPanel from "@/components/community/ServerBoostsPanel";
 import ServerBoostLevels from "@/components/prospecteurs/ServerBoostLevels";
 import BoostLevelGate from "@/components/community/BoostLevelGate";
 import BoostLevelBadge from "@/components/community/BoostLevelBadge";
+import ServerCustomEmojis from "@/components/community/ServerCustomEmojis";
 import { useServerBoosts } from "@/hooks/useServerBoosts";
 import { getBoostLevel } from "@/lib/boostPerks";
 import { Button } from "@/components/ui/button";
@@ -286,8 +287,7 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
         {/* APPEARANCE */}
         {tab === "appearance" && (
           <>
-            {/* Icon — Niveau 1 requis */}
-            <BoostLevelGate currentLevel={currentBoostLevel} requiredLevel={1} label="Icône & GIF animé">
+            {/* Icon — libre (GIF animé au Niveau 1) */}
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Icône du serveur</p>
               <label className="flex items-center gap-3 cursor-pointer">
@@ -303,9 +303,10 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
                 </div>
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && uploadIcon(e.target.files[0])} disabled={uploadingIcon} />
               </label>
+              {currentBoostLevel < 1 && (
+                <p className="text-[10px] text-white/30 mt-1.5">🔒 Icône animée (GIF) à partir du Niveau 1</p>
+              )}
             </div>
-
-            </BoostLevelGate>
 
             {/* Banner — Niveau 2 requis */}
             <BoostLevelGate currentLevel={currentBoostLevel} requiredLevel={2} label="Bannière fixe">
@@ -326,6 +327,9 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
             </div>
 
             </BoostLevelGate>
+            {currentBoostLevel >= 2 && currentBoostLevel < 3 && (
+              <p className="text-[10px] text-white/30 -mt-3">🔒 Bannière animée (GIF) à partir du Niveau 3</p>
+            )}
 
             {/* Theme — Niveau 1 requis */}
             <BoostLevelGate currentLevel={currentBoostLevel} requiredLevel={1} label="Thème visuel">
@@ -343,6 +347,11 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
                 ))}
               </div>
             </div>
+            </BoostLevelGate>
+
+            {/* Custom Emojis — Niveau 1 requis */}
+            <BoostLevelGate currentLevel={currentBoostLevel} requiredLevel={1} label="Emojis personnalisés">
+            <ServerCustomEmojis server={server} onUpdate={onUpdate} boostLevel={currentBoostLevel} accent={accent} />
             </BoostLevelGate>
           </>
         )}

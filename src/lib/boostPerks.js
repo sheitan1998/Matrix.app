@@ -7,7 +7,7 @@ export const BOOST_LEVELS = [
     color: "#F472B6",
     label: "Basique",
     perks: [
-      { icon: "🖼️", text: "Photo de profil du serveur (animée / GIF)" },
+      { icon: "🖼️", text: "Icône de serveur animée (GIF)" },
       { icon: "🎨", text: "Thème visuel du serveur" },
       { icon: "😀", text: "Jusqu'à 10 emojis personnalisés" },
     ],
