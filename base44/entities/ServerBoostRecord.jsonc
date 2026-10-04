@@ -6,14 +6,27 @@
       "type": "string",
       "description": "ID du serveur boost\u00e9"
     },
+    "user_id": {
+      "type": "string",
+      "description": "ID de l'utilisateur qui a boost\u00e9"
+    },
     "user_email": {
       "type": "string",
       "description": "Email de l'utilisateur qui a boost\u00e9"
     },
+    "user_name": {
+      "type": "string",
+      "description": "Pseudo de l'utilisateur au moment du boost"
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date de d\u00e9but exacte du boost"
+    },
     "expires_at": {
       "type": "string",
       "format": "date-time",
-      "description": "Date d'expiration du boost (now + 30 jours)"
+      "description": "Date d'expiration du boost (d\u00e9but + 30 jours)"
     },
     "description": {
       "type": "string",
@@ -22,7 +35,9 @@
   },
   "required": [
     "server_id",
+    "user_id",
     "user_email",
+    "started_at",
     "expires_at"
   ],
   "rls": {

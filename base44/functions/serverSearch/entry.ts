@@ -715,16 +715,64 @@ export default async function(req: Request): Promise<Response> {
           boosts: newBoosts,
         });
 
-        // Create a boost record with 30-day expiry
-        const expiresAt = new Date(Date.now() + SERVER_BOOST_DURATION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+        // Create a boost record: user + exact start date + 30-day expiry (all mandatory)
+        const startedAtMs = Date.now();
+        const startedAt = new Date(startedAtMs).toISOString();
+        const expiresAt = new Date(startedAtMs + SERVER_BOOST_DURATION_DAYS * 24 * 60 * 60 * 1000).toISOString();
         await base44.asServiceRole.entities.ServerBoostRecord.create({
           server_id: serverId,
+          user_id: user.id,
           user_email: user.email,
+          user_name: String(freshBoostUser?.pseudo || '').split('#')[0].trim(),
+          started_at: startedAt,
           expires_at: expiresAt,
         });
 
         console.log('[boostServer] server', serverId, 'boosts:', newBoosts, 'by', user.email, 'expires:', expiresAt);
         return Response.json({ success: true, boosts: newBoosts, newFlashBoosts });
+      }
+
+      // ---- List a server's boosts with resolved booster profiles (no emails returned) ----
+      case 'getServerBoosts': {
+        const { serverId } = params;
+        if (!serverId) return Response.json({ error: 'Missing serverId' }, { status: 400 });
+
+        const srv = await base44.asServiceRole.entities.Server.get(serverId);
+        if (!srv) return Response.json({ error: 'Serveur introuvable' }, { status: 404 });
+
+        const page = await base44.asServiceRole.entities.ServerBoostRecord.filter({ server_id: serverId }, '-created_date', 100);
+        const records = page?.items || page || [];
+
+        const emails = [...new Set(records.map((r) => r.user_email).filter(Boolean))];
+        const profiles = {};
+        if (emails.length > 0) {
+          const usersPage = await base44.asServiceRole.entities.User.filter({ email: { $in: emails } });
+          for (const u of (usersPage?.items || usersPage || [])) {
+            if (u?.email) profiles[u.email.toLowerCase()] = u;
+          }
+        }
+
+        const nowMs = Date.now();
+        const boosts = records.map((r) => {
+          const u = profiles[(r.user_email || '').toLowerCase()];
+          return {
+            id: r.id,
+            user_id: r.user_id || u?.id || '',
+            user_name: String(u?.pseudo || r.user_name || '').split('#')[0].trim() || 'Membre',
+            user_avatar: u?.avatar_url || '',
+            started_at: r.started_at || r.created_date,
+            expires_at: r.expires_at,
+            is_active: new Date(r.expires_at).getTime() > nowMs,
+          };
+        });
+
+        const serverBoosts = srv.boosts || 0;
+        const activeCount = boosts.filter((b) => b.is_active).length;
+        return Response.json({
+          boosts,
+          server_boosts: serverBoosts,
+          legacy_count: Math.max(0, serverBoosts - activeCount),
+        });
       }
 
       // ---- Delete a server message (author or server owner only) ----
