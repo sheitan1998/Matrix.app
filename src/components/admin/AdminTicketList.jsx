@@ -55,40 +55,36 @@ export default function AdminTicketList({ tickets, user, onRefresh }) {
     } catch { toast.error("Erreur"); }
   };
 
-  const approveCreator = async (ticket) => {
+  // Runs an approve/reject action, surfaces the real server error, then refreshes the list
+  const runAction = async (payload, successMsg) => {
     setActionLoading(true);
     try {
-      await base44.functions.invoke("ticketSystem", { action: "approveCreatorRequest", ticket_id: ticket.id });
-      toast.success("Statut Créateur accordé !");
-      onRefresh();
-    } catch { toast.error("Erreur lors de l'acceptation"); }
+      const res = await base44.functions.invoke("ticketSystem", payload);
+      if (!res?.data?.success) throw new Error(res?.data?.error || "Action échouée");
+      toast.success(successMsg);
+      setExpanded(null);
+      await onRefresh();
+    } catch (e) {
+      toast.error(e?.response?.data?.error || e?.message || "Erreur");
+    }
     setActionLoading(false);
   };
 
-  const approveAffiliate = async (ticket) => {
-    setActionLoading(true);
-    try {
-      await base44.functions.invoke("ticketSystem", { action: "approveAffiliateRequest", ticket_id: ticket.id });
-      toast.success("Statut accordé !");
-      onRefresh();
-    } catch { toast.error("Erreur lors de l'acceptation"); }
-    setActionLoading(false);
-  };
+  const approveCreator = (ticket) =>
+    runAction({ action: "approveCreatorRequest", ticket_id: ticket.id }, "Statut Créateur accordé !");
+
+  const approveAffiliate = (ticket) =>
+    runAction(
+      { action: "approveAffiliateRequest", ticket_id: ticket.id },
+      `Statut ${ticket.program_type === "partner" ? "Partenaire" : "Affilié"} accordé !`
+    );
 
   const confirmReject = async () => {
     if (!rejectingTicket) return;
-    setActionLoading(true);
-    try {
-      await base44.functions.invoke("ticketSystem", {
-        action: "rejectCreatorRequest",
-        ticket_id: rejectingTicket.id,
-        reason: rejectReason.trim(),
-      });
-      toast.success("Demande refusée");
-      setExpanded(null);
-      onRefresh();
-    } catch { toast.error("Erreur lors du refus"); }
-    setActionLoading(false);
+    await runAction(
+      { action: "rejectCreatorRequest", ticket_id: rejectingTicket.id, reason: rejectReason.trim() },
+      "Demande refusée"
+    );
     setRejectingTicket(null);
     setRejectReason("");
   };
@@ -337,7 +333,7 @@ export default function AdminTicketList({ tickets, user, onRefresh }) {
           <div className="w-full max-w-md rounded-2xl overflow-hidden" style={{ background: "#13101a", border: "1px solid rgba(239,68,68,0.3)" }} onClick={e => e.stopPropagation()}>
             <div className="px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
               <h3 className="text-sm font-black text-white flex items-center gap-2">
-                <XCircle className="w-4 h-4 text-red-400" /> Refuser la demande Créateur
+                <XCircle className="w-4 h-4 text-red-400" /> Refuser la demande {rejectingTicket.category === "affiliate_partner" ? "Affilié / Partenaire" : "Créateur"}
               </h3>
               <p className="text-[10px] text-white/40 mt-0.5">{rejectingTicket.user_name} — {rejectingTicket.subject}</p>
             </div>

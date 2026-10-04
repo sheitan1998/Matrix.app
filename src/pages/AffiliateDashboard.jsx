@@ -10,6 +10,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import MediaKit from "@/components/affiliate/MediaKit";
+import { useMyAffiliation } from "@/hooks/useMyAffiliation";
 
 const STATUS_META = {
   affiliate: { label: "Affilié", color: "#3b82f6", icon: Zap },
@@ -30,11 +31,7 @@ export default function AffiliateDashboard() {
 
   useEffect(() => {base44.auth.me().then(setUser).catch(() => {});}, []);
 
-  const { data: affiliation } = useQuery({
-    queryKey: ["my-affiliation", user?.email],
-    queryFn: () => base44.entities.Affiliation.filter({ user_email: user.email }).then((r) => r?.items?.[0] || r?.[0] || null),
-    enabled: !!user?.email
-  });
+  const { data: affiliation } = useMyAffiliation(user?.email);
 
   const { data: modAgg = { rows: [] } } = useQuery({
     queryKey: ["mod-stats", user?.email],

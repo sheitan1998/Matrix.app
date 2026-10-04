@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Loader2, Eye, ThumbsUp, ThumbsDown, Pencil, Trash2, Package, Map as MapIcon, Download, Star } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import FarmingModForm from "@/components/tuto-gaming/FarmingModForm";
 import SubmitMapModal from "@/components/tuto-gaming/SubmitMapModal";
 
@@ -16,7 +16,8 @@ const MOD_CATEGORY_LABELS = {
   others: "Autres",
 };
 
-export default function CreatorDashboard({ user }) {
+export default function CreatorDashboard({ user, onNavigate }) {
+  const nav = useNavigate();
   const [mods, setMods] = useState([]);
   const [maps, setMaps] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -94,7 +95,7 @@ export default function CreatorDashboard({ user }) {
 
   return (
     <div className="space-y-4">
-      <Link to="/affiliate" className="flex items-center justify-between p-4 rounded-2xl transition hover:opacity-90" style={{ background: "linear-gradient(135deg, rgba(255,215,0,0.12), rgba(168,85,247,0.08))", border: "1px solid rgba(255,215,0,0.2)" }}>
+      <button type="button" onClick={() => (onNavigate ? onNavigate("/affiliate") : nav("/affiliate"))} className="w-full text-left flex items-center justify-between p-4 rounded-2xl transition hover:opacity-90" style={{ background: "linear-gradient(135deg, rgba(255,215,0,0.12), rgba(168,85,247,0.08))", border: "1px solid rgba(255,215,0,0.2)" }}>
         <div className="flex items-center gap-3">
           <Star className="w-5 h-5 text-yellow-400" />
           <div>
@@ -103,7 +104,7 @@ export default function CreatorDashboard({ user }) {
           </div>
         </div>
         <span className="text-xs font-bold text-yellow-400">Ouvrir →</span>
-      </Link>
+      </button>
       {/* Summary stats */}
       <div className="grid grid-cols-3 gap-3">
         <div className="p-4 rounded-2xl" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(168,85,247,0.15)" }}>

@@ -253,6 +253,11 @@ export default async function(req: Request): Promise<Response> {
         const ticket = await base44.asServiceRole.entities.SupportTicket.get(ticket_id);
         if (!ticket) return Response.json({ error: 'Ticket not found' }, { status: 404 });
 
+        const isAffiliate = ticket.category === 'affiliate_partner';
+        const requestLabel = isAffiliate
+          ? `candidature ${ticket.program_type === 'partner' ? 'Partenaire' : 'Affilié'}`
+          : 'demande de statut Créateur';
+
         // 1. Close and lock the ticket
         await base44.asServiceRole.entities.SupportTicket.update(ticket_id, {
           status: 'closed',
@@ -284,7 +289,7 @@ export default async function(req: Request): Promise<Response> {
           recipient_email: ticket.user_email,
           recipient_name: ticket.user_name || '',
           recipient_avatar: ticket.user_avatar || '',
-          content: `Votre demande de statut Créateur n'a pas été acceptée.${reason ? `\n\nMotif: ${sanitize(reason, 500)}` : ''}\n\nVous pouvez soumettre une nouvelle demande à tout moment.`,
+          content: `Votre ${requestLabel} n'a pas été acceptée.${reason ? `\n\nMotif: ${sanitize(reason, 500)}` : ''}\n\nVous pouvez soumettre une nouvelle demande à tout moment.`,
           ticket_id,
           is_read: false,
           is_read_only: true,
@@ -294,8 +299,8 @@ export default async function(req: Request): Promise<Response> {
         await base44.asServiceRole.entities.Notification.create({
           user_email: ticket.user_email,
           type: 'role_assigned',
-          title: 'Demande Créateur refusée',
-          body: reason || 'Votre demande de statut Créateur n\'a pas été acceptée pour le moment.',
+          title: isAffiliate ? 'Candidature Affilié / Partenaire refusée' : 'Demande Créateur refusée',
+          body: reason || `Votre ${requestLabel} n'a pas été acceptée pour le moment.`,
           icon: 'ℹ️',
           is_read: false,
         });

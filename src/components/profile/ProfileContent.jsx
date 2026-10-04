@@ -20,6 +20,7 @@ import TrixIcon from "@/components/TrixIcon";
 import DesktopDownloadButton from "@/components/DesktopDownloadButton";
 import SupportTicketModal from "@/components/profile/SupportTicketModal";
 import ImageCropModal from "@/components/profile/ImageCropModal";
+import { useMyAffiliation, isActiveAffiliation } from "@/hooks/useMyAffiliation";
 
 const TABS = [
 { key: "overview", label: "Vue d'ensemble", icon: Zap },
@@ -44,19 +45,9 @@ export default function ProfileContent({ onClose }) {
   const [editPseudo, setEditPseudo] = useState("");
   const [showSupport, setShowSupport] = useState(false);
   const [cropModal, setCropModal] = useState(null);
-  const [isCreator, setIsCreator] = useState(false);
-
-  const { data: affiliation } = useQuery({
-    queryKey: ["my-affiliation", user?.email],
-    queryFn: () => base44.entities.Affiliation.filter({ user_email: user.email }).then((r) => r?.items?.[0] || r?.[0] || null),
-    enabled: !!user?.email
-  });
-
-  useEffect(() => {
-    if (affiliation && (affiliation.status === "affiliate" || affiliation.status === "partner")) {
-      setIsCreator(true);
-    }
-  }, [affiliation]);
+  const [hasCreatorBadge, setHasCreatorBadge] = useState(false);
+  const { data: affiliation } = useMyAffiliation(user?.email);
+  const isCreator = hasCreatorBadge || isActiveAffiliation(affiliation);
 
   useEffect(() => {
     base44.auth.me().then(async (me) => {
@@ -71,20 +62,8 @@ export default function ProfileContent({ onClose }) {
           );
           const progress = progressRes?.items?.[0] || progressRes?.[0];
           const badges = Array.isArray(progress?.badges) ? progress.badges : [];
-          const hasCreatorBadge = badges.includes("creator") || me.role === "admin";
-
-          // Also check active affiliation status (affiliate or partner)
-          let hasAffiliation = false;
-          try {
-            const affRes = await base44.entities.Affiliation.filter({ user_email: me.email });
-            const aff = affRes?.items?.[0] || affRes?.[0];
-            if (aff && (aff.status === "affiliate" || aff.status === "partner")) {
-              hasAffiliation = true;
-            }
-          } catch { /* silent */ }
-
-          setIsCreator(hasCreatorBadge || hasAffiliation);
-        } catch { setIsCreator(false); }
+          setHasCreatorBadge(badges.includes("creator") || me.role === "admin");
+        } catch { setHasCreatorBadge(false); }
       }
     }).catch(() => {});
   }, []);
@@ -451,7 +430,7 @@ export default function ProfileContent({ onClose }) {
             {tab === "cosmetics" && <CosmeticsPanel user={user} />}
             {tab === "wallet" && <TransactionHistory user={user} />}
             {tab === "privacy" && <PrivacyPanel user={user} onUpdate={setUser} />}
-            {tab === "creator" && isCreator && <CreatorDashboard user={user} />}
+            {tab === "creator" && isCreator && <CreatorDashboard user={user} onNavigate={goTo} />}
           </div>
         </div>
       </div>

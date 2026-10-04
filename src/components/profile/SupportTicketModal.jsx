@@ -80,10 +80,9 @@ export default function SupportTicketModal({ user, onClose }) {
       return;
     }
     setLoading(true);
-    try {
-      const links = isEnhancedForm
-        ? portfolioLinks.split("\n").map(l => l.trim()).filter(l => l.length > 0)
-        : [];
+    const links = isEnhancedForm
+      ? portfolioLinks.split("\n").map(l => l.trim()).filter(l => l.length > 0)
+      : [];
 
       const formattedMessage = isAffiliatePartner
         ? `⭐ Candidature ${programType === "partner" ? "Partenaire" : "Affilié"}\n\nLiens / Portfolio:\n${links.map(l => `• ${l}`).join("\n")}\n\nMotivation:\n${creatorDescription.trim()}`
@@ -113,9 +112,18 @@ export default function SupportTicketModal({ user, onClose }) {
         ticketData.creator_description = creatorDescription.trim();
       }
 
-      const ticket = await base44.entities.SupportTicket.create(ticketData);
+    let ticket;
+    try {
+      ticket = await base44.entities.SupportTicket.create(ticketData);
+    } catch {
+      toast.error("Erreur lors de l'envoi du ticket");
+      setLoading(false);
+      return;
+    }
 
-      // Create the first TicketMessage with attachments
+    // The ticket is saved: follow-up steps (conversation thread + Support DM)
+    // must never turn a successful submission into an error message.
+    try {
       await base44.entities.TicketMessage.create({
         ticket_id: ticket.id,
         author_email: user.email,
@@ -125,26 +133,24 @@ export default function SupportTicketModal({ user, onClose }) {
         content: formattedMessage,
         attachments,
       });
-
-      // Open a DM conversation with Support in the user's messaging
       await base44.functions.invoke("ticketSystem", {
         action: "openTicket",
         ticket_id: ticket.id,
         subject: subject.trim(),
         message: formattedMessage,
       });
-
-      toast.success(isEnhancedForm
-        ? "Candidature envoyée ! Vous serez notifié dès qu'un administrateur aura traité votre demande."
-        : "Ticket envoyé ! Une conversation avec le Support a été ouverte dans votre messagerie."
-      );
-      trackActivity("tickets_created");
-      trackActivity("help_community");
-      onClose();
-    } catch {
-      toast.error("Erreur lors de l'envoi du ticket");
+    } catch (e) {
+      console.error("[SupportTicket] follow-up step failed", e);
     }
+
+    toast.success(isEnhancedForm
+      ? "Candidature envoyée ! Elle a bien été transmise aux administrateurs."
+      : "Ticket envoyé ! Une conversation avec le Support a été ouverte dans votre messagerie."
+    );
+    trackActivity("tickets_created");
+    trackActivity("help_community");
     setLoading(false);
+    onClose();
   };
 
   return createPortal(
