@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
-import { Clock, CheckCircle2, AlertCircle, X, Lock, Trash2, Palette, Check, XCircle, ExternalLink } from "lucide-react";
+import { Clock, CheckCircle2, AlertCircle, X, Lock, Trash2, Palette, Check, XCircle, ExternalLink, Zap, Star } from "lucide-react";
 import TicketConversation from "@/components/admin/TicketConversation";
 import ConfirmDeleteModal from "@/components/admin/ConfirmDeleteModal";
 
@@ -18,6 +18,7 @@ const CATEGORY_LABELS = {
   payment: "Paiement / Boutique",
   harassment: "Harcèlement",
   creator_request: "Statut Créateur",
+  affiliate_partner: "Affilié / Partenaire",
   other: "Autre",
 };
 
@@ -40,6 +41,7 @@ export default function AdminTicketList({ tickets, user, onRefresh }) {
   const [expanded, setExpanded] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [creatorFilterOnly, setCreatorFilterOnly] = useState(false);
+  const [affiliateFilterOnly, setAffiliateFilterOnly] = useState(false);
   const [deletingTicket, setDeletingTicket] = useState(null);
   const [rejectingTicket, setRejectingTicket] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
@@ -58,6 +60,16 @@ export default function AdminTicketList({ tickets, user, onRefresh }) {
     try {
       await base44.functions.invoke("ticketSystem", { action: "approveCreatorRequest", ticket_id: ticket.id });
       toast.success("Statut Créateur accordé !");
+      onRefresh();
+    } catch { toast.error("Erreur lors de l'acceptation"); }
+    setActionLoading(false);
+  };
+
+  const approveAffiliate = async (ticket) => {
+    setActionLoading(true);
+    try {
+      await base44.functions.invoke("ticketSystem", { action: "approveAffiliateRequest", ticket_id: ticket.id });
+      toast.success("Statut accordé !");
       onRefresh();
     } catch { toast.error("Erreur lors de l'acceptation"); }
     setActionLoading(false);
@@ -94,7 +106,8 @@ export default function AdminTicketList({ tickets, user, onRefresh }) {
 
   const filtered = tickets
     .filter(t => statusFilter === "all" || t.status === statusFilter)
-    .filter(t => !creatorFilterOnly || t.category === "creator_request");
+    .filter(t => !creatorFilterOnly || t.category === "creator_request")
+    .filter(t => !affiliateFilterOnly || t.category === "affiliate_partner");
 
   const sorted = [...filtered].sort((a, b) => {
     const order = { open: 0, in_progress: 1, resolved: 2, closed: 3 };
@@ -129,6 +142,13 @@ export default function AdminTicketList({ tickets, user, onRefresh }) {
         >
           <Palette className="w-3 h-3" /> Créateur
         </button>
+        <button
+          onClick={() => setAffiliateFilterOnly(prev => !prev)}
+          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition whitespace-nowrap tap-sm flex items-center gap-1 ${affiliateFilterOnly ? "text-white" : "text-white/40 hover:text-white/60"}`}
+          style={affiliateFilterOnly ? { background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.4)" } : { background: "rgba(255,255,255,0.03)", border: "1px solid transparent" }}
+        >
+          <Zap className="w-3 h-3" /> Affilié / Partenaire
+        </button>
       </div>
 
       <div className="max-h-[600px] overflow-y-auto scrollbar-thin">
@@ -161,6 +181,57 @@ export default function AdminTicketList({ tickets, user, onRefresh }) {
               {isOpen && (
                 <div className="px-3 pb-4">
                   <TicketConversation ticket={ticket} user={user} isAdmin={true} onRefresh={onRefresh} />
+
+                  {/* Affiliate/Partner request details */}
+                  {ticket.category === "affiliate_partner" && (
+                    <div className="mt-3 p-3 rounded-xl space-y-2" style={{ background: "rgba(168,85,247,0.05)", border: "1px solid rgba(168,85,247,0.15)" }}>
+                      <div className="flex items-center gap-1.5">
+                        {ticket.program_type === "partner" ? <Star className="w-3.5 h-3.5 text-purple-400" /> : <Zap className="w-3.5 h-3.5 text-purple-400" />}
+                        <p className="text-xs font-black text-purple-400">Candidature {ticket.program_type === "partner" ? "Partenaire" : "Affilié"}</p>
+                      </div>
+                      {ticket.portfolio_links && ticket.portfolio_links.length > 0 && (
+                        <div>
+                          <p className="text-[10px] font-bold text-white/40 mb-0.5">Liens / Portfolio</p>
+                          <div className="space-y-1">
+                            {ticket.portfolio_links.map((link, i) => (
+                              <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition">
+                                <ExternalLink className="w-3 h-3 shrink-0" />
+                                <span className="truncate">{link}</span>
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {ticket.creator_description && (
+                        <div>
+                          <p className="text-[10px] font-bold text-white/40 mb-0.5">Motivation</p>
+                          <p className="text-xs text-white/80 whitespace-pre-wrap">{ticket.creator_description}</p>
+                        </div>
+                      )}
+
+                      {/* Approve / Reject buttons — only if not already closed */}
+                      {!isLocked && (
+                        <div className="flex gap-2 pt-1">
+                          <button
+                            onClick={() => approveAffiliate(ticket)}
+                            disabled={actionLoading}
+                            className="flex-1 py-2 rounded-lg text-xs font-bold text-white transition hover:opacity-90 disabled:opacity-40 flex items-center justify-center gap-1.5"
+                            style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}
+                          >
+                            <Check className="w-3.5 h-3.5" /> Accepter
+                          </button>
+                          <button
+                            onClick={() => { setRejectingTicket(ticket); setRejectReason(""); }}
+                            disabled={actionLoading}
+                            className="flex-1 py-2 rounded-lg text-xs font-bold text-red-400 transition hover:bg-red-500/10 disabled:opacity-40 flex items-center justify-center gap-1.5"
+                            style={{ border: "1px solid rgba(239,68,68,0.4)" }}
+                          >
+                            <XCircle className="w-3.5 h-3.5" /> Refuser
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Creator request details */}
                   {ticket.category === "creator_request" && (

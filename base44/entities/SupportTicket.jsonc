@@ -26,6 +26,7 @@
         "payment",
         "harassment",
         "creator_request",
+        "affiliate_partner",
         "other"
       ],
       "default": "other",
@@ -37,7 +38,7 @@
         "affiliate",
         "partner"
       ],
-      "description": "Type de candidature (programme Affili\u00e9s/Partenaires) - null pour les autres tickets"
+      "description": "Type de candidature (programme Affilies/Partenaires) - null pour les autres tickets"
     },
     "message": {
       "type": "string",
@@ -77,7 +78,7 @@
     "is_locked": {
       "type": "boolean",
       "default": false,
-      "description": "Verrouille le ticket en lecture seule (cl\u00f4ture)"
+      "description": "Verrouille le ticket en lecture seule (cloture)"
     },
     "creator_category": {
       "type": "string",

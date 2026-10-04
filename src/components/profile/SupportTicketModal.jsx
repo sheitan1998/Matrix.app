@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
-import { X, Send, Bug, UserCircle, CreditCard, ShieldAlert, HelpCircle, Paperclip, Loader2, Download, Palette, Gamepad2, Map, Brush } from "lucide-react";
+import { X, Send, Bug, UserCircle, CreditCard, ShieldAlert, HelpCircle, Paperclip, Loader2, Download, Palette, Gamepad2, Map, Brush, Zap, Star } from "lucide-react";
 import { useProgression } from "@/context/ProgressionContext";
 import { uploadImageWithToast } from "@/lib/imageModeration";
 
@@ -12,6 +12,7 @@ const CATEGORIES = [
   { id: "payment", label: "Paiement / Boutique", icon: CreditCard, color: "#f59e0b" },
   { id: "harassment", label: "Harcèlement / Signalement", icon: ShieldAlert, color: "#ec4899" },
   { id: "creator_request", label: "Statut Créateur", icon: Palette, color: "#22c55e" },
+  { id: "affiliate_partner", label: "Devenir Affilié / Partenaire", icon: Zap, color: "#a855f7" },
   { id: "other", label: "Autre", icon: HelpCircle, color: "#a855f7" },
 ];
 
@@ -33,14 +34,20 @@ export default function SupportTicketModal({ user, onClose }) {
   const [creatorCategory, setCreatorCategory] = useState("mods");
   const [portfolioLinks, setPortfolioLinks] = useState("");
   const [creatorDescription, setCreatorDescription] = useState("");
+  const [programType, setProgramType] = useState("affiliate");
 
   const isCreatorRequest = category === "creator_request";
+  const isAffiliatePartner = category === "affiliate_partner";
+  const isEnhancedForm = isCreatorRequest || isAffiliatePartner;
 
-  // Auto-fill subject when switching to creator request
+  // Auto-fill subject when switching to creator request or affiliate/partner
   const handleCategorySelect = (catId) => {
     setCategory(catId);
     if (catId === "creator_request" && !subject.trim()) {
       setSubject("Demande de statut Créateur");
+    }
+    if (catId === "affiliate_partner" && !subject.trim()) {
+      setSubject(`Candidature ${programType === "partner" ? "Partenaire" : "Affilié"}`);
     }
   };
 
@@ -63,7 +70,7 @@ export default function SupportTicketModal({ user, onClose }) {
       toast.error("Veuillez remplir le sujet");
       return;
     }
-    if (isCreatorRequest) {
+    if (isEnhancedForm) {
       if (!portfolioLinks.trim() || !creatorDescription.trim()) {
         toast.error("Veuillez fournir vos liens et une description de vos créations");
         return;
@@ -74,11 +81,13 @@ export default function SupportTicketModal({ user, onClose }) {
     }
     setLoading(true);
     try {
-      const links = isCreatorRequest
+      const links = isEnhancedForm
         ? portfolioLinks.split("\n").map(l => l.trim()).filter(l => l.length > 0)
         : [];
 
-      const formattedMessage = isCreatorRequest
+      const formattedMessage = isAffiliatePartner
+        ? `⭐ Candidature ${programType === "partner" ? "Partenaire" : "Affilié"}\n\nLiens / Portfolio:\n${links.map(l => `• ${l}`).join("\n")}\n\nMotivation:\n${creatorDescription.trim()}`
+        : isCreatorRequest
         ? `🎨 Demande de statut Créateur\n\nCatégorie: ${CREATOR_CATEGORIES.find(c => c.id === creatorCategory)?.label || creatorCategory}\n\nLiens / Portfolio:\n${links.map(l => `• ${l}`).join("\n")}\n\nDescription:\n${creatorDescription.trim()}`
         : message.trim();
 
@@ -95,6 +104,11 @@ export default function SupportTicketModal({ user, onClose }) {
 
       if (isCreatorRequest) {
         ticketData.creator_category = creatorCategory;
+        ticketData.portfolio_links = links;
+        ticketData.creator_description = creatorDescription.trim();
+      }
+      if (isAffiliatePartner) {
+        ticketData.program_type = programType;
         ticketData.portfolio_links = links;
         ticketData.creator_description = creatorDescription.trim();
       }
@@ -120,8 +134,8 @@ export default function SupportTicketModal({ user, onClose }) {
         message: formattedMessage,
       });
 
-      toast.success(isCreatorRequest
-        ? "Demande envoyée ! Vous serez notifié dès qu'un administrateur aura traité votre demande."
+      toast.success(isEnhancedForm
+        ? "Candidature envoyée ! Vous serez notifié dès qu'un administrateur aura traité votre demande."
         : "Ticket envoyé ! Une conversation avec le Support a été ouverte dans votre messagerie."
       );
       trackActivity("tickets_created");
@@ -243,6 +257,65 @@ export default function SupportTicketModal({ user, onClose }) {
                 <p className="text-[10px] text-white/30 mt-1 text-right">{creatorDescription.length}/1000</p>
               </div>
             </>
+          ) : isAffiliatePartner ? (
+            <>
+              {/* Program type selector */}
+              <div>
+                <label className="text-xs font-bold text-white/60 mb-1.5 block">Type de candidature</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { key: "affiliate", label: "Affilié", icon: Zap, desc: "Premier pas" },
+                    { key: "partner", label: "Partenaire", icon: Star, desc: "Statut avancé" },
+                  ].map(p => (
+                    <button
+                      key={p.key}
+                      onClick={() => setProgramType(p.key)}
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition"
+                      style={{
+                        background: programType === p.key ? "rgba(168,85,247,0.15)" : "rgba(255,255,255,0.03)",
+                        border: programType === p.key ? "1px solid rgba(168,85,247,0.5)" : "1px solid rgba(255,255,255,0.06)",
+                        color: programType === p.key ? "#a855f7" : "rgba(255,255,255,0.5)",
+                      }}
+                    >
+                      <p.icon className="w-3.5 h-3.5 shrink-0" />
+                      <div className="text-left">
+                        <p className="leading-tight">{p.label}</p>
+                        <p className="text-[9px] font-normal opacity-60">{p.desc}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Portfolio links */}
+              <div>
+                <label className="text-xs font-bold text-white/60 mb-1.5 block">Liens / Portfolio</label>
+                <textarea
+                  value={portfolioLinks}
+                  onChange={e => setPortfolioLinks(e.target.value)}
+                  placeholder="Un lien par ligne :&#10;https://twitch.tv/...&#10;https://youtube.com/...&#10;https://twitter.com/..."
+                  rows={4}
+                  className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder:text-white/30 outline-none resize-none"
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                />
+                <p className="text-[10px] text-white/30 mt-1">Chaînes Twitch, YouTube, réseaux sociaux, contenu existant...</p>
+              </div>
+
+              {/* Motivation */}
+              <div>
+                <label className="text-xs font-bold text-white/60 mb-1.5 block">Votre motivation</label>
+                <textarea
+                  value={creatorDescription}
+                  onChange={e => setCreatorDescription(e.target.value)}
+                  placeholder="Décrivez votre parcours de créateur, vos objectifs et pourquoi vous souhaitez rejoindre le programme..."
+                  rows={4}
+                  maxLength={1000}
+                  className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder:text-white/30 outline-none resize-none"
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                />
+                <p className="text-[10px] text-white/30 mt-1 text-right">{creatorDescription.length}/1000</p>
+              </div>
+            </>
           ) : (
             /* Message */
             <div>
@@ -289,7 +362,7 @@ export default function SupportTicketModal({ user, onClose }) {
           </button>
           <button
             onClick={submit}
-            disabled={loading || uploading || !subject.trim() || (isCreatorRequest ? (!portfolioLinks.trim() || !creatorDescription.trim()) : !message.trim())}
+            disabled={loading || uploading || !subject.trim() || (isEnhancedForm ? (!portfolioLinks.trim() || !creatorDescription.trim()) : !message.trim())}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-40 flex items-center justify-center gap-2"
             style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}
           >

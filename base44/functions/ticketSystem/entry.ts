@@ -303,6 +303,92 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ success: true });
       }
 
+      // ---- Approve an affiliate/partner request (admin only) ----
+      case 'approveAffiliateRequest': {
+        if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
+
+        const { ticket_id } = params;
+        if (!ticket_id) return Response.json({ error: 'Missing ticket_id' }, { status: 400 });
+
+        const ticket = await base44.asServiceRole.entities.SupportTicket.get(ticket_id);
+        if (!ticket) return Response.json({ error: 'Ticket not found' }, { status: 404 });
+        if (ticket.category !== 'affiliate_partner')
+          return Response.json({ error: 'Not an affiliate/partner request' }, { status: 400 });
+
+        const programType = ticket.program_type || 'affiliate';
+
+        // 1. Create or update Affiliation record
+        const existingAff = await base44.asServiceRole.entities.Affiliation.filter({ user_email: ticket.user_email });
+        const existing = Array.isArray(existingAff) ? existingAff[0] : existingAff?.items?.[0];
+        const now = new Date().toISOString();
+        const affData: any = {
+          user_email: ticket.user_email,
+          user_name: ticket.user_name || '',
+          user_avatar: ticket.user_avatar || '',
+          status: programType,
+          motivation: ticket.creator_description || '',
+          portfolio_links: ticket.portfolio_links || [],
+          approved_at: now,
+          ticket_id,
+          trix_per_month: programType === 'partner' ? 1000 : 0,
+        };
+        if (programType === 'partner') affData.partner_since = now;
+        if (existing) {
+          await base44.asServiceRole.entities.Affiliation.update(existing.id, affData);
+        } else {
+          await base44.asServiceRole.entities.Affiliation.create(affData);
+        }
+
+        // 2. Close and lock the ticket
+        await base44.asServiceRole.entities.SupportTicket.update(ticket_id, {
+          status: 'closed',
+          is_locked: true,
+          admin_response: `Statut ${programType === 'partner' ? 'Partenaire' : 'Affilié'} accordé`,
+        });
+
+        // 3. Mark associated DMs as read-only
+        const dms = await base44.asServiceRole.entities.DirectMessage.filter({ ticket_id });
+        for (const dm of dms) {
+          await base44.asServiceRole.entities.DirectMessage.update(dm.id, { is_read_only: true });
+        }
+
+        // 4. System message in the conversation
+        await base44.asServiceRole.entities.TicketMessage.create({
+          ticket_id,
+          author_email: user.email,
+          author_name: user.full_name || 'Système',
+          author_role: 'admin',
+          content: `✅ Candidature acceptée — Le statut ${programType === 'partner' ? 'Partenaire' : 'Affilié'} vous a été accordé.`,
+          is_system: true,
+        });
+
+        // 5. DM the user
+        await base44.asServiceRole.entities.DirectMessage.create({
+          sender_email: SUPPORT_EMAIL,
+          sender_name: SUPPORT_NAME,
+          sender_avatar: SUPPORT_AVATAR,
+          recipient_email: ticket.user_email,
+          recipient_name: ticket.user_name || '',
+          recipient_avatar: ticket.user_avatar || '',
+          content: `⭐ Félicitations ! Votre candidature a été acceptée.\n\nVous avez désormais le statut ${programType === 'partner' ? 'Partenaire' : 'Affilié'} sur MATRIX.${programType === 'partner' ? '\n\n💎 Vous recevrez 1 000 TRIX chaque mois en tant que Partenaire.' : ''}\n\nRetrouvez votre dashboard sur la page du programme Affiliés.`,
+          ticket_id,
+          is_read: false,
+          is_read_only: true,
+        });
+
+        // 6. Notification
+        await base44.asServiceRole.entities.Notification.create({
+          user_email: ticket.user_email,
+          type: 'role_assigned',
+          title: `Statut ${programType === 'partner' ? 'Partenaire' : 'Affilié'} accordé !`,
+          body: 'Votre candidature a été acceptée. Consultez votre dashboard Affiliés.',
+          icon: '⭐',
+          is_read: false,
+        });
+
+        return Response.json({ success: true });
+      }
+
       // ---- Permanently delete a ticket and all associated data (admin only) ----
       case 'deleteTicket': {
         if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
