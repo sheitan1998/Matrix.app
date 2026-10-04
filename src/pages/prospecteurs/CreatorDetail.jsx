@@ -3,6 +3,8 @@ import { useParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { ArrowLeft, Eye, ThumbsUp, Download, Package, Map as MapIcon, Loader2, Users } from "lucide-react";
 import SubscribeButton from "@/components/profile/SubscribeButton";
+import ProfileAnimationLayer from "@/components/profile/ProfileAnimationLayer";
+import { getCosmeticIconImageUrl } from "@/lib/cosmeticAssetUrl";
 import { toast } from "sonner";
 
 export default function CreatorDetail() {
@@ -10,6 +12,7 @@ export default function CreatorDetail() {
   const [creator, setCreator] = useState(null);
   const [mods, setMods] = useState([]);
   const [maps, setMaps] = useState([]);
+  const [cosmetics, setCosmetics] = useState([]);
   const [subscriberCount, setSubscriberCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -25,14 +28,16 @@ export default function CreatorDetail() {
         if (!found) { toast.error("Créateur introuvable ou profil privé"); setLoading(false); return; }
         setCreator(found);
 
-        const [modRes, mapRes, subRes] = await Promise.all([
+        const [modRes, mapRes, subRes, cosRes] = await Promise.all([
           base44.entities.FarmingMod.filter({ creator_email: decoded }, { sort: "-created_date", limit: 100 }),
           base44.entities.FortniteMap.filter({ user_email: decoded }, { sort: "-created_date", limit: 100 }),
           base44.entities.UserSubscription.count({ target_email: decoded }),
+          base44.entities.UserCosmetic.filter({ user_email: decoded, is_equipped: true }, "-created_date", 50),
         ]);
         setMods(modRes?.items || modRes || []);
         setMaps(mapRes?.items || mapRes || []);
         setSubscriberCount(subRes || 0);
+        setCosmetics(cosRes?.items || cosRes || []);
       } catch { toast.error("Erreur lors du chargement du profil"); }
       setLoading(false);
     })();
@@ -58,6 +63,12 @@ export default function CreatorDetail() {
     );
   }
 
+  const pseudo = (creator.pseudo || "").split("#")[0];
+  const equippedAnimation = cosmetics.find(c => c.is_equipped && c.category === "avatar_animation");
+  const equippedBadges = cosmetics.filter(c => c.is_equipped && c.category === "badge");
+  const equippedOther = cosmetics.filter(c => c.is_equipped && c.category !== "badge" && c.category !== "avatar_animation");
+  const avatarFrame = cosmetics.find(c => c.is_equipped && c.category === "avatar_frame");
+
   return (
     <div className="min-h-screen bg-background pb-12">
       <div className="relative h-40 sm:h-52 overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.15), rgba(109,40,217,0.1))" }}>
@@ -70,15 +81,40 @@ export default function CreatorDetail() {
         </Link>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4 mb-6">
-          <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-background bg-secondary shrink-0">
-            {creator.avatar_url ? <img src={creator.avatar_url} alt={creator.pseudo} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-3xl font-black text-muted-foreground">{creator.pseudo?.[0]?.toUpperCase()}</div>}
+          <div className="relative inline-block overflow-visible">
+            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-background bg-secondary shrink-0" style={avatarFrame ? { borderColor: avatarFrame.icon || undefined } : {}}>
+              {creator.avatar_url ? <img src={creator.avatar_url} alt={pseudo} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-3xl font-black text-muted-foreground">{pseudo?.[0]?.toUpperCase()}</div>}
+            </div>
+            <ProfileAnimationLayer cosmetic={equippedAnimation} size={96} />
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl sm:text-2xl font-black text-white">{creator.pseudo}</h1>
+            <h1 className="text-xl sm:text-2xl font-black text-white">{pseudo}</h1>
             {creator.bio && <p className="text-sm text-muted-foreground mt-1">{creator.bio}</p>}
             <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground"><Users className="w-3 h-3" /> {subscriberCount} abonné{subscriberCount > 1 ? "s" : ""}</div>
+            {(equippedBadges.length > 0 || equippedOther.length > 0) && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {equippedBadges.slice(0, 5).map((b) => {
+                  const iconImageUrl = getCosmeticIconImageUrl(b.icon);
+                  return (
+                    <span key={b.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: "rgba(255,255,255,0.04)", color: "#b9bbbe" }}>
+                      {iconImageUrl ? <img src={iconImageUrl} alt="" className="w-3 h-3 rounded object-cover" /> : <span>{b.icon || "✨"}</span>}
+                      {b.item_name}
+                    </span>
+                  );
+                })}
+                {equippedOther.map((c) => {
+                  const iconImageUrl = getCosmeticIconImageUrl(c.icon);
+                  return (
+                    <span key={c.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: "rgba(168,85,247,0.1)", color: "#c084fc" }}>
+                      {iconImageUrl ? <img src={iconImageUrl} alt="" className="w-3 h-3 rounded object-cover" /> : <span>{c.icon || "✨"}</span>}
+                      {c.item_name}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
           </div>
-          <SubscribeButton targetEmail={creator.email} targetName={creator.pseudo} size="md" />
+          <SubscribeButton targetEmail={creator.email} targetName={pseudo} size="md" />
         </div>
 
         <div className="grid grid-cols-3 gap-3 mb-8">

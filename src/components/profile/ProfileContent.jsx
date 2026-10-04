@@ -236,7 +236,6 @@ export default function ProfileContent({ onClose }) {
                     <input value={editPseudo} onChange={(e) => setEditPseudo(e.target.value)} placeholder="Pseudo" autoFocus
                   className="flex-1 px-3 py-1.5 rounded-lg text-sm text-white outline-none font-mono"
                   style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(168,85,247,0.3)" }} />
-                    <span className="text-sm font-mono font-bold text-white/40 shrink-0">#{user.pseudo_tag || "????"}</span>
                   </div>
                   <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} placeholder="Bio..." rows={2}
                 className="w-full px-3 py-1.5 rounded-lg text-xs text-white outline-none resize-none"
@@ -254,7 +253,7 @@ export default function ProfileContent({ onClose }) {
               <div className="space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="text-xl font-black text-white leading-tight font-mono">
-                      {user.pseudo || "Pseudo non défini"}<span className="text-white/40">#{user.pseudo_tag || "????"}</span>
+                      {user.pseudo || "Pseudo non défini"}
                     </h2>
                     <button onClick={() => setEditing(true)} className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(255,255,255,0.05)" }}>
                       <Edit3 className="w-3.5 h-3.5 text-white/50" />

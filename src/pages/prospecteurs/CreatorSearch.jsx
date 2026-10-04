@@ -80,7 +80,7 @@ export default function CreatorSearch() {
                       {c.avatar_url ? <img src={c.avatar_url} alt="" className="w-full h-full object-cover" /> : (c.pseudo?.[0]?.toUpperCase() || "?")}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-white truncate">{c.pseudo}</p>
+                      <p className="text-sm font-bold text-white truncate">{(c.pseudo || "").split("#")[0]}</p>
                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                         {(c.mod_count > 0 || c.map_count > 0) ? (
                           <>

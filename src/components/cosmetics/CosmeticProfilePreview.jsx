@@ -83,8 +83,7 @@ export default function CosmeticProfilePreview({ item, user }) {
   const banner = isCover
     ? (videoUrl || previewImage)
     : resolveAssetUrl(user?.banner_url, appParams.appBaseUrl);
-  const pseudo = user?.pseudo || user?.full_name?.split(" ")[0] || "Vous";
-  const pseudoTag = user?.pseudo_tag || "????";
+  const pseudo = (user?.pseudo || user?.full_name?.split(" ")[0] || "Vous").split("#")[0];
 
   return (
     <div className="rounded-2xl overflow-hidden" style={{ background: "#13101a", border: "1px solid rgba(168,85,247,0.2)" }}>
@@ -152,7 +151,7 @@ export default function CosmeticProfilePreview({ item, user }) {
         {/* Name */}
         <div className="mt-2">
           <p className="text-sm font-black text-white font-mono">
-            {pseudo}<span className="text-white/40">#{pseudoTag}</span>
+            {pseudo}
           </p>
           <p className="text-[10px] text-white/40">Aperçu du cosmétique sur votre profil</p>
         </div>
