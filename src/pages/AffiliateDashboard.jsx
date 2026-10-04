@@ -25,6 +25,8 @@ export default function AffiliateDashboard() {
   const [portfolio, setPortfolio] = useState("");
   const [contentDesc, setContentDesc] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [partnerSubmitting, setPartnerSubmitting] = useState(false);
+  const [partnerSubmitted, setPartnerSubmitted] = useState(false);
 
   useEffect(() => {base44.auth.me().then(setUser).catch(() => {});}, []);
 
@@ -71,7 +73,7 @@ export default function AffiliateDashboard() {
   const status = affiliation?.status;
   const statusMeta = status ? STATUS_META[status] : null;
   const hasActiveStatus = status && status !== "revoked";
-  const canApplyPartner = status === "affiliate" && partElig.eligible;
+  const canApplyPartner = partElig.eligible && status !== "partner";
   const canApplyAffiliate = !status && affElig.eligible;
 
   const submit = async () => {
@@ -83,7 +85,7 @@ export default function AffiliateDashboard() {
         user_name: user.full_name || user.email.split("@")[0],
         user_avatar: user.avatar_url || "",
         subject: `Candidature ${program === "partner" ? "Partenaire" : "Affilié"}`,
-        category: "creator_request",
+        category: "affiliate_partner",
         program_type: program,
         message: motivation.trim(),
         creator_description: contentDesc.trim(),
@@ -95,6 +97,28 @@ export default function AffiliateDashboard() {
       qc.invalidateQueries({ queryKey: ["my-affiliation"] });
     } catch {toast.error("Erreur lors de l'envoi");}
     setSubmitting(false);
+  };
+
+  const submitPartner = async () => {
+    setPartnerSubmitting(true);
+    try {
+      await base44.entities.SupportTicket.create({
+        user_email: user.email,
+        user_name: user.full_name || user.email.split("@")[0],
+        user_avatar: user.avatar_url || "",
+        subject: "Demande de statut Partenaire",
+        category: "affiliate_partner",
+        program_type: "partner",
+        message: `Demande automatique générée depuis le Tableau de bord Affilié. Seuils Partenaire atteints : ${stats.totalViews.toLocaleString()} vues, ${stats.totalLikes.toLocaleString()} likes, ${stats.contentCount} contenus publiés, ${stats.subscriberCount.toLocaleString()} abonnés.`,
+        creator_description: `Créateur avec ${stats.contentCount} contenus publiés (${stats.totalDownloads.toLocaleString()} téléchargements cumulés).`,
+        portfolio_links: [],
+        status: "open"
+      });
+      setPartnerSubmitted(true);
+      toast.success("Demande transmise aux administrateurs pour validation finale.");
+      qc.invalidateQueries({ queryKey: ["my-affiliation"] });
+    } catch {toast.error("Erreur lors de l'envoi");}
+    setPartnerSubmitting(false);
   };
 
   const Progress = ({ value, label, current, target, ok }) =>
@@ -175,11 +199,31 @@ export default function AffiliateDashboard() {
           <Progress value={stats.totalLikes / PARTNER_LIKES * 100} label="Likes cumulés" current={stats.totalLikes} target={PARTNER_LIKES} ok={partElig.likesOk} />
           <Progress value={stats.contentCount / PARTNER_MIN_CONTENT * 100} label="Contenus publiés" current={stats.contentCount} target={PARTNER_MIN_CONTENT} ok={partElig.contentOk} />
           <Progress value={stats.subscriberCount / PARTNER_SUBSCRIBERS * 100} label="Abonnés" current={stats.subscriberCount} target={PARTNER_SUBSCRIBERS} ok={partElig.subscribersOk} />
-          {partElig.eligible ?
-          <p className="text-xs text-green-400 flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Vous remplissez les conditions pour postuler au statut Partenaire !</p> :
-
-          <p className="text-xs text-muted-foreground">Atteignez les seuils ci-dessus pour devenir éligible au statut Partenaire.</p>
-          }
+          {partElig.eligible && status !== "partner" ? (
+            partnerSubmitted ? (
+              <div className="p-3 rounded-xl flex items-center gap-2" style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)" }}>
+                <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0" />
+                <p className="text-xs text-green-400">Demande transmise aux administrateurs pour validation finale. Vous serez notifié(e) dès qu'elle sera traitée.</p>
+              </div>
+            ) : (
+              <button onClick={submitPartner} disabled={partnerSubmitting}
+                className="w-full h-12 rounded-xl font-black text-sm text-black flex items-center justify-center gap-2 transition hover:scale-[1.02] disabled:opacity-50"
+                style={{ background: "linear-gradient(135deg, #FFD700, #FFA500)" }}>
+                {partnerSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Star className="w-5 h-5" />}
+                Devenir partenaire
+              </button>
+            )
+          ) : partElig.eligible && status === "partner" ? (
+            <p className="text-xs text-yellow-400 flex items-center gap-1"><Star className="w-3.5 h-3.5" /> Vous êtes déjà Partenaire.</p>
+          ) : (
+            <div>
+              <button disabled className="w-full h-12 rounded-xl font-black text-sm text-white/30 flex items-center justify-center gap-2 cursor-not-allowed"
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <Star className="w-5 h-5" /> Devenir partenaire
+              </button>
+              <p className="text-xs text-muted-foreground mt-2">Atteignez les 4 seuils ci-dessus pour devenir éligible au statut Partenaire.</p>
+            </div>
+          )}
         </div>
 
         {/* Partner perks */}
@@ -212,8 +256,7 @@ export default function AffiliateDashboard() {
             <p className="text-sm font-black text-white">Soumettre ma candidature</p>
             <div className="flex gap-2">
               {[
-            { key: "affiliate", label: "Affilié", desc: `≥ ${AFFILIATE_VIEWS.toLocaleString()} vues`, eligible: canApplyAffiliate || !status },
-            { key: "partner", label: "Partenaire", desc: `Conditions remplies`, eligible: canApplyPartner }].
+            { key: "affiliate", label: "Affilié", desc: `≥ ${AFFILIATE_VIEWS.toLocaleString()} vues`, eligible: canApplyAffiliate || !status }].
             map((p) =>
             <button key={p.key} onClick={() => setProgram(p.key)} disabled={!p.eligible}
             className={cn("flex-1 p-3 rounded-xl text-left transition", program === p.key ? "text-white" : "text-muted-foreground")}
@@ -223,7 +266,6 @@ export default function AffiliateDashboard() {
                 </button>
             )}
             </div>
-            {program === "partner" && !canApplyPartner && <p className="text-[10px] text-orange-400">Vous devez d'abord être Affilié et remplir les conditions de visibilité.</p>}
             {program === "affiliate" && !canApplyAffiliate && <p className="text-[10px] text-orange-400">Il vous manque {(AFFILIATE_VIEWS - stats.totalViews).toLocaleString()} vues pour être éligible.</p>}
             <textarea value={motivation} onChange={(e) => setMotivation(e.target.value)} maxLength={2000} rows={4} placeholder="Votre motivation, votre parcours de créateur..."
           className="w-full p-3 rounded-xl bg-secondary border border-border text-white placeholder:text-muted-foreground outline-none text-sm resize-none" />
