@@ -9,6 +9,7 @@ import {
 "@/lib/affiliateProgram";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import MediaKit from "@/components/affiliate/MediaKit";
 
 const STATUS_META = {
   affiliate: { label: "Affilié", color: "#3b82f6", icon: Zap },
@@ -141,6 +142,9 @@ export default function AffiliateDashboard() {
             </div>
           }
         </div>
+
+        {/* Media Kit */}
+        <MediaKit />
 
         {/* Stats */}
         <div>
