@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { X, Upload, Loader2, FileArchive, Trash2, ImagePlus } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
+import CreatorAgreementCheckbox from "@/components/tuto-gaming/CreatorAgreementCheckbox";
 
 const CATEGORIES = [
   { id: "vehicles", label: "Véhicules" },
@@ -25,6 +26,7 @@ export default function FarmingModForm({ mod, userEmail, userName, userAvatar, o
   const [saving, setSaving] = useState(false);
   const [uploadingZip, setUploadingZip] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [agreed, setAgreed] = useState(false);
 
   const handleFileChange = (e) => {
     const f = e.target.files?.[0];
@@ -303,6 +305,9 @@ export default function FarmingModForm({ mod, userEmail, userName, userAvatar, o
               </p>
             </div>
           </div>
+
+          {/* Creator agreement */}
+          <CreatorAgreementCheckbox checked={agreed} onChange={setAgreed} accent="#7DA627" />
         </div>
 
         {/* Footer */}
@@ -315,7 +320,7 @@ export default function FarmingModForm({ mod, userEmail, userName, userAvatar, o
           </button>
           <button
             type="submit"
-            disabled={saving || isUploading}
+            disabled={saving || isUploading || !agreed}
             className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-bold transition tap-sm disabled:opacity-50"
             style={{ background: "#7DA627", color: "#0a0a0a" }}
           >

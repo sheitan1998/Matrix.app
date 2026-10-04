@@ -4,6 +4,7 @@ import { X, Loader2, Upload, ImageIcon, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { CATEGORY_OPTIONS, validateMapCode, formatMapCode } from "@/components/tuto-gaming/fortniteMapsData";
 import { uploadImageWithToast } from "@/lib/imageModeration";
+import CreatorAgreementCheckbox from "@/components/tuto-gaming/CreatorAgreementCheckbox";
 
 export default function SubmitMapModal({ open, onClose, onSuccess, userEmail, editMap }) {
   const isEdit = !!editMap;
@@ -17,6 +18,7 @@ export default function SubmitMapModal({ open, onClose, onSuccess, userEmail, ed
   const [imageFiles, setImageFiles] = useState([]);
   const [existingGallery, setExistingGallery] = useState([]);
   const [submitting, setSubmitting] = useState(false);
+  const [agreed, setAgreed] = useState(false);
 
   // Pre-fill form when editing an existing map
   useEffect(() => {
@@ -34,6 +36,7 @@ export default function SubmitMapModal({ open, onClose, onSuccess, userEmail, ed
       setForm({ title: "", creator_name: "", map_code: "", category: "tycoon", description: "" });
       setExistingGallery([]);
       setImageFiles([]);
+      setAgreed(false);
     }
   }, [editMap, open]);
 
@@ -277,10 +280,13 @@ export default function SubmitMapModal({ open, onClose, onSuccess, userEmail, ed
             )}
           </div>
 
+          {/* Creator agreement */}
+          <CreatorAgreementCheckbox checked={agreed} onChange={setAgreed} accent="#BF5AF2" />
+
           {/* Submit */}
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || !agreed}
             className="w-full h-11 rounded-lg text-sm font-black text-white transition hover:opacity-90 disabled:opacity-50 tap-sm flex items-center justify-center gap-2"
             style={{ background: "linear-gradient(135deg, #BF5AF2, #7C3AED)" }}
           >

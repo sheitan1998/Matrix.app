@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Shield, Users, FileText, Mail, Database, Cookie, Share2, CreditCard, Server } from "lucide-react";
+import { ArrowLeft, Shield, Users, FileText, Mail, Database, Cookie, Share2, CreditCard, Server, Copyright } from "lucide-react";
 
 // Official YouTube icon
 const YT_ICON_RED = "/media/tuto-gaming/7b7c491be_yt_icon_red_digital.png";
@@ -85,9 +85,21 @@ const SECTIONS = [
     ],
   },
   {
+    id: "creators",
+    icon: Copyright,
+    title: "8. Créateurs de Mods & Maps — Conditions de publication",
+    content: [
+      "Cette section s'applique à tout utilisateur publiant des mods (Farming Simulator) ou des maps (Fortnite) sur la plateforme MATRIX.",
+      "En tant que créateur, vous certifiez être l'auteur légitime du contenu que vous publiez, ou disposer des droits, autorisations ou licences nécessaires pour le partager publiquement sur MATRIX.",
+      "Sont strictement interdits : le vol de mods ou de maps, le re-upload de contenus créés par des tiers sans autorisation explicite, et toute fausse déclaration sur le statut de licence d'un contenu (notamment l'usage abusif du statut « libre de droit » pour un contenu soumis à des droits réservés).",
+      "Vous êtes seul responsable des contenus que vous publiez. En cas de litige, de réclamation d'un tiers ou de signalement pour violation de droits d'auteur, MATRIX applique une politique de suppression immédiate (« Notice and Takedown ») : le contenu incriminé est retiré sans préavis, et des sanctions peuvent être appliquées à votre compte, allant jusqu'au bannissement définitif et au retrait du badge créateur.",
+      "MATRIX se réserve le droit de modérer, retirer ou refuser tout contenu ne respectant pas ces conditions, et de collaborer avec les ayants droit en cas de signalement avéré.",
+    ],
+  },
+  {
     id: "contact",
     icon: Mail,
-    title: "8. Contact — Droits sur vos données",
+    title: "9. Contact — Droits sur vos données",
     content: [
       "Conformément au RGPD, vous disposez d'un droit d'accès, de rectification, d'effacement, de portabilité et d'opposition concernant vos données personnelles.",
       "Pour toute demande, question ou préoccupation relative à vos données personnelles ou à la présente politique, vous pouvez nous contacter via l'adresse e-mail ci-dessous. Nous traiterons votre demande dans un délai de 30 jours.",
@@ -142,7 +154,7 @@ export default function Privacy() {
             </div>
           </div>
           <p className="text-xs text-white/40 font-mono">
-            Dernière mise à jour : 17 septembre 2026
+            Dernière mise à jour : 4 octobre 2026
           </p>
         </div>
 
