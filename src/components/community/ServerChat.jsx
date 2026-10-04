@@ -16,6 +16,10 @@ import ReportContentModal from "@/components/admin/ReportContentModal";
 import { isEmojiOnly } from "@/lib/emojiUtils";
 import UnifiedPicker from "@/components/chat/UnifiedPicker";
 import ServerInviteEmbed from "@/components/community/ServerInviteEmbed";
+import MessageEffectPicker from "@/components/community/MessageEffectPicker";
+import { getEffectClass } from "@/lib/messageEffects";
+import { useServerBoosts } from "@/hooks/useServerBoosts";
+import { getBoostLevel } from "@/lib/boostPerks";
 
 export default function ServerChat({ server, channel, theme, user }) {
   const [input, setInput] = useState("");
@@ -29,6 +33,9 @@ export default function ServerChat({ server, channel, theme, user }) {
   const [replyTo, setReplyTo] = useState(null); // message being replied to
   const [showReactionPicker, setShowReactionPicker] = useState(null); // message id
   const [reportTarget, setReportTarget] = useState(null); // message to report
+  const [messageEffect, setMessageEffect] = useState("none");
+  const { activeCount: boostCount } = useServerBoosts(server.id, server.boosts);
+  const effectsUnlocked = getBoostLevel(boostCount) >= 2;
   const fileInputRef = useRef(null);
   const docFileInputRef = useRef(null);
   const bottomRef = useRef(null);
@@ -110,6 +117,7 @@ export default function ServerChat({ server, channel, theme, user }) {
       author_avatar: user.animated_avatar || user.avatar_url || "",
       content: content || (attachment ? attachment.name : ""),
       type,
+      effect: type === "text" && effectsUnlocked ? messageEffect : "none",
       file_url: attachment?.url || "",
       file_name: attachment?.name || "",
       transcript: type === "voice" ? (attachment?.transcript || "") : "",
@@ -158,6 +166,7 @@ export default function ServerChat({ server, channel, theme, user }) {
 
     setInput("");
     setReplyTo(null);
+    setMessageEffect("none");
     setSending(false);
     trackActivity("send_message");
     qc.invalidateQueries({ queryKey });
@@ -368,7 +377,7 @@ export default function ServerChat({ server, channel, theme, user }) {
                     /^https?:\/\/.+\.(gif|png|jpg|jpeg|webp)/i.test(msg.content) || msg.content?.includes("giphy.com/media") ? (
                       <img src={msg.content} alt="" className="max-w-[200px] max-h-[200px] rounded-lg object-contain" />
                     ) : (
-                      <p className={isEmojiOnly(msg.content) ? "text-4xl leading-none" : ""}>{msg.content.split(/(@\S+)/g).map((part, i) => {
+                      <p className={cn(isEmojiOnly(msg.content) ? "text-4xl leading-none" : "", getEffectClass(msg.effect))} style={{ "--fx-accent": accent }}>{msg.content.split(/(@\S+)/g).map((part, i) => {
                         if (part.startsWith("@"))
                           return <span key={i} className="font-bold px-1 rounded" style={{ color: accent, background: accent + "20" }}>{part}</span>;
                         // Parse :emoji_name: patterns and replace with server emoji images
@@ -503,6 +512,13 @@ export default function ServerChat({ server, channel, theme, user }) {
             title="Emojis, GIFs & Stickers">
             <Smile className="w-4 h-4" />
           </button>
+          <MessageEffectPicker
+            value={messageEffect}
+            onChange={setMessageEffect}
+            locked={!effectsUnlocked}
+            accent={accent}
+            disabled={!canSendMessages}
+          />
           <VoiceRecorder
             disabled={!canSendMessages || sending}
             accent={accent}

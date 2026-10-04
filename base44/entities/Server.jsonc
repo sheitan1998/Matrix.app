@@ -22,17 +22,39 @@
     },
     "visual_theme": {
       "type": "string",
-      "enum": [
-        "default",
-        "ruby",
-        "galaxy",
-        "ocean",
-        "forest",
-        "neon",
-        "gold",
-        "midnight"
-      ],
-      "default": "default"
+      "default": "default",
+      "description": "Cle du theme actif : theme predefini (default, ruby, galaxy, ocean, forest, neon, gold, midnight) ou theme personnalise (custom_<id>)"
+    },
+    "custom_themes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "emoji": {
+            "type": "string"
+          },
+          "accent": {
+            "type": "string",
+            "description": "Couleur d'accent (hex)"
+          },
+          "bg_from": {
+            "type": "string",
+            "description": "Couleur de fond de depart du degrade (hex)"
+          },
+          "bg_to": {
+            "type": "string",
+            "description": "Couleur de fond de fin du degrade (hex)"
+          }
+        }
+      },
+      "default": [],
+      "description": "Themes visuels personnalises du serveur (Niveau 3, max 10)"
     },
     "theme": {
       "type": "string",

@@ -73,6 +73,31 @@ export const VISUAL_THEMES = [
   },
 ];
 
-export function getTheme(key) {
+export const MAX_CUSTOM_THEMES = 10;
+
+function hexToRgba(hex, alpha) {
+  const h = (hex || "#000000").replace("#", "");
+  const n = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h, 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
+}
+
+// Converts a stored custom theme { id, name, emoji, accent, bg_from, bg_to } into a full theme object
+export function buildCustomTheme(t) {
+  return {
+    key: `custom_${t.id}`,
+    label: t.name,
+    emoji: t.emoji || "🎨",
+    bg: `linear-gradient(135deg, ${t.bg_from} 0%, ${t.bg_to} 100%)`,
+    accent: t.accent,
+    card: hexToRgba(t.bg_from, 0.95),
+    border: hexToRgba(t.accent, 0.2),
+  };
+}
+
+export function getTheme(key, customThemes = []) {
+  if (key?.startsWith("custom_")) {
+    const custom = (customThemes || []).find((t) => `custom_${t.id}` === key);
+    if (custom) return buildCustomTheme(custom);
+  }
   return VISUAL_THEMES.find((t) => t.key === key) || VISUAL_THEMES[0];
 }

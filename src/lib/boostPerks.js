@@ -7,7 +7,7 @@ export const BOOST_LEVELS = [
     color: "#F472B6",
     label: "Basique",
     perks: [
-      { icon: "🖼️", text: "Icône de serveur animée (GIF)" },
+      { icon: "🖼️", text: "Icône de serveur animée (GIF / vidéo)" },
       { icon: "🎨", text: "Thème visuel du serveur" },
       { icon: "😀", text: "Jusqu'à 10 emojis personnalisés" },
     ],
@@ -30,8 +30,8 @@ export const BOOST_LEVELS = [
     label: "Max",
     perks: [
       { icon: "⭐", text: "Lien d'invitation personnalisé" },
-      { icon: "🎭", text: "Bannière de serveur animée (GIF)" },
-      { icon: "🌈", text: "Thèmes visuels personnalisés avancés" },
+      { icon: "🎭", text: "Bannière de serveur animée (GIF / vidéo)" },
+      { icon: "🌈", text: "Jusqu'à 10 thèmes visuels personnalisés" },
     ],
   },
   {

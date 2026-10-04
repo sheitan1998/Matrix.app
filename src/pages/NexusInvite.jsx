@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { ArrowLeft, Loader2, CheckCircle2, AlertCircle, Users, Lock, Globe, Clock, MessageCircle, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { useProgression } from "@/context/ProgressionContext";
+import AnimatedMedia from "@/components/community/AnimatedMedia";
 
 export default function NexusInvite() {
   const { code } = useParams();
@@ -111,7 +112,7 @@ export default function NexusInvite() {
         {/* Banner */}
         {server?.banner_url ? (
           <div className="h-24 w-full overflow-hidden">
-            <img src={server.banner_url} className="w-full h-full object-cover" alt="" />
+            <AnimatedMedia src={server.banner_url} className="w-full h-full object-cover" />
           </div>
         ) : (
           <div className="h-24" style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.3), rgba(109,40,217,0.2))" }} />
@@ -121,7 +122,7 @@ export default function NexusInvite() {
         <div className="px-6 pb-6 -mt-10 text-center">
           <div className="w-20 h-20 rounded-2xl overflow-hidden border-4 mx-auto mb-3" style={{ borderColor: "#13101a", background: "rgba(168,85,247,0.15)" }}>
             {server?.icon_url
-              ? <img src={server.icon_url} className="w-full h-full object-cover" alt="" />
+              ? <AnimatedMedia src={server.icon_url} className="w-full h-full object-cover" />
               : <div className="w-full h-full flex items-center justify-center text-3xl">{server?.icon_emoji || "🏠"}</div>}
           </div>
 

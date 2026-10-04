@@ -1,10 +1,13 @@
 import React from "react";
+import { isVideoUrl } from "@/lib/serverMedia";
 
-export default function AnimatedMedia({ src, className, alt = "", autoPlay = true, ...props }) {
+export default function AnimatedMedia({ src, className, alt = "", ...props }) {
   if (!src) return null;
-  const isVideo = /\.(webm|mp4|mov)$/i.test(src);
-  if (isVideo) {
-    return <video src={src} className={className} autoPlay={autoPlay} loop muted playsInline {...props} />;
+  if (isVideoUrl(src)) {
+    return (
+      <video key={src} src={src} className={className} autoPlay loop muted playsInline
+        preload="auto" disablePictureInPicture {...props} />
+    );
   }
   return <img src={src} className={className} alt={alt} {...props} />;
 }

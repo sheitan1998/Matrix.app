@@ -9,6 +9,8 @@ import BoostLevelGate from "@/components/community/BoostLevelGate";
 import BoostLevelBadge from "@/components/community/BoostLevelBadge";
 import ServerCustomEmojis from "@/components/community/ServerCustomEmojis";
 import AnimatedMedia from "@/components/community/AnimatedMedia";
+import ServerCustomThemes from "@/components/community/ServerCustomThemes";
+import { isAnimatedFile } from "@/lib/serverMedia";
 import { useServerBoosts } from "@/hooks/useServerBoosts";
 import { getBoostLevel } from "@/lib/boostPerks";
 import { Button } from "@/components/ui/button";
@@ -111,6 +113,29 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
       onUpdate({ custom_roles: updated });
       toast.success("Icône du rôle mise à jour !");
     } catch { /* error already toasted */ }
+  };
+
+  // Level gating: animated/video icon from Level 1, animated/video banner from Level 3
+  const handleIconFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (currentBoostLevel < 1 && await isAnimatedFile(file)) {
+      toast.error("Icône animée ou vidéo réservée au Niveau 1 de boost. Seules les images fixes sont autorisées.");
+      return;
+    }
+    uploadIcon(file);
+  };
+
+  const handleBannerFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (currentBoostLevel < 3 && await isAnimatedFile(file)) {
+      toast.error("Bannière animée ou vidéo réservée au Niveau 3 de boost. Seules les images fixes sont autorisées.");
+      return;
+    }
+    uploadBanner(file);
   };
 
   const accent = theme?.accent || "hsl(var(--primary))";
@@ -317,12 +342,12 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-white">{uploadingIcon ? "Envoi..." : "Changer l'icône"}</p>
-                  <p className="text-xs text-muted-foreground">PNG, JPG</p>
+                  <p className="text-xs text-muted-foreground">{currentBoostLevel >= 1 ? "PNG, JPG, GIF, MP4, WebM" : "PNG, JPG, WEBP (image fixe)"}</p>
                 </div>
-                <input type="file" accept="image/*,video/webm,video/mp4" className="hidden" onChange={(e) => e.target.files[0] && uploadIcon(e.target.files[0])} disabled={uploadingIcon} />
+                <input type="file" accept={currentBoostLevel >= 1 ? "image/*,video/mp4,video/webm" : "image/png,image/jpeg,image/webp"} className="hidden" onChange={handleIconFile} disabled={uploadingIcon} />
               </label>
               {currentBoostLevel < 1 && (
-                <p className="text-[10px] text-white/30 mt-1.5">🔒 Icône animée (GIF) à partir du Niveau 1</p>
+                <p className="text-[10px] text-white/30 mt-1.5">🔒 Icône animée (GIF / vidéo) à partir du Niveau 1</p>
               )}
             </div>
 
@@ -340,13 +365,13 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
                         <span className="text-xs">{uploadingBanner ? "Envoi..." : "Ajouter une bannière"}</span>
                       </div>}
                 </div>
-                <input type="file" accept="image/*,video/webm,video/mp4" className="hidden" onChange={(e) => e.target.files[0] && uploadBanner(e.target.files[0])} disabled={uploadingBanner} />
+                <input type="file" accept={currentBoostLevel >= 3 ? "image/*,video/mp4,video/webm" : "image/png,image/jpeg,image/webp"} className="hidden" onChange={handleBannerFile} disabled={uploadingBanner} />
               </label>
             </div>
 
             </BoostLevelGate>
             {currentBoostLevel >= 2 && currentBoostLevel < 3 && (
-              <p className="text-[10px] text-white/30 -mt-3">🔒 Bannière animée (GIF) à partir du Niveau 3</p>
+              <p className="text-[10px] text-white/30 -mt-3">🔒 Bannière animée (GIF / vidéo) à partir du Niveau 3</p>
             )}
 
             {/* Theme — Niveau 1 requis */}
@@ -365,6 +390,11 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
                 ))}
               </div>
             </div>
+            </BoostLevelGate>
+
+            {/* Custom Themes — Niveau 3 requis (max 10) */}
+            <BoostLevelGate currentLevel={currentBoostLevel} requiredLevel={3} label="Thèmes personnalisés">
+            <ServerCustomThemes server={server} onUpdate={onUpdate} accent={accent} />
             </BoostLevelGate>
 
             {/* Custom Emojis — Niveau 1 requis */}

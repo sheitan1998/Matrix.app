@@ -4,6 +4,7 @@ import { Search, X, UserPlus, Globe, Lock, ArrowLeft } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { getTheme } from "@/lib/visualThemes";
+import AnimatedMedia from "@/components/community/AnimatedMedia";
 import { toast } from "sonner";
 
 export default function ServerSearch({ onSelectServer, onClose }) {
@@ -127,7 +128,7 @@ export default function ServerSearch({ onSelectServer, onClose }) {
               </p>
             )}
             {filtered.map((s) => {
-              const t = getTheme(s.visual_theme || "default");
+              const t = getTheme(s.visual_theme || "default", s.custom_themes);
               return (
                 <motion.button key={s.id}
                   whileTap={{ scale: 0.98 }}
@@ -136,7 +137,7 @@ export default function ServerSearch({ onSelectServer, onClose }) {
                   style={{ borderColor: t.border, background: t.bg + "40" }}>
                   <div className="w-12 h-12 rounded-2xl overflow-hidden border shrink-0" style={{ borderColor: t.border }}>
                     {s.icon_url
-                      ? <img src={s.icon_url} className="w-full h-full object-cover" alt="" />
+                      ? <AnimatedMedia src={s.icon_url} className="w-full h-full object-cover" />
                       : <div className="w-full h-full flex items-center justify-center text-2xl" style={{ background: t.accent + "25" }}>
                           {s.icon_emoji || "🏠"}
                         </div>}

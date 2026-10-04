@@ -217,3 +217,46 @@ body {
 .animate-trix-float {
   animation: trix-float 2s ease-out forwards;
 }
+
+/* Server message visual effects (Boost Level 2) */
+.msg-fx-glow { color: #fff; animation: fx-glow 2s ease-in-out infinite alternate; }
+@keyframes fx-glow {
+  from { text-shadow: 0 0 2px var(--fx-accent, #a855f7), 0 0 6px var(--fx-accent, #a855f7); }
+  to { text-shadow: 0 0 6px var(--fx-accent, #a855f7), 0 0 18px var(--fx-accent, #a855f7); }
+}
+.msg-fx-rainbow {
+  background: linear-gradient(90deg, #ff004c, #ff9a00, #fff200, #00ff6a, #00c8ff, #a855f7, #ff004c);
+  background-size: 200% auto; -webkit-background-clip: text; background-clip: text;
+  color: transparent; font-weight: 700; animation: fx-rainbow 3s linear infinite;
+}
+@keyframes fx-rainbow { to { background-position: 200% center; } }
+.msg-fx-fire {
+  background: linear-gradient(0deg, #ff2d00, #ff8a00, #ffe066); background-size: 100% 200%;
+  -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 700;
+  animation: fx-fire 1.2s ease-in-out infinite alternate;
+}
+@keyframes fx-fire {
+  from { background-position: 0 0; filter: drop-shadow(0 0 3px rgba(255, 80, 0, 0.5)); }
+  to { background-position: 0 100%; filter: drop-shadow(0 0 8px rgba(255, 140, 0, 0.8)); }
+}
+.msg-fx-sparkle { color: #fde68a; animation: fx-sparkle 1.6s ease-in-out infinite; }
+.msg-fx-sparkle::after { content: " ✨"; animation: fx-twinkle 1.6s ease-in-out infinite; }
+@keyframes fx-sparkle {
+  0%, 100% { text-shadow: 0 0 2px #fff7cc, 0 0 6px #facc15; }
+  50% { text-shadow: 0 0 8px #ffffff, 0 0 16px #facc15, 0 0 24px #f59e0b; }
+}
+@keyframes fx-twinkle { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+.msg-fx-pulse { display: inline-block; transform-origin: left center; animation: fx-pulse 1.4s ease-in-out infinite; }
+@keyframes fx-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); color: var(--fx-accent, #a855f7); }
+}
+.msg-fx-shake { display: inline-block; animation: fx-shake 2.4s ease-in-out infinite; }
+@keyframes fx-shake {
+  0%, 20%, 100% { transform: translateX(0); }
+  4%, 12% { transform: translateX(-3px) rotate(-1deg); }
+  8%, 16% { transform: translateX(3px) rotate(1deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [class*="msg-fx-"], [class*="msg-fx-"]::after { animation: none !important; }
+}

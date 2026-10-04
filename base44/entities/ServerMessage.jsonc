@@ -30,6 +30,20 @@
       ],
       "default": "text"
     },
+    "effect": {
+      "type": "string",
+      "enum": [
+        "none",
+        "glow",
+        "rainbow",
+        "fire",
+        "sparkle",
+        "pulse",
+        "shake"
+      ],
+      "default": "none",
+      "description": "Effet visuel applique au message (Boost Niveau 2+)"
+    },
     "file_url": {
       "type": "string"
     },

@@ -19,7 +19,8 @@ import UserProfilePopup from "@/components/profile/UserProfilePopup";
 import ProfileContent from "@/components/profile/ProfileContent";
 import UserSettingsModal from "@/components/profile/UserSettingsModal";
 import UserBar from "@/components/community/UserBar";
-import { uploadImageWithToast } from "@/lib/imageModeration";
+import { uploadServerMedia } from "@/lib/serverMedia";
+import AnimatedMedia from "@/components/community/AnimatedMedia";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { VISUAL_THEMES, getTheme } from "@/lib/visualThemes";
@@ -121,7 +122,7 @@ export default function Community() {
   const isOwner = selectedServer?.owner_email === user?.email;
   const myMembership = userMemberships.find((m) => m.server_id === selectedServer?.id);
   const canManageChannels = isOwner || myMembership?.role === "admin" || myMembership?.role === "moderator";
-  const theme = getTheme(selectedServer?.visual_theme || "default");
+  const theme = getTheme(selectedServer?.visual_theme || "default", selectedServer?.custom_themes);
   const channels = selectedServer && selectedServer.id !== "__feed__" ?
   selectedServer.channels?.length ? selectedServer.channels : defaultChannels :
   [];
@@ -166,32 +167,20 @@ export default function Community() {
   const uploadIcon = async (file) => {
     setUploadingIcon(true);
     try {
-      const isImage = file.type.startsWith("image/");
-      const isVideo = file.type.startsWith("video/") || /\.(webm|mp4|mov)$/i.test(file.name);
-      if (!isImage && !isVideo) {
-        toast.error("Format non supporté. Utilisez PNG, JPG, GIF, WebM ou MP4.");
-        return;
-      }
-      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
+      const { file_url } = await uploadServerMedia(file);
       await updateServer({ icon_url: file_url });
       toast.success("Icône mise à jour !");
-    } catch { toast.error("Erreur lors de l'upload"); }
+    } catch (err) { toast.error(err?.message || "Erreur lors de l'upload"); }
     setUploadingIcon(false);
   };
 
   const uploadBanner = async (file) => {
     setUploadingBanner(true);
     try {
-      const isImage = file.type.startsWith("image/");
-      const isVideo = file.type.startsWith("video/") || /\.(webm|mp4|mov)$/i.test(file.name);
-      if (!isImage && !isVideo) {
-        toast.error("Format non supporté. Utilisez PNG, JPG, GIF, WebM ou MP4.");
-        return;
-      }
-      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
+      const { file_url } = await uploadServerMedia(file);
       await updateServer({ banner_url: file_url });
       toast.success("Bannière mise à jour !");
-    } catch { toast.error("Erreur lors de l'upload"); }
+    } catch (err) { toast.error(err?.message || "Erreur lors de l'upload"); }
     setUploadingBanner(false);
   };
 
@@ -312,7 +301,7 @@ export default function Community() {
             </button>
             <div className="w-8 h-8 rounded-xl overflow-hidden border shrink-0" style={{ borderColor: theme.border }}>
               {selectedServer.icon_url ?
-            <img src={selectedServer.icon_url} className="w-full h-full object-cover" alt="" /> :
+            <AnimatedMedia src={selectedServer.icon_url} className="w-full h-full object-cover" /> :
             <div className="w-full h-full flex items-center justify-center text-lg" style={{ background: (selectedServer.banner_color || theme.accent) + "30" }}>{selectedServer.icon_emoji || "🏠"}</div>}
             </div>
             <div className="flex-1 min-w-0">
@@ -377,14 +366,14 @@ export default function Community() {
         <div className="w-14 shrink-0 border-r flex flex-col items-center py-3 gap-2 overflow-y-auto no-scrollbar"
         style={{ borderColor: theme.border, background: theme.card + "cc" }}>
             {servers.map((s) => {
-            const t = getTheme(s.visual_theme || "default");
+            const t = getTheme(s.visual_theme || "default", s.custom_themes);
             const active = selectedServer?.id === s.id;
             return (
               <button key={s.id} onClick={() => selectServer(s)}
               className="w-10 h-10 rounded-xl overflow-hidden border-2 transition shrink-0"
               style={{ borderColor: active ? t.accent : "transparent" }}>
                   {s.icon_url ?
-                <img src={s.icon_url} className="w-full h-full object-cover" alt="" /> :
+                <AnimatedMedia src={s.icon_url} className="w-full h-full object-cover" /> :
                 <div className="w-full h-full flex items-center justify-center text-lg" style={{ background: (s.banner_color || t.accent) + "25" }}>{s.icon_emoji || "🏠"}</div>}
                 </button>);
 
@@ -408,13 +397,13 @@ export default function Community() {
               </button>
             </div>
             {myServers.map((s) => {
-            const t = getTheme(s.visual_theme || "default");
+            const t = getTheme(s.visual_theme || "default", s.custom_themes);
             return (
               <button key={s.id} onClick={() => selectServer(s)}
               className="flex items-center gap-3 px-3 py-2 mx-2 mb-1 rounded-2xl hover:bg-secondary/50 transition">
                   <div className="w-11 h-11 rounded-xl overflow-hidden border shrink-0" style={{ borderColor: t.border }}>
                     {s.icon_url ?
-                  <img src={s.icon_url} className="w-full h-full object-cover" alt="" /> :
+                  <AnimatedMedia src={s.icon_url} className="w-full h-full object-cover" /> :
                   <div className="w-full h-full flex items-center justify-center text-xl" style={{ background: (s.banner_color || t.accent) + "25" }}>{s.icon_emoji || "🏠"}</div>}
                   </div>
                   <div className="flex-1 min-w-0 text-left">
@@ -464,7 +453,7 @@ export default function Community() {
         style={{ borderColor: theme.border, background: theme.card + "88" }}>
             {selectedServer.banner_url &&
           <div className="w-full h-20 overflow-hidden shrink-0">
-                <img src={selectedServer.banner_url} className="w-full h-full object-cover" alt="" />
+                <AnimatedMedia src={selectedServer.banner_url} className="w-full h-full object-cover" />
               </div>
           }
             <div className="p-3 border-b shrink-0 flex items-center justify-between" style={{ borderColor: theme.border }}>
@@ -645,7 +634,7 @@ export default function Community() {
             <div className="p-6 text-center">
               <div className="w-16 h-16 rounded-2xl overflow-hidden mx-auto mb-3" style={{ border: "1px solid rgba(255,255,255,0.1)" }}>
                 {joinConfirmServer.icon_url ?
-              <img src={joinConfirmServer.icon_url} className="w-full h-full object-cover" alt="" /> :
+              <AnimatedMedia src={joinConfirmServer.icon_url} className="w-full h-full object-cover" /> :
               <div className="w-full h-full flex items-center justify-center text-3xl" style={{ background: "rgba(168,85,247,0.15)" }}>{joinConfirmServer.icon_emoji || "🏠"}</div>}
               </div>
               <h3 className="text-lg font-black text-white">{joinConfirmServer.name}</h3>
