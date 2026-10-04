@@ -131,7 +131,7 @@ export default function AffiliateDashboard() {
           <div>
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Programme Affiliés & Partenaires</p>
               <p className="text-lg font-black text-white mt-1">Devenez un créateur reconnu de Matrix</p>
-              <p className="text-xs text-muted-foreground mt-1 hidden">Cumulez de la visibilité sur vos mods et maps pour débloquer des avantages exclusifs.</p>
+              
             </div>
           }
         </div>
