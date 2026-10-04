@@ -136,10 +136,10 @@ export default function UnifiedPicker({ open, onClose, onSelectEmoji, onSelectGi
                       <button
                         key={i}
                         onClick={() => onSelectEmoji?.(`:${emoji.name}:`)}
-                        className="w-8 h-8 hover:bg-white/10 rounded transition flex items-center justify-center tap-sm"
+                        className="w-9 h-9 hover:bg-white/10 rounded-lg transition flex items-center justify-center tap-sm"
                         title={`:${emoji.name}:`}
                       >
-                        <img src={emoji.url} alt={emoji.name} className="w-6 h-6 object-contain" loading="lazy" />
+                        <img src={emoji.url} alt={emoji.name} className="w-7 h-7 object-contain" loading="lazy" />
                       </button>
                     ))}
                   </div>
@@ -152,7 +152,7 @@ export default function UnifiedPicker({ open, onClose, onSelectEmoji, onSelectGi
                       <button
                         key={`${emoji}-${i}`}
                         onClick={() => onSelectEmoji?.(emoji)}
-                        className="w-8 h-8 text-lg hover:bg-white/10 rounded transition flex items-center justify-center tap-sm"
+                        className="w-9 h-9 text-xl hover:bg-white/10 rounded-lg transition flex items-center justify-center tap-sm"
                       >
                         {emoji}
                       </button>

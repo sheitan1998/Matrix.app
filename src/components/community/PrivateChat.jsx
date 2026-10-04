@@ -8,6 +8,7 @@ import { useProgression } from "@/context/ProgressionContext";
 import { cn } from "@/lib/utils";
 import VoiceRecorder from "@/components/chat/VoiceRecorder";
 import VoiceMessagePlayer from "@/components/chat/VoiceMessagePlayer";
+import ServerInviteEmbed from "@/components/community/ServerInviteEmbed";
 
 const REACTIONS = ["❤️", "😂", "🔥", "👏", "😮", "😢"];
 
@@ -173,6 +174,9 @@ export default function PrivateChat({ user, friend, onClose }) {
                       </a>
                     ) : null}
                     {msg.content && msg.content !== msg.file_name && <p>{msg.content}</p>}
+                    {msg.content && msg.content.match(/\/nexus\/invite\/([A-Za-z0-9]+)/) && (
+                      <ServerInviteEmbed inviteCode={msg.content.match(/\/nexus\/invite\/([A-Za-z0-9]+)/)[1]} accent="hsl(135 100% 50%)" />
+                    )}
                     <p className={cn("text-[9px] mt-0.5", isMe ? "text-primary-foreground/60" : "text-muted-foreground")}>
                       {format(new Date(msg.created_date), "HH:mm")}
                     </p>

@@ -8,6 +8,7 @@ import ServerBoostLevels from "@/components/prospecteurs/ServerBoostLevels";
 import BoostLevelGate from "@/components/community/BoostLevelGate";
 import BoostLevelBadge from "@/components/community/BoostLevelBadge";
 import ServerCustomEmojis from "@/components/community/ServerCustomEmojis";
+import AnimatedMedia from "@/components/community/AnimatedMedia";
 import { useServerBoosts } from "@/hooks/useServerBoosts";
 import { getBoostLevel } from "@/lib/boostPerks";
 import { Button } from "@/components/ui/button";
@@ -311,14 +312,14 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
                 <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-dashed flex items-center justify-center"
                   style={{ borderColor: accent + "60" }}>
                   {server.icon_url
-                    ? <img src={server.icon_url} className="w-full h-full object-cover" alt="" />
+                    ? <AnimatedMedia src={server.icon_url} className="w-full h-full object-cover" />
                     : <span className="text-2xl">{server.icon_emoji || "🏠"}</span>}
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-white">{uploadingIcon ? "Envoi..." : "Changer l'icône"}</p>
                   <p className="text-xs text-muted-foreground">PNG, JPG</p>
                 </div>
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && uploadIcon(e.target.files[0])} disabled={uploadingIcon} />
+                <input type="file" accept="image/*,video/webm,video/mp4" className="hidden" onChange={(e) => e.target.files[0] && uploadIcon(e.target.files[0])} disabled={uploadingIcon} />
               </label>
               {currentBoostLevel < 1 && (
                 <p className="text-[10px] text-white/30 mt-1.5">🔒 Icône animée (GIF) à partir du Niveau 1</p>
@@ -333,13 +334,13 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
                 <div className="w-full h-24 rounded-2xl overflow-hidden border-2 border-dashed flex items-center justify-center"
                   style={{ borderColor: accent + "60" }}>
                   {server.banner_url
-                    ? <img src={server.banner_url} className="w-full h-full object-cover" alt="" />
+                    ? <AnimatedMedia src={server.banner_url} className="w-full h-full object-cover" />
                     : <div className="flex flex-col items-center gap-1 text-muted-foreground">
                         <Upload className="w-5 h-5" />
                         <span className="text-xs">{uploadingBanner ? "Envoi..." : "Ajouter une bannière"}</span>
                       </div>}
                 </div>
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && uploadBanner(e.target.files[0])} disabled={uploadingBanner} />
+                <input type="file" accept="image/*,video/webm,video/mp4" className="hidden" onChange={(e) => e.target.files[0] && uploadBanner(e.target.files[0])} disabled={uploadingBanner} />
               </label>
             </div>
 

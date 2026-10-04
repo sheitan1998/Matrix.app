@@ -15,6 +15,7 @@ import { uploadImageWithToast } from "@/lib/imageModeration";
 import ReportContentModal from "@/components/admin/ReportContentModal";
 import { isEmojiOnly } from "@/lib/emojiUtils";
 import UnifiedPicker from "@/components/chat/UnifiedPicker";
+import ServerInviteEmbed from "@/components/community/ServerInviteEmbed";
 
 export default function ServerChat({ server, channel, theme, user }) {
   const [input, setInput] = useState("");
@@ -379,14 +380,17 @@ export default function ServerChat({ server, channel, theme, user }) {
                         const emojiParts = part.split(/(:\w+:)/g);
                         return emojiParts.map((ep, j) => {
                           if (ep.startsWith(":") && ep.endsWith(":") && emojiMap[ep.slice(1, -1)])
-                            return <img key={`${i}-${j}`} src={emojiMap[ep.slice(1, -1)]} alt={ep} className="inline-block w-5 h-5 object-contain align-middle" />;
+                            return <img key={`${i}-${j}`} src={emojiMap[ep.slice(1, -1)]} alt={ep} className="inline-block w-7 h-7 object-contain align-middle" />;
                           return <React.Fragment key={`${i}-${j}`}>{ep}</React.Fragment>;
                         });
                       })}</p>
-                    )
-                  )}
-                </div>
-              )}
+                      )
+                      )}
+                      {msg.content && msg.content.match(/\/nexus\/invite\/([A-Za-z0-9]+)/) && (
+                      <ServerInviteEmbed inviteCode={msg.content.match(/\/nexus\/invite\/([A-Za-z0-9]+)/)[1]} accent={accent} />
+                      )}
+                      </div>
+                      )}
 
               {/* Reactions display */}
               {reactionGroups.length > 0 && (

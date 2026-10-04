@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Crown, Shield, MessageCircle } from "lucide-react";
 import UserProfilePopup from "@/components/profile/UserProfilePopup";
@@ -16,12 +16,22 @@ const ROLE_ICONS = {
 
 export default function MembersList({ server, theme, currentUserEmail, onOpenDm }) {
   const [profileEmail, setProfileEmail] = useState(null);
+  const qc = useQueryClient();
   const { speakingEmails } = useServerVoice(server.id);
   const { data: members = [] } = useQuery({
     queryKey: ["server-members", server.id],
     queryFn: () => base44.entities.ServerMember.filter({ server_id: server.id }, "-created_date", 100),
     refetchInterval: 15000,
   });
+
+  // Real-time subscription for instant member updates
+  useEffect(() => {
+    const unsubscribe = base44.entities.ServerMember.subscribe(() => {
+      qc.invalidateQueries({ queryKey: ["server-members", server.id] });
+      qc.invalidateQueries({ queryKey: ["member-activities"] });
+    });
+    return unsubscribe;
+  }, [server.id, qc]);
 
   const accent = theme?.accent || "hsl(var(--primary))";
 
@@ -62,7 +72,7 @@ export default function MembersList({ server, theme, currentUserEmail, onOpenDm 
       <div className="px-3 py-2.5 border-b shrink-0 flex items-center gap-1.5"
         style={{ borderColor: theme?.border }}>
         <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-          Membres — {members.length}
+          Membres — {members.filter(m => !m.is_banned).length}
         </span>
       </div>
 

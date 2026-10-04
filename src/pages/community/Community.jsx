@@ -166,20 +166,32 @@ export default function Community() {
   const uploadIcon = async (file) => {
     setUploadingIcon(true);
     try {
-      const { file_url } = await uploadImageWithToast(file);
+      const isImage = file.type.startsWith("image/");
+      const isVideo = file.type.startsWith("video/") || /\.(webm|mp4|mov)$/i.test(file.name);
+      if (!isImage && !isVideo) {
+        toast.error("Format non supporté. Utilisez PNG, JPG, GIF, WebM ou MP4.");
+        return;
+      }
+      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
       await updateServer({ icon_url: file_url });
       toast.success("Icône mise à jour !");
-    } catch { /* error already toasted */ }
+    } catch { toast.error("Erreur lors de l'upload"); }
     setUploadingIcon(false);
   };
 
   const uploadBanner = async (file) => {
     setUploadingBanner(true);
     try {
-      const { file_url } = await uploadImageWithToast(file);
+      const isImage = file.type.startsWith("image/");
+      const isVideo = file.type.startsWith("video/") || /\.(webm|mp4|mov)$/i.test(file.name);
+      if (!isImage && !isVideo) {
+        toast.error("Format non supporté. Utilisez PNG, JPG, GIF, WebM ou MP4.");
+        return;
+      }
+      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
       await updateServer({ banner_url: file_url });
       toast.success("Bannière mise à jour !");
-    } catch { /* error already toasted */ }
+    } catch { toast.error("Erreur lors de l'upload"); }
     setUploadingBanner(false);
   };
 
