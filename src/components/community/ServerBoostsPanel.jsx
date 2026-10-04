@@ -1,29 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Zap, Loader2 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { useServerBoosts } from "@/hooks/useServerBoosts";
 import ServerBoostRow from "@/components/community/ServerBoostRow";
 
 export default function ServerBoostsPanel({ server, theme }) {
-  const [data, setData] = useState({ boosts: [], legacy_count: 0, server_boosts: 0 });
-  const [loading, setLoading] = useState(true);
   const accent = theme?.accent || "#a855f7";
+  const { boosts, legacyCount, loading, activeCount } = useServerBoosts(server?.id, server?.boosts);
 
-  // Refetch whenever the server's boost counter changes (new boost / expiry)
-  useEffect(() => {
-    if (!server?.id) return;
-    let cancelled = false;
-    setLoading(true);
-    base44.functions
-      .invoke("serverSearch", { action: "getServerBoosts", serverId: server.id })
-      .then((res) => { if (!cancelled) setData(res.data); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [server?.id, server?.boosts]);
-
-  const active = data.boosts.filter((b) => b.is_active);
-  const expired = data.boosts.filter((b) => !b.is_active);
-  const legacyCount = data.legacy_count || 0;
-  const totalActive = active.length + legacyCount;
+  const active = boosts.filter((b) => b.is_active);
+  const expired = boosts.filter((b) => !b.is_active);
+  const totalActive = activeCount;
 
   return (
     <div className="space-y-4">
