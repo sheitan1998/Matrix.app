@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Upload, Trash2, Copy, Shield, Ban, MicOff, Crown, Plus, X, Hash, Volume2, Megaphone, RefreshCw, Clock, Edit3, UserPlus } from "lucide-react";
+import { ArrowLeft, Upload, Trash2, Copy, Shield, Ban, MicOff, Crown, Plus, X, Hash, Volume2, Megaphone, RefreshCw, Clock, Edit3, UserPlus, Zap } from "lucide-react";
+import ServerBoostsPanel from "@/components/community/ServerBoostsPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { VISUAL_THEMES } from "@/lib/visualThemes";
@@ -147,6 +148,7 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
           { key: "roles", label: "Rôles" },
           { key: "channels", label: "Salons" },
           { key: "members", label: "Membres" },
+          { key: "boosts", label: "Boosts" },
         ].map((t) => (
           <button key={t.key} onClick={() => setTab(t.key)}
             className={cn("shrink-0 px-4 py-1.5 rounded-xl text-xs font-bold transition",
@@ -624,6 +626,11 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
               );
             })}
           </>
+        )}
+
+        {/* BOOSTS */}
+        {tab === "boosts" && (
+          <ServerBoostsPanel server={server} theme={theme} />
         )}
       </div>
     </div>
