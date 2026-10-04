@@ -768,10 +768,17 @@ export default async function(req: Request): Promise<Response> {
 
         const serverBoosts = srv.boosts || 0;
         const activeCount = boosts.filter((b) => b.is_active).length;
+
+        // Real-time sync: if the server counter drifted (expired boost not yet cleaned by cron,
+        // or legacy boosts with no record), resync it now so the panel always shows live data.
+        if (serverBoosts !== activeCount) {
+          await base44.asServiceRole.entities.Server.update(serverId, { boosts: activeCount });
+        }
+
         return Response.json({
           boosts,
-          server_boosts: serverBoosts,
-          legacy_count: Math.max(0, serverBoosts - activeCount),
+          server_boosts: activeCount,
+          legacy_count: 0,
         });
       }
 
@@ -846,7 +853,7 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ blocked: records.length > 0 });
       }
 
-      // ---- Cleanup expired server boosts (30-day expiry) ----
+      // ---- Cleanup expired server boosts (30-day expiry) + resync orphaned/legacy counters ----
       // Secured: requires either a valid API key (for automated tasks) or an admin user
       case 'cleanupExpiredBoosts': {
         const apiKey = req.headers.get('x-api-key');
@@ -856,34 +863,42 @@ export default async function(req: Request): Promise<Response> {
         }
 
         const now = new Date().toISOString();
+
+        // 1. Delete expired records (boost older than 30 days)
         const expiredRecords = await base44.asServiceRole.entities.ServerBoostRecord.filter({
           expires_at: { $lt: now }
         });
-
-        // Group expired records by server_id
-        const byServer = {};
-        for (const rec of expiredRecords) {
-          byServer[rec.server_id] = (byServer[rec.server_id] || 0) + 1;
+        if (expiredRecords.length > 0) {
+          await base44.asServiceRole.entities.ServerBoostRecord.deleteMany({
+            expires_at: { $lt: now }
+          });
         }
 
-        // Decrement each server's boost count
-        for (const [serverId, count] of Object.entries(byServer)) {
-          const srv = await base44.asServiceRole.entities.Server.get(serverId);
-          if (srv) {
-            const newBoosts = Math.max(0, (srv.boosts || 0) - count);
-            await base44.asServiceRole.entities.Server.update(serverId, {
-              boosts: newBoosts,
-            });
+        // 2. Resync ALL servers with boosts > 0 to their actual active record count.
+        //    This removes legacy/orphaned boosts (no record, no dates) from the counter
+        //    and corrects any drift between server.boosts and tracked records.
+        const serversPage = await base44.asServiceRole.entities.Server.filter({ boosts: { $gt: 0 } }, null, 500);
+        const servers = serversPage?.items || serversPage || [];
+        let synced = 0;
+        for (const srv of servers) {
+          const activePage = await base44.asServiceRole.entities.ServerBoostRecord.filter({
+            server_id: srv.id,
+            expires_at: { $gt: now }
+          });
+          const activeCount = (activePage?.items || activePage || []).length;
+          if ((srv.boosts || 0) !== activeCount) {
+            await base44.asServiceRole.entities.Server.update(srv.id, { boosts: activeCount });
+            synced++;
           }
         }
 
-        // Delete all expired records
-        await base44.asServiceRole.entities.ServerBoostRecord.deleteMany({
-          expires_at: { $lt: now }
+        console.log('[cleanupExpiredBoosts] expired:', expiredRecords.length, 'servers synced:', synced, '/', servers.length);
+        return Response.json({
+          success: true,
+          expired: expiredRecords.length,
+          serversSynced: synced,
+          totalServers: servers.length,
         });
-
-        console.log('[cleanupExpiredBoosts] expired:', expiredRecords.length, 'servers affected:', Object.keys(byServer).length);
-        return Response.json({ success: true, expired: expiredRecords.length, serversAffected: Object.keys(byServer).length });
       }
 
       default:
