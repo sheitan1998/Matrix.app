@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Upload, Trash2, Copy, Shield, Ban, MicOff, Crown, Plus, X, Hash, Volume2, Megaphone, RefreshCw, Clock, Edit3, UserPlus, Zap, Lock } from "lucide-react";
+import { ArrowLeft, Upload, Trash2, Copy, Shield, Ban, MicOff, Crown, Plus, X, Hash, Volume2, Megaphone, RefreshCw, Clock, Edit3, UserPlus, Zap, Lock, ChevronDown } from "lucide-react";
+import { uploadImageWithToast } from "@/lib/imageModeration";
 import ServerBoostsPanel from "@/components/community/ServerBoostsPanel";
 import ServerBoostLevels from "@/components/prospecteurs/ServerBoostLevels";
 import BoostLevelGate from "@/components/community/BoostLevelGate";
@@ -47,6 +48,7 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
   const [newRoleColor, setNewRoleColor] = useState("#3b82f6");
   const [customRoles, setCustomRoles] = useState(server.custom_roles || []);
   const [assigningRole, setAssigningRole] = useState(null); // member id
+  const [collapsedChannels, setCollapsedChannels] = useState(new Set());
   const [editingInvite, setEditingInvite] = useState(false);
   const [inviteInput, setInviteInput] = useState(server.invite_code || "");
   const [tempDuration, setTempDuration] = useState("24h");
@@ -75,6 +77,10 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
   };
 
   const handleUnban = async (member) => {
+    if (member.is_banned && !member.ban_until) {
+      toast.error("Impossible de lever un bannissement permanent.");
+      return;
+    }
     await updateMember(member.id, { is_banned: false, ban_until: null });
   };
 
@@ -93,6 +99,17 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
     refetchMembers();
     toast.success(`Rôle "${role}" attribué à ${member.user_name || member.user_email}`);
     setMemberAction(null);
+  };
+
+  const handleRoleIconUpload = async (roleIndex, file) => {
+    try {
+      const { file_url } = await uploadImageWithToast(file);
+      const updated = [...customRoles];
+      updated[roleIndex] = { ...updated[roleIndex], icon: file_url };
+      setCustomRoles(updated);
+      onUpdate({ custom_roles: updated });
+      toast.success("Icône du rôle mise à jour !");
+    } catch { /* error already toasted */ }
   };
 
   const accent = theme?.accent || "hsl(var(--primary))";
@@ -370,12 +387,21 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
               {customRoles.map((r, i) => (
                 <div key={i} className="flex items-center gap-3 p-2 rounded-xl border" style={{ borderColor: theme?.border, background: "rgba(255,255,255,0.03)" }}>
                   <div className="w-3 h-3 rounded-full shrink-0" style={{ background: r.color }} />
+                  {r.icon && <img src={r.icon} alt="" className="w-4 h-4 rounded-full shrink-0" />}
                   <span className="flex-1 text-sm font-semibold text-white">{r.name}</span>
+                  {currentBoostLevel >= 2 ? (
+                    <label className="cursor-pointer shrink-0 tap-sm" title="Icône du rôle">
+                      <Upload className="w-3.5 h-3.5 text-muted-foreground hover:text-white" />
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && handleRoleIconUpload(i, e.target.files[0])} />
+                    </label>
+                  ) : (
+                    <Lock className="w-3 h-3 text-white/20 shrink-0" title="Niveau 2 requis" />
+                  )}
                   <button onClick={() => {
                     const updated = customRoles.filter((_, j) => j !== i);
                     setCustomRoles(updated);
                     onUpdate({ custom_roles: updated });
-                  }} className="text-muted-foreground hover:text-red-400 transition">
+                  }} className="text-muted-foreground hover:text-red-400 transition shrink-0">
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -394,7 +420,7 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
                   style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }} />
                 <Button size="sm" onClick={() => {
                   if (!newRoleName.trim()) return;
-                  const updated = [...customRoles, { name: newRoleName.trim(), color: newRoleColor }];
+                  const updated = [...customRoles, { name: newRoleName.trim(), color: newRoleColor, icon: "" }];
                   setCustomRoles(updated);
                   onUpdate({ custom_roles: updated });
                   setNewRoleName("");
@@ -424,12 +450,22 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
                   await onUpdate({ channels: updated });
                 };
                 return (
-                  <div key={ch.id} className="p-4 rounded-2xl border space-y-3" style={{ borderColor: theme?.border, background: "rgba(255,255,255,0.03)" }}>
-                    <div className="flex items-center gap-2">
+                  <div key={ch.id} className="rounded-2xl border overflow-hidden" style={{ borderColor: theme?.border, background: "rgba(255,255,255,0.03)" }}>
+                    <div className="flex items-center gap-2 p-3 cursor-pointer" onClick={() => {
+                      setCollapsedChannels(prev => {
+                        const next = new Set(prev);
+                        if (next.has(ch.id)) next.delete(ch.id);
+                        else next.add(ch.id);
+                        return next;
+                      });
+                    }}>
                       {React.createElement(CH_ICONS[ch.type] || Hash, { className: "w-4 h-4", style: { color: accent } })}
                       <span className="font-bold text-white">#{ch.name}</span>
                       <span className="text-[10px] text-muted-foreground">{ch.type}</span>
+                      <ChevronDown className={cn("w-4 h-4 ml-auto transition", collapsedChannels.has(ch.id) ? "" : "rotate-180")} />
                     </div>
+                    {!collapsedChannels.has(ch.id) && (
+                    <div className="px-4 pb-4 space-y-3">
                     <p className="text-[10px] font-bold text-muted-foreground uppercase">Permissions générales</p>
                     <div className="space-y-2">
                       {[
@@ -527,6 +563,8 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
                         );
                       })}
                     </div>
+                    </div>
+                    )}
                   </div>
                 );
               })
@@ -640,10 +678,16 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
                         <MicOff className="w-3 h-3" /> Muet vocal
                       </button>
                       {m.is_banned ? (
-                        <button onClick={() => handleUnban(m)}
-                          className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold border border-green-500/20 text-green-400 hover:bg-green-500/10 transition">
-                          <Shield className="w-3 h-3" /> Débannir
-                        </button>
+                        m.ban_until === null ? (
+                          <span className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold border border-red-500/20 text-red-400/50">
+                            <Shield className="w-3 h-3" /> Ban définitif
+                          </span>
+                        ) : (
+                          <button onClick={() => handleUnban(m)}
+                            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold border border-green-500/20 text-green-400 hover:bg-green-500/10 transition">
+                            <Shield className="w-3 h-3" /> Débannir
+                          </button>
+                        )
                       ) : (
                         <button onClick={() => setMemberAction({ member: m, action: "ban" })}
                           className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold border border-red-500/20 text-red-400 hover:bg-red-500/10 transition">

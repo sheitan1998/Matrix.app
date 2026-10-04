@@ -367,11 +367,22 @@ export default function ServerChat({ server, channel, theme, user }) {
                     /^https?:\/\/.+\.(gif|png|jpg|jpeg|webp)/i.test(msg.content) || msg.content?.includes("giphy.com/media") ? (
                       <img src={msg.content} alt="" className="max-w-[200px] max-h-[200px] rounded-lg object-contain" />
                     ) : (
-                      <p className={isEmojiOnly(msg.content) ? "text-4xl leading-none" : ""}>{msg.content.split(/(@\S+)/g).map((part, i) =>
-                        part.startsWith("@")
-                          ? <span key={i} className="font-bold px-1 rounded" style={{ color: accent, background: accent + "20" }}>{part}</span>
-                          : <React.Fragment key={i}>{part}</React.Fragment>
-                      )}</p>
+                      <p className={isEmojiOnly(msg.content) ? "text-4xl leading-none" : ""}>{msg.content.split(/(@\S+)/g).map((part, i) => {
+                        if (part.startsWith("@"))
+                          return <span key={i} className="font-bold px-1 rounded" style={{ color: accent, background: accent + "20" }}>{part}</span>;
+                        // Parse :emoji_name: patterns and replace with server emoji images
+                        const serverEmojis = server?.custom_emojis || [];
+                        if (serverEmojis.length === 0 || !part.includes(":"))
+                          return <React.Fragment key={i}>{part}</React.Fragment>;
+                        const emojiMap = {};
+                        serverEmojis.forEach(e => { emojiMap[e.name] = e.url; });
+                        const emojiParts = part.split(/(:\w+:)/g);
+                        return emojiParts.map((ep, j) => {
+                          if (ep.startsWith(":") && ep.endsWith(":") && emojiMap[ep.slice(1, -1)])
+                            return <img key={`${i}-${j}`} src={emojiMap[ep.slice(1, -1)]} alt={ep} className="inline-block w-5 h-5 object-contain align-middle" />;
+                          return <React.Fragment key={`${i}-${j}`}>{ep}</React.Fragment>;
+                        });
+                      })}</p>
                     )
                   )}
                 </div>
@@ -460,6 +471,7 @@ export default function ServerChat({ server, channel, theme, user }) {
           open={showPicker}
           onClose={() => setShowPicker(false)}
           accent={accent}
+          serverEmojis={server?.custom_emojis || []}
           onSelectEmoji={(emoji) => setInput(prev => prev + emoji)}
           onSelectGif={(url) => handleSendMedia(url)}
           onSelectSticker={(url) => handleSendMedia(url)}

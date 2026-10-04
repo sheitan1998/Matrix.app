@@ -12,8 +12,8 @@
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 
-const ALLOWED_MIME = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-const ALLOWED_EXT = [".jpg", ".jpeg", ".png", ".webp"];
+const ALLOWED_MIME = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
+const ALLOWED_EXT = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
 const MAX_SIZE_MB = 8;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 

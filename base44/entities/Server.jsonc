@@ -170,6 +170,10 @@
           },
           "color": {
             "type": "string"
+          },
+          "icon": {
+            "type": "string",
+            "description": "URL de l'ic\u00f4ne du r\u00f4le (Niveau 2+)"
           }
         }
       },

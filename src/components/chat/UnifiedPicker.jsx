@@ -9,7 +9,7 @@ const TABS = [
   { id: "stickers", label: "Stickers", icon: StickerIcon },
 ];
 
-export default function UnifiedPicker({ open, onClose, onSelectEmoji, onSelectGif, onSelectSticker, accent = "#a855f7" }) {
+export default function UnifiedPicker({ open, onClose, onSelectEmoji, onSelectGif, onSelectSticker, accent = "#a855f7", serverEmojis = [] }) {
   const [activeTab, setActiveTab] = useState("emojis");
   const [emojiCat, setEmojiCat] = useState(0);
   const [gifQuery, setGifQuery] = useState("");
@@ -70,6 +70,7 @@ export default function UnifiedPicker({ open, onClose, onSelectEmoji, onSelectGi
   if (!open) return null;
 
   const filteredStickers = activePack === "all" ? stickers : stickers.filter(s => (s.pack || "Default") === activePack);
+  const hasServerEmojis = serverEmojis && serverEmojis.length > 0;
 
   return (
     <div
@@ -105,6 +106,15 @@ export default function UnifiedPicker({ open, onClose, onSelectEmoji, onSelectGi
           <>
             {/* Category sidebar */}
             <div className="flex flex-col shrink-0 overflow-y-auto scrollbar-thin" style={{ width: "44px", borderRight: "1px solid rgba(255,255,255,0.06)" }}>
+              {hasServerEmojis && (
+                <button
+                  onClick={() => setEmojiCat("server")}
+                  className={`w-full h-10 flex items-center justify-center text-lg transition ${emojiCat === "server" ? "bg-white/10" : "hover:bg-white/5"}`}
+                  title="Emojis du serveur"
+                >
+                  🎭
+                </button>
+              )}
               {EMOJI_CATEGORIES.map((cat, i) => (
                 <button
                   key={cat.name}
@@ -118,18 +128,38 @@ export default function UnifiedPicker({ open, onClose, onSelectEmoji, onSelectGi
             </div>
             {/* Emoji grid */}
             <div className="flex-1 overflow-y-auto scrollbar-thin p-2">
-              <p className="text-[10px] font-bold text-white/40 uppercase mb-1.5 px-1">{EMOJI_CATEGORIES[emojiCat].name}</p>
-              <div className="grid grid-cols-7 gap-0.5">
-                {EMOJI_CATEGORIES[emojiCat].emojis.map((emoji, i) => (
-                  <button
-                    key={`${emoji}-${i}`}
-                    onClick={() => onSelectEmoji?.(emoji)}
-                    className="w-8 h-8 text-lg hover:bg-white/10 rounded transition flex items-center justify-center tap-sm"
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
+              {emojiCat === "server" ? (
+                <>
+                  <p className="text-[10px] font-bold text-white/40 uppercase mb-1.5 px-1">Emojis du serveur</p>
+                  <div className="grid grid-cols-7 gap-0.5">
+                    {serverEmojis.map((emoji, i) => (
+                      <button
+                        key={i}
+                        onClick={() => onSelectEmoji?.(`:${emoji.name}:`)}
+                        className="w-8 h-8 hover:bg-white/10 rounded transition flex items-center justify-center tap-sm"
+                        title={`:${emoji.name}:`}
+                      >
+                        <img src={emoji.url} alt={emoji.name} className="w-6 h-6 object-contain" loading="lazy" />
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-[10px] font-bold text-white/40 uppercase mb-1.5 px-1">{EMOJI_CATEGORIES[emojiCat].name}</p>
+                  <div className="grid grid-cols-7 gap-0.5">
+                    {EMOJI_CATEGORIES[emojiCat].emojis.map((emoji, i) => (
+                      <button
+                        key={`${emoji}-${i}`}
+                        onClick={() => onSelectEmoji?.(emoji)}
+                        className="w-8 h-8 text-lg hover:bg-white/10 rounded transition flex items-center justify-center tap-sm"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </>
         )}

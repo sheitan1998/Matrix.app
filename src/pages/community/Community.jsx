@@ -244,6 +244,32 @@ export default function Community() {
   const confirmJoinServer = async () => {
     if (!joinConfirmServer || !user) return;
     try {
+      // Check if user is permanently banned from this server
+      const existing = await base44.entities.ServerMember.filter({ server_id: joinConfirmServer.id, user_email: user.email }, "-created_date", 5);
+      const existingMember = (existing?.items || existing || [])[0];
+      if (existingMember?.is_banned) {
+        const isPermanent = !existingMember.ban_until;
+        const isExpired = existingMember.ban_until && new Date(existingMember.ban_until).getTime() < Date.now();
+        if (isPermanent || !isExpired) {
+          toast.error("Vous êtes banni de ce serveur.");
+          setJoinConfirmServer(null);
+          return;
+        }
+        // Ban expired — clear it
+        await base44.entities.ServerMember.update(existingMember.id, { is_banned: false, ban_until: null });
+      }
+
+      if (existingMember && !existingMember.is_banned) {
+        // Already a member — just select the server
+        setJoinedServerIds((prev) => new Set([...prev, joinConfirmServer.id]));
+        setSelectedServer(joinConfirmServer);
+        setActiveChannel(null);
+        setShowSettings(false);
+        toast.success(`Rejoint "${joinConfirmServer.name}" !`);
+        setJoinConfirmServer(null);
+        return;
+      }
+
       await base44.entities.ServerMember.create({
         server_id: joinConfirmServer.id,
         user_email: user.email,
