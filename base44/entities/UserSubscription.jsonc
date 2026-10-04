@@ -1,0 +1,34 @@
+{
+  "name": "UserSubscription",
+  "type": "object",
+  "properties": {
+    "subscriber_email": {
+      "type": "string",
+      "description": "Email de l'utilisateur qui s'abonne"
+    },
+    "target_email": {
+      "type": "string",
+      "description": "Email du cr\u00e9ateur/utilisateur auquel on s'abonne"
+    },
+    "target_name": {
+      "type": "string",
+      "description": "Pseudo du cr\u00e9ateur au moment de l'abonnement (cache pour affichage)"
+    }
+  },
+  "required": [
+    "subscriber_email",
+    "target_email"
+  ],
+  "rls": {
+    "create": {
+      "data.subscriber_email": "{{user.email}}"
+    },
+    "read": {},
+    "update": {
+      "data.subscriber_email": "{{user.email}}"
+    },
+    "delete": {
+      "data.subscriber_email": "{{user.email}}"
+    }
+  }
+}

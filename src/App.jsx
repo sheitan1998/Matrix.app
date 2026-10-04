@@ -74,6 +74,8 @@ const NexusInvite = lazy(() => import('@/pages/NexusInvite'));
 const CreatorProfile = lazy(() => import('@/pages/CreatorProfile'));
 const AdminPanel = lazy(() => import('@/pages/AdminPanel'));
 const RechercheJoueur = lazy(() => import('@/pages/prospecteurs/RechercheJoueur'));
+const CreatorSearch = lazy(() => import('@/pages/prospecteurs/CreatorSearch'));
+const CreatorDetail = lazy(() => import('@/pages/prospecteurs/CreatorDetail'));
 const Privacy = lazy(() => import('@/pages/Privacy'));
 const About = lazy(() => import('@/pages/About'));
 const Contact = lazy(() => import('@/pages/Contact'));
@@ -192,6 +194,8 @@ const AuthenticatedApp = () => {
           <Route path="/boutique-nexus" element={<BoutiqueNexus />} />
           <Route path="/affiliate" element={<AffiliateDashboard />} />
           <Route path="/recherche-joueur" element={<RechercheJoueur />} />
+          <Route path="/recherche-createur" element={<CreatorSearch />} />
+          <Route path="/profil-createur/:email" element={<CreatorDetail />} />
           <Route path="/admin" element={<AdminPanel />} />
           <Route element={<TwitchLayout />}>
             <Route path="/twitch" element={<TwitchHome />} />

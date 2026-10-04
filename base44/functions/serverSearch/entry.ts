@@ -901,6 +901,126 @@ export default async function(req: Request): Promise<Response> {
         });
       }
 
+      // ---- Search public creators/users (for Prospecteur Creator tab) ----
+      case 'searchCreators': {
+        const { query } = params;
+        const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
+
+        // Filter: public profiles (is_private !== true) with a pseudo
+        let publicUsers = allUsers.filter(u => u.is_private !== true && u.pseudo);
+
+        // Optional search filter on pseudo (case-insensitive)
+        if (query && query.trim()) {
+          const q = query.trim().toLowerCase();
+          publicUsers = publicUsers.filter(u => {
+            const p = (u.pseudo || '').toLowerCase();
+            return p.includes(q);
+          });
+        }
+
+        // Aggregate content stats per creator
+        const modAgg = await base44.asServiceRole.entities.FarmingMod.aggregate({
+          groupBy: 'creator_email',
+          sum: ['views', 'likes', 'download_count'],
+        });
+        const mapAgg = await base44.asServiceRole.entities.FortniteMap.aggregate({
+          groupBy: 'user_email',
+          sum: ['views', 'likes'],
+        });
+
+        const modStats = {};
+        for (const row of (modAgg?.rows || [])) {
+          if (row?.creator_email) modStats[row.creator_email.toLowerCase()] = row;
+        }
+        const mapStats = {};
+        for (const row of (mapAgg?.rows || [])) {
+          if (row?.user_email) mapStats[row.user_email.toLowerCase()] = row;
+        }
+
+        const results = publicUsers.map(u => {
+          const email = u.email?.toLowerCase();
+          const mod = modStats[email] || {};
+          const map = mapStats[email] || {};
+          let displayPseudo = u.pseudo || '';
+          if (!displayPseudo.includes('#') && u.pseudo_tag) {
+            displayPseudo = `${displayPseudo}#${u.pseudo_tag}`;
+          }
+          return {
+            id: u.id,
+            email: u.email,
+            pseudo: displayPseudo,
+            pseudo_tag: u.pseudo_tag || '',
+            avatar_url: u.avatar_url || '',
+            bio: u.bio || '',
+            mod_count: mod.count || 0,
+            map_count: map.count || 0,
+            total_views: (mod.sum_views || 0) + (map.sum_views || 0),
+            total_likes: (mod.sum_likes || 0) + (map.sum_likes || 0),
+            total_downloads: mod.sum_download_count || 0,
+          };
+        });
+
+        // Sort: creators with content first, then by total views
+        results.sort((a, b) => {
+          const aContent = a.mod_count + a.map_count;
+          const bContent = b.mod_count + b.map_count;
+          if (bContent !== aContent) return bContent - aContent;
+          return b.total_views - a.total_views;
+        });
+
+        return Response.json({ users: results });
+      }
+
+      // ---- Subscribe to a creator/user ----
+      case 'subscribe': {
+        const { target_email } = params;
+        if (!target_email) return Response.json({ error: 'Missing target_email' }, { status: 400 });
+        if (target_email === user.email) return Response.json({ error: 'Tu ne peux pas t\'abonner à toi-même' }, { status: 400 });
+
+        const existing = await base44.asServiceRole.entities.UserSubscription.filter({
+          subscriber_email: user.email,
+          target_email,
+        });
+        if (existing.length > 0) return Response.json({ success: true, already_subscribed: true });
+
+        const targetUser = await base44.asServiceRole.entities.User.filter({ email: target_email });
+        const target = (targetUser?.items || targetUser || [])[0];
+        const targetName = target?.pseudo || '';
+
+        await base44.asServiceRole.entities.UserSubscription.create({
+          subscriber_email: user.email,
+          target_email,
+          target_name: targetName,
+        });
+
+        return Response.json({ success: true });
+      }
+
+      // ---- Unsubscribe from a creator/user ----
+      case 'unsubscribe': {
+        const { target_email } = params;
+        if (!target_email) return Response.json({ error: 'Missing target_email' }, { status: 400 });
+
+        await base44.asServiceRole.entities.UserSubscription.deleteMany({
+          subscriber_email: user.email,
+          target_email,
+        });
+
+        return Response.json({ success: true });
+      }
+
+      // ---- Check subscription status ----
+      case 'getSubscriptionStatus': {
+        const { target_email } = params;
+        if (!target_email) return Response.json({ subscribed: false });
+
+        const records = await base44.asServiceRole.entities.UserSubscription.filter({
+          subscriber_email: user.email,
+          target_email,
+        });
+        return Response.json({ subscribed: records.length > 0 });
+      }
+
       default:
         return Response.json({ error: `Unknown action: ${action}` }, { status: 400 });
     }

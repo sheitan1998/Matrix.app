@@ -2,9 +2,9 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Eye, ThumbsUp, Download, Package, Award, Zap, Send, Loader2, CheckCircle2, Star, Sparkles } from "lucide-react";
+import { ArrowLeft, Eye, ThumbsUp, Download, Package, Award, Zap, Send, Loader2, CheckCircle2, Star, Sparkles, Users } from "lucide-react";
 import {
-  AFFILIATE_VIEWS, PARTNER_VIEWS, PARTNER_LIKES, PARTNER_MIN_CONTENT, PARTNER_TRIX_MONTHLY,
+  AFFILIATE_VIEWS, PARTNER_VIEWS, PARTNER_LIKES, PARTNER_MIN_CONTENT, PARTNER_SUBSCRIBERS, PARTNER_TRIX_MONTHLY,
   PARTNER_PERKS, PARTNER_COMMITMENTS, getPartnerEligibility, getAffiliateEligibility } from
 "@/lib/affiliateProgram";
 import { toast } from "sonner";
@@ -43,6 +43,11 @@ export default function AffiliateDashboard() {
     queryFn: () => base44.entities.FortniteMap.aggregate({ query: { user_email: user.email }, groupBy: "user_email", sum: ["views", "likes"] }),
     enabled: !!user?.email
   });
+  const { data: subscriberCount = 0 } = useQuery({
+    queryKey: ["subscriber-count", user?.email],
+    queryFn: () => base44.entities.UserSubscription.count({ target_email: user.email }),
+    enabled: !!user?.email
+  });
 
   if (!user) return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -56,7 +61,8 @@ export default function AffiliateDashboard() {
     totalViews: (modRow.sum_views || 0) + (mapRow.sum_views || 0),
     totalLikes: (modRow.sum_likes || 0) + (mapRow.sum_likes || 0),
     totalDownloads: modRow.sum_download_count || 0,
-    contentCount: (modRow.count || 0) + (mapRow.count || 0)
+    contentCount: (modRow.count || 0) + (mapRow.count || 0),
+    subscriberCount: subscriberCount || 0
   };
 
   const affElig = getAffiliateEligibility(stats);
@@ -144,7 +150,7 @@ export default function AffiliateDashboard() {
             { icon: Eye, color: "#3b82f6", label: "Vues", value: stats.totalViews },
             { icon: ThumbsUp, color: "#22c55e", label: "Likes", value: stats.totalLikes },
             { icon: Download, color: "#f59e0b", label: "Téléchargements", value: stats.totalDownloads },
-            { icon: Package, color: "#a855f7", label: "Contenus", value: stats.contentCount }].
+            { icon: Users, color: "#a855f7", label: "Abonnés", value: stats.subscriberCount }].
             map((s) =>
             <div key={s.label} className="p-4 rounded-2xl" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(255,255,255,0.06)" }}>
                 <s.icon className="w-4 h-4 mb-1.5" style={{ color: s.color }} />
@@ -164,6 +170,7 @@ export default function AffiliateDashboard() {
           <Progress value={stats.totalViews / PARTNER_VIEWS * 100} label="Vues cumulées" current={stats.totalViews} target={PARTNER_VIEWS} ok={partElig.viewsOk} />
           <Progress value={stats.totalLikes / PARTNER_LIKES * 100} label="Likes cumulés" current={stats.totalLikes} target={PARTNER_LIKES} ok={partElig.likesOk} />
           <Progress value={stats.contentCount / PARTNER_MIN_CONTENT * 100} label="Contenus publiés" current={stats.contentCount} target={PARTNER_MIN_CONTENT} ok={partElig.contentOk} />
+          <Progress value={stats.subscriberCount / PARTNER_SUBSCRIBERS * 100} label="Abonnés" current={stats.subscriberCount} target={PARTNER_SUBSCRIBERS} ok={partElig.subscribersOk} />
           {partElig.eligible ?
           <p className="text-xs text-green-400 flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Vous remplissez les conditions pour postuler au statut Partenaire !</p> :
 

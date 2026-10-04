@@ -10,6 +10,18 @@ export default function PrivacyPanel({ user, onUpdate }) {
   const [emailValue, setEmailValue] = useState(user?.email || "");
   const [saving, setSaving] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [savingPrivacy, setSavingPrivacy] = useState(false);
+
+  const togglePrivate = async () => {
+    setSavingPrivacy(true);
+    try {
+      const newValue = !user?.is_private;
+      await base44.auth.updateMe({ is_private: newValue });
+      onUpdate({ is_private: newValue });
+      toast.success(newValue ? "Profil privé — masqué des recherches" : "Profil public — visible dans les recherches");
+    } catch { toast.error("Erreur lors de la mise à jour"); }
+    setSavingPrivacy(false);
+  };
 
   const saveEmail = async () => {
     if (!emailValue.trim()) return;
@@ -61,6 +73,24 @@ export default function PrivacyPanel({ user, onUpdate }) {
         <Link to="/forgot-password" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white transition" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
           <Lock className="w-3.5 h-3.5" /> Réinitialiser le mot de passe
         </Link>
+      </div>
+
+      {/* Profile visibility */}
+      <div className="p-4 rounded-2xl" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(255,255,255,0.06)" }}>
+        <h3 className="text-sm font-bold text-white flex items-center gap-2 mb-2"><Eye className="w-4 h-4" style={{ color: "#a855f7" }} /> Visibilité du profil</h3>
+        <div className="flex items-center justify-between">
+          <div className="flex-1 pr-3">
+            <p className="text-xs text-white/70">{user?.is_private ? "Profil privé" : "Profil public"}</p>
+            <p className="text-[11px] text-white/40 mt-0.5">{user?.is_private ? "Votre profil est masqué des recherches publiques (Prospecteur)." : "Votre profil apparaît dans les résultats de recherche publique."}</p>
+          </div>
+          <button
+            onClick={togglePrivate}
+            disabled={savingPrivacy}
+            className={`w-10 h-5 rounded-full transition shrink-0 ${user?.is_private ? "bg-white/20" : "bg-green-500"}`}
+          >
+            <div className={`w-4 h-4 rounded-full bg-white transition-transform ${user?.is_private ? "translate-x-0.5" : "translate-x-5"}`} />
+          </button>
+        </div>
       </div>
 
       {/* Account info */}

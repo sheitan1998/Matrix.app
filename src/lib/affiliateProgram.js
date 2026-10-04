@@ -2,6 +2,7 @@ export const AFFILIATE_VIEWS = 1000;
 export const PARTNER_VIEWS = 10000;
 export const PARTNER_LIKES = 100;
 export const PARTNER_MIN_CONTENT = 5;
+export const PARTNER_SUBSCRIBERS = 1000;
 export const PARTNER_TRIX_MONTHLY = 1000;
 
 export const PARTNER_PERKS = [
@@ -21,13 +22,15 @@ export function getPartnerEligibility(stats) {
   const viewsOk = stats.totalViews >= PARTNER_VIEWS;
   const likesOk = stats.totalLikes >= PARTNER_LIKES;
   const contentOk = stats.contentCount >= PARTNER_MIN_CONTENT;
+  const subscribersOk = stats.subscriberCount >= PARTNER_SUBSCRIBERS;
   return {
-    viewsOk, likesOk, contentOk,
-    eligible: viewsOk && likesOk && contentOk,
+    viewsOk, likesOk, contentOk, subscribersOk,
+    eligible: viewsOk && likesOk && contentOk && subscribersOk,
     progress: Math.min(100, Math.round(
       (Math.min(stats.totalViews / PARTNER_VIEWS, 1) +
         Math.min(stats.totalLikes / PARTNER_LIKES, 1) +
-        Math.min(stats.contentCount / PARTNER_MIN_CONTENT, 1)) / 3 * 100
+        Math.min(stats.contentCount / PARTNER_MIN_CONTENT, 1) +
+        Math.min(stats.subscriberCount / PARTNER_SUBSCRIBERS, 1)) / 4 * 100
     )),
   };
 }

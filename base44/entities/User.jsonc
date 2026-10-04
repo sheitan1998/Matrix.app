@@ -175,6 +175,11 @@
       "default": "everyone",
       "description": "Qui peut envoyer des messages prives a l'utilisateur (everyone = tout le monde, friends = uniquement les amis)"
     },
+    "is_private": {
+      "type": "boolean",
+      "default": false,
+      "description": "Profil prive \u2014 masque l'utilisateur des resultats de recherche publique (Prospecteur)"
+    },
     "interface_language": {
       "type": "string",
       "enum": [
