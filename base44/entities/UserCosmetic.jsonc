@@ -86,6 +86,9 @@
           "data.user_email": "{{user.email}}"
         },
         {
+          "data.is_equipped": true
+        },
+        {
           "user_condition": {
             "role": "admin"
           }
