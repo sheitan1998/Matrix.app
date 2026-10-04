@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Shield, Users, Ticket, AlertTriangle, FileCode, ShoppingBag, BarChart3, Download, Megaphone, Dices, Gamepad2, Flag, Sticker } from "lucide-react";
+import { ArrowLeft, Shield, Users, Ticket, AlertTriangle, FileCode, ShoppingBag, BarChart3, Download, Megaphone, Dices, Gamepad2, Flag, Sticker, Star } from "lucide-react";
 import HeaderActions from "@/components/layout/HeaderActions";
 import AdminUserList from "@/components/admin/AdminUserList";
 import AdminTicketList from "@/components/admin/AdminTicketList";
@@ -15,6 +15,7 @@ import CasinoManager from "@/components/admin/CasinoManager";
 import TutoGamingManager from "@/components/admin/TutoGamingManager";
 import ContentModerationPanel from "@/components/admin/ContentModerationPanel";
 import StickerManager from "@/components/admin/StickerManager";
+import AffiliationManager from "@/components/admin/AffiliationManager";
 
 export default function AdminPanel() {
   const nav = useNavigate();
@@ -85,6 +86,7 @@ export default function AdminPanel() {
     { id: "pages", label: "Pages Dynamiques", icon: FileCode },
     { id: "moderation", label: "Modération", icon: Flag, section: "Modération & Sécurité" },
     { id: "stickers", label: "Stickers", icon: Sticker },
+    { id: "affiliates", label: "Affiliés & Partenaires", icon: Star, section: "Créateurs" },
     { id: "broadcast", label: "Annonces", icon: Megaphone },
   ];
 
@@ -189,6 +191,7 @@ export default function AdminPanel() {
         {tab === "broadcast" && <BroadcastPanel />}
         {tab === "moderation" && <ContentModerationPanel />}
         {tab === "stickers" && <StickerManager />}
+        {tab === "affiliates" && <AffiliationManager />}
           </div>
         </div>
       </div>

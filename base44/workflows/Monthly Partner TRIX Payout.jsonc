@@ -1,0 +1,47 @@
+{
+  "name": "Monthly Partner TRIX Payout",
+  "description": "Verse automatiquement 1 000 TRIX mensuels \u00e0 tous les Partenaires Matrix actifs (1er de chaque mois)",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 0 1 * *",
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "monthly_partner_trix_payout",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "payout_partners": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "partnerPayout",
+            "args": {
+              "action": "runPayout"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Versement TRIX Partenaires",
+            "description": "Cr\u00e9dite 1000 TRIX \u00e0 chaque Partenaire actif"
+          }
+        }
+      }
+    ]
+  }
+}

@@ -31,6 +31,14 @@
       "default": "other",
       "description": "Categorie du ticket"
     },
+    "program_type": {
+      "type": "string",
+      "enum": [
+        "affiliate",
+        "partner"
+      ],
+      "description": "Type de candidature (programme Affili\u00e9s/Partenaires) - null pour les autres tickets"
+    },
     "message": {
       "type": "string",
       "description": "Message detaille de l'utilisateur"

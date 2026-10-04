@@ -1,0 +1,106 @@
+{
+  "name": "Affiliation",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email du cr\u00e9ateur affili\u00e9/partenaire"
+    },
+    "user_name": {
+      "type": "string",
+      "description": "Pseudo du cr\u00e9ateur"
+    },
+    "user_avatar": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "affiliate",
+        "partner",
+        "revoked"
+      ],
+      "default": "affiliate",
+      "description": "Statut du programme: affiliate, partner ou revoked (retir\u00e9)"
+    },
+    "motivation": {
+      "type": "string",
+      "maxLength": 2000,
+      "description": "Motivation du cr\u00e9ateur (issue de la candidature)"
+    },
+    "portfolio_links": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Liens vers les profils/cha\u00eenes du cr\u00e9ateur"
+    },
+    "subscriber_count_snapshot": {
+      "type": "number",
+      "default": 0,
+      "description": "Snapshot de visibilit\u00e9 au moment de l'approbation"
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date d'approbation du statut"
+    },
+    "partner_since": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date de passage au statut Partenaire"
+    },
+    "last_trix_payout_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date du dernier versement de TRIX mensuel (Partenaires)"
+    },
+    "trix_per_month": {
+      "type": "number",
+      "default": 1000,
+      "description": "TRIX vers\u00e9s chaque mois au Partenaire"
+    },
+    "admin_notes": {
+      "type": "string",
+      "maxLength": 1000
+    },
+    "ticket_id": {
+      "type": "string",
+      "description": "ID du ticket de candidature approuv\u00e9"
+    }
+  },
+  "required": [
+    "user_email",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

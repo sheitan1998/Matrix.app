@@ -68,6 +68,7 @@ const Outils = lazy(() => import('@/pages/Outils'));
 const Sondages = lazy(() => import('@/pages/Sondages'));
 const MonProfil = lazy(() => import('@/pages/MonProfil'));
 const BoutiqueMatrix = lazy(() => import('@/pages/BoutiqueMatrix'));
+const AffiliateDashboard = lazy(() => import('@/pages/AffiliateDashboard'));
 const BoutiqueNexus = lazy(() => import('@/pages/BoutiqueNexus'));
 const NexusInvite = lazy(() => import('@/pages/NexusInvite'));
 const CreatorProfile = lazy(() => import('@/pages/CreatorProfile'));
@@ -189,6 +190,7 @@ const AuthenticatedApp = () => {
           <Route path="/mon-profil" element={<MonProfil />} />
           <Route path="/boutique-matrix" element={<BoutiqueMatrix />} />
           <Route path="/boutique-nexus" element={<BoutiqueNexus />} />
+          <Route path="/affiliate" element={<AffiliateDashboard />} />
           <Route path="/recherche-joueur" element={<RechercheJoueur />} />
           <Route path="/admin" element={<AdminPanel />} />
           <Route element={<TwitchLayout />}>
