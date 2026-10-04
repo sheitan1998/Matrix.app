@@ -17,6 +17,7 @@ export default function FortniteMaps() {
   const [showSubmit, setShowSubmit] = useState(false);
   const [showMyMaps, setShowMyMaps] = useState(false);
   const [selectedMap, setSelectedMap] = useState(null);
+  const [editMap, setEditMap] = useState(null);
   const [user, setUser] = useState(null);
   const [isCreator, setIsCreator] = useState(false);
   const { assets } = useTutoGamingAssets();
@@ -223,10 +224,21 @@ export default function FortniteMaps() {
         }
 
       {/* Detail modal */}
-      <MapDetailModal map={selectedMap} onClose={() => setSelectedMap(null)} />
+      <MapDetailModal
+        map={selectedMap}
+        user={user}
+        onClose={() => setSelectedMap(null)}
+        onEdit={(m) => { setSelectedMap(null); setEditMap(m); setShowSubmit(true); }}
+      />
 
-      {/* Submit modal */}
-      <SubmitMapModal open={showSubmit} onClose={() => setShowSubmit(false)} onSuccess={fetchMaps} userEmail={user?.email} />
+      {/* Submit / Edit modal */}
+      <SubmitMapModal
+        open={showSubmit}
+        editMap={editMap}
+        onClose={() => { setShowSubmit(false); setEditMap(null); }}
+        onSuccess={fetchMaps}
+        userEmail={user?.email}
+      />
     </div>);
 
 }

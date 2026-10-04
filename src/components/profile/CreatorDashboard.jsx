@@ -3,6 +3,7 @@ import { Loader2, Eye, ThumbsUp, ThumbsDown, Pencil, Trash2, Package, Map as Map
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import FarmingModForm from "@/components/tuto-gaming/FarmingModForm";
+import SubmitMapModal from "@/components/tuto-gaming/SubmitMapModal";
 
 const MOD_CATEGORY_LABELS = {
   vehicles: "Véhicules",
@@ -20,6 +21,8 @@ export default function CreatorDashboard({ user }) {
   const [loading, setLoading] = useState(true);
   const [showModForm, setShowModForm] = useState(false);
   const [editMod, setEditMod] = useState(null);
+  const [showMapForm, setShowMapForm] = useState(false);
+  const [editMap, setEditMap] = useState(null);
 
   const fetchMods = useCallback(async () => {
     if (!user?.email) return;
@@ -180,9 +183,18 @@ export default function CreatorDashboard({ user }) {
                     <span className="text-[10px] text-red-400 flex items-center gap-0.5"><ThumbsDown className="w-2.5 h-2.5" /> {map.dislikes || 0}</span>
                   </div>
                 </div>
-                <button onClick={() => handleDeleteMap(map)} className="w-7 h-7 rounded-lg flex items-center justify-center text-red-400/70 hover:text-red-400 hover:bg-red-500/10 transition tap-sm shrink-0" title="Supprimer">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={() => { setEditMap(map); setShowMapForm(true); }}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition tap-sm"
+                    title="Modifier"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => handleDeleteMap(map)} className="w-7 h-7 rounded-lg flex items-center justify-center text-red-400/70 hover:text-red-400 hover:bg-red-500/10 transition tap-sm" title="Supprimer">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -197,6 +209,16 @@ export default function CreatorDashboard({ user }) {
           userAvatar={user?.avatar_url}
           onClose={() => { setShowModForm(false); setEditMod(null); }}
           onSaved={() => { setShowModForm(false); setEditMod(null); fetchMods(); }}
+        />
+      )}
+
+      {showMapForm && (
+        <SubmitMapModal
+          open={showMapForm}
+          editMap={editMap}
+          userEmail={user?.email}
+          onClose={() => { setShowMapForm(false); setEditMap(null); }}
+          onSuccess={fetchMaps}
         />
       )}
     </div>

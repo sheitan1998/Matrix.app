@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Download, User, ChevronLeft, ChevronRight, X } from "lucide-react";
 import VoteButtons from "@/components/tuto-gaming/VoteButtons";
+import { useViewTracker } from "@/hooks/useViewTracker";
 
 const CATEGORY_LABELS = {
   vehicles: "Véhicules",
@@ -16,8 +17,16 @@ export default function FarmingModCard({ mod, onDownload, user }) {
   const images = mod.images || [];
   const [galleryIdx, setGalleryIdx] = useState(0);
   const [lightbox, setLightbox] = useState(null);
+  const { trackView } = useViewTracker();
 
   const hasImages = images.length > 0;
+
+  // Count a view when the lightbox opens (afficher en grand)
+  useEffect(() => {
+    if (lightbox !== null && mod?.id) {
+      trackView("farming_mod", mod.id, "FarmingMod");
+    }
+  }, [lightbox, mod?.id, trackView]);
 
   return (
     <div

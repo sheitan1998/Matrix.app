@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { X, ChevronLeft, ChevronRight, Copy, Check, User, Map as MapIcon } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Copy, Check, User, Map as MapIcon, Pencil, Eye } from "lucide-react";
 import { getCategoryMeta } from "@/components/tuto-gaming/fortniteMapsData";
+import { useViewTracker } from "@/hooks/useViewTracker";
 
-export default function MapDetailModal({ map, onClose }) {
+export default function MapDetailModal({ map, onClose, user, onEdit }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [copied, setCopied] = useState(false);
   const cat = getCategoryMeta(map?.category);
@@ -38,6 +39,16 @@ export default function MapDetailModal({ map, onClose }) {
     }
   }, [map]);
 
+  // Count a view when the modal opens with a map
+  const { trackView } = useViewTracker();
+  useEffect(() => {
+    if (map?.id) {
+      trackView("fortnite_map", map.id, "FortniteMap");
+    }
+  }, [map?.id, trackView]);
+
+  const canEdit = user && map && map.user_email === user.email;
+
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(map.map_code);
@@ -72,6 +83,16 @@ export default function MapDetailModal({ map, onClose }) {
             </span>
             <h2 className="text-lg font-black text-white truncate">{map.title}</h2>
           </div>
+          {canEdit && onEdit && (
+            <button
+              onClick={() => onEdit(map)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition tap-sm shrink-0"
+              style={{ background: "rgba(191,90,242,0.15)", border: "1px solid rgba(191,90,242,0.3)", color: "#BF5AF2" }}
+              title="Modifier ma map"
+            >
+              <Pencil className="w-3.5 h-3.5" /> Modifier
+            </button>
+          )}
           <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 tap-sm" style={{ background: "rgba(255,255,255,0.05)" }}>
             <X className="w-4 h-4 text-white/50" />
           </button>
@@ -144,7 +165,11 @@ export default function MapDetailModal({ map, onClose }) {
             <span className="text-sm font-bold text-white">{map.creator_name}</span>
           </div>
 
-          {/* Description */}
+          {/* Views + Description */}
+          <div className="flex items-center gap-1.5 text-xs text-white/40">
+            <Eye className="w-3.5 h-3.5" />
+            <span>{map.views || 0} vue{(map.views || 0) > 1 ? "s" : ""}</span>
+          </div>
           {map.description && (
             <div>
               <h3 className="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-1.5">Description</h3>
