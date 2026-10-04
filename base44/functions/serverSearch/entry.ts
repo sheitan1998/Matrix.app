@@ -946,14 +946,10 @@ export default async function(req: Request): Promise<Response> {
           const email = u.email?.toLowerCase();
           const mod = modStats[email] || {};
           const map = mapStats[email] || {};
-          let displayPseudo = u.pseudo || '';
-          if (!displayPseudo.includes('#') && u.pseudo_tag) {
-            displayPseudo = `${displayPseudo}#${u.pseudo_tag}`;
-          }
           return {
             id: u.id,
             email: u.email,
-            pseudo: displayPseudo,
+            pseudo: (u.pseudo || '').split('#')[0],
             pseudo_tag: u.pseudo_tag || '',
             avatar_url: u.avatar_url || '',
             bio: u.bio || '',

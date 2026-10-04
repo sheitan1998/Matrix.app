@@ -29,15 +29,19 @@ export default async function(req) {
     const shorts = await base44.asServiceRole.entities.Short.filter({ channel_id: user.channel_id });
     const videos = await base44.asServiceRole.entities.Video.filter({ channel_id: user.channel_id });
 
+    // Fetch equipped cosmetics (publicly visible)
+    const cosmetics = await base44.asServiceRole.entities.UserCosmetic.filter({ user_email: user.email, is_equipped: true });
+
     return Response.json({
       creator: {
-        pseudo: user.pseudo || "",
+        pseudo: (user.pseudo || "").split('#')[0],
         pseudo_tag: user.pseudo_tag || "",
         avatar_url: user.avatar_url || "",
         bio: user.bio || "",
         level: progress?.level || 1,
         badge_count: progress?.badges?.length || 0,
         total_trix_received: totalTrixReceived,
+        cosmetics: cosmetics || [],
       },
       shorts: shorts.map((s) => ({
         id: s.id,
