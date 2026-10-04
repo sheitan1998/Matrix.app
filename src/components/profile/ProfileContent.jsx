@@ -253,7 +253,7 @@ export default function ProfileContent({ onClose }) {
               <div className="space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="text-xl font-black text-white leading-tight font-mono">
-                      {user.pseudo || "Pseudo non défini"}
+                      {user.pseudo || "Pseudo non défini"}{user.pseudo_tag ? <span className="text-white/40">#{user.pseudo_tag}</span> : null}
                     </h2>
                     <button onClick={() => setEditing(true)} className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(255,255,255,0.05)" }}>
                       <Edit3 className="w-3.5 h-3.5 text-white/50" />

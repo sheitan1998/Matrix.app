@@ -29,7 +29,7 @@ export default function CreatorProfile() {
   useEffect(() => {
     if (data?.creator) {
       const c = data.creator;
-      const fullName = c.pseudo || "Créateur";
+      const fullName = c.pseudo_tag ? `${c.pseudo}#${c.pseudo_tag}` : (c.pseudo || "Créateur");
       document.title = `${fullName} — Créateur MATRIX`;
       setMeta("description", `${c.bio || `Profil de ${fullName} sur MATRIX`}. Niveau ${c.level}, ${c.badge_count} badges, ${formatTrix(c.total_trix_received)} TRIX reçus.`);
       setMeta("og:title", `${fullName} — Créateur MATRIX`);
@@ -63,7 +63,7 @@ export default function CreatorProfile() {
   }
 
   const { creator, shorts = [], videos = [] } = data;
-  const fullName = creator.pseudo || "Créateur";
+  const fullName = creator.pseudo_tag ? `${creator.pseudo}#${creator.pseudo_tag}` : (creator.pseudo || "Créateur");
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -86,7 +86,7 @@ export default function CreatorProfile() {
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-              {creator.pseudo}
+              {creator.pseudo}{creator.pseudo_tag ? <span className="text-muted-foreground">#{creator.pseudo_tag}</span> : null}
             </h1>
             {creator.bio && (
               <p className="text-sm text-muted-foreground mt-1 max-w-2xl">{creator.bio}</p>

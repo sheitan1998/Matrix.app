@@ -64,6 +64,7 @@ export default function CreatorDetail() {
   }
 
   const pseudo = (creator.pseudo || "").split("#")[0];
+  const pseudoTag = creator.pseudo_tag || (creator.pseudo || "").split("#")[1] || "";
   const equippedAnimation = cosmetics.find(c => c.is_equipped && c.category === "avatar_animation");
   const equippedBadges = cosmetics.filter(c => c.is_equipped && c.category === "badge");
   const equippedOther = cosmetics.filter(c => c.is_equipped && c.category !== "badge" && c.category !== "avatar_animation");
@@ -88,7 +89,7 @@ export default function CreatorDetail() {
             <ProfileAnimationLayer cosmetic={equippedAnimation} size={96} />
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl sm:text-2xl font-black text-white">{pseudo}</h1>
+            <h1 className="text-xl sm:text-2xl font-black text-white">{pseudo}{pseudoTag && <span className="text-white/40">#{pseudoTag}</span>}</h1>
             {creator.bio && <p className="text-sm text-muted-foreground mt-1">{creator.bio}</p>}
             <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground"><Users className="w-3 h-3" /> {subscriberCount} abonné{subscriberCount > 1 ? "s" : ""}</div>
             {(equippedBadges.length > 0 || equippedOther.length > 0) && (

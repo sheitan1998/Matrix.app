@@ -93,6 +93,7 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
   if (!open) return null;
 
   const displayName = profile?.pseudo?.split("#")[0] || profile?.full_name || userEmail?.split("@")[0] || "Utilisateur";
+  const pseudoTag = profile?.pseudo_tag || profile?.pseudo?.split("#")[1] || "";
   const avatar = profile?.avatar_url;
   const isAdmin = profile?.role === "admin";
   const level = progress?.level || 1;
@@ -230,6 +231,7 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
             </div>
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className="text-[11px] text-white/40 font-mono">{displayName}</span>
+              {pseudoTag && <span className="text-[11px] text-white/30 font-mono">#{pseudoTag}</span>}
               {/* Achievement icons */}
               {trophies > 0 && (
                 <span className="flex items-center gap-0.5 ml-1">
@@ -424,7 +426,7 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
           onClose={() => setShowReportModal(false)}
           contentType="other"
           contentId={targetUserId}
-          contentPreview={`Profil utilisateur: ${displayName}`}
+          contentPreview={`Profil utilisateur: ${displayName}${pseudoTag ? `#${pseudoTag}` : ""}`}
           authorEmail={targetEmail}
           authorName={displayName}
           reporterUser={currentUser}
