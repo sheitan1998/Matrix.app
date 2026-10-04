@@ -6,16 +6,7 @@ import { toast } from "sonner";
 import { useProgression } from "@/context/ProgressionContext";
 import ServerBoostLevels from "@/components/prospecteurs/ServerBoostLevels";
 import { useServerBoosts, useBoostCountSync } from "@/hooks/useServerBoosts";
-
-const MAX_BOOSTS = 30;
-
-function getBoostLevel(boosts) {
-  if (boosts >= 30) return { level: 4, color: "#FFD700", label: "Légendaire" };
-  if (boosts >= 20) return { level: 3, color: "#A855F7", label: "Max" };
-  if (boosts >= 10) return { level: 2, color: "#C084FC", label: "Avancé" };
-  if (boosts >= 2) return { level: 1, color: "#F472B6", label: "Basique" };
-  return { level: 0, color: "#6b7280", label: "Aucun" };
-}
+import { getBoostLevelInfo, MAX_BOOSTS } from "@/lib/boostPerks";
 
 export default function ServerBoostButton({ server, user, flashBoosts, onBoosted }) {
   const { trackActivity } = useProgression();
@@ -25,7 +16,7 @@ export default function ServerBoostButton({ server, user, flashBoosts, onBoosted
   useBoostCountSync(server?.boosts || 0, activeCount, flashBoosts, onBoosted);
 
   const currentBoosts = activeCount;
-  const boostLevel = getBoostLevel(currentBoosts);
+  const boostLevel = getBoostLevelInfo(currentBoosts);
   const isMaxed = currentBoosts >= MAX_BOOSTS;
 
   const handleBoost = async () => {

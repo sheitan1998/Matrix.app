@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Upload, Trash2, Copy, Shield, Ban, MicOff, Crown, Plus, X, Hash, Volume2, Megaphone, RefreshCw, Clock, Edit3, UserPlus, Zap } from "lucide-react";
+import { ArrowLeft, Upload, Trash2, Copy, Shield, Ban, MicOff, Crown, Plus, X, Hash, Volume2, Megaphone, RefreshCw, Clock, Edit3, UserPlus, Zap, Lock } from "lucide-react";
 import ServerBoostsPanel from "@/components/community/ServerBoostsPanel";
+import ServerBoostLevels from "@/components/prospecteurs/ServerBoostLevels";
+import BoostLevelGate from "@/components/community/BoostLevelGate";
+import BoostLevelBadge from "@/components/community/BoostLevelBadge";
+import { useServerBoosts } from "@/hooks/useServerBoosts";
+import { getBoostLevel } from "@/lib/boostPerks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { VISUAL_THEMES } from "@/lib/visualThemes";
@@ -45,6 +50,8 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
   const [inviteInput, setInviteInput] = useState(server.invite_code || "");
   const [tempDuration, setTempDuration] = useState("24h");
   const { trackActivity } = useProgression();
+  const { activeCount: boostCount } = useServerBoosts(server.id, server.boosts);
+  const currentBoostLevel = getBoostLevel(boostCount);
 
   const { data: members = [], refetch: refetchMembers } = useQuery({
     queryKey: ["server-members", server.id],
@@ -138,6 +145,7 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
           <ArrowLeft className="w-5 h-5" />
         </button>
         <h2 className="font-black text-lg text-white">Paramètres — {server.name}</h2>
+        <div className="ml-auto"><BoostLevelBadge boosts={boostCount} accent={accent} /></div>
       </div>
 
       {/* Tabs */}
@@ -182,8 +190,13 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
                       <Copy className="w-4 h-4" />
                     </button>
                   )}
-                  <button onClick={() => { setEditingInvite(true); setInviteInput(server.invite_code || ""); }} className="text-muted-foreground hover:text-white shrink-0">
-                    <Edit3 className="w-4 h-4" />
+                  <button
+                    onClick={() => currentBoostLevel >= 3 && setEditingInvite(true)}
+                    disabled={currentBoostLevel < 3}
+                    className={cn("shrink-0", currentBoostLevel < 3 ? "text-white/20 cursor-not-allowed" : "text-muted-foreground hover:text-white")}
+                    title={currentBoostLevel < 3 ? "Niveau 3 de boost requis" : "Personnaliser le lien"}
+                  >
+                    {currentBoostLevel < 3 ? <Lock className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
                   </button>
                 </div>
               ) : (
@@ -273,7 +286,8 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
         {/* APPEARANCE */}
         {tab === "appearance" && (
           <>
-            {/* Icon */}
+            {/* Icon — Niveau 1 requis */}
+            <BoostLevelGate currentLevel={currentBoostLevel} requiredLevel={1} label="Icône & GIF animé">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Icône du serveur</p>
               <label className="flex items-center gap-3 cursor-pointer">
@@ -291,7 +305,10 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
               </label>
             </div>
 
-            {/* Banner */}
+            </BoostLevelGate>
+
+            {/* Banner — Niveau 2 requis */}
+            <BoostLevelGate currentLevel={currentBoostLevel} requiredLevel={2} label="Bannière fixe">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Bannière</p>
               <label className="cursor-pointer block">
@@ -308,7 +325,10 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
               </label>
             </div>
 
-            {/* Theme */}
+            </BoostLevelGate>
+
+            {/* Theme — Niveau 1 requis */}
+            <BoostLevelGate currentLevel={currentBoostLevel} requiredLevel={1} label="Thème visuel">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Thème visuel</p>
               <div className="grid grid-cols-4 gap-2">
@@ -323,6 +343,7 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
                 ))}
               </div>
             </div>
+            </BoostLevelGate>
           </>
         )}
 
@@ -630,7 +651,11 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
 
         {/* BOOSTS */}
         {tab === "boosts" && (
-          <ServerBoostsPanel server={server} theme={theme} />
+          <>
+            <BoostLevelBadge boosts={boostCount} accent={accent} />
+            <ServerBoostsPanel server={server} theme={theme} />
+            <ServerBoostLevels currentBoosts={boostCount} />
+          </>
         )}
       </div>
     </div>

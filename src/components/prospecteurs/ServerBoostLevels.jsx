@@ -1,53 +1,6 @@
 import React from "react";
 import { Zap } from "lucide-react";
-
-const BOOST_LEVELS = [
-  {
-    level: 1,
-    requiredBoosts: 2,
-    color: "#FF4081",
-    crystalColor: "#F472B6",
-    perks: [
-      { icon: "🗄️", text: "Image de serveur animée" },
-      { icon: "🎨", text: "Couleur de serveur personnalisée" },
-      { icon: "😀", text: "Émojis personnalisés" },
-    ],
-  },
-  {
-    level: 2,
-    requiredBoosts: 10,
-    color: "#9C27B0",
-    crystalColor: "#C084FC",
-    perks: [
-      { icon: "🖼️", text: "Bannière de serveur fixe" },
-      { icon: "🛡️", text: "Icônes de rôle personnalisées" },
-      { icon: "💫", text: "Effets visuels sur les messages" },
-    ],
-  },
-  {
-    level: 3,
-    requiredBoosts: 20,
-    color: "#6A1B9A",
-    crystalColor: "#A855F7",
-    perks: [
-      { icon: "⭐", text: "Lien d'invitation personnalisé" },
-      { icon: "🎭", text: "Bannière de serveur animée" },
-      { icon: "🌈", text: "Thèmes de serveur" },
-    ],
-  },
-  {
-    level: 4,
-    requiredBoosts: 30,
-    color: "#FFD700",
-    crystalColor: "#FBBF24",
-    perks: [
-      { icon: "🚀", text: "Boost d'XP x2 pour tous les membres" },
-      { icon: "😀", text: "Limite de 50 émojis personnalisés" },
-    ],
-  },
-];
-
-const MAX_BOOSTS = 30;
+import { BOOST_LEVELS } from "@/lib/boostPerks";
 
 export default function ServerBoostLevels({ currentBoosts = 0 }) {
   return (
@@ -63,7 +16,7 @@ export default function ServerBoostLevels({ currentBoosts = 0 }) {
           >
             <div className="relative h-1.5" style={{ background: "rgba(255,255,255,0.03)" }}>
               <div className="absolute top-0 left-0 h-full rounded-full transition-all" style={{ width: `${progress}%`, background: lvl.color }} />
-              <div className="absolute -top-1.5 left-2 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: lvl.crystalColor, boxShadow: `0 0 8px ${lvl.color}80` }}>
+              <div className="absolute -top-1.5 left-2 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: lvl.color, boxShadow: `0 0 8px ${lvl.color}80` }}>
                 <Zap className="w-2 h-2 text-white" fill="white" />
               </div>
               <div className="absolute -top-2.5 right-3 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white flex items-center gap-1" style={{ background: "#202020", border: "1px solid rgba(255,255,255,0.08)" }}>
@@ -72,7 +25,7 @@ export default function ServerBoostLevels({ currentBoosts = 0 }) {
               </div>
             </div>
             <div className="p-4">
-              <h3 className="text-base font-black text-white mb-2.5">Niveau {lvl.level}</h3>
+              <h3 className="text-base font-black text-white mb-2.5">Niveau {lvl.level} — {lvl.label}</h3>
               <ul className="space-y-1.5">
                 {lvl.perks.map((perk, i) => (
                   <li key={i} className="flex items-center gap-2 text-xs text-white/70">
