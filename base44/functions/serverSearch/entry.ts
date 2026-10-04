@@ -918,23 +918,28 @@ export default async function(req: Request): Promise<Response> {
           });
         }
 
-        // Aggregate content stats per creator
-        const modAgg = await base44.asServiceRole.entities.FarmingMod.aggregate({
-          groupBy: 'creator_email',
-          sum: ['views', 'likes', 'download_count'],
-        });
-        const mapAgg = await base44.asServiceRole.entities.FortniteMap.aggregate({
-          groupBy: 'user_email',
-          sum: ['views', 'likes'],
-        });
+        // Aggregate content stats per creator (aggregate not available in backend SDK — compute from filter)
+        const allMods = await base44.asServiceRole.entities.FarmingMod.filter({}, '-created_date', 500);
+        const allMaps = await base44.asServiceRole.entities.FortniteMap.filter({}, '-created_date', 500);
 
         const modStats = {};
-        for (const row of (modAgg?.rows || [])) {
-          if (row?.creator_email) modStats[row.creator_email.toLowerCase()] = row;
+        for (const m of (allMods || [])) {
+          const key = (m.creator_email || '').toLowerCase();
+          if (!key) continue;
+          if (!modStats[key]) modStats[key] = { count: 0, sum_views: 0, sum_likes: 0, sum_download_count: 0 };
+          modStats[key].count++;
+          modStats[key].sum_views += (m.views || 0);
+          modStats[key].sum_likes += (m.likes || 0);
+          modStats[key].sum_download_count += (m.download_count || 0);
         }
         const mapStats = {};
-        for (const row of (mapAgg?.rows || [])) {
-          if (row?.user_email) mapStats[row.user_email.toLowerCase()] = row;
+        for (const m of (allMaps || [])) {
+          const key = (m.user_email || '').toLowerCase();
+          if (!key) continue;
+          if (!mapStats[key]) mapStats[key] = { count: 0, sum_views: 0, sum_likes: 0 };
+          mapStats[key].count++;
+          mapStats[key].sum_views += (m.views || 0);
+          mapStats[key].sum_likes += (m.likes || 0);
         }
 
         const results = publicUsers.map(u => {
