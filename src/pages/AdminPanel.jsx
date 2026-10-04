@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { ArrowLeft, Shield, Users, Ticket, AlertTriangle, FileCode, ShoppingBag, BarChart3, Download, Megaphone, Dices, Gamepad2, Flag, Sticker, Star } from "lucide-react";
@@ -53,12 +53,22 @@ export default function AdminPanel() {
     }).catch(() => { setAuthChecked(true); nav("/"); });
   }, []);
 
-  // Realtime subscriptions
+  // Realtime subscriptions — debounced so a burst of events only triggers one reload
+  const reloadTimer = useRef(null);
+  const debouncedReload = () => {
+    if (reloadTimer.current) clearTimeout(reloadTimer.current);
+    reloadTimer.current = setTimeout(() => loadData(), 1500);
+  };
+
   useEffect(() => {
     if (user?.role !== "admin") return;
-    const unsubUsers = base44.entities.User.subscribe(() => loadData());
-    const unsubTickets = base44.entities.SupportTicket.subscribe(() => loadData());
-    return () => { unsubUsers(); unsubTickets(); };
+    const unsubUsers = base44.entities.User.subscribe(debouncedReload);
+    const unsubTickets = base44.entities.SupportTicket.subscribe(debouncedReload);
+    return () => {
+      unsubUsers();
+      unsubTickets();
+      if (reloadTimer.current) clearTimeout(reloadTimer.current);
+    };
   }, [user?.role]);
 
   if (!authChecked || loading) {

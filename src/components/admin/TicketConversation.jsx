@@ -47,18 +47,18 @@ export default function TicketConversation({ ticket: initialTicket, user, isAdmi
       fetchMessages();
     });
 
-    // Subscribe to SupportTicket changes (lock/status changes appear instantly)
+    // Subscribe to SupportTicket changes (only this ticket's lock/status updates)
     const unsubTicket = base44.entities.SupportTicket.subscribe((event) => {
-      if (event.data?.id === initialTicket.id || event.type === "update") {
+      if (event.data?.id === initialTicket.id) {
         fetchTicketState();
       }
     });
 
-    // Polling fallback every 8 seconds (catches changes that subscriptions might miss)
+    // Polling fallback every 30 seconds (catches changes that subscriptions might miss)
     const pollInterval = setInterval(() => {
       fetchTicketState();
       fetchMessages();
-    }, 8000);
+    }, 30000);
 
     return () => {
       unsubMsgs();

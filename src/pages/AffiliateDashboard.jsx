@@ -36,17 +36,23 @@ export default function AffiliateDashboard() {
   const { data: modAgg = { rows: [] } } = useQuery({
     queryKey: ["mod-stats", user?.email],
     queryFn: () => base44.entities.FarmingMod.aggregate({ query: { creator_email: user.email }, groupBy: "creator_email", sum: ["views", "likes", "download_count"] }),
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
   const { data: mapAgg = { rows: [] } } = useQuery({
     queryKey: ["map-stats", user?.email],
     queryFn: () => base44.entities.FortniteMap.aggregate({ query: { user_email: user.email }, groupBy: "user_email", sum: ["views", "likes"] }),
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
   const { data: subscriberCount = 0 } = useQuery({
     queryKey: ["subscriber-count", user?.email],
     queryFn: () => base44.entities.UserSubscription.count({ target_email: user.email }),
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   if (!user) return (
