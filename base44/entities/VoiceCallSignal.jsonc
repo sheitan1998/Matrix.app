@@ -33,6 +33,10 @@
       ],
       "default": "ringing",
       "description": "Statut du signal d'appel"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

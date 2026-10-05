@@ -68,6 +68,10 @@
     "ticket_id": {
       "type": "string",
       "description": "ID du ticket de candidature approuv\u00e9"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

@@ -25,6 +25,10 @@
         "dislike"
       ],
       "description": "Type de vote"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [
