@@ -12,7 +12,8 @@
         "role_assigned",
         "sport_event",
         "new_message",
-        "invite"
+        "invite",
+        "twitch_live"
       ],
       "default": "mention"
     },

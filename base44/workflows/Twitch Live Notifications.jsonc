@@ -1,0 +1,47 @@
+{
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "interval",
+      "cron_expression": null,
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": 5,
+      "interval_unit": "minutes",
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "twitch_live_notifications",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "check_live": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "twitchLiveNotifier",
+            "args": {
+              "action": "checkLiveAndNotify"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "V\u00e9rifier les streams live Twitch",
+            "description": "Notifie les utilisateurs dont les cha\u00eenes favorites passent en direct"
+          }
+        }
+      }
+    ]
+  },
+  "name": "Twitch Live Notifications",
+  "description": "V\u00e9rifie toutes les 5 minutes si les cha\u00eenes Twitch favorites des utilisateurs sont en direct et envoie une notification"
+}

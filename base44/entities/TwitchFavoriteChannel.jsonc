@@ -1,0 +1,68 @@
+{
+  "name": "TwitchFavoriteChannel",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email de l'utilisateur MATRIX"
+    },
+    "channel_login": {
+      "type": "string",
+      "description": "Login Twitch de la cha\u00eene suivie"
+    },
+    "channel_display_name": {
+      "type": "string",
+      "description": "Nom d'affichage Twitch (cache)"
+    },
+    "channel_avatar": {
+      "type": "string",
+      "description": "URL de l'avatar Twitch (cache)"
+    },
+    "last_notified_live_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Derni\u00e8re fois qu'une notification de live a \u00e9t\u00e9 envoy\u00e9e pour cette cha\u00eene"
+    },
+    "is_live": {
+      "type": "boolean",
+      "default": false,
+      "description": "Statut live actuel (mis \u00e0 jour par le workflow)"
+    }
+  },
+  "required": [
+    "user_email",
+    "channel_login"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "data.user_email": "{{user.email}}"
+    }
+  }
+}
