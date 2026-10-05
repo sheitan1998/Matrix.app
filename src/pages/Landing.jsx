@@ -12,6 +12,7 @@ import {
   Gem, Shield, Star, User, ArrowRight, HelpCircle } from
 "lucide-react";
 import FaqPanel from "@/components/landing/FaqPanel";
+import LandingSEO from "@/components/landing/LandingSEO";
 
 const LEFT_CARDS = [
 { path: "/stream", label: "Youtube", desc: "Vidéos, lives, shorts. Crée ta chaîne et partage ton contenu.", icon: Youtube, iconUrl: "/media/tuto-gaming/c4e71cf23_yt_icon_red_digital.png", color: "#FF0000" },
@@ -178,6 +179,9 @@ export default function Landing() {
             </div>
           </div>
         </div>
+
+        {/* SEO content section */}
+        <LandingSEO />
 
         {/* Support block */}
         <div className="mt-6 lg:mt-8">
