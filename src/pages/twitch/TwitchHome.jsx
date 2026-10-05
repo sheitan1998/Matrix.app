@@ -7,7 +7,6 @@ import TwitchChannelPanel from "@/components/twitch/TwitchChannelPanel";
 import TwitchChatEmbed from "@/components/twitch/TwitchChatEmbed";
 import TwitchActivityFeed from "@/components/twitch/TwitchActivityFeed";
 import { Loader2, AlertCircle } from "lucide-react";
-import { useState } from "react";
 
 const SUB_TABS = [
   { id: "overview", label: "Vue d'ensemble" },
@@ -37,9 +36,10 @@ function EmptyState({ title, subtitle }) {
 }
 
 export default function TwitchHome() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get("tab") || "suivis";
-  const [subTab, setSubTab] = useState(searchParams.get("view") || "overview");
+  const subTab = searchParams.get("view") || "overview";
+  const setSubTab = (view) => setSearchParams({ tab, view });
   const { isAuthenticated, userToken, login } = useTwitchAuth();
 
   // Followed streams (if authenticated)

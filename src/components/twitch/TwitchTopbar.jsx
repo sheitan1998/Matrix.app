@@ -1,7 +1,9 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Bell, Calendar, Sparkles, ArrowLeft } from "lucide-react";
+import { Search, Calendar, Sparkles, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import TwitchProfileMenu from "./TwitchProfileMenu";
+import TwitchNotificationsButton from "./TwitchNotificationsButton";
+import TwitchWhispersButton from "./TwitchWhispersButton";
 
 export default function TwitchTopbar({ activeTab = "suivis", onTabChange }) {
   const navigate = useNavigate();
@@ -72,9 +74,8 @@ export default function TwitchTopbar({ activeTab = "suivis", onTabChange }) {
 
       {/* Right side icons */}
       <div className="flex items-center gap-2 shrink-0">
-        <button className="w-9 h-9 rounded-full hover:bg-white/10 flex items-center justify-center tap-sm transition-colors" aria-label="Notifications">
-          <Bell className="w-5 h-5 text-[#a0a0b0]" />
-        </button>
+        <TwitchNotificationsButton />
+        <TwitchWhispersButton />
         <button className="w-9 h-9 rounded-full hover:bg-white/10 flex items-center justify-center tap-sm transition-colors hidden sm:flex" aria-label="Calendrier">
           <Calendar className="w-5 h-5 text-[#a0a0b0]" />
         </button>

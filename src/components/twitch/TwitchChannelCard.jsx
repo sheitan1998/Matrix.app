@@ -10,7 +10,7 @@ export default function TwitchChannelCard({ channel }) {
 
   return (
     <Link
-      to={`/twitch/watch/${channel.user_login}`}
+      to={`/twitch/channel/${channel.user_login}`}
       className="group flex items-center gap-3 p-3 rounded-xl bg-[#161321] hover:ring-2 hover:ring-[#db2777] transition-all"
     >
       {/* Avatar */}

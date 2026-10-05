@@ -1,14 +1,14 @@
 import { useTwitchAuth } from "@/context/TwitchAuthContext";
 import { MessageSquare, ExternalLink } from "lucide-react";
 
-export default function TwitchChatEmbed() {
+export default function TwitchChatEmbed({ channel }) {
   const { twitchUser, isAuthenticated } = useTwitchAuth();
 
-  // Use the dynamically-resolved login from the Twitch /users endpoint — never a static default
-  const channelLogin = twitchUser?.login;
-  const channelName = twitchUser?.display_name || channelLogin;
+  // Another channel's login when given, else the connected user's login from Twitch /users
+  const channelLogin = channel || twitchUser?.login;
+  const channelName = channel || twitchUser?.display_name || channelLogin;
 
-  if (!isAuthenticated || !channelLogin) {
+  if (!channelLogin || (!channel && !isAuthenticated)) {
     return (
       <div className="rounded-2xl bg-[#0f0b1a] border border-[#2a1f3e] p-6 text-center">
         <MessageSquare className="w-8 h-8 text-[#a0a0b0] mx-auto mb-2" />

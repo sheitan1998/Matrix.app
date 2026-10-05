@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useTwitch } from "@/hooks/useTwitch";
 import TwitchPlayer from "@/components/twitch/TwitchPlayer";
 import TwitchChat from "@/components/twitch/TwitchChat";
@@ -142,11 +142,11 @@ export default function TwitchWatch() {
         {/* Stream info */}
         <div className="p-4 bg-[#161321] border-t border-[#1f1f2e] shrink-0">
           <div className="flex items-start gap-3">
-            <div className="w-12 h-12 rounded-full overflow-hidden bg-[#1f1f2e] shrink-0">
+            <Link to={`/twitch/channel/${channelLogin}`} className="w-12 h-12 rounded-full overflow-hidden bg-[#1f1f2e] shrink-0">
               {user.profile_image_url && <img src={user.profile_image_url} alt="" className="w-full h-full object-cover" />}
-            </div>
+            </Link>
             <div className="min-w-0 flex-1">
-              <h1 className="text-white font-bold text-lg truncate">{user.display_name}</h1>
+              <Link to={`/twitch/channel/${channelLogin}`} className="block text-white font-bold text-lg truncate hover:text-[#a855f7]">{user.display_name}</Link>
               <p className="text-[#a0a0b0] text-sm mt-0.5 line-clamp-2">
                 {channel?.title || stream?.title || "Hors ligne"}
               </p>

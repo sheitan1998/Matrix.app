@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useTwitchAuth } from "@/context/TwitchAuthContext";
 import { useTwitch } from "@/hooks/useTwitch";
 import { Loader2, Heart, Users, Bell } from "lucide-react";
@@ -53,7 +54,7 @@ export default function TwitchActivityFeed() {
         </h3>
         <span className="text-xs text-[#a0a0b0] flex items-center gap-1">
           <Users className="w-3 h-3" />
-          {totalFollowers.toLocaleString("fr-FR")} abonnés
+          {totalFollowers.toLocaleString("fr-FR")} followers
         </span>
       </div>
 
@@ -66,9 +67,9 @@ export default function TwitchActivityFeed() {
         ) : (
           <div className="divide-y divide-[#1f1f2e]">
             {followers.map((f, i) => (
-              <div key={`${f.from_id}-${i}`} className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 transition-colors">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#a855f7] to-[#6d28d9] flex items-center justify-center text-white text-xs font-bold shrink-0">
-                  {f.from_name?.[0]?.toUpperCase()}
+              <Link key={`${f.from_id}-${i}`} to={`/twitch/channel/${f.from_login}`} className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 transition-colors">
+                <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-[#a855f7] to-[#6d28d9] flex items-center justify-center text-white text-xs font-bold shrink-0">
+                  {f.from_avatar ? <img src={f.from_avatar} alt="" className="w-full h-full object-cover" /> : f.from_name?.[0]?.toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-white truncate">
@@ -77,7 +78,7 @@ export default function TwitchActivityFeed() {
                   </p>
                 </div>
                 <span className="text-[10px] text-[#a0a0b0] shrink-0">{formatRelative(f.followed_at)}</span>
-              </div>
+              </Link>
             ))}
           </div>
         )}

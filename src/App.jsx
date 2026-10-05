@@ -93,6 +93,7 @@ const TwitchWatch = lazy(() => import('@/pages/twitch/TwitchWatch'));
 const TwitchSearch = lazy(() => import('@/pages/twitch/TwitchSearch'));
 const TwitchCategoryPage = lazy(() => import('@/pages/twitch/TwitchCategoryPage'));
 const TwitchCallback = lazy(() => import('@/pages/twitch/TwitchCallback'));
+const TwitchChannelPage = lazy(() => import('@/pages/twitch/TwitchChannelPage'));
 
 // Updater — eager (runs on startup)
 import UpdateModal from '@/components/UpdateModal';
@@ -204,6 +205,7 @@ const AuthenticatedApp = () => {
             <Route path="/twitch/search" element={<TwitchSearch />} />
             <Route path="/twitch/category/:gameId" element={<TwitchCategoryPage />} />
             <Route path="/twitch/watch/:channelLogin" element={<TwitchWatch />} />
+            <Route path="/twitch/channel/:login" element={<TwitchChannelPage />} />
           </Route>
           <Route element={<MainLayout />}>
             <Route path="/stream" element={<Home />} />

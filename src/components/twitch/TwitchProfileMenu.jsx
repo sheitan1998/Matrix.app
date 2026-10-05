@@ -1,5 +1,6 @@
 import { useTwitchAuth } from "@/context/TwitchAuthContext";
-import { Twitch as TwitchIcon, LogOut } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Twitch as TwitchIcon, LogOut, LayoutDashboard, ExternalLink } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 export default function TwitchProfileMenu() {
@@ -72,6 +73,26 @@ export default function TwitchProfileMenu() {
               </span>
             </div>
           )}
+
+          {/* Own channel dashboard + Twitch page */}
+          <Link
+            to="/twitch?tab=suivis&view=mychannel"
+            onClick={() => setOpen(false)}
+            className="w-full px-4 py-3 flex items-center gap-2 text-sm text-white hover:bg-white/5 transition-colors"
+          >
+            <LayoutDashboard className="w-4 h-4 text-[#a855f7]" />
+            Ma chaîne
+          </Link>
+          <a
+            href={`https://www.twitch.tv/${twitchUser?.login}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setOpen(false)}
+            className="w-full px-4 py-3 flex items-center gap-2 text-sm text-white hover:bg-white/5 transition-colors border-b border-[#2a2a3e]"
+          >
+            <ExternalLink className="w-4 h-4 text-[#a855f7]" />
+            Ma page Twitch
+          </a>
 
           {/* Logout */}
           <button
