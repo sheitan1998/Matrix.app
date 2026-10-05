@@ -198,7 +198,8 @@ class OAuthService {
             if (
               currentUrl &&
               (currentUrl.includes("/oauth/callback") ||
-                currentUrl.startsWith("matrix://"))
+                currentUrl.startsWith("matrix://") ||
+                new URL(currentUrl).pathname === "/auth/twitch/callback")
             ) {
               resolved = true;
               cleanup();

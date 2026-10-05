@@ -92,6 +92,7 @@ const TwitchHome = lazy(() => import('@/pages/twitch/TwitchHome'));
 const TwitchWatch = lazy(() => import('@/pages/twitch/TwitchWatch'));
 const TwitchSearch = lazy(() => import('@/pages/twitch/TwitchSearch'));
 const TwitchCategoryPage = lazy(() => import('@/pages/twitch/TwitchCategoryPage'));
+const TwitchCallback = lazy(() => import('@/pages/twitch/TwitchCallback'));
 
 // Updater — eager (runs on startup)
 import UpdateModal from '@/components/UpdateModal';
@@ -197,6 +198,7 @@ const AuthenticatedApp = () => {
           <Route path="/recherche-createur" element={<CreatorSearch />} />
           <Route path="/profil-createur/:email" element={<CreatorDetail />} />
           <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/auth/twitch/callback" element={<TwitchCallback />} />
           <Route element={<TwitchLayout />}>
             <Route path="/twitch" element={<TwitchHome />} />
             <Route path="/twitch/search" element={<TwitchSearch />} />

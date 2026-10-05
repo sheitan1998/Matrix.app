@@ -1,0 +1,69 @@
+{
+  "name": "TwitchConnection",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID de l'utilisateur MATRIX propri\u00e9taire de la connexion"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email de l'utilisateur MATRIX"
+    },
+    "twitch_user_id": {
+      "type": "string",
+      "description": "ID unique Twitch (broadcaster_id)"
+    },
+    "twitch_login": {
+      "type": "string",
+      "description": "Login Twitch"
+    },
+    "twitch_display_name": {
+      "type": "string",
+      "description": "Nom d'affichage Twitch"
+    },
+    "twitch_avatar": {
+      "type": "string",
+      "description": "URL de l'avatar Twitch"
+    },
+    "access_token": {
+      "type": "string",
+      "description": "Jeton d'acces Twitch (serveur uniquement)"
+    },
+    "refresh_token": {
+      "type": "string",
+      "description": "Jeton de rafraichissement Twitch (serveur uniquement)"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date d'expiration du jeton d'acces"
+    },
+    "scopes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Scopes OAuth accordes"
+    }
+  },
+  "required": [
+    "user_id",
+    "access_token"
+  ],
+  "rls": {
+    "read": false,
+    "delete": false,
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -39,7 +39,7 @@ function EmptyState({ title, subtitle }) {
 export default function TwitchHome() {
   const [searchParams] = useSearchParams();
   const tab = searchParams.get("tab") || "suivis";
-  const [subTab, setSubTab] = useState("overview");
+  const [subTab, setSubTab] = useState(searchParams.get("view") || "overview");
   const { isAuthenticated, userToken, login } = useTwitchAuth();
 
   // Followed streams (if authenticated)

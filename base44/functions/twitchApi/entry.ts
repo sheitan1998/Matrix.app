@@ -248,37 +248,41 @@ export default async function(req: Request): Promise<Response> {
         break;
       }
 
-      // Get channel activity (recent followers) — uses app token
+      // Get channel activity (recent followers) — Helix channels/followers.
+      // The follower list requires the broadcaster's own user token (moderator:read:followers);
+      // with an app token Twitch only returns the total.
       case 'getChannelActivity': {
-        let targetUserId = params.userId;
-        // If userToken provided, resolve their user ID from Twitch
-        if (!targetUserId && params.userToken) {
-          const userData = await twitchFetch('users', {}, params.userToken, clientId);
-          if (!userData._error) targetUserId = userData.data?.[0]?.id;
+        let broadcasterId = params.userId;
+        let accessToken = params.userToken;
+        if (accessToken && !broadcasterId) {
+          const userData = await twitchFetch('users', {}, accessToken, clientId);
+          if (!userData._error) broadcasterId = userData.data?.[0]?.id;
         }
-        if (!targetUserId) return Response.json({ error: 'Could not determine user ID.' }, { status: 400 });
-        if (!clientSecret) return Response.json({ error: 'TWITCH_CLIENT_SECRET not configured.' }, { status: 500 });
-        const token = await getAppToken(clientId, clientSecret);
-        if (token?._error) return Response.json(token, { status: token.status });
-        // Recent followers (users/follows with to_id=channel owner)
-        const followsData = await twitchFetch('users/follows', {
-          to_id: targetUserId,
+        if (!broadcasterId) return Response.json({ error: 'Could not determine user ID.' }, { status: 400 });
+        if (!accessToken) {
+          if (!clientSecret) return Response.json({ error: 'TWITCH_CLIENT_SECRET not configured.' }, { status: 500 });
+          const token = await getAppToken(clientId, clientSecret);
+          if (token?._error) return Response.json(token, { status: token.status });
+          accessToken = token;
+        }
+        const followersData = await twitchFetch('channels/followers', {
+          broadcaster_id: broadcasterId,
           first: params.first || 20,
-        }, token, clientId);
-        if (followsData._error) {
+        }, accessToken, clientId);
+        if (followersData._error) {
           // Tolerate API errors — return empty rather than failing the whole panel
           result = { followers: [], total_followers: 0 };
           break;
         }
         result = {
-          followers: (followsData.data || []).map(f => ({
-            from_id: f.from_id,
-            from_login: f.from_login,
-            from_name: f.from_name,
+          followers: (followersData.data || []).map(f => ({
+            from_id: f.user_id,
+            from_login: f.user_login,
+            from_name: f.user_name,
             followed_at: f.followed_at,
             _source: 'twitch',
           })),
-          total_followers: followsData.total || 0,
+          total_followers: followersData.total || 0,
         };
         break;
       }

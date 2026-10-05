@@ -1,8 +1,10 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
-import { canonicalAppUrl } from "@/lib/canonicalOrigin";
+import { startTwitchLogin } from "@/lib/twitchOAuth";
 
-const STORAGE_KEY = "twitch_access_token";
+const LEGACY_STORAGE_KEY = "twitch_access_token";
+const SESSION_REFRESH_MS = 30 * 60 * 1000;
 const TwitchAuthContext = createContext(null);
 
 export function useTwitchAuth() {
@@ -10,99 +12,51 @@ export function useTwitchAuth() {
 }
 
 /**
- * TwitchAuthProvider — manages Twitch OAuth via the implicit grant flow.
- * The client_id is fetched from the backend (stored as TWITCH_CLIENT_ID secret).
- * The user token is persisted in localStorage; on mount, the URL hash is checked
- * for the OAuth callback (#access_token=...).
+ * TwitchAuthProvider — Authorization Code Flow.
+ * Tokens (access + refresh) live server-side; the backend returns a valid access token
+ * (refreshed when needed) and the Twitch profile (/users) for the logged-in MATRIX user.
  */
 export function TwitchAuthProvider({ children }) {
-  const [userToken, setUserToken] = useState(() => localStorage.getItem(STORAGE_KEY));
+  const [userToken, setUserToken] = useState(null);
   const [twitchUser, setTwitchUser] = useState(null);
-  const [clientId, setClientId] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // On mount: check for OAuth callback hash + fetch client_id from backend
-  useEffect(() => {
-    let mounted = true;
-
-    // Check for OAuth callback in URL hash (implicit grant flow)
-    const hash = window.location.hash;
-    if (hash.includes("access_token")) {
-      const params = new URLSearchParams(hash.substring(1));
-      const token = params.get("access_token");
-      if (token) {
-        localStorage.setItem(STORAGE_KEY, token);
-        setUserToken(token);
-        // Clean the URL
-        window.history.replaceState(null, "", window.location.pathname + window.location.search);
-      }
+  const loadSession = useCallback(async () => {
+    const res = await base44.functions.invoke("twitchAuth", { action: "getSession" });
+    if (res.data?.connected) {
+      setUserToken(res.data.access_token);
+      setTwitchUser(res.data.user);
+    } else {
+      setUserToken(null);
+      setTwitchUser(null);
     }
-
-    // Fetch client_id from backend
-    base44.functions
-      .invoke("twitchApi", { action: "getOAuthConfig" })
-      .then((res) => {
-        if (!mounted) return;
-        setClientId(res.data?.data?.client_id || null);
-      })
-      .catch((e) => {
-        console.error("[twitchAuth] getOAuthConfig failed:", e);
-      })
-      .finally(() => {
-        if (mounted) setLoading(false);
-      });
-
-    return () => { mounted = false; };
   }, []);
 
-  // Fetch Twitch user profile when we have a token
   useEffect(() => {
-    if (!userToken) {
-      setTwitchUser(null);
-      return;
-    }
-    let mounted = true;
-    base44.functions
-      .invoke("twitchApi", { action: "getUserInfo", userToken })
-      .then((res) => {
-        if (!mounted) return;
-        const users = res.data?.data || [];
-        if (users[0]) {
-          setTwitchUser(users[0]);
-        } else {
-          // Token invalid — clear it
-          localStorage.removeItem(STORAGE_KEY);
-          setUserToken(null);
-        }
-      })
-      .catch(() => {
-        if (!mounted) return;
-        localStorage.removeItem(STORAGE_KEY);
-        setUserToken(null);
-        setTwitchUser(null);
-      });
-    return () => { mounted = false; };
-  }, [userToken]);
+    // Drop any token left by the old implicit flow
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
+    loadSession()
+      .catch((e) => console.error("[twitchAuth] getSession failed:", e))
+      .finally(() => setLoading(false));
+    const id = setInterval(() => loadSession().catch(() => {}), SESSION_REFRESH_MS);
+    return () => clearInterval(id);
+  }, [loadSession]);
 
   const login = useCallback(() => {
-    if (!clientId) {
-      alert("Configuration Twitch manquante. Veuillez configurer les identifiants Twitch dans les paramètres de l'application pour activer la connexion.");
-      return;
-    }
-    const redirectUri = canonicalAppUrl("/twitch");
-    const scope = "user:read:email user:read:follows user:read:broadcast";
-    window.location.href = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(scope)}`;
-  }, [clientId]);
+    startTwitchLogin().catch((e) => {
+      toast.error(e?.response?.data?.error || e?.message || "Connexion Twitch impossible.");
+    });
+  }, []);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY);
+  const logout = useCallback(async () => {
     setUserToken(null);
     setTwitchUser(null);
+    await base44.functions.invoke("twitchAuth", { action: "disconnect" });
   }, []);
 
   return (
     <TwitchAuthContext.Provider
-      value={{ userToken, twitchUser, isAuthenticated: !!userToken, loading, clientId, login, logout }}
+      value={{ userToken, twitchUser, isAuthenticated: !!userToken && !!twitchUser, loading, login, logout }}
     >
       {children}
     </TwitchAuthContext.Provider>
