@@ -11,7 +11,16 @@
         "purchase",
         "donation",
         "subscription_payment",
-        "refund"
+        "refund",
+        "vip",
+        "nitro",
+        "ai_sub",
+        "community_sub",
+        "premium",
+        "casino_coins",
+        "flash_purchase",
+        "nexus_item",
+        "cosmetic"
       ],
       "description": "Transaction type"
     },
@@ -30,6 +39,10 @@
     },
     "description": {
       "type": "string"
+    },
+    "stripe_event_id": {
+      "type": "string",
+      "description": "Stripe event ID for webhook idempotency (prevents double-crediting)"
     }
   },
   "required": [
