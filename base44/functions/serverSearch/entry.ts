@@ -13,14 +13,17 @@ export default async function(req: Request): Promise<Response> {
 
     const base44 = createClientFromRequest(req);
 
-    // ---- Public action: get server by invite code (no auth required) ----
+    // ---- Public action: get server by invite code (no auth required, but filtered) ----
     if (action === 'getServerByInviteCode') {
       const { inviteCode } = params;
-      if (!inviteCode) return Response.json({ error: 'Missing inviteCode' }, { status: 400 });
-      const servers = await base44.asServiceRole.entities.Server.list('-created_date', 200);
-      const found = servers.find(s => s.invite_code === inviteCode);
+      if (!inviteCode || typeof inviteCode !== 'string' || inviteCode.length < 3 || inviteCode.length > 64) {
+        return Response.json({ error: 'Invalid invite code' }, { status: 400 });
+      }
+      // Use filter (not list) to avoid loading all servers — prevents enumeration
+      const serverPage = await base44.asServiceRole.entities.Server.filter({ invite_code: inviteCode }, null, 1);
+      const found = (serverPage?.items || serverPage || [])[0];
       if (!found) return Response.json({ error: 'Not found' }, { status: 404 });
-      // Return only public fields needed for the invite page
+      // Return only public fields needed for the invite page — no owner data, no channels
       return Response.json({
         id: found.id,
         name: found.name,
@@ -395,8 +398,7 @@ export default async function(req: Request): Promise<Response> {
             const showActivity = u.show_game_activity !== false;
             return {
               id: u.id,
-              // Email renvoyé uniquement pour les adresses demandées par l'appelant (clé de correspondance côté interface)
-              email: u.email,
+              // Email NOT returned — caller already has it; prevents PII exposure
               pseudo: cleanPseudo,
               avatar_url: u.avatar_url || '',
               last_seen: u.last_seen || '',

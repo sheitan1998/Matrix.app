@@ -113,7 +113,7 @@ export default function TwitchHome() {
                 {topStreams.isLoading ? (
                   <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#a0a0b0]" /></div>
                 ) : hasError ? (
-                  <SectionError message="Impossible de charger les streams. Vérifiez que TWITCH_CLIENT_ID et TWITCH_CLIENT_SECRET sont configurés." />
+                  <SectionError message="Impossible de charger les streams. La configuration Twitch est manquante ou invalide." />
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                     {recommended.map((s) => <TwitchStreamCard key={s.id} stream={s} />)}
@@ -180,7 +180,7 @@ export default function TwitchHome() {
           {allStreams.isLoading ? (
             <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-[#a0a0b0]" /></div>
           ) : hasError ? (
-            <SectionError message="Impossible de charger les streams. Vérifiez que TWITCH_CLIENT_ID et TWITCH_CLIENT_SECRET sont configurés dans Dashboard → Settings → Environment Variables." />
+            <SectionError message="Impossible de charger les streams. La configuration Twitch est manquante ou invalide." />
           ) : (
             <>
               <h2 className="text-lg font-bold text-white mb-3">Streams en direct</h2>

@@ -86,7 +86,7 @@ export function TwitchAuthProvider({ children }) {
 
   const login = useCallback(() => {
     if (!clientId) {
-      alert("Configuration Twitch manquante. Ajoutez TWITCH_CLIENT_ID et TWITCH_CLIENT_SECRET dans Dashboard → Settings → Environment Variables pour activer la connexion Twitch.");
+      alert("Configuration Twitch manquante. Veuillez configurer les identifiants Twitch dans les paramètres de l'application pour activer la connexion.");
       return;
     }
     const redirectUri = canonicalAppUrl("/twitch");

@@ -105,10 +105,11 @@ export default async function(req: Request): Promise<Response> {
         const userEmail = data.metadata?.user_email || data.customer_email || '';
         const userId = data.metadata?.user_id || '';
 
-        // Idempotency check
+        // Idempotency: exact session ID match to prevent double-crediting
+        const webhookSessionId = String(data.id || '');
         const existing = await base44.asServiceRole.entities.TrixTransaction.filter({
           user_email: userEmail,
-          description: { $regex: data.id },
+          description: { $regex: `\\(${webhookSessionId}\\)$` },
         });
 
         if (existing.length === 0) {
@@ -375,10 +376,11 @@ export default async function(req: Request): Promise<Response> {
       const userEmail = session.metadata?.user_email || session.customer_email || '';
       const userId = session.metadata?.user_id || '';
 
-      // Idempotency
+      // Idempotency: exact session ID match to prevent double-crediting
+      const stripeSessionId = String(session.id || '');
       const existing = await base44.asServiceRole.entities.TrixTransaction.filter({
         user_email: userEmail,
-        description: { $regex: session.id },
+        description: { $regex: `\\(${stripeSessionId}\\)$` },
       });
       if (existing.length > 0) {
         return Response.json({ success: true, alreadyProcessed: true, type, trixAmount });

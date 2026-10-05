@@ -7,12 +7,9 @@ export default async function(req) {
     const pseudo = body?.pseudo;
     if (!pseudo) return Response.json({ error: 'Missing pseudo' }, { status: 400 });
 
-    // Fetch user by pseudo using service role (User entity is not publicly readable)
-    const users = await base44.asServiceRole.entities.User.list();
-    const user = users.find((u) => {
-      const p = (u.pseudo || "").toLowerCase().trim();
-      return p === pseudo.toLowerCase().trim();
-    });
+    // Fetch user by pseudo using service role — use filter (not list) to avoid loading all users
+    const userPage = await base44.asServiceRole.entities.User.filter({ pseudo: pseudo }, null, 1);
+    const user = (userPage?.items || userPage || [])[0];
     if (!user) return Response.json({ error: 'Creator not found' }, { status: 404 });
 
     // Fetch user progress (publicly readable)
