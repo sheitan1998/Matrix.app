@@ -95,17 +95,17 @@ export default function LandingSEO() {
         transition={{ duration: 0.6 }}
         className="text-center space-y-4 px-2">
         
-        <h1 className="text-2xl md:text-4xl font-black tracking-tight text-white leading-tight hidden">
-          Matrix — Le hub gaming, streaming et communautaire{" "}
-          <span style={{ color: "#a855f7" }}>100% gratuit</span> et évolutif
-        </h1>
-        <p className="text-sm md:text-base text-white/60 leading-relaxed max-w-3xl mx-auto hidden">
-          Matrix est une plateforme tout-en-un qui réunit le streaming de vidéos YouTube et Twitch,
-          des profils ultra-personnalisés, la création de serveurs Nexus et Discord, un outil de
-          recherche de coéquipiers, un programme d'affiliation pour créateurs, des tutoriels et wikis
-          de jeux, ainsi qu'un espace de mini-jeux type casino arcade. Rejoignez gratuitement la
-          communauté Matrix et bâtissez votre univers gaming dès aujourd'hui.
-        </p>
+        
+
+
+        
+        
+
+
+
+
+
+        
       </motion.div>
 
       {/* Feature sections */}
@@ -138,21 +138,21 @@ export default function LandingSEO() {
       )}
 
       {/* Closing CTA */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5 }}
-        className="rounded-2xl p-6 md:p-8 text-center hidden"
-        style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.08), rgba(109,40,217,0.05))", border: "1px solid rgba(168,85,247,0.2)" }}>
-        
-        <h2 className="text-lg md:text-xl font-black text-white mb-2">Rejoignez la communauté Matrix gratuitement</h2>
-        <p className="text-xs md:text-sm text-white/55 leading-relaxed max-w-2xl mx-auto">
-          Matrix est une plateforme gaming, streaming et communautaire gratuite et évolutive, accessible
-          sur navigateur web et application de bureau. Créez votre compte, personnalisez votre profil,
-          lancez votre chaîne, rejoignez des serveurs et découvrez un univers gaming complet en un seul endroit.
-        </p>
-      </motion.div>
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
     </section>);
 
 }
