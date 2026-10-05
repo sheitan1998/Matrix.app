@@ -90,7 +90,7 @@ export function TwitchAuthProvider({ children }) {
       return;
     }
     const redirectUri = canonicalAppUrl("/twitch");
-    const scope = "user:read:email user:read:follows";
+    const scope = "user:read:email user:read:follows user:read:broadcast";
     window.location.href = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(scope)}`;
   }, [clientId]);
 

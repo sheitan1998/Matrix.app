@@ -9,6 +9,10 @@ export default function TwitchChannelPanel() {
     enabled: !!userToken,
   });
 
+  // Always prefer the dynamically-fetched twitchUser as the source of truth for id/login
+  const resolvedUser = channelData.data?.user || twitchUser;
+  const resolvedLogin = resolvedUser?.login || twitchUser?.login;
+
   if (!isAuthenticated) {
     return (
       <div className="rounded-2xl bg-[#0f0b1a] border border-[#2a1f3e] p-8 text-center">
@@ -37,7 +41,7 @@ export default function TwitchChannelPanel() {
     );
   }
 
-  const user = channelData.data?.user || twitchUser;
+  const user = resolvedUser;
   const stream = channelData.data?.stream;
   const channel = channelData.data?.channel;
   const isLive = !!stream;

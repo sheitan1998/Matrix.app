@@ -16,10 +16,12 @@ function formatRelative(dateStr) {
 export default function TwitchActivityFeed() {
   const { userToken, twitchUser, isAuthenticated } = useTwitchAuth();
 
+  // Pass the userToken so the backend can resolve the broadcaster_id dynamically
+  // from the Twitch /users endpoint — never rely on a stale or static ID.
   const activity = useTwitch(
     "getChannelActivity",
     { userToken, userId: twitchUser?.id },
-    { enabled: !!userToken && !!twitchUser?.id, refetchInterval: 60_000 }
+    { enabled: !!userToken, refetchInterval: 60_000 }
   );
 
   if (!isAuthenticated) {

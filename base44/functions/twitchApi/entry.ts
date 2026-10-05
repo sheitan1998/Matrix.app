@@ -227,10 +227,13 @@ export default async function(req: Request): Promise<Response> {
         if (userData._error) return Response.json(userData, { status: userData.status });
         const u = userData.data?.[0];
         if (!u) return Response.json({ data: null, _source: 'twitch' });
-        const streamData = await twitchFetch('streams', { user_login: u.login }, params.userToken, clientId);
-        const stream = streamData._error ? null : (streamData.data?.[0] || null);
-        const channelData = await twitchFetch('channels', { broadcaster_id: u.id }, params.userToken, clientId);
-        const channel = channelData._error ? null : (channelData.data?.[0] || null);
+        // Fetch stream and channel info in parallel — tolerate partial failures
+        const [streamResult, channelResult] = await Promise.all([
+          twitchFetch('streams', { user_login: u.login }, params.userToken, clientId),
+          twitchFetch('channels', { broadcaster_id: u.id }, params.userToken, clientId),
+        ]);
+        const stream = streamResult._error ? null : (streamResult.data?.[0] || null);
+        const channel = channelResult._error ? null : (channelResult.data?.[0] || null);
         result = {
           user: mapUser(u),
           stream: stream ? mapStream(stream) : null,
@@ -248,7 +251,7 @@ export default async function(req: Request): Promise<Response> {
       // Get channel activity (recent followers) — uses app token
       case 'getChannelActivity': {
         let targetUserId = params.userId;
-        // If userToken provided, resolve their user ID
+        // If userToken provided, resolve their user ID from Twitch
         if (!targetUserId && params.userToken) {
           const userData = await twitchFetch('users', {}, params.userToken, clientId);
           if (!userData._error) targetUserId = userData.data?.[0]?.id;
@@ -257,12 +260,16 @@ export default async function(req: Request): Promise<Response> {
         if (!clientSecret) return Response.json({ error: 'TWITCH_CLIENT_SECRET not configured.' }, { status: 500 });
         const token = await getAppToken(clientId, clientSecret);
         if (token?._error) return Response.json(token, { status: token.status });
-        // Recent followers (users/follows with to_id, sorted by followed_at desc)
+        // Recent followers (users/follows with to_id=channel owner)
         const followsData = await twitchFetch('users/follows', {
           to_id: targetUserId,
           first: params.first || 20,
         }, token, clientId);
-        if (followsData._error) return Response.json(followsData, { status: followsData.status });
+        if (followsData._error) {
+          // Tolerate API errors — return empty rather than failing the whole panel
+          result = { followers: [], total_followers: 0 };
+          break;
+        }
         result = {
           followers: (followsData.data || []).map(f => ({
             from_id: f.from_id,
