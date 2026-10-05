@@ -220,20 +220,31 @@ export default async function(req: Request): Promise<Response> {
         break;
       }
 
-      // Get the authenticated user's channel info (profile, banner, live status)
-      case 'getMyChannel': {
-        if (!params.userToken) return Response.json({ error: 'User OAuth token required.' }, { status: 401 });
-        const userData = await twitchFetch('users', {}, params.userToken, clientId);
+      // Channel profile (users + streams + channels + follower/sub totals).
+      // Without `login` → the connected user's own channel (user token, includes subscribers).
+      // With `login` → any public channel (app token).
+      case 'getChannelProfile': {
+        const isOwn = !params.login;
+        let accessToken = params.userToken;
+        if (isOwn && !accessToken) return Response.json({ error: 'User OAuth token required.' }, { status: 401 });
+        if (!isOwn) {
+          if (!clientSecret) return Response.json({ error: 'TWITCH_CLIENT_SECRET not configured.' }, { status: 500 });
+          const token = await getAppToken(clientId, clientSecret);
+          if (token?._error) return Response.json(token, { status: token.status });
+          accessToken = token;
+        }
+        const userData = await twitchFetch('users', isOwn ? {} : { login: params.login }, accessToken, clientId);
         if (userData._error) return Response.json(userData, { status: userData.status });
         const u = userData.data?.[0];
-        if (!u) return Response.json({ data: null, _source: 'twitch' });
-        // Fetch stream and channel info in parallel — tolerate partial failures
-        const [streamResult, channelResult] = await Promise.all([
-          twitchFetch('streams', { user_login: u.login }, params.userToken, clientId),
-          twitchFetch('channels', { broadcaster_id: u.id }, params.userToken, clientId),
+        if (!u) { result = null; break; }
+        const [streamRes, channelRes, followersRes, subsRes] = await Promise.all([
+          twitchFetch('streams', { user_id: u.id }, accessToken, clientId),
+          twitchFetch('channels', { broadcaster_id: u.id }, accessToken, clientId),
+          twitchFetch('channels/followers', { broadcaster_id: u.id, first: 1 }, accessToken, clientId),
+          isOwn ? twitchFetch('subscriptions', { broadcaster_id: u.id, first: 1 }, accessToken, clientId) : Promise.resolve(null),
         ]);
-        const stream = streamResult._error ? null : (streamResult.data?.[0] || null);
-        const channel = channelResult._error ? null : (channelResult.data?.[0] || null);
+        const stream = streamRes._error ? null : (streamRes.data?.[0] || null);
+        const channel = channelRes._error ? null : (channelRes.data?.[0] || null);
         result = {
           user: mapUser(u),
           stream: stream ? mapStream(stream) : null,
@@ -242,9 +253,43 @@ export default async function(req: Request): Promise<Response> {
             game_name: channel.game_name,
             game_id: channel.game_id,
             broadcaster_language: channel.broadcaster_language,
+            tags: channel.tags || [],
             _source: 'twitch',
           } : null,
+          followers_total: followersRes._error ? null : (followersRes.total ?? 0),
+          // Only partners/affiliates have subscriptions; null = unavailable
+          subscribers_total: subsRes && !subsRes._error ? (subsRes.total ?? 0) : null,
+          is_own: isOwn,
         };
+        break;
+      }
+
+      // Subscribe an EventSub WebSocket session to the user's incoming whispers
+      case 'subscribeWhispers': {
+        if (!params.userToken || !params.sessionId) return Response.json({ error: 'userToken and sessionId required.' }, { status: 400 });
+        const meData = await twitchFetch('users', {}, params.userToken, clientId);
+        if (meData._error) return Response.json(meData, { status: meData.status });
+        const meId = meData.data?.[0]?.id;
+        if (!meId) return Response.json({ error: 'Could not determine Twitch user ID.' }, { status: 400 });
+        const subRes = await fetch('https://api.twitch.tv/helix/eventsub/subscriptions', {
+          method: 'POST',
+          headers: {
+            'Client-Id': clientId,
+            'Authorization': `Bearer ${params.userToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            type: 'user.whisper.message',
+            version: '1',
+            condition: { user_id: meId },
+            transport: { method: 'websocket', session_id: params.sessionId },
+          }),
+        });
+        const subData = await subRes.json().catch(() => ({}));
+        if (!subRes.ok) {
+          return Response.json({ _error: true, message: subData.message || `EventSub ${subRes.status}` }, { status: subRes.status });
+        }
+        result = { subscribed: true };
         break;
       }
 
@@ -274,11 +319,21 @@ export default async function(req: Request): Promise<Response> {
           result = { followers: [], total_followers: 0 };
           break;
         }
+        // Enrich followers with their real Twitch avatars (one batched /users call)
+        const followerIds = (followersData.data || []).map(f => f.user_id);
+        const avatarById = {};
+        if (followerIds.length > 0) {
+          const followerUsers = await twitchFetch('users', { id: followerIds }, accessToken, clientId);
+          for (const fu of (followerUsers._error ? [] : followerUsers.data || [])) {
+            avatarById[fu.id] = fu.profile_image_url || '';
+          }
+        }
         result = {
           followers: (followersData.data || []).map(f => ({
             from_id: f.user_id,
             from_login: f.user_login,
             from_name: f.user_name,
+            from_avatar: avatarById[f.user_id] || '',
             followed_at: f.followed_at,
             _source: 'twitch',
           })),

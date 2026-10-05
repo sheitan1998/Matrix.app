@@ -7,7 +7,13 @@ import { mapUser } from '../../shared/twitch.ts';
 const TWITCH_OAUTH = 'https://id.twitch.tv/oauth2';
 const CALLBACK_PATH = '/auth/twitch/callback';
 const ALLOWED_ORIGINS = ['https://matrix-hub.app', 'https://www.matrix-hub.app', 'https://matrix-hub.base44.app'];
-const SCOPES = ['user:read:email', 'user:read:follows', 'moderator:read:followers'];
+const SCOPES = [
+  'user:read:email',
+  'user:read:follows',
+  'moderator:read:followers',
+  'channel:read:subscriptions',
+  'user:read:whispers',
+];
 const REFRESH_MARGIN_MS = 5 * 60 * 1000;
 const FORM_HEADERS = { 'Content-Type': 'application/x-www-form-urlencoded' };
 
