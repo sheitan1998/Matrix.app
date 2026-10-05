@@ -3,11 +3,15 @@ import { useTwitchAuth } from "@/context/TwitchAuthContext";
 import { useTwitch } from "@/hooks/useTwitch";
 import TwitchStreamCard from "@/components/twitch/TwitchStreamCard";
 import TwitchCategoryCard from "@/components/twitch/TwitchCategoryCard";
+import TwitchChannelPanel from "@/components/twitch/TwitchChannelPanel";
+import TwitchChatEmbed from "@/components/twitch/TwitchChatEmbed";
+import TwitchActivityFeed from "@/components/twitch/TwitchActivityFeed";
 import { Loader2, AlertCircle } from "lucide-react";
 import { useState } from "react";
 
 const SUB_TABS = [
   { id: "overview", label: "Vue d'ensemble" },
+  { id: "mychannel", label: "Ma Chaîne" },
   { id: "live", label: "Live" },
   { id: "videos", label: "Vidéos" },
   { id: "categories", label: "Catégories" },
@@ -138,6 +142,18 @@ export default function TwitchHome() {
                   </div>
                 )}
               </section>
+            </div>
+          )}
+
+          {subTab === "mychannel" && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="lg:col-span-2 space-y-4">
+                <TwitchChannelPanel />
+                <TwitchChatEmbed />
+              </div>
+              <div className="space-y-4">
+                <TwitchActivityFeed />
+              </div>
             </div>
           )}
 

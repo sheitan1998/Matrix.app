@@ -220,6 +220,62 @@ export default async function(req: Request): Promise<Response> {
         break;
       }
 
+      // Get the authenticated user's channel info (profile, banner, live status)
+      case 'getMyChannel': {
+        if (!params.userToken) return Response.json({ error: 'User OAuth token required.' }, { status: 401 });
+        const userData = await twitchFetch('users', {}, params.userToken, clientId);
+        if (userData._error) return Response.json(userData, { status: userData.status });
+        const u = userData.data?.[0];
+        if (!u) return Response.json({ data: null, _source: 'twitch' });
+        const streamData = await twitchFetch('streams', { user_login: u.login }, params.userToken, clientId);
+        const stream = streamData._error ? null : (streamData.data?.[0] || null);
+        const channelData = await twitchFetch('channels', { broadcaster_id: u.id }, params.userToken, clientId);
+        const channel = channelData._error ? null : (channelData.data?.[0] || null);
+        result = {
+          user: mapUser(u),
+          stream: stream ? mapStream(stream) : null,
+          channel: channel ? {
+            title: channel.title,
+            game_name: channel.game_name,
+            game_id: channel.game_id,
+            broadcaster_language: channel.broadcaster_language,
+            _source: 'twitch',
+          } : null,
+        };
+        break;
+      }
+
+      // Get channel activity (recent followers) — uses app token
+      case 'getChannelActivity': {
+        let targetUserId = params.userId;
+        // If userToken provided, resolve their user ID
+        if (!targetUserId && params.userToken) {
+          const userData = await twitchFetch('users', {}, params.userToken, clientId);
+          if (!userData._error) targetUserId = userData.data?.[0]?.id;
+        }
+        if (!targetUserId) return Response.json({ error: 'Could not determine user ID.' }, { status: 400 });
+        if (!clientSecret) return Response.json({ error: 'TWITCH_CLIENT_SECRET not configured.' }, { status: 500 });
+        const token = await getAppToken(clientId, clientSecret);
+        if (token?._error) return Response.json(token, { status: token.status });
+        // Recent followers (users/follows with to_id, sorted by followed_at desc)
+        const followsData = await twitchFetch('users/follows', {
+          to_id: targetUserId,
+          first: params.first || 20,
+        }, token, clientId);
+        if (followsData._error) return Response.json(followsData, { status: followsData.status });
+        result = {
+          followers: (followsData.data || []).map(f => ({
+            from_id: f.from_id,
+            from_login: f.from_login,
+            from_name: f.from_name,
+            followed_at: f.followed_at,
+            _source: 'twitch',
+          })),
+          total_followers: followsData.total || 0,
+        };
+        break;
+      }
+
       // Search live streams — searches channels (live_only), then fetches stream details
       case 'searchStreams': {
         if (!clientSecret) return Response.json({ error: 'TWITCH_CLIENT_SECRET not configured.' }, { status: 500 });
