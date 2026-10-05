@@ -3,6 +3,11 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
+
+    // Auth required — prevents public enumeration of creator data
+    const currentUser = await base44.auth.me();
+    if (!currentUser) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
     const body = await req.json().catch(() => ({}));
     const pseudo = body?.pseudo;
     if (!pseudo) return Response.json({ error: 'Missing pseudo' }, { status: 400 });

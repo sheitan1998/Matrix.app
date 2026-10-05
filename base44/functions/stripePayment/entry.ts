@@ -105,11 +105,9 @@ export default async function(req: Request): Promise<Response> {
         const userEmail = data.metadata?.user_email || data.customer_email || '';
         const userId = data.metadata?.user_id || '';
 
-        // Idempotency: exact session ID match to prevent double-crediting
-        const webhookSessionId = String(data.id || '');
+        // Idempotency: Stripe event ID stored in dedicated field (not regex on description)
         const existing = await base44.asServiceRole.entities.TrixTransaction.filter({
-          user_email: userEmail,
-          description: { $regex: `\\(${webhookSessionId}\\)$` },
+          stripe_event_id: event.id,
         });
 
         if (existing.length === 0) {
@@ -128,6 +126,7 @@ export default async function(req: Request): Promise<Response> {
               user_email: userEmail,
               type: 'purchase',
               amount: trixAmount,
+              stripe_event_id: event.id,
               description: `Achat Trix - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
             });
           }
@@ -146,6 +145,7 @@ export default async function(req: Request): Promise<Response> {
               user_email: userEmail,
               type: 'nexus_item',
               amount: 0,
+              stripe_event_id: event.id,
               description: `Achat Nexus ${itemId} - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
             });
           }
@@ -155,6 +155,7 @@ export default async function(req: Request): Promise<Response> {
               user_email: userEmail,
               type: 'donation',
               amount: 0,
+              stripe_event_id: event.id,
               description: `Don de ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
             });
           }
@@ -205,6 +206,7 @@ export default async function(req: Request): Promise<Response> {
               user_email: userEmail,
               type: 'vip',
               amount: plan.tokens,
+              stripe_event_id: event.id,
               description: `Abonnement ${plan.label} - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
             });
           }
@@ -224,6 +226,7 @@ export default async function(req: Request): Promise<Response> {
               user_email: userEmail,
               type: 'nitro',
               amount: 0,
+              stripe_event_id: event.id,
               description: `Abonnement Nitro ${nitroPlan} - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
             });
           }
@@ -236,6 +239,7 @@ export default async function(req: Request): Promise<Response> {
             }
             await base44.asServiceRole.entities.TrixTransaction.create({
               user_email: userEmail, type: 'ai_sub', amount: 0,
+              stripe_event_id: event.id,
               description: `Abonnement AI ${aiPlanId} - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
             });
           }
@@ -248,6 +252,7 @@ export default async function(req: Request): Promise<Response> {
             }
             await base44.asServiceRole.entities.TrixTransaction.create({
               user_email: userEmail, type: 'community_sub', amount: 0,
+              stripe_event_id: event.id,
               description: `Abonnement Communauté ${commPlanId} - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
             });
           }
@@ -267,6 +272,7 @@ export default async function(req: Request): Promise<Response> {
             }
             await base44.asServiceRole.entities.TrixTransaction.create({
               user_email: userEmail, type: 'premium', amount: premiumPlan.trixBonus,
+              stripe_event_id: event.id,
               description: `Abonnement MATRIX Premium - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
             });
           }
@@ -293,6 +299,7 @@ export default async function(req: Request): Promise<Response> {
               user_email: userEmail,
               type: 'casino_coins',
               amount: 0,
+              stripe_event_id: event.id,
               description: `Achat Jetons M - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
             });
           }
@@ -379,8 +386,7 @@ export default async function(req: Request): Promise<Response> {
       // Idempotency: exact session ID match to prevent double-crediting
       const stripeSessionId = String(session.id || '');
       const existing = await base44.asServiceRole.entities.TrixTransaction.filter({
-        user_email: userEmail,
-        description: { $regex: `\\(${stripeSessionId}\\)$` },
+        stripe_event_id: stripeSessionId,
       });
       if (existing.length > 0) {
         return Response.json({ success: true, alreadyProcessed: true, type, trixAmount });
@@ -403,6 +409,7 @@ export default async function(req: Request): Promise<Response> {
           user_email: userEmail,
           type: 'purchase',
           amount: trixAmount,
+          stripe_event_id: stripeSessionId,
           description: `Achat Trix - ${(session.amount_total / 100).toFixed(2)}€ (session ${session.id})`,
         });
         return Response.json({ success: true, type, credited: trixAmount });
@@ -422,6 +429,7 @@ export default async function(req: Request): Promise<Response> {
           user_email: userEmail,
           type: 'nexus_item',
           amount: 0,
+          stripe_event_id: stripeSessionId,
           description: `Achat Nexus ${itemId} - ${(session.amount_total / 100).toFixed(2)}€ (session ${session.id})`,
         });
         return Response.json({ success: true, type, itemId });
@@ -452,6 +460,7 @@ export default async function(req: Request): Promise<Response> {
         }
         await base44.asServiceRole.entities.TrixTransaction.create({
           user_email: userEmail, type: 'cosmetic', amount: 0,
+          stripe_event_id: stripeSessionId,
           description: `Achat cosmétique ${itemId} - ${(session.amount_total / 100).toFixed(2)}€ (session ${session.id})`,
         });
         return Response.json({ success: true, type, itemId });
@@ -462,6 +471,7 @@ export default async function(req: Request): Promise<Response> {
           user_email: userEmail,
           type: 'donation',
           amount: 0,
+          stripe_event_id: stripeSessionId,
           description: `Don de ${(session.amount_total / 100).toFixed(2)}€ (session ${session.id})`,
         });
         return Response.json({ success: true, type, donationAmount: session.amount_total });
@@ -513,6 +523,7 @@ export default async function(req: Request): Promise<Response> {
           user_email: userEmail,
           type: 'vip',
           amount: plan.tokens,
+          stripe_event_id: stripeSessionId,
           description: `Abonnement ${plan.label} - ${(session.amount_total / 100).toFixed(2)}€ (session ${session.id})`,
         });
         return Response.json({ success: true, type, vipUntil, tokens: plan.tokens });
@@ -530,6 +541,7 @@ export default async function(req: Request): Promise<Response> {
           user_email: userEmail,
           type: 'nitro',
           amount: 0,
+          stripe_event_id: stripeSessionId,
           description: `Abonnement Nitro ${nitroPlan} - ${(session.amount_total / 100).toFixed(2)}€ (session ${session.id})`,
         });
         return Response.json({ success: true, type, nitroPlan });
@@ -543,6 +555,7 @@ export default async function(req: Request): Promise<Response> {
         }
         await base44.asServiceRole.entities.TrixTransaction.create({
           user_email: userEmail, type: 'ai_sub', amount: 0,
+          stripe_event_id: stripeSessionId,
           description: `Abonnement AI ${aiPlanId} - ${(session.amount_total / 100).toFixed(2)}€ (session ${session.id})`,
         });
         return Response.json({ success: true, type, aiPlanId });
@@ -556,6 +569,7 @@ export default async function(req: Request): Promise<Response> {
         }
         await base44.asServiceRole.entities.TrixTransaction.create({
           user_email: userEmail, type: 'community_sub', amount: 0,
+          stripe_event_id: stripeSessionId,
           description: `Abonnement Communauté ${commPlanId} - ${(session.amount_total / 100).toFixed(2)}€ (session ${session.id})`,
         });
         return Response.json({ success: true, type, commPlanId });
@@ -576,6 +590,7 @@ export default async function(req: Request): Promise<Response> {
         }
         await base44.asServiceRole.entities.TrixTransaction.create({
           user_email: userEmail, type: 'premium', amount: premiumPlan.trixBonus,
+          stripe_event_id: stripeSessionId,
           description: `Abonnement MATRIX Premium - ${(session.amount_total / 100).toFixed(2)}€ (session ${session.id})`,
         });
         return Response.json({ success: true, type });
@@ -603,6 +618,7 @@ export default async function(req: Request): Promise<Response> {
           user_email: userEmail,
           type: 'casino_coins',
           amount: 0,
+          stripe_event_id: stripeSessionId,
           description: `Achat Jetons M - ${(session.amount_total / 100).toFixed(2)}€ (session ${session.id})`,
         });
         return Response.json({ success: true, type, coinAmount });

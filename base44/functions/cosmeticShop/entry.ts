@@ -73,10 +73,9 @@ export default async function(req: Request): Promise<Response> {
           const userEmail = data.metadata?.user_email || data.customer_email || '';
           const userId = data.metadata?.user_id || '';
 
-          // Idempotency check
+          // Idempotency: Stripe event ID stored in dedicated field (not regex on description)
           const existing = await base44.asServiceRole.entities.TrixTransaction.filter({
-            user_email: userEmail,
-            description: { $regex: data.id },
+            stripe_event_id: event.id,
           });
 
           if (existing.length === 0 && itemId && userId) {
@@ -109,6 +108,7 @@ export default async function(req: Request): Promise<Response> {
             }
             await base44.asServiceRole.entities.TrixTransaction.create({
               user_email: userEmail, type: 'cosmetic', amount: 0,
+              stripe_event_id: event.id,
               description: `Achat cosmétique ${itemId} - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
             });
           }

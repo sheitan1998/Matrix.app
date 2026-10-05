@@ -13,8 +13,11 @@ export default async function(req: Request): Promise<Response> {
 
     const base44 = createClientFromRequest(req);
 
-    // ---- Public action: get server by invite code (no auth required, but filtered) ----
+    // ---- get server by invite code (auth required to prevent enumeration) ----
     if (action === 'getServerByInviteCode') {
+      const user = await base44.auth.me();
+      if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
       const { inviteCode } = params;
       if (!inviteCode || typeof inviteCode !== 'string' || inviteCode.length < 3 || inviteCode.length > 64) {
         return Response.json({ error: 'Invalid invite code' }, { status: 400 });
