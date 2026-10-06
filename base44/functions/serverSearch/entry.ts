@@ -97,6 +97,7 @@ export default async function(req: Request): Promise<Response> {
         author_avatar: found.author_avatar,
         created_date: found.created_date,
         is_owner: !!user && user.email === found.author_email,
+        api_key: (!!user && user.email === found.author_email) ? found.api_key : undefined,
       });
     }
 
@@ -1132,6 +1133,18 @@ export default async function(req: Request): Promise<Response> {
           target_email,
         });
         return Response.json({ subscribed: records.length > 0 });
+      }
+
+      // ---- Regenerate the server's secret API key (owner only) ----
+      case 'regenerateApiKey': {
+        const { serverAdId } = params;
+        if (!serverAdId) return Response.json({ error: 'Missing serverAdId' }, { status: 400 });
+        const ad = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
+        if (!ad) return Response.json({ error: 'Server not found' }, { status: 404 });
+        if (ad.author_email !== user.email) return Response.json({ error: 'Not authorized' }, { status: 403 });
+        const newKey = crypto.randomUUID();
+        await base44.asServiceRole.entities.ServerAd.update(serverAdId, { api_key: newKey });
+        return Response.json({ success: true, api_key: newKey });
       }
 
       // ---- Track a click (visit / vote) — anonymous allowed ----

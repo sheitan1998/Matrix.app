@@ -143,6 +143,7 @@ export default function Prospecteurs() {
         author_email: user.email,
         author_name: user.full_name || user.email.split("@")[0],
         author_avatar: user.avatar_url || "",
+        api_key: crypto.randomUUID(),
       });
       setAds((prev) => (belongsToTab(newAd) ? [newAd, ...prev] : prev));
       setShowCreateModal(false);

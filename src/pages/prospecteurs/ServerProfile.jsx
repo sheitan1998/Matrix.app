@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import BoostAdModal from "@/components/prospecteurs/BoostAdModal";
 import VoteModal from "@/components/prospecteurs/VoteModal";
+import ServerApiPanel from "@/components/prospecteurs/ServerApiPanel";
 
 export default function ServerProfile() {
   const { slug } = useParams();
@@ -363,6 +364,8 @@ export default function ServerProfile() {
             Copier
           </button>
         </div>
+
+        {isOwner && <ServerApiPanel server={server} />}
       </div>
 
       {showVoteModal && (

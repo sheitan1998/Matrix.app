@@ -147,6 +147,10 @@
       "default": 0,
       "description": "Clics du mois en cours (reset mensuel)"
     },
+    "api_key": {
+      "type": "string",
+      "description": "Cle API secrete unique du serveur (Web API publique)"
+    },
     "boosts": {
       "type": "number",
       "default": 0
