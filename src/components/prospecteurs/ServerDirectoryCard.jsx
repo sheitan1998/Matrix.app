@@ -417,7 +417,7 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
           onClose={() => setShowVoteModal(false)}
           onVoted={(data) => {
             setVoteStatus({ canVote: false, remaining: { h: 2, m: 0, s: 0 } });
-            onVote(server.id, data.votes);
+            onVote(server.id, data);
           }}
         />
       )}

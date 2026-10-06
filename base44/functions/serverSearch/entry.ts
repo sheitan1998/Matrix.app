@@ -191,21 +191,21 @@ export default async function(req: Request): Promise<Response> {
           });
         }
 
-        // Increment vote count on the ad
-        const ad = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
-        if (!ad) return Response.json({ error: 'Server not found' }, { status: 404 });
-        const newVotes = (ad.votes || 0) + 1;
-        const newVotesMonth = (ad.votes_month || 0) + 1;
-        const newClicks = (ad.clicks || 0) + 1;
-        const newClicksMonth = (ad.clicks_month || 0) + 1;
-        await base44.asServiceRole.entities.ServerAd.update(serverAdId, {
-          votes: newVotes,
-          votes_month: newVotesMonth,
-          clicks: newClicks,
-          clicks_month: newClicksMonth,
+        // Atomically increment vote + click counters (no read-then-write race condition)
+        const voteAd = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
+        if (!voteAd) return Response.json({ error: 'Server not found' }, { status: 404 });
+        await base44.asServiceRole.entities.ServerAd.updateMany(
+          { id: serverAdId },
+          { $inc: { votes: 1, votes_month: 1, clicks: 1, clicks_month: 1 } }
+        );
+        const freshAd = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
+        return Response.json({
+          success: true,
+          votes: freshAd.votes || 0,
+          votes_month: freshAd.votes_month || 0,
+          clicks: freshAd.clicks || 0,
+          clicks_month: freshAd.clicks_month || 0,
         });
-
-        return Response.json({ success: true, votes: newVotes, votes_month: newVotesMonth });
       }
 
       // ---- Boost a server ad with Flash Boosts or Trix (200) ----
@@ -1153,10 +1153,10 @@ export default async function(req: Request): Promise<Response> {
         if (!serverAdId) return Response.json({ error: 'Missing serverAdId' }, { status: 400 });
         const clickAd = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
         if (!clickAd) return Response.json({ error: 'Server not found' }, { status: 404 });
-        await base44.asServiceRole.entities.ServerAd.update(serverAdId, {
-          clicks: (clickAd.clicks || 0) + 1,
-          clicks_month: (clickAd.clicks_month || 0) + 1,
-        });
+        await base44.asServiceRole.entities.ServerAd.updateMany(
+          { id: serverAdId },
+          { $inc: { clicks: 1, clicks_month: 1 } }
+        );
         return Response.json({ success: true });
       }
 

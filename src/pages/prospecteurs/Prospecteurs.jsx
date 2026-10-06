@@ -99,8 +99,14 @@ export default function Prospecteurs() {
     return categories.filter((c) => c.type === activeTab || c.type === "both");
   }, [categories, activeTab]);
 
-  const handleVote = (adId, newVotes) => {
-    setAds((prev) => prev.map((a) => (a.id === adId ? { ...a, votes: newVotes } : a)));
+  const handleVote = (adId, data) => {
+    setAds((prev) => prev.map((a) => (a.id === adId ? {
+      ...a,
+      votes: data.votes ?? a.votes,
+      votes_month: data.votes_month ?? a.votes_month,
+      clicks: data.clicks ?? a.clicks,
+      clicks_month: data.clicks_month ?? a.clicks_month,
+    } : a)));
   };
 
   const handleDeleteAd = (adId) => {

@@ -23,7 +23,7 @@ export default function VoteModal({ server, voteStatus, onClose, onVoted }) {
       });
       if (res.data?.success) {
         toast.success("Vote enregistré !");
-        onVoted({ votes: res.data.votes, votes_month: res.data.votes_month });
+        onVoted({ votes: res.data.votes, votes_month: res.data.votes_month, clicks: res.data.clicks, clicks_month: res.data.clicks_month });
         onClose();
       } else if (res.data?.error === "cooldown") {
         toast.error(`Reviens dans ${res.data.remainingTime.h}h ${res.data.remainingTime.m}m`);

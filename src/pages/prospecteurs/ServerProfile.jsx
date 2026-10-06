@@ -379,6 +379,8 @@ export default function ServerProfile() {
               ...prev,
               votes: data.votes,
               votes_month: data.votes_month,
+              clicks: data.clicks,
+              clicks_month: data.clicks_month,
             }));
           }}
         />
