@@ -92,10 +92,8 @@ export default function ServerProfile() {
     setShowVoteModal(true);
   };
 
-  const shareSlug = server.slug || server.id;
-
   const handleShare = async () => {
-    const url = `${window.location.origin}/servers/${shareSlug}`;
+    const url = `${window.location.origin}/servers/${server?.slug || server?.id || ""}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
@@ -160,6 +158,7 @@ export default function ServerProfile() {
   const isOwner = user?.email === server.author_email;
   const score = (server.votes_month || server.votes || 0) + (server.boosts || 0) * 2;
   const fmt = (n) => String(n).padStart(2, "0");
+  const shareSlug = server.slug || server.id;
 
   return (
     <div className="min-h-screen" style={{ background: "#12091c" }}>
