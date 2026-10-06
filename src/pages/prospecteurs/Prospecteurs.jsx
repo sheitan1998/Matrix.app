@@ -9,6 +9,7 @@ import CategoryGrid from "@/components/prospecteurs/CategoryGrid";
 import ServerSearchBar from "@/components/prospecteurs/ServerSearchBar";
 import ServerDirectoryCard from "@/components/prospecteurs/ServerDirectoryCard";
 import CreateAdModal from "@/components/prospecteurs/CreateAdModal";
+import Top10Monthly from "@/components/prospecteurs/Top10Monthly";
 
 const TABS = [
   { id: "nexus", label: "Serveurs Nexus", icon: ServerIcon, color: "#22c55e" },
@@ -138,8 +139,16 @@ export default function Prospecteurs() {
 
   const handleCreateAd = async (data) => {
     try {
+      const slug = data.title
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
       const newAd = await base44.entities.ServerAd.create({
         ...data,
+        slug,
         author_email: user.email,
         author_name: user.full_name || user.email.split("@")[0],
         author_avatar: user.avatar_url || "",
@@ -254,6 +263,9 @@ export default function Prospecteurs() {
               );
             })}
           </div>
+
+          {/* Top 10 Monthly */}
+          <Top10Monthly activeTab={activeTab} />
 
           {/* Category grid */}
           <div className="mb-5">

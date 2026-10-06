@@ -59,6 +59,7 @@ const ListingDetail = lazy(() => import('@/pages/marketplace/ListingDetail'));
 const Casino = lazy(() => import('@/pages/Casino'));
 const NexusGames = lazy(() => import('@/pages/NexusGames'));
 const Prospecteurs = lazy(() => import('@/pages/prospecteurs/Prospecteurs'));
+const ServerProfile = lazy(() => import('@/pages/prospecteurs/ServerProfile'));
 const CommunitySubscription = lazy(() => import('@/pages/community/CommunitySubscription'));
 const Wallet = lazy(() => import('@/pages/Wallet'));
 const VideoStudio = lazy(() => import('@/pages/VideoStudio'));
@@ -155,6 +156,7 @@ const AuthenticatedApp = () => {
         <Route path="/oauth" element={<Navigate to="/oauth/callback" replace />} />
         <Route path="/oauth/consent" element={<OAuthConsent />} />
         <Route path="/nexus/invite/:code" element={<NexusInvite />} />
+        <Route path="/servers/:slug" element={<ServerProfile />} />
         <Route path="/creator/:username" element={<CreatorProfile />} />
         <Route path="/page/:slug" element={<DynamicPage />} />
         <Route path="/" element={<Landing />} />

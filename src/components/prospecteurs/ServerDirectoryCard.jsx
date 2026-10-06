@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { ArrowUp, Flame, ExternalLink, Users, Zap, Pencil, Trash2 } from "lucide-react";
+import { ArrowUp, Flame, ExternalLink, Users, Zap, Pencil, Trash2, Share2, Check } from "lucide-react";
+import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import BoostAdModal from "./BoostAdModal";
@@ -16,6 +17,23 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
   const [flashBoosts, setFlashBoosts] = useState(currentUser?.flash_boosts || 0);
   const [trixBalance, setTrixBalance] = useState(currentUser?.trix_balance || 0);
   const [boostCount, setBoostCount] = useState(server.boosts || 0);
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async () => {
+    if (!server.slug) {
+      toast.error("Lien de partage non disponible");
+      return;
+    }
+    const url = `${window.location.origin}/servers/${server.slug}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      toast.success("Lien copié !");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Impossible de copier le lien");
+    }
+  };
 
   const serverType = server.server_type || "nexus";
   const typeConfig = BADGE_CONFIG[serverType] || BADGE_CONFIG.nexus;
@@ -74,7 +92,7 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
         serverAdId: server.id,
       });
       if (res.data?.success) {
-        setVoteStatus({ canVote: false, remaining: { h: 24, m: 0, s: 0 } });
+        setVoteStatus({ canVote: false, remaining: { h: 2, m: 0, s: 0 } });
         onVote(server.id, res.data.votes);
         toast.success("Vote enregistré !");
       } else if (res.data?.error === "cooldown") {
@@ -318,6 +336,24 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
           <Zap className="w-3 h-3" />
           <span className="hidden sm:inline">Boost</span>
         </button>
+        <button
+          onClick={handleShare}
+          className="h-7 px-2 rounded-md flex items-center justify-center gap-0.5 transition tap-sm text-[9px] font-bold"
+          style={{ background: "rgba(138,79,255,0.12)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}
+          title="Partager la fiche"
+        >
+          {copied ? <Check className="w-3 h-3" /> : <Share2 className="w-3 h-3" />}
+        </button>
+        {server.slug && (
+          <Link
+            to={`/servers/${server.slug}`}
+            className="h-7 px-2 rounded-md flex items-center justify-center transition tap-sm text-[9px] font-bold"
+            style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.1)" }}
+            title="Voir la fiche"
+          >
+            <ExternalLink className="w-3 h-3" />
+          </Link>
+        )}
         {server.discord_link && (
           <a
             href={server.discord_link}

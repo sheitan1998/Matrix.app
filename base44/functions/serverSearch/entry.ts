@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { rateLimitByIp } from '../../shared/security.ts';
 
-const VOTE_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 hours
+const VOTE_COOLDOWN_MS = 2 * 60 * 60 * 1000; // 2 hours
 const BOOST_COST = 500; // 500 Trix minimum per boost
 const PLAYER_BOOST_COST = 50; // 50 Trix for player ad boost
 const BOOST_DURATION_HOURS = 24;
@@ -48,8 +48,51 @@ export default async function(req: Request): Promise<Response> {
       });
     }
 
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    const user = await base44.auth.me().catch(() => null);
+    // Vote and getVoteStatus don't require auth (IP-based fallback for anonymous visitors)
+    if (!user && action !== 'vote' && action !== 'getVoteStatus') {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // ---- get server by slug (public - no auth required) ----
+    if (action === 'getServerBySlug') {
+      const { slug } = params;
+      if (!slug || typeof slug !== 'string' || slug.length < 2 || slug.length > 128) {
+        return Response.json({ error: 'Invalid slug' }, { status: 400 });
+      }
+      const serverPage = await base44.asServiceRole.entities.ServerAd.filter({ slug }, null, 1);
+      const found = (serverPage?.items || serverPage || [])[0];
+      if (!found) return Response.json({ error: 'Not found' }, { status: 404 });
+      return Response.json({
+        id: found.id,
+        title: found.title,
+        slug: found.slug,
+        description: found.description,
+        server_type: found.server_type,
+        category_id: found.category_id,
+        category_slug: found.category_slug,
+        logo_url: found.logo_url,
+        banner_url: found.banner_url,
+        profile_image: found.profile_image,
+        cover_image: found.cover_image,
+        discord_link: found.discord_link,
+        ip: found.ip,
+        port: found.port,
+        discord_server_id: found.discord_server_id,
+        game: found.game,
+        category: found.category,
+        votes: found.votes,
+        votes_month: found.votes_month,
+        boosts: found.boosts,
+        is_boosted: found.is_boosted,
+        boost_until: found.boost_until,
+        players_count: found.players_count,
+        max_players: found.max_players,
+        author_name: found.author_name,
+        author_avatar: found.author_avatar,
+        created_date: found.created_date,
+      });
+    }
 
     // System action: monthly reset of votes AND boosts (admin or cron only, 1st of each month)
     if (action === 'resetMonthly') {
@@ -81,16 +124,21 @@ export default async function(req: Request): Promise<Response> {
 
     switch (action) {
 
-      // ---- Vote for a server (2h cooldown per user per server) ----
+      // ---- Vote for a server (2h cooldown, no auth required - IP fallback) ----
       case 'vote': {
         const { serverAdId } = params;
         if (!serverAdId) return Response.json({ error: 'Missing serverAdId' }, { status: 400 });
 
-        // Check existing vote record for this user + server
-        const existingVotes = await base44.asServiceRole.entities.ServerVote.filter({
-          server_ad_id: serverAdId,
-          user_email: user.email,
-        });
+        const voterEmail = user?.email || '';
+        const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+                   req.headers.get('x-real-ip') || 'unknown';
+
+        // Build query based on auth status (logged-in by email, anonymous by IP)
+        const voteQuery = voterEmail
+          ? { server_ad_id: serverAdId, user_email: voterEmail }
+          : { server_ad_id: serverAdId, ip_address: ip };
+
+        const existingVotes = await base44.asServiceRole.entities.ServerVote.filter(voteQuery);
 
         const now = Date.now();
 
@@ -119,10 +167,11 @@ export default async function(req: Request): Promise<Response> {
             last_voted_at: new Date(now).toISOString(),
           });
         } else {
-          // Create new vote record
+          // Create new vote record (store email for logged-in, IP for anonymous)
           await base44.asServiceRole.entities.ServerVote.create({
             server_ad_id: serverAdId,
-            user_email: user.email,
+            user_email: voterEmail || undefined,
+            ip_address: voterEmail ? undefined : ip,
             last_voted_at: new Date(now).toISOString(),
           });
         }
@@ -131,11 +180,13 @@ export default async function(req: Request): Promise<Response> {
         const ad = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
         if (!ad) return Response.json({ error: 'Server not found' }, { status: 404 });
         const newVotes = (ad.votes || 0) + 1;
+        const newVotesMonth = (ad.votes_month || 0) + 1;
         await base44.asServiceRole.entities.ServerAd.update(serverAdId, {
           votes: newVotes,
+          votes_month: newVotesMonth,
         });
 
-        return Response.json({ success: true, votes: newVotes });
+        return Response.json({ success: true, votes: newVotes, votes_month: newVotesMonth });
       }
 
       // ---- Boost a server ad with Flash Boosts or Trix (200) ----
@@ -221,10 +272,15 @@ export default async function(req: Request): Promise<Response> {
         const { serverAdId } = params;
         if (!serverAdId) return Response.json({ error: 'Missing serverAdId' }, { status: 400 });
 
-        const existingVotes = await base44.asServiceRole.entities.ServerVote.filter({
-          server_ad_id: serverAdId,
-          user_email: user.email,
-        });
+        const voterEmail = user?.email || '';
+        const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+                   req.headers.get('x-real-ip') || 'unknown';
+
+        const voteQuery = voterEmail
+          ? { server_ad_id: serverAdId, user_email: voterEmail }
+          : { server_ad_id: serverAdId, ip_address: ip };
+
+        const existingVotes = await base44.asServiceRole.entities.ServerVote.filter(voteQuery);
 
         if (existingVotes.length === 0) {
           return Response.json({ canVote: true });

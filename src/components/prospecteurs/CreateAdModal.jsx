@@ -4,8 +4,24 @@ import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { uploadImageWithToast } from "@/lib/imageModeration";
 
-const GAMES = ["Valorant", "League of Legends", "Fortnite", "CS2", "Apex Legends", "Minecraft", "Rocket League", "Autre"];
-const CATEGORIES = ["Gaming", "RP", "Communauté", "Compétitif", "Casual", "Créatif", "Autre"];
+const GAMES = [
+  "GTA RP", "GTA V", "Minecraft", "Rust", "ARK: Survival Evolved", "Palworld",
+  "Valheim", "Garry's Mod", "FiveM", "Roblox", "Fortnite", "Counter-Strike 2",
+  "League of Legends", "Valorant", "World of Warcraft", "Genshin Impact",
+  "Call of Duty", "Apex Legends", "Rocket League", "Among Us", "Destiny 2",
+  "Overwatch 2", "Elden Ring", "Cyberpunk 2077", "RuneScape", "Metin 2",
+  "Dofus", "Albion Online", "Black Desert Online", "Final Fantasy XIV",
+  "The Elder Scrolls Online", "New World", "Lost Ark", "DayZ", "7 Days to Die",
+  "Project Zomboid", "Don't Starve Together", "Terraria", "Stardew Valley",
+  "Pokémon", "Super Smash Bros", "Super Mario", "Animal Crossing", "Splatoon",
+  "FIFA / EA FC", "NBA 2K", "Madden NFL", "Gran Turismo", "Forza Horizon",
+  "Autre",
+];
+const CATEGORIES = [
+  "Gaming", "RP / Roleplay", "Communauté", "Compétitif", "Casual", "Créatif",
+  "Survie", "PVE", "PVP", "Moddé", "Semi-Vanilla", "Hardcore", "Mini-Jeux",
+  "Événementiel", "Autre",
+];
 
 export default function CreateAdModal({ onClose, onSubmit, initialType = "server", initialServerType = "nexus", editAd = null }) {
   const [adType, setAdType] = useState(editAd?.type || initialType);
