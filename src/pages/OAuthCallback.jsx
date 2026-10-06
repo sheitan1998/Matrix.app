@@ -6,16 +6,19 @@ import { useAuth } from "@/lib/AuthContext";
 import { safeReturnTo } from "@/lib/authReturnTo";
 import { oauthService } from "@/lib/OAuthService";
 import { getTauriInvoke } from "@/lib/tauriInvoke";
+import { TermsGateScreen, hasCguSessionFlag, clearCguSessionFlag } from "@/components/auth/TermsAcceptance";
 
 const DESKTOP_OAUTH_STATE_PREFIX = "desktop_";
 const DESKTOP_OAUTH_DEEP_LINK_BASE = "matrix://oauth/callback";
 
 export default function OAuthCallback() {
-  const { isAuthenticated, isLoadingAuth, isLoadingPublicSettings, checkUserAuth } = useAuth();
+  const { user, isAuthenticated, isLoadingAuth, isLoadingPublicSettings, checkUserAuth } = useAuth();
   const [error, setError] = useState("");
   const [desktopDeepLink, setDesktopDeepLink] = useState("");
   const [isCustomExchangeComplete, setIsCustomExchangeComplete] = useState(false);
   const [isProcessing, setIsProcessing] = useState(true);
+  const [termsGate, setTermsGate] = useState(false);
+  const [termsLoading, setTermsLoading] = useState(false);
   const redirectTarget = useMemo(() => {
     const urlTarget = safeReturnTo();
     if (urlTarget !== "/" && urlTarget !== "/oauth/callback") {
@@ -142,6 +145,9 @@ export default function OAuthCallback() {
     // Don't redirect while there's an error (error UI is shown instead)
     if (error) return;
 
+    // Terms gate takes priority — don't redirect while it's showing
+    if (termsGate) return;
+
     // Wait for public settings to be loaded
     if (isLoadingPublicSettings) return;
 
@@ -172,7 +178,58 @@ export default function OAuthCallback() {
     isLoadingPublicSettings,
     isProcessing,
     redirectTarget,
+    termsGate,
   ]);
+
+  // After authentication, check if the user has accepted the CGU.
+  // New users (terms_accepted === false/undefined) get a gate screen.
+  // Returning users (terms_accepted === true) are redirected normally.
+  useEffect(() => {
+    if (termsGate || error || isLoadingAuth || !isAuthenticated) return;
+    if (!user) return;
+    if (user.terms_accepted === true) {
+      // Returning user — clear any stale session flag and let the redirect effect handle it
+      clearCguSessionFlag();
+      return;
+    }
+    // New user — auto-accept if they already consented in the pre-OAuth modal
+    if (hasCguSessionFlag()) {
+      setTermsLoading(true);
+      base44.auth
+        .updateMe({ terms_accepted: true, terms_accepted_at: new Date().toISOString() })
+        .then(() => {
+          clearCguSessionFlag();
+          setTermsLoading(false);
+          window.location.replace(redirectTarget);
+        })
+        .catch(() => {
+          setTermsLoading(false);
+          setTermsGate(true);
+        });
+    } else {
+      setTermsGate(true);
+    }
+  }, [isAuthenticated, isLoadingAuth, error, termsGate, redirectTarget, user]);
+
+  const handleTermsAccept = async () => {
+    setTermsLoading(true);
+    try {
+      await base44.auth.updateMe({
+        terms_accepted: true,
+        terms_accepted_at: new Date().toISOString(),
+      });
+      clearCguSessionFlag();
+      setTermsGate(false);
+      window.location.replace(redirectTarget);
+    } catch {
+      setTermsLoading(false);
+    }
+  };
+
+  const handleTermsDecline = () => {
+    clearCguSessionFlag();
+    base44.auth.logout("/login");
+  };
 
   if (error) {
     return (
@@ -185,6 +242,16 @@ export default function OAuthCallback() {
           {error}
         </div>
       </AuthLayout>
+    );
+  }
+
+  if (termsGate) {
+    return (
+      <TermsGateScreen
+        onAccept={handleTermsAccept}
+        onDecline={handleTermsDecline}
+        loading={termsLoading}
+      />
     );
   }
 

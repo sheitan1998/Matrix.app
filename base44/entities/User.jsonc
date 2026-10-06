@@ -124,7 +124,7 @@
     },
     "banner_url": {
       "type": "string",
-      "description": "URL de la banni\u00e8re de profil"
+      "description": "URL de la banniere de profil"
     },
     "bio": {
       "type": "string"
@@ -301,6 +301,16 @@
       "type": "string",
       "default": "UTC",
       "description": "Fuseau horaire de l'utilisateur (ex: Europe/Paris, America/New_York, UTC)"
+    },
+    "terms_accepted": {
+      "type": "boolean",
+      "default": false,
+      "description": "L'utilisateur a accepte les Conditions Generales d'Utilisation (CGU)"
+    },
+    "terms_accepted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date d'acceptation des CGU"
     }
   },
   "required": []

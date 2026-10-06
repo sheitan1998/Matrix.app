@@ -3,6 +3,7 @@ import { AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import GoogleIcon from "@/components/GoogleIcon";
 import { startOAuthLogin } from "@/lib/startOAuthLogin";
+import { TermsAcceptanceModal, setCguSessionFlag } from "@/components/auth/TermsAcceptance";
 
 const MicrosoftIcon = ({ className = "w-5 h-5" }) => (
   <svg className={className} viewBox="0 0 23 23" aria-hidden="true">
@@ -38,10 +39,19 @@ export default function SocialAuthButtons() {
   const oauthReturnPath = getOAuthReturnPath();
   const [loadingProvider, setLoadingProvider] = useState("");
   const [error, setError] = useState("");
+  const [termsModal, setTermsModal] = useState({ open: false, providerId: "", label: "" });
 
   const handleOAuthLogin = async (providerId) => {
+    const provider = PROVIDERS.find((p) => p.id === providerId);
+    setTermsModal({ open: true, providerId, label: provider?.label || providerId });
+  };
+
+  const confirmOAuthLogin = async () => {
+    const { providerId, label } = termsModal;
     setError("");
     setLoadingProvider(providerId);
+    setTermsModal({ open: false, providerId: "", label: "" });
+    setCguSessionFlag();
 
     try {
       await startOAuthLogin(providerId, oauthReturnPath);
@@ -87,6 +97,17 @@ export default function SocialAuthButtons() {
           </div>
         </div>
       )}
+
+      <TermsAcceptanceModal
+        open={termsModal.open}
+        loading={Boolean(loadingProvider)}
+        providerLabel={termsModal.label}
+        onAccept={confirmOAuthLogin}
+        onCancel={() => {
+          setTermsModal({ open: false, providerId: "", label: "" });
+          setLoadingProvider("");
+        }}
+      />
 
       <div className="relative mb-6">
         <div className="absolute inset-0 flex items-center">

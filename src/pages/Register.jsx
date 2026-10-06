@@ -8,6 +8,7 @@ import { UserPlus, Mail, Lock, Loader2 } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import AuthLayout from "@/components/AuthLayout";
 import SocialAuthButtons from "@/components/auth/SocialAuthButtons";
+import { TermsCheckbox } from "@/components/auth/TermsAcceptance";
 import { toast } from "@/components/ui/use-toast";
 
 export default function Register() {
@@ -18,12 +19,17 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     if (password !== confirmPassword) {
       setError("Passwords do not match");
+      return;
+    }
+    if (!termsAccepted) {
+      setError("Vous devez accepter les Conditions Générales d'Utilisation.");
       return;
     }
     setLoading(true);
@@ -46,6 +52,10 @@ export default function Register() {
       if (result?.access_token) {
         base44.auth.setToken(result.access_token);
       }
+      await base44.auth.updateMe({
+        terms_accepted: true,
+        terms_accepted_at: new Date().toISOString(),
+      });
       window.location.href = "/";
     } catch (err) {
       setError(err.message || "Invalid verification code");
@@ -193,7 +203,8 @@ export default function Register() {
             />
           </div>
         </div>
-        <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
+        <TermsCheckbox checked={termsAccepted} onChange={setTermsAccepted} />
+        <Button type="submit" className="w-full h-12 font-medium" disabled={loading || !termsAccepted}>
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
