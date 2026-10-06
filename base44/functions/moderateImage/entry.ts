@@ -1,7 +1,17 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { requireUser, rateLimitByIp } from '../../shared/security.ts';
 
 export default async function(req: Request): Promise<Response> {
   try {
+    // Require authentication — prevents anonymous credit consumption
+    const user = await requireUser(req);
+    if (!user) return Response.json({ safe: false, reason: 'Authentification requise.' }, { status: 401 });
+
+    // Rate limit — each call triggers a billable multimodal LLM inference
+    if (!rateLimitByIp(req, 'moderateImage', 20, 60_000)) {
+      return Response.json({ safe: false, reason: 'Trop de requêtes de modération. Réessayez plus tard.' }, { status: 429 });
+    }
+
     const body = await req.json().catch(() => ({}));
     const { file_url } = body;
 

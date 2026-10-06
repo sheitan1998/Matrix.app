@@ -2,9 +2,45 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 
 const YOUTUBE_SCOPE = "https://www.googleapis.com/auth/youtube.readonly";
+// Token stored in sessionStorage (cleared on tab close) with expiry — never localStorage
 const TOKEN_KEY = "yt_oauth_token";
+const TOKEN_EXPIRY_KEY = "yt_oauth_expires_at";
 const CHANNELS_KEY = "yt_channels";
 const SELECTED_KEY = "yt_selected_channel";
+
+/** Read token from sessionStorage, clearing it if expired. */
+function readStoredToken() {
+  try {
+    const tk = sessionStorage.getItem(TOKEN_KEY);
+    if (!tk) return null;
+    const expiresAt = parseInt(sessionStorage.getItem(TOKEN_EXPIRY_KEY) || "0", 10);
+    if (expiresAt && Date.now() >= expiresAt) {
+      sessionStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem(TOKEN_EXPIRY_KEY);
+      return null;
+    }
+    return tk;
+  } catch {
+    return null;
+  }
+}
+
+/** Persist token to sessionStorage with its expiry timestamp. */
+function persistToken(token, expiresInSeconds) {
+  try {
+    if (token) {
+      sessionStorage.setItem(TOKEN_KEY, token);
+      // Default Google access token lifetime is 3600s; subtract 60s margin
+      const expiryMs = Date.now() + ((expiresInSeconds || 3600) - 60) * 1000;
+      sessionStorage.setItem(TOKEN_EXPIRY_KEY, String(expiryMs));
+    } else {
+      sessionStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem(TOKEN_EXPIRY_KEY);
+    }
+  } catch {
+    /* sessionStorage may be unavailable in rare contexts */
+  }
+}
 
 let gisPromise = null;
 function loadGIS() {
@@ -51,7 +87,7 @@ function mapChannelOAuth(item) {
 export function useYouTubeAuth() {
   const [clientId, setClientId] = useState(null);
   const [clientIdLoaded, setClientIdLoaded] = useState(false);
-  const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY));
+  const [token, setToken] = useState(() => readStoredToken());
   const [channels, setChannels] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem(CHANNELS_KEY) || "[]");
@@ -84,10 +120,9 @@ export function useYouTubeAuth() {
       .finally(() => setClientIdLoaded(true));
   }, []);
 
-  // Persist token / channels / selected
+  // Persist token (sessionStorage + expiry) / channels / selected
   useEffect(() => {
-    if (token) localStorage.setItem(TOKEN_KEY, token);
-    else localStorage.removeItem(TOKEN_KEY);
+    persistToken(token, token ? 3600 : 0);
   }, [token]);
   useEffect(() => {
     localStorage.setItem(CHANNELS_KEY, JSON.stringify(channels));
@@ -143,6 +178,7 @@ export function useYouTubeAuth() {
               return;
             }
             const tk = response.access_token;
+            persistToken(tk, response.expires_in || 3600);
             setToken(tk);
             setError(null);
             setLoading(true);

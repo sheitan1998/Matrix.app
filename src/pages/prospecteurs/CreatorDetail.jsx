@@ -8,8 +8,9 @@ import { getCosmeticIconImageUrl } from "@/lib/cosmeticAssetUrl";
 import { toast } from "sonner";
 
 export default function CreatorDetail() {
-  const { email } = useParams();
+  const { id } = useParams();
   const [creator, setCreator] = useState(null);
+  const [creatorEmail, setCreatorEmail] = useState(null);
   const [mods, setMods] = useState([]);
   const [maps, setMaps] = useState([]);
   const [cosmetics, setCosmetics] = useState([]);
@@ -17,22 +18,22 @@ export default function CreatorDetail() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!email) return;
-    const decoded = decodeURIComponent(email);
+    if (!id) return;
+    const decoded = decodeURIComponent(id);
     setLoading(true);
     (async () => {
       try {
-        const res = await base44.functions.invoke("serverSearch", { action: "searchCreators", query: "" });
-        const users = res?.data?.users || [];
-        const found = users.find((u) => u.email === decoded);
-        if (!found) { toast.error("Créateur introuvable ou profil privé"); setLoading(false); return; }
-        setCreator(found);
+        const res = await base44.functions.invoke("serverSearch", { action: "getCreatorById", id: decoded });
+        const c = res?.data?.creator;
+        if (!c) { toast.error("Créateur introuvable ou profil privé"); setLoading(false); return; }
+        setCreator({ ...c, pseudo: c.pseudo, avatar_url: c.avatar_url, bio: c.bio });
+        setCreatorEmail(c.email);
 
         const [modRes, mapRes, subRes, cosRes] = await Promise.all([
-          base44.entities.FarmingMod.filter({ creator_email: decoded }, { sort: "-created_date", limit: 100 }),
-          base44.entities.FortniteMap.filter({ user_email: decoded }, { sort: "-created_date", limit: 100 }),
-          base44.entities.UserSubscription.count({ target_email: decoded }),
-          base44.entities.UserCosmetic.filter({ user_email: decoded, is_equipped: true }, "-created_date", 50),
+          base44.entities.FarmingMod.filter({ creator_email: c.email }, { sort: "-created_date", limit: 100 }),
+          base44.entities.FortniteMap.filter({ user_email: c.email }, { sort: "-created_date", limit: 100 }),
+          base44.entities.UserSubscription.count({ target_email: c.email }),
+          base44.entities.UserCosmetic.filter({ user_email: c.email, is_equipped: true }, "-created_date", 50),
         ]);
         setMods(modRes?.items || modRes || []);
         setMaps(mapRes?.items || mapRes || []);
@@ -41,7 +42,7 @@ export default function CreatorDetail() {
       } catch { toast.error("Erreur lors du chargement du profil"); }
       setLoading(false);
     })();
-  }, [email]);
+  }, [id]);
 
   if (loading) {
     return (
@@ -114,7 +115,7 @@ export default function CreatorDetail() {
               </div>
             )}
           </div>
-          <SubscribeButton targetEmail={creator.email} targetName={pseudo} size="md" />
+          <SubscribeButton targetEmail={creatorEmail} targetName={pseudo} size="md" />
         </div>
 
         <div className="grid grid-cols-3 gap-3 mb-8">

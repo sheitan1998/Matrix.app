@@ -197,7 +197,7 @@ const AuthenticatedApp = () => {
           <Route path="/affiliate" element={<AffiliateDashboard />} />
           <Route path="/recherche-joueur" element={<RechercheJoueur />} />
           <Route path="/recherche-createur" element={<CreatorSearch />} />
-          <Route path="/profil-createur/:email" element={<CreatorDetail />} />
+          <Route path="/profil-createur/:id" element={<CreatorDetail />} />
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/auth/twitch/callback" element={<TwitchCallback />} />
           <Route element={<TwitchLayout />}>

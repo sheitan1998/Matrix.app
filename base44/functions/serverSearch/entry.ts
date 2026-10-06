@@ -963,7 +963,6 @@ export default async function(req: Request): Promise<Response> {
           const map = mapStats[email] || {};
           return {
             id: u.id,
-            email: u.email,
             pseudo: (u.pseudo || '').split('#')[0],
             pseudo_tag: u.pseudo_tag || '',
             avatar_url: u.avatar_url || '',
@@ -985,6 +984,25 @@ export default async function(req: Request): Promise<Response> {
         });
 
         return Response.json({ users: results });
+      }
+
+      // ---- Get a single creator's profile by id (for profile view) ----
+      case 'getCreatorById': {
+        const { id } = params;
+        if (!id) return Response.json({ error: 'Missing id' }, { status: 400 });
+        const target = await base44.asServiceRole.entities.User.get(id);
+        if (!target || target.is_private === true) {
+          return Response.json({ error: 'Créateur introuvable ou profil privé' }, { status: 404 });
+        }
+        return Response.json({
+          creator: {
+            id: target.id,
+            email: target.email,
+            pseudo: (target.pseudo || '').split('#')[0],
+            avatar_url: target.avatar_url || '',
+            bio: target.bio || '',
+          },
+        });
       }
 
       // ---- Subscribe to a creator/user ----

@@ -72,7 +72,7 @@ export default function CreatorSearch() {
                 {filtered.map((c) => (
                   <Link
                     key={c.id}
-                    to={`/profil-createur/${encodeURIComponent(c.email)}`}
+                    to={`/profil-createur/${encodeURIComponent(c.id)}`}
                     className="flex items-center gap-3 p-3 rounded-xl transition hover:bg-white/5"
                     style={{ background: "rgba(138,79,255,0.05)", border: "1px solid rgba(138,79,255,0.1)" }}
                   >

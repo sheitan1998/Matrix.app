@@ -1,7 +1,14 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { rateLimitByIp } from '../../shared/security.ts';
 
 export default async function(req: Request): Promise<Response> {
   try {
+    // Rate limit all AI actions to protect integration credits
+    // generateVideo costs 20-40 credits per call; chat costs 1+ credit per call
+    if (!rateLimitByIp(req, 'aiStudio', 10, 60_000)) {
+      return Response.json({ error: 'Trop de requêtes. Réessayez dans un instant.' }, { status: 429 });
+    }
+
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -28,8 +35,12 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ response });
       }
 
-      // ---- AI Video Generation ----
+      // ---- AI Video Generation (stricter rate limit — 20-40 credits per call) ----
       case 'generateVideo': {
+        // Separate, stricter bucket for video generation
+        if (!rateLimitByIp(req, 'aiStudioVideo', 3, 60_000)) {
+          return Response.json({ error: 'Limite de génération vidéo atteinte. Réessayez plus tard.' }, { status: 429 });
+        }
         const { prompt, duration, aspect_ratio } = params;
         if (!prompt || typeof prompt !== 'string') {
           return Response.json({ error: 'Prompt is required' }, { status: 400 });
