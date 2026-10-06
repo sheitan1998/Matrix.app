@@ -20,7 +20,15 @@
     },
     "img": {
       "type": "string",
-      "description": "URL de l'image"
+      "description": "URL de l'image principale (affiche de l'element)"
+    },
+    "gallery": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Images supplementaires (recettes, etapes de fabrication, details visuels)"
     },
     "sort_order": {
       "type": "number",

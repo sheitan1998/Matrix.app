@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, Images } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { normalizeAppAssetUrl } from "@/lib/urlUtils";
-import LightboxViewer from "@/components/tuto-gaming/LightboxViewer";
+import GalleryLightboxViewer from "@/components/tuto-gaming/GalleryLightboxViewer";
 
 export default function FarmingSimPopupModal({ popupKey, title, onClose }) {
   const [categories, setCategories] = useState([]);
@@ -173,6 +173,11 @@ export default function FarmingSimPopupModal({ popupKey, title, onClose }) {
                                       {sub.title}
                                     </span>
                                   </div>
+                                  {(sub.gallery?.length || 0) > 0 && (
+                                    <span className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white flex items-center gap-0.5" style={{ background: "rgba(125,166,39,0.9)" }}>
+                                      <Images className="w-2.5 h-2.5" />{sub.gallery.length}
+                                    </span>
+                                  )}
                                 </div>
                               ) : (
                                 <div className="h-32 flex items-center justify-center">
@@ -203,10 +208,10 @@ export default function FarmingSimPopupModal({ popupKey, title, onClose }) {
         </div>
       </div>
 
-      {/* Lightbox for full-size image view with zoom */}
+      {/* Lightbox for full-size image view with gallery navigation */}
       {lightbox && (
-        <LightboxViewer
-          image={lightbox}
+        <GalleryLightboxViewer
+          item={lightbox}
           onClose={() => setLightbox(null)}
         />
       )}

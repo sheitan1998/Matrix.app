@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Plus, Trash2, ChevronUp, ChevronDown, Pencil, Loader2, X, Upload } from "lucide-react";
+import { Plus, Trash2, ChevronUp, ChevronDown, Pencil, Loader2, X, Upload, Images } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import ConfirmDeleteModal from "@/components/admin/ConfirmDeleteModal";
+import PopupGalleryEditor from "@/components/admin/PopupGalleryEditor";
 import { normalizeAppAssetUrl } from "@/lib/urlUtils";
 
 const POPUP_KEYS = [
@@ -34,6 +35,7 @@ export default function FarmingSimPopupManager() {
   const [newStandaloneImg, setNewStandaloneImg] = useState("");
   const [uploadingStandalone, setUploadingStandalone] = useState(false);
   const [deletingStandalone, setDeletingStandalone] = useState(null);
+  const [galleryFor, setGalleryFor] = useState(null);
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
@@ -370,22 +372,39 @@ export default function FarmingSimPopupManager() {
 
                 <div className="px-4 py-2 space-y-1">
                   {subs.map((sub, subIndex) => (
-                    <div key={sub.id} className="flex items-center gap-2 py-1.5">
-                      <button onClick={() => handleReorderSub(cat.slug, subIndex, -1)} disabled={subIndex === 0} className="w-6 h-6 rounded flex items-center justify-center text-white/30 hover:text-white transition disabled:opacity-20">
-                        <ChevronUp className="w-3 h-3" />
-                      </button>
-                      <button onClick={() => handleReorderSub(cat.slug, subIndex, 1)} disabled={subIndex === subs.length - 1} className="w-6 h-6 rounded flex items-center justify-center text-white/30 hover:text-white transition disabled:opacity-20">
-                        <ChevronDown className="w-3 h-3" />
-                      </button>
-                      {sub.img && (
-                        <div className="w-8 h-8 rounded overflow-hidden shrink-0" style={{ background: "#262626" }}>
-                          <img src={normalizeAppAssetUrl(sub.img)} alt={sub.title} className="w-full h-full object-cover" />
-                        </div>
+                    <div key={sub.id}>
+                      <div className="flex items-center gap-2 py-1.5">
+                        <button onClick={() => handleReorderSub(cat.slug, subIndex, -1)} disabled={subIndex === 0} className="w-6 h-6 rounded flex items-center justify-center text-white/30 hover:text-white transition disabled:opacity-20">
+                          <ChevronUp className="w-3 h-3" />
+                        </button>
+                        <button onClick={() => handleReorderSub(cat.slug, subIndex, 1)} disabled={subIndex === subs.length - 1} className="w-6 h-6 rounded flex items-center justify-center text-white/30 hover:text-white transition disabled:opacity-20">
+                          <ChevronDown className="w-3 h-3" />
+                        </button>
+                        {sub.img && (
+                          <div className="w-8 h-8 rounded overflow-hidden shrink-0" style={{ background: "#262626" }}>
+                            <img src={normalizeAppAssetUrl(sub.img)} alt={sub.title} className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                        <span className="flex-1 text-xs text-white/70">{sub.title}</span>
+                        {(sub.gallery?.length || 0) > 0 && (
+                          <span className="text-[9px] text-[#7DA627] flex items-center gap-0.5">
+                            <Images className="w-2.5 h-2.5" />{sub.gallery.length}
+                          </span>
+                        )}
+                        <button
+                          onClick={() => setGalleryFor(galleryFor === sub.id ? null : sub.id)}
+                          className={`w-6 h-6 rounded flex items-center justify-center transition ${galleryFor === sub.id ? "text-[#7DA627] bg-[#7DA627]/10" : "text-white/30 hover:text-[#7DA627]"}`}
+                          title="Galerie"
+                        >
+                          <Images className="w-3 h-3" />
+                        </button>
+                        <button onClick={() => setDeletingSub(sub)} className="w-6 h-6 rounded flex items-center justify-center text-white/30 hover:text-red-500 transition">
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                      {galleryFor === sub.id && (
+                        <PopupGalleryEditor item={sub} onUpdate={fetchItems} />
                       )}
-                      <span className="flex-1 text-xs text-white/70">{sub.title}</span>
-                      <button onClick={() => setDeletingSub(sub)} className="w-6 h-6 rounded flex items-center justify-center text-white/30 hover:text-red-500 transition">
-                        <Trash2 className="w-3 h-3" />
-                      </button>
                     </div>
                   ))}
 
