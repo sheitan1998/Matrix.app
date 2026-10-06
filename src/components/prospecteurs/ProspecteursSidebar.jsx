@@ -70,11 +70,11 @@ export default function ProspecteursSidebar({ active = "servers", user }) {
         <img
           src={VOTE_AUTO_IMAGE}
           alt="Vote Auto - 4,99€/mois"
-          className="w-full h-auto block mx-1"
+          className="w-full h-auto block"
           style={{ minHeight: "140px" }} />
         
-        <div className="absolute inset-0 ring-2 rounded-xl pointer-events-none" style={{ boxShadow: "inset 0 0 0 2px rgba(191,0,255,0.3)" }} />
-        <div className="absolute inset-0 bg-transparent group-hover:bg-fuchsia-500/5 transition rounded-[10px] px-16" />
+        <div className="absolute inset-0 ring-2 ring-fuchsia-500/30 rounded-xl pointer-events-none" />
+        <div className="absolute inset-0 bg-transparent group-hover:bg-fuchsia-500/5 transition rounded-[10px]" />
         {hasVoteAuto &&
         <div className="absolute top-1 right-1 px-1.5 py-0.5 rounded text-[7px] font-black" style={{ background: "rgba(34,197,94,0.2)", color: "#22c55e", backdropFilter: "blur(4px)" }}>
             ACTIF
