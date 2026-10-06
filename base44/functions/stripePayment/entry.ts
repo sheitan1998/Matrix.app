@@ -18,6 +18,7 @@ const NEXUS_ITEMS: Record<string, { trixPrice: number; euroCents: number; label:
 };
 
 const VIP_PLANS: Record<string, { priceCents: number; label: string; xpBonus: number; tokens: number; tier: string; flashBoosts: number }> = {
+  vip_vote:   { priceCents: 299,  label: 'VIP Vote (1h cooldown)', xpBonus: 0, tokens: 0, tier: 'bronze', flashBoosts: 0 },
   vip_bronze: { priceCents: 499,  label: 'VIP Bronze', xpBonus: 10, tokens: 5000,  tier: 'bronze', flashBoosts: 2 },
   vip_silver: { priceCents: 999,  label: 'VIP Silver', xpBonus: 25, tokens: 15000, tier: 'silver', flashBoosts: 5 },
   vip_gold:   { priceCents: 1999, label: 'VIP Gold',   xpBonus: 50, tokens: 40000, tier: 'gold',   flashBoosts: 15 },

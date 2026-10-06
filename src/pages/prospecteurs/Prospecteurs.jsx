@@ -110,7 +110,7 @@ export default function Prospecteurs() {
 
   // Filtered categories for current tab
   const tabCategories = useMemo(() => {
-    return categories.filter((c) => c.type === activeTab);
+    return categories.filter((c) => c.type === activeTab || c.type === "both");
   }, [categories, activeTab]);
 
   const handleVote = (adId, newVotes) => {

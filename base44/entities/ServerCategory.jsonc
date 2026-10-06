@@ -14,9 +14,10 @@
       "type": "string",
       "enum": [
         "nexus",
-        "discord"
+        "discord",
+        "both"
       ],
-      "description": "Type de serveurs: nexus ou discord"
+      "description": "Type de serveurs: nexus, discord ou both (partage entre les deux univers)"
     },
     "image_url": {
       "type": "string",

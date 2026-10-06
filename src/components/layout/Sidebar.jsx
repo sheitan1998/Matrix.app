@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   Home,
@@ -19,9 +19,12 @@ import {
   Search,
   Wrench,
   BarChart3,
-  User
+  User,
+  Crown,
+  Zap
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import CheckoutModal from "@/components/CheckoutModal";
 
 const mainNav = [
   { to: "/stream", label: "Accueil", icon: Home },
@@ -71,6 +74,7 @@ function NavItem({ to, label, icon: Icon, active }) {
 export default function Sidebar() {
   const { pathname } = useLocation();
   const isActive = (to) => pathname === to || (to === "/stream" && pathname === "/");
+  const [showVipCheckout, setShowVipCheckout] = useState(false);
 
   return (
     <aside className="hidden lg:flex flex-col w-64 shrink-0 border-r border-border h-[calc(100vh-64px)] sticky top-16 overflow-y-auto scrollbar-thin py-4 px-3 gap-1">
@@ -99,7 +103,39 @@ export default function Sidebar() {
         ))}
       </div>
 
-      <div className="mt-auto pt-4">
+      {/* VIP Subscription encart */}
+      <div className="mt-auto pt-4 space-y-3">
+        <button
+          onClick={() => setShowVipCheckout(true)}
+          className="w-full rounded-xl p-3 transition hover:opacity-90 text-left"
+          style={{
+            background: "linear-gradient(135deg, rgba(168,85,247,0.15), rgba(109,40,217,0.1))",
+            border: "1px solid rgba(168,85,247,0.25)",
+          }}
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <div
+              className="w-6 h-6 rounded-lg flex items-center justify-center"
+              style={{ background: "rgba(168,85,247,0.2)" }}
+            >
+              <Crown className="w-3.5 h-3.5" style={{ color: "#a855f7" }} />
+            </div>
+            <span className="text-xs font-black text-white">VIP Prospecteur</span>
+          </div>
+          <p className="text-[10px] text-white/50 leading-tight mb-1.5">
+            Cooldown de vote réduit à <span className="font-bold text-purple-400">1h</span> au lieu de 2h
+          </p>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-black text-white">2,99€<span className="text-[10px] font-normal text-white/40">/mois</span></span>
+            <span
+              className="text-[9px] font-bold px-2 py-1 rounded-lg flex items-center gap-1"
+              style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)", color: "#fff" }}
+            >
+              <Zap className="w-2.5 h-2.5" /> S'abonner
+            </span>
+          </div>
+        </button>
+
         <Link to="/studio"
           className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition hover:opacity-80"
           style={{ background: "linear-gradient(135deg, #ff4d4d, #cc3838)", color: "#fff" }}>
@@ -107,6 +143,18 @@ export default function Sidebar() {
           Lancer un direct
         </Link>
       </div>
+
+      {showVipCheckout && (
+        <CheckoutModal
+          functionName="stripePayment"
+          params={{ action: "createVIPSubscription", plan: "vip_vote" }}
+          onClose={() => setShowVipCheckout(false)}
+          onSuccess={() => {
+            setShowVipCheckout(false);
+            window.location.reload();
+          }}
+        />
+      )}
     </aside>
   );
 }

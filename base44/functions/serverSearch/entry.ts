@@ -60,8 +60,13 @@ export default async function(req: Request): Promise<Response> {
       if (!slug || typeof slug !== 'string' || slug.length < 2 || slug.length > 128) {
         return Response.json({ error: 'Invalid slug' }, { status: 400 });
       }
-      const serverPage = await base44.asServiceRole.entities.ServerAd.filter({ slug }, null, 1);
-      const found = (serverPage?.items || serverPage || [])[0];
+      let serverPage = await base44.asServiceRole.entities.ServerAd.filter({ slug }, null, 1);
+      let found = (serverPage?.items || serverPage || [])[0];
+      // Fallback: try by ID if slug lookup fails
+      if (!found) {
+        try { found = await base44.asServiceRole.entities.ServerAd.get(slug); }
+        catch { /* not found by ID either */ }
+      }
       if (!found) return Response.json({ error: 'Not found' }, { status: 404 });
       return Response.json({
         id: found.id,
@@ -142,14 +147,18 @@ export default async function(req: Request): Promise<Response> {
 
         const now = Date.now();
 
+        // VIP users get 1h cooldown instead of 2h
+        const isVip = user && user.is_vip && user.vip_until && new Date(user.vip_until).getTime() > now;
+        const effectiveCooldown = isVip ? (1 * 60 * 60 * 1000) : VOTE_COOLDOWN_MS;
+
         if (existingVotes.length > 0) {
           const lastVoted = existingVotes[0].last_voted_at
             ? new Date(existingVotes[0].last_voted_at).getTime()
             : 0;
           const elapsed = now - lastVoted;
 
-          if (elapsed < VOTE_COOLDOWN_MS) {
-            const remaining = VOTE_COOLDOWN_MS - elapsed;
+          if (elapsed < effectiveCooldown) {
+            const remaining = effectiveCooldown - elapsed;
             return Response.json({
               success: false,
               error: 'cooldown',
@@ -291,11 +300,14 @@ export default async function(req: Request): Promise<Response> {
           : 0;
         const elapsed = Date.now() - lastVoted;
 
-        if (elapsed >= VOTE_COOLDOWN_MS) {
+        const isVip = user && user.is_vip && user.vip_until && new Date(user.vip_until).getTime() > Date.now();
+        const effectiveCooldown = isVip ? (1 * 60 * 60 * 1000) : VOTE_COOLDOWN_MS;
+
+        if (elapsed >= effectiveCooldown) {
           return Response.json({ canVote: true });
         }
 
-        const remaining = VOTE_COOLDOWN_MS - elapsed;
+        const remaining = effectiveCooldown - elapsed;
         return Response.json({
           canVote: false,
           remainingMs: remaining,
