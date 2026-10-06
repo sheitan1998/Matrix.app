@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { rateLimitByIp } from '../../shared/security.ts';
 
-const VOTE_COOLDOWN_MS = 2 * 60 * 60 * 1000; // 2 hours
+const VOTE_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 hours
 const BOOST_COST = 500; // 500 Trix minimum per boost
 const PLAYER_BOOST_COST = 50; // 50 Trix for player ad boost
 const BOOST_DURATION_HOURS = 24;

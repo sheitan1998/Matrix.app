@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { ArrowUp, Flame, ExternalLink, Users, Trash2, Pencil, Zap } from "lucide-react";
+import { ArrowUp, Flame, ExternalLink, Users, Zap, Pencil, Trash2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
-import AdMessages from "./AdMessages";
 import BoostAdModal from "./BoostAdModal";
 
-export default function ServerCard({ server, onVote, onDelete, onEdit, currentUser }) {
+const BADGE_CONFIG = {
+  nexus: { color: "#22c55e", label: "NEXUS" },
+  discord: { color: "#5865F2", label: "DISCORD" },
+};
+
+export default function ServerDirectoryCard({ server, rank, onVote, onDelete, onEdit, currentUser }) {
   const [voteStatus, setVoteStatus] = useState({ canVote: true, remaining: null });
   const [loading, setLoading] = useState(false);
   const [showBoost, setShowBoost] = useState(false);
@@ -13,9 +17,15 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
   const [trixBalance, setTrixBalance] = useState(currentUser?.trix_balance || 0);
   const [boostCount, setBoostCount] = useState(server.boosts || 0);
 
-  const isDiscord = server.server_type === "discord";
-  const typeColor = isDiscord ? "#5865F2" : "#22c55e";
-  const typeLabel = isDiscord ? "Discord" : "Nexus";
+  const serverType = server.server_type || "nexus";
+  const typeConfig = BADGE_CONFIG[serverType] || BADGE_CONFIG.nexus;
+  const initial = server.title?.[0]?.toUpperCase() || "S";
+  const hasLogo = !!server.logo_url || !!server.profile_image || !!server.server_icon;
+  const hasBanner = !!server.banner_url || !!server.cover_image;
+  const isOwner = currentUser?.email === server.author_email;
+
+  const logoUrl = server.logo_url || server.profile_image || server.server_icon;
+  const bannerUrl = server.banner_url || server.cover_image;
 
   useEffect(() => {
     let active = true;
@@ -69,7 +79,7 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
         toast.success("Vote enregistré !");
       } else if (res.data?.error === "cooldown") {
         setVoteStatus({ canVote: false, remaining: res.data.remainingTime });
-        toast.error(`Encore ${res.data.remainingTime.h}h ${res.data.remainingTime.m}m`);
+        toast.error(`Reviens dans ${res.data.remainingTime.h}h ${res.data.remainingTime.m}m`);
       }
     } catch {
       toast.error("Erreur lors du vote");
@@ -92,7 +102,7 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
       });
       if (res.data?.success) {
         onDelete(server.id);
-        toast.success("Annonce supprimée");
+        toast.success("Serveur supprimé");
       } else {
         toast.error(res.data?.error || "Erreur");
       }
@@ -102,54 +112,70 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
   };
 
   const fmt = (n) => String(n).padStart(2, "0");
-  const initial = server.title?.[0]?.toUpperCase() || "S";
-  const hasCover = !!server.cover_image;
-  const hasProfile = !!server.profile_image || !!server.server_icon;
-  const isOwner = currentUser?.email === server.author_email;
+  const rankBadge = rank <= 3;
+  const rankColors = [
+    "linear-gradient(135deg, #fbbf24, #f59e0b)", // 1st gold
+    "linear-gradient(135deg, #e5e7eb, #9ca3af)", // 2nd silver
+    "linear-gradient(135deg, #d97706, #b45309)", // 3rd bronze
+  ];
 
   return (
     <div
       className="rounded-xl overflow-hidden transition group flex flex-col"
       style={{
-        background: "rgba(18, 9, 28, 0.6)",
+        background: "rgba(18,9,28,0.6)",
         border: server.is_boosted
-          ? "1px solid rgba(251, 191, 36, 0.3)"
-          : "1px solid rgba(138, 79, 255, 0.15)",
+          ? "1px solid rgba(251,191,36,0.3)"
+          : "1px solid rgba(138,79,255,0.15)",
       }}
     >
-      {/* Cover image */}
-      {hasCover ? (
-        <div className="relative h-16 w-full overflow-hidden">
-          <img src={server.cover_image} alt="" className="w-full h-full object-cover" />
-          {/* Server type badge */}
+      {/* Banner */}
+      {hasBanner ? (
+        <div className="relative h-20 w-full overflow-hidden">
+          <img src={bannerUrl} alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(18,9,28,0.2) 0%, rgba(18,9,28,0.7) 100%)" }} />
+          {/* Rank badge */}
+          {rank > 0 && (
+            <div
+              className="absolute top-1.5 left-1.5 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shrink-0"
+              style={{
+                background: rankBadge ? rankColors[rank - 1] : "linear-gradient(135deg, #8a4fff, #5b21b6)",
+                color: "#fff",
+                boxShadow: rankBadge ? `0 0 12px ${rankBadge ? "rgba(251,191,36,0.4)" : "rgba(138,79,255,0.3)"}` : "0 0 8px rgba(138,79,255,0.3)",
+                border: "2px solid #12091c",
+              }}
+            >
+              {rank}
+            </div>
+          )}
+          {/* Type badge */}
           <span
-            className="absolute top-1.5 left-1.5 text-[7px] font-black px-1.5 py-0.5 rounded"
-            style={{ background: `${typeColor}30`, color: typeColor, backdropFilter: "blur(4px)" }}
+            className="absolute top-1.5 right-1.5 text-[7px] font-black px-1.5 py-0.5 rounded"
+            style={{ background: `${typeConfig.color}30`, color: typeConfig.color, backdropFilter: "blur(4px)" }}
           >
-            {typeLabel}
+            {typeConfig.label}
           </span>
           {server.is_boosted && (
             <span
-              className="absolute top-1.5 right-1.5 text-[7px] font-black px-1.5 py-0.5 rounded flex items-center gap-0.5"
-              style={{ background: "rgba(251, 191, 36, 0.2)", color: "#fbbf24", backdropFilter: "blur(4px)" }}
+              className="absolute bottom-1.5 right-1.5 text-[7px] font-black px-1.5 py-0.5 rounded flex items-center gap-0.5"
+              style={{ background: "rgba(251,191,36,0.2)", color: "#fbbf24", backdropFilter: "blur(4px)" }}
             >
-              <Flame className="w-2 h-2" />
-              BOOSTÉ
+              <Flame className="w-2 h-2" /> BOOSTÉ
             </span>
           )}
           {isOwner && (
-            <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1">
+            <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1">
               <button
                 onClick={() => onEdit?.(server)}
                 className="w-6 h-6 rounded flex items-center justify-center transition tap-sm"
-                style={{ background: "rgba(138, 79, 255, 0.3)", color: "#a855f7", backdropFilter: "blur(4px)" }}
+                style={{ background: "rgba(138,79,255,0.3)", color: "#a855f7", backdropFilter: "blur(4px)" }}
               >
                 <Pencil className="w-3 h-3" />
               </button>
               <button
                 onClick={handleDelete}
                 className="w-6 h-6 rounded flex items-center justify-center transition tap-sm"
-                style={{ background: "rgba(239, 68, 68, 0.3)", color: "#ef4444", backdropFilter: "blur(4px)" }}
+                style={{ background: "rgba(239,68,68,0.3)", color: "#ef4444", backdropFilter: "blur(4px)" }}
               >
                 <Trash2 className="w-3 h-3" />
               </button>
@@ -158,33 +184,45 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
         </div>
       ) : (
         <div className="px-3 pt-2 flex items-center justify-between">
-          <span
-            className="text-[7px] font-black px-1.5 py-0.5 rounded inline-flex items-center gap-0.5"
-            style={{ background: `${typeColor}20`, color: typeColor }}
-          >
-            {typeLabel}
-          </span>
+          <div className="flex items-center gap-1.5">
+            {rank > 0 && (
+              <div
+                className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0"
+                style={{
+                  background: rankBadge ? rankColors[rank - 1] : "linear-gradient(135deg, #8a4fff, #5b21b6)",
+                  color: "#fff",
+                }}
+              >
+                {rank}
+              </div>
+            )}
+            <span
+              className="text-[7px] font-black px-1.5 py-0.5 rounded inline-flex items-center gap-0.5"
+              style={{ background: `${typeConfig.color}20`, color: typeConfig.color }}
+            >
+              {typeConfig.label}
+            </span>
+          </div>
           {server.is_boosted ? (
             <span
               className="text-[7px] font-black px-1.5 py-0.5 rounded inline-flex items-center gap-0.5"
-              style={{ background: "rgba(251, 191, 36, 0.15)", color: "#fbbf24" }}
+              style={{ background: "rgba(251,191,36,0.15)", color: "#fbbf24" }}
             >
-              <Flame className="w-2 h-2" />
-              BOOSTÉ
+              <Flame className="w-2 h-2" /> BOOSTÉ
             </span>
           ) : isOwner ? (
             <div className="flex items-center gap-1">
               <button
                 onClick={() => onEdit?.(server)}
                 className="w-6 h-6 rounded flex items-center justify-center transition tap-sm"
-                style={{ background: "rgba(138, 79, 255, 0.1)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}
+                style={{ background: "rgba(138,79,255,0.1)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}
               >
                 <Pencil className="w-3 h-3" />
               </button>
               <button
                 onClick={handleDelete}
                 className="w-6 h-6 rounded flex items-center justify-center transition tap-sm"
-                style={{ background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)" }}
+                style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)" }}
               >
                 <Trash2 className="w-3 h-3" />
               </button>
@@ -195,14 +233,14 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
         </div>
       )}
 
-      {/* Profile + title */}
+      {/* Logo + title */}
       <div className="p-3 flex items-center gap-2.5">
         <div
           className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center text-sm font-black text-white shrink-0"
           style={{ background: "linear-gradient(135deg, #8a4fff, #5b21b6)" }}
         >
-          {hasProfile ? (
-            <img src={server.profile_image || server.server_icon} alt="" className="w-full h-full object-cover" />
+          {hasLogo ? (
+            <img src={logoUrl} alt="" className="w-full h-full object-cover" />
           ) : (
             initial
           )}
@@ -216,7 +254,7 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
             {server.category && (
               <span
                 className="text-[7px] font-bold px-1 py-0.5 rounded"
-                style={{ background: "rgba(138, 79, 255, 0.1)", color: "#8a4fff" }}
+                style={{ background: "rgba(138,79,255,0.1)", color: "#8a4fff" }}
               >
                 {server.category}
               </span>
@@ -228,9 +266,6 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
       {/* Description */}
       <div className="px-3 pb-2 flex-1">
         <p className="text-[10px] text-white/50 leading-relaxed line-clamp-2">{server.description}</p>
-        {server.additional_info && (
-          <p className="text-[9px] text-white/30 leading-relaxed line-clamp-1 mt-1">{server.additional_info}</p>
-        )}
       </div>
 
       {/* Stats */}
@@ -252,14 +287,14 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
       </div>
 
       {/* Actions */}
-      <div className="px-3 pb-2 flex items-center gap-1.5">
+      <div className="px-3 pb-3 flex items-center gap-1.5">
         <button
           onClick={handleVote}
           disabled={!voteStatus.canVote || loading}
           className="flex-1 h-7 rounded-md text-[10px] font-bold transition flex items-center justify-center gap-1 tap-sm"
           style={
             voteStatus.canVote
-              ? { background: "rgba(138, 79, 255, 0.15)", color: "#8a4fff", border: "1px solid rgba(138, 79, 255, 0.2)" }
+              ? { background: "rgba(138,79,255,0.15)", color: "#8a4fff", border: "1px solid rgba(138,79,255,0.2)" }
               : { background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.3)", border: "1px solid rgba(255,255,255,0.05)" }
           }
         >
@@ -278,7 +313,7 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
           onClick={() => setShowBoost(true)}
           className="h-7 px-2 rounded-md flex items-center justify-center gap-0.5 transition tap-sm text-[9px] font-bold"
           style={{ background: "rgba(251,191,36,0.12)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.2)" }}
-          title="Booster cette annonce"
+          title="Booster ce serveur"
         >
           <Zap className="w-3 h-3" />
           <span className="hidden sm:inline">Boost</span>
@@ -289,7 +324,7 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
             target="_blank"
             rel="noopener noreferrer"
             className="h-7 px-2 rounded-md flex items-center justify-center transition tap-sm text-[9px] font-bold"
-            style={{ background: `${typeColor}20`, color: typeColor, border: `1px solid ${typeColor}30` }}
+            style={{ background: `${typeConfig.color}20`, color: typeConfig.color, border: `1px solid ${typeConfig.color}30` }}
             title={server.discord_link}
           >
             <ExternalLink className="w-3 h-3" />
@@ -308,11 +343,6 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
           onClose={() => setShowBoost(false)}
         />
       )}
-
-      {/* Messages */}
-      <div className="px-3 pb-3">
-        <AdMessages adId={server.id} currentUser={currentUser} />
-      </div>
     </div>
   );
 }
