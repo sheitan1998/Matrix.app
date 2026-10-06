@@ -13,9 +13,9 @@ import CreateAdModal from "@/components/prospecteurs/CreateAdModal";
 import Top10Modal from "@/components/prospecteurs/Top10Modal";
 
 const TABS = [
-  { id: "nexus", label: "Serveurs Nexus", icon: ServerIcon, color: "#22c55e" },
-  { id: "discord", label: "Serveurs Discord", icon: MessageCircle, color: "#5865F2" },
-];
+{ id: "nexus", label: "Serveurs Nexus", icon: ServerIcon, color: "#22c55e" },
+{ id: "discord", label: "Serveurs Discord", icon: MessageCircle, color: "#5865F2" }];
+
 
 export default function Prospecteurs() {
   const navigate = useNavigate();
@@ -42,10 +42,10 @@ export default function Prospecteurs() {
   useEffect(() => {
     let active = true;
     setLoading(true);
-    fetchUniverseServers(activeTab)
-      .then((list) => { if (active) setAds(list || []); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
+    fetchUniverseServers(activeTab).
+    then((list) => {if (active) setAds(list || []);}).
+    finally(() => {if (active) setLoading(false);});
+    return () => {active = false;};
   }, [activeTab]);
 
   const typedServers = ads;
@@ -65,9 +65,9 @@ export default function Prospecteurs() {
     if (!search.trim()) return categoryFiltered;
     const q = search.trim().toLowerCase();
     return categoryFiltered.filter((s) =>
-      (s.title || "").toLowerCase().includes(q) ||
-      (s.description || "").toLowerCase().includes(q) ||
-      (s.game || "").toLowerCase().includes(q)
+    (s.title || "").toLowerCase().includes(q) ||
+    (s.description || "").toLowerCase().includes(q) ||
+    (s.game || "").toLowerCase().includes(q)
     );
   }, [categoryFiltered, search]);
 
@@ -75,12 +75,12 @@ export default function Prospecteurs() {
   const sortedServers = useMemo(() => {
     const arr = [...searchFiltered];
     if (sortBy === "votes_month") {
-      arr.sort((a, b) => ((b.votes_month || 0) + (b.boosts || 0) * 2) - ((a.votes_month || 0) + (a.boosts || 0) * 2));
+      arr.sort((a, b) => (b.votes_month || 0) + (b.boosts || 0) * 2 - ((a.votes_month || 0) + (a.boosts || 0) * 2));
     } else if (sortBy === "newest") {
       arr.sort((a, b) => (b.created_date || "").localeCompare(a.created_date || ""));
     } else {
       // general ranking
-      arr.sort((a, b) => ((b.votes || 0) + (b.boosts || 0) * 2) - ((a.votes || 0) + (a.boosts || 0) * 2));
+      arr.sort((a, b) => (b.votes || 0) + (b.boosts || 0) * 2 - ((a.votes || 0) + (a.boosts || 0) * 2));
     }
     return arr;
   }, [searchFiltered, sortBy]);
@@ -100,13 +100,13 @@ export default function Prospecteurs() {
   }, [categories, activeTab]);
 
   const handleVote = (adId, data) => {
-    setAds((prev) => prev.map((a) => (a.id === adId ? {
+    setAds((prev) => prev.map((a) => a.id === adId ? {
       ...a,
       votes: data.votes ?? a.votes,
       votes_month: data.votes_month ?? a.votes_month,
       clicks: data.clicks ?? a.clicks,
-      clicks_month: data.clicks_month ?? a.clicks_month,
-    } : a)));
+      clicks_month: data.clicks_month ?? a.clicks_month
+    } : a));
   };
 
   const handleDeleteAd = (adId) => {
@@ -122,7 +122,7 @@ export default function Prospecteurs() {
 
   // Server universe is always derived from the invite link (Discord invite = Discord, else Nexus)
   const withUniverse = (data) =>
-    data.type === "server" ? { ...data, server_type: detectServerType(data.discord_link) } : data;
+  data.type === "server" ? { ...data, server_type: detectServerType(data.discord_link) } : data;
   const belongsToTab = (ad) => ad.type === "server" && ad.server_type === activeTab;
 
   const handleUpdateAd = async (data) => {
@@ -131,7 +131,7 @@ export default function Prospecteurs() {
       const payload = withUniverse({ ...data, slug: slugify(data.title) });
       await base44.entities.ServerAd.update(editingAd.id, payload);
       setAds((prev) =>
-        prev.map((a) => (a.id === editingAd.id ? { ...a, ...payload } : a)).filter(belongsToTab)
+      prev.map((a) => a.id === editingAd.id ? { ...a, ...payload } : a).filter(belongsToTab)
       );
       setShowCreateModal(false);
       setEditingAd(null);
@@ -149,9 +149,9 @@ export default function Prospecteurs() {
         author_email: user.email,
         author_name: user.full_name || user.email.split("@")[0],
         author_avatar: user.avatar_url || "",
-        api_key: crypto.randomUUID(),
+        api_key: crypto.randomUUID()
       });
-      setAds((prev) => (belongsToTab(newAd) ? [newAd, ...prev] : prev));
+      setAds((prev) => belongsToTab(newAd) ? [newAd, ...prev] : prev);
       setShowCreateModal(false);
       toast.success("Serveur publié !");
     } catch {
@@ -179,30 +179,30 @@ export default function Prospecteurs() {
       className="min-h-screen relative"
       style={{
         background:
-          "linear-gradient(180deg, rgba(18,9,28,0.85) 0%, rgba(26,14,46,0.82) 40%, rgba(18,9,28,0.88) 100%)",
-      }}
-    >
+        "linear-gradient(180deg, rgba(18,9,28,0.85) 0%, rgba(26,14,46,0.82) 40%, rgba(18,9,28,0.88) 100%)"
+      }}>
+      
       {/* Background image */}
       <div
         className="fixed inset-0 pointer-events-none"
         style={{
           backgroundImage:
-            "url(/media/tuto-gaming/3215bd138_Gemini_Generated_Image_fjt2ptfjt2ptfjt2.png)",
+          "url(/media/tuto-gaming/3215bd138_Gemini_Generated_Image_fjt2ptfjt2ptfjt2.png)",
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundAttachment: "fixed",
-          zIndex: 0,
-        }}
-      />
+          zIndex: 0
+        }} />
+      
       {/* Dark overlay */}
       <div
         className="fixed inset-0 pointer-events-none"
         style={{
           background:
-            "linear-gradient(180deg, rgba(18,9,28,0.55) 0%, rgba(18,9,28,0.4) 50%, rgba(18,9,28,0.7) 100%)",
-          zIndex: 1,
-        }}
-      />
+          "linear-gradient(180deg, rgba(18,9,28,0.55) 0%, rgba(18,9,28,0.4) 50%, rgba(18,9,28,0.7) 100%)",
+          zIndex: 1
+        }} />
+      
 
       <ProspecteursHeader user={user} trixBalance={user?.trix_balance || 0} />
 
@@ -214,16 +214,16 @@ export default function Prospecteurs() {
           <div className="flex items-center justify-between mb-5">
             <Link
               to="/"
-              className="inline-flex items-center gap-1.5 text-white/50 hover:text-white transition tap-sm"
-            >
+              className="inline-flex items-center gap-1.5 text-white/50 hover:text-white transition tap-sm">
+              
               <ArrowLeft className="w-4 h-4" />
               <span className="text-xs font-bold">Retour au Hub</span>
             </Link>
             <button
               onClick={() => openCreateModal(activeTab)}
               className="flex items-center gap-1.5 h-9 px-4 rounded-xl text-xs font-bold text-white transition hover:opacity-90 tap-sm"
-              style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)", boxShadow: "0 0 12px rgba(168,85,247,0.25)" }}
-            >
+              style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)", boxShadow: "0 0 12px rgba(168,85,247,0.25)" }}>
+              
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Publier un serveur</span>
               <span className="sm:hidden">Publier</span>
@@ -241,30 +241,30 @@ export default function Prospecteurs() {
                   onClick={() => handleTabChange(tab.id)}
                   className="flex-1 sm:flex-none h-10 px-5 rounded-xl text-xs font-black tracking-wider uppercase transition flex items-center justify-center gap-2 tap-sm"
                   style={
-                    isActive
-                      ? {
-                          background: `${tab.color}20`,
-                          color: tab.color,
-                          border: `1px solid ${tab.color}50`,
-                          boxShadow: `0 0 12px ${tab.color}20`,
-                        }
-                      : {
-                          background: "rgba(18,9,28,0.6)",
-                          color: "rgba(255,255,255,0.4)",
-                          border: "1px solid rgba(138,79,255,0.1)",
-                        }
+                  isActive ?
+                  {
+                    background: `${tab.color}20`,
+                    color: tab.color,
+                    border: `1px solid ${tab.color}50`,
+                    boxShadow: `0 0 12px ${tab.color}20`
+                  } :
+                  {
+                    background: "rgba(18,9,28,0.6)",
+                    color: "rgba(255,255,255,0.4)",
+                    border: "1px solid rgba(138,79,255,0.1)"
                   }
-                >
+                  }>
+                  
                   <Icon className="w-4 h-4" />
                   {tab.label}
-                </button>
-              );
+                </button>);
+
             })}
             <button
               onClick={() => setShowTop10(true)}
               className="h-10 px-4 rounded-xl text-xs font-black tracking-wider uppercase transition flex items-center justify-center gap-1.5 tap-sm ml-auto"
-              style={{ background: "rgba(251,191,36,0.12)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.25)" }}
-            >
+              style={{ background: "rgba(251,191,36,0.12)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.25)" }}>
+              
               <Trophy className="w-4 h-4" />
               <span className="hidden sm:inline">Voir le classement</span>
               <span className="sm:hidden">Classement</span>
@@ -292,23 +292,23 @@ export default function Prospecteurs() {
                 }
               }}
               serverCounts={serverCounts}
-              loading={loading}
-            />
+              loading={loading} />
+            
           </div>
 
           {/* Server list with search + sort */}
           <div
-            className="rounded-2xl p-4 sm:p-5"
+            className="rounded-2xl p-4 sm:p-5 hidden"
             style={{
               background: "rgba(18,9,28,0.6)",
-              border: `1px solid ${activeTabConfig?.color}30`,
-            }}
-          >
+              border: `1px solid ${activeTabConfig?.color}30`
+            }}>
+            
             <div className="flex items-center gap-2 mb-3">
               <h2 className="text-xs font-black tracking-wider uppercase text-white">
-                {selectedCategory
-                  ? `Serveurs ${activeTabConfig?.label} - ${categories.find((c) => c.slug === selectedCategory)?.name || selectedCategory}`
-                  : `Tous les serveurs ${activeTabConfig?.label}`}
+                {selectedCategory ?
+                `Serveurs ${activeTabConfig?.label} - ${categories.find((c) => c.slug === selectedCategory)?.name || selectedCategory}` :
+                `Tous les serveurs ${activeTabConfig?.label}`}
               </h2>
               <span className="text-[9px] text-white/40 ml-auto">
                 {sortedServers.length} serveur{sortedServers.length !== 1 ? "s" : ""}
@@ -322,65 +322,65 @@ export default function Prospecteurs() {
                 onSearchChange={setSearch}
                 sortBy={sortBy}
                 onSortChange={setSortBy}
-                resultCount={sortedServers.length}
-              />
+                resultCount={sortedServers.length} />
+              
             </div>
 
             {/* Server grid */}
-            {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="h-48 rounded-xl animate-pulse" style={{ background: "rgba(138,79,255,0.05)" }} />
-                ))}
-              </div>
-            ) : sortedServers.length === 0 ? (
-              <div
-                className="rounded-xl p-8 text-center"
-                style={{ background: "rgba(18,9,28,0.4)", border: "1px dashed rgba(138,79,255,0.15)" }}
-              >
+            {loading ?
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {Array.from({ length: 6 }).map((_, i) =>
+              <div key={i} className="h-48 rounded-xl animate-pulse" style={{ background: "rgba(138,79,255,0.05)" }} />
+              )}
+              </div> :
+            sortedServers.length === 0 ?
+            <div
+              className="rounded-xl p-8 text-center"
+              style={{ background: "rgba(18,9,28,0.4)", border: "1px dashed rgba(138,79,255,0.15)" }}>
+              
                 <ServerIcon className="w-8 h-8 mx-auto mb-2 text-white/20" />
                 <p className="text-xs text-white/40">Aucun serveur trouvé</p>
                 <button
-                  onClick={() => openCreateModal(activeTab)}
-                  className="mt-3 h-8 px-4 rounded-lg text-[10px] font-bold transition flex items-center gap-1 mx-auto tap-sm"
-                  style={{ background: "rgba(138,79,255,0.15)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}
-                >
+                onClick={() => openCreateModal(activeTab)}
+                className="mt-3 h-8 px-4 rounded-lg text-[10px] font-bold transition flex items-center gap-1 mx-auto tap-sm"
+                style={{ background: "rgba(138,79,255,0.15)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}>
+                
                   <Plus className="w-3 h-3" />
                   Publier le premier serveur
                 </button>
+              </div> :
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {sortedServers.map((server, i) =>
+              <ServerDirectoryCard
+                key={server.id}
+                server={server}
+                rank={i + 1}
+                onVote={handleVote}
+                onDelete={handleDeleteAd}
+                onEdit={handleEditAd}
+                currentUser={user} />
+
+              )}
               </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {sortedServers.map((server, i) => (
-                  <ServerDirectoryCard
-                    key={server.id}
-                    server={server}
-                    rank={i + 1}
-                    onVote={handleVote}
-                    onDelete={handleDeleteAd}
-                    onEdit={handleEditAd}
-                    currentUser={user}
-                  />
-                ))}
-              </div>
-            )}
+            }
           </div>
         </div>
       </div>
 
-      {showTop10 && (
-        <Top10Modal activeTab={activeTab} servers={ads} loading={loading} onClose={() => setShowTop10(false)} />
-      )}
+      {showTop10 &&
+      <Top10Modal activeTab={activeTab} servers={ads} loading={loading} onClose={() => setShowTop10(false)} />
+      }
 
-      {showCreateModal && (
-        <CreateAdModal
-          initialType={createType}
-          initialServerType={createServerType}
-          editAd={editingAd}
-          onClose={() => { setShowCreateModal(false); setEditingAd(null); }}
-          onSubmit={editingAd ? handleUpdateAd : handleCreateAd}
-        />
-      )}
-    </div>
-  );
+      {showCreateModal &&
+      <CreateAdModal
+        initialType={createType}
+        initialServerType={createServerType}
+        editAd={editingAd}
+        onClose={() => {setShowCreateModal(false);setEditingAd(null);}}
+        onSubmit={editingAd ? handleUpdateAd : handleCreateAd} />
+
+      }
+    </div>);
+
 }
