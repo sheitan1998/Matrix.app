@@ -6,6 +6,10 @@
       "type": "string",
       "description": "Titre de l'annonce"
     },
+    "slug": {
+      "type": "string",
+      "description": "Slug URL unique du serveur"
+    },
     "description": {
       "type": "string",
       "description": "Description"
@@ -32,27 +36,69 @@
       "default": "server",
       "description": "Type d'annonce: serveur ou recherche joueur"
     },
+    "server_type": {
+      "type": "string",
+      "enum": [
+        "nexus",
+        "discord"
+      ],
+      "default": "nexus",
+      "description": "Type de serveur: Nexus ou Discord"
+    },
+    "category_id": {
+      "type": "string",
+      "description": "ID de la categorie ServerCategory associee"
+    },
+    "category_slug": {
+      "type": "string",
+      "description": "Slug de la categorie (cache pour filtrage)"
+    },
     "profile_image": {
       "type": "string",
-      "description": "Photo de profil de l'annonce"
+      "description": "Photo de profil / logo du serveur"
     },
     "cover_image": {
       "type": "string",
-      "description": "Image de couverture de l'annonce"
+      "description": "Image de couverture / banniere du serveur"
+    },
+    "logo_url": {
+      "type": "string",
+      "description": "URL du logo du serveur"
+    },
+    "banner_url": {
+      "type": "string",
+      "description": "URL de la banniere du serveur"
     },
     "category": {
       "type": "string",
       "default": "",
-      "description": "Categorie du serveur"
-    },
-    "additional_info": {
-      "type": "string",
-      "description": "Informations supplementaires du serveur"
+      "description": "Categorie du serveur (legacy texte libre)"
     },
     "game": {
       "type": "string",
       "default": "",
       "description": "Jeu associe"
+    },
+    "ip": {
+      "type": "string",
+      "description": "Adresse IP du serveur Nexus"
+    },
+    "port": {
+      "type": "number",
+      "default": 0,
+      "description": "Port du serveur Nexus"
+    },
+    "webhook_api_key": {
+      "type": "string",
+      "description": "Cle API webhook pour le vote Nexus (cote serveur uniquement)"
+    },
+    "discord_server_id": {
+      "type": "string",
+      "description": "ID du serveur Discord"
+    },
+    "additional_info": {
+      "type": "string",
+      "description": "Informations supplementaires du serveur"
     },
     "rank_tier": {
       "type": "string",
@@ -85,6 +131,11 @@
     "votes": {
       "type": "number",
       "default": 0
+    },
+    "votes_month": {
+      "type": "number",
+      "default": 0,
+      "description": "Votes du mois en cours (reset mensuel)"
     },
     "boosts": {
       "type": "number",
