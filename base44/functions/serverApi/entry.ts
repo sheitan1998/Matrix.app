@@ -6,7 +6,7 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
-const serverScore = (s) => (s.votes_month || s.votes || 0) + (s.boosts || 0) * 2;
+const serverScore = (s) => (s.votes_month || 0) + (s.boosts || 0) * 2;
 
 // Public Web API for server owners — secured by the server's secret api_key.
 // GET /functions/serverApi?action=stats&api_key=KEY

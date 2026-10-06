@@ -5,7 +5,7 @@ const DISCORD_LINK_RE = /discord\.gg|discord\.com|discordapp\.com/i;
 // The invite link is the source of truth: a Discord invite = Discord universe, anything else = Nexus
 export const detectServerType = (link) => (DISCORD_LINK_RE.test(link || "") ? "discord" : "nexus");
 
-export const serverScore = (s) => (s.votes_month || s.votes || 0) + (s.boosts || 0) * 2;
+export const serverScore = (s) => (s.votes_month || 0) + (s.boosts || 0) * 2;
 
 export const sortByScore = (list) => [...list].sort((a, b) => serverScore(b) - serverScore(a));
 

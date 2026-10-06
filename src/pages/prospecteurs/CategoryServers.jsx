@@ -61,8 +61,14 @@ export default function CategoryServers() {
     return [...arr].sort((a, b) => ((b.votes || 0) + (b.boosts || 0) * 2) - ((a.votes || 0) + (a.boosts || 0) * 2));
   }, [servers, search, sortBy]);
 
-  const handleVote = (adId, newVotes) => {
-    setServers((prev) => prev.map((s) => (s.id === adId ? { ...s, votes: newVotes, votes_month: (s.votes_month || 0) + 1 } : s)));
+  const handleVote = (adId, data) => {
+    setServers((prev) => prev.map((s) => (s.id === adId ? {
+      ...s,
+      votes: data.votes ?? s.votes,
+      votes_month: data.votes_month ?? s.votes_month,
+      clicks: data.clicks ?? s.clicks,
+      clicks_month: data.clicks_month ?? s.clicks_month,
+    } : s)));
   };
 
   if (!loading && !category) {

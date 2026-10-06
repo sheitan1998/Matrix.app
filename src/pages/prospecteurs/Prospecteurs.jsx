@@ -75,7 +75,7 @@ export default function Prospecteurs() {
   const sortedServers = useMemo(() => {
     const arr = [...searchFiltered];
     if (sortBy === "votes_month") {
-      arr.sort((a, b) => ((b.votes_month || b.votes || 0) + (b.boosts || 0) * 2) - ((a.votes_month || a.votes || 0) + (a.boosts || 0) * 2));
+      arr.sort((a, b) => ((b.votes_month || 0) + (b.boosts || 0) * 2) - ((a.votes_month || 0) + (a.boosts || 0) * 2));
     } else if (sortBy === "newest") {
       arr.sort((a, b) => (b.created_date || "").localeCompare(a.created_date || ""));
     } else {
