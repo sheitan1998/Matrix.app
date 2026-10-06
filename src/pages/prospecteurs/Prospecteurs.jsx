@@ -234,7 +234,7 @@ export default function Prospecteurs() {
       <ProspecteursHeader user={user} trixBalance={user?.trix_balance || 0} />
 
       <div className="relative z-10 flex max-w-7xl mx-auto pb-12">
-        <ProspecteursSidebar active="servers" />
+        <ProspecteursSidebar active="servers" user={user} />
 
         <div className="flex-1 px-4 sm:px-6 py-5">
           {/* Back + Publish */}

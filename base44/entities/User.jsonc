@@ -73,6 +73,48 @@
         }
       }
     },
+    "has_vote_auto": {
+      "type": "boolean",
+      "default": false,
+      "description": "Vote Auto subscription active (automated server voting)",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "vote_auto_until": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Vote Auto subscription expiration date",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "vote_auto_server_id": {
+      "type": "string",
+      "description": "ID of the ServerAd to auto-vote for",
+      "rls": {
+        "write": {
+          "data._id": "{{user.id}}"
+        }
+      }
+    },
+    "vote_auto_pseudo": {
+      "type": "string",
+      "description": "Pseudo used for auto-votes (webhook compatibility)",
+      "rls": {
+        "write": {
+          "data._id": "{{user.id}}"
+        }
+      }
+    },
     "stripe_customer_id": {
       "type": "string",
       "description": "Stripe customer ID for billing portal",

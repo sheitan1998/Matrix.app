@@ -26,6 +26,10 @@ const VIP_PLANS: Record<string, { priceCents: number; label: string; xpBonus: nu
   yearly:     { priceCents: 4999, label: 'VIP Annuel',  xpBonus: 25, tokens: 15000, tier: 'silver', flashBoosts: 5 },
 };
 
+const VOTE_AUTO_PLANS: Record<string, { priceCents: number; label: string }> = {
+  vote_auto: { priceCents: 499, label: 'Vote Auto (4,99€/mois) - Vote automatisé' },
+};
+
 const AI_PLANS: Record<string, { priceCents: number; label: string }> = {
   explorer: { priceCents: 499, label: 'AI Explorer' },
   creator: { priceCents: 999, label: 'AI Creator' },
@@ -212,6 +216,27 @@ export default async function(req: Request): Promise<Response> {
             });
           }
 
+          if (type === 'vote_auto_subscription') {
+            const voteAutoUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+            if (userId) {
+              const target = await base44.asServiceRole.entities.User.get(userId);
+              if (target) {
+                await base44.asServiceRole.entities.User.update(userId, {
+                  has_vote_auto: true,
+                  vote_auto_until: voteAutoUntil,
+                  stripe_customer_id: data.customer || undefined,
+                });
+              }
+            }
+            await base44.asServiceRole.entities.TrixTransaction.create({
+              user_email: userEmail,
+              type: 'subscription_payment',
+              amount: 0,
+              stripe_event_id: data.id,
+              description: `Abonnement Vote Auto - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
+            });
+          }
+
           if (type === 'nitro_subscription') {
             const nitroPlan = data.metadata?.nitro_plan || 'monthly';
             if (userId) {
@@ -314,7 +339,27 @@ export default async function(req: Request): Promise<Response> {
       // prevent re-crediting on every subscription update (payment method change, etc.)
       if ((eventType === 'customer.subscription.created' || eventType === 'customer.subscription.updated') && data) {
         const userId = data.metadata?.user_id;
+        const subType = data.metadata?.type || 'vip_subscription';
         const planId = data.metadata?.plan || 'monthly';
+
+        // ---- Vote Auto subscription handling ----
+        if (subType === 'vote_auto_subscription') {
+          if (userId) {
+            const voteAutoUntil = data.current_period_end
+              ? new Date(data.current_period_end * 1000).toISOString()
+              : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+            const isActive = data.status === 'active' || data.status === 'trialing';
+            await base44.asServiceRole.entities.User.update(userId, {
+              has_vote_auto: isActive,
+              vote_auto_until: isActive ? voteAutoUntil : new Date().toISOString(),
+              stripe_customer_id: data.customer || undefined,
+            });
+            console.log('[stripePayment] Vote Auto status updated:', userId, 'status:', data.status);
+          }
+          return Response.json({ received: true });
+        }
+
+        // ---- VIP subscription handling ----
         const plan = VIP_PLANS[planId] || VIP_PLANS.monthly;
         if (userId) {
           const vipUntil = data.current_period_end
@@ -338,12 +383,21 @@ export default async function(req: Request): Promise<Response> {
       // ---- customer.subscription.deleted ----
       if (eventType === 'customer.subscription.deleted' && data) {
         const userId = data.metadata?.user_id;
+        const subType = data.metadata?.type || 'vip_subscription';
         if (userId) {
-          await base44.asServiceRole.entities.User.update(userId, {
-            is_vip: false,
-            vip_until: new Date().toISOString(),
-          });
-          console.log('[stripePayment] VIP revoked:', userId);
+          if (subType === 'vote_auto_subscription') {
+            await base44.asServiceRole.entities.User.update(userId, {
+              has_vote_auto: false,
+              vote_auto_until: new Date().toISOString(),
+            });
+            console.log('[stripePayment] Vote Auto revoked:', userId);
+          } else {
+            await base44.asServiceRole.entities.User.update(userId, {
+              is_vip: false,
+              vip_until: new Date().toISOString(),
+            });
+            console.log('[stripePayment] VIP revoked:', userId);
+          }
         }
         return Response.json({ received: true });
       }
@@ -860,6 +914,41 @@ export default async function(req: Request): Promise<Response> {
       params.append('subscription_data[metadata][user_email]', user.email);
       params.append('subscription_data[metadata][user_id]', user.id);
       params.append('subscription_data[metadata][plan]', plan || 'vip_bronze');
+
+      const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${stripeKey}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params,
+      });
+      const session = await res.json();
+      if (session.error) return Response.json({ error: session.error.message }, { status: 400 });
+      return Response.json({ clientSecret: session.client_secret, sessionId: session.id, publishableKey: STRIPE_PUBLISHABLE_KEY });
+    }
+
+    // ---- createVoteAutoSubscription ----
+    if (action === 'createVoteAutoSubscription') {
+      const { plan } = body;
+      const selected = VOTE_AUTO_PLANS[plan || 'vote_auto'] || VOTE_AUTO_PLANS.vote_auto;
+
+      const params = new URLSearchParams();
+      params.append('payment_method_types[]', 'card');
+      params.append('mode', 'subscription');
+      params.append('ui_mode', 'embedded');
+      params.append('return_url', `${origin}`);
+      params.append('customer_email', user.email);
+      params.append('line_items[0][price_data][currency]', 'eur');
+      params.append('line_items[0][price_data][product_data][name]', selected.label);
+      params.append('line_items[0][price_data][unit_amount]', String(selected.priceCents));
+      params.append('line_items[0][price_data][recurring][interval]', 'month');
+      params.append('line_items[0][quantity]', '1');
+      params.append('metadata[type]', 'vote_auto_subscription');
+      params.append('metadata[user_email]', user.email);
+      params.append('metadata[user_id]', user.id);
+      params.append('metadata[plan]', plan || 'vote_auto');
+      params.append('subscription_data[metadata][type]', 'vote_auto_subscription');
+      params.append('subscription_data[metadata][user_email]', user.email);
+      params.append('subscription_data[metadata][user_id]', user.id);
+      params.append('subscription_data[metadata][plan]', plan || 'vote_auto');
 
       const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
         method: 'POST',

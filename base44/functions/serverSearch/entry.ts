@@ -115,6 +115,95 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ success: true });
     }
 
+    // System action: process all Vote Auto subscriptions (cron only, every hour)
+    if (action === 'processAutoVotes') {
+      const apiKey = req.headers.get('x-api-key');
+      const isAuthorized = (apiKey && apiKey === process.env.CRON_SECRET) || user?.role === 'admin';
+      if (!isAuthorized) return Response.json({ error: 'Forbidden' }, { status: 403 });
+
+      const now = Date.now();
+      const nowIso = new Date(now).toISOString();
+      let processed = 0;
+      let skipped = 0;
+      let errors = 0;
+
+      // Fetch all users with Vote Auto active
+      const autoVoteUsers = await base44.asServiceRole.entities.User.filter({ has_vote_auto: true });
+
+      for (const u of autoVoteUsers) {
+        try {
+          // Check subscription validity
+          if (!u.vote_auto_until || new Date(u.vote_auto_until).getTime() <= now) {
+            skipped++;
+            continue;
+          }
+          if (!u.vote_auto_server_id || !u.vote_auto_pseudo) {
+            skipped++;
+            continue;
+          }
+
+          const serverAdId = u.vote_auto_server_id;
+          const voterPseudo = u.vote_auto_pseudo;
+
+          // Verify the server ad exists and belongs to the user
+          const ad = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
+          if (!ad || ad.author_email !== u.email) {
+            skipped++;
+            continue;
+          }
+
+          // Check last vote time for this user + server
+          const existingVotes = await base44.asServiceRole.entities.ServerVote.filter({
+            server_ad_id: serverAdId,
+            user_email: u.email,
+          });
+
+          // Determine cooldown: 1h if VIP+VoteAuto, 2h if VoteAuto only
+          const isVip = u.is_vip && u.vip_until && new Date(u.vip_until).getTime() > now;
+          const effectiveCooldown = isVip ? (1 * 60 * 60 * 1000) : VOTE_COOLDOWN_MS;
+
+          if (existingVotes.length > 0) {
+            const lastVoted = existingVotes[0].last_voted_at
+              ? new Date(existingVotes[0].last_voted_at).getTime()
+              : 0;
+            const elapsed = now - lastVoted;
+
+            if (elapsed < effectiveCooldown) {
+              skipped++;
+              continue;
+            }
+
+            // Update existing vote record
+            await base44.asServiceRole.entities.ServerVote.update(existingVotes[0].id, {
+              last_voted_at: nowIso,
+              voter_pseudo: voterPseudo,
+            });
+          } else {
+            // Create new vote record
+            await base44.asServiceRole.entities.ServerVote.create({
+              server_ad_id: serverAdId,
+              user_email: u.email,
+              voter_pseudo: voterPseudo,
+              last_voted_at: nowIso,
+            });
+          }
+
+          // Atomically increment vote + click counters
+          await base44.asServiceRole.entities.ServerAd.updateMany(
+            { id: serverAdId },
+            { $inc: { votes: 1, votes_month: 1, clicks: 1, clicks_month: 1 } }
+          );
+
+          processed++;
+        } catch (err) {
+          console.error('[serverSearch] Auto-vote error for user', u.email, err);
+          errors++;
+        }
+      }
+
+      return Response.json({ success: true, processed, skipped, errors, timestamp: nowIso });
+    }
+
     // System action: monthly purge of all server ads (admin or cron only, 1st of each month)
     if (action === 'monthlyPurge') {
       const apiKey = req.headers.get('x-api-key');
@@ -326,6 +415,56 @@ export default async function(req: Request): Promise<Response> {
             m: Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000)),
             s: Math.floor((remaining % (60 * 1000)) / 1000),
           },
+        });
+      }
+
+      // ---- Setup Vote Auto (configure server + pseudo) ----
+      case 'setupVoteAuto': {
+        const { serverAdId, voterPseudo } = params;
+        if (!serverAdId) return Response.json({ error: 'Missing serverAdId' }, { status: 400 });
+        const pseudo = String(voterPseudo || '').trim().slice(0, 30);
+        if (!pseudo) return Response.json({ error: 'Le pseudo est obligatoire.' }, { status: 400 });
+
+        // Verify the server ad exists and belongs to the user
+        const ad = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
+        if (!ad) return Response.json({ error: 'Server not found' }, { status: 404 });
+        if (ad.author_email !== user.email) {
+          return Response.json({ error: 'Not authorized — you can only auto-vote for your own server' }, { status: 403 });
+        }
+
+        // Check the user has Vote Auto subscription active
+        const freshUser = await base44.asServiceRole.entities.User.get(user.id);
+        if (!freshUser?.has_vote_auto || !freshUser?.vote_auto_until ||
+            new Date(freshUser.vote_auto_until).getTime() <= Date.now()) {
+          return Response.json({ error: 'Vote Auto subscription inactive' }, { status: 403 });
+        }
+
+        await base44.asServiceRole.entities.User.update(user.id, {
+          vote_auto_server_id: serverAdId,
+          vote_auto_pseudo: pseudo,
+        });
+
+        return Response.json({ success: true, serverAdId, voterPseudo: pseudo });
+      }
+
+      // ---- Get Vote Auto status (config + subscription) ----
+      case 'getVoteAutoStatus': {
+        const freshUser = await base44.asServiceRole.entities.User.get(user.id);
+        const isActive = !!freshUser?.has_vote_auto &&
+          !!freshUser?.vote_auto_until &&
+          new Date(freshUser.vote_auto_until).getTime() > Date.now();
+        const isVip = !!freshUser?.is_vip &&
+          !!freshUser?.vip_until &&
+          new Date(freshUser.vip_until).getTime() > Date.now();
+
+        return Response.json({
+          active: isActive,
+          vote_auto_until: freshUser?.vote_auto_until || null,
+          configured: !!(freshUser?.vote_auto_server_id && freshUser?.vote_auto_pseudo),
+          server_id: freshUser?.vote_auto_server_id || null,
+          voter_pseudo: freshUser?.vote_auto_pseudo || null,
+          effective_cooldown_hours: (isActive && isVip) ? 1 : 2,
+          has_vip: isVip,
         });
       }
 

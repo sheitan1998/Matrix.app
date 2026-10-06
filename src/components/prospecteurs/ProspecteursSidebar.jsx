@@ -2,11 +2,19 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Server, Users, Search } from "lucide-react";
 import CheckoutModal from "@/components/CheckoutModal";
+import VoteAutoSetupModal from "./VoteAutoSetupModal";
 
 const VIP_IMAGE = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/ca0329832_ChatGPTImage6oct202621_00_29.png";
+const VOTE_AUTO_IMAGE = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/1448fd9e6_ChatGPTImage6oct202623_19_53.png";
 
-export default function ProspecteursSidebar({ active = "servers" }) {
+export default function ProspecteursSidebar({ active = "servers", user }) {
   const [showVipCheckout, setShowVipCheckout] = useState(false);
+  const [showVoteAutoCheckout, setShowVoteAutoCheckout] = useState(false);
+  const [showVoteAutoSetup, setShowVoteAutoSetup] = useState(false);
+
+  const hasVoteAuto = !!user?.has_vote_auto &&
+    !!user?.vote_auto_until &&
+    new Date(user.vote_auto_until).getTime() > Date.now();
 
   return (
     <div className="w-16 sm:w-20 shrink-0 sticky top-16 self-start flex flex-col gap-1 p-2">
@@ -35,7 +43,7 @@ export default function ProspecteursSidebar({ active = "servers" }) {
         <span className="text-[9px] font-bold text-center">Créateurs</span>
       </Link>
 
-      {/* VIP encart avec image fournie - agrandi et proéminent */}
+      {/* VIP encart (2,99€/mois) */}
       <button
         onClick={() => setShowVipCheckout(true)}
         className="relative rounded-xl overflow-hidden transition hover:scale-[1.03] mt-2 group block w-full"
@@ -52,6 +60,28 @@ export default function ProspecteursSidebar({ active = "servers" }) {
         <div className="absolute inset-0 bg-transparent group-hover:bg-yellow-500/5 transition rounded-[10px]" />
       </button>
 
+      {/* Vote Auto encart (4,99€/mois) — placé sous le VIP */}
+      <button
+        onClick={() => hasVoteAuto ? setShowVoteAutoSetup(true) : setShowVoteAutoCheckout(true)}
+        className="relative rounded-xl overflow-hidden transition hover:scale-[1.03] group block w-full"
+        title="Vote Auto - 4,99€/mois - Vote automatisé pour ton serveur"
+        style={{ boxShadow: "0 0 20px rgba(191,0,255,0.15)" }}>
+        
+        <img
+          src={VOTE_AUTO_IMAGE}
+          alt="Vote Auto - 4,99€/mois"
+          className="w-full h-auto block"
+          style={{ minHeight: "140px" }} />
+        
+        <div className="absolute inset-0 ring-2 rounded-xl pointer-events-none" style={{ boxShadow: "inset 0 0 0 2px rgba(191,0,255,0.3)" }} />
+        <div className="absolute inset-0 bg-transparent group-hover:bg-fuchsia-500/5 transition rounded-[10px]" />
+        {hasVoteAuto && (
+          <div className="absolute top-1 right-1 px-1.5 py-0.5 rounded text-[7px] font-black" style={{ background: "rgba(34,197,94,0.2)", color: "#22c55e", backdropFilter: "blur(4px)" }}>
+            ACTIF
+          </div>
+        )}
+      </button>
+
       {showVipCheckout &&
       <CheckoutModal
         functionName="stripePayment"
@@ -63,6 +93,22 @@ export default function ProspecteursSidebar({ active = "servers" }) {
         }} />
 
       }
+
+      {showVoteAutoCheckout &&
+      <CheckoutModal
+        functionName="stripePayment"
+        params={{ action: "createVoteAutoSubscription", plan: "vote_auto" }}
+        onClose={() => setShowVoteAutoCheckout(false)}
+        onSuccess={() => {
+          setShowVoteAutoCheckout(false);
+          window.location.reload();
+        }} />
+
+      }
+
+      {showVoteAutoSetup && user && (
+        <VoteAutoSetupModal user={user} onClose={() => setShowVoteAutoSetup(false)} />
+      )}
     </div>);
 
 }
