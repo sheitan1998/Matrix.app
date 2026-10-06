@@ -53,6 +53,30 @@
       "type": "string",
       "description": "Slug de la categorie (cache pour filtrage)"
     },
+    "categories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Categories multiples associees au serveur"
+    },
+    "category_slugs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Slugs des categories multiples (cache pour filtrage)"
+    },
+    "games": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Jeux multiples associes au serveur"
+    },
     "profile_image": {
       "type": "string",
       "description": "Photo de profil / logo du serveur"

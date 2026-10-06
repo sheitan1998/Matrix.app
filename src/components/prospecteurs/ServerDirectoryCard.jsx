@@ -274,17 +274,18 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
         <div className="min-w-0 flex-1">
           <p className="text-xs font-bold text-white truncate">{server.title}</p>
           <div className="flex items-center gap-1 flex-wrap">
-            {server.game && (
-              <span className="text-[9px] text-white/40 truncate">{server.game}</span>
-            )}
-            {server.category && (
+            {(server.games && server.games.length > 0 ? server.games : (server.game ? [server.game] : [])).slice(0, 3).map((g, i) => (
+              <span key={i} className="text-[9px] text-white/40 truncate">{g}</span>
+            ))}
+            {(server.categories && server.categories.length > 0 ? server.categories : (server.category ? [server.category] : [])).slice(0, 2).map((c, i) => (
               <span
+                key={i}
                 className="text-[7px] font-bold px-1 py-0.5 rounded"
                 style={{ background: "rgba(138,79,255,0.1)", color: "#8a4fff" }}
               >
-                {server.category}
+                {c}
               </span>
-            )}
+            ))}
           </div>
         </div>
       </div>

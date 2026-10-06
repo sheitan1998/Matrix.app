@@ -41,7 +41,14 @@ export default function CategoryServers() {
       const uni = cat.type === "both" ? requested : cat.type;
       setUniverse(uni);
 
-      const list = await fetchUniverseServers(uni, { $or: [{ category_slug: slug }, { category: cat.name }] });
+      const list = await fetchUniverseServers(uni, {
+        $or: [
+          { category_slug: slug },
+          { category: cat.name },
+          { category_slugs: slug },
+          { categories: cat.name },
+        ],
+      });
       setServers(list || []);
       setLoading(false);
     };

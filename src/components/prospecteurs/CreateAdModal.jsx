@@ -3,6 +3,7 @@ import { X, Gamepad2, Image as ImageIcon, Upload, Users, Clock, User } from "luc
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { uploadImageWithToast } from "@/lib/imageModeration";
+import MultiTagSelect from "@/components/prospecteurs/MultiTagSelect";
 
 const GAMES = [
   "GTA RP", "GTA V", "Minecraft", "Rust", "ARK: Survival Evolved", "Palworld",
@@ -32,6 +33,10 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
     discord_link: editAd?.discord_link || "",
     game: editAd?.game || "",
     category: editAd?.category || "",
+    category_slug: editAd?.category_slug || "",
+    games: editAd?.games || (editAd?.game ? [editAd.game] : []),
+    categories: editAd?.categories || (editAd?.category ? [editAd.category] : []),
+    category_slugs: editAd?.category_slugs || (editAd?.category_slug ? [editAd.category_slug] : []),
     additional_info: editAd?.additional_info || "",
     max_players: editAd?.max_players || 0,
     player_count_needed: editAd?.player_count_needed || 1,
@@ -94,7 +99,7 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
         }
       }
     } else {
-      if (!form.title.trim() || !form.description.trim() || !form.game.trim() || !form.availability_hours.trim()) return;
+      if (!form.title.trim() || !form.description.trim() || (form.games || []).length === 0 || !form.availability_hours.trim()) return;
     }
     setSubmitting(true);
     const slugify = (text) => text.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -105,7 +110,14 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
       profile_image: profileImage,
       cover_image: adType === "server" ? coverImage : "",
       discord_link: adType === "server" ? form.discord_link : "",
-      category_slug: form.category_slug || (form.category ? slugify(form.category) : ""),
+      games: form.games || [],
+      categories: form.categories || [],
+      category_slugs: form.category_slugs || (form.categories && form.categories.length > 0
+        ? form.categories.map((c) => availableCategories.find((ac) => ac.name === c)?.slug || slugify(c))
+        : []),
+      game: (form.games && form.games[0]) || form.game || "",
+      category: (form.categories && form.categories[0]) || form.category || "",
+      category_slug: form.category_slugs?.[0] || form.category_slug || (form.category ? slugify(form.category) : ""),
     };
     await onSubmit(data);
     setSubmitting(false);
@@ -298,51 +310,52 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
             />
           </div>
 
-          {/* Game */}
+          {/* Games (multi-select) */}
           <div>
             <label className="text-[9px] font-bold uppercase tracking-wider text-white/40 mb-1 flex items-center gap-1">
               <Gamepad2 className="w-3 h-3" />
-              Jeu {adType === "player" ? "*" : ""}
+              Jeux {adType === "player" ? "*" : "(optionnel)"}
             </label>
-            <div className="relative">
-              <select
-                value={form.game}
-                onChange={(e) => handleChange("game", e.target.value)}
-                className="w-full h-10 px-3 rounded-lg text-sm text-white outline-none appearance-none cursor-pointer"
-                style={inputStyle}
-              >
-                <option value="" style={{ background: "#12091c" }}>Sélectionner le jeu</option>
-                {GAMES.map((g) => (
-                  <option key={g} value={g} style={{ background: "#12091c" }}>{g}</option>
-                ))}
-              </select>
-            </div>
+            <MultiTagSelect
+              options={GAMES}
+              value={form.games || []}
+              onChange={(games) => {
+                setForm((prev) => ({
+                  ...prev,
+                  games,
+                  game: games[0] || prev.game,
+                }));
+              }}
+              placeholder="Sélectionner un ou plusieurs jeux"
+              max={10}
+            />
+            {adType === "player" && (form.games || []).length === 0 && (
+              <p className="text-[9px] text-red-400 mt-1">Sélectionne au moins un jeu</p>
+            )}
           </div>
 
-          {/* Category (server only) */}
+          {/* Categories (multi-select, server only) */}
           {adType === "server" && (
             <div>
-              <label className={labelClass}>Catégorie du serveur</label>
-              <div className="relative">
-                <select
-                  value={form.category}
-                  onChange={(e) => {
-                    const selectedCat = availableCategories.find(c => c.name === e.target.value);
-                    setForm(prev => ({
-                      ...prev,
-                      category: e.target.value,
-                      category_slug: selectedCat?.slug || "",
-                    }));
-                  }}
-                  className="w-full h-10 px-3 rounded-lg text-sm text-white outline-none appearance-none cursor-pointer"
-                  style={inputStyle}
-                >
-                  <option value="" style={{ background: "#12091c" }}>Sélectionner la catégorie</option>
-                  {availableCategories.map((c) => (
-                    <option key={c.slug || c.name} value={c.name} style={{ background: "#12091c" }}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
+              <label className={labelClass}>Catégories du serveur</label>
+              <MultiTagSelect
+                options={availableCategories.map((c) => ({ value: c.name, label: c.name }))}
+                value={form.categories || []}
+                onChange={(cats) => {
+                  const slugs = cats
+                    .map((name) => availableCategories.find((c) => c.name === name)?.slug)
+                    .filter(Boolean);
+                  setForm((prev) => ({
+                    ...prev,
+                    categories: cats,
+                    category: cats[0] || prev.category,
+                    category_slugs: slugs,
+                    category_slug: slugs[0] || prev.category_slug,
+                  }));
+                }}
+                placeholder="Sélectionner une ou plusieurs catégories"
+                max={8}
+              />
             </div>
           )}
 

@@ -11,6 +11,8 @@ import ServerSearchBar from "@/components/prospecteurs/ServerSearchBar";
 import ServerDirectoryCard from "@/components/prospecteurs/ServerDirectoryCard";
 import CreateAdModal from "@/components/prospecteurs/CreateAdModal";
 import Top10Modal from "@/components/prospecteurs/Top10Modal";
+import MyServersModal from "@/components/prospecteurs/MyServersModal";
+import { List as ListIcon } from "lucide-react";
 
 const TABS = [
 { id: "nexus", label: "Serveurs Nexus", icon: ServerIcon, color: "#22c55e" },
@@ -32,11 +34,31 @@ export default function Prospecteurs() {
   const [createServerType, setCreateServerType] = useState("nexus");
   const [editingAd, setEditingAd] = useState(null);
   const [showTop10, setShowTop10] = useState(false);
+  const [showMyServers, setShowMyServers] = useState(false);
+  const [myServersCount, setMyServersCount] = useState(0);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => setUser(null));
     base44.entities.ServerCategory.list("sort_order", 200).then((cats) => setCategories(cats || []));
   }, []);
+
+  // Count current user's servers (for "Mes Serveurs" button visibility)
+  useEffect(() => {
+    if (!user) { setMyServersCount(0); return; }
+    const loadCount = async () => {
+      try {
+        const [nexus, discord] = await Promise.all([
+          fetchUniverseServers("nexus"),
+          fetchUniverseServers("discord"),
+        ]);
+        const count = [...(nexus || []), ...(discord || [])].filter(
+          (s) => s.author_email === user.email
+        ).length;
+        setMyServersCount(count);
+      } catch { /* silent */ }
+    };
+    loadCount();
+  }, [user]);
 
   // Strict isolation: only the active universe's servers are fetched from the database
   useEffect(() => {
@@ -224,15 +246,28 @@ export default function Prospecteurs() {
               <ArrowLeft className="w-4 h-4" />
               <span className="text-xs font-bold">Retour au Hub</span>
             </Link>
-            <button
-              onClick={() => openCreateModal(activeTab)}
-              className="flex items-center gap-1.5 h-9 px-4 rounded-xl text-xs font-bold text-white transition hover:opacity-90 tap-sm"
-              style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)", boxShadow: "0 0 12px rgba(168,85,247,0.25)" }}>
-              
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Publier un serveur</span>
-              <span className="sm:hidden">Publier</span>
-            </button>
+            <div className="flex items-center gap-2">
+              {user && myServersCount > 0 && (
+                <button
+                  onClick={() => setShowMyServers(true)}
+                  className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold transition hover:opacity-90 tap-sm"
+                  style={{ background: "rgba(138,79,255,0.12)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.25)" }}>
+                  <ListIcon className="w-4 h-4" />
+                  <span className="hidden sm:inline">Mes serveurs</span>
+                  <span className="sm:hidden">Mes serveurs</span>
+                  <span className="ml-1 px-1.5 py-0.5 rounded text-[9px] font-black" style={{ background: "rgba(138,79,255,0.2)" }}>{myServersCount}</span>
+                </button>
+              )}
+              <button
+                onClick={() => openCreateModal(activeTab)}
+                className="flex items-center gap-1.5 h-9 px-4 rounded-xl text-xs font-bold text-white transition hover:opacity-90 tap-sm"
+                style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)", boxShadow: "0 0 12px rgba(168,85,247,0.25)" }}>
+                
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Publier un serveur</span>
+                <span className="sm:hidden">Publier</span>
+              </button>
+            </div>
           </div>
 
           {/* Tabs: Nexus / Discord */}
@@ -386,6 +421,20 @@ export default function Prospecteurs() {
         onSubmit={editingAd ? handleUpdateAd : handleCreateAd} />
 
       }
+
+      {showMyServers && user && (
+        <MyServersModal
+          user={user}
+          onClose={() => setShowMyServers(false)}
+          onEdit={(ad) => {
+            setShowMyServers(false);
+            setEditingAd(ad);
+            setCreateType(ad.type || "server");
+            setCreateServerType(ad.server_type || "nexus");
+            setShowCreateModal(true);
+          }}
+        />
+      )}
     </div>);
 
 }
