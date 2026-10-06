@@ -13,8 +13,8 @@ export default function ProspecteursSidebar({ active = "servers", user }) {
   const [showVoteAutoSetup, setShowVoteAutoSetup] = useState(false);
 
   const hasVoteAuto = !!user?.has_vote_auto &&
-    !!user?.vote_auto_until &&
-    new Date(user.vote_auto_until).getTime() > Date.now();
+  !!user?.vote_auto_until &&
+  new Date(user.vote_auto_until).getTime() > Date.now();
 
   return (
     <div className="w-16 sm:w-20 shrink-0 sticky top-16 self-start flex flex-col gap-1 p-2">
@@ -74,12 +74,12 @@ export default function ProspecteursSidebar({ active = "servers", user }) {
           style={{ minHeight: "140px" }} />
         
         <div className="absolute inset-0 ring-2 rounded-xl pointer-events-none" style={{ boxShadow: "inset 0 0 0 2px rgba(191,0,255,0.3)" }} />
-        <div className="absolute inset-0 bg-transparent group-hover:bg-fuchsia-500/5 transition rounded-[10px]" />
-        {hasVoteAuto && (
-          <div className="absolute top-1 right-1 px-1.5 py-0.5 rounded text-[7px] font-black" style={{ background: "rgba(34,197,94,0.2)", color: "#22c55e", backdropFilter: "blur(4px)" }}>
+        <div className="absolute inset-0 bg-transparent group-hover:bg-fuchsia-500/5 transition rounded-[10px] mx-16 px-1" />
+        {hasVoteAuto &&
+        <div className="absolute top-1 right-1 px-1.5 py-0.5 rounded text-[7px] font-black" style={{ background: "rgba(34,197,94,0.2)", color: "#22c55e", backdropFilter: "blur(4px)" }}>
             ACTIF
           </div>
-        )}
+        }
       </button>
 
       {showVipCheckout &&
@@ -106,9 +106,9 @@ export default function ProspecteursSidebar({ active = "servers", user }) {
 
       }
 
-      {showVoteAutoSetup && user && (
-        <VoteAutoSetupModal user={user} onClose={() => setShowVoteAutoSetup(false)} />
-      )}
+      {showVoteAutoSetup && user &&
+      <VoteAutoSetupModal user={user} onClose={() => setShowVoteAutoSetup(false)} />
+      }
     </div>);
 
 }
