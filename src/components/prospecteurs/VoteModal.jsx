@@ -1,12 +1,38 @@
-import React, { useState } from "react";
-import { X, ArrowUp, Flame, Loader2, Clock } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { X, ArrowUp, Flame, Loader2, Clock, CheckCircle2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { toast } from "sonner";
+
+const CONFIRM_DURATION = 5; // seconds
 
 export default function VoteModal({ server, voteStatus, onClose, onVoted }) {
   const [pseudo, setPseudo] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
+  const [countdown, setCountdown] = useState(CONFIRM_DURATION);
+  const timerRef = useRef(null);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
+  const startCountdown = () => {
+    setCountdown(CONFIRM_DURATION);
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current);
+          onClose();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
 
   const handleSubmit = async () => {
     if (!pseudo.trim()) {
@@ -22,33 +48,104 @@ export default function VoteModal({ server, voteStatus, onClose, onVoted }) {
         voterPseudo: pseudo.trim(),
       });
       if (res.data?.success) {
-        toast.success("Vote enregistré !");
         onVoted({ votes: res.data.votes, votes_month: res.data.votes_month, clicks: res.data.clicks, clicks_month: res.data.clicks_month });
-        onClose();
+        setConfirmed(true);
+        startCountdown();
       } else if (res.data?.error === "cooldown") {
-        toast.error(`Reviens dans ${res.data.remainingTime.h}h ${res.data.remainingTime.m}m`);
-        onClose();
+        setError(`Reviens dans ${res.data.remainingTime.h}h ${res.data.remainingTime.m}m pour revoter.`);
       } else {
         setError(res.data?.error || "Erreur lors du vote");
       }
     } catch {
-      setError("Erreur lors du vote");
+      setError("Erreur lors du vote. Réessaie dans un instant.");
     } finally {
       setSubmitting(false);
     }
   };
 
+  const handleClose = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    onClose();
+  };
+
   const fmt = (n) => String(n).padStart(2, "0");
   const logoUrl = server.logo_url || server.profile_image || server.server_icon;
   const initial = server.title?.[0]?.toUpperCase() || "S";
+  const progress = (countdown / CONFIRM_DURATION) * 100;
 
+  // ---- Confirmation overlay (shown after successful vote) ----
+  if (confirmed) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(10,5,15,0.85)", backdropFilter: "blur(8px)" }} onClick={handleClose}>
+        <div
+          className="w-full max-w-sm rounded-2xl overflow-hidden text-center relative"
+          style={{ background: "#12091c", border: "1px solid rgba(34,197,94,0.4)", boxShadow: "0 0 40px rgba(34,197,94,0.15)" }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Top accent bar */}
+          <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, #22c55e, #16a34a)" }} />
+
+          <div className="px-6 py-8">
+            {/* Success icon */}
+            <div
+              className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
+              style={{ background: "rgba(34,197,94,0.15)", border: "2px solid rgba(34,197,94,0.3)" }}
+            >
+              <CheckCircle2 className="w-8 h-8" style={{ color: "#22c55e" }} />
+            </div>
+
+            {/* Message */}
+            <h2 className="text-lg font-black text-white mb-1">Merci pour votre vote !</h2>
+            <p className="text-xs text-white/50 mb-4">
+              Votre vote pour <span className="font-bold text-white">{server.title}</span> a bien été enregistré.
+            </p>
+
+            {/* Server preview */}
+            <div className="flex items-center gap-2.5 rounded-lg p-3 mx-auto max-w-[200px]" style={{ background: "rgba(138,79,255,0.06)", border: "1px solid rgba(138,79,255,0.15)" }}>
+              <div className="w-8 h-8 rounded-md overflow-hidden flex items-center justify-center text-xs font-black text-white shrink-0" style={{ background: "linear-gradient(135deg, #8a4fff, #5b21b6)" }}>
+                {logoUrl ? <img src={logoUrl} alt="" className="w-full h-full object-cover" /> : initial}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-bold text-white truncate text-left">{server.title}</p>
+                <p className="text-[9px] text-white/40 text-left">{server.votes_month || 0} votes ce mois</p>
+              </div>
+            </div>
+
+            {/* Auto-close countdown */}
+            <div className="mt-6">
+              <div className="h-1 rounded-full overflow-hidden mb-2" style={{ background: "rgba(255,255,255,0.06)" }}>
+                <div
+                  className="h-full rounded-full transition-all duration-1000 ease-linear"
+                  style={{ width: `${progress}%`, background: "linear-gradient(90deg, #22c55e, #16a34a)" }}
+                />
+              </div>
+              <p className="text-[9px] text-white/30">
+                Fermeture automatique dans {countdown}s
+              </p>
+            </div>
+
+            {/* Manual close */}
+            <button
+              onClick={handleClose}
+              className="mt-4 h-9 px-6 rounded-lg text-[11px] font-bold transition tap-sm"
+              style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.1)" }}
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ---- Vote form (default view) ----
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(10,5,15,0.85)", backdropFilter: "blur(8px)" }} onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(10,5,15,0.85)", backdropFilter: "blur(8px)" }} onClick={handleClose}>
       <div className="w-full max-w-sm rounded-2xl overflow-hidden" style={{ background: "#12091c", border: "1px solid rgba(138,79,255,0.3)" }} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid rgba(138,79,255,0.2)" }}>
           <h2 className="text-sm font-black tracking-wider uppercase text-white">Voter pour ce serveur</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white transition tap-sm">
+          <button onClick={handleClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white transition tap-sm">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -77,6 +174,13 @@ export default function VoteModal({ server, voteStatus, onClose, onVoted }) {
               {fmt(voteStatus.remaining.h)}:{fmt(voteStatus.remaining.m)}:{fmt(voteStatus.remaining.s)}
             </p>
             <p className="text-[9px] text-white/30 mt-1">Reviens plus tard pour revoter</p>
+            <button
+              onClick={handleClose}
+              className="mt-4 h-9 px-6 rounded-lg text-[11px] font-bold transition tap-sm"
+              style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.1)" }}
+            >
+              Fermer
+            </button>
           </div>
         ) : (
           <div className="p-5 space-y-3">
