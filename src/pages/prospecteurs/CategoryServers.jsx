@@ -73,14 +73,14 @@ export default function CategoryServers() {
     );
   }, [sortedServers, search]);
 
-  const top10 = useMemo(() => {
+  const top5 = useMemo(() => {
     return [...servers]
       .sort((a, b) => {
         const scoreA = (a.votes_month || a.votes || 0) + (a.boosts || 0) * 2;
         const scoreB = (b.votes_month || b.votes || 0) + (b.boosts || 0) * 2;
         return scoreB - scoreA;
       })
-      .slice(0, 10);
+      .slice(0, 5);
   }, [servers]);
 
   const handleVote = (adId, newVotes) => {
@@ -147,18 +147,18 @@ export default function CategoryServers() {
             </div>
           </div>
 
-          {/* Top 10 spécifique à la catégorie */}
-          {top10.length > 0 && (
+          {/* Top 5 spécifique à la catégorie */}
+          {top5.length > 0 && (
             <div className="rounded-2xl p-4 mb-5" style={{ background: "rgba(18,9,28,0.6)", border: `1px solid ${accentColor}30` }}>
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${accentColor}20`, border: `1px solid ${accentColor}40` }}>
                   <Trophy className="w-4 h-4" style={{ color: accentColor }} />
                 </div>
-                <h3 className="text-xs font-black tracking-wider uppercase text-white">Top 10 - {category.name}</h3>
+                <h3 className="text-xs font-black tracking-wider uppercase text-white">Top 5 - {category.name}</h3>
                 <span className="text-[8px] text-white/30 ml-auto">Ce mois-ci</span>
               </div>
               <div className="space-y-1">
-                {top10.map((server, i) => {
+                {top5.map((server, i) => {
                   const rankStyle = i < 3 ? RANK_STYLES[i] : null;
                   const logoUrl = server.logo_url || server.profile_image || server.server_icon;
                   const initial = server.title?.[0]?.toUpperCase() || "S";

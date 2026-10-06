@@ -35,19 +35,21 @@ export default function ProspecteursSidebar({ active = "servers" }) {
         <span className="text-[9px] font-bold text-center">Créateurs</span>
       </Link>
 
-      {/* VIP encart avec image fournie */}
+      {/* VIP encart avec image fournie - agrandi et proéminent */}
       <button
         onClick={() => setShowVipCheckout(true)}
-        className="relative rounded-xl overflow-hidden transition hover:opacity-90 mt-1 group"
+        className="relative rounded-xl overflow-hidden transition hover:scale-[1.03] mt-2 group block w-full"
         title="VIP - 2,99€/mois - Cooldown 1h au lieu de 2h"
+        style={{ boxShadow: "0 0 20px rgba(255,215,0,0.15)" }}
       >
         <img
           src={VIP_IMAGE}
           alt="VIP - 2,99€/mois"
           className="w-full h-auto block"
-          style={{ minHeight: "80px" }}
+          style={{ minHeight: "140px" }}
         />
-        <div className="absolute inset-0 bg-transparent group-hover:bg-white/5 transition" />
+        <div className="absolute inset-0 ring-2 ring-yellow-500/30 rounded-xl pointer-events-none" />
+        <div className="absolute inset-0 bg-transparent group-hover:bg-yellow-500/5 transition" />
       </button>
 
       {showVipCheckout && (
