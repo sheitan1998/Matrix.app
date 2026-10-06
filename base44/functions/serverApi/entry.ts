@@ -54,9 +54,11 @@ export default async function(req: Request): Promise<Response> {
         server: { id: server.id, title: server.title, slug: server.slug },
         universe: server.server_type || 'nexus',
         votes_month: server.votes_month || 0,
+        votes_last_month: server.votes_last_month || 0,
         votes_total: server.votes || 0,
         clicks: server.clicks || 0,
         clicks_month: server.clicks_month || 0,
+        clicks_last_month: server.clicks_last_month || 0,
         rank: rank > 0 ? rank : null,
       }, { headers: CORS });
     }

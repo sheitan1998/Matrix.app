@@ -7,19 +7,31 @@ const PLAYER_BOOST_COST = 50; // 50 Trix for player ad boost
 const BOOST_DURATION_HOURS = 24;
 const SERVER_BOOST_DURATION_DAYS = 30; // 30 days for community server boosts
 
-// Send a POST request to the server owner's webhook URL after a vote
+// Compute HMAC-SHA256 signature (hex) using the server's api_key as secret
+async function computeHmacSha256(secret: string, message: string): Promise<string> {
+  const enc = new TextEncoder();
+  const cryptoKey = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const sig = await crypto.subtle.sign('HMAC', cryptoKey, enc.encode(message));
+  return Array.from(new Uint8Array(sig)).map((b: number) => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Send a signed POST request to the server owner's webhook URL after a vote
 async function sendVoteWebhook(webhookUrl: string, webhookToken: string, pseudo: string, serverId: string) {
   try {
     const payload = {
       pseudo,
       server_id: serverId,
       timestamp: new Date().toISOString(),
-      token: webhookToken,
     };
+    const bodyStr = JSON.stringify(payload);
+    const signature = await computeHmacSha256(webhookToken, bodyStr);
     await fetch(webhookUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Matrix-Signature': signature,
+      },
+      body: bodyStr,
       signal: AbortSignal.timeout(5000),
     });
   } catch (err) {
@@ -127,6 +139,14 @@ export default async function(req: Request): Promise<Response> {
       const apiKey = req.headers.get('x-api-key');
       const isAuthorized = (apiKey && apiKey === process.env.CRON_SECRET) || user.role === 'admin';
       if (!isAuthorized) return Response.json({ error: 'Forbidden' }, { status: 403 });
+      // Archive current month values before resetting
+      const allServersForArchive = await base44.asServiceRole.entities.ServerAd.list('-created_date', 500);
+      for (const s of allServersForArchive) {
+        await base44.asServiceRole.entities.ServerAd.update(s.id, {
+          votes_last_month: s.votes_month || 0,
+          clicks_last_month: s.clicks_month || 0,
+        });
+      }
       await base44.asServiceRole.entities.ServerAd.updateMany(
         {},
         { $set: { votes: 0, votes_month: 0, clicks: 0, clicks_month: 0, boosts: 0, is_boosted: false, boost_until: null } }
@@ -1304,6 +1324,45 @@ export default async function(req: Request): Promise<Response> {
           target_email,
         });
         return Response.json({ subscribed: records.length > 0 });
+      }
+
+      // ---- Test webhook (owner only) — sends a test POST to the configured webhook URL ----
+      case 'testWebhook': {
+        const { serverAdId } = params;
+        if (!serverAdId) return Response.json({ error: 'Missing serverAdId' }, { status: 400 });
+        const ad = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
+        if (!ad) return Response.json({ error: 'Server not found' }, { status: 404 });
+        if (ad.author_email !== user.email) return Response.json({ error: 'Not authorized' }, { status: 403 });
+        if (!ad.webhook_url) return Response.json({ error: 'Aucune URL de webhook configurée' }, { status: 400 });
+        if (!ad.api_key) return Response.json({ error: 'Aucune clé API configurée' }, { status: 400 });
+
+        try {
+          const testPayload = {
+            pseudo: '__TEST__',
+            server_id: serverAdId,
+            timestamp: new Date().toISOString(),
+            test: true,
+          };
+          const bodyStr = JSON.stringify(testPayload);
+          const signature = await computeHmacSha256(ad.api_key, bodyStr);
+          const res = await fetch(ad.webhook_url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Matrix-Signature': signature,
+            },
+            body: bodyStr,
+            signal: AbortSignal.timeout(8000),
+          });
+          return Response.json({
+            success: true,
+            status: res.status,
+            statusText: res.statusText,
+            webhook_url: ad.webhook_url,
+          });
+        } catch (err: any) {
+          return Response.json({ success: false, error: err.message || 'Webhook injoignable' }, { status: 502 });
+        }
       }
 
       // ---- Set webhook URL (owner only) ----

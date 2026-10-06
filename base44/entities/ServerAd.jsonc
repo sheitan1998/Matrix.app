@@ -165,6 +165,11 @@
       "default": 0,
       "description": "Votes du mois en cours (reset mensuel)"
     },
+    "votes_last_month": {
+      "type": "number",
+      "default": 0,
+      "description": "Votes du mois precedent (archive au reset mensuel)"
+    },
     "clicks": {
       "type": "number",
       "default": 0,
@@ -174,6 +179,11 @@
       "type": "number",
       "default": 0,
       "description": "Clics du mois en cours (reset mensuel)"
+    },
+    "clicks_last_month": {
+      "type": "number",
+      "default": 0,
+      "description": "Clics du mois precedent (archive au reset mensuel)"
     },
     "api_key": {
       "type": "string",
