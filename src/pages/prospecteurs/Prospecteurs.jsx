@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { fetchUniverseServers, detectServerType, slugify } from "@/lib/serverDirectory";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { ArrowLeft, Plus, Server as ServerIcon, MessageCircle } from "lucide-react";
@@ -31,39 +32,22 @@ export default function Prospecteurs() {
   const [createServerType, setCreateServerType] = useState("nexus");
   const [editingAd, setEditingAd] = useState(null);
 
-  const fetchData = useCallback(async () => {
-    try {
-      const me = await base44.auth.me();
-      setUser(me);
-
-      const [allAds, catsPage] = await Promise.all([
-        base44.entities.ServerAd.list("-created_date", 500),
-        base44.entities.ServerCategory.list("sort_order", 100),
-      ]);
-      setAds(allAds || []);
-      setCategories(catsPage || []);
-    } catch {
-      /* silent */
-    } finally {
-      setLoading(false);
-    }
+  useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => setUser(null));
+    base44.entities.ServerCategory.list("sort_order", 200).then((cats) => setCategories(cats || []));
   }, []);
 
+  // Strict isolation: only the active universe's servers are fetched from the database
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    let active = true;
+    setLoading(true);
+    fetchUniverseServers(activeTab)
+      .then((list) => { if (active) setAds(list || []); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [activeTab]);
 
-  // Filter servers by type (nexus/discord) using server_type field or link detection
-  const typedServers = useMemo(() => {
-    return ads.filter((s) => {
-      const st = s.server_type;
-      if (st) return st === activeTab;
-      // Legacy: detect by link
-      const link = (s.discord_link || "").toLowerCase();
-      const isDiscord = link.includes("discord.gg") || link.includes("discord.com") || link.includes("discordapp.com");
-      return activeTab === "discord" ? isDiscord : !isDiscord;
-    });
-  }, [ads, activeTab]);
+  const typedServers = ads;
 
   // Filter by category
   const categoryFiltered = useMemo(() => {
@@ -104,7 +88,7 @@ export default function Prospecteurs() {
   const serverCounts = useMemo(() => {
     const counts = { all: typedServers.length };
     for (const cat of categories) {
-      counts[cat.slug] = typedServers.filter((s) => s.category_slug === cat.slug || s.category === cat.slug).length;
+      counts[cat.slug] = typedServers.filter((s) => s.category_slug === cat.slug || s.category === cat.name).length;
     }
     return counts;
   }, [typedServers, categories]);
@@ -129,18 +113,19 @@ export default function Prospecteurs() {
     setShowCreateModal(true);
   };
 
+  // Server universe is always derived from the invite link (Discord invite = Discord, else Nexus)
+  const withUniverse = (data) =>
+    data.type === "server" ? { ...data, server_type: detectServerType(data.discord_link) } : data;
+  const belongsToTab = (ad) => ad.type === "server" && ad.server_type === activeTab;
+
   const handleUpdateAd = async (data) => {
     if (!editingAd) return;
     try {
-      const slug = data.title
-        .trim()
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "");
-      const updated = await base44.entities.ServerAd.update(editingAd.id, { ...data, slug });
-      setAds((prev) => prev.map((a) => (a.id === editingAd.id ? { ...a, ...updated } : a)));
+      const payload = withUniverse({ ...data, slug: slugify(data.title) });
+      await base44.entities.ServerAd.update(editingAd.id, payload);
+      setAds((prev) =>
+        prev.map((a) => (a.id === editingAd.id ? { ...a, ...payload } : a)).filter(belongsToTab)
+      );
       setShowCreateModal(false);
       setEditingAd(null);
       toast.success("Serveur modifié !");
@@ -151,21 +136,14 @@ export default function Prospecteurs() {
 
   const handleCreateAd = async (data) => {
     try {
-      const slug = data.title
-        .trim()
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "");
       const newAd = await base44.entities.ServerAd.create({
-        ...data,
-        slug,
+        ...withUniverse(data),
+        slug: slugify(data.title),
         author_email: user.email,
         author_name: user.full_name || user.email.split("@")[0],
         author_avatar: user.avatar_url || "",
       });
-      setAds((prev) => [newAd, ...prev]);
+      setAds((prev) => (belongsToTab(newAd) ? [newAd, ...prev] : prev));
       setShowCreateModal(false);
       toast.success("Serveur publié !");
     } catch {
@@ -277,7 +255,7 @@ export default function Prospecteurs() {
           </div>
 
           {/* Top 10 Monthly */}
-          <Top10Monthly activeTab={activeTab} />
+          <Top10Monthly activeTab={activeTab} servers={ads} loading={loading} />
 
           {/* Category grid */}
           <div className="mb-5">
@@ -294,7 +272,7 @@ export default function Prospecteurs() {
               selectedSlug={selectedCategory}
               onSelect={(slug) => {
                 if (slug) {
-                  navigate(`/prospecteurs/category/${slug}`);
+                  navigate(`/prospecteurs/category/${slug}?type=${activeTab}`);
                 } else {
                   setSelectedCategory(null);
                 }

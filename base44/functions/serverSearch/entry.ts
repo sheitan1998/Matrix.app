@@ -50,7 +50,7 @@ export default async function(req: Request): Promise<Response> {
 
     const user = await base44.auth.me().catch(() => null);
     // Vote and getVoteStatus don't require auth (IP-based fallback for anonymous visitors)
-    if (!user && action !== 'vote' && action !== 'getVoteStatus') {
+    if (!user && action !== 'vote' && action !== 'getVoteStatus' && action !== 'getServerBySlug') {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -96,6 +96,7 @@ export default async function(req: Request): Promise<Response> {
         author_name: found.author_name,
         author_avatar: found.author_avatar,
         created_date: found.created_date,
+        is_owner: !!user && user.email === found.author_email,
       });
     }
 
@@ -131,8 +132,10 @@ export default async function(req: Request): Promise<Response> {
 
       // ---- Vote for a server (2h cooldown, no auth required - IP fallback) ----
       case 'vote': {
-        const { serverAdId, voterPseudo } = params;
+        const { serverAdId } = params;
+        const voterPseudo = String(params.voterPseudo || '').trim().slice(0, 30);
         if (!serverAdId) return Response.json({ error: 'Missing serverAdId' }, { status: 400 });
+        if (!voterPseudo) return Response.json({ error: 'Le pseudo en jeu est obligatoire pour voter.' }, { status: 400 });
 
         const voterEmail = user?.email || '';
         const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
@@ -174,6 +177,7 @@ export default async function(req: Request): Promise<Response> {
           // Update existing vote timestamp
           await base44.asServiceRole.entities.ServerVote.update(existingVotes[0].id, {
             last_voted_at: new Date(now).toISOString(),
+            voter_pseudo: voterPseudo,
           });
         } else {
           // Create new vote record (store email for logged-in, IP for anonymous)
@@ -181,7 +185,7 @@ export default async function(req: Request): Promise<Response> {
             server_ad_id: serverAdId,
             user_email: voterEmail || undefined,
             ip_address: voterEmail ? undefined : ip,
-            voter_pseudo: voterPseudo || undefined,
+            voter_pseudo: voterPseudo,
             last_voted_at: new Date(now).toISOString(),
           });
         }

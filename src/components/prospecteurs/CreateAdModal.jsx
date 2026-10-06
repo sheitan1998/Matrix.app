@@ -105,7 +105,7 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
       profile_image: profileImage,
       cover_image: adType === "server" ? coverImage : "",
       discord_link: adType === "server" ? form.discord_link : "",
-      category_slug: form.category ? slugify(form.category) : "",
+      category_slug: form.category_slug || (form.category ? slugify(form.category) : ""),
     };
     await onSubmit(data);
     setSubmitting(false);

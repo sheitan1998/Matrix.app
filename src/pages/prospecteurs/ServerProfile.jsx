@@ -155,7 +155,7 @@ export default function ServerProfile() {
   const logoUrl = server.logo_url || server.profile_image;
   const bannerUrl = server.banner_url || server.cover_image;
   const initial = server.title?.[0]?.toUpperCase() || "S";
-  const isOwner = user?.email === server.author_email;
+  const isOwner = !!server.is_owner;
   const score = (server.votes_month || server.votes || 0) + (server.boosts || 0) * 2;
   const fmt = (n) => String(n).padStart(2, "0");
   const shareSlug = server.slug || server.id;
