@@ -4,10 +4,18 @@
   "properties": {
     "server_ad_id": {
       "type": "string",
-      "description": "ID de l'annonce de serveur"
+      "description": "ID de l'annonce de serveur (legacy)"
+    },
+    "server_id": {
+      "type": "string",
+      "description": "ID du serveur (nouveau systeme annuaire)"
     },
     "user_email": {
       "type": "string"
+    },
+    "ip_address": {
+      "type": "string",
+      "description": "Adresse IP pour les votes non-connectes"
     },
     "last_voted_at": {
       "type": "string",
@@ -19,16 +27,31 @@
     }
   },
   "required": [
-    "server_ad_id",
-    "user_email"
+    "server_ad_id"
   ],
   "rls": {
     "create": {
-      "data.user_email": "{{user.email}}"
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        }
+      ]
     },
     "read": {},
     "update": {
-      "data.user_email": "{{user.email}}"
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     },
     "delete": {
       "user_condition": {
