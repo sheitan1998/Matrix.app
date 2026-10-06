@@ -131,7 +131,7 @@ export default async function(req: Request): Promise<Response> {
 
       // ---- Vote for a server (2h cooldown, no auth required - IP fallback) ----
       case 'vote': {
-        const { serverAdId } = params;
+        const { serverAdId, voterPseudo } = params;
         if (!serverAdId) return Response.json({ error: 'Missing serverAdId' }, { status: 400 });
 
         const voterEmail = user?.email || '';
@@ -181,6 +181,7 @@ export default async function(req: Request): Promise<Response> {
             server_ad_id: serverAdId,
             user_email: voterEmail || undefined,
             ip_address: voterEmail ? undefined : ip,
+            voter_pseudo: voterPseudo || undefined,
             last_voted_at: new Date(now).toISOString(),
           });
         }

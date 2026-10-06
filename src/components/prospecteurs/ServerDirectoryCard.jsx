@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import BoostAdModal from "./BoostAdModal";
+import VoteModal from "./VoteModal";
 
 const BADGE_CONFIG = {
   nexus: { color: "#22c55e", label: "NEXUS" },
@@ -18,6 +19,7 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
   const [trixBalance, setTrixBalance] = useState(currentUser?.trix_balance || 0);
   const [boostCount, setBoostCount] = useState(server.boosts || 0);
   const [copied, setCopied] = useState(false);
+  const [showVoteModal, setShowVoteModal] = useState(false);
 
   const shareSlug = server.slug || server.id;
 
@@ -309,7 +311,7 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
       {/* Actions */}
       <div className="px-3 pb-3 flex items-center gap-1.5">
         <button
-          onClick={handleVote}
+          onClick={() => setShowVoteModal(true)}
           disabled={!voteStatus.canVote || loading}
           className="flex-1 h-7 rounded-md text-[10px] font-bold transition flex items-center justify-center gap-1 tap-sm"
           style={
@@ -369,6 +371,19 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
           </a>
         )}
       </div>
+
+      {/* Vote modal with pseudo */}
+      {showVoteModal && (
+        <VoteModal
+          server={server}
+          voteStatus={voteStatus}
+          onClose={() => setShowVoteModal(false)}
+          onVoted={(data) => {
+            setVoteStatus({ canVote: false, remaining: { h: 2, m: 0, s: 0 } });
+            onVote(server.id, data.votes);
+          }}
+        />
+      )}
 
       {/* Boost modal */}
       {showBoost && (

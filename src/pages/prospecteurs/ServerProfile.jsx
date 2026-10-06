@@ -7,6 +7,7 @@ import {
   Server as ServerIcon, MessageCircle, Copy, Check, Loader2, Pencil, Trash2,
 } from "lucide-react";
 import BoostAdModal from "@/components/prospecteurs/BoostAdModal";
+import VoteModal from "@/components/prospecteurs/VoteModal";
 
 export default function ServerProfile() {
   const { slug } = useParams();
@@ -18,6 +19,7 @@ export default function ServerProfile() {
   const [voting, setVoting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showBoost, setShowBoost] = useState(false);
+  const [showVoteModal, setShowVoteModal] = useState(false);
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -85,31 +87,9 @@ export default function ServerProfile() {
     return () => clearInterval(timer);
   }, [voteStatus.canVote]);
 
-  const handleVote = async () => {
+  const handleVote = () => {
     if (!voteStatus.canVote) return;
-    setVoting(true);
-    try {
-      const res = await base44.functions.invoke("serverSearch", {
-        action: "vote",
-        serverAdId: server.id,
-      });
-      if (res.data?.success) {
-        setVoteStatus({ canVote: false, remaining: { h: 2, m: 0, s: 0 } });
-        setServer((prev) => ({
-          ...prev,
-          votes: res.data.votes,
-          votes_month: res.data.votes_month,
-        }));
-        toast.success("Vote enregistré !");
-      } else if (res.data?.error === "cooldown") {
-        setVoteStatus({ canVote: false, remaining: res.data.remainingTime });
-        toast.error(`Reviens dans ${res.data.remainingTime.h}h ${res.data.remainingTime.m}m`);
-      }
-    } catch {
-      toast.error("Erreur lors du vote");
-    } finally {
-      setVoting(false);
-    }
+    setShowVoteModal(true);
   };
 
   const shareSlug = server.slug || server.id;
@@ -244,7 +224,7 @@ export default function ServerProfile() {
 
           <button
             onClick={handleVote}
-            disabled={!voteStatus.canVote || voting}
+            disabled={!voteStatus.canVote}
             className="flex-1 h-9 rounded-lg text-xs font-black transition flex items-center justify-center gap-1.5 tap-sm"
             style={
               voteStatus.canVote
@@ -384,6 +364,22 @@ export default function ServerProfile() {
           </button>
         </div>
       </div>
+
+      {showVoteModal && (
+        <VoteModal
+          server={server}
+          voteStatus={voteStatus}
+          onClose={() => setShowVoteModal(false)}
+          onVoted={(data) => {
+            setVoteStatus({ canVote: false, remaining: { h: 2, m: 0, s: 0 } });
+            setServer((prev) => ({
+              ...prev,
+              votes: data.votes,
+              votes_month: data.votes_month,
+            }));
+          }}
+        />
+      )}
 
       {showBoost && (
         <BoostAdModal

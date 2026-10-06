@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Server, Users, Search, Crown } from "lucide-react";
+import { Server, Users, Search } from "lucide-react";
 import CheckoutModal from "@/components/CheckoutModal";
+
+const VIP_IMAGE = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/ca0329832_ChatGPTImage6oct202621_00_29.png";
 
 export default function ProspecteursSidebar({ active = "servers" }) {
   const [showVipCheckout, setShowVipCheckout] = useState(false);
@@ -33,23 +35,19 @@ export default function ProspecteursSidebar({ active = "servers" }) {
         <span className="text-[9px] font-bold text-center">Créateurs</span>
       </Link>
 
-      {/* VIP encart */}
+      {/* VIP encart avec image fournie */}
       <button
         onClick={() => setShowVipCheckout(true)}
-        className="flex flex-col items-center gap-1 p-2.5 rounded-xl transition hover:opacity-90 mt-1"
-        style={{
-          background: "linear-gradient(135deg, rgba(168,85,247,0.15), rgba(109,40,217,0.08))",
-          border: "1px solid rgba(168,85,247,0.25)",
-        }}
+        className="relative rounded-xl overflow-hidden transition hover:opacity-90 mt-1 group"
         title="VIP - 2,99€/mois - Cooldown 1h au lieu de 2h"
       >
-        <Crown className="w-5 h-5" style={{ color: "#a855f7" }} />
-        <span className="text-[8px] font-black text-center text-purple-300 leading-tight">
-          VIP
-        </span>
-        <span className="text-[7px] text-white/40 leading-tight text-center">
-          2,99€/mois
-        </span>
+        <img
+          src={VIP_IMAGE}
+          alt="VIP - 2,99€/mois"
+          className="w-full h-auto block"
+          style={{ minHeight: "80px" }}
+        />
+        <div className="absolute inset-0 bg-transparent group-hover:bg-white/5 transition" />
       </button>
 
       {showVipCheckout && (

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { ArrowLeft, Plus, Server as ServerIcon, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -17,6 +17,7 @@ const TABS = [
 ];
 
 export default function Prospecteurs() {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [ads, setAds] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -291,7 +292,13 @@ export default function Prospecteurs() {
             <CategoryGrid
               categories={tabCategories}
               selectedSlug={selectedCategory}
-              onSelect={setSelectedCategory}
+              onSelect={(slug) => {
+                if (slug) {
+                  navigate(`/prospecteurs/category/${slug}`);
+                } else {
+                  setSelectedCategory(null);
+                }
+              }}
               serverCounts={serverCounts}
               loading={loading}
             />

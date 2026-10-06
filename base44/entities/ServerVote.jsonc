@@ -13,6 +13,10 @@
     "user_email": {
       "type": "string"
     },
+    "voter_pseudo": {
+      "type": "string",
+      "description": "Pseudo saisi par le votant au moment du vote"
+    },
     "ip_address": {
       "type": "string",
       "description": "Adresse IP pour les votes non-connectes"
