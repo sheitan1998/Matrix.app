@@ -990,7 +990,9 @@ export default async function(req: Request): Promise<Response> {
       case 'getCreatorById': {
         const { id } = params;
         if (!id) return Response.json({ error: 'Missing id' }, { status: 400 });
-        const target = await base44.asServiceRole.entities.User.get(id);
+        let target;
+        try { target = await base44.asServiceRole.entities.User.get(id); }
+        catch { return Response.json({ error: 'Créateur introuvable' }, { status: 404 }); }
         if (!target || target.is_private === true) {
           return Response.json({ error: 'Créateur introuvable ou profil privé' }, { status: 404 });
         }
