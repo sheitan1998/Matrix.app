@@ -5,35 +5,85 @@
     "trix_balance": {
       "type": "number",
       "default": 0,
-      "description": "Current TRIX coin balance"
+      "description": "Current TRIX coin balance",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "flash_boosts": {
       "type": "number",
       "default": 0,
-      "description": "Flash boosts available for boosting servers"
+      "description": "Flash boosts available for boosting servers",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "is_premium": {
       "type": "boolean",
       "default": false,
-      "description": "Premium subscription - no ads"
+      "description": "Premium subscription - no ads",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "premium_until": {
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "is_vip": {
       "type": "boolean",
       "default": false,
-      "description": "VIP subscription status"
+      "description": "VIP subscription status",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "vip_until": {
       "type": "string",
       "format": "date-time",
-      "description": "VIP subscription expiration date"
+      "description": "VIP subscription expiration date",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "stripe_customer_id": {
       "type": "string",
-      "description": "Stripe customer ID for billing portal"
+      "description": "Stripe customer ID for billing portal",
+      "rls": {
+        "read": false,
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "inventory": {
       "type": "array",
@@ -60,7 +110,14 @@
         }
       },
       "default": [],
-      "description": "User inventory of purchased items"
+      "description": "User inventory of purchased items",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "avatar_url": {
       "type": "string"
@@ -126,30 +183,72 @@
     "is_muted": {
       "type": "boolean",
       "default": false,
-      "description": "User is muted (cannot send messages)"
+      "description": "User is muted (cannot send messages)",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "is_banned": {
       "type": "boolean",
       "default": false,
-      "description": "User is banned (cannot access app)"
+      "description": "User is banned (cannot access app)",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "mute_reason": {
       "type": "string",
-      "description": "Reason for muting"
+      "description": "Reason for muting",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "ban_reason": {
       "type": "string",
-      "description": "Reason for banning"
+      "description": "Reason for banning",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "muted_until": {
       "type": "string",
       "format": "date-time",
-      "description": "Mute expiration date"
+      "description": "Mute expiration date",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "banned_until": {
       "type": "string",
       "format": "date-time",
-      "description": "Ban expiration date"
+      "description": "Ban expiration date",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "notif_messages": {
       "type": "boolean",
