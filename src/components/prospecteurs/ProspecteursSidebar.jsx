@@ -17,7 +17,7 @@ export default function ProspecteursSidebar({ active = "servers", user }) {
   new Date(user.vote_auto_until).getTime() > Date.now();
 
   return (
-    <div className="w-16 sm:w-20 shrink-0 sticky top-16 self-start flex flex-col gap-1 p-2">
+    <div className="w-24 sm:w-32 shrink-0 sticky top-16 self-start flex flex-col gap-1 p-2">
       <Link
         to="/prospecteurs"
         className={`flex flex-col items-center gap-1 p-2.5 rounded-xl transition ${active === "servers" ? "text-white" : "text-white/40 hover:text-white"}`}
