@@ -67,7 +67,11 @@ export default function Prospecteurs() {
   // Filter by category
   const categoryFiltered = useMemo(() => {
     if (!selectedCategory) return typedServers;
-    return typedServers.filter((s) => s.category_slug === selectedCategory || s.category === selectedCategory);
+    return typedServers.filter((s) => {
+      if (s.category_slug === selectedCategory) return true;
+      const catSlug = (s.category || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+      return catSlug === selectedCategory;
+    });
   }, [typedServers, selectedCategory]);
 
   // Filter by search
@@ -127,7 +131,14 @@ export default function Prospecteurs() {
   const handleUpdateAd = async (data) => {
     if (!editingAd) return;
     try {
-      const updated = await base44.entities.ServerAd.update(editingAd.id, data);
+      const slug = data.title
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+      const updated = await base44.entities.ServerAd.update(editingAd.id, { ...data, slug });
       setAds((prev) => prev.map((a) => (a.id === editingAd.id ? { ...a, ...updated } : a)));
       setShowCreateModal(false);
       setEditingAd(null);

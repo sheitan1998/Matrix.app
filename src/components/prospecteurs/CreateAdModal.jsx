@@ -85,6 +85,7 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
       if (!form.title.trim() || !form.description.trim() || !form.game.trim() || !form.availability_hours.trim()) return;
     }
     setSubmitting(true);
+    const slugify = (text) => text.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
     const data = {
       ...form,
       type: adType,
@@ -92,6 +93,7 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
       profile_image: profileImage,
       cover_image: adType === "server" ? coverImage : "",
       discord_link: adType === "server" ? form.discord_link : "",
+      category_slug: form.category ? slugify(form.category) : "",
     };
     await onSubmit(data);
     setSubmitting(false);
