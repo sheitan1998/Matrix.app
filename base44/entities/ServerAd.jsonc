@@ -137,6 +137,16 @@
       "default": 0,
       "description": "Votes du mois en cours (reset mensuel)"
     },
+    "clicks": {
+      "type": "number",
+      "default": 0,
+      "description": "Nombre total de clics (visites de fiche + votes)"
+    },
+    "clicks_month": {
+      "type": "number",
+      "default": 0,
+      "description": "Clics du mois en cours (reset mensuel)"
+    },
     "boosts": {
       "type": "number",
       "default": 0

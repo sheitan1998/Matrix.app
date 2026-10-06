@@ -34,6 +34,7 @@ export default function ServerProfile() {
         });
         if (res.data?.id) {
           setServer(res.data);
+          base44.functions.invoke("serverSearch", { action: "trackClick", serverAdId: res.data.id }).catch(() => {});
         } else {
           setError("Serveur introuvable");
         }

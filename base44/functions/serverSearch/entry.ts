@@ -50,7 +50,7 @@ export default async function(req: Request): Promise<Response> {
 
     const user = await base44.auth.me().catch(() => null);
     // Vote and getVoteStatus don't require auth (IP-based fallback for anonymous visitors)
-    if (!user && action !== 'vote' && action !== 'getVoteStatus' && action !== 'getServerBySlug') {
+    if (!user && action !== 'vote' && action !== 'getVoteStatus' && action !== 'getServerBySlug' && action !== 'trackClick') {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -107,7 +107,7 @@ export default async function(req: Request): Promise<Response> {
       if (!isAuthorized) return Response.json({ error: 'Forbidden' }, { status: 403 });
       await base44.asServiceRole.entities.ServerAd.updateMany(
         {},
-        { $set: { votes: 0, boosts: 0, is_boosted: false, boost_until: null } }
+        { $set: { votes: 0, votes_month: 0, clicks: 0, clicks_month: 0, boosts: 0, is_boosted: false, boost_until: null } }
       );
       // Also clear all vote records so users can vote again
       await base44.asServiceRole.entities.ServerVote.deleteMany({});
@@ -195,9 +195,13 @@ export default async function(req: Request): Promise<Response> {
         if (!ad) return Response.json({ error: 'Server not found' }, { status: 404 });
         const newVotes = (ad.votes || 0) + 1;
         const newVotesMonth = (ad.votes_month || 0) + 1;
+        const newClicks = (ad.clicks || 0) + 1;
+        const newClicksMonth = (ad.clicks_month || 0) + 1;
         await base44.asServiceRole.entities.ServerAd.update(serverAdId, {
           votes: newVotes,
           votes_month: newVotesMonth,
+          clicks: newClicks,
+          clicks_month: newClicksMonth,
         });
 
         return Response.json({ success: true, votes: newVotes, votes_month: newVotesMonth });
@@ -1128,6 +1132,19 @@ export default async function(req: Request): Promise<Response> {
           target_email,
         });
         return Response.json({ subscribed: records.length > 0 });
+      }
+
+      // ---- Track a click (visit / vote) — anonymous allowed ----
+      case 'trackClick': {
+        const { serverAdId } = params;
+        if (!serverAdId) return Response.json({ error: 'Missing serverAdId' }, { status: 400 });
+        const clickAd = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
+        if (!clickAd) return Response.json({ error: 'Server not found' }, { status: 404 });
+        await base44.asServiceRole.entities.ServerAd.update(serverAdId, {
+          clicks: (clickAd.clicks || 0) + 1,
+          clicks_month: (clickAd.clicks_month || 0) + 1,
+        });
+        return Response.json({ success: true });
       }
 
       default:

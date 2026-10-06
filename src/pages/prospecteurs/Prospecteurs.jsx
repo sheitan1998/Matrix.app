@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { fetchUniverseServers, detectServerType, slugify } from "@/lib/serverDirectory";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Plus, Server as ServerIcon, MessageCircle } from "lucide-react";
+import { ArrowLeft, Plus, Server as ServerIcon, MessageCircle, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import ProspecteursHeader from "@/components/prospecteurs/ProspecteursHeader";
 import ProspecteursSidebar from "@/components/prospecteurs/ProspecteursSidebar";
@@ -10,7 +10,7 @@ import CategoryGrid from "@/components/prospecteurs/CategoryGrid";
 import ServerSearchBar from "@/components/prospecteurs/ServerSearchBar";
 import ServerDirectoryCard from "@/components/prospecteurs/ServerDirectoryCard";
 import CreateAdModal from "@/components/prospecteurs/CreateAdModal";
-import Top10Monthly from "@/components/prospecteurs/Top10Monthly";
+import Top10Modal from "@/components/prospecteurs/Top10Modal";
 
 const TABS = [
   { id: "nexus", label: "Serveurs Nexus", icon: ServerIcon, color: "#22c55e" },
@@ -31,6 +31,7 @@ export default function Prospecteurs() {
   const [createType, setCreateType] = useState("server");
   const [createServerType, setCreateServerType] = useState("nexus");
   const [editingAd, setEditingAd] = useState(null);
+  const [showTop10, setShowTop10] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => setUser(null));
@@ -252,10 +253,16 @@ export default function Prospecteurs() {
                 </button>
               );
             })}
+            <button
+              onClick={() => setShowTop10(true)}
+              className="h-10 px-4 rounded-xl text-xs font-black tracking-wider uppercase transition flex items-center justify-center gap-1.5 tap-sm ml-auto"
+              style={{ background: "rgba(251,191,36,0.12)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.25)" }}
+            >
+              <Trophy className="w-4 h-4" />
+              <span className="hidden sm:inline">Voir le classement</span>
+              <span className="sm:hidden">Classement</span>
+            </button>
           </div>
-
-          {/* Top 10 Monthly */}
-          <Top10Monthly activeTab={activeTab} servers={ads} loading={loading} />
 
           {/* Category grid */}
           <div className="mb-5">
@@ -353,6 +360,10 @@ export default function Prospecteurs() {
           </div>
         </div>
       </div>
+
+      {showTop10 && (
+        <Top10Modal activeTab={activeTab} servers={ads} loading={loading} onClose={() => setShowTop10(false)} />
+      )}
 
       {showCreateModal && (
         <CreateAdModal

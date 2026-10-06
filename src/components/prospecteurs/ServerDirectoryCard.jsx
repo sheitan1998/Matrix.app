@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ArrowUp, Flame, ExternalLink, Users, Zap, Pencil, Trash2, Share2, Check } from "lucide-react";
+import { ArrowUp, Flame, ExternalLink, Users, Zap, Pencil, Trash2, Share2, Check, ThumbsUp, MousePointerClick } from "lucide-react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
@@ -22,6 +22,10 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
   const [showVoteModal, setShowVoteModal] = useState(false);
 
   const shareSlug = server.slug || server.id;
+
+  const handleTrackClick = () => {
+    base44.functions.invoke("serverSearch", { action: "trackClick", serverAdId: server.id }).catch(() => {});
+  };
 
   const handleShare = async () => {
     if (!shareSlug) {
@@ -290,15 +294,46 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
         <p className="text-[10px] text-white/50 leading-relaxed line-clamp-2">{server.description}</p>
       </div>
 
-      {/* Stats */}
+      {/* Stats — votes & clicks counters (Top-Serveurs style) */}
+      <div className="px-3 pb-2 grid grid-cols-2 gap-2">
+        {/* Votes block — purple */}
+        <div
+          className="relative rounded-lg p-2 overflow-hidden"
+          style={{ background: "linear-gradient(135deg, rgba(138,79,255,0.20), rgba(109,40,217,0.10))", border: "1px solid rgba(138,79,255,0.28)" }}
+        >
+          <svg className="absolute right-0 bottom-0 opacity-25 pointer-events-none" width="64" height="30" viewBox="0 0 64 30" fill="none">
+            <polyline points="0,24 10,20 20,22 30,12 40,15 50,7 64,9" stroke="#a855f7" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <div className="relative flex items-center gap-1.5">
+            <ThumbsUp className="w-3.5 h-3.5 shrink-0" style={{ color: "#a855f7" }} />
+            <div className="min-w-0">
+              <p className="text-sm font-black text-white leading-none">{server.votes_month ?? server.votes ?? 0}</p>
+              <p className="text-[8px] text-white/40 uppercase tracking-wider mt-0.5">Votes</p>
+            </div>
+          </div>
+        </div>
+        {/* Clicks block — light */}
+        <div
+          className="relative rounded-lg p-2 overflow-hidden"
+          style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03))", border: "1px solid rgba(255,255,255,0.14)" }}
+        >
+          <svg className="absolute right-0 bottom-0 opacity-25 pointer-events-none" width="64" height="30" viewBox="0 0 64 30" fill="none">
+            <polyline points="0,20 10,22 20,14 30,17 40,8 50,11 64,4" stroke="#f97316" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <div className="relative flex items-center gap-1.5">
+            <MousePointerClick className="w-3.5 h-3.5 shrink-0" style={{ color: "#f97316" }} />
+            <div className="min-w-0">
+              <p className="text-sm font-black text-white leading-none">{server.clicks_month ?? server.clicks ?? 0}</p>
+              <p className="text-[8px] text-white/40 uppercase tracking-wider mt-0.5">Clics</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* Secondary stats */}
       <div className="px-3 pb-2 flex items-center gap-2 text-[9px] text-white/40">
-        <span className="flex items-center gap-0.5">
-          <ArrowUp className="w-2.5 h-2.5" style={{ color: "#8a4fff" }} />
-          {server.votes || 0}
-        </span>
         <span className="flex items-center gap-0.5 font-bold" style={{ color: "#fbbf24" }}>
           <Flame className="w-2.5 h-2.5" style={{ color: "#fbbf24" }} />
-          {boostCount} boost{boostCount !== 1 ? "s" : ""}
+          {boostCount}
         </span>
         {server.max_players > 0 && (
           <span className="flex items-center gap-0.5">
@@ -351,6 +386,7 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
         {shareSlug && (
           <Link
             to={`/servers/${shareSlug}`}
+            onClick={handleTrackClick}
             className="h-7 px-2 rounded-md flex items-center justify-center transition tap-sm text-[9px] font-bold"
             style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.1)" }}
             title="Voir la fiche"
@@ -363,6 +399,7 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
             href={server.discord_link}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={handleTrackClick}
             className="h-7 px-2 rounded-md flex items-center justify-center transition tap-sm text-[9px] font-bold"
             style={{ background: `${typeConfig.color}20`, color: typeConfig.color, border: `1px solid ${typeConfig.color}30` }}
             title={server.discord_link}
