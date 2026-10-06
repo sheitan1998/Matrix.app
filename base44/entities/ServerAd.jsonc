@@ -116,6 +116,10 @@
       "type": "string",
       "description": "Cle API webhook pour le vote Nexus (cote serveur uniquement)"
     },
+    "webhook_url": {
+      "type": "string",
+      "description": "URL de postback (webhook) appelee apres chaque vote pour livrer les recompenses en jeu (RP)"
+    },
     "discord_server_id": {
       "type": "string",
       "description": "ID du serveur Discord"

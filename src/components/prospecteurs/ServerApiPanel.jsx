@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { KeyRound, Copy, Check, RefreshCw, Code2, ChevronDown, ChevronRight } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { KeyRound, Copy, Check, RefreshCw, Code2, ChevronDown, ChevronRight, Webhook, Loader2, Clock, User, Activity } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 
@@ -7,9 +7,18 @@ const API_BASE = "https://matrix-hub.base44.app/functions/serverApi";
 
 export default function ServerApiPanel({ server }) {
   const [apiKey, setApiKey] = useState(server.api_key || "");
+  const [webhookUrl, setWebhookUrl] = useState(server.webhook_url || "");
   const [copied, setCopied] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [openDocs, setOpenDocs] = useState(false);
+  const [savingWebhook, setSavingWebhook] = useState(false);
+  const [recentVotes, setRecentVotes] = useState([]);
+  const [loadingVotes, setLoadingVotes] = useState(false);
+
+  useEffect(() => {
+    setApiKey(server.api_key || "");
+    setWebhookUrl(server.webhook_url || "");
+  }, [server]);
 
   const handleCopy = async () => {
     try {
@@ -43,12 +52,58 @@ export default function ServerApiPanel({ server }) {
     }
   };
 
+  const handleSaveWebhook = async () => {
+    const url = webhookUrl.trim();
+    if (url && !url.startsWith("https://")) {
+      toast.error("L'URL doit commencer par https://");
+      return;
+    }
+    setSavingWebhook(true);
+    try {
+      const res = await base44.functions.invoke("serverSearch", {
+        action: "setWebhookUrl",
+        serverAdId: server.id,
+        webhookUrl: url,
+      });
+      if (res.data?.success) {
+        toast.success(url ? "Webhook configuré" : "Webhook supprimé");
+        setWebhookUrl(url);
+      } else {
+        toast.error(res.data?.error || "Erreur");
+      }
+    } catch {
+      toast.error("Erreur lors de la sauvegarde");
+    } finally {
+      setSavingWebhook(false);
+    }
+  };
+
+  const loadRecentVotes = async () => {
+    setLoadingVotes(true);
+    try {
+      const res = await base44.functions.invoke("serverSearch", {
+        action: "getRecentVotes",
+        serverAdId: server.id,
+      });
+      const data = res.data || res;
+      setRecentVotes(data.votes || []);
+    } catch {
+      toast.error("Erreur lors du chargement des votes");
+    } finally {
+      setLoadingVotes(false);
+    }
+  };
+
+  useEffect(() => {
+    loadRecentVotes();
+  }, [server.id]);
+
   const statsUrl = `${API_BASE}?action=stats&api_key=${apiKey}`;
   const checkVoteUrl = `${API_BASE}?action=check-vote&api_key=${apiKey}&pseudo=PSEUDO`;
 
   return (
-    <div className="mt-4 rounded-xl p-4" style={{ background: "rgba(18,9,28,0.6)", border: "1px solid rgba(138,79,255,0.15)" }}>
-      <div className="flex items-center gap-2 mb-3">
+    <div className="mt-4 rounded-xl p-4 space-y-4" style={{ background: "rgba(18,9,28,0.6)", border: "1px solid rgba(138,79,255,0.15)" }}>
+      <div className="flex items-center gap-2">
         <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(138,79,255,0.15)", border: "1px solid rgba(138,79,255,0.3)" }}>
           <Code2 className="w-4 h-4 text-purple-400" />
         </div>
@@ -56,7 +111,7 @@ export default function ServerApiPanel({ server }) {
       </div>
 
       {/* API key */}
-      <div className="mb-3">
+      <div>
         <label className="text-[10px] text-white/40 uppercase tracking-wider mb-1 block">Clé API du serveur</label>
         <div className="flex items-center gap-2">
           <div className="flex-1 flex items-center gap-1.5 h-9 px-2 rounded-lg" style={{ background: "rgba(0,0,0,0.3)", border: "1px solid rgba(138,79,255,0.2)" }}>
@@ -86,7 +141,87 @@ export default function ServerApiPanel({ server }) {
             <span className="hidden sm:inline">Régénérer</span>
           </button>
         </div>
-        <p className="text-[9px] text-white/30 mt-1">Gardez cette clé secrète. Elle permet d'accéder aux statistiques et à la vérification des votes de votre serveur.</p>
+        <p className="text-[9px] text-white/30 mt-1">Gardez cette clé secrète. Elle sert aussi de token de sécurité pour les webhooks.</p>
+      </div>
+
+      {/* Webhook URL */}
+      <div>
+        <label className="text-[10px] text-white/40 uppercase tracking-wider mb-1 block flex items-center gap-1">
+          <Webhook className="w-3 h-3" /> URL de Postback (Webhook)
+        </label>
+        <div className="flex items-center gap-2">
+          <div className="flex-1 flex items-center gap-1.5 h-9 px-2 rounded-lg" style={{ background: "rgba(0,0,0,0.3)", border: "1px solid rgba(138,79,255,0.2)" }}>
+            <input
+              type="url"
+              value={webhookUrl}
+              onChange={(e) => setWebhookUrl(e.target.value)}
+              placeholder="https://monserveur-rp.com/api/matrix-listener.php"
+              className="flex-1 bg-transparent text-[11px] text-white/70 placeholder:text-white/20 outline-none"
+            />
+          </div>
+          <button
+            onClick={handleSaveWebhook}
+            disabled={savingWebhook}
+            className="h-9 px-3 rounded-lg flex items-center gap-1 text-[10px] font-bold transition tap-sm disabled:opacity-40"
+            style={{ background: "rgba(34,197,94,0.12)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.2)" }}
+          >
+            {savingWebhook ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+            <span>{savingWebhook ? "..." : "Sauver"}</span>
+          </button>
+        </div>
+        <p className="text-[9px] text-white/30 mt-1">
+          À chaque vote, MATRIX envoie un POST vers cette URL avec le pseudo du votant et votre token (clé API). Laissez vide pour désactiver.
+        </p>
+      </div>
+
+      {/* Recent votes table */}
+      <div>
+        <label className="text-[10px] text-white/40 uppercase tracking-wider mb-1.5 block flex items-center gap-1">
+          <Activity className="w-3 h-3" /> Votes récents
+        </label>
+        {loadingVotes ? (
+          <div className="flex items-center justify-center py-4">
+            <Loader2 className="w-4 h-4 animate-spin text-purple-400" />
+          </div>
+        ) : recentVotes.length === 0 ? (
+          <div className="text-center py-4 text-[10px] text-white/30">Aucun vote récent</div>
+        ) : (
+          <div className="rounded-lg overflow-hidden" style={{ border: "1px solid rgba(138,79,255,0.15)" }}>
+            <table className="w-full text-[10px]">
+              <thead>
+                <tr style={{ background: "rgba(138,79,255,0.08)" }}>
+                  <th className="text-left px-2 py-1.5 font-bold text-white/50">Pseudo</th>
+                  <th className="text-left px-2 py-1.5 font-bold text-white/50 hidden sm:table-cell">Source</th>
+                  <th className="text-right px-2 py-1.5 font-bold text-white/50">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentVotes.slice(0, 15).map((v, i) => (
+                  <tr key={v.id || i} style={{ borderTop: i > 0 ? "1px solid rgba(138,79,255,0.08)" : "none" }}>
+                    <td className="px-2 py-1.5 text-white/80 flex items-center gap-1">
+                      <User className="w-2.5 h-2.5 text-white/30" />
+                      {v.voter_pseudo}
+                    </td>
+                    <td className="px-2 py-1.5 hidden sm:table-cell">
+                      <span
+                        className="px-1.5 py-0.5 rounded text-[8px] font-bold"
+                        style={v.source === "authenticated"
+                          ? { background: "rgba(34,197,94,0.1)", color: "#22c55e" }
+                          : { background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.4)" }}
+                      >
+                        {v.source === "authenticated" ? "Compte" : "Anonyme"}
+                      </span>
+                    </td>
+                    <td className="px-2 py-1.5 text-right text-white/40 flex items-center justify-end gap-0.5">
+                      <Clock className="w-2.5 h-2.5" />
+                      {v.last_voted_at ? new Date(v.last_voted_at).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Documentation toggle */}
@@ -102,18 +237,8 @@ export default function ServerApiPanel({ server }) {
         <div className="mt-2 space-y-3 text-[10px] text-white/60 leading-relaxed">
           <div>
             <p className="font-bold text-white/80 mb-1">1. Statistiques en temps réel</p>
-            <p className="mb-1">Renvoie les votes du mois, les clics et le rang de votre serveur (dans son univers).</p>
+            <p className="mb-1">Renvoie les votes du mois, les clics et le rang de votre serveur.</p>
             <pre className="rounded-lg p-2 overflow-x-auto text-[9px] font-mono text-purple-300" style={{ background: "rgba(0,0,0,0.4)" }}>{`GET ${statsUrl}`}</pre>
-            <p className="mt-1 text-white/40">Réponse :</p>
-            <pre className="rounded-lg p-2 overflow-x-auto text-[9px] font-mono text-emerald-300" style={{ background: "rgba(0,0,0,0.4)" }}>{`{
-  "server": { "id": "...", "title": "...", "slug": "..." },
-  "universe": "nexus",
-  "votes_month": 12,
-  "votes_total": 48,
-  "clicks": 130,
-  "clicks_month": 22,
-  "rank": 3
-}`}</pre>
           </div>
 
           <div>
@@ -129,6 +254,51 @@ export default function ServerApiPanel({ server }) {
           </div>
 
           <div>
+            <p className="font-bold text-white/80 mb-1">3. Webhook (Postback URL) — Récompenses en temps réel</p>
+            <p className="mb-1">
+              Configurez votre URL de webhook ci-dessus. À chaque vote validé par un joueur, MATRIX envoie une requête
+              <span className="font-mono text-purple-300"> POST </span>
+              vers votre URL avec les données suivantes :
+            </p>
+            <pre className="rounded-lg p-2 overflow-x-auto text-[9px] font-mono text-emerald-300" style={{ background: "rgba(0,0,0,0.4)" }}>{`POST https://monserveur-rp.com/api/matrix-listener.php
+Content-Type: application/json
+
+{
+  "pseudo": "PseudoDuJoueur",
+  "server_id": "ID_DU_SERVEUR",
+  "timestamp": "2026-10-06T23:30:00.000Z",
+  "token": "VOTRE_CLE_API"
+}`}</pre>
+            <p className="mt-1 mb-1">
+              Le champ <span className="font-mono text-purple-300">token</span> contient votre clé API secrète.
+              Vérifiez-le côté serveur pour sécuriser l'endpoint et déclencher la récompense en jeu (argent, item, XP, etc.).
+            </p>
+            <p className="font-bold text-white/70 mt-2 mb-1">Exemple PHP (listener) :</p>
+            <pre className="rounded-lg p-2 overflow-x-auto text-[9px] font-mono text-purple-300" style={{ background: "rgba(0,0,0,0.4)" }}>{`<?php
+$data = json_decode(file_get_contents("php://input"), true);
+
+// Vérifier le token de sécurité
+if ($data["token"] !== "VOTRE_CLE_API") {
+  http_response_code(403);
+  exit("Token invalide");
+}
+
+$pseudo = $data["pseudo"];
+$timestamp = $data["timestamp"];
+
+// TODO: accorder la récompense en jeu
+// ex: donner 500$ au joueur via votre API serveur
+grantReward($pseudo, 500);
+
+http_response_code(200);
+echo "OK";`}</pre>
+            <p className="mt-1 text-white/40">
+              Le webhook est envoyé en fire-and-forget avec un timeout de 5 secondes. Les votes automatiques (Vote Auto)
+              déclenchent aussi le webhook à chaque vote automatique.
+            </p>
+          </div>
+
+          <div>
             <p className="font-bold text-white/80 mb-1">Exemple JavaScript</p>
             <pre className="rounded-lg p-2 overflow-x-auto text-[9px] font-mono text-purple-300" style={{ background: "rgba(0,0,0,0.4)" }}>{`const res = await fetch(
   "${API_BASE}?action=check-vote" +
@@ -141,7 +311,7 @@ if (data.has_voted) {
           </div>
 
           <div>
-            <p className="font-bold text-white/80 mb-1">Exemple PHP</p>
+            <p className="font-bold text-white/80 mb-1">Exemple PHP (statistiques)</p>
             <pre className="rounded-lg p-2 overflow-x-auto text-[9px] font-mono text-purple-300" style={{ background: "rgba(0,0,0,0.4)" }}>{`<?php
 $url = "${API_BASE}?action=stats" .
   "&api_key=VOTRE_CLE";

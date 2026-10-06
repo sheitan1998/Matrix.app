@@ -7,6 +7,26 @@ const PLAYER_BOOST_COST = 50; // 50 Trix for player ad boost
 const BOOST_DURATION_HOURS = 24;
 const SERVER_BOOST_DURATION_DAYS = 30; // 30 days for community server boosts
 
+// Send a POST request to the server owner's webhook URL after a vote
+async function sendVoteWebhook(webhookUrl: string, webhookToken: string, pseudo: string, serverId: string) {
+  try {
+    const payload = {
+      pseudo,
+      server_id: serverId,
+      timestamp: new Date().toISOString(),
+      token: webhookToken,
+    };
+    await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(5000),
+    });
+  } catch (err) {
+    console.error('[serverSearch] Webhook delivery failed:', err);
+  }
+}
+
 export default async function(req: Request): Promise<Response> {
   try {
     const body = await req.json().catch(() => ({}));
@@ -98,6 +118,7 @@ export default async function(req: Request): Promise<Response> {
         created_date: found.created_date,
         is_owner: !!user && user.email === found.author_email,
         api_key: (!!user && user.email === found.author_email) ? found.api_key : undefined,
+        webhook_url: (!!user && user.email === found.author_email) ? found.webhook_url : undefined,
       });
     }
 
@@ -194,6 +215,11 @@ export default async function(req: Request): Promise<Response> {
             { $inc: { votes: 1, votes_month: 1, clicks: 1, clicks_month: 1 } }
           );
 
+          // Fire-and-forget: send webhook postback if configured
+          if (ad.webhook_url && ad.api_key) {
+            sendVoteWebhook(ad.webhook_url, ad.api_key, voterPseudo, serverAdId);
+          }
+
           processed++;
         } catch (err) {
           console.error('[serverSearch] Auto-vote error for user', u.email, err);
@@ -287,6 +313,12 @@ export default async function(req: Request): Promise<Response> {
           { id: serverAdId },
           { $inc: { votes: 1, votes_month: 1, clicks: 1, clicks_month: 1 } }
         );
+
+        // Fire-and-forget: send webhook postback if configured
+        if (voteAd.webhook_url && voteAd.api_key) {
+          sendVoteWebhook(voteAd.webhook_url, voteAd.api_key, voterPseudo, serverAdId);
+        }
+
         const freshAd = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
         return Response.json({
           success: true,
@@ -1272,6 +1304,44 @@ export default async function(req: Request): Promise<Response> {
           target_email,
         });
         return Response.json({ subscribed: records.length > 0 });
+      }
+
+      // ---- Set webhook URL (owner only) ----
+      case 'setWebhookUrl': {
+        const { serverAdId, webhookUrl } = params;
+        if (!serverAdId) return Response.json({ error: 'Missing serverAdId' }, { status: 400 });
+        const ad = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
+        if (!ad) return Response.json({ error: 'Server not found' }, { status: 404 });
+        if (ad.author_email !== user.email) return Response.json({ error: 'Not authorized' }, { status: 403 });
+        // Basic URL validation
+        const url = String(webhookUrl || '').trim();
+        if (url && !url.startsWith('https://')) {
+          return Response.json({ error: 'L\'URL du webhook doit commencer par https://' }, { status: 400 });
+        }
+        await base44.asServiceRole.entities.ServerAd.update(serverAdId, { webhook_url: url });
+        return Response.json({ success: true, webhook_url: url });
+      }
+
+      // ---- Get recent votes for owner dashboard (owner only) ----
+      case 'getRecentVotes': {
+        const { serverAdId } = params;
+        if (!serverAdId) return Response.json({ error: 'Missing serverAdId' }, { status: 400 });
+        const ad = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
+        if (!ad) return Response.json({ error: 'Server not found' }, { status: 404 });
+        if (ad.author_email !== user.email) return Response.json({ error: 'Not authorized' }, { status: 403 });
+        const votesPage = await base44.asServiceRole.entities.ServerVote.filter(
+          { server_ad_id: serverAdId },
+          '-last_voted_at',
+          50
+        );
+        const votes = (votesPage?.items || votesPage || []).map((v) => ({
+          id: v.id,
+          voter_pseudo: v.voter_pseudo || 'Anonyme',
+          user_email: v.user_email || null,
+          last_voted_at: v.last_voted_at || v.created_date,
+          source: v.user_email ? 'authenticated' : 'guest',
+        }));
+        return Response.json({ votes });
       }
 
       // ---- Regenerate the server's secret API key (owner only) ----
