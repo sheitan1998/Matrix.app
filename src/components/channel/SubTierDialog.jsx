@@ -32,51 +32,22 @@ export default function SubTierDialog({ open, onOpenChange, channel, user, curre
 
   const subscribe = async (tier) => {
     if (!user || !channel) return;
-    if ((user.trix_balance || 0) < tier.price) {
-      toast.error("Solde TRIX insuffisant", { description: "Achète des TRIX dans le store." });
-      return;
-    }
     setLoading(true);
-
-    // debit trix
-    await base44.auth.updateMe({ trix_balance: (user.trix_balance || 0) - tier.price });
-
-    // sub entity
-    let newSub;
-    if (currentSub) {
-      newSub = await base44.entities.Subscription.update(currentSub.id, { tier: tier.key });
-    } else {
-      newSub = await base44.entities.Subscription.create({
-        user_email: user.email,
-        channel_id: channel.id,
-        channel_name: channel.name,
+    try {
+      const res = await base44.functions.invoke("walletSpend", {
+        action: "channelSubscription",
         tier: tier.key,
-        notifications_enabled: true,
+        channelId: channel.id,
+        channelName: channel.name,
       });
-      await base44.entities.Channel.update(channel.id, {
-        subscribers_count: (channel.subscribers_count || 0) + 1,
-      });
+      toast.success(`Abonnement ${tier.name} activé !`);
+      onDone?.(res?.data);
+      onOpenChange(false);
+    } catch (e) {
+      toast.error(e?.response?.data?.error || "Erreur lors de l'abonnement");
+    } finally {
+      setLoading(false);
     }
-
-    // channel trix credit
-    await base44.entities.Channel.update(channel.id, {
-      trix_received: (channel.trix_received || 0) + tier.price,
-    });
-
-    // transaction log
-    await base44.entities.TrixTransaction.create({
-      user_email: user.email,
-      type: "subscription_payment",
-      amount: -tier.price,
-      target_channel_id: channel.id,
-      target_channel_name: channel.name,
-      description: `Abonnement ${tier.name} à ${channel.name}`,
-    });
-
-    setLoading(false);
-    toast.success(`Abonnement ${tier.name} activé !`);
-    onDone?.(newSub);
-    onOpenChange(false);
   };
 
   return (

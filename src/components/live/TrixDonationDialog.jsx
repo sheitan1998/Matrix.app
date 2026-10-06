@@ -18,51 +18,26 @@ export default function TrixDonationDialog({ open, onOpenChange, video, channel,
 
   const send = async () => {
     if (!user || !video || amount <= 0) return;
-    if ((user.trix_balance || 0) < amount) {
-      toast.error("Solde TRIX insuffisant");
-      return;
-    }
     setLoading(true);
-
-    // debit user
-    await base44.auth.updateMe({ trix_balance: (user.trix_balance || 0) - amount });
-
-    // credit channel
-    if (channel?.id) {
-      await base44.entities.Channel.update(channel.id, {
-        trix_received: (channel.trix_received || 0) + amount,
+    try {
+      await base44.functions.invoke("walletSpend", {
+        action: "liveDonation",
+        amount,
+        videoId: video.id,
+        channelId: channel?.id,
+        channelName: channel?.name || video.channel_name,
+        message,
       });
+      toast.success(`${amount} TRIX envoyés !`, { description: "Merci pour ton soutien 💚" });
+      setMessage("");
+      setAmount(100);
+      onSent?.();
+      onOpenChange(false);
+    } catch (e) {
+      toast.error(e?.response?.data?.error || "Erreur lors de l'envoi");
+    } finally {
+      setLoading(false);
     }
-
-    // chat message
-    await base44.entities.ChatMessage.create({
-      video_id: video.id,
-      author_email: user.email,
-      author_name: user.full_name,
-      author_avatar: user.avatar_url,
-      content: message || `a envoyé ${amount} TRIX`,
-      type: "trix_donation",
-      trix_amount: amount,
-      is_premium: !!user.is_premium,
-    });
-
-    // transaction
-    await base44.entities.TrixTransaction.create({
-      user_email: user.email,
-      type: "donation",
-      amount: -amount,
-      target_channel_id: channel?.id,
-      target_channel_name: channel?.name || video.channel_name,
-      video_id: video.id,
-      description: `Don de ${amount} TRIX à ${video.channel_name}`,
-    });
-
-    setLoading(false);
-    toast.success(`${amount} TRIX envoyés !`, { description: "Merci pour ton soutien 💚" });
-    setMessage("");
-    setAmount(100);
-    onSent?.();
-    onOpenChange(false);
   };
 
   return (

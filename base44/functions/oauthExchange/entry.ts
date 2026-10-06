@@ -1,4 +1,5 @@
 import { secrets } from 'base44:runtime';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 type ProviderConfig = {
   authorizationUrl: string;
@@ -252,6 +253,15 @@ export default async function(req: Request): Promise<Response> {
 
     if (action !== 'exchangeCode') {
       throw new HttpError(400, `Unknown action: ${action}.`);
+    }
+
+    // Require authentication — only logged-in users can exchange OAuth codes.
+    // All social login flows use loginWithProvider (SDK), not this endpoint.
+    // This prevents anonymous token oracle abuse.
+    const base44 = createClientFromRequest(req);
+    const currentUser = await base44.auth.me();
+    if (!currentUser) {
+      throw new HttpError(401, 'Authentification requise pour l\'échange de code OAuth.');
     }
 
     const code = requireNonEmptyString('code', body?.code);

@@ -284,19 +284,15 @@ export function ProgressionProvider({ children }) {
 
   const buyXPBooster = useCallback(async (booster) => {
     if (!ref.current) return;
-    // Deduct Trix from user balance
     const me = await base44.auth.me();
     const currentBalance = me.trix_balance || 0;
     if (currentBalance < booster.price_trix) {
       throw new Error('Insufficient Trix balance');
     }
-    await base44.auth.updateMe({ trix_balance: currentBalance - booster.price_trix });
-    // Record transaction
-    await base44.entities.TrixTransaction.create({
-      user_email: me.email,
-      type: 'purchase',
-      amount: -booster.price_trix,
-      description: `Booster XP x${booster.multiplier} (${booster.duration_label})`,
+    // Server-side debit + transaction record
+    await base44.functions.invoke("walletSpend", {
+      action: "xpBooster",
+      boosterId: booster.id,
     });
     // Add to inventory
     const boosters = [...(ref.current.xp_boosters || []), {

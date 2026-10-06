@@ -25,7 +25,7 @@ export default async function(req: Request): Promise<Response> {
       },
     });
 
-    const safe = result?.safe !== false;
+    const safe = result?.safe === true;
     return Response.json({
       safe,
       reason: safe ? "" : (result?.reason || "Image non conforme aux règles de la communauté."),

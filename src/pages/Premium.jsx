@@ -48,9 +48,13 @@ export default function Premium() {
   };
 
   const cancel = async () => {
-    await base44.auth.updateMe({ is_premium: false, premium_until: null });
-    toast("Abonnement Premium désactivé");
-    base44.auth.me().then(setUser);
+    try {
+      await base44.functions.invoke("walletSpend", { action: "cancelPremium" });
+      toast("Abonnement Premium désactivé");
+      base44.auth.me().then(setUser);
+    } catch (e) {
+      toast.error("Erreur lors de la désactivation");
+    }
   };
 
   return (

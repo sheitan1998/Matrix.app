@@ -79,8 +79,8 @@ export async function uploadImageModerated(file, options = {}) {
     }
   } catch (err) {
     if (err instanceof ModerationError) throw err;
-    // If moderation service is unreachable, fail open (image is allowed)
-    console.warn("Image moderation service unavailable:", err);
+    // Fail closed — if moderation service is unreachable, reject the image
+    throw new ModerationError("Le service de modération est indisponible. Réessayez plus tard.");
   }
 
   return { file_url };

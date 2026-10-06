@@ -107,7 +107,7 @@ export default async function(req: Request): Promise<Response> {
 
         // Idempotency: Stripe event ID stored in dedicated field (not regex on description)
         const existing = await base44.asServiceRole.entities.TrixTransaction.filter({
-          stripe_event_id: event.id,
+          stripe_event_id: data.id,
         });
 
         if (existing.length === 0) {
@@ -126,7 +126,7 @@ export default async function(req: Request): Promise<Response> {
               user_email: userEmail,
               type: 'purchase',
               amount: trixAmount,
-              stripe_event_id: event.id,
+              stripe_event_id: data.id,
               description: `Achat Trix - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
             });
           }
@@ -145,7 +145,7 @@ export default async function(req: Request): Promise<Response> {
               user_email: userEmail,
               type: 'nexus_item',
               amount: 0,
-              stripe_event_id: event.id,
+              stripe_event_id: data.id,
               description: `Achat Nexus ${itemId} - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
             });
           }
@@ -155,7 +155,7 @@ export default async function(req: Request): Promise<Response> {
               user_email: userEmail,
               type: 'donation',
               amount: 0,
-              stripe_event_id: event.id,
+              stripe_event_id: data.id,
               description: `Don de ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
             });
           }
@@ -206,7 +206,7 @@ export default async function(req: Request): Promise<Response> {
               user_email: userEmail,
               type: 'vip',
               amount: plan.tokens,
-              stripe_event_id: event.id,
+              stripe_event_id: data.id,
               description: `Abonnement ${plan.label} - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
             });
           }
@@ -226,7 +226,7 @@ export default async function(req: Request): Promise<Response> {
               user_email: userEmail,
               type: 'nitro',
               amount: 0,
-              stripe_event_id: event.id,
+              stripe_event_id: data.id,
               description: `Abonnement Nitro ${nitroPlan} - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
             });
           }
@@ -239,7 +239,7 @@ export default async function(req: Request): Promise<Response> {
             }
             await base44.asServiceRole.entities.TrixTransaction.create({
               user_email: userEmail, type: 'ai_sub', amount: 0,
-              stripe_event_id: event.id,
+              stripe_event_id: data.id,
               description: `Abonnement AI ${aiPlanId} - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
             });
           }
@@ -252,7 +252,7 @@ export default async function(req: Request): Promise<Response> {
             }
             await base44.asServiceRole.entities.TrixTransaction.create({
               user_email: userEmail, type: 'community_sub', amount: 0,
-              stripe_event_id: event.id,
+              stripe_event_id: data.id,
               description: `Abonnement Communauté ${commPlanId} - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
             });
           }
@@ -272,7 +272,7 @@ export default async function(req: Request): Promise<Response> {
             }
             await base44.asServiceRole.entities.TrixTransaction.create({
               user_email: userEmail, type: 'premium', amount: premiumPlan.trixBonus,
-              stripe_event_id: event.id,
+              stripe_event_id: data.id,
               description: `Abonnement MATRIX Premium - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
             });
           }
@@ -299,7 +299,7 @@ export default async function(req: Request): Promise<Response> {
               user_email: userEmail,
               type: 'casino_coins',
               amount: 0,
-              stripe_event_id: event.id,
+              stripe_event_id: data.id,
               description: `Achat Jetons M - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
             });
           }
@@ -343,6 +343,50 @@ export default async function(req: Request): Promise<Response> {
             vip_until: new Date().toISOString(),
           });
           console.log('[stripePayment] VIP revoked:', userId);
+        }
+        return Response.json({ received: true });
+      }
+
+      // ---- invoice.paid — subscription renewal (monthly tokens/boosts) ----
+      if (eventType === 'invoice.paid' && data) {
+        const billingReason = data.billing_reason;
+        // Skip 'subscription_create' — initial subscription is handled in checkout.session.completed
+        if (billingReason === 'subscription_cycle') {
+          const subMetadata = data.subscription_details?.metadata || data.lines?.data?.[0]?.metadata || {};
+          const userId = subMetadata.user_id;
+          const userEmail = subMetadata.user_email || data.customer_email || '';
+          const planId = subMetadata.plan || 'monthly';
+          const plan = VIP_PLANS[planId] || VIP_PLANS.monthly;
+
+          if (userId) {
+            const existing = await base44.asServiceRole.entities.TrixTransaction.filter({
+              stripe_event_id: data.id,
+            });
+            if (existing.length === 0) {
+              const target = await base44.asServiceRole.entities.User.get(userId);
+              if (target) {
+                const newTokens = (target.nexus_tokens || 0) + plan.tokens;
+                const newFlashBoosts = (target.flash_boosts || 0) + (plan.flashBoosts || 0);
+                const vipUntil = data.subscription_details?.period?.end
+                  ? new Date(data.subscription_details.period.end * 1000).toISOString()
+                  : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+                await base44.asServiceRole.entities.User.update(userId, {
+                  is_vip: true,
+                  vip_until: vipUntil,
+                  vip_tier: plan.tier,
+                  nexus_tokens: newTokens,
+                  flash_boosts: newFlashBoosts,
+                });
+              }
+              await base44.asServiceRole.entities.TrixTransaction.create({
+                user_email: userEmail,
+                type: 'vip',
+                amount: plan.tokens,
+                stripe_event_id: data.id,
+                description: `Renouvellement ${plan.label} (invoice ${data.id})`,
+              });
+            }
+          }
         }
         return Response.json({ received: true });
       }
@@ -810,6 +854,11 @@ export default async function(req: Request): Promise<Response> {
       params.append('metadata[user_email]', user.email);
       params.append('metadata[user_id]', user.id);
       params.append('metadata[plan]', plan || 'vip_bronze');
+      // Also set metadata on the subscription itself so it appears on renewal invoices
+      params.append('subscription_data[metadata][type]', 'vip_subscription');
+      params.append('subscription_data[metadata][user_email]', user.email);
+      params.append('subscription_data[metadata][user_id]', user.id);
+      params.append('subscription_data[metadata][plan]', plan || 'vip_bronze');
 
       const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
         method: 'POST',

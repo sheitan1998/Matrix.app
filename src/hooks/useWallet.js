@@ -18,16 +18,11 @@ export function useWallet() {
     return () => { mounted = false; };
   }, []);
 
-  // Update balance: persists to the User entity via auth.updateMe so it's in the DB
+  // Update balance: local state only. trix_balance is FLS-locked (admin write only);
+  // all persistent credits/debits must go through server-side functions (walletSpend, stripePayment).
   const setBalance = useCallback((valOrFn) => {
-    setBalanceState((prev) => {
-      const next = typeof valOrFn === "function" ? valOrFn(prev) : valOrFn;
-      if (user) {
-        base44.auth.updateMe({ trix_balance: next }).catch(() => {});
-      }
-      return next;
-    });
-  }, [user]);
+    setBalanceState((prev) => typeof valOrFn === "function" ? valOrFn(prev) : valOrFn);
+  }, []);
 
   const addTransaction = useCallback(async (type, amount, description, universe = "general") => {
     if (!user) return;

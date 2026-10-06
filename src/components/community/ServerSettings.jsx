@@ -65,7 +65,12 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
   });
 
   const updateMember = async (memberId, data) => {
-    await base44.entities.ServerMember.update(memberId, data);
+    await base44.functions.invoke("serverMembership", {
+      action: "updateMember",
+      memberId,
+      serverId: server.id,
+      ...data,
+    });
     refetchMembers();
     toast.success("Membre mis à jour");
     setMemberAction(null);
@@ -98,7 +103,7 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
   };
 
   const handleSetRole = async (member, role) => {
-    await base44.entities.ServerMember.update(member.id, { role });
+    await updateMember(member.id, { role });
     refetchMembers();
     toast.success(`Rôle "${role}" attribué à ${member.user_name || member.user_email}`);
     setMemberAction(null);

@@ -42,22 +42,12 @@ export default function NexusInvite() {
     if (!server) return;
     setJoining(true);
     try {
-      // Check if already a member
-      const existing = await base44.entities.ServerMember.filter({ server_id: server.id, user_email: user.email });
-      if (existing.length === 0) {
-        await base44.entities.ServerMember.create({
-          server_id: server.id,
-          user_email: user.email,
-          user_name: user.full_name || user.email.split("@")[0],
-          role: "member",
-        });
-        await base44.entities.Server.update(server.id, { members_count: (server.members_count || 1) + 1 });
-      }
+      await base44.functions.invoke("serverMembership", { action: "join", serverId: server.id });
       setJoined(true);
       trackActivity("servers_joined");
       toast.success(`Rejoint "${server.name}" !`);
-    } catch {
-      toast.error("Erreur lors de la rejointe du serveur");
+    } catch (e) {
+      toast.error(e?.response?.data?.error || "Erreur lors de la rejointe du serveur");
     }
     setJoining(false);
   };

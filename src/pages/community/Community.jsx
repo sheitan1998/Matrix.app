@@ -206,17 +206,7 @@ export default function Community() {
       const exp = new Date(found.invite_expires_at);
       if (exp < new Date()) {toast.error("Ce lien d'invitation a expiré");return;}
     }
-    // Check if already a member
-    const existing = await base44.entities.ServerMember.filter({ server_id: found.id, user_email: user.email });
-    if (existing.length === 0) {
-      await base44.entities.ServerMember.create({
-        server_id: found.id,
-        user_email: user.email,
-        user_name: user.full_name || user.email.split("@")[0],
-        role: "member"
-      });
-      await base44.entities.Server.update(found.id, { members_count: (found.members_count || 1) + 1 });
-    }
+    await base44.functions.invoke("serverMembership", { action: "join", serverId: found.id });
     qc.invalidateQueries({ queryKey: ["servers"] });
     setShowInviteJoin(false);
     setInviteCodeInput("");
@@ -245,46 +235,16 @@ export default function Community() {
   const confirmJoinServer = async () => {
     if (!joinConfirmServer || !user) return;
     try {
-      // Check if user is permanently banned from this server
-      const existing = await base44.entities.ServerMember.filter({ server_id: joinConfirmServer.id, user_email: user.email }, "-created_date", 5);
-      const existingMember = (existing?.items || existing || [])[0];
-      if (existingMember?.is_banned) {
-        const isPermanent = !existingMember.ban_until;
-        const isExpired = existingMember.ban_until && new Date(existingMember.ban_until).getTime() < Date.now();
-        if (isPermanent || !isExpired) {
-          toast.error("Vous êtes banni de ce serveur.");
-          setJoinConfirmServer(null);
-          return;
-        }
-        // Ban expired — clear it
-        await base44.entities.ServerMember.update(existingMember.id, { is_banned: false, ban_until: null });
-      }
-
-      if (existingMember && !existingMember.is_banned) {
-        // Already a member — just select the server
-        setJoinedServerIds((prev) => new Set([...prev, joinConfirmServer.id]));
-        setSelectedServer(joinConfirmServer);
-        setActiveChannel(null);
-        setShowSettings(false);
-        toast.success(`Rejoint "${joinConfirmServer.name}" !`);
-        setJoinConfirmServer(null);
-        return;
-      }
-
-      await base44.entities.ServerMember.create({
-        server_id: joinConfirmServer.id,
-        user_email: user.email,
-        user_name: user.full_name || user.email.split("@")[0],
-        role: "member"
-      });
-      await base44.entities.Server.update(joinConfirmServer.id, { members_count: (joinConfirmServer.members_count || 1) + 1 });
+      await base44.functions.invoke("serverMembership", { action: "join", serverId: joinConfirmServer.id });
       setJoinedServerIds((prev) => new Set([...prev, joinConfirmServer.id]));
       setSelectedServer(joinConfirmServer);
       setActiveChannel(null);
       setShowSettings(false);
       toast.success(`Rejoint "${joinConfirmServer.name}" !`);
-    } catch {
-      toast.error("Erreur lors de la rejointe du serveur");
+    } catch (e) {
+      const msg = e?.response?.data?.error;
+      if (msg?.includes("banni") || msg?.includes("banned")) toast.error(msg);
+      else toast.error("Erreur lors de la rejointe du serveur");
     }
     setJoinConfirmServer(null);
   };

@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { rateLimitByIp } from '../../shared/security.ts';
 
 const VOTE_COOLDOWN_MS = 2 * 60 * 60 * 1000; // 2 hours
 const BOOST_COST = 500; // 500 Trix minimum per boost
@@ -22,11 +23,15 @@ export default async function(req: Request): Promise<Response> {
       if (!inviteCode || typeof inviteCode !== 'string' || inviteCode.length < 3 || inviteCode.length > 64) {
         return Response.json({ error: 'Invalid invite code' }, { status: 400 });
       }
-      // Use filter (not list) to avoid loading all servers — prevents enumeration
+      if (!rateLimitByIp(req, 'inviteLookup', 30, 60_000)) {
+        return Response.json({ error: 'Too many requests' }, { status: 429 });
+      }
       const serverPage = await base44.asServiceRole.entities.Server.filter({ invite_code: inviteCode }, null, 1);
       const found = (serverPage?.items || serverPage || [])[0];
       if (!found) return Response.json({ error: 'Not found' }, { status: 404 });
-      // Return only public fields needed for the invite page — no owner data, no channels
+      if (found.invite_expires_at && new Date(found.invite_expires_at).getTime() < Date.now()) {
+        return Response.json({ error: 'This invite link has expired' }, { status: 410 });
+      }
       return Response.json({
         id: found.id,
         name: found.name,
@@ -299,6 +304,9 @@ export default async function(req: Request): Promise<Response> {
         const query = (pseudo || email || '').trim().toLowerCase();
 
         if (!query) return Response.json({ error: 'Veuillez saisir un pseudo ou un email.' }, { status: 400 });
+        if (!rateLimitByIp(req, `searchUser:${user.email}`, 20, 60_000)) {
+          return Response.json({ error: 'Too many requests' }, { status: 429 });
+        }
 
         const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
         const inputPseudo = (pseudo || '').trim().toLowerCase();
@@ -337,7 +345,7 @@ export default async function(req: Request): Promise<Response> {
           displayPseudo = `${displayPseudo}#${target.pseudo_tag}`;
         }
 
-        console.log('[searchUser] query:', query, '| inputPseudo:', inputPseudo, '| inputTag:', inputTag, '| found:', target?.email);
+        console.log('[searchUser] query length:', query.length, '| found:', !!target);
 
         return Response.json({
           success: true,
@@ -392,25 +400,27 @@ export default async function(req: Request): Promise<Response> {
           return Response.json({ users: [] });
         }
         const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
-        const emailSet = new Set(emails.map((e: string) => e.toLowerCase()));
-        const users = allUsers
-          .filter(u => u.email && emailSet.has(u.email.toLowerCase()))
-          .map(u => {
-            // Pseudo brut du profil, sans le suffixe #XXXX
-            const cleanPseudo = String(u.pseudo || '').split('#')[0].trim();
-            const showActivity = u.show_game_activity !== false;
-            return {
-              id: u.id,
-              // Email NOT returned — caller already has it; prevents PII exposure
-              pseudo: cleanPseudo,
-              avatar_url: u.avatar_url || '',
-              last_seen: u.last_seen || '',
-              current_activity: showActivity ? (u.current_activity || '') : '',
-              current_activity_type: showActivity ? (u.current_activity_type || 'idle') : 'idle',
-              custom_status: u.custom_status || '',
-              show_game_activity: showActivity,
-            };
-          });
+        const userMap = {};
+        for (const u of allUsers) {
+          if (u.email) userMap[u.email.toLowerCase()] = u;
+        }
+        // Return profiles aligned to the input email order (no emails in response)
+        const users = emails.map((e: string) => {
+          const u = userMap[e.toLowerCase()];
+          if (!u) return null;
+          const cleanPseudo = String(u.pseudo || '').split('#')[0].trim();
+          const showActivity = u.show_game_activity !== false;
+          return {
+            id: u.id,
+            pseudo: cleanPseudo,
+            avatar_url: u.avatar_url || '',
+            last_seen: u.last_seen || '',
+            current_activity: showActivity ? (u.current_activity || '') : '',
+            current_activity_type: showActivity ? (u.current_activity_type || 'idle') : 'idle',
+            custom_status: u.custom_status || '',
+            show_game_activity: showActivity,
+          };
+        }).filter(Boolean);
         return Response.json({ users });
       }
 
