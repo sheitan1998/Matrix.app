@@ -160,6 +160,11 @@ export default function Prospecteurs() {
   };
 
   const openCreateModal = (serverType = "nexus") => {
+    if (!user) {
+      toast.info("Connecte-toi pour publier un serveur");
+      navigate("/login?returnTo=" + encodeURIComponent(window.location.pathname));
+      return;
+    }
     setCreateType("server");
     setCreateServerType(serverType);
     setEditingAd(null);

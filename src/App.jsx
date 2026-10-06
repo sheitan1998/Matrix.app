@@ -158,6 +158,8 @@ const AuthenticatedApp = () => {
         <Route path="/oauth/consent" element={<OAuthConsent />} />
         <Route path="/nexus/invite/:code" element={<NexusInvite />} />
         <Route path="/servers/:slug" element={<ServerProfile />} />
+        <Route path="/prospecteurs" element={<Prospecteurs />} />
+        <Route path="/prospecteurs/category/:slug" element={<CategoryServers />} />
         <Route path="/creator/:username" element={<CreatorProfile />} />
         <Route path="/page/:slug" element={<DynamicPage />} />
         <Route path="/" element={<Landing />} />
@@ -181,8 +183,6 @@ const AuthenticatedApp = () => {
 
         <Route path="/casino" element={<Casino />} />
         <Route path="/nexus-games" element={<NexusGames />} />
-        <Route path="/prospecteurs" element={<Prospecteurs />} />
-        <Route path="/prospecteurs/category/:slug" element={<CategoryServers />} />
         <Route path="/community/subscription" element={<CommunitySubscription />} />
           <Route path="/wallet" element={<Wallet />} />
           <Route path="/trix-store" element={<TrixStore />} />
