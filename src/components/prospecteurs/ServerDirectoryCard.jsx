@@ -19,12 +19,14 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
   const [boostCount, setBoostCount] = useState(server.boosts || 0);
   const [copied, setCopied] = useState(false);
 
+  const shareSlug = server.slug || server.id;
+
   const handleShare = async () => {
-    if (!server.slug) {
+    if (!shareSlug) {
       toast.error("Lien de partage non disponible");
       return;
     }
-    const url = `${window.location.origin}/servers/${server.slug}`;
+    const url = `${window.location.origin}/servers/${shareSlug}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
@@ -344,9 +346,9 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
         >
           {copied ? <Check className="w-3 h-3" /> : <Share2 className="w-3 h-3" />}
         </button>
-        {server.slug && (
+        {shareSlug && (
           <Link
-            to={`/servers/${server.slug}`}
+            to={`/servers/${shareSlug}`}
             className="h-7 px-2 rounded-md flex items-center justify-center transition tap-sm text-[9px] font-bold"
             style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.1)" }}
             title="Voir la fiche"

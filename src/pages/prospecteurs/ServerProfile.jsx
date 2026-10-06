@@ -112,8 +112,10 @@ export default function ServerProfile() {
     }
   };
 
+  const shareSlug = server.slug || server.id;
+
   const handleShare = async () => {
-    const url = `${window.location.origin}/servers/${server.slug}`;
+    const url = `${window.location.origin}/servers/${shareSlug}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
@@ -370,7 +372,7 @@ export default function ServerProfile() {
           <Copy className="w-3.5 h-3.5 text-white/30 shrink-0" />
           <input
             readOnly
-            value={`${window.location.origin}/servers/${server.slug}`}
+            value={`${window.location.origin}/servers/${shareSlug}`}
             className="flex-1 bg-transparent text-[10px] text-white/40 outline-none"
             onClick={(e) => e.target.select()}
           />

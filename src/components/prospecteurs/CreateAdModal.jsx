@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { X, Gamepad2, Image as ImageIcon, Upload, Users, Clock, User } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
@@ -42,6 +42,18 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
   const [coverImage, setCoverImage] = useState(editAd?.cover_image || "");
   const [uploadingField, setUploadingField] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [serverCategories, setServerCategories] = useState([]);
+
+  // Fetch dynamic categories from ServerCategory entity (managed in admin)
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const cats = await base44.entities.ServerCategory.list("sort_order", 200);
+        setServerCategories(cats || []);
+      } catch { /* silent fallback to hardcoded */ }
+    };
+    fetchCategories();
+  }, []);
   const profileInputRef = useRef(null);
   const coverInputRef = useRef(null);
 
@@ -98,6 +110,12 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
     await onSubmit(data);
     setSubmitting(false);
   };
+
+  // Filter categories by selected server type (nexus/discord/both)
+  const filteredCategories = serverCategories.filter(
+    (c) => c.type === serverSubType || c.type === "both"
+  );
+  const availableCategories = filteredCategories.length > 0 ? filteredCategories : CATEGORIES.map(name => ({ name, slug: "" }));
 
   const inputStyle = {
     background: "rgba(138, 79, 255, 0.05)",
@@ -308,13 +326,20 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
               <div className="relative">
                 <select
                   value={form.category}
-                  onChange={(e) => handleChange("category", e.target.value)}
+                  onChange={(e) => {
+                    const selectedCat = availableCategories.find(c => c.name === e.target.value);
+                    setForm(prev => ({
+                      ...prev,
+                      category: e.target.value,
+                      category_slug: selectedCat?.slug || "",
+                    }));
+                  }}
                   className="w-full h-10 px-3 rounded-lg text-sm text-white outline-none appearance-none cursor-pointer"
                   style={inputStyle}
                 >
                   <option value="" style={{ background: "#12091c" }}>Sélectionner la catégorie</option>
-                  {CATEGORIES.map((c) => (
-                    <option key={c} value={c} style={{ background: "#12091c" }}>{c}</option>
+                  {availableCategories.map((c) => (
+                    <option key={c.slug || c.name} value={c.name} style={{ background: "#12091c" }}>{c.name}</option>
                   ))}
                 </select>
               </div>

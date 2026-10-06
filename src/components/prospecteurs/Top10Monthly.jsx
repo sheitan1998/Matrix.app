@@ -8,7 +8,7 @@ const RANK_STYLES = [
   { bg: "linear-gradient(135deg, #d97706, #b45309)", glow: "rgba(217,119,6,0.3)" },
 ];
 
-export default function Top10Monthly() {
+export default function Top10Monthly({ activeTab = "nexus" }) {
   const [topNexus, setTopNexus] = useState([]);
   const [topDiscord, setTopDiscord] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -125,10 +125,18 @@ export default function Top10Monthly() {
     </div>
   );
 
+  // Only render the Top 10 matching the active tab
+  if (activeTab === "discord") {
+    return (
+      <div className="mb-5">
+        {renderTopBlock("Top 10 Serveurs Discord", Crown, topDiscord, "#5865F2")}
+      </div>
+    );
+  }
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-5">
+    <div className="mb-5">
       {renderTopBlock("Top 10 Serveurs Nexus", Trophy, topNexus, "#22c55e")}
-      {renderTopBlock("Top 10 Serveurs Discord", Crown, topDiscord, "#5865F2")}
     </div>
   );
 }
