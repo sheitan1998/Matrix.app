@@ -393,7 +393,14 @@ export default function ServerProfile() {
           flashBoosts={user?.flash_boosts || 0}
           trixBalance={user?.trix_balance || 0}
           onBoosted={(data) => {
-            setServer((prev) => ({ ...prev, boosts: data.boosts }));
+            setServer((prev) => ({
+              ...prev,
+              boosts: data.boosts,
+              votes: data.votes ?? prev.votes,
+              votes_month: data.votes_month ?? prev.votes_month,
+              clicks: data.clicks ?? prev.clicks,
+              clicks_month: data.clicks_month ?? prev.clicks_month,
+            }));
           }}
           onClose={() => setShowBoost(false)}
         />

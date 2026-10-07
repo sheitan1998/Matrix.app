@@ -19,7 +19,7 @@ export default function BoostAdModal({ adId, adTitle, flashBoosts, trixBalance, 
         method: selectedMethod,
       });
       if (res.data?.success) {
-        toast.success("Annonce boostée !");
+        toast.success("Boost envoyé ! +1 vote pour ce serveur");
         onBoosted(res.data);
         onClose();
       } else {
@@ -77,7 +77,7 @@ export default function BoostAdModal({ adId, adTitle, flashBoosts, trixBalance, 
             </div>
             <div className="flex-1">
               <p className="text-sm font-bold text-white">Flash Boost</p>
-              <p className="text-[10px] text-white/40">Utilise un boost Flash (illimité)</p>
+              <p className="text-[10px] text-white/40">Boost + 1 vote pour le serveur</p>
             </div>
             <span className="text-xs font-bold" style={{ color: flashBoosts > 0 ? "#fbbf24" : "#ef4444" }}>
               {flashBoosts} dispo
@@ -96,7 +96,7 @@ export default function BoostAdModal({ adId, adTitle, flashBoosts, trixBalance, 
             </div>
             <div className="flex-1">
               <p className="text-sm font-bold text-white">200 Trix</p>
-              <p className="text-[10px] text-white/40">Utilise tes Trix (illimité)</p>
+              <p className="text-[10px] text-white/40">Boost + 1 vote pour le serveur</p>
             </div>
             <span className="text-xs font-bold" style={{ color: trixBalance >= 200 ? "#a855f7" : "#ef4444" }}>
               {trixBalance >= 200 ? "OK" : "Insuffisant"}

@@ -349,13 +349,15 @@ export default async function(req: Request): Promise<Response> {
         });
       }
 
-      // ---- Boost a server ad with Flash Boosts or Trix (200) ----
+      // ---- Boost a server ad with Flash Boosts or Trix (200) — also counts as a vote ----
       case 'boost': {
         const { serverAdId, method } = params;
         if (!serverAdId) return Response.json({ error: 'Missing serverAdId' }, { status: 400 });
 
         const ad = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
         if (!ad) return Response.json({ error: 'Server not found' }, { status: 404 });
+
+        const nowIso = new Date().toISOString();
 
         if (method === 'trix') {
           const TRIX_BOOST_COST = 200;
@@ -371,7 +373,37 @@ export default async function(req: Request): Promise<Response> {
           const newBoosts = (ad.boosts || 0) + 1;
           await base44.asServiceRole.entities.ServerAd.update(serverAdId, { boosts: newBoosts, is_boosted: true, boost_until: boostUntil });
 
-          return Response.json({ success: true, boosts: newBoosts, newBalance });
+          // Boost counts as a vote: increment counters atomically
+          await base44.asServiceRole.entities.ServerAd.updateMany(
+            { id: serverAdId },
+            { $inc: { votes: 1, votes_month: 1, clicks: 1, clicks_month: 1 } }
+          );
+
+          // Create a vote record for traceability (source: boost)
+          const voterPseudo = String(freshUser?.pseudo || '').split('#')[0].trim() || user.email.split('@')[0];
+          await base44.asServiceRole.entities.ServerVote.create({
+            server_ad_id: serverAdId,
+            user_email: user.email,
+            voter_pseudo: voterPseudo,
+            last_voted_at: nowIso,
+          });
+
+          // Fire-and-forget: send webhook postback if configured
+          if (ad.webhook_url && ad.api_key) {
+            sendVoteWebhook(ad.webhook_url, ad.api_key, voterPseudo, serverAdId);
+          }
+
+          const freshAd = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
+          return Response.json({
+            success: true,
+            boosts: newBoosts,
+            newBalance,
+            votes: freshAd?.votes || 0,
+            votes_month: freshAd?.votes_month || 0,
+            clicks: freshAd?.clicks || 0,
+            clicks_month: freshAd?.clicks_month || 0,
+            voted: true,
+          });
         }
 
         const freshUserBoost = await base44.asServiceRole.entities.User.get(user.id);
@@ -387,7 +419,37 @@ export default async function(req: Request): Promise<Response> {
         const newBoosts = (ad.boosts || 0) + 1;
         await base44.asServiceRole.entities.ServerAd.update(serverAdId, { boosts: newBoosts, is_boosted: true, boost_until: boostUntil });
 
-        return Response.json({ success: true, boosts: newBoosts, newFlashBoosts });
+        // Boost counts as a vote: increment counters atomically
+        await base44.asServiceRole.entities.ServerAd.updateMany(
+          { id: serverAdId },
+          { $inc: { votes: 1, votes_month: 1, clicks: 1, clicks_month: 1 } }
+        );
+
+        // Create a vote record for traceability (source: boost)
+        const flashVoterPseudo = String(freshUserBoost?.pseudo || '').split('#')[0].trim() || user.email.split('@')[0];
+        await base44.asServiceRole.entities.ServerVote.create({
+          server_ad_id: serverAdId,
+          user_email: user.email,
+          voter_pseudo: flashVoterPseudo,
+          last_voted_at: nowIso,
+        });
+
+        // Fire-and-forget: send webhook postback if configured
+        if (ad.webhook_url && ad.api_key) {
+          sendVoteWebhook(ad.webhook_url, ad.api_key, flashVoterPseudo, serverAdId);
+        }
+
+        const freshFlashAd = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
+        return Response.json({
+          success: true,
+          boosts: newBoosts,
+          newFlashBoosts,
+          votes: freshFlashAd?.votes || 0,
+          votes_month: freshFlashAd?.votes_month || 0,
+          clicks: freshFlashAd?.clicks || 0,
+          clicks_month: freshFlashAd?.clicks_month || 0,
+          voted: true,
+        });
       }
 
       // ---- Boost a player search ad with Trix tokens (50 Trix) ----

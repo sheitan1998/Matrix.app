@@ -118,6 +118,15 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
     setFlashBoosts(data.newFlashBoosts ?? flashBoosts);
     setTrixBalance(data.newBalance ?? trixBalance);
     setBoostCount(data.boosts ?? boostCount);
+    // Propagate vote counters to parent (boost now counts as a vote)
+    if (data.voted) {
+      onVote(server.id, {
+        votes: data.votes,
+        votes_month: data.votes_month,
+        clicks: data.clicks,
+        clicks_month: data.clicks_month,
+      });
+    }
   };
 
   const handleDelete = async () => {
