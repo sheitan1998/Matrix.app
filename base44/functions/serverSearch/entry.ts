@@ -349,7 +349,7 @@ export default async function(req: Request): Promise<Response> {
         });
       }
 
-      // ---- Boost a server ad with Flash Boosts or Trix (200) — also counts as a vote ----
+      // ---- Boost a server ad: Trix counts as a vote, Flash does NOT ----
       case 'boost': {
         const { serverAdId, method } = params;
         if (!serverAdId) return Response.json({ error: 'Missing serverAdId' }, { status: 400 });
@@ -419,26 +419,7 @@ export default async function(req: Request): Promise<Response> {
         const newBoosts = (ad.boosts || 0) + 1;
         await base44.asServiceRole.entities.ServerAd.update(serverAdId, { boosts: newBoosts, is_boosted: true, boost_until: boostUntil });
 
-        // Boost counts as a vote: increment counters atomically
-        await base44.asServiceRole.entities.ServerAd.updateMany(
-          { id: serverAdId },
-          { $inc: { votes: 1, votes_month: 1, clicks: 1, clicks_month: 1 } }
-        );
-
-        // Create a vote record for traceability (source: boost)
-        const flashVoterPseudo = String(freshUserBoost?.pseudo || '').split('#')[0].trim() || user.email.split('@')[0];
-        await base44.asServiceRole.entities.ServerVote.create({
-          server_ad_id: serverAdId,
-          user_email: user.email,
-          voter_pseudo: flashVoterPseudo,
-          last_voted_at: nowIso,
-        });
-
-        // Fire-and-forget: send webhook postback if configured
-        if (ad.webhook_url && ad.api_key) {
-          sendVoteWebhook(ad.webhook_url, ad.api_key, flashVoterPseudo, serverAdId);
-        }
-
+        // Flash boosts do NOT count as a vote — only the boost counter is incremented
         const freshFlashAd = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
         return Response.json({
           success: true,
@@ -448,7 +429,7 @@ export default async function(req: Request): Promise<Response> {
           votes_month: freshFlashAd?.votes_month || 0,
           clicks: freshFlashAd?.clicks || 0,
           clicks_month: freshFlashAd?.clicks_month || 0,
-          voted: true,
+          voted: false,
         });
       }
 
