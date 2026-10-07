@@ -16,6 +16,10 @@ export default function ProspecteursSidebar({ active = "servers", user }) {
   !!user?.vote_auto_until &&
   new Date(user.vote_auto_until).getTime() > Date.now();
 
+  const hasVip = !!user?.is_vip &&
+  !!user?.vip_until &&
+  new Date(user.vip_until).getTime() > Date.now();
+
   return (
     <div className="w-24 sm:w-32 shrink-0 sticky top-16 self-start flex flex-col gap-1 p-2">
       <Link
@@ -43,44 +47,43 @@ export default function ProspecteursSidebar({ active = "servers", user }) {
         <span className="text-[9px] font-bold text-center">Créateurs</span>
       </Link>
 
-      {/* VIP encart (2,99€/mois) */}
-      <button
-        onClick={() => setShowVipCheckout(true)}
-        className="relative rounded-xl overflow-hidden transition hover:scale-[1.03] mt-2 group block w-full"
-        title="VIP - 2,99€/mois - Cooldown 1h au lieu de 2h"
-        style={{ boxShadow: "0 0 20px rgba(255,215,0,0.15)" }}>
-        
-        <img
-          src={VIP_IMAGE}
-          alt="VIP - 2,99€/mois"
-          className="w-full h-auto block"
-          style={{ minHeight: "140px" }} />
-        
-        <div className="absolute inset-0 ring-2 ring-yellow-500/30 rounded-xl pointer-events-none" />
-        <div className="absolute inset-0 bg-transparent group-hover:bg-yellow-500/5 transition rounded-[10px]" />
-      </button>
+      {/* VIP encart (2,99€/mois) — masqué si VIP actif */}
+      {!hasVip && (
+        <button
+          onClick={() => setShowVipCheckout(true)}
+          className="relative rounded-xl overflow-hidden transition hover:scale-[1.03] mt-2 group block w-full"
+          title="VIP - 2,99€/mois - Cooldown 1h au lieu de 2h"
+          style={{ boxShadow: "0 0 20px rgba(255,215,0,0.15)" }}>
+          
+          <img
+            src={VIP_IMAGE}
+            alt="VIP - 2,99€/mois"
+            className="w-full h-auto block"
+            style={{ minHeight: "140px" }} />
+          
+          <div className="absolute inset-0 ring-2 ring-yellow-500/30 rounded-xl pointer-events-none" />
+          <div className="absolute inset-0 bg-transparent group-hover:bg-yellow-500/5 transition rounded-[10px]" />
+        </button>
+      )}
 
-      {/* Vote Auto encart (4,99€/mois) — placé sous le VIP */}
-      <button
-        onClick={() => hasVoteAuto ? setShowVoteAutoSetup(true) : setShowVoteAutoCheckout(true)}
-        className="relative rounded-xl overflow-hidden transition hover:scale-[1.03] group block w-full"
-        title="Vote Auto - 4,99€/mois - Vote automatisé pour ton serveur"
-        style={{ boxShadow: "0 0 20px rgba(191,0,255,0.15)" }}>
-        
-        <img
-          src={VOTE_AUTO_IMAGE}
-          alt="Vote Auto - 4,99€/mois"
-          className="w-full h-auto block"
-          style={{ minHeight: "140px" }} />
-        
-        <div className="absolute inset-0 ring-2 ring-fuchsia-500/30 rounded-xl pointer-events-none" />
-        <div className="absolute inset-0 bg-transparent group-hover:bg-fuchsia-500/5 transition rounded-[10px]" />
-        {hasVoteAuto &&
-        <div className="absolute top-1 right-1 px-1.5 py-0.5 rounded text-[7px] font-black" style={{ background: "rgba(34,197,94,0.2)", color: "#22c55e", backdropFilter: "blur(4px)" }}>
-            ACTIF
-          </div>
-        }
-      </button>
+      {/* Vote Auto encart (4,99€/mois) — masqué si Vote Auto actif */}
+      {!hasVoteAuto && (
+        <button
+          onClick={() => setShowVoteAutoCheckout(true)}
+          className="relative rounded-xl overflow-hidden transition hover:scale-[1.03] group block w-full"
+          title="Vote Auto - 4,99€/mois - Vote automatisé pour ton serveur"
+          style={{ boxShadow: "0 0 20px rgba(191,0,255,0.15)" }}>
+          
+          <img
+            src={VOTE_AUTO_IMAGE}
+            alt="Vote Auto - 4,99€/mois"
+            className="w-full h-auto block"
+            style={{ minHeight: "140px" }} />
+          
+          <div className="absolute inset-0 ring-2 ring-fuchsia-500/30 rounded-xl pointer-events-none" />
+          <div className="absolute inset-0 bg-transparent group-hover:bg-fuchsia-500/5 transition rounded-[10px]" />
+        </button>
+      )}
 
       {showVipCheckout &&
       <CheckoutModal
