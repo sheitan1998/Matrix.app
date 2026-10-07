@@ -77,7 +77,7 @@ export default function BoostAdModal({ adId, adTitle, flashBoosts, trixBalance, 
             </div>
             <div className="flex-1">
               <p className="text-sm font-bold text-white">Flash Boost</p>
-              <p className="text-[10px] text-white/40">Augmente uniquement les boosts</p>
+              <p className="text-[10px] text-white/40">Boost + 1 vote pour le serveur</p>
             </div>
             <span className="text-xs font-bold" style={{ color: flashBoosts > 0 ? "#fbbf24" : "#ef4444" }}>
               {flashBoosts} dispo
