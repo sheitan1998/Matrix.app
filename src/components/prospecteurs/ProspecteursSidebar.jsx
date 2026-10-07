@@ -13,12 +13,10 @@ export default function ProspecteursSidebar({ active = "servers", user }) {
   const [showVoteAutoSetup, setShowVoteAutoSetup] = useState(false);
 
   const hasVoteAuto = !!user?.has_vote_auto &&
-  !!user?.vote_auto_until &&
-  new Date(user.vote_auto_until).getTime() > Date.now();
+  (!user?.vote_auto_until || new Date(user.vote_auto_until).getTime() > Date.now());
 
   const hasVip = !!user?.is_vip &&
-  !!user?.vip_until &&
-  new Date(user.vip_until).getTime() > Date.now();
+  (!user?.vip_until || new Date(user.vip_until).getTime() > Date.now());
 
   return (
     <div className="w-24 sm:w-32 shrink-0 sticky top-16 self-start flex flex-col gap-1 p-2">

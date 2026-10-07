@@ -200,7 +200,7 @@ export default async function(req: Request): Promise<Response> {
           });
 
           // Determine cooldown: 1h if VIP+VoteAuto, 2h if VoteAuto only
-          const isVip = u.is_vip && u.vip_until && new Date(u.vip_until).getTime() > now;
+          const isVip = !!(u.is_vip && (!u.vip_until || new Date(u.vip_until).getTime() > now));
           const effectiveCooldown = isVip ? (1 * 60 * 60 * 1000) : VOTE_COOLDOWN_MS;
 
           if (existingVotes.length > 0) {
@@ -287,7 +287,9 @@ export default async function(req: Request): Promise<Response> {
         const now = Date.now();
 
         // VIP users get 1h cooldown instead of 2h
-        const isVip = user && user.is_vip && user.vip_until && new Date(user.vip_until).getTime() > now;
+        // is_vip is set to false by the Stripe webhook on subscription deletion,
+        // so if is_vip is true the subscription is active (even if vip_until is missing)
+        const isVip = !!(user && user.is_vip && (!user.vip_until || new Date(user.vip_until).getTime() > now));
         const effectiveCooldown = isVip ? (1 * 60 * 60 * 1000) : VOTE_COOLDOWN_MS;
 
         if (existingVotes.length > 0) {
@@ -475,7 +477,7 @@ export default async function(req: Request): Promise<Response> {
           : 0;
         const elapsed = Date.now() - lastVoted;
 
-        const isVip = user && user.is_vip && user.vip_until && new Date(user.vip_until).getTime() > Date.now();
+        const isVip = !!(user && user.is_vip && (!user.vip_until || new Date(user.vip_until).getTime() > Date.now()));
         const effectiveCooldown = isVip ? (1 * 60 * 60 * 1000) : VOTE_COOLDOWN_MS;
 
         if (elapsed >= effectiveCooldown) {
@@ -527,11 +529,9 @@ export default async function(req: Request): Promise<Response> {
       case 'getVoteAutoStatus': {
         const freshUser = await base44.asServiceRole.entities.User.get(user.id);
         const isActive = !!freshUser?.has_vote_auto &&
-          !!freshUser?.vote_auto_until &&
-          new Date(freshUser.vote_auto_until).getTime() > Date.now();
+          (!freshUser?.vote_auto_until || new Date(freshUser.vote_auto_until).getTime() > Date.now());
         const isVip = !!freshUser?.is_vip &&
-          !!freshUser?.vip_until &&
-          new Date(freshUser.vip_until).getTime() > Date.now();
+          (!freshUser?.vip_until || new Date(freshUser.vip_until).getTime() > Date.now());
 
         return Response.json({
           active: isActive,
