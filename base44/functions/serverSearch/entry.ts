@@ -448,17 +448,23 @@ export default async function(req: Request): Promise<Response> {
             if (!lastByServer[v.server_ad_id]) lastByServer[v.server_ad_id] = v.last_voted_at;
           }
 
-          servers = items.map(a => ({
-            id: a.id,
-            title: a.title,
-            server_type: a.server_type,
-            logo_url: a.logo_url,
-            profile_image: a.profile_image,
-            game: a.game || '',
-            votes_month: a.votes_month || 0,
-            votes: a.votes || 0,
-            last_auto_voted_at: lastByServer[a.id] || null,
-          }));
+          // Keep the exact order the user saved (slot 1, 2, 3) — never reorder by votes
+          const byId = Object.fromEntries(items.map(a => [a.id, a]));
+          servers = serverIds.map(id => {
+            const a = byId[id];
+            if (!a) return { id, title: 'Serveur introuvable', missing: true, votes_month: 0, votes: 0, last_auto_voted_at: lastByServer[id] || null };
+            return {
+              id: a.id,
+              title: a.title,
+              server_type: a.server_type,
+              logo_url: a.logo_url,
+              profile_image: a.profile_image,
+              game: a.game || '',
+              votes_month: a.votes_month || 0,
+              votes: a.votes || 0,
+              last_auto_voted_at: lastByServer[a.id] || null,
+            };
+          });
 
           lastRun = servers.reduce((max, s) => {
             if (!s.last_auto_voted_at) return max;
@@ -506,11 +512,13 @@ export default async function(req: Request): Promise<Response> {
       // ---- Search any server in the directory (for Vote Auto setup) ----
       case 'searchServers': {
         const q = String(params.query || '').trim().slice(0, 60);
+        // Escape regex special chars so inputs like "(" or "+" never crash the search
+        const rx = { $regex: q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' };
         const baseQ = { type: 'server' };
         const query = q
-          ? { ...baseQ, $or: [ { title: { $regex: q, $options: 'i' } }, { game: { $regex: q, $options: 'i' } }, { description: { $regex: q, $options: 'i' } } ] }
+          ? { ...baseQ, $or: [ { title: rx }, { slug: rx }, { game: rx }, { games: rx }, { category: rx }, { categories: rx }, { server_type: rx }, { description: rx } ] }
           : baseQ;
-        const page = await base44.asServiceRole.entities.ServerAd.filter(query, '-votes_month', 20);
+        const page = await base44.asServiceRole.entities.ServerAd.filter(query, '-votes_month', 30);
         const items = page?.items || page || [];
         return Response.json({
           servers: items.map(a => ({
