@@ -1401,24 +1401,27 @@ export default async function(req: Request): Promise<Response> {
 
       // ---- Get recent votes for owner dashboard (owner only) ----
       case 'getRecentVotes': {
-        const { serverAdId } = params;
+        const { serverAdId, cursor, limit } = params;
         if (!serverAdId) return Response.json({ error: 'Missing serverAdId' }, { status: 400 });
         const ad = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
         if (!ad) return Response.json({ error: 'Server not found' }, { status: 404 });
         if (ad.author_email !== user.email) return Response.json({ error: 'Not authorized' }, { status: 403 });
+        const pageLimit = Math.min(Number(limit) || 15, 100);
         const votesPage = await base44.asServiceRole.entities.ServerVote.filter(
           { server_ad_id: serverAdId },
-          '-last_voted_at',
-          50
+          { sort: '-last_voted_at', limit: pageLimit, cursor: cursor || undefined }
         );
-        const votes = (votesPage?.items || votesPage || []).map((v) => ({
+        const rawItems = votesPage?.items || [];
+        const votes = rawItems.map((v) => ({
           id: v.id,
           voter_pseudo: v.voter_pseudo || 'Anonyme',
           user_email: v.user_email || null,
           last_voted_at: v.last_voted_at || v.created_date,
-          source: v.vote_source || (v.user_email ? 'authenticated' : 'guest'),
+          source: v.vote_source === 'auto' ? 'auto'
+            : v.vote_source === 'boost' ? 'boost'
+            : v.user_email ? 'authenticated' : 'guest',
         }));
-        return Response.json({ votes });
+        return Response.json({ votes, next_cursor: votesPage?.next_cursor || null, has_more: !!votesPage?.has_more });
       }
 
       // ---- Regenerate the server's secret API key (owner only) ----

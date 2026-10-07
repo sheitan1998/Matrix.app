@@ -16,6 +16,9 @@ export default function ServerApiPanel({ server }) {
   const [testResult, setTestResult] = useState(null);
   const [recentVotes, setRecentVotes] = useState([]);
   const [loadingVotes, setLoadingVotes] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [votesCursor, setVotesCursor] = useState(null);
+  const [hasMoreVotes, setHasMoreVotes] = useState(false);
 
   useEffect(() => {
     setApiKey(server.api_key || "");
@@ -80,24 +83,54 @@ export default function ServerApiPanel({ server }) {
     }
   };
 
-  const loadRecentVotes = async () => {
-    setLoadingVotes(true);
+  const loadRecentVotes = async (silent = false) => {
+    if (!silent) setLoadingVotes(true);
     try {
       const res = await base44.functions.invoke("serverSearch", {
         action: "getRecentVotes",
         serverAdId: server.id,
+        limit: 15,
       });
       const data = res.data || res;
       setRecentVotes(data.votes || []);
+      setVotesCursor(data.next_cursor || null);
+      setHasMoreVotes(!!data.has_more);
     } catch {
-      toast.error("Erreur lors du chargement des votes");
+      if (!silent) toast.error("Erreur lors du chargement des votes");
     } finally {
-      setLoadingVotes(false);
+      if (!silent) setLoadingVotes(false);
+    }
+  };
+
+  const loadMoreVotes = async () => {
+    if (!votesCursor || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const res = await base44.functions.invoke("serverSearch", {
+        action: "getRecentVotes",
+        serverAdId: server.id,
+        cursor: votesCursor,
+        limit: 15,
+      });
+      const data = res.data || res;
+      setRecentVotes((prev) => [...prev, ...(data.votes || [])]);
+      setVotesCursor(data.next_cursor || null);
+      setHasMoreVotes(!!data.has_more);
+    } catch {
+      toast.error("Erreur lors du chargement");
+    } finally {
+      setLoadingMore(false);
     }
   };
 
   useEffect(() => {
     loadRecentVotes();
+    const unsub = base44.entities.ServerVote.subscribe((event) => {
+      const d = event.data;
+      if (!d || d.server_ad_id !== server.id) return;
+      loadRecentVotes(true);
+    });
+    return () => unsub();
   }, [server.id]);
 
   const handleTestWebhook = async () => {
@@ -232,45 +265,24 @@ export default function ServerApiPanel({ server }) {
         ) : recentVotes.length === 0 ? (
           <div className="text-center py-4 text-[10px] text-white/30">Aucun vote récent</div>
         ) : (
+          <>
           <div className="rounded-lg overflow-hidden" style={{ border: "1px solid rgba(138,79,255,0.15)" }}>
             <table className="w-full text-[10px]">
-              <thead>
-                <tr style={{ background: "rgba(138,79,255,0.08)" }}>
-                  <th className="text-left px-2 py-1.5 font-bold text-white/50">Pseudo</th>
-                  <th className="text-left px-2 py-1.5 font-bold text-white/50 hidden sm:table-cell">Source</th>
-                  <th className="text-right px-2 py-1.5 font-bold text-white/50">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentVotes.slice(0, 15).map((v, i) => (
-                  <tr key={v.id || i} style={{ borderTop: i > 0 ? "1px solid rgba(138,79,255,0.08)" : "none" }}>
-                    <td className="px-2 py-1.5 text-white/80 flex items-center gap-1">
-                      <User className="w-2.5 h-2.5 text-white/30" />
-                      {v.voter_pseudo}
-                    </td>
-                    <td className="px-2 py-1.5 hidden sm:table-cell">
-                      <span
-                        className="px-1.5 py-0.5 rounded text-[8px] font-bold"
-                        style={v.source === "auto"
-                          ? { background: "rgba(168,85,247,0.15)", color: "#a855f7" }
-                          : v.source === "boost"
-                          ? { background: "rgba(251,191,36,0.12)", color: "#fbbf24" }
-                          : v.source === "authenticated"
-                          ? { background: "rgba(34,197,94,0.1)", color: "#22c55e" }
-                          : { background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.4)" }}
-                      >
-                        {v.source === "auto" ? "Automatique" : v.source === "boost" ? "Boost" : v.source === "authenticated" ? "Compte" : "Anonyme"}
-                      </span>
-                    </td>
-                    <td className="px-2 py-1.5 text-right text-white/40 flex items-center justify-end gap-0.5">
-                      <Clock className="w-2.5 h-2.5" />
-                      {v.last_voted_at ? new Date(v.last_voted_at).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+...
             </table>
           </div>
+          {hasMoreVotes && (
+            <button
+              onClick={loadMoreVotes}
+              disabled={loadingMore}
+              className="w-full mt-2 h-8 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 transition tap-sm disabled:opacity-50"
+              style={{ background: "rgba(138,79,255,0.08)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}
+            >
+              {loadingMore ? <Loader2 className="w-3 h-3 animate-spin" /> : <ChevronDown className="w-3 h-3" />}
+              Afficher plus
+            </button>
+          )}
+          </>
         )}
       </div>
 
