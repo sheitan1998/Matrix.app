@@ -97,9 +97,14 @@
         }
       }
     },
-    "vote_auto_server_id": {
-      "type": "string",
-      "description": "ID of the ServerAd to auto-vote for",
+    "vote_auto_server_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "maxItems": 3,
+      "description": "IDs of up to 3 ServerAds to auto-vote for",
       "rls": {
         "write": {
           "data._id": "{{user.id}}"
@@ -353,6 +358,26 @@
       "type": "string",
       "format": "date-time",
       "description": "Date d'acceptation des CGU"
+    },
+    "server_reminder_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Activer les rappels sonores de vote"
+    },
+    "server_reminder_sound": {
+      "type": "string",
+      "default": "nebula",
+      "description": "Preset sonore du rappel"
+    },
+    "server_reminder_frequency": {
+      "type": "string",
+      "default": "60",
+      "description": "Frequence du rappel en minutes"
+    },
+    "server_reminder_duration": {
+      "type": "number",
+      "default": 5,
+      "description": "Duree de l'alerte en secondes"
     }
   },
   "required": []

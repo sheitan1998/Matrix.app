@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Server, Users, Search } from "lucide-react";
+import { Server, Users, Search, Zap } from "lucide-react";
 import CheckoutModal from "@/components/CheckoutModal";
 import VoteAutoSetupModal from "./VoteAutoSetupModal";
 
@@ -80,6 +80,19 @@ export default function ProspecteursSidebar({ active = "servers", user }) {
           
           <div className="absolute inset-0 ring-2 ring-fuchsia-500/30 rounded-xl pointer-events-none" />
           <div className="absolute inset-0 bg-transparent group-hover:bg-fuchsia-500/5 transition rounded-[10px]" />
+        </button>
+      )}
+
+      {/* Bouton de configuration Vote Auto — visible si Vote Auto actif */}
+      {hasVoteAuto && (
+        <button
+          onClick={() => setShowVoteAutoSetup(true)}
+          className="flex flex-col items-center gap-1 p-2.5 rounded-xl transition text-white hover:opacity-90 tap-sm"
+          style={{ background: "rgba(191,0,255,0.15)", border: "1px solid rgba(191,0,255,0.3)" }}
+          title="Configurer tes serveurs en Vote Auto"
+        >
+          <Zap className="w-5 h-5" style={{ color: "#d946ef" }} />
+          <span className="text-[9px] font-bold text-center">Configurer Vote Auto</span>
         </button>
       )}
 

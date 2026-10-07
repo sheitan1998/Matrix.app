@@ -173,74 +173,76 @@ export default async function(req: Request): Promise<Response> {
 
       for (const u of autoVoteUsers) {
         try {
-          // Check subscription validity
-          if (!u.vote_auto_until || new Date(u.vote_auto_until).getTime() <= now) {
-            skipped++;
-            continue;
-          }
-          if (!u.vote_auto_server_id || !u.vote_auto_pseudo) {
+          // Check subscription validity (has_vote_auto is set to false by Stripe on cancellation)
+          if (!u.has_vote_auto || (u.vote_auto_until && new Date(u.vote_auto_until).getTime() <= now)) {
             skipped++;
             continue;
           }
 
-          const serverAdId = u.vote_auto_server_id;
+          const serverIds = Array.isArray(u.vote_auto_server_ids)
+            ? u.vote_auto_server_ids
+            : (u.vote_auto_server_id ? [u.vote_auto_server_id] : []);
           const voterPseudo = u.vote_auto_pseudo;
 
-          // Verify the server ad exists and belongs to the user
-          const ad = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
-          if (!ad || ad.author_email !== u.email) {
+          if (serverIds.length === 0 || !voterPseudo) {
             skipped++;
             continue;
           }
-
-          // Check last vote time for this user + server
-          const existingVotes = await base44.asServiceRole.entities.ServerVote.filter({
-            server_ad_id: serverAdId,
-            user_email: u.email,
-          });
 
           // Determine cooldown: 1h if VIP+VoteAuto, 2h if VoteAuto only
           const isVip = !!(u.is_vip && (!u.vip_until || new Date(u.vip_until).getTime() > now));
           const effectiveCooldown = isVip ? (1 * 60 * 60 * 1000) : VOTE_COOLDOWN_MS;
 
-          if (existingVotes.length > 0) {
-            const lastVoted = existingVotes[0].last_voted_at
-              ? new Date(existingVotes[0].last_voted_at).getTime()
-              : 0;
-            const elapsed = now - lastVoted;
+          // Loop through each server (max 3)
+          for (const serverAdId of serverIds.slice(0, 3)) {
+            try {
+              const ad = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
+              if (!ad || ad.author_email !== u.email) {
+                continue;
+              }
 
-            if (elapsed < effectiveCooldown) {
-              skipped++;
-              continue;
+              const existingVotes = await base44.asServiceRole.entities.ServerVote.filter({
+                server_ad_id: serverAdId,
+                user_email: u.email,
+              });
+
+              if (existingVotes.length > 0) {
+                const lastVoted = existingVotes[0].last_voted_at
+                  ? new Date(existingVotes[0].last_voted_at).getTime()
+                  : 0;
+                const elapsed = now - lastVoted;
+
+                if (elapsed < effectiveCooldown) {
+                  continue;
+                }
+
+                await base44.asServiceRole.entities.ServerVote.update(existingVotes[0].id, {
+                  last_voted_at: nowIso,
+                  voter_pseudo: voterPseudo,
+                });
+              } else {
+                await base44.asServiceRole.entities.ServerVote.create({
+                  server_ad_id: serverAdId,
+                  user_email: u.email,
+                  voter_pseudo: voterPseudo,
+                  last_voted_at: nowIso,
+                });
+              }
+
+              await base44.asServiceRole.entities.ServerAd.updateMany(
+                { id: serverAdId },
+                { $inc: { votes: 1, votes_month: 1, clicks: 1, clicks_month: 1 } }
+              );
+
+              if (ad.webhook_url && ad.api_key) {
+                sendVoteWebhook(ad.webhook_url, ad.api_key, voterPseudo, serverAdId);
+              }
+
+              processed++;
+            } catch {
+              errors++;
             }
-
-            // Update existing vote record
-            await base44.asServiceRole.entities.ServerVote.update(existingVotes[0].id, {
-              last_voted_at: nowIso,
-              voter_pseudo: voterPseudo,
-            });
-          } else {
-            // Create new vote record
-            await base44.asServiceRole.entities.ServerVote.create({
-              server_ad_id: serverAdId,
-              user_email: u.email,
-              voter_pseudo: voterPseudo,
-              last_voted_at: nowIso,
-            });
           }
-
-          // Atomically increment vote + click counters
-          await base44.asServiceRole.entities.ServerAd.updateMany(
-            { id: serverAdId },
-            { $inc: { votes: 1, votes_month: 1, clicks: 1, clicks_month: 1 } }
-          );
-
-          // Fire-and-forget: send webhook postback if configured
-          if (ad.webhook_url && ad.api_key) {
-            sendVoteWebhook(ad.webhook_url, ad.api_key, voterPseudo, serverAdId);
-          }
-
-          processed++;
         } catch (err) {
           console.error('[serverSearch] Auto-vote error for user', u.email, err);
           errors++;
@@ -496,33 +498,39 @@ export default async function(req: Request): Promise<Response> {
         });
       }
 
-      // ---- Setup Vote Auto (configure server + pseudo) ----
+      // ---- Setup Vote Auto (configure up to 3 servers + pseudo) ----
       case 'setupVoteAuto': {
-        const { serverAdId, voterPseudo } = params;
-        if (!serverAdId) return Response.json({ error: 'Missing serverAdId' }, { status: 400 });
+        const { serverAdIds, voterPseudo } = params;
         const pseudo = String(voterPseudo || '').trim().slice(0, 30);
         if (!pseudo) return Response.json({ error: 'Le pseudo est obligatoire.' }, { status: 400 });
 
-        // Verify the server ad exists and belongs to the user
-        const ad = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
-        if (!ad) return Response.json({ error: 'Server not found' }, { status: 404 });
-        if (ad.author_email !== user.email) {
-          return Response.json({ error: 'Not authorized — you can only auto-vote for your own server' }, { status: 403 });
+        // Parse and validate server IDs (max 3)
+        let ids = Array.isArray(serverAdIds) ? serverAdIds : (serverAdIds ? [serverAdIds] : []);
+        ids = ids.filter(Boolean).slice(0, 3);
+        if (ids.length === 0) return Response.json({ error: 'Veuillez sélectionner au moins un serveur' }, { status: 400 });
+
+        // Verify all server ads exist and belong to the user
+        for (const sid of ids) {
+          const ad = await base44.asServiceRole.entities.ServerAd.get(sid);
+          if (!ad) return Response.json({ error: `Server not found: ${sid}` }, { status: 404 });
+          if (ad.author_email !== user.email) {
+            return Response.json({ error: 'Not authorized — you can only auto-vote for your own servers' }, { status: 403 });
+          }
         }
 
         // Check the user has Vote Auto subscription active
         const freshUser = await base44.asServiceRole.entities.User.get(user.id);
-        if (!freshUser?.has_vote_auto || !freshUser?.vote_auto_until ||
-            new Date(freshUser.vote_auto_until).getTime() <= Date.now()) {
+        if (!freshUser?.has_vote_auto ||
+            (freshUser?.vote_auto_until && new Date(freshUser.vote_auto_until).getTime() <= Date.now())) {
           return Response.json({ error: 'Vote Auto subscription inactive' }, { status: 403 });
         }
 
         await base44.asServiceRole.entities.User.update(user.id, {
-          vote_auto_server_id: serverAdId,
+          vote_auto_server_ids: ids,
           vote_auto_pseudo: pseudo,
         });
 
-        return Response.json({ success: true, serverAdId, voterPseudo: pseudo });
+        return Response.json({ success: true, serverAdIds: ids, voterPseudo: pseudo });
       }
 
       // ---- Get Vote Auto status (config + subscription) ----
@@ -533,14 +541,37 @@ export default async function(req: Request): Promise<Response> {
         const isVip = !!freshUser?.is_vip &&
           (!freshUser?.vip_until || new Date(freshUser.vip_until).getTime() > Date.now());
 
+        const serverIds = Array.isArray(freshUser?.vote_auto_server_ids)
+          ? freshUser.vote_auto_server_ids
+          : (freshUser?.vote_auto_server_id ? [freshUser.vote_auto_server_id] : []);
+
         return Response.json({
           active: isActive,
           vote_auto_until: freshUser?.vote_auto_until || null,
-          configured: !!(freshUser?.vote_auto_server_id && freshUser?.vote_auto_pseudo),
-          server_id: freshUser?.vote_auto_server_id || null,
+          configured: !!(serverIds.length > 0 && freshUser?.vote_auto_pseudo),
+          server_ids: serverIds,
           voter_pseudo: freshUser?.vote_auto_pseudo || null,
           effective_cooldown_hours: (isActive && isVip) ? 1 : 2,
           has_vip: isVip,
+        });
+      }
+
+      // ---- Get user's own servers (for Vote Auto setup) ----
+      case 'getMyServers': {
+        const myAdsPage = await base44.asServiceRole.entities.ServerAd.filter(
+          { author_email: user.email }, '-created_date', 100
+        );
+        const myAds = myAdsPage?.items || myAdsPage || [];
+        return Response.json({
+          servers: myAds.map(a => ({
+            id: a.id,
+            title: a.title,
+            server_type: a.server_type,
+            logo_url: a.logo_url,
+            profile_image: a.profile_image,
+            votes: a.votes || 0,
+            votes_month: a.votes_month || 0,
+          })),
         });
       }
 

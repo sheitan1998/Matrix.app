@@ -3,30 +3,30 @@ import { X, Loader2, Check, Zap, Clock, Server as ServerIcon, AlertCircle } from
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 
+const MAX_SERVERS = 3;
+
 export default function VoteAutoSetupModal({ user, onClose }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [servers, setServers] = useState([]);
   const [status, setStatus] = useState(null);
-  const [selectedServer, setSelectedServer] = useState("");
+  const [selectedServers, setSelectedServers] = useState([]);
   const [pseudo, setPseudo] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
     const load = async () => {
       try {
-        // Get vote auto status
-        const statusRes = await base44.functions.invoke("serverSearch", { action: "getVoteAutoStatus" });
+        const [statusRes, serversRes] = await Promise.all([
+          base44.functions.invoke("serverSearch", { action: "getVoteAutoStatus" }),
+          base44.functions.invoke("serverSearch", { action: "getMyServers" }),
+        ]);
         const statusData = statusRes.data || statusRes;
+        const serversData = serversRes.data || serversRes;
         setStatus(statusData);
         if (statusData.voter_pseudo) setPseudo(statusData.voter_pseudo);
-        if (statusData.server_id) setSelectedServer(statusData.server_id);
-
-        // Get user's servers
-        const serversRes = await base44.functions.invoke("serverSearch", { action: "getMyServers" });
-        const serversData = serversRes.data || serversRes;
-        const serverList = serversData.servers || serversData || [];
-        setServers(serverList);
+        if (Array.isArray(statusData.server_ids)) setSelectedServers(statusData.server_ids);
+        setServers(serversData.servers || serversData || []);
       } catch {
         setError("Erreur lors du chargement");
       }
@@ -35,9 +35,23 @@ export default function VoteAutoSetupModal({ user, onClose }) {
     load();
   }, []);
 
+  const toggleServer = (serverId) => {
+    setSelectedServers((prev) => {
+      if (prev.includes(serverId)) {
+        return prev.filter((id) => id !== serverId);
+      }
+      if (prev.length >= MAX_SERVERS) {
+        setError(`Maximum ${MAX_SERVERS} serveurs`);
+        return prev;
+      }
+      setError("");
+      return [...prev, serverId];
+    });
+  };
+
   const handleSave = async () => {
-    if (!selectedServer) {
-      setError("Veuillez sélectionner un serveur");
+    if (selectedServers.length === 0) {
+      setError("Veuillez sélectionner au moins un serveur");
       return;
     }
     if (!pseudo.trim()) {
@@ -49,7 +63,7 @@ export default function VoteAutoSetupModal({ user, onClose }) {
     try {
       const res = await base44.functions.invoke("serverSearch", {
         action: "setupVoteAuto",
-        serverAdId: selectedServer,
+        serverAdIds: selectedServers,
         voterPseudo: pseudo.trim(),
       });
       if (res.data?.success) {
@@ -128,17 +142,22 @@ export default function VoteAutoSetupModal({ user, onClose }) {
                 </p>
                 <p className="text-[9px] text-white/40">
                   {status?.has_vip
-                    ? "VIP actif — vote toutes les 1 heure"
-                    : "Vote toutes les 2 heures (ajoute VIP pour 1h)"}
+                    ? "VIP actif — vote toutes les 1 heure par serveur"
+                    : "Vote toutes les 2 heures par serveur (ajoute VIP pour 1h)"}
                 </p>
               </div>
             </div>
 
-            {/* Server selection */}
+            {/* Server selection — multi-select up to 3 */}
             <div>
-              <label className="text-[9px] font-bold uppercase tracking-wider text-white/40 mb-1 block">
-                Serveur à voter automatiquement
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[9px] font-bold uppercase tracking-wider text-white/40">
+                  Serveurs à voter automatiquement
+                </label>
+                <span className="text-[9px] font-bold" style={{ color: selectedServers.length >= MAX_SERVERS ? "#ef4444" : "#a855f7" }}>
+                  {selectedServers.length}/{MAX_SERVERS}
+                </span>
+              </div>
               {servers.length === 0 ? (
                 <div
                   className="p-3 rounded-lg text-center"
@@ -148,19 +167,39 @@ export default function VoteAutoSetupModal({ user, onClose }) {
                   <p className="text-[10px] text-white/40">Tu n'as pas encore publié de serveur</p>
                 </div>
               ) : (
-                <select
-                  value={selectedServer}
-                  onChange={(e) => setSelectedServer(e.target.value)}
-                  className="w-full h-10 px-3 rounded-lg text-sm text-white outline-none"
-                  style={{ background: "rgba(138,79,255,0.05)", border: "1px solid rgba(138,79,255,0.2)" }}
-                >
-                  <option value="">— Sélectionner —</option>
-                  {servers.map((s) => (
-                    <option key={s.id} value={s.id} style={{ background: "#12091c" }}>
-                      {s.title}
-                    </option>
-                  ))}
-                </select>
+                <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-thin">
+                  {servers.map((s) => {
+                    const isSelected = selectedServers.includes(s.id);
+                    const isMaxed = !isSelected && selectedServers.length >= MAX_SERVERS;
+                    const logoUrl = s.logo_url || s.profile_image;
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => toggleServer(s.id)}
+                        disabled={isMaxed}
+                        className="w-full flex items-center gap-2 p-2.5 rounded-lg transition tap-sm"
+                        style={{
+                          background: isSelected ? "rgba(138,79,255,0.15)" : "rgba(138,79,255,0.05)",
+                          border: isSelected ? "1px solid rgba(138,79,255,0.4)" : "1px solid rgba(138,79,255,0.1)",
+                          opacity: isMaxed ? 0.4 : 1,
+                        }}
+                      >
+                        <div
+                          className="w-7 h-7 rounded flex items-center justify-center text-xs font-black text-white shrink-0 overflow-hidden"
+                          style={{ background: "linear-gradient(135deg, #8a4fff, #5b21b6)" }}
+                        >
+                          {logoUrl ? (
+                            <img src={logoUrl} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            (s.title || "S")[0]?.toUpperCase()
+                          )}
+                        </div>
+                        <span className="text-xs font-bold text-white truncate flex-1 text-left">{s.title}</span>
+                        {isSelected && <Check className="w-4 h-4 shrink-0" style={{ color: "#a855f7" }} />}
+                      </button>
+                    );
+                  })}
+                </div>
               )}
             </div>
 
@@ -193,7 +232,7 @@ export default function VoteAutoSetupModal({ user, onClose }) {
 
             <button
               onClick={handleSave}
-              disabled={saving || !selectedServer || !pseudo.trim()}
+              disabled={saving || selectedServers.length === 0 || !pseudo.trim()}
               className="w-full h-10 rounded-lg text-xs font-black tracking-wider uppercase transition disabled:opacity-50 flex items-center justify-center gap-1.5 tap-sm"
               style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)", color: "#fff", boxShadow: "0 0 15px rgba(138,79,255,0.3)" }}
             >
