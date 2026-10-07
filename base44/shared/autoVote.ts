@@ -42,11 +42,11 @@ async function autoVoteOnServer(base44: any, u: any, serverAdId: string, pseudo:
     }
 
     const nowIso = new Date(now).toISOString();
-    if (lastVote) {
-      await base44.asServiceRole.entities.ServerVote.update(lastVote.id, { last_voted_at: nowIso, voter_pseudo: pseudo, vote_source: 'auto' });
-    } else {
-      await base44.asServiceRole.entities.ServerVote.create({ ...voteQuery, voter_pseudo: pseudo, last_voted_at: nowIso, vote_source: 'auto' });
-    }
+    // Always INSERT a new record so every auto-vote pass is logged in the history.
+    // The cooldown check above uses getLastVote to find the most recent timestamp,
+    // but the record itself must never be overwritten — otherwise only the last
+    // auto-vote survives and the "Votes récents" table shows a single entry.
+    await base44.asServiceRole.entities.ServerVote.create({ ...voteQuery, voter_pseudo: pseudo, last_voted_at: nowIso, vote_source: 'auto' });
 
     await base44.asServiceRole.entities.ServerAd.updateMany(
       { id: serverAdId },
