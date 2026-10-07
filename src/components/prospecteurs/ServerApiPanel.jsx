@@ -268,7 +268,39 @@ export default function ServerApiPanel({ server }) {
           <>
           <div className="rounded-lg overflow-hidden" style={{ border: "1px solid rgba(138,79,255,0.15)" }}>
             <table className="w-full text-[10px]">
-...
+              <thead>
+                <tr style={{ background: "rgba(138,79,255,0.08)" }}>
+                  <th className="text-left py-1.5 px-2 font-bold text-white/50 uppercase tracking-wider">Pseudo</th>
+                  <th className="text-left py-1.5 px-2 font-bold text-white/50 uppercase tracking-wider">Source</th>
+                  <th className="text-right py-1.5 px-2 font-bold text-white/50 uppercase tracking-wider">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentVotes.map((v) => {
+                  const sourceLabels = {
+                    auto: { label: "AUTO", color: "#a855f7" },
+                    boost: { label: "BOOST", color: "#fbbf24" },
+                    authenticated: { label: "COMPTE", color: "#22c55e" },
+                    guest: { label: "INVITÉ", color: "#6b7280" },
+                  };
+                  const src = sourceLabels[v.source] || sourceLabels.guest;
+                  const date = v.last_voted_at ? new Date(v.last_voted_at) : null;
+                  const dateStr = date
+                    ? `${date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })} ${date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`
+                    : "—";
+                  return (
+                    <tr key={v.id} className="border-t" style={{ borderColor: "rgba(138,79,255,0.1)" }}>
+                      <td className="py-1.5 px-2 text-white/80 font-medium">{v.voter_pseudo || "Anonyme"}</td>
+                      <td className="py-1.5 px-2">
+                        <span className="inline-block px-1.5 py-0.5 rounded font-bold text-[8px]" style={{ background: `${src.color}15`, color: src.color }}>
+                          {src.label}
+                        </span>
+                      </td>
+                      <td className="py-1.5 px-2 text-right text-white/40 font-mono">{dateStr}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
             </table>
           </div>
           {hasMoreVotes && (
