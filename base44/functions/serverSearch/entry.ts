@@ -136,20 +136,6 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ success: true, processed: summary.voted, ...summary, timestamp: new Date().toISOString() });
     }
 
-    // System action: monthly purge of all server ads (admin or cron only, 1st of each month)
-    if (action === 'monthlyPurge') {
-      const apiKey = req.headers.get('x-api-key');
-      const isAuthorized = (apiKey && apiKey === process.env.CRON_SECRET) || user.role === 'admin';
-      if (!isAuthorized) return Response.json({ error: 'Forbidden' }, { status: 403 });
-      const allAds = await base44.asServiceRole.entities.ServerAd.list('-created_date', 500);
-      for (const ad of allAds) {
-        await base44.asServiceRole.entities.AdMessage.deleteMany({ ad_id: ad.id });
-        await base44.asServiceRole.entities.ServerVote.deleteMany({ server_ad_id: ad.id });
-        await base44.asServiceRole.entities.ServerAd.delete(ad.id);
-      }
-      return Response.json({ success: true, deleted: allAds.length });
-    }
-
     switch (action) {
 
       // ---- Vote for a server (2h cooldown, no auth required - IP fallback) ----
