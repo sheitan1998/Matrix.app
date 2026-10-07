@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { X, Loader2, Check, Zap, Clock, AlertCircle, Pause, Play, Power, Pencil, User } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
@@ -15,10 +15,15 @@ export default function VoteAutoSetupModal({ onClose }) {
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
 
+  // Monotonic token: only the most recent fetchStatus response updates state.
+  // A background poll that was in flight before a save/pause/disable is ignored,
+  // so a stale response can never overwrite the freshly-saved configuration.
+  const statusReqId = useRef(0);
   const fetchStatus = useCallback(async () => {
+    const id = ++statusReqId.current;
     const res = await base44.functions.invoke("serverSearch", { action: "getVoteAutoStatus" });
     const data = res.data || res;
-    setStatus(data);
+    if (id === statusReqId.current) setStatus(data);
     return data;
   }, []);
 
