@@ -1408,10 +1408,9 @@ export default async function(req: Request): Promise<Response> {
         if (ad.author_email !== user.email) return Response.json({ error: 'Not authorized' }, { status: 403 });
         const pageLimit = Math.min(Number(limit) || 15, 100);
         const votesPage = await base44.asServiceRole.entities.ServerVote.filter(
-          { server_ad_id: serverAdId },
-          { sort: '-last_voted_at', limit: pageLimit, cursor: cursor || undefined }
+          { server_ad_id: serverAdId }, '-last_voted_at', pageLimit
         );
-        const rawItems = votesPage?.items || [];
+        const rawItems = votesPage?.items || votesPage || [];
         const votes = rawItems.map((v) => ({
           id: v.id,
           voter_pseudo: v.voter_pseudo || 'Anonyme',
