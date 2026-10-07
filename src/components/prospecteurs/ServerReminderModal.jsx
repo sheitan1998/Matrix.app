@@ -3,13 +3,74 @@ import { Bell, X, Music, Clock, Repeat, Play, Pause, Save, Volume2 } from "lucid
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 
+// Design sonore futuriste / cyberpunk feutré :
+// chaque preset est une séquence de notes (freq Hz, type d'onde, durée, delay)
+// avec volumes doux (0.08-0.18) et fondu d'entrée progressif (fade-in 80ms)
 const SOUND_PRESETS = [
-  { id: "chime", name: "Carillon", emoji: "🔔", freq: 880, pattern: [0, 200, 400] },
-  { id: "alarm", name: "Alarme", emoji: "⏰", freq: 660, pattern: [0, 150, 300, 450, 600] },
-  { id: "soft", name: "Douce", emoji: "🎵", freq: 523, pattern: [0, 300, 600] },
-  { id: "epic", name: "Épique", emoji: "⚔️", freq: 440, pattern: [0, 100, 200, 400, 500, 700] },
-  { id: "bell", name: "Cloche", emoji: "🛎️", freq: 988, pattern: [0, 500] },
-  { id: "pulse", name: "Pulse", emoji: "💫", freq: 740, pattern: [0, 100, 200, 300, 400, 500] },
+  {
+    id: "nebula",
+    name: "Nebula",
+    emoji: "🌌",
+    notes: [
+      { freq: 523.25, type: "sine", delay: 0, dur: 0.6, vol: 0.12 },
+      { freq: 659.25, type: "sine", delay: 120, dur: 0.6, vol: 0.12 },
+      { freq: 783.99, type: "sine", delay: 240, dur: 0.8, vol: 0.14 },
+    ],
+  },
+  {
+    id: "aurora",
+    name: "Aurora",
+    emoji: "💫",
+    notes: [
+      { freq: 440.0, type: "triangle", delay: 0, dur: 0.5, vol: 0.10 },
+      { freq: 554.37, type: "triangle", delay: 180, dur: 0.5, vol: 0.10 },
+      { freq: 659.25, type: "triangle", delay: 360, dur: 0.7, vol: 0.12 },
+      { freq: 880.0, type: "sine", delay: 540, dur: 0.9, vol: 0.08 },
+    ],
+  },
+  {
+    id: "cyber",
+    name: "Cyber",
+    emoji: "🤖",
+    notes: [
+      { freq: 329.63, type: "sine", delay: 0, dur: 0.4, vol: 0.11 },
+      { freq: 493.88, type: "sine", delay: 100, dur: 0.4, vol: 0.11 },
+      { freq: 659.25, type: "sine", delay: 200, dur: 0.5, vol: 0.13 },
+      { freq: 987.77, type: "sine", delay: 350, dur: 0.7, vol: 0.09 },
+    ],
+  },
+  {
+    id: "ethereal",
+    name: "Éthéré",
+    emoji: "✨",
+    notes: [
+      { freq: 587.33, type: "sine", delay: 0, dur: 0.8, vol: 0.08 },
+      { freq: 880.0, type: "sine", delay: 200, dur: 0.8, vol: 0.08 },
+      { freq: 1174.66, type: "sine", delay: 400, dur: 1.0, vol: 0.06 },
+    ],
+  },
+  {
+    id: "matrix",
+    name: "Matrix",
+    emoji: "🟢",
+    notes: [
+      { freq: 392.0, type: "triangle", delay: 0, dur: 0.3, vol: 0.10 },
+      { freq: 523.25, type: "triangle", delay: 80, dur: 0.3, vol: 0.10 },
+      { freq: 659.25, type: "triangle", delay: 160, dur: 0.3, vol: 0.10 },
+      { freq: 783.99, type: "triangle", delay: 240, dur: 0.5, vol: 0.12 },
+      { freq: 1046.5, type: "sine", delay: 400, dur: 0.8, vol: 0.08 },
+    ],
+  },
+  {
+    id: "lullaby",
+    name: "Berceuse",
+    emoji: "🌙",
+    notes: [
+      { freq: 440.0, type: "sine", delay: 0, dur: 0.5, vol: 0.10 },
+      { freq: 493.88, type: "sine", delay: 200, dur: 0.5, vol: 0.10 },
+      { freq: 523.25, type: "sine", delay: 400, dur: 0.7, vol: 0.11 },
+    ],
+  },
 ];
 
 const DURATION_OPTIONS = [
@@ -55,20 +116,33 @@ export default function ServerReminderModal({ user, onClose }) {
       }
       const ctx = audioCtxRef.current;
       const preset = SOUND_PRESETS.find((s) => s.id === sound) || SOUND_PRESETS[0];
-      preset.pattern.forEach((delay) => {
+      // Master gain doux avec léger fondu d'entrée global
+      const master = ctx.createGain();
+      master.gain.setValueAtTime(0, ctx.currentTime);
+      master.gain.linearRampToValueAtTime(0.9, ctx.currentTime + 0.06);
+      master.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.15);
+      master.connect(ctx.destination);
+
+      let maxEnd = 0;
+      preset.notes.forEach((note) => {
+        const start = ctx.currentTime + note.delay / 1000;
+        const end = start + note.dur;
+        if (end > maxEnd) maxEnd = end;
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        osc.frequency.value = preset.freq;
-        osc.type = "sine";
-        gain.gain.setValueAtTime(0, ctx.currentTime + delay / 1000);
-        gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + delay / 1000 + 0.02);
-        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + delay / 1000 + 0.3);
+        osc.frequency.value = note.freq;
+        osc.type = note.type || "sine";
+        // Fondu d'entrée doux (80ms) + fondu de sortie naturel (120ms)
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(note.vol, start + 0.08);
+        gain.gain.setValueAtTime(note.vol, end - 0.12);
+        gain.gain.linearRampToValueAtTime(0, end);
         osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + delay / 1000);
-        osc.stop(ctx.currentTime + delay / 1000 + 0.3);
+        gain.connect(master);
+        osc.start(start);
+        osc.stop(end + 0.05);
       });
-      timeoutRef.current = setTimeout(() => setPreviewing(false), 1000);
+      timeoutRef.current = setTimeout(() => setPreviewing(false), (maxEnd - ctx.currentTime) * 1000 + 200);
     } catch {
       setPreviewing(false);
     }
