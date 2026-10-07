@@ -16,9 +16,8 @@ export default function ServerApiPanel({ server }) {
   const [testResult, setTestResult] = useState(null);
   const [recentVotes, setRecentVotes] = useState([]);
   const [loadingVotes, setLoadingVotes] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [votesCursor, setVotesCursor] = useState(null);
-  const [hasMoreVotes, setHasMoreVotes] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const PAGE_SIZE = 20;
 
   useEffect(() => {
     setApiKey(server.api_key || "");
@@ -89,37 +88,15 @@ export default function ServerApiPanel({ server }) {
       const res = await base44.functions.invoke("serverSearch", {
         action: "getRecentVotes",
         serverAdId: server.id,
-        limit: 15,
+        limit: 200,
       });
       const data = res.data || res;
       setRecentVotes(data.votes || []);
-      setVotesCursor(data.next_cursor || null);
-      setHasMoreVotes(!!data.has_more);
+      setCurrentPage(0);
     } catch {
       if (!silent) toast.error("Erreur lors du chargement des votes");
     } finally {
       if (!silent) setLoadingVotes(false);
-    }
-  };
-
-  const loadMoreVotes = async () => {
-    if (!votesCursor || loadingMore) return;
-    setLoadingMore(true);
-    try {
-      const res = await base44.functions.invoke("serverSearch", {
-        action: "getRecentVotes",
-        serverAdId: server.id,
-        cursor: votesCursor,
-        limit: 15,
-      });
-      const data = res.data || res;
-      setRecentVotes((prev) => [...prev, ...(data.votes || [])]);
-      setVotesCursor(data.next_cursor || null);
-      setHasMoreVotes(!!data.has_more);
-    } catch {
-      toast.error("Erreur lors du chargement");
-    } finally {
-      setLoadingMore(false);
     }
   };
 
@@ -276,7 +253,9 @@ export default function ServerApiPanel({ server }) {
                 </tr>
               </thead>
               <tbody>
-                {recentVotes.map((v) => {
+                {recentVotes
+                  .slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE)
+                  .map((v) => {
                   const sourceLabels = {
                     auto: { label: "AUTO", color: "#a855f7" },
                     boost: { label: "BOOST", color: "#fbbf24" },
@@ -303,17 +282,73 @@ export default function ServerApiPanel({ server }) {
               </tbody>
             </table>
           </div>
-          {hasMoreVotes && (
-            <button
-              onClick={loadMoreVotes}
-              disabled={loadingMore}
-              className="w-full mt-2 h-8 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 transition tap-sm disabled:opacity-50"
-              style={{ background: "rgba(138,79,255,0.08)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}
-            >
-              {loadingMore ? <Loader2 className="w-3 h-3 animate-spin" /> : <ChevronDown className="w-3 h-3" />}
-              Afficher plus
-            </button>
-          )}
+          {(() => {
+            const totalPages = Math.ceil(recentVotes.length / PAGE_SIZE);
+            if (totalPages <= 1) return null;
+            const pages = [];
+            const maxVisible = 5;
+            let startPage = Math.max(0, currentPage - Math.floor(maxVisible / 2));
+            let endPage = Math.min(totalPages - 1, startPage + maxVisible - 1);
+            if (endPage - startPage < maxVisible - 1) startPage = Math.max(0, endPage - maxVisible + 1);
+            for (let i = startPage; i <= endPage; i++) pages.push(i);
+            return (
+              <div className="flex items-center justify-center gap-1 mt-2">
+                <button
+                  onClick={() => setCurrentPage(0)}
+                  disabled={currentPage === 0}
+                  className="h-7 px-2 rounded-lg text-[10px] font-bold flex items-center gap-1 transition tap-sm disabled:opacity-30"
+                  style={{ background: "rgba(138,79,255,0.08)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}
+                >
+                  <ChevronRight className="w-3 h-3 rotate-180" />
+                </button>
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+                  disabled={currentPage === 0}
+                  className="h-7 px-2 rounded-lg text-[10px] font-bold flex items-center gap-1 transition tap-sm disabled:opacity-30"
+                  style={{ background: "rgba(138,79,255,0.08)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}
+                >
+                  <ChevronDown className="w-3 h-3 rotate-90" />
+                  Précédent
+                </button>
+                {startPage > 0 && <span className="text-[10px] text-white/30 px-1">…</span>}
+                {pages.map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setCurrentPage(p)}
+                    className="h-7 w-7 rounded-lg text-[10px] font-bold transition tap-sm"
+                    style={p === currentPage
+                      ? { background: "rgba(138,79,255,0.25)", color: "#fff", border: "1px solid rgba(138,79,255,0.4)" }
+                      : { background: "rgba(138,79,255,0.08)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }
+                    }
+                  >
+                    {p + 1}
+                  </button>
+                ))}
+                {endPage < totalPages - 1 && <span className="text-[10px] text-white/30 px-1">…</span>}
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
+                  disabled={currentPage >= totalPages - 1}
+                  className="h-7 px-2 rounded-lg text-[10px] font-bold flex items-center gap-1 transition tap-sm disabled:opacity-30"
+                  style={{ background: "rgba(138,79,255,0.08)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}
+                >
+                  Suivant
+                  <ChevronDown className="w-3 h-3 -rotate-90" />
+                </button>
+                <button
+                  onClick={() => setCurrentPage(totalPages - 1)}
+                  disabled={currentPage >= totalPages - 1}
+                  className="h-7 px-2 rounded-lg text-[10px] font-bold flex items-center gap-1 transition tap-sm disabled:opacity-30"
+                  style={{ background: "rgba(138,79,255,0.08)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}
+                >
+                  <ChevronRight className="w-3 h-3" />
+                </button>
+              </div>
+            );
+          })()}
+          <p className="text-center text-[9px] text-white/30 mt-1">
+            {recentVotes.length} vote{recentVotes.length > 1 ? "s" : ""} au total
+            {Math.ceil(recentVotes.length / PAGE_SIZE) > 1 && ` · Page ${currentPage + 1}/${Math.ceil(recentVotes.length / PAGE_SIZE)}`}
+          </p>
           </>
         )}
       </div>
