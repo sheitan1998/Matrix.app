@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { rateLimitByIp } from '../../shared/security.ts';
 import { computeHmacSha256, sendVoteWebhook } from '../../shared/voteWebhook.ts';
-import { VOTE_COOLDOWN_MS, getLastVote, processUserAutoVotes, processAllAutoVotes } from '../../shared/autoVote.ts';
+import { VOTE_COOLDOWN_MS, getLastVote, processAllAutoVotes } from '../../shared/autoVote.ts';
 
 const BOOST_COST = 500; // 500 Trix minimum per boost
 const PLAYER_BOOST_COST = 50; // 50 Trix for player ad boost
@@ -393,13 +393,10 @@ export default async function(req: Request): Promise<Response> {
         ids = ids.filter(Boolean).slice(0, 3);
         if (ids.length === 0) return Response.json({ error: 'Veuillez sélectionner au moins un serveur' }, { status: 400 });
 
-        // Verify all server ads exist and belong to the user
+        // Verify all selected servers exist (any server in the directory — no ownership required)
         for (const sid of ids) {
-          const ad = await base44.asServiceRole.entities.ServerAd.get(sid);
-          if (!ad) return Response.json({ error: `Server not found: ${sid}` }, { status: 404 });
-          if (ad.author_email !== user.email) {
-            return Response.json({ error: 'Not authorized — you can only auto-vote for your own servers' }, { status: 403 });
-          }
+          const ad = await base44.asServiceRole.entities.ServerAd.get(sid).catch(() => null);
+          if (!ad) return Response.json({ error: `Serveur introuvable: ${sid}` }, { status: 404 });
         }
 
         // Check the user has Vote Auto subscription active
@@ -440,34 +437,42 @@ export default async function(req: Request): Promise<Response> {
         });
       }
 
-      // ---- Manual test: run the auto-vote script now for the current subscriber (strict cooldown) ----
-      case 'runMyAutoVotes': {
-        const freshUser = await base44.asServiceRole.entities.User.get(user.id);
-        const result = await processUserAutoVotes(base44, freshUser);
-        if (result.status === 'inactive') {
-          return Response.json({ success: false, error: 'Abonnement Vote Auto inactif' }, { status: 403 });
-        }
-        if (result.status === 'not_configured') {
-          return Response.json({ success: false, error: 'Enregistre au moins un serveur et ton pseudo avant de tester.' }, { status: 400 });
-        }
-        console.log('[runMyAutoVotes]', user.id, JSON.stringify(result.results.map((r) => r.status)));
-        return Response.json({ success: true, ...result, timestamp: new Date().toISOString() });
-      }
-
-      // ---- Get user's own servers (for Vote Auto setup) ----
-      case 'getMyServers': {
-        const myAdsPage = await base44.asServiceRole.entities.ServerAd.filter(
-          { author_email: user.email }, '-created_date', 100
-        );
-        const myAds = myAdsPage?.items || myAdsPage || [];
+      // ---- Search any server in the directory (for Vote Auto setup) ----
+      case 'searchServers': {
+        const q = String(params.query || '').trim().slice(0, 60);
+        const baseQ = { type: 'server' };
+        const query = q
+          ? { ...baseQ, $or: [ { title: { $regex: q, $options: 'i' } }, { game: { $regex: q, $options: 'i' } }, { description: { $regex: q, $options: 'i' } } ] }
+          : baseQ;
+        const page = await base44.asServiceRole.entities.ServerAd.filter(query, '-votes_month', 20);
+        const items = page?.items || page || [];
         return Response.json({
-          servers: myAds.map(a => ({
+          servers: items.map(a => ({
             id: a.id,
             title: a.title,
             server_type: a.server_type,
             logo_url: a.logo_url,
             profile_image: a.profile_image,
-            votes: a.votes || 0,
+            game: a.game || '',
+            votes_month: a.votes_month || 0,
+          })),
+        });
+      }
+
+      // ---- Fetch server details by IDs (for loading configured Vote Auto servers) ----
+      case 'getServersByIds': {
+        const { ids } = params;
+        if (!Array.isArray(ids) || ids.length === 0) return Response.json({ servers: [] });
+        const page = await base44.asServiceRole.entities.ServerAd.filter({ id: { $in: ids }, type: 'server' }, '-votes_month', 20);
+        const items = page?.items || page || [];
+        return Response.json({
+          servers: items.map(a => ({
+            id: a.id,
+            title: a.title,
+            server_type: a.server_type,
+            logo_url: a.logo_url,
+            profile_image: a.profile_image,
+            game: a.game || '',
             votes_month: a.votes_month || 0,
           })),
         });

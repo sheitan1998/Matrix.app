@@ -27,8 +27,6 @@ async function autoVoteOnServer(base44: any, u: any, serverAdId: string, pseudo:
   try {
     const ad = await base44.asServiceRole.entities.ServerAd.get(serverAdId).catch(() => null);
     if (!ad) return { server_id: serverAdId, title: null, status: 'not_found' };
-    if (ad.author_email !== u.email) return { server_id: serverAdId, title: ad.title, status: 'not_owner' };
-
     const voteQuery = { server_ad_id: serverAdId, user_email: u.email };
     const lastVote = await getLastVote(base44, voteQuery);
     const lastMs = lastVote?.last_voted_at ? new Date(lastVote.last_voted_at).getTime() : 0;
