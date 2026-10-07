@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { KeyRound, Copy, Check, RefreshCw, Code2, ChevronDown, ChevronRight, Webhook, Loader2, Clock, User, Activity, Send, AlertCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
+import RecentVotesHistory from "@/components/prospecteurs/RecentVotesHistory";
 
 const API_BASE = "https://matrix-hub.base44.app/functions/serverApi";
 
@@ -14,10 +15,6 @@ export default function ServerApiPanel({ server }) {
   const [savingWebhook, setSavingWebhook] = useState(false);
   const [testingWebhook, setTestingWebhook] = useState(false);
   const [testResult, setTestResult] = useState(null);
-  const [recentVotes, setRecentVotes] = useState([]);
-  const [loadingVotes, setLoadingVotes] = useState(false);
-  const [currentPage, setCurrentPage] = useState(0);
-  const PAGE_SIZE = 20;
 
   useEffect(() => {
     setApiKey(server.api_key || "");
@@ -82,33 +79,6 @@ export default function ServerApiPanel({ server }) {
     }
   };
 
-  const loadRecentVotes = async (silent = false) => {
-    if (!silent) setLoadingVotes(true);
-    try {
-      const res = await base44.functions.invoke("serverSearch", {
-        action: "getRecentVotes",
-        serverAdId: server.id,
-        limit: 200,
-      });
-      const data = res.data || res;
-      setRecentVotes(data.votes || []);
-      setCurrentPage(0);
-    } catch {
-      if (!silent) toast.error("Erreur lors du chargement des votes");
-    } finally {
-      if (!silent) setLoadingVotes(false);
-    }
-  };
-
-  useEffect(() => {
-    loadRecentVotes();
-    const unsub = base44.entities.ServerVote.subscribe((event) => {
-      const d = event.data;
-      if (!d || d.server_ad_id !== server.id) return;
-      loadRecentVotes(true);
-    });
-    return () => unsub();
-  }, [server.id]);
 
   const handleTestWebhook = async () => {
     setTestingWebhook(true);
@@ -230,128 +200,8 @@ export default function ServerApiPanel({ server }) {
         </p>
       </div>
 
-      {/* Recent votes table */}
-      <div>
-        <label className="text-[10px] text-white/40 uppercase tracking-wider mb-1.5 block flex items-center gap-1">
-          <Activity className="w-3 h-3" /> Votes récents
-        </label>
-        {loadingVotes ? (
-          <div className="flex items-center justify-center py-4">
-            <Loader2 className="w-4 h-4 animate-spin text-purple-400" />
-          </div>
-        ) : recentVotes.length === 0 ? (
-          <div className="text-center py-4 text-[10px] text-white/30">Aucun vote récent</div>
-        ) : (
-          <>
-          <div className="rounded-lg overflow-hidden" style={{ border: "1px solid rgba(138,79,255,0.15)" }}>
-            <table className="w-full text-[10px]">
-              <thead>
-                <tr style={{ background: "rgba(138,79,255,0.08)" }}>
-                  <th className="text-left py-1.5 px-2 font-bold text-white/50 uppercase tracking-wider">Pseudo</th>
-                  <th className="text-left py-1.5 px-2 font-bold text-white/50 uppercase tracking-wider">Source</th>
-                  <th className="text-right py-1.5 px-2 font-bold text-white/50 uppercase tracking-wider">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentVotes
-                  .slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE)
-                  .map((v) => {
-                  const sourceLabels = {
-                    auto: { label: "AUTO", color: "#a855f7" },
-                    boost: { label: "BOOST", color: "#fbbf24" },
-                    authenticated: { label: "COMPTE", color: "#22c55e" },
-                    guest: { label: "INVITÉ", color: "#6b7280" },
-                  };
-                  const src = sourceLabels[v.source] || sourceLabels.guest;
-                  const date = v.last_voted_at ? new Date(v.last_voted_at) : null;
-                  const dateStr = date
-                    ? `${date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })} ${date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`
-                    : "—";
-                  return (
-                    <tr key={v.id} className="border-t" style={{ borderColor: "rgba(138,79,255,0.1)" }}>
-                      <td className="py-1.5 px-2 text-white/80 font-medium">{v.voter_pseudo || "Anonyme"}</td>
-                      <td className="py-1.5 px-2">
-                        <span className="inline-block px-1.5 py-0.5 rounded font-bold text-[8px]" style={{ background: `${src.color}15`, color: src.color }}>
-                          {src.label}
-                        </span>
-                      </td>
-                      <td className="py-1.5 px-2 text-right text-white/40 font-mono">{dateStr}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          {(() => {
-            const totalPages = Math.ceil(recentVotes.length / PAGE_SIZE);
-            if (totalPages <= 1) return null;
-            const pages = [];
-            const maxVisible = 5;
-            let startPage = Math.max(0, currentPage - Math.floor(maxVisible / 2));
-            let endPage = Math.min(totalPages - 1, startPage + maxVisible - 1);
-            if (endPage - startPage < maxVisible - 1) startPage = Math.max(0, endPage - maxVisible + 1);
-            for (let i = startPage; i <= endPage; i++) pages.push(i);
-            return (
-              <div className="flex items-center justify-center gap-1 mt-2">
-                <button
-                  onClick={() => setCurrentPage(0)}
-                  disabled={currentPage === 0}
-                  className="h-7 px-2 rounded-lg text-[10px] font-bold flex items-center gap-1 transition tap-sm disabled:opacity-30"
-                  style={{ background: "rgba(138,79,255,0.08)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}
-                >
-                  <ChevronRight className="w-3 h-3 rotate-180" />
-                </button>
-                <button
-                  onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
-                  disabled={currentPage === 0}
-                  className="h-7 px-2 rounded-lg text-[10px] font-bold flex items-center gap-1 transition tap-sm disabled:opacity-30"
-                  style={{ background: "rgba(138,79,255,0.08)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}
-                >
-                  <ChevronDown className="w-3 h-3 rotate-90" />
-                  Précédent
-                </button>
-                {startPage > 0 && <span className="text-[10px] text-white/30 px-1">…</span>}
-                {pages.map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => setCurrentPage(p)}
-                    className="h-7 w-7 rounded-lg text-[10px] font-bold transition tap-sm"
-                    style={p === currentPage
-                      ? { background: "rgba(138,79,255,0.25)", color: "#fff", border: "1px solid rgba(138,79,255,0.4)" }
-                      : { background: "rgba(138,79,255,0.08)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }
-                    }
-                  >
-                    {p + 1}
-                  </button>
-                ))}
-                {endPage < totalPages - 1 && <span className="text-[10px] text-white/30 px-1">…</span>}
-                <button
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
-                  disabled={currentPage >= totalPages - 1}
-                  className="h-7 px-2 rounded-lg text-[10px] font-bold flex items-center gap-1 transition tap-sm disabled:opacity-30"
-                  style={{ background: "rgba(138,79,255,0.08)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}
-                >
-                  Suivant
-                  <ChevronDown className="w-3 h-3 -rotate-90" />
-                </button>
-                <button
-                  onClick={() => setCurrentPage(totalPages - 1)}
-                  disabled={currentPage >= totalPages - 1}
-                  className="h-7 px-2 rounded-lg text-[10px] font-bold flex items-center gap-1 transition tap-sm disabled:opacity-30"
-                  style={{ background: "rgba(138,79,255,0.08)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}
-                >
-                  <ChevronRight className="w-3 h-3" />
-                </button>
-              </div>
-            );
-          })()}
-          <p className="text-center text-[9px] text-white/30 mt-1">
-            {recentVotes.length} vote{recentVotes.length > 1 ? "s" : ""} au total
-            {Math.ceil(recentVotes.length / PAGE_SIZE) > 1 && ` · Page ${currentPage + 1}/${Math.ceil(recentVotes.length / PAGE_SIZE)}`}
-          </p>
-          </>
-        )}
-      </div>
+      {/* Recent votes history (paginated, permanent) */}
+      <RecentVotesHistory serverId={server.id} />
 
       {/* Documentation toggle */}
       <button

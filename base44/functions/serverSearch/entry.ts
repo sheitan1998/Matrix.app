@@ -120,8 +120,8 @@ export default async function(req: Request): Promise<Response> {
         {},
         { $set: { votes: 0, votes_month: 0, clicks: 0, clicks_month: 0, boosts: 0, is_boosted: false, boost_until: null } }
       );
-      // Also clear all vote records so users can vote again
-      await base44.asServiceRole.entities.ServerVote.deleteMany({});
+      // Vote history (ServerVote) is intentionally preserved: only monthly counters/boosts reset.
+      // Cooldowns are time-based (1h/2h), so no record deletion is needed to allow new votes.
       return Response.json({ success: true });
     }
 
@@ -184,23 +184,17 @@ export default async function(req: Request): Promise<Response> {
             });
           }
 
-          // Update existing vote timestamp
-          await base44.asServiceRole.entities.ServerVote.update(lastVote.id, {
-            last_voted_at: new Date(now).toISOString(),
-            voter_pseudo: voterPseudo,
-            vote_source: 'manual',
-          });
-        } else {
-          // Create new vote record (store email for logged-in, IP for anonymous)
-          await base44.asServiceRole.entities.ServerVote.create({
-            server_ad_id: serverAdId,
-            user_email: voterEmail || undefined,
-            ip_address: voterEmail ? undefined : ip,
-            voter_pseudo: voterPseudo,
-            last_voted_at: new Date(now).toISOString(),
-            vote_source: 'manual',
-          });
         }
+
+        // Always insert a new record so every manual vote stays in the history (never overwrite)
+        await base44.asServiceRole.entities.ServerVote.create({
+          server_ad_id: serverAdId,
+          user_email: voterEmail || undefined,
+          ip_address: voterEmail ? undefined : ip,
+          voter_pseudo: voterPseudo,
+          last_voted_at: new Date(now).toISOString(),
+          vote_source: 'manual',
+        });
 
         // Atomically increment vote + click counters (no read-then-write race condition)
         const voteAd = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
@@ -1401,17 +1395,20 @@ export default async function(req: Request): Promise<Response> {
 
       // ---- Get recent votes for owner dashboard (owner only) ----
       case 'getRecentVotes': {
-        const { serverAdId, limit } = params;
+        const { serverAdId } = params;
         if (!serverAdId) return Response.json({ error: 'Missing serverAdId' }, { status: 400 });
         const ad = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
         if (!ad) return Response.json({ error: 'Server not found' }, { status: 404 });
         if (ad.author_email !== user.email) return Response.json({ error: 'Not authorized' }, { status: 403 });
-        const pageLimit = Math.min(Number(limit) || 200, 200);
+        const pageSize = Math.min(Math.max(Number(params.pageSize) || 20, 1), 100);
+        const page = Math.max(Math.floor(Number(params.page) || 0), 0);
+        // Fetch one extra row to know whether a next page exists (sorted newest first)
         const votesPage = await base44.asServiceRole.entities.ServerVote.filter(
-          { server_ad_id: serverAdId }, '-last_voted_at', pageLimit
+          { server_ad_id: serverAdId }, '-last_voted_at', pageSize + 1, page * pageSize
         );
-        const rawItems = votesPage?.items || votesPage || [];
-        const votes = rawItems.map((v) => ({
+        const rawItems = (votesPage?.items || votesPage || []);
+        const hasMore = rawItems.length > pageSize;
+        const votes = rawItems.slice(0, pageSize).map((v) => ({
           id: v.id,
           voter_pseudo: v.voter_pseudo || 'Anonyme',
           user_email: v.user_email || null,
@@ -1420,7 +1417,7 @@ export default async function(req: Request): Promise<Response> {
             : v.vote_source === 'boost' ? 'boost'
             : v.user_email ? 'authenticated' : 'guest',
         }));
-        return Response.json({ votes, total: votes.length });
+        return Response.json({ votes, page, page_size: pageSize, has_more: hasMore });
       }
 
       // ---- Regenerate the server's secret API key (owner only) ----
