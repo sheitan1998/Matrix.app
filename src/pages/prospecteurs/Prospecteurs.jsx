@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { fetchUniverseServers, detectServerType, slugify } from "@/lib/serverDirectory";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Plus, Server as ServerIcon, MessageCircle, Trophy } from "lucide-react";
+import { ArrowLeft, Plus, Server as ServerIcon, MessageCircle, Trophy, Bell } from "lucide-react";
 import { toast } from "sonner";
 import ProspecteursHeader from "@/components/prospecteurs/ProspecteursHeader";
 import ProspecteursSidebar from "@/components/prospecteurs/ProspecteursSidebar";
@@ -12,6 +12,7 @@ import ServerDirectoryCard from "@/components/prospecteurs/ServerDirectoryCard";
 import CreateAdModal from "@/components/prospecteurs/CreateAdModal";
 import Top10Modal from "@/components/prospecteurs/Top10Modal";
 import MyServersModal from "@/components/prospecteurs/MyServersModal";
+import ServerReminderModal from "@/components/prospecteurs/ServerReminderModal";
 import { List as ListIcon } from "lucide-react";
 
 const TABS = [
@@ -36,6 +37,7 @@ export default function Prospecteurs() {
   const [showTop10, setShowTop10] = useState(false);
   const [showMyServers, setShowMyServers] = useState(false);
   const [myServersCount, setMyServersCount] = useState(0);
+  const [showReminder, setShowReminder] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => setUser(null));
@@ -301,6 +303,15 @@ export default function Prospecteurs() {
 
             })}
             <button
+              onClick={() => setShowReminder(true)}
+              className="h-10 px-3 rounded-xl text-xs font-black tracking-wider uppercase transition flex items-center justify-center gap-1.5 tap-sm"
+              style={{ background: "rgba(138,79,255,0.12)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.25)" }}
+              title="Configurer un rappel sonore"
+            >
+              <Bell className="w-4 h-4" />
+              <span className="hidden sm:inline">Sonnerie</span>
+            </button>
+            <button
               onClick={() => setShowTop10(true)}
               className="h-10 px-4 rounded-xl text-xs font-black tracking-wider uppercase transition flex items-center justify-center gap-1.5 tap-sm ml-auto"
               style={{ background: "rgba(251,191,36,0.12)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.25)" }}>
@@ -434,6 +445,10 @@ export default function Prospecteurs() {
             setShowCreateModal(true);
           }}
         />
+      )}
+
+      {showReminder && (
+        <ServerReminderModal user={user} onClose={() => setShowReminder(false)} />
       )}
     </div>);
 
