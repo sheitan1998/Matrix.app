@@ -69,11 +69,21 @@ export default function CreatorDetail() {
   const equippedBadges = cosmetics.filter(c => c.is_equipped && c.category === "badge");
   const equippedOther = cosmetics.filter(c => c.is_equipped && c.category !== "badge" && c.category !== "avatar_animation");
   const avatarFrame = cosmetics.find(c => c.is_equipped && c.category === "avatar_frame");
+  const profileCover = cosmetics.find(c => c.is_equipped && c.category === "profile_cover");
+
+  // Compute real stats from loaded content (getCreatorById doesn't return aggregates)
+  const totalViews = mods.reduce((s, m) => s + (m.views || 0), 0) + maps.reduce((s, m) => s + (m.views || 0), 0);
+  const totalLikes = mods.reduce((s, m) => s + (m.likes || 0), 0) + maps.reduce((s, m) => s + (m.likes || 0), 0);
+  const totalDownloads = mods.reduce((s, m) => s + (m.download_count || 0), 0);
 
   return (
     <div className="min-h-screen bg-background pb-12">
-      <div className="relative h-40 sm:h-52 overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.15), rgba(109,40,217,0.1))" }}>
-        <div className="absolute inset-0 grid-bg opacity-30" />
+      <div className="relative h-40 sm:h-52 overflow-hidden" style={{ background: "linear-gradient(135deg, #2e1065 0%, #4c1d95 40%, #1e1b4b 100%)" }}>
+        {profileCover?.preview_image ? (
+          <img src={profileCover.preview_image} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        ) : null}
+        <div className="absolute inset-0 grid-bg opacity-20" />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, transparent 40%, rgba(10,5,15,0.85) 100%)" }} />
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 -mt-16 relative z-10">
@@ -119,9 +129,9 @@ export default function CreatorDetail() {
         </div>
 
         <div className="grid grid-cols-3 gap-3 mb-8">
-          <StatCard icon={Eye} label="Vues" value={creator.total_views} color="#3b82f6" />
-          <StatCard icon={ThumbsUp} label="Likes" value={creator.total_likes} color="#22c55e" />
-          <StatCard icon={Download} label="Téléchargements" value={creator.total_downloads} color="#f59e0b" />
+          <StatCard icon={Eye} label="Vues" value={totalViews} color="#a855f7" />
+          <StatCard icon={ThumbsUp} label="Likes" value={totalLikes} color="#22c55e" />
+          <StatCard icon={Download} label="Téléchargements" value={totalDownloads} color="#fbbf24" />
         </div>
 
         {mods.length > 0 && (
@@ -188,10 +198,10 @@ export default function CreatorDetail() {
 
 function StatCard({ icon: Icon, label, value, color }) {
   return (
-    <div className="p-4 rounded-2xl" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(255,255,255,0.06)" }}>
+    <div className="p-4 rounded-2xl" style={{ background: "rgba(15,10,25,0.7)", border: "1px solid rgba(168,85,247,0.2)", boxShadow: `0 0 18px ${color}22` }}>
       <Icon className="w-5 h-5 mb-2" style={{ color }} />
-      <p className="text-[10px] uppercase tracking-wider text-white/40">{label}</p>
-      <p className="text-lg font-black text-white mt-0.5">{value}</p>
+      <p className="text-[10px] uppercase tracking-wider text-white/70">{label}</p>
+      <p className="text-lg font-black mt-0.5" style={{ color }}>{value ?? 0}</p>
     </div>
   );
 }
