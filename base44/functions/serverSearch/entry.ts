@@ -358,96 +358,58 @@ export default async function(req: Request): Promise<Response> {
         if (!ad) return Response.json({ error: 'Server not found' }, { status: 404 });
 
         const nowIso = new Date().toISOString();
+        const freshUser = await base44.asServiceRole.entities.User.get(user.id);
+        const payment: Record<string, number> = {};
 
         if (method === 'trix') {
           const TRIX_BOOST_COST = 200;
-          const freshUser = await base44.asServiceRole.entities.User.get(user.id);
           const userTrix = freshUser?.trix_balance || 0;
           if (userTrix < TRIX_BOOST_COST) {
             return Response.json({ error: 'Trix insuffisants (200 requis)', balance: userTrix, cost: TRIX_BOOST_COST }, { status: 400 });
           }
-          const newBalance = userTrix - TRIX_BOOST_COST;
-          await base44.asServiceRole.entities.User.update(user.id, { trix_balance: newBalance });
-
-          const boostUntil = new Date(Date.now() + BOOST_DURATION_HOURS * 60 * 60 * 1000).toISOString();
-          const newBoosts = (ad.boosts || 0) + 1;
-          await base44.asServiceRole.entities.ServerAd.update(serverAdId, { boosts: newBoosts, is_boosted: true, boost_until: boostUntil });
-
-          // Boost counts as a vote: increment counters atomically
-          await base44.asServiceRole.entities.ServerAd.updateMany(
-            { id: serverAdId },
-            { $inc: { votes: 1, votes_month: 1, clicks: 1, clicks_month: 1 } }
-          );
-
-          // Create a vote record for traceability (source: boost)
-          const voterPseudo = String(freshUser?.pseudo || '').split('#')[0].trim() || user.email.split('@')[0];
-          await base44.asServiceRole.entities.ServerVote.create({
-            server_ad_id: serverAdId,
-            user_email: user.email,
-            voter_pseudo: voterPseudo,
-            last_voted_at: nowIso,
-          });
-
-          // Fire-and-forget: send webhook postback if configured
-          if (ad.webhook_url && ad.api_key) {
-            sendVoteWebhook(ad.webhook_url, ad.api_key, voterPseudo, serverAdId);
+          payment.newBalance = userTrix - TRIX_BOOST_COST;
+          await base44.asServiceRole.entities.User.update(user.id, { trix_balance: payment.newBalance });
+        } else {
+          const currentFlashBoosts = freshUser?.flash_boosts || 0;
+          if (currentFlashBoosts < 1) {
+            return Response.json({ error: 'Insufficient Flash Boosts', balance: currentFlashBoosts }, { status: 400 });
           }
-
-          const freshAd = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
-          return Response.json({
-            success: true,
-            boosts: newBoosts,
-            newBalance,
-            votes: freshAd?.votes || 0,
-            votes_month: freshAd?.votes_month || 0,
-            clicks: freshAd?.clicks || 0,
-            clicks_month: freshAd?.clicks_month || 0,
-            voted: true,
-          });
+          payment.newFlashBoosts = currentFlashBoosts - 1;
+          await base44.asServiceRole.entities.User.update(user.id, { flash_boosts: payment.newFlashBoosts });
         }
 
-        const freshUserBoost = await base44.asServiceRole.entities.User.get(user.id);
-        const currentFlashBoosts = freshUserBoost?.flash_boosts || 0;
-        if (currentFlashBoosts < 1) {
-          return Response.json({ error: 'Insufficient Flash Boosts', balance: currentFlashBoosts }, { status: 400 });
-        }
-
-        const newFlashBoosts = currentFlashBoosts - 1;
-        await base44.asServiceRole.entities.User.update(user.id, { flash_boosts: newFlashBoosts });
-
+        // Every boost (Flash or Trix) = +1 boost AND +1 vote, in ONE atomic write so counters never drift
         const boostUntil = new Date(Date.now() + BOOST_DURATION_HOURS * 60 * 60 * 1000).toISOString();
-        const newBoosts = (ad.boosts || 0) + 1;
-        await base44.asServiceRole.entities.ServerAd.update(serverAdId, { boosts: newBoosts, is_boosted: true, boost_until: boostUntil });
-
-        // Flash boost also counts as a vote: increment counters atomically
         await base44.asServiceRole.entities.ServerAd.updateMany(
           { id: serverAdId },
-          { $inc: { votes: 1, votes_month: 1, clicks: 1, clicks_month: 1 } }
+          {
+            $inc: { boosts: 1, votes: 1, votes_month: 1, clicks: 1, clicks_month: 1 },
+            $set: { is_boosted: true, boost_until: boostUntil },
+          }
         );
 
-        // Create a vote record for traceability (source: boost)
-        const flashVoterPseudo = String(freshUserBoost?.pseudo || '').split('#')[0].trim() || user.email.split('@')[0];
+        // Vote record for traceability (source: boost)
+        const voterPseudo = String(freshUser?.pseudo || '').split('#')[0].trim() || user.email.split('@')[0];
         await base44.asServiceRole.entities.ServerVote.create({
           server_ad_id: serverAdId,
           user_email: user.email,
-          voter_pseudo: flashVoterPseudo,
+          voter_pseudo: voterPseudo,
           last_voted_at: nowIso,
         });
 
-        // Fire-and-forget: send webhook postback if configured
         if (ad.webhook_url && ad.api_key) {
-          sendVoteWebhook(ad.webhook_url, ad.api_key, flashVoterPseudo, serverAdId);
+          sendVoteWebhook(ad.webhook_url, ad.api_key, voterPseudo, serverAdId);
         }
 
-        const freshFlashAd = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
+        const freshAd = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
         return Response.json({
           success: true,
-          boosts: newBoosts,
-          newFlashBoosts,
-          votes: freshFlashAd?.votes || 0,
-          votes_month: freshFlashAd?.votes_month || 0,
-          clicks: freshFlashAd?.clicks || 0,
-          clicks_month: freshFlashAd?.clicks_month || 0,
+          ...payment,
+          boosts: freshAd?.boosts || 0,
+          votes: freshAd?.votes || 0,
+          votes_month: freshAd?.votes_month || 0,
+          clicks: freshAd?.clicks || 0,
+          clicks_month: freshAd?.clicks_month || 0,
           voted: true,
         });
       }
