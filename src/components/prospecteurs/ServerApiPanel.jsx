@@ -251,11 +251,15 @@ export default function ServerApiPanel({ server }) {
                     <td className="px-2 py-1.5 hidden sm:table-cell">
                       <span
                         className="px-1.5 py-0.5 rounded text-[8px] font-bold"
-                        style={v.source === "authenticated"
+                        style={v.source === "auto"
+                          ? { background: "rgba(168,85,247,0.15)", color: "#a855f7" }
+                          : v.source === "boost"
+                          ? { background: "rgba(251,191,36,0.12)", color: "#fbbf24" }
+                          : v.source === "authenticated"
                           ? { background: "rgba(34,197,94,0.1)", color: "#22c55e" }
                           : { background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.4)" }}
                       >
-                        {v.source === "authenticated" ? "Compte" : "Anonyme"}
+                        {v.source === "auto" ? "Automatique" : v.source === "boost" ? "Boost" : v.source === "authenticated" ? "Compte" : "Anonyme"}
                       </span>
                     </td>
                     <td className="px-2 py-1.5 text-right text-white/40 flex items-center justify-end gap-0.5">

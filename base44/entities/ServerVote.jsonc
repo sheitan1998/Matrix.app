@@ -21,6 +21,16 @@
       "type": "string",
       "description": "Adresse IP pour les votes non-connectes"
     },
+    "vote_source": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "auto",
+        "boost"
+      ],
+      "default": "manual",
+      "description": "Origine du vote: manual (utilisateur), auto (Vote Auto), boost (Flash/Trix)"
+    },
     "last_voted_at": {
       "type": "string",
       "format": "date-time"

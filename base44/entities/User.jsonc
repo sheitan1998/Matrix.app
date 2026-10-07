@@ -120,6 +120,16 @@
         }
       }
     },
+    "vote_auto_paused": {
+      "type": "boolean",
+      "default": false,
+      "description": "Vote Auto paused (subscription stays active but no votes are cast)",
+      "rls": {
+        "write": {
+          "data._id": "{{user.id}}"
+        }
+      }
+    },
     "stripe_customer_id": {
       "type": "string",
       "description": "Stripe customer ID for billing portal",

@@ -43,9 +43,9 @@ async function autoVoteOnServer(base44: any, u: any, serverAdId: string, pseudo:
 
     const nowIso = new Date(now).toISOString();
     if (lastVote) {
-      await base44.asServiceRole.entities.ServerVote.update(lastVote.id, { last_voted_at: nowIso, voter_pseudo: pseudo });
+      await base44.asServiceRole.entities.ServerVote.update(lastVote.id, { last_voted_at: nowIso, voter_pseudo: pseudo, vote_source: 'auto' });
     } else {
-      await base44.asServiceRole.entities.ServerVote.create({ ...voteQuery, voter_pseudo: pseudo, last_voted_at: nowIso });
+      await base44.asServiceRole.entities.ServerVote.create({ ...voteQuery, voter_pseudo: pseudo, last_voted_at: nowIso, vote_source: 'auto' });
     }
 
     await base44.asServiceRole.entities.ServerAd.updateMany(
@@ -68,6 +68,7 @@ async function autoVoteOnServer(base44: any, u: any, serverAdId: string, pseudo:
 // Run auto-votes for ONE subscriber on each of their (max 3) selected servers
 export async function processUserAutoVotes(base44: any, u: any, now = Date.now(), graceMs = 0) {
   if (!isVoteAutoActive(u, now)) return { status: 'inactive', results: [] };
+  if (u?.vote_auto_paused) return { status: 'paused', results: [] };
 
   const serverIds = (Array.isArray(u.vote_auto_server_ids) ? u.vote_auto_server_ids : [])
     .filter(Boolean)

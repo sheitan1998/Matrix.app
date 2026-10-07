@@ -202,6 +202,7 @@ export default async function(req: Request): Promise<Response> {
           await base44.asServiceRole.entities.ServerVote.update(lastVote.id, {
             last_voted_at: new Date(now).toISOString(),
             voter_pseudo: voterPseudo,
+            vote_source: 'manual',
           });
         } else {
           // Create new vote record (store email for logged-in, IP for anonymous)
@@ -211,6 +212,7 @@ export default async function(req: Request): Promise<Response> {
             ip_address: voterEmail ? undefined : ip,
             voter_pseudo: voterPseudo,
             last_voted_at: new Date(now).toISOString(),
+            vote_source: 'manual',
           });
         }
 
@@ -283,6 +285,7 @@ export default async function(req: Request): Promise<Response> {
           user_email: user.email,
           voter_pseudo: voterPseudo,
           last_voted_at: nowIso,
+          vote_source: 'boost',
         });
 
         if (ad.webhook_url && ad.api_key) {
@@ -414,27 +417,90 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ success: true, serverAdIds: ids, voterPseudo: pseudo });
       }
 
-      // ---- Get Vote Auto status (config + subscription) ----
+      // ---- Get Vote Auto status (config + subscription + live per-server data) ----
       case 'getVoteAutoStatus': {
         const freshUser = await base44.asServiceRole.entities.User.get(user.id);
         const isActive = !!freshUser?.has_vote_auto &&
           (!freshUser?.vote_auto_until || new Date(freshUser.vote_auto_until).getTime() > Date.now());
         const isVip = !!freshUser?.is_vip &&
           (!freshUser?.vip_until || new Date(freshUser.vip_until).getTime() > Date.now());
+        const paused = !!freshUser?.vote_auto_paused;
 
         const serverIds = Array.isArray(freshUser?.vote_auto_server_ids)
           ? freshUser.vote_auto_server_ids
           : (freshUser?.vote_auto_server_id ? [freshUser.vote_auto_server_id] : []);
 
+        // Fetch configured server details + latest auto-vote timestamp per server
+        let servers = [];
+        let lastRun = null;
+        if (serverIds.length > 0) {
+          const page = await base44.asServiceRole.entities.ServerAd.filter({ id: { $in: serverIds } }, '-votes_month', 20);
+          const items = page?.items || page || [];
+
+          const votesPage = await base44.asServiceRole.entities.ServerVote.filter(
+            { server_ad_id: { $in: serverIds }, user_email: user.email, vote_source: 'auto' },
+            '-last_voted_at',
+            50
+          );
+          const votes = votesPage?.items || votesPage || [];
+          const lastByServer = {};
+          for (const v of votes) {
+            if (!lastByServer[v.server_ad_id]) lastByServer[v.server_ad_id] = v.last_voted_at;
+          }
+
+          servers = items.map(a => ({
+            id: a.id,
+            title: a.title,
+            server_type: a.server_type,
+            logo_url: a.logo_url,
+            profile_image: a.profile_image,
+            game: a.game || '',
+            votes_month: a.votes_month || 0,
+            votes: a.votes || 0,
+            last_auto_voted_at: lastByServer[a.id] || null,
+          }));
+
+          lastRun = servers.reduce((max, s) => {
+            if (!s.last_auto_voted_at) return max;
+            const t = new Date(s.last_auto_voted_at).getTime();
+            return (!max || t > new Date(max).getTime()) ? s.last_auto_voted_at : max;
+          }, null);
+        }
+
         return Response.json({
           active: isActive,
+          paused,
           vote_auto_until: freshUser?.vote_auto_until || null,
           configured: !!(serverIds.length > 0 && freshUser?.vote_auto_pseudo),
           server_ids: serverIds,
           voter_pseudo: freshUser?.vote_auto_pseudo || null,
           effective_cooldown_hours: (isActive && isVip) ? 1 : 2,
           has_vip: isVip,
+          servers,
+          last_run: lastRun,
         });
+      }
+
+      // ---- Pause / resume Vote Auto execution (subscription stays active) ----
+      case 'toggleVoteAutoPaused': {
+        const freshUser = await base44.asServiceRole.entities.User.get(user.id);
+        if (!freshUser?.has_vote_auto ||
+            (freshUser?.vote_auto_until && new Date(freshUser.vote_auto_until).getTime() <= Date.now())) {
+          return Response.json({ error: 'Vote Auto subscription inactive' }, { status: 403 });
+        }
+        const newPaused = !freshUser?.vote_auto_paused;
+        await base44.asServiceRole.entities.User.update(user.id, { vote_auto_paused: newPaused });
+        return Response.json({ success: true, paused: newPaused });
+      }
+
+      // ---- Clear Vote Auto config (disable execution, keeps subscription) ----
+      case 'clearVoteAutoConfig': {
+        await base44.asServiceRole.entities.User.update(user.id, {
+          vote_auto_server_ids: [],
+          vote_auto_pseudo: null,
+          vote_auto_paused: false,
+        });
+        return Response.json({ success: true });
       }
 
       // ---- Search any server in the directory (for Vote Auto setup) ----
@@ -1356,7 +1422,7 @@ export default async function(req: Request): Promise<Response> {
           voter_pseudo: v.voter_pseudo || 'Anonyme',
           user_email: v.user_email || null,
           last_voted_at: v.last_voted_at || v.created_date,
-          source: v.user_email ? 'authenticated' : 'guest',
+          source: v.vote_source || (v.user_email ? 'authenticated' : 'guest'),
         }));
         return Response.json({ votes });
       }
