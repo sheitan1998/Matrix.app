@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { X, Loader2, Check, Zap, Clock, Server as ServerIcon, AlertCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
+import VoteAutoTestPanel from "./VoteAutoTestPanel";
 
 const MAX_SERVERS = 3;
 
@@ -68,7 +69,7 @@ export default function VoteAutoSetupModal({ user, onClose }) {
       });
       if (res.data?.success) {
         toast.success("Vote Auto configuré !");
-        onClose();
+        setStatus((prev) => ({ ...prev, configured: true, server_ids: res.data.serverAdIds, voter_pseudo: res.data.voterPseudo }));
       } else {
         setError(res.data?.error || "Erreur");
       }
@@ -242,6 +243,9 @@ export default function VoteAutoSetupModal({ user, onClose }) {
                 <><Check className="w-4 h-4" /> Activer le Vote Auto</>
               )}
             </button>
+
+            <VoteAutoTestPanel configured={!!status?.configured} />
+          
           </div>
         )}
       </div>

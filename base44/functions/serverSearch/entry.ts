@@ -1,43 +1,12 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { rateLimitByIp } from '../../shared/security.ts';
+import { computeHmacSha256, sendVoteWebhook } from '../../shared/voteWebhook.ts';
+import { VOTE_COOLDOWN_MS, getLastVote, processUserAutoVotes, processAllAutoVotes } from '../../shared/autoVote.ts';
 
-const VOTE_COOLDOWN_MS = 2 * 60 * 60 * 1000; // 2 hours
 const BOOST_COST = 500; // 500 Trix minimum per boost
 const PLAYER_BOOST_COST = 50; // 50 Trix for player ad boost
 const BOOST_DURATION_HOURS = 24;
 const SERVER_BOOST_DURATION_DAYS = 30; // 30 days for community server boosts
-
-// Compute HMAC-SHA256 signature (hex) using the server's api_key as secret
-async function computeHmacSha256(secret: string, message: string): Promise<string> {
-  const enc = new TextEncoder();
-  const cryptoKey = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-  const sig = await crypto.subtle.sign('HMAC', cryptoKey, enc.encode(message));
-  return Array.from(new Uint8Array(sig)).map((b: number) => b.toString(16).padStart(2, '0')).join('');
-}
-
-// Send a signed POST request to the server owner's webhook URL after a vote
-async function sendVoteWebhook(webhookUrl: string, webhookToken: string, pseudo: string, serverId: string) {
-  try {
-    const payload = {
-      pseudo,
-      server_id: serverId,
-      timestamp: new Date().toISOString(),
-    };
-    const bodyStr = JSON.stringify(payload);
-    const signature = await computeHmacSha256(webhookToken, bodyStr);
-    await fetch(webhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Matrix-Signature': signature,
-      },
-      body: bodyStr,
-      signal: AbortSignal.timeout(5000),
-    });
-  } catch (err) {
-    console.error('[serverSearch] Webhook delivery failed:', err);
-  }
-}
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -162,94 +131,9 @@ export default async function(req: Request): Promise<Response> {
       const isAuthorized = (apiKey && apiKey === process.env.CRON_SECRET) || user?.role === 'admin';
       if (!isAuthorized) return Response.json({ error: 'Forbidden' }, { status: 403 });
 
-      const now = Date.now();
-      const nowIso = new Date(now).toISOString();
-      let processed = 0;
-      let skipped = 0;
-      let errors = 0;
-
-      // Fetch all users with Vote Auto active
-      const autoVoteUsers = await base44.asServiceRole.entities.User.filter({ has_vote_auto: true });
-
-      for (const u of autoVoteUsers) {
-        try {
-          // Check subscription validity (has_vote_auto is set to false by Stripe on cancellation)
-          if (!u.has_vote_auto || (u.vote_auto_until && new Date(u.vote_auto_until).getTime() <= now)) {
-            skipped++;
-            continue;
-          }
-
-          const serverIds = Array.isArray(u.vote_auto_server_ids)
-            ? u.vote_auto_server_ids
-            : (u.vote_auto_server_id ? [u.vote_auto_server_id] : []);
-          const voterPseudo = u.vote_auto_pseudo;
-
-          if (serverIds.length === 0 || !voterPseudo) {
-            skipped++;
-            continue;
-          }
-
-          // Determine cooldown: 1h if VIP+VoteAuto, 2h if VoteAuto only
-          const isVip = !!(u.is_vip && (!u.vip_until || new Date(u.vip_until).getTime() > now));
-          const effectiveCooldown = isVip ? (1 * 60 * 60 * 1000) : VOTE_COOLDOWN_MS;
-
-          // Loop through each server (max 3)
-          for (const serverAdId of serverIds.slice(0, 3)) {
-            try {
-              const ad = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
-              if (!ad || ad.author_email !== u.email) {
-                continue;
-              }
-
-              const existingVotes = await base44.asServiceRole.entities.ServerVote.filter({
-                server_ad_id: serverAdId,
-                user_email: u.email,
-              });
-
-              if (existingVotes.length > 0) {
-                const lastVoted = existingVotes[0].last_voted_at
-                  ? new Date(existingVotes[0].last_voted_at).getTime()
-                  : 0;
-                const elapsed = now - lastVoted;
-
-                if (elapsed < effectiveCooldown) {
-                  continue;
-                }
-
-                await base44.asServiceRole.entities.ServerVote.update(existingVotes[0].id, {
-                  last_voted_at: nowIso,
-                  voter_pseudo: voterPseudo,
-                });
-              } else {
-                await base44.asServiceRole.entities.ServerVote.create({
-                  server_ad_id: serverAdId,
-                  user_email: u.email,
-                  voter_pseudo: voterPseudo,
-                  last_voted_at: nowIso,
-                });
-              }
-
-              await base44.asServiceRole.entities.ServerAd.updateMany(
-                { id: serverAdId },
-                { $inc: { votes: 1, votes_month: 1, clicks: 1, clicks_month: 1 } }
-              );
-
-              if (ad.webhook_url && ad.api_key) {
-                sendVoteWebhook(ad.webhook_url, ad.api_key, voterPseudo, serverAdId);
-              }
-
-              processed++;
-            } catch {
-              errors++;
-            }
-          }
-        } catch (err) {
-          console.error('[serverSearch] Auto-vote error for user', u.email, err);
-          errors++;
-        }
-      }
-
-      return Response.json({ success: true, processed, skipped, errors, timestamp: nowIso });
+      const summary = await processAllAutoVotes(base44);
+      console.log('[processAutoVotes]', JSON.stringify(summary));
+      return Response.json({ success: true, processed: summary.voted, ...summary, timestamp: new Date().toISOString() });
     }
 
     // System action: monthly purge of all server ads (admin or cron only, 1st of each month)
@@ -284,7 +168,7 @@ export default async function(req: Request): Promise<Response> {
           ? { server_ad_id: serverAdId, user_email: voterEmail }
           : { server_ad_id: serverAdId, ip_address: ip };
 
-        const existingVotes = await base44.asServiceRole.entities.ServerVote.filter(voteQuery);
+        const lastVote = await getLastVote(base44, voteQuery);
 
         const now = Date.now();
 
@@ -294,9 +178,9 @@ export default async function(req: Request): Promise<Response> {
         const isVip = !!(user && user.is_vip && (!user.vip_until || new Date(user.vip_until).getTime() > now));
         const effectiveCooldown = isVip ? (1 * 60 * 60 * 1000) : VOTE_COOLDOWN_MS;
 
-        if (existingVotes.length > 0) {
-          const lastVoted = existingVotes[0].last_voted_at
-            ? new Date(existingVotes[0].last_voted_at).getTime()
+        if (lastVote) {
+          const lastVoted = lastVote.last_voted_at
+            ? new Date(lastVote.last_voted_at).getTime()
             : 0;
           const elapsed = now - lastVoted;
 
@@ -315,7 +199,7 @@ export default async function(req: Request): Promise<Response> {
           }
 
           // Update existing vote timestamp
-          await base44.asServiceRole.entities.ServerVote.update(existingVotes[0].id, {
+          await base44.asServiceRole.entities.ServerVote.update(lastVote.id, {
             last_voted_at: new Date(now).toISOString(),
             voter_pseudo: voterPseudo,
           });
@@ -468,14 +352,14 @@ export default async function(req: Request): Promise<Response> {
           ? { server_ad_id: serverAdId, user_email: voterEmail }
           : { server_ad_id: serverAdId, ip_address: ip };
 
-        const existingVotes = await base44.asServiceRole.entities.ServerVote.filter(voteQuery);
+        const lastVote = await getLastVote(base44, voteQuery);
 
-        if (existingVotes.length === 0) {
+        if (!lastVote) {
           return Response.json({ canVote: true });
         }
 
-        const lastVoted = existingVotes[0].last_voted_at
-          ? new Date(existingVotes[0].last_voted_at).getTime()
+        const lastVoted = lastVote.last_voted_at
+          ? new Date(lastVote.last_voted_at).getTime()
           : 0;
         const elapsed = Date.now() - lastVoted;
 
@@ -554,6 +438,20 @@ export default async function(req: Request): Promise<Response> {
           effective_cooldown_hours: (isActive && isVip) ? 1 : 2,
           has_vip: isVip,
         });
+      }
+
+      // ---- Manual test: run the auto-vote script now for the current subscriber (strict cooldown) ----
+      case 'runMyAutoVotes': {
+        const freshUser = await base44.asServiceRole.entities.User.get(user.id);
+        const result = await processUserAutoVotes(base44, freshUser);
+        if (result.status === 'inactive') {
+          return Response.json({ success: false, error: 'Abonnement Vote Auto inactif' }, { status: 403 });
+        }
+        if (result.status === 'not_configured') {
+          return Response.json({ success: false, error: 'Enregistre au moins un serveur et ton pseudo avant de tester.' }, { status: 400 });
+        }
+        console.log('[runMyAutoVotes]', user.id, JSON.stringify(result.results.map((r) => r.status)));
+        return Response.json({ success: true, ...result, timestamp: new Date().toISOString() });
       }
 
       // ---- Get user's own servers (for Vote Auto setup) ----
