@@ -13,6 +13,7 @@ import CreateAdModal from "@/components/prospecteurs/CreateAdModal";
 import Top10Modal from "@/components/prospecteurs/Top10Modal";
 import MyServersModal from "@/components/prospecteurs/MyServersModal";
 import ServerReminderModal from "@/components/prospecteurs/ServerReminderModal";
+import VoteAutoSetupModal from "@/components/prospecteurs/VoteAutoSetupModal";
 import { List as ListIcon } from "lucide-react";
 
 const TABS = [
@@ -38,6 +39,7 @@ export default function Prospecteurs() {
   const [showMyServers, setShowMyServers] = useState(false);
   const [myServersCount, setMyServersCount] = useState(0);
   const [showReminder, setShowReminder] = useState(false);
+  const [showVoteAutoSetup, setShowVoteAutoSetup] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => setUser(null));
@@ -236,7 +238,7 @@ export default function Prospecteurs() {
       <ProspecteursHeader user={user} trixBalance={user?.trix_balance || 0} />
 
       <div className="relative z-10 flex max-w-7xl mx-auto pb-12">
-        <ProspecteursSidebar active="servers" user={user} />
+        <ProspecteursSidebar active="servers" user={user} onConfigureVoteAuto={() => setShowVoteAutoSetup(true)} />
 
         <div className="flex-1 px-4 sm:px-6 py-5">
           {/* Back + Publish */}
@@ -449,6 +451,10 @@ export default function Prospecteurs() {
 
       {showReminder && (
         <ServerReminderModal user={user} onClose={() => setShowReminder(false)} />
+      )}
+
+      {showVoteAutoSetup && user && (
+        <VoteAutoSetupModal user={user} onClose={() => setShowVoteAutoSetup(false)} />
       )}
     </div>);
 

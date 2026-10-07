@@ -2,15 +2,13 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Server, Users, Search, Zap } from "lucide-react";
 import CheckoutModal from "@/components/CheckoutModal";
-import VoteAutoSetupModal from "./VoteAutoSetupModal";
 
 const VIP_IMAGE = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/ca0329832_ChatGPTImage6oct202621_00_29.png";
 const VOTE_AUTO_IMAGE = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/1448fd9e6_ChatGPTImage6oct202623_19_53.png";
 
-export default function ProspecteursSidebar({ active = "servers", user }) {
+export default function ProspecteursSidebar({ active = "servers", user, onConfigureVoteAuto }) {
   const [showVipCheckout, setShowVipCheckout] = useState(false);
   const [showVoteAutoCheckout, setShowVoteAutoCheckout] = useState(false);
-  const [showVoteAutoSetup, setShowVoteAutoSetup] = useState(false);
 
   const hasVoteAuto = !!user?.has_vote_auto &&
   (!user?.vote_auto_until || new Date(user.vote_auto_until).getTime() > Date.now());
@@ -86,7 +84,7 @@ export default function ProspecteursSidebar({ active = "servers", user }) {
       {/* Bouton de configuration Vote Auto — visible si Vote Auto actif */}
       {hasVoteAuto && (
         <button
-          onClick={() => setShowVoteAutoSetup(true)}
+          onClick={() => onConfigureVoteAuto?.()}
           className="flex flex-col items-center gap-1 p-2.5 rounded-xl transition text-white hover:opacity-90 tap-sm"
           style={{ background: "rgba(191,0,255,0.15)", border: "1px solid rgba(191,0,255,0.3)" }}
           title="Configurer tes serveurs en Vote Auto"
@@ -120,9 +118,6 @@ export default function ProspecteursSidebar({ active = "servers", user }) {
 
       }
 
-      {showVoteAutoSetup && user &&
-      <VoteAutoSetupModal user={user} onClose={() => setShowVoteAutoSetup(false)} />
-      }
     </div>);
 
 }
