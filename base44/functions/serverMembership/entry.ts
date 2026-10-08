@@ -16,15 +16,17 @@ export default async function(req: Request): Promise<Response> {
       const serverId = sanitizeText(body?.serverId, 100);
       if (!serverId) return errorResponse(400, 'ID du serveur manquant.');
 
-      const serverPage = await sdk.asServiceRole.entities.Server.filter({ id: serverId }, { limit: 1 });
-      const server = serverPage.items?.[0];
+      let server;
+      try { server = await sdk.asServiceRole.entities.Server.get(serverId); }
+      catch { return errorResponse(404, 'Serveur introuvable.'); }
       if (!server) return errorResponse(404, 'Serveur introuvable.');
 
-      const existingPage = await sdk.asServiceRole.entities.ServerMember.filter(
+      const existingMembers = await sdk.asServiceRole.entities.ServerMember.filter(
         { server_id: serverId, user_email: user.email },
-        { limit: 1, sort: '-created_date' }
+        '-created_date',
+        1
       );
-      const existing = existingPage.items?.[0];
+      const existing = (Array.isArray(existingMembers) ? existingMembers : existingMembers?.items || [])[0];
 
       if (existing?.is_banned) {
         const isPermanent = !existing.ban_until;
@@ -56,15 +58,17 @@ export default async function(req: Request): Promise<Response> {
       const serverId = sanitizeText(body?.serverId, 100);
       if (!serverId) return errorResponse(400, 'ID du serveur manquant.');
 
-      const page = await sdk.asServiceRole.entities.ServerMember.filter(
+      const leaveMembers = await sdk.asServiceRole.entities.ServerMember.filter(
         { server_id: serverId, user_email: user.email },
-        { limit: 1 }
+        null,
+        1
       );
-      const member = page.items?.[0];
+      const member = (Array.isArray(leaveMembers) ? leaveMembers : leaveMembers?.items || [])[0];
       if (!member) return Response.json({ data: { ok: true } });
 
-      const serverPage = await sdk.asServiceRole.entities.Server.filter({ id: serverId }, { limit: 1 });
-      const server = serverPage.items?.[0];
+      let server;
+      try { server = await sdk.asServiceRole.entities.Server.get(serverId); }
+      catch { server = null; }
       if (server && server.owner_email === user.email) {
         return errorResponse(400, 'Le propriétaire ne peut pas quitter son propre serveur.');
       }
@@ -78,17 +82,32 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ data: { ok: true } });
     }
 
+    if (action === 'getMembers') {
+      const serverId = sanitizeText(body?.serverId, 100);
+      if (!serverId) return errorResponse(400, 'ID du serveur manquant.');
+
+      const members = await sdk.asServiceRole.entities.ServerMember.filter(
+        { server_id: serverId },
+        '-created_date',
+        200
+      );
+      const memberList = Array.isArray(members) ? members : members?.items || [];
+      return Response.json({ members: memberList });
+    }
+
     if (action === 'updateMember') {
       const memberId = sanitizeText(body?.memberId, 100);
       const serverId = sanitizeText(body?.serverId, 100);
       if (!memberId || !serverId) return errorResponse(400, 'Paramètres manquants.');
 
-      const serverPage = await sdk.asServiceRole.entities.Server.filter({ id: serverId }, { limit: 1 });
-      const server = serverPage.items?.[0];
+      let server;
+      try { server = await sdk.asServiceRole.entities.Server.get(serverId); }
+      catch { return errorResponse(404, 'Serveur introuvable.'); }
       if (!server) return errorResponse(404, 'Serveur introuvable.');
 
-      const memberPage = await sdk.asServiceRole.entities.ServerMember.filter({ id: memberId }, { limit: 1 });
-      const target = memberPage.items?.[0];
+      let target;
+      try { target = await sdk.asServiceRole.entities.ServerMember.get(memberId); }
+      catch { return errorResponse(404, 'Membre introuvable.'); }
       if (!target || target.server_id !== serverId) return errorResponse(404, 'Membre introuvable.');
 
       if (target.user_email === server.owner_email) {
@@ -98,11 +117,12 @@ export default async function(req: Request): Promise<Response> {
       const isOwner = server.owner_email === user.email;
       const isPlatformAdmin = user.role === 'admin';
 
-      const callerPage = await sdk.asServiceRole.entities.ServerMember.filter(
+      const callerMembers = await sdk.asServiceRole.entities.ServerMember.filter(
         { server_id: serverId, user_email: user.email },
-        { limit: 1 }
+        null,
+        1
       );
-      const callerMember = callerPage.items?.[0];
+      const callerMember = (Array.isArray(callerMembers) ? callerMembers : callerMembers?.items || [])[0];
       const isServerAdmin = callerMember?.role === 'admin';
       const isModerator = callerMember?.role === 'moderator';
 

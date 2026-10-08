@@ -694,6 +694,7 @@ export default async function(req: Request): Promise<Response> {
           const showActivity = u.show_game_activity !== false;
           return {
             id: u.id,
+            email: u.email || '',
             pseudo: cleanPseudo,
             avatar_url: u.avatar_url || '',
             last_seen: u.last_seen || '',

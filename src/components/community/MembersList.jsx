@@ -20,7 +20,7 @@ export default function MembersList({ server, theme, currentUserEmail, onOpenDm 
   const { speakingEmails } = useServerVoice(server.id);
   const { data: members = [] } = useQuery({
     queryKey: ["server-members", server.id],
-    queryFn: () => base44.entities.ServerMember.filter({ server_id: server.id }, "-created_date", 100),
+    queryFn: () => base44.functions.invoke("serverMembership", { action: "getMembers", serverId: server.id }).then(res => res?.data?.members || []),
     refetchInterval: 15000,
   });
 
