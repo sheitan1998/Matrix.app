@@ -197,21 +197,24 @@ export default function Community() {
     let code = input;
     const urlMatch = input.match(/\/nexus\/invite\/([a-zA-Z0-9]+)/i);
     if (urlMatch) code = urlMatch[1];
-    // Search server by invite code
-    const allServers = await base44.entities.Server.list("-created_date", 200);
-    const found = allServers.find((s) => s.invite_code === code);
-    if (!found) {toast.error("Lien invalide ou expiré");return;}
-    // Check expiration
-    if (found.invite_expires_at) {
-      const exp = new Date(found.invite_expires_at);
-      if (exp < new Date()) {toast.error("Ce lien d'invitation a expiré");return;}
+    try {
+      // Use backend (bypasses RLS — finds private servers by invite code too)
+      const res = await base44.functions.invoke("serverSearch", { action: "getServerByInviteCode", inviteCode: code });
+      const found = res?.data;
+      if (!found || !found.id) { toast.error("Lien invalide ou expiré"); return; }
+      if (found.invite_expires_at && new Date(found.invite_expires_at) < new Date()) {
+        toast.error("Ce lien d'invitation a expiré"); return;
+      }
+      await base44.functions.invoke("serverMembership", { action: "join", serverId: found.id });
+      setJoinedServerIds((prev) => new Set([...prev, found.id]));
+      qc.invalidateQueries({ queryKey: ["servers"] });
+      setShowInviteJoin(false);
+      setInviteCodeInput("");
+      selectServer(found);
+      toast.success(`Rejoint "${found.name}" !`);
+    } catch (e) {
+      toast.error(e?.response?.data?.error || "Lien invalide ou expiré");
     }
-    await base44.functions.invoke("serverMembership", { action: "join", serverId: found.id });
-    qc.invalidateQueries({ queryKey: ["servers"] });
-    setShowInviteJoin(false);
-    setInviteCodeInput("");
-    selectServer(found);
-    toast.success(`Rejoint "${found.name}" !`);
   };
 
   const inviteToServer = (server) => {
@@ -237,6 +240,7 @@ export default function Community() {
     try {
       await base44.functions.invoke("serverMembership", { action: "join", serverId: joinConfirmServer.id });
       setJoinedServerIds((prev) => new Set([...prev, joinConfirmServer.id]));
+      qc.invalidateQueries({ queryKey: ["servers"] });
       setSelectedServer(joinConfirmServer);
       setActiveChannel(null);
       setShowSettings(false);
@@ -325,19 +329,19 @@ export default function Community() {
         {selectedServer &&
         <div className="w-14 shrink-0 border-r flex flex-col items-center py-3 gap-2 overflow-y-auto no-scrollbar"
         style={{ borderColor: theme.border, background: theme.card + "cc" }}>
-            {servers.map((s) => {
+            {myServers.map((s) => {
             const t = getTheme(s.visual_theme || "default", s.custom_themes);
             const active = selectedServer?.id === s.id;
             return (
               <button key={s.id} onClick={() => selectServer(s)}
               className="w-10 h-10 rounded-xl overflow-hidden border-2 transition shrink-0"
               style={{ borderColor: active ? t.accent : "transparent" }}>
-                  {s.icon_url ?
-                <AnimatedMedia src={s.icon_url} className="w-full h-full object-cover" /> :
-                <div className="w-full h-full flex items-center justify-center text-lg" style={{ background: (s.banner_color || t.accent) + "25" }}>{s.icon_emoji || "🏠"}</div>}
-                </button>);
+                   {s.icon_url ?
+                 <AnimatedMedia src={s.icon_url} className="w-full h-full object-cover" /> :
+                 <div className="w-full h-full flex items-center justify-center text-lg" style={{ background: (s.banner_color || t.accent) + "25" }}>{s.icon_emoji || "🏠"}</div>}
+                 </button>);
 
-          })}
+            })}
             <button onClick={() => setShowCreator(true)}
           className="w-10 h-10 rounded-xl border-2 border-dashed flex items-center justify-center transition"
           style={{ borderColor: theme.accent + "40", color: theme.accent }}>
