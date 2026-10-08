@@ -82,6 +82,7 @@ export default async function(req: Request): Promise<Response> {
         profile_image: found.profile_image,
         cover_image: found.cover_image,
         discord_link: found.discord_link,
+        website_url: found.website_url,
         ip: found.ip,
         port: found.port,
         discord_server_id: found.discord_server_id,

@@ -115,7 +115,12 @@ export default function Prospecteurs() {
   const serverCounts = useMemo(() => {
     const counts = { all: typedServers.length };
     for (const cat of categories) {
-      counts[cat.slug] = typedServers.filter((s) => s.category_slug === cat.slug || s.category === cat.name).length;
+      counts[cat.slug] = typedServers.filter((s) =>
+        s.category_slug === cat.slug ||
+        s.category === cat.name ||
+        (Array.isArray(s.category_slugs) && s.category_slugs.includes(cat.slug)) ||
+        (Array.isArray(s.categories) && s.categories.includes(cat.name))
+      ).length;
     }
     return counts;
   }, [typedServers, categories]);

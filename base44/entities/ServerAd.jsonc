@@ -18,6 +18,10 @@
       "type": "string",
       "description": "Lien Discord (serveur uniquement)"
     },
+    "website_url": {
+      "type": "string",
+      "description": "Lien site web du serveur (URL HTTPS obligatoire)"
+    },
     "author_email": {
       "type": "string"
     },

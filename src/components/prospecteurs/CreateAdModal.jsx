@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { X, Gamepad2, Image as ImageIcon, Upload, Users, Clock, User } from "lucide-react";
+import { X, Gamepad2, Image as ImageIcon, Upload, Users, Clock, User, Globe } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { uploadImageWithToast } from "@/lib/imageModeration";
@@ -31,6 +31,7 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
     title: editAd?.title || "",
     description: editAd?.description || "",
     discord_link: editAd?.discord_link || "",
+    website_url: editAd?.website_url || "",
     game: editAd?.game || "",
     category: editAd?.category || "",
     category_slug: editAd?.category_slug || "",
@@ -86,6 +87,11 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
     e.preventDefault();
     if (adType === "server") {
       if (!form.title.trim() || !form.description.trim() || !form.discord_link.trim()) return;
+      const webUrl = form.website_url.trim();
+      if (webUrl && !webUrl.startsWith("https://")) {
+        toast.error("Le lien du site web doit commencer par https://");
+        return;
+      }
       const link = form.discord_link.trim().toLowerCase();
       if (serverSubType === "nexus") {
         if (link.includes("discord.gg") || link.includes("discord.com") || link.includes("discordapp.com")) {
@@ -110,6 +116,7 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
       profile_image: profileImage,
       cover_image: adType === "server" ? coverImage : "",
       discord_link: adType === "server" ? form.discord_link : "",
+      website_url: adType === "server" ? (form.website_url.trim().startsWith("https://") ? form.website_url.trim() : "") : "",
       games: form.games || [],
       categories: form.categories || [],
       category_slugs: form.category_slugs || (form.categories && form.categories.length > 0
@@ -470,6 +477,24 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
                   ? "⚠️ Seuls les liens de serveurs Nexus sont acceptés."
                   : "⚠️ Un lien Discord valide est requis."}
               </p>
+            </div>
+          )}
+
+          {/* Website URL (server only) */}
+          {adType === "server" && (
+            <div>
+              <label className={labelClass}>
+                <span className="flex items-center gap-1"><Globe className="w-3 h-3" /> Site web (optionnel)</span>
+              </label>
+              <input
+                type="url"
+                value={form.website_url}
+                onChange={(e) => handleChange("website_url", e.target.value)}
+                placeholder="https://monsite.com"
+                className="w-full h-10 px-3 rounded-lg text-sm text-white placeholder:text-white/30 outline-none"
+                style={inputStyle}
+              />
+              <p className="text-[9px] text-white/30 mt-1">⚠️ Le lien doit commencer par https://</p>
             </div>
           )}
 
