@@ -184,7 +184,15 @@
         "type": "string"
       },
       "default": [],
-      "description": "Cles des extensions globales activees sur ce serveur"
+      "description": "Ancien champ (non utilise) : cles des extensions globales activees sur ce serveur"
+    },
+    "disabled_extensions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Cles des extensions globales desactivees sur ce serveur (toutes les extensions actives sont activees par defaut)"
     },
     "enabled_automation_rules": {
       "type": "array",
@@ -298,7 +306,9 @@
                 "default": false
               }
             },
-            "default": {}
+            "additionalProperties": true,
+            "default": {},
+            "description": "Surcharges de permissions par salon (toute cle de permission dynamique est acceptee)"
           }
         }
       }
@@ -405,7 +415,9 @@
                 "default": false
               }
             },
-            "default": {}
+            "additionalProperties": true,
+            "default": {},
+            "description": "Permissions du role (toute cle de permission dynamique est acceptee)"
           }
         }
       },

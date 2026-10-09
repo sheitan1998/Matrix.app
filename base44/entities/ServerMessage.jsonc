@@ -55,6 +55,10 @@
       "type": "string",
       "description": "Transcription automatique du message vocal (generee localement via Web Speech API)"
     },
+    "event_key": {
+      "type": "string",
+      "description": "Cle d'idempotence des messages automatiques (regle + evenement) pour eviter les doublons"
+    },
     "reactions": {
       "type": "array",
       "items": {

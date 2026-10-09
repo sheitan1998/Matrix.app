@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { rateLimitByIp } from '../../shared/security.ts';
 import { computeHmacSha256, sendVoteWebhook } from '../../shared/voteWebhook.ts';
 import { VOTE_COOLDOWN_MS, getLastVote, processAllAutoVotes } from '../../shared/autoVote.ts';
+import { dispatchEvent } from '../../shared/nexusEngine.ts';
 
 const BOOST_COST = 500; // 500 Trix minimum per boost
 const PLAYER_BOOST_COST = 50; // 50 Trix for player ad boost
@@ -1028,13 +1029,22 @@ export default async function(req: Request): Promise<Response> {
         const startedAtMs = Date.now();
         const startedAt = new Date(startedAtMs).toISOString();
         const expiresAt = new Date(startedAtMs + SERVER_BOOST_DURATION_DAYS * 24 * 60 * 60 * 1000).toISOString();
-        await base44.asServiceRole.entities.ServerBoostRecord.create({
+        const boostRecord = await base44.asServiceRole.entities.ServerBoostRecord.create({
           server_id: serverId,
           user_id: user.id,
           user_email: user.email,
           user_name: String(freshBoostUser?.pseudo || '').split('#')[0].trim(),
           started_at: startedAt,
           expires_at: expiresAt,
+        });
+
+        // Run the dynamic boost_received rules (thank-you message, ...)
+        await dispatchEvent(base44, {
+          server: { ...srv, boosts: newBoosts },
+          trigger: 'boost_received',
+          actorName: String(freshBoostUser?.pseudo || user.full_name || '').split('#')[0].trim() || 'Membre',
+          eventId: boostRecord?.id || `${serverId}:${user.email}:${startedAtMs}`,
+          vars: { boosts: String(newBoosts) },
         });
 
         console.log('[boostServer] server', serverId, 'boosts:', newBoosts, 'by', user.email, 'expires:', expiresAt);

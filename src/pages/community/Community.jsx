@@ -28,6 +28,7 @@ import { VISUAL_THEMES, getTheme } from "@/lib/visualThemes";
 import { useProgression } from "@/context/ProgressionContext";
 import { getRank } from "@/lib/progressionData";
 import { canonicalAppUrl } from "@/lib/canonicalOrigin";
+import { useServerAccess } from "@/hooks/useServerAccess";
 import { Gamepad2, Cpu, Music, Palette, Film, Newspaper } from "lucide-react";
 
 const CATEGORIES = [
@@ -124,7 +125,10 @@ export default function Community() {
 
   const isOwner = selectedServer?.owner_email === user?.email;
   const myMembership = userMemberships.find((m) => m.server_id === selectedServer?.id);
-  const canManageChannels = isOwner || myMembership?.role === "admin" || myMembership?.role === "moderator";
+  const serverAccess = useServerAccess(selectedServer?.id);
+  const canManageChannels = serverAccess.ready
+    ? serverAccess.can("manage_channels")
+    : isOwner || myMembership?.role === "admin" || myMembership?.role === "moderator";
   const theme = getTheme(selectedServer?.visual_theme || "default", selectedServer?.custom_themes);
   const channels = selectedServer && selectedServer.id !== "__feed__" ?
   selectedServer.channels?.length ? selectedServer.channels : defaultChannels :
@@ -463,7 +467,7 @@ export default function Community() {
 
             <ChannelList
               ref={channelListRef}
-              channels={channels}
+              channels={canManageChannels ? channels : channels.filter((c) => c.type === "category" || serverAccess.canView(c.id))}
               activeChannel={activeChannel}
               setActiveChannel={setActiveChannel}
               canManage={canManageChannels}
@@ -551,12 +555,12 @@ export default function Community() {
 
           {/* Text channel */}
           {selectedServer && selectedServer.id !== "__feed__" && activeChannel?.type === "text" && !showSettings && user &&
-          <ServerChat server={selectedServer} channel={activeChannel} theme={theme} user={user} />
+          <ServerChat server={selectedServer} channel={activeChannel} theme={theme} user={user} access={serverAccess} />
           }
 
           {/* Announce channel (read-only) */}
           {selectedServer && selectedServer.id !== "__feed__" && activeChannel?.type === "announce" && !showSettings && user &&
-          <ServerChat server={selectedServer} channel={activeChannel} theme={theme} user={user} />
+          <ServerChat server={selectedServer} channel={activeChannel} theme={theme} user={user} access={serverAccess} />
           }
 
           {/* Voice channel */}

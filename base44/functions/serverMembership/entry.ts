@@ -1,5 +1,11 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { requireUser, rateLimitByIp, sanitizeText, errorResponse, HttpError } from '../../shared/security.ts';
+import { loadRegistry, getMember, resolveServerPermissions, allowed, findCustomRole } from '../../shared/nexusAccess.ts';
+import { dispatchEvent } from '../../shared/nexusEngine.ts';
+
+function displayName(user: any) {
+  return String(user.pseudo || user.full_name || user.email.split('@')[0]).split('#')[0].trim();
+}
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -52,40 +58,14 @@ export default async function(req: Request): Promise<Response> {
         members_count: (server.members_count || 1) + 1,
       });
 
-      // Post welcome message via automation_configs (with backward compat for legacy welcome_* fields)
-      const memberName = user.full_name || user.email.split('@')[0];
-      const automationConfigs = server.automation_configs || [];
-      const welcomeConfig = automationConfigs.find((c) => c.rule_key === 'welcome_message');
-
-      // Determine if welcome message should be sent (automation_configs takes priority, fall back to legacy fields)
-      const welcomeEnabled = welcomeConfig ? welcomeConfig.enabled : (server.welcome_enabled || false);
-      const welcomeChannelId = welcomeConfig ? welcomeConfig.channel_id : (server.welcome_channel_id || '');
-      const welcomeMessage = welcomeConfig ? welcomeConfig.message : (server.welcome_message || '');
-
-      if (welcomeEnabled && welcomeChannelId) {
-        // Idempotency: check if a welcome message was already posted for this user in this server+channel
-        const existingWelcome = await sdk.asServiceRole.entities.ServerMessage.filter(
-          { server_id: serverId, channel_id: welcomeChannelId, author_email: 'system@matrix.app', type: 'system' },
-          '-created_date',
-          1
-        );
-        const existingMsg = (Array.isArray(existingWelcome) ? existingWelcome : existingWelcome?.items || [])[0];
-        // Only post if no recent system welcome message exists for this user
-        if (!existingMsg) {
-          const defaultMsg = 'Bienvenue {user} ! 🎉';
-          const welcomeText = (welcomeMessage || defaultMsg).replace(/\{user\}/g, memberName);
-          await sdk.asServiceRole.entities.ServerMessage.create({
-            server_id: serverId,
-            channel_id: welcomeChannelId,
-            author_email: 'system@matrix.app',
-            author_name: 'MATRIX Bot',
-            author_avatar: '',
-            content: welcomeText,
-            type: 'system',
-            interactive_buttons: server.interactive_buttons || [],
-          });
-        }
-      }
+      // Run the dynamic member_join rules (welcome message + buttons, auto-role, ...)
+      await dispatchEvent(sdk, {
+        server,
+        trigger: 'member_join',
+        member,
+        actorName: displayName(user),
+        eventId: `${serverId}:${user.email}`,
+      });
 
       return Response.json({ data: member });
     }
@@ -115,23 +95,14 @@ export default async function(req: Request): Promise<Response> {
           members_count: Math.max(0, (server.members_count || 1) - 1),
         });
 
-        // Post goodbye message via automation_configs if enabled
-        const automationConfigs = server.automation_configs || [];
-        const goodbyeConfig = automationConfigs.find((c) => c.rule_key === 'goodbye_message');
-        if (goodbyeConfig?.enabled && goodbyeConfig.channel_id) {
-          const memberName = member.user_name || user.email.split('@')[0];
-          const defaultMsg = '{user} a quitté le serveur.';
-          const goodbyeText = (goodbyeConfig.message || defaultMsg).replace(/\{user\}/g, memberName);
-          await sdk.asServiceRole.entities.ServerMessage.create({
-            server_id: serverId,
-            channel_id: goodbyeConfig.channel_id,
-            author_email: 'system@matrix.app',
-            author_name: 'MATRIX Bot',
-            author_avatar: '',
-            content: goodbyeText,
-            type: 'system',
-          });
-        }
+        // Run the dynamic member_leave rules (goodbye message, ...)
+        await dispatchEvent(sdk, {
+          server,
+          trigger: 'member_leave',
+          member,
+          actorName: member.user_name || displayName(user),
+          eventId: `${serverId}:${user.email}`,
+        });
       }
       return Response.json({ data: { ok: true } });
     }
@@ -168,20 +139,15 @@ export default async function(req: Request): Promise<Response> {
         return errorResponse(403, 'Impossible de modifier le propriétaire du serveur.');
       }
 
-      const isOwner = server.owner_email === user.email;
-      const isPlatformAdmin = user.role === 'admin';
+      // Dynamic permission check: the caller's resolved permissions (roles + custom roles + registry)
+      const registry = await loadRegistry(sdk);
+      const callerMember = await getMember(sdk, serverId, user.email);
+      const caller = resolveServerPermissions({ server, member: callerMember, user, registry });
+      const isTopLevel = caller.isOwner || user.role === 'admin';
 
-      const callerMembers = await sdk.asServiceRole.entities.ServerMember.filter(
-        { server_id: serverId, user_email: user.email },
-        null,
-        1
-      );
-      const callerMember = (Array.isArray(callerMembers) ? callerMembers : callerMembers?.items || [])[0];
-      const isServerAdmin = callerMember?.role === 'admin';
-      const isModerator = callerMember?.role === 'moderator';
-
-      if (!isOwner && !isPlatformAdmin && !isServerAdmin && !isModerator) {
-        return errorResponse(403, 'Permissions insuffisantes.');
+      if (!caller.isMember) return errorResponse(403, 'Permissions insuffisantes.');
+      if (target.role === 'admin' && !isTopLevel) {
+        return errorResponse(403, 'Seul le propriétaire peut modifier un administrateur.');
       }
 
       const update: Record<string, any> = {};
@@ -191,24 +157,45 @@ export default async function(req: Request): Promise<Response> {
         if (!['member', 'moderator', 'admin'].includes(newRole)) {
           return errorResponse(400, 'Rôle invalide.');
         }
-        if (!isOwner && !isPlatformAdmin && newRole === 'admin') {
-          return errorResponse(403, 'Seul le propriétaire peut attribuer le rôle admin.');
+        if (!allowed(caller.perms, 'manage_roles')) {
+          return errorResponse(403, 'Permission "Gérer les rôles" requise.');
         }
-        if (!isOwner && !isPlatformAdmin && !isServerAdmin) {
-          return errorResponse(403, 'Permissions insuffisantes pour modifier le rôle.');
+        if (newRole === 'admin' && !isTopLevel) {
+          return errorResponse(403, 'Seul le propriétaire peut attribuer le rôle admin.');
         }
         update.role = newRole;
       }
 
+      if (body?.custom_role !== undefined) {
+        if (!allowed(caller.perms, 'manage_roles')) {
+          return errorResponse(403, 'Permission "Gérer les rôles" requise.');
+        }
+        if (body.custom_role === null || body.custom_role === '') {
+          update.custom_role = null;
+        } else {
+          const customRole = findCustomRole(server, sanitizeText(body.custom_role, 100));
+          if (!customRole) return errorResponse(400, 'Rôle personnalisé introuvable.');
+          if (customRole.permissions?.administrator && !isTopLevel) {
+            return errorResponse(403, 'Seul le propriétaire peut attribuer un rôle administrateur.');
+          }
+          update.custom_role = customRole.name;
+        }
+      }
+
       if (typeof body?.is_banned === 'boolean') {
+        if (!allowed(caller.perms, 'ban_members')) return errorResponse(403, 'Permission "Bannir des membres" requise.');
         update.is_banned = body.is_banned;
         update.ban_until = body.ban_until === null ? null : sanitizeText(body?.ban_until, 30);
       }
       if (typeof body?.is_muted_text === 'boolean') {
+        if (!allowed(caller.perms, 'timeout_members')) return errorResponse(403, 'Permission "Exclure temporairement" requise.');
         update.is_muted_text = body.is_muted_text;
         update.mute_text_until = body.mute_text_until === null ? null : sanitizeText(body?.mute_text_until, 30);
       }
       if (typeof body?.is_muted_voice === 'boolean') {
+        if (!allowed(caller.perms, 'voice_mute_members') && !allowed(caller.perms, 'timeout_members')) {
+          return errorResponse(403, 'Permission "Rendre les membres muets" requise.');
+        }
         update.is_muted_voice = body.is_muted_voice;
         update.mute_voice_until = body.mute_voice_until === null ? null : sanitizeText(body?.mute_voice_until, 30);
       }
@@ -218,6 +205,22 @@ export default async function(req: Request): Promise<Response> {
       }
 
       const updated = await sdk.asServiceRole.entities.ServerMember.update(memberId, update);
+
+      // Run the dynamic role_assigned rules when a role actually changed
+      const assigned = (update.custom_role && update.custom_role !== target.custom_role && update.custom_role)
+        || (update.role && update.role !== target.role && update.role);
+      if (assigned) {
+        await dispatchEvent(sdk, {
+          server,
+          registry,
+          trigger: 'role_assigned',
+          member: { ...target, ...update },
+          actorName: target.user_name || target.user_email.split('@')[0],
+          eventId: `${memberId}:${assigned}`,
+          vars: { role: assigned },
+        });
+      }
+
       return Response.json({ data: updated });
     }
 

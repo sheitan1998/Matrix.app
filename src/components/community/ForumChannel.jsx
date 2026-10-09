@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { MessageSquare, Plus, Pin, MessageCircle, Send } from "lucide-react";
 import { toast } from "sonner";
+import { callNexusEngine } from "@/lib/nexusEngineClient";
 
 export default function ForumChannel({ channel, server, theme, user }) {
   const [threads, setThreads] = useState([]);
@@ -24,25 +25,21 @@ export default function ForumChannel({ channel, server, theme, user }) {
     if (!newThreadTitle.trim() || !user) return;
     setCreating(true);
     try {
-      const msg = await base44.entities.ServerMessage.create({
-        server_id: server.id,
-        channel_id: channel.id,
-        author_email: user.email,
-        author_name: user.full_name || user.email?.split("@")[0],
-        author_avatar: user.avatar_url || "",
+      const { data: msg } = await callNexusEngine("sendMessage", {
+        serverId: server.id,
+        channelId: channel.id,
         content: newThreadContent.trim() || newThreadTitle.trim(),
+        type: "text",
         is_thread_starter: true,
         thread_title: newThreadTitle.trim(),
-        thread_replies: 0,
-        thread_pinned: false,
       });
       setThreads(prev => [msg, ...prev]);
       setNewThreadTitle("");
       setNewThreadContent("");
       setShowCreate(false);
       toast.success("Discussion créée !");
-    } catch {
-      toast.error("Erreur lors de la création");
+    } catch (err) {
+      toast.error(err.message || "Erreur lors de la création");
     }
     setCreating(false);
   };

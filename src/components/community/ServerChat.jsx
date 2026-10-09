@@ -20,8 +20,9 @@ import MessageEffectPicker from "@/components/community/MessageEffectPicker";
 import { getEffectClass } from "@/lib/messageEffects";
 import { useServerBoosts } from "@/hooks/useServerBoosts";
 import { getBoostLevel } from "@/lib/boostPerks";
+import { callNexusEngine } from "@/lib/nexusEngineClient";
 
-export default function ServerChat({ server, channel, theme, user }) {
+export default function ServerChat({ server, channel, theme, user, access }) {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -49,8 +50,6 @@ export default function ServerChat({ server, channel, theme, user }) {
     document.addEventListener("click", close);
     return () => document.removeEventListener("click", close);
   }, []);
-
-  const isOwner = server?.owner_email === user?.email;
 
   const queryKey = ["server-messages", server.id, channel.id];
 
@@ -93,38 +92,54 @@ export default function ServerChat({ server, channel, theme, user }) {
     return stripPseudoTag(fresh?.pseudo) || "";
   };
 
-  const settings = channel.settings || {};
-  const canSendMessages = settings.send_messages !== false;
-  const canSendImages = settings.embed_links !== false; // reuse embed_links for images
-  const canMentionEveryone = settings.mention_everyone !== false;
+  // Permissions & extensions resolved by the Nexus engine (roles, custom roles, channel overrides, mutes)
+  const can = (key) => (access ? access.can(key, channel.id) : true);
+  const ext = (key) => (access ? access.extension(key) : true);
+  const canSendMessages = can("send_messages");
+  const canAttachFiles = canSendMessages && can("attach_files");
+  const canSendImages = canAttachFiles && ext("image_sharing");
+  const canMentionEveryone = can("mention_everyone");
+  const canSendVoice = canSendMessages && can("send_voice") && ext("voice_messaging");
+  const canReact = can("add_reactions");
+  const canManageMessages = can("manage_messages");
+  const effectsEnabled = ext("message_effects");
+  const buttonsEnabled = ext("interactive_buttons");
+  const serverEmojis = ext("custom_emojis") ? server?.custom_emojis || [] : [];
+  const replyFields = () => ({
+    reply_to_id: replyTo?.id || "",
+    reply_to_name: replyTo?.author_name || "",
+    reply_to_content: replyTo?.content || "",
+  });
 
   const send = async (attachment = null, messageType = null) => {
     const content = input.trim();
     if ((!content && !attachment) || sending) return;
     if (!canSendMessages) { toast.error("Envoi de messages désactivé dans ce salon"); return; }
-    if (attachment && !canSendImages) { toast.error("Les fichiers ne sont pas autorisés dans ce salon"); return; }
+    if (attachment && messageType !== "voice" && !canAttachFiles) { toast.error("Les fichiers ne sont pas autorisés dans ce salon"); return; }
     if (content && content.includes("@everyone") && !canMentionEveryone) {
       toast.error("Vous n'êtes pas autorisé à mentionner @everyone");
       return;
     }
     setSending(true);
     const type = messageType || (attachment ? "file" : "text");
-    await base44.entities.ServerMessage.create({
-      server_id: server.id,
-      channel_id: channel.id,
-      author_email: user.email,
-      author_name: user.full_name || user.email.split("@")[0],
-      author_avatar: user.animated_avatar || user.avatar_url || "",
-      content: content || (attachment ? attachment.name : ""),
-      type,
-      effect: type === "text" && effectsUnlocked ? messageEffect : "none",
-      file_url: attachment?.url || "",
-      file_name: attachment?.name || "",
-      transcript: type === "voice" ? (attachment?.transcript || "") : "",
-      reply_to_id: replyTo?.id || "",
-      reply_to_name: replyTo?.author_name || "",
-      reply_to_content: replyTo?.content || "",
-    });
+    try {
+      await callNexusEngine("sendMessage", {
+        serverId: server.id,
+        channelId: channel.id,
+        content: content || (attachment ? attachment.name : ""),
+        type,
+        kind: attachment?.kind || "",
+        effect: type === "text" && effectsUnlocked ? messageEffect : "none",
+        file_url: attachment?.url || "",
+        file_name: attachment?.name || "",
+        transcript: type === "voice" ? (attachment?.transcript || "") : "",
+        ...replyFields(),
+      });
+    } catch (err) {
+      toast.error(err.message);
+      setSending(false);
+      return;
+    }
 
     if (content && content.includes("@everyone")) {
       toast.info("@everyone envoyé — tous les membres seront notifiés");
@@ -172,22 +187,28 @@ export default function ServerChat({ server, channel, theme, user }) {
     qc.invalidateQueries({ queryKey });
   };
 
-  const handleSendMedia = async (url) => {
+  const handleSendMedia = async (url, kind) => {
     if (!url || sending || !canSendMessages) return;
+    if (!can(kind === "gif" ? "use_gifs" : "use_stickers")) {
+      toast.error(kind === "gif" ? "Les GIFs ne sont pas autorisés dans ce salon" : "Les stickers ne sont pas autorisés dans ce salon");
+      return;
+    }
     setShowPicker(false);
     setSending(true);
-    await base44.entities.ServerMessage.create({
-      server_id: server.id,
-      channel_id: channel.id,
-      author_email: user.email,
-      author_name: user.full_name || user.email.split("@")[0],
-      author_avatar: user.animated_avatar || user.avatar_url || "",
-      content: url,
-      type: "text",
-      reply_to_id: replyTo?.id || "",
-      reply_to_name: replyTo?.author_name || "",
-      reply_to_content: replyTo?.content || "",
-    });
+    try {
+      await callNexusEngine("sendMessage", {
+        serverId: server.id,
+        channelId: channel.id,
+        content: url,
+        type: "text",
+        kind,
+        ...replyFields(),
+      });
+    } catch (err) {
+      toast.error(err.message);
+      setSending(false);
+      return;
+    }
     setReplyTo(null);
     setSending(false);
     trackActivity("send_message");
@@ -200,7 +221,7 @@ export default function ServerChat({ server, channel, theme, user }) {
     setUploadingImage(true);
     try {
       const { file_url } = await uploadImageWithToast(file);
-      await send(file_url);
+      await send({ url: file_url, name: file.name, kind: "image" });
     } catch { /* error already toasted */ }
     setUploadingImage(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -222,20 +243,13 @@ export default function ServerChat({ server, channel, theme, user }) {
   };
 
   const deleteMessage = async (msg) => {
-    if (msg.author_email !== user?.email && !isOwner) return;
+    if (msg.author_email !== user?.email && !canManageMessages) return;
     try {
-      const res = await base44.functions.invoke("serverSearch", {
-        action: "deleteServerMessage",
-        messageId: msg.id,
-      });
-      if (res.data?.success) {
-        qc.invalidateQueries({ queryKey });
-        toast.success("Message supprimé");
-      } else {
-        toast.error(res.data?.error || "Suppression impossible");
-      }
-    } catch {
-      toast.error("Erreur lors de la suppression");
+      await callNexusEngine("deleteMessage", { messageId: msg.id });
+      qc.invalidateQueries({ queryKey });
+      toast.success("Message supprimé");
+    } catch (err) {
+      toast.error(err.message);
     }
     setContextMenu(null);
   };
@@ -248,19 +262,17 @@ export default function ServerChat({ server, channel, theme, user }) {
     toast.success("Message modifié");
   };
 
-  const toggleReaction = async (msg, emoji) => {
-    const reactions = msg.reactions || [];
-    const existing = reactions.find(r => r.emoji === emoji && r.user_email === user.email);
-    let updated;
-    if (existing) {
-      updated = reactions.filter(r => !(r.emoji === emoji && r.user_email === user.email));
-    } else {
-      updated = [...reactions, { emoji, user_email: user.email, user_name: user.full_name || user.email.split("@")[0] }];
-      trackActivity("like");
-    }
-    await base44.entities.ServerMessage.update(msg.id, { reactions: updated });
-    qc.invalidateQueries({ queryKey });
+  // Reactions and interactive buttons go through the engine (permission + extension checks)
+  const toggleReaction = async (msg, emoji, buttonId = null) => {
+    const alreadyReacted = (msg.reactions || []).some(r => r.emoji === emoji && r.user_email === user.email);
     setShowReactionPicker(null);
+    try {
+      await callNexusEngine("react", { messageId: msg.id, emoji, buttonId });
+      if (!alreadyReacted) trackActivity("like");
+      qc.invalidateQueries({ queryKey });
+    } catch (err) {
+      toast.error(err.message);
+    }
   };
 
   const handleContextMenu = (e, msg) => {
@@ -381,7 +393,6 @@ export default function ServerChat({ server, channel, theme, user }) {
                         if (part.startsWith("@"))
                           return <span key={i} className="font-bold px-1 rounded" style={{ color: accent, background: accent + "20" }}>{part}</span>;
                         // Parse :emoji_name: patterns and replace with server emoji images
-                        const serverEmojis = server?.custom_emojis || [];
                         if (serverEmojis.length === 0 || !part.includes(":"))
                           return <React.Fragment key={i}>{part}</React.Fragment>;
                         const emojiMap = {};
@@ -422,14 +433,14 @@ export default function ServerChat({ server, channel, theme, user }) {
               )}
 
               {/* Interactive buttons (welcome message, etc.) */}
-              {msg.interactive_buttons?.length > 0 && (
+              {buttonsEnabled && msg.interactive_buttons?.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-1">
                   {msg.interactive_buttons.map((btn) => {
-                    const reacted = msgReactions.some(r => r.emoji === btn.emoji && r.user_email === user.email);
+                    const reacted = msgReactions.some(r => r.emoji === (btn.emoji || btn.label) && r.user_email === user.email);
                     return (
                       <button
                         key={btn.id}
-                        onClick={() => toggleReaction(msg, btn.emoji)}
+                        onClick={() => toggleReaction(msg, btn.emoji || btn.label, btn.id)}
                         className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition hover:scale-105"
                         style={{
                           background: reacted ? accent + "20" : "rgba(255,255,255,0.04)",
@@ -448,7 +459,7 @@ export default function ServerChat({ server, channel, theme, user }) {
               {/* Hover toolbar */}
               <div className="absolute -top-5 right-0 flex items-center gap-0.5 rounded-lg opacity-0 group-hover:opacity-100 transition"
                 style={{ background: "hsl(var(--card))", border: "1px solid rgba(255,255,255,0.1)" }}>
-                <div className="relative">
+                {canReact && <div className="relative">
                   <button onClick={() => setShowReactionPicker(showReactionPicker === msg.id ? null : msg.id)}
                     className="w-7 h-7 flex items-center justify-center text-white/50 hover:text-white transition"
                     title="Réagir">
@@ -464,7 +475,7 @@ export default function ServerChat({ server, channel, theme, user }) {
                       ))}
                     </div>
                   )}
-                </div>
+                </div>}
                 <button onClick={() => setReplyTo(msg)}
                   className="w-7 h-7 flex items-center justify-center text-white/50 hover:text-white transition"
                   title="Répondre">
@@ -477,7 +488,7 @@ export default function ServerChat({ server, channel, theme, user }) {
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
                 )}
-                {(isOwn || isOwner) && (
+                {(isOwn || canManageMessages) && (
                   <button onClick={() => deleteMessage(msg)}
                     className="w-7 h-7 flex items-center justify-center text-red-400 hover:text-red-300 transition"
                     title="Supprimer">
@@ -508,23 +519,23 @@ export default function ServerChat({ server, channel, theme, user }) {
           open={showPicker}
           onClose={() => setShowPicker(false)}
           accent={accent}
-          serverEmojis={server?.custom_emojis || []}
+          serverEmojis={serverEmojis}
           onSelectEmoji={(emoji) => setInput(prev => prev + emoji)}
-          onSelectGif={(url) => handleSendMedia(url)}
-          onSelectSticker={(url) => handleSendMedia(url)}
+          onSelectGif={(url) => handleSendMedia(url, "gif")}
+          onSelectSticker={(url) => handleSendMedia(url, "sticker")}
         />
         <div className="flex items-center gap-2 px-4 rounded-2xl border"
           style={{ borderColor: theme?.border || "hsl(var(--border))", background: "rgba(255,255,255,0.05)" }}>
           <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageUpload} className="hidden" />
           <input type="file" ref={docFileInputRef} onChange={handleFileUpload} className="hidden" />
-          <button onClick={() => fileInputRef.current?.click()} disabled={uploadingImage || !canSendMessages}
+          <button onClick={() => fileInputRef.current?.click()} disabled={uploadingImage || !canSendImages}
             className="w-8 h-8 rounded-xl flex items-center justify-center transition text-white/40 hover:text-white disabled:opacity-30"
             title="Envoyer une image">
             {uploadingImage ? (
               <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : <Image className="w-4 h-4" />}
           </button>
-          <button onClick={() => docFileInputRef.current?.click()} disabled={uploadingFile || !canSendMessages}
+          <button onClick={() => docFileInputRef.current?.click()} disabled={uploadingFile || !canAttachFiles}
             className="w-8 h-8 rounded-xl flex items-center justify-center transition text-white/40 hover:text-white disabled:opacity-30"
             title="Envoyer un fichier">
             {uploadingFile ? (
@@ -536,15 +547,17 @@ export default function ServerChat({ server, channel, theme, user }) {
             title="Emojis, GIFs & Stickers">
             <Smile className="w-4 h-4" />
           </button>
-          <MessageEffectPicker
-            value={messageEffect}
-            onChange={setMessageEffect}
-            locked={!effectsUnlocked}
-            accent={accent}
-            disabled={!canSendMessages}
-          />
+          {effectsEnabled && (
+            <MessageEffectPicker
+              value={messageEffect}
+              onChange={setMessageEffect}
+              locked={!effectsUnlocked}
+              accent={accent}
+              disabled={!canSendMessages}
+            />
+          )}
           <VoiceRecorder
-            disabled={!canSendMessages || sending}
+            disabled={!canSendVoice || sending}
             accent={accent}
             onSend={(voice) => send({ url: voice.url, name: voice.name }, "voice")}
           />
@@ -570,12 +583,12 @@ export default function ServerChat({ server, channel, theme, user }) {
           className="fixed z-[999] rounded-2xl overflow-hidden shadow-2xl border border-white/10"
           style={{ top: contextMenu.y, left: contextMenu.x, background: "hsl(var(--card))", minWidth: "180px" }}
           onClick={(e) => e.stopPropagation()}>
-          <div className="p-2 flex gap-1 border-b border-white/10">
+          {canReact && <div className="p-2 flex gap-1 border-b border-white/10">
             {REACTIONS.map(emoji => (
               <button key={emoji} onClick={() => { toggleReaction(contextMenu.msg, emoji); setContextMenu(null); }}
                 className="text-xl hover:scale-125 transition p-0.5">{emoji}</button>
             ))}
-          </div>
+          </div>}
           <button
             onClick={() => { setReplyTo(contextMenu.msg); setContextMenu(null); }}
             className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-white hover:bg-white/10 transition">
@@ -588,7 +601,7 @@ export default function ServerChat({ server, channel, theme, user }) {
               <Pencil className="w-4 h-4" /> Modifier
             </button>
           )}
-          {(contextMenu.msg.author_email === user?.email || isOwner) && (
+          {(contextMenu.msg.author_email === user?.email || canManageMessages) && (
             <button
               onClick={() => deleteMessage(contextMenu.msg)}
               className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition">

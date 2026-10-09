@@ -747,14 +747,14 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
         {tab === "extensions" && (
           <>
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Extensions globales</p>
-            <p className="text-xs text-muted-foreground">Extensions définies par l'administration globale. Activez celles que vous souhaitez utiliser sur ce serveur.</p>
+            <p className="text-xs text-muted-foreground">Extensions définies par l'administration globale. Elles sont actives par défaut : désactivez celles que vous ne voulez pas sur ce serveur.</p>
             {globalExtensions.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-6">Aucune extension disponible</p>
             ) : (
               <div className="space-y-2">
                 {globalExtensions.map((ext) => {
-                  const enabledExtensions = server.enabled_extensions || [];
-                  const isEnabled = enabledExtensions.includes(ext.key);
+                  const disabledExtensions = server.disabled_extensions || [];
+                  const isEnabled = ext.is_active !== false && !disabledExtensions.includes(ext.key);
                   return (
                     <div key={ext.id} className="p-3 rounded-2xl border flex items-center gap-3" style={{ borderColor: theme?.border, background: isEnabled ? accent + "08" : "rgba(255,255,255,0.03)" }}>
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: accent + "15" }}>
@@ -767,10 +767,10 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
                       </div>
                       <button
                         onClick={() => {
-                          const newExts = isEnabled
-                            ? enabledExtensions.filter((k) => k !== ext.key)
-                            : [...enabledExtensions, ext.key];
-                          onUpdate({ enabled_extensions: newExts });
+                          const newDisabled = isEnabled
+                            ? [...disabledExtensions, ext.key]
+                            : disabledExtensions.filter((k) => k !== ext.key);
+                          onUpdate({ disabled_extensions: newDisabled });
                         }}
                         disabled={!ext.is_active}
                         className={cn("w-10 h-5 rounded-full transition shrink-0", !ext.is_active ? "opacity-30 cursor-not-allowed" : "", isEnabled ? "bg-green-500" : "bg-white/20")}
