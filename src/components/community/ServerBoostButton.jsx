@@ -34,7 +34,7 @@ export default function ServerBoostButton({ server, user, flashBoosts, onBoosted
     }
     setLoading(true);
     try {
-      const res = await base44.functions.invoke("serverSearch", {
+      const { data: res } = await base44.functions.invoke("serverSearch", {
         action: "boostServer",
         serverId: server.id,
       });

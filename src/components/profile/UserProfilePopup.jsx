@@ -40,10 +40,10 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
         setCurrentUser(me);
         let u;
         if (userId) {
-          const res = await base44.functions.invoke("serverSearch", { action: "getUsersByIds", ids: [userId] });
+          const { data: res } = await base44.functions.invoke("serverSearch", { action: "getUsersByIds", ids: [userId] });
           u = res?.users?.[0];
         } else if (userEmail) {
-          const res = await base44.functions.invoke("serverSearch", { action: "searchUser", email: userEmail });
+          const { data: res } = await base44.functions.invoke("serverSearch", { action: "searchUser", email: userEmail });
           u = res?.user;
         }
         if (u) {
@@ -62,7 +62,7 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
           }
           if (targetId) {
             try {
-              const statusRes = await base44.functions.invoke("serverSearch", { action: "getFriendStatus", friend_user_id: targetId });
+              const { data: statusRes } = await base44.functions.invoke("serverSearch", { action: "getFriendStatus", friend_user_id: targetId });
               setFriendStatus(statusRes?.status || "none");
             } catch { /* silent */ }
           }
@@ -110,7 +110,7 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
   const handleAddFriend = async () => {
     setActionLoading(true);
     try {
-      const res = await base44.functions.invoke("serverSearch", { action: "sendFriendRequest", target_user_id: targetUserId });
+      const { data: res } = await base44.functions.invoke("serverSearch", { action: "sendFriendRequest", target_user_id: targetUserId });
       if (res?.success) { setFriendStatus("pending_sent"); toast.success("Demande d'ami envoyée"); }
       else { toast.error(res?.error || "Erreur"); }
     } catch { toast.error("Erreur lors de l'envoi"); }
@@ -120,7 +120,7 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
   const handleRemoveFriend = async () => {
     setActionLoading(true);
     try {
-      const res = await base44.functions.invoke("serverSearch", { action: "removeFriend", friend_user_id: targetUserId });
+      const { data: res } = await base44.functions.invoke("serverSearch", { action: "removeFriend", friend_user_id: targetUserId });
       if (res?.success) { setFriendStatus("none"); toast.success("Ami supprimé"); }
       else { toast.error("Erreur"); }
     } catch { toast.error("Erreur"); }
@@ -130,7 +130,7 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
   const handleBlock = async () => {
     setActionLoading(true);
     try {
-      const res = await base44.functions.invoke("serverSearch", { action: "blockFriend", friend_user_id: targetUserId });
+      const { data: res } = await base44.functions.invoke("serverSearch", { action: "blockFriend", friend_user_id: targetUserId });
       if (res?.success) { setFriendStatus("blocked"); toast.success("Utilisateur bloqué"); }
       else { toast.error("Erreur"); }
     } catch { toast.error("Erreur"); }
@@ -140,7 +140,7 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
   const handleUnblock = async () => {
     setActionLoading(true);
     try {
-      const res = await base44.functions.invoke("serverSearch", { action: "removeFriend", friend_user_id: targetUserId });
+      const { data: res } = await base44.functions.invoke("serverSearch", { action: "removeFriend", friend_user_id: targetUserId });
       if (res?.success) { setFriendStatus("none"); toast.success("Utilisateur débloqué"); }
       else { toast.error("Erreur"); }
     } catch { toast.error("Erreur"); }

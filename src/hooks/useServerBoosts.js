@@ -17,7 +17,7 @@ export function useServerBoosts(serverId, initialBoosts = 0) {
     queryKey: ["server-boosts", serverId],
     queryFn: async () => {
       if (!serverId) return { boosts: [], server_boosts: 0, legacy_count: 0 };
-      const res = await base44.functions.invoke("serverSearch", {
+      const { data: res } = await base44.functions.invoke("serverSearch", {
         action: "getServerBoosts",
         serverId,
       });

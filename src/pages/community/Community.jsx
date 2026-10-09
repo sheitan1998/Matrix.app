@@ -89,7 +89,7 @@ export default function Community() {
     if (nitroStatus === "success" && sessionId) {
       base44.functions.invoke("stripePayment", { action: "verifySession", sessionId }).
       then((res) => {
-        if (res?.success) toast.success("Nitro activé ! Profite de tes avantages 🎉");
+        if (res?.data?.success) toast.success("Nitro activé ! Profite de tes avantages 🎉");
       }).
       catch(() => {});
     }
@@ -202,7 +202,7 @@ export default function Community() {
     if (urlMatch) code = urlMatch[1];
     try {
       // Use backend (bypasses RLS — finds private servers by invite code too)
-      const found = await base44.functions.invoke("serverSearch", { action: "getServerByInviteCode", inviteCode: code });
+      const { data: found } = await base44.functions.invoke("serverSearch", { action: "getServerByInviteCode", inviteCode: code });
       if (!found || !found.id) { toast.error("Lien invalide ou expiré"); return; }
       if (found.invite_expires_at && new Date(found.invite_expires_at) < new Date()) {
         toast.error("Ce lien d'invitation a expiré"); return;

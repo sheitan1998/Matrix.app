@@ -20,7 +20,7 @@ export default function MembersList({ server, theme, currentUserEmail, onOpenDm 
   const { speakingEmails } = useServerVoice(server.id);
   const { data: members = [] } = useQuery({
     queryKey: ["server-members", server.id],
-    queryFn: () => base44.functions.invoke("serverMembership", { action: "getMembers", serverId: server.id }).then(res => res?.members || []),
+    queryFn: () => base44.functions.invoke("serverMembership", { action: "getMembers", serverId: server.id }).then(res => res?.data?.members || []),
     refetchInterval: 30000,
     placeholderData: (prev) => prev,
     retry: 1,
@@ -53,7 +53,7 @@ export default function MembersList({ server, theme, currentUserEmail, onOpenDm 
     refetchInterval: 30000,
     placeholderData: (prev) => prev,
     retry: 1,
-    select: (res) => res?.users || [],
+    select: (res) => res?.data?.users || [],
   });
 
   // Build email → user data map
