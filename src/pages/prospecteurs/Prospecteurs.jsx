@@ -356,7 +356,7 @@ export default function Prospecteurs() {
 
           {/* Server list with search + sort */}
           <div
-            className="rounded-2xl p-4 sm:p-5 hidden"
+            className="rounded-2xl p-4 sm:p-5"
             style={{
               background: "rgba(18,9,28,0.6)",
               border: `1px solid ${activeTabConfig?.color}30`

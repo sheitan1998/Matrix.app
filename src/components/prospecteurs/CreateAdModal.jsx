@@ -361,7 +361,7 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
                   }));
                 }}
                 className="w-full h-10 px-3 rounded-lg text-sm text-white outline-none"
-                style={inputStyle}
+                style={{ ...inputStyle, colorScheme: "dark" }}
               >
                 <option value="">— Sélectionner une catégorie —</option>
                 {availableCategories.map((c) => (
