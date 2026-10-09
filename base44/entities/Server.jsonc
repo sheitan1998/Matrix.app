@@ -120,6 +120,38 @@
       "default": false,
       "description": "Autoriser les membres a generer des liens d'invitation"
     },
+    "welcome_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Activer le message de bienvenue automatique lorsqu'un membre rejoint"
+    },
+    "welcome_message": {
+      "type": "string",
+      "description": "Texte du message de bienvenue. Supporte le placeholder {user} remplace par le pseudo du nouveau membre."
+    },
+    "welcome_channel_id": {
+      "type": "string",
+      "description": "ID du salon ou poster le message de bienvenue"
+    },
+    "interactive_buttons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "emoji": {
+            "type": "string"
+          }
+        }
+      },
+      "default": [],
+      "description": "Boutons interactifs personnalisises affiches sous le message de bienvenue"
+    },
     "channels": {
       "type": "array",
       "items": {

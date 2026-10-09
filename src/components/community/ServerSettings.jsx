@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import ChannelStructureManager from "@/components/community/ChannelStructureManager";
+import ServerAutomations from "@/components/community/ServerAutomations";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Upload, Trash2, Copy, Shield, Ban, MicOff, Crown, Plus, X, Hash, Volume2, Megaphone, RefreshCw, Clock, Edit3, UserPlus, Zap, Lock, ChevronDown } from "lucide-react";
 import { uploadImageWithToast } from "@/lib/imageModeration";
@@ -64,6 +66,14 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
     queryKey: ["server-members", server.id],
     queryFn: () => base44.entities.ServerMember.filter({ server_id: server.id }, "-created_date", 100),
   });
+
+  // Real-time sync: member list updates instantly when someone joins/leaves/is banned
+  useEffect(() => {
+    const unsubscribe = base44.entities.ServerMember.subscribe(() => {
+      qc.invalidateQueries({ queryKey: ["server-members", server.id] });
+    });
+    return unsubscribe;
+  }, [server.id, qc]);
 
   const updateMember = async (memberId, data) => {
     try {
@@ -208,8 +218,10 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
         {[
           { key: "general", label: "Général" },
           { key: "appearance", label: "Apparence" },
+          { key: "structure", label: "Structure" },
           { key: "roles", label: "Rôles" },
           { key: "channels", label: "Salons" },
+          { key: "automations", label: "Automatisations" },
           { key: "members", label: "Membres" },
           { key: "boosts", label: "Boosts" },
         ].map((t) => (
@@ -415,6 +427,17 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
           </>
         )}
 
+        {/* STRUCTURE */}
+        {tab === "structure" && (
+          <ChannelStructureManager
+            server={server}
+            theme={theme}
+            channels={channels}
+            onUpdate={onUpdate}
+            accent={accent}
+          />
+        )}
+
         {/* ROLES */}
         {tab === "roles" && (
           <RoleManager
@@ -565,6 +588,17 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
               })
             )}
           </>
+        )}
+
+        {/* AUTOMATIONS */}
+        {tab === "automations" && (
+          <ServerAutomations
+            server={server}
+            theme={theme}
+            channels={channels}
+            onUpdate={onUpdate}
+            accent={accent}
+          />
         )}
 
         {/* MEMBERS */}

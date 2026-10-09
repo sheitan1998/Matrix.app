@@ -421,6 +421,30 @@ export default function ServerChat({ server, channel, theme, user }) {
                 </div>
               )}
 
+              {/* Interactive buttons (welcome message, etc.) */}
+              {msg.interactive_buttons?.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {msg.interactive_buttons.map((btn) => {
+                    const reacted = msgReactions.some(r => r.emoji === btn.emoji && r.user_email === user.email);
+                    return (
+                      <button
+                        key={btn.id}
+                        onClick={() => toggleReaction(msg, btn.emoji)}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition hover:scale-105"
+                        style={{
+                          background: reacted ? accent + "20" : "rgba(255,255,255,0.04)",
+                          border: `1px solid ${reacted ? accent + "50" : "rgba(255,255,255,0.1)"}`,
+                          color: reacted ? accent : "rgba(255,255,255,0.7)",
+                        }}
+                      >
+                        <span>{btn.emoji}</span>
+                        <span>{btn.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
               {/* Hover toolbar */}
               <div className="absolute -top-5 right-0 flex items-center gap-0.5 rounded-lg opacity-0 group-hover:opacity-100 transition"
                 style={{ background: "hsl(var(--card))", border: "1px solid rgba(255,255,255,0.1)" }}>

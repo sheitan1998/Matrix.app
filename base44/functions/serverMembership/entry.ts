@@ -51,6 +51,24 @@ export default async function(req: Request): Promise<Response> {
       await sdk.asServiceRole.entities.Server.update(serverId, {
         members_count: (server.members_count || 1) + 1,
       });
+
+      // Post welcome message if enabled and a channel is configured
+      if (server.welcome_enabled && server.welcome_channel_id) {
+        const memberName = user.full_name || user.email.split('@')[0];
+        const welcomeText = (server.welcome_message || 'Bienvenue {user} ! 🎉')
+          .replace(/\{user\}/g, memberName);
+        await sdk.asServiceRole.entities.ServerMessage.create({
+          server_id: serverId,
+          channel_id: server.welcome_channel_id,
+          author_email: 'system@matrix.app',
+          author_name: 'MATRIX Bot',
+          author_avatar: '',
+          content: welcomeText,
+          type: 'system',
+          interactive_buttons: server.interactive_buttons || [],
+        });
+      }
+
       return Response.json({ data: member });
     }
 

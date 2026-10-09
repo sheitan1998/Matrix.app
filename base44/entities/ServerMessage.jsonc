@@ -74,6 +74,25 @@
       "default": [],
       "description": "Reactions des utilisateurs sur ce message"
     },
+    "interactive_buttons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "emoji": {
+            "type": "string"
+          }
+        }
+      },
+      "default": [],
+      "description": "Boutons interactifs affiches sous ce message (message de bienvenue, annonces)"
+    },
     "reply_to_id": {
       "type": "string",
       "description": "ID du message auquel on repond (optionnel)"
