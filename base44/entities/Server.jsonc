@@ -50,6 +50,10 @@
           "bg_to": {
             "type": "string",
             "description": "Couleur de fond de fin du degrade (hex)"
+          },
+          "image_url": {
+            "type": "string",
+            "description": "URL de l'image de fond (obligatoire)"
           }
         }
       },
@@ -178,6 +182,49 @@
               "read": "everyone",
               "write": "everyone"
             }
+          },
+          "settings": {
+            "type": "object",
+            "properties": {
+              "visible": {
+                "type": "boolean",
+                "default": true,
+                "description": "Afficher le salon dans la liste"
+              },
+              "send_messages": {
+                "type": "boolean",
+                "default": true
+              },
+              "embed_links": {
+                "type": "boolean",
+                "default": true
+              },
+              "add_reactions": {
+                "type": "boolean",
+                "default": true
+              },
+              "manage_messages": {
+                "type": "boolean",
+                "default": false
+              },
+              "read_history": {
+                "type": "boolean",
+                "default": true
+              },
+              "voice_connect": {
+                "type": "boolean",
+                "default": true
+              },
+              "voice_speak": {
+                "type": "boolean",
+                "default": true
+              },
+              "voice_move_members": {
+                "type": "boolean",
+                "default": false
+              }
+            },
+            "default": {}
           }
         }
       }
@@ -187,6 +234,9 @@
       "items": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "string"
+          },
           "name": {
             "type": "string"
           },
@@ -196,6 +246,92 @@
           "icon": {
             "type": "string",
             "description": "URL de l'ic\u00f4ne du r\u00f4le (Niveau 2+)"
+          },
+          "permissions": {
+            "type": "object",
+            "properties": {
+              "view_channels": {
+                "type": "boolean",
+                "default": true
+              },
+              "manage_channels": {
+                "type": "boolean",
+                "default": false
+              },
+              "manage_roles": {
+                "type": "boolean",
+                "default": false
+              },
+              "manage_emojis": {
+                "type": "boolean",
+                "default": false
+              },
+              "view_logs": {
+                "type": "boolean",
+                "default": false
+              },
+              "create_invite": {
+                "type": "boolean",
+                "default": true
+              },
+              "change_nicknames": {
+                "type": "boolean",
+                "default": false
+              },
+              "kick_members": {
+                "type": "boolean",
+                "default": false
+              },
+              "accept_members": {
+                "type": "boolean",
+                "default": false
+              },
+              "ban_members": {
+                "type": "boolean",
+                "default": false
+              },
+              "timeout_members": {
+                "type": "boolean",
+                "default": false
+              },
+              "send_messages": {
+                "type": "boolean",
+                "default": true
+              },
+              "attach_files": {
+                "type": "boolean",
+                "default": true
+              },
+              "embed_links": {
+                "type": "boolean",
+                "default": true
+              },
+              "use_emojis": {
+                "type": "boolean",
+                "default": true
+              },
+              "use_stickers": {
+                "type": "boolean",
+                "default": true
+              },
+              "use_gifs": {
+                "type": "boolean",
+                "default": true
+              },
+              "voice_connect": {
+                "type": "boolean",
+                "default": true
+              },
+              "voice_move_members": {
+                "type": "boolean",
+                "default": false
+              },
+              "administrator": {
+                "type": "boolean",
+                "default": false
+              }
+            },
+            "default": {}
           }
         }
       },

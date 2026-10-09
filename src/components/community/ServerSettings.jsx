@@ -10,6 +10,7 @@ import BoostLevelBadge from "@/components/community/BoostLevelBadge";
 import ServerCustomEmojis from "@/components/community/ServerCustomEmojis";
 import AnimatedMedia from "@/components/community/AnimatedMedia";
 import ServerCustomThemes from "@/components/community/ServerCustomThemes";
+import RoleManager from "@/components/community/RoleManager";
 import { isAnimatedFile } from "@/lib/serverMedia";
 import { useServerBoosts } from "@/hooks/useServerBoosts";
 import { getBoostLevel } from "@/lib/boostPerks";
@@ -411,62 +412,15 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
 
         {/* ROLES */}
         {tab === "roles" && (
-          <>
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Rôles personnalisés</p>
-            <p className="text-xs text-muted-foreground">Créez des rôles pour vos membres. Vous pouvez ensuite les assigner depuis l'onglet Membres.</p>
-
-            {/* Existing custom roles */}
-            <div className="space-y-2">
-              {customRoles.length === 0 && (
-                <p className="text-xs text-muted-foreground text-center py-3">Aucun rôle personnalisé</p>
-              )}
-              {customRoles.map((r, i) => (
-                <div key={i} className="flex items-center gap-3 p-2 rounded-xl border" style={{ borderColor: theme?.border, background: "rgba(255,255,255,0.03)" }}>
-                  <div className="w-3 h-3 rounded-full shrink-0" style={{ background: r.color }} />
-                  {r.icon && <img src={r.icon} alt="" className="w-4 h-4 rounded-full shrink-0" />}
-                  <span className="flex-1 text-sm font-semibold text-white">{r.name}</span>
-                  {currentBoostLevel >= 2 ? (
-                    <label className="cursor-pointer shrink-0 tap-sm" title="Icône du rôle">
-                      <Upload className="w-3.5 h-3.5 text-muted-foreground hover:text-white" />
-                      <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && handleRoleIconUpload(i, e.target.files[0])} />
-                    </label>
-                  ) : (
-                    <Lock className="w-3 h-3 text-white/20 shrink-0" title="Niveau 2 requis" />
-                  )}
-                  <button onClick={() => {
-                    const updated = customRoles.filter((_, j) => j !== i);
-                    setCustomRoles(updated);
-                    onUpdate({ custom_roles: updated });
-                  }} className="text-muted-foreground hover:text-red-400 transition shrink-0">
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            {/* Add new role */}
-            <div className="p-3 rounded-2xl border space-y-3" style={{ borderColor: theme?.border, background: "rgba(255,255,255,0.03)" }}>
-              <p className="text-xs font-bold text-white">Nouveau rôle</p>
-              <div className="flex gap-2 items-center">
-                <input type="color" value={newRoleColor} onChange={(e) => setNewRoleColor(e.target.value)}
-                  className="w-8 h-8 rounded-lg cursor-pointer border-0 p-0.5" style={{ background: "transparent" }} />
-                <input value={newRoleName} onChange={(e) => setNewRoleName(e.target.value)}
-                  placeholder="Nom du rôle..."
-                  className="flex-1 h-8 px-3 text-xs rounded-xl outline-none text-white placeholder:text-white/30"
-                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }} />
-                <Button size="sm" onClick={() => {
-                  if (!newRoleName.trim()) return;
-                  const updated = [...customRoles, { name: newRoleName.trim(), color: newRoleColor, icon: "" }];
-                  setCustomRoles(updated);
-                  onUpdate({ custom_roles: updated });
-                  setNewRoleName("");
-                  toast.success("Rôle créé !");
-                }} style={{ background: accent }}>
-                  <Plus className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-            </div>
-          </>
+          <RoleManager
+            server={server}
+            theme={theme}
+            onUpdate={onUpdate}
+            members={members}
+            onUpdateMember={updateMember}
+            accent={accent}
+            currentBoostLevel={currentBoostLevel}
+          />
         )}
 
         {/* CHANNELS */}

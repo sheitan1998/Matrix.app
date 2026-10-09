@@ -446,11 +446,20 @@ export default function Community() {
               server={selectedServer}
               theme={theme}
               isOwner={isOwner}
+              canManage={canManageChannels}
               channels={channels}
               onInvite={() => inviteToServer(selectedServer)}
               onOpenSettings={openSettingsTab}
               onLeaveServer={leaveServer}
               onExpandAll={() => channelListRef.current?.expandAll()}
+              onToggleChannelVisible={(channelId) => {
+                const updated = channels.map(c => {
+                  if (c.id !== channelId) return c;
+                  const isVisible = c.settings?.visible !== false;
+                  return { ...c, settings: { ...(c.settings || {}), visible: !isVisible } };
+                });
+                updateServer({ channels: updated });
+              }}
             />
 
             <ChannelList

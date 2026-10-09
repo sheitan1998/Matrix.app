@@ -16,14 +16,14 @@ const CHANNEL_TYPES = [
 const ChannelList = forwardRef(({ channels, activeChannel, setActiveChannel, canManage, theme, onReorder, onRemove, onContextMenu, serverId }, ref) => {
   const [collapsed, setCollapsed] = useState({});
 
-  // Collapse all categories by default when channels load
+  // Expand all categories by default when channels load
   useEffect(() => {
     const catIds = (channels || []).filter(c => c.type === "category").map(c => c.id);
     if (catIds.length > 0) {
       setCollapsed(prev => {
         const next = { ...prev };
         for (const id of catIds) {
-          if (next[id] === undefined) next[id] = true;
+          if (next[id] === undefined) next[id] = false;
         }
         return next;
       });
@@ -49,7 +49,9 @@ const ChannelList = forwardRef(({ channels, activeChannel, setActiveChannel, can
     return room?.participants || [];
   };
 
-  const allChannels = channels?.length ? channels : [];
+  const rawChannels = channels?.length ? channels : [];
+  // Hide channels marked invisible (unless user can manage — they see everything)
+  const allChannels = canManage ? rawChannels : rawChannels.filter(c => c.type === "category" || !c.settings || c.settings.visible !== false);
   const categories = allChannels.filter(c => c.type === "category");
   const uncategorized = allChannels.filter(c => c.type !== "category" && !c.category_id);
 

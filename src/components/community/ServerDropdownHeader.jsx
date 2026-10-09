@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
   ChevronDown, UserPlus, Zap, Bell, LogOut, Settings as SettingsIcon,
-  Hash, Volume2, Megaphone, MessageSquare, Folder, Check,
+  Hash, Volume2, Megaphone, MessageSquare, Folder, Check, Eye, EyeOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -17,11 +17,16 @@ export function setServerNotifPref(serverId, pref) {
   localStorage.setItem(notifKey(serverId), JSON.stringify(pref));
 }
 
+const CHANNEL_ICONS = {
+  text: Hash, voice: Volume2, announce: Megaphone, forum: MessageSquare, category: Folder,
+};
+
 export default function ServerDropdownHeader({
-  server, theme, isOwner, channels, onInvite, onOpenSettings, onLeaveServer, onExpandAll,
+  server, theme, isOwner, canManage, channels, onInvite, onOpenSettings, onLeaveServer, onExpandAll, onToggleChannelVisible,
 }) {
   const [open, setOpen] = useState(false);
   const [showNotif, setShowNotif] = useState(false);
+  const [showChannels, setShowChannels] = useState(false);
   const [notifPref, setNotifPref] = useState({ muted: false, mentions_only: false });
   const ref = useRef(null);
 
@@ -50,10 +55,12 @@ export default function ServerDropdownHeader({
     onLeaveServer?.();
   };
 
+  const visibleChannels = (channels || []).filter(c => c.type !== "category");
+
   return (
     <div className="relative shrink-0" ref={ref}>
       <button
-        onClick={() => { setOpen(!open); setShowNotif(false); }}
+        onClick={() => { setOpen(!open); setShowNotif(false); setShowChannels(false); }}
         className="w-full flex items-center gap-2 px-3 py-2.5 transition hover:bg-white/5"
         style={{ borderBottom: `1px solid ${theme?.border || "hsl(var(--border))"}` }}
       >
@@ -96,6 +103,39 @@ export default function ServerDropdownHeader({
           {/* Afficher tous les salons */}
           <MenuItem icon={Hash} label="Afficher tous les salons" accent={accent}
             onClick={() => { setOpen(false); onExpandAll?.(); }} />
+
+          {/* Salons visibles (owner/mod only) */}
+          {canManage && onToggleChannelVisible && (
+            <MenuItem icon={showChannels ? EyeOff : Eye} label="Salons visibles" accent={accent}
+              onClick={() => setShowChannels(!showChannels)} />
+          )}
+
+          {showChannels && canManage && (
+            <div className="px-4 py-2 space-y-1 max-h-48 overflow-y-auto no-scrollbar" style={{ background: "rgba(255,255,255,0.02)" }}>
+              {visibleChannels.length === 0 && (
+                <p className="text-[10px] text-muted-foreground">Aucun salon à configurer</p>
+              )}
+              {visibleChannels.map((ch) => {
+                const Icon = CHANNEL_ICONS[ch.type] || Hash;
+                const isVisible = ch.settings?.visible !== false;
+                return (
+                  <button key={ch.id}
+                    onClick={() => onToggleChannelVisible(ch.id)}
+                    className="w-full flex items-center gap-2 py-1 text-left">
+                    <Icon className="w-3 h-3 shrink-0" style={{ color: isVisible ? accent : "rgba(255,255,255,0.2)" }} />
+                    <span className={cn("text-[11px] flex-1 truncate", isVisible ? "text-white/80" : "text-white/30 line-through")}>
+                      {ch.name}
+                    </span>
+                    <div className={cn("w-7 h-3.5 rounded-full transition shrink-0", isVisible ? "bg-green-500" : "bg-white/15")}>
+                      <div className={cn("w-2.5 h-2.5 rounded-full bg-white transition-transform", isVisible ? "translate-x-4" : "translate-x-0.5")} />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="h-px bg-white/5" />
 
           {/* Gérer le serveur (owner) ou Quitter */}
           {isOwner ? (

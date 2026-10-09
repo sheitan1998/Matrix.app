@@ -39,7 +39,8 @@ export default function CustomThemeForm({ onCreate, accent }) {
 
   const submit = () => {
     if (!name.trim()) return;
-    onCreate({ name: name.trim(), emoji: emoji.trim() || "🎨", accent: themeAccent, bg_from: bgFrom, bg_to: bgTo, image_url: imageUrl || undefined });
+    if (!imageUrl) { toast.error("L'image de fond est obligatoire."); return; }
+    onCreate({ name: name.trim(), emoji: emoji.trim() || "🎨", accent: themeAccent, bg_from: bgFrom, bg_to: bgTo, image_url: imageUrl });
     setName("");
     setImageUrl("");
   };
@@ -56,7 +57,7 @@ export default function CustomThemeForm({ onCreate, accent }) {
 
       {/* Image import for background */}
       <div>
-        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Image de fond (optionnel)</p>
+        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Image de fond <span className="text-red-400">(obligatoire)</span></p>
         <div className="flex items-center gap-2">
           <input ref={fileRef} type="file" accept="image/*" className="hidden"
             onChange={(e) => handleImageUpload(e.target.files?.[0])} />
@@ -91,7 +92,7 @@ export default function CustomThemeForm({ onCreate, accent }) {
         <span className="text-lg">{preview.emoji}</span>
         <span className="text-xs font-bold" style={{ color: preview.accent }}>{preview.label}</span>
       </div>
-      <button onClick={submit} disabled={!name.trim()}
+      <button onClick={submit} disabled={!name.trim() || !imageUrl}
         className="w-full h-9 rounded-xl text-xs font-bold text-black flex items-center justify-center gap-1 transition hover:opacity-90 disabled:opacity-40"
         style={{ background: accent }}>
         <Plus className="w-3.5 h-3.5" /> Créer le thème
