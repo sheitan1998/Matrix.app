@@ -355,74 +355,74 @@ export default function Prospecteurs() {
           </div>
 
           {/* Server list with search + sort */}
-          <div
-            className="rounded-2xl p-4 sm:p-5 hidden"
-            style={{
-              background: "rgba(18,9,28,0.6)",
-              border: `1px solid ${activeTabConfig?.color}30`
-            }}>
-            
-            <div className="flex items-center gap-2 mb-3">
-              <h2 className="text-xs font-black tracking-wider uppercase text-white">
-                {selectedCategory ?
-                `Serveurs ${activeTabConfig?.label} - ${categories.find((c) => c.slug === selectedCategory)?.name || selectedCategory}` :
-                `Tous les serveurs ${activeTabConfig?.label}`}
-              </h2>
-              <span className="text-[9px] text-white/40 ml-auto">
-                {sortedServers.length} serveur{sortedServers.length !== 1 ? "s" : ""}
-              </span>
-            </div>
+          
 
-            {/* Search + Sort bar */}
-            <div className="mb-4">
-              <ServerSearchBar
-                search={search}
-                onSearchChange={setSearch}
-                sortBy={sortBy}
-                onSortChange={setSortBy}
-                resultCount={sortedServers.length} />
-              
-            </div>
 
-            {/* Server grid */}
-            {loading ?
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {Array.from({ length: 6 }).map((_, i) =>
-              <div key={i} className="h-48 rounded-xl animate-pulse" style={{ background: "rgba(138,79,255,0.05)" }} />
-              )}
-              </div> :
-            sortedServers.length === 0 ?
-            <div
-              className="rounded-xl p-8 text-center"
-              style={{ background: "rgba(18,9,28,0.4)", border: "1px dashed rgba(138,79,255,0.15)" }}>
-              
-                <ServerIcon className="w-8 h-8 mx-auto mb-2 text-white/20" />
-                <p className="text-xs text-white/40">Aucun serveur trouvé</p>
-                <button
-                onClick={() => openCreateModal(activeTab)}
-                className="mt-3 h-8 px-4 rounded-lg text-[10px] font-bold transition flex items-center gap-1 mx-auto tap-sm"
-                style={{ background: "rgba(138,79,255,0.15)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}>
-                
-                  <Plus className="w-3 h-3" />
-                  Publier le premier serveur
-                </button>
-              </div> :
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {sortedServers.map((server, i) =>
-              <ServerDirectoryCard
-                key={server.id}
-                server={server}
-                rank={i + 1}
-                onVote={handleVote}
-                onDelete={handleDeleteAd}
-                onEdit={handleEditAd}
-                currentUser={user} />
 
-              )}
-              </div>
-            }
-          </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          
         </div>
       </div>
 
