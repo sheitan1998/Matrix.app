@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Plus, Trash2, Edit3, Check, X, ToggleLeft, ToggleRight } from "lucide-react";
+import { Plus, Trash2, Edit3, Check, X, ToggleLeft, ToggleRight, Copy } from "lucide-react";
 import { toast } from "sonner";
+import { SEED_AUTOMATION_RULES } from "@/lib/nexusSeeds";
 
 const TRIGGERS = [
   { key: "member_join", label: "Membre rejoint" },
@@ -32,7 +33,13 @@ export default function AutomationRuleBuilder({ accent }) {
     queryKey: ["nexus-automation-rules"],
     queryFn: async () => {
       const res = await base44.entities.NexusAutomationRule.filter({}, "sort_order", 200);
-      return Array.isArray(res) ? res : res?.items || [];
+      let list = Array.isArray(res) ? res : res?.items || [];
+      if (list.length === 0) {
+        await base44.entities.NexusAutomationRule.bulkCreate(SEED_AUTOMATION_RULES);
+        const res2 = await base44.entities.NexusAutomationRule.filter({}, "sort_order", 200);
+        list = Array.isArray(res2) ? res2 : res2?.items || [];
+      }
+      return list;
     },
   });
 
@@ -86,6 +93,26 @@ export default function AutomationRuleBuilder({ accent }) {
   const toggleActive = async (r) => {
     await base44.entities.NexusAutomationRule.update(r.id, { is_active: !r.is_active });
     qc.invalidateQueries({ queryKey: ["nexus-automation-rules"] });
+  };
+
+  const handleDuplicate = async (r) => {
+    const newKey = `${r.key}_copy_${Date.now().toString(36)}`;
+    try {
+      await base44.entities.NexusAutomationRule.create({
+        key: newKey,
+        name: `${r.name} (copie)`,
+        description: r.description || "",
+        trigger_type: r.trigger_type,
+        action_type: r.action_type,
+        config: r.config || {},
+        sort_order: rules.length,
+        is_active: r.is_active,
+      });
+      qc.invalidateQueries({ queryKey: ["nexus-automation-rules"] });
+      toast.success("Règle dupliquée");
+    } catch {
+      toast.error("Duplication impossible");
+    }
   };
 
   return (
@@ -175,11 +202,12 @@ export default function AutomationRuleBuilder({ accent }) {
                     <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: "rgba(168,85,247,0.15)", color: "#c084fc" }}>{act?.label || r.action_type}</span>
                   </div>
                 </div>
-                <button onClick={() => toggleActive(r)} className="shrink-0 tap-sm">
+                <button onClick={() => toggleActive(r)} className="shrink-0 tap-sm" title={r.is_active ? "Désactiver" : "Activer"}>
                   {r.is_active ? <ToggleRight className="w-4 h-4 text-green-400" /> : <ToggleLeft className="w-4 h-4 text-white/20" />}
                 </button>
-                <button onClick={() => handleEdit(r)} className="shrink-0 text-white/30 hover:text-white transition tap-sm"><Edit3 className="w-3.5 h-3.5" /></button>
-                <button onClick={() => handleDelete(r.id)} className="shrink-0 text-red-400/60 hover:text-red-400 transition tap-sm"><Trash2 className="w-3.5 h-3.5" /></button>
+                <button onClick={() => handleEdit(r)} className="shrink-0 text-white/30 hover:text-white transition tap-sm" title="Modifier"><Edit3 className="w-3.5 h-3.5" /></button>
+                <button onClick={() => handleDuplicate(r)} className="shrink-0 text-white/30 hover:text-white transition tap-sm" title="Dupliquer"><Copy className="w-3.5 h-3.5" /></button>
+                <button onClick={() => handleDelete(r.id)} className="shrink-0 text-red-400/60 hover:text-red-400 transition tap-sm" title="Supprimer"><Trash2 className="w-3.5 h-3.5" /></button>
               </div>
             );
           })}

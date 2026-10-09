@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Plus, Trash2, Edit3, Check, X, ToggleLeft, ToggleRight } from "lucide-react";
+import { Plus, Trash2, Edit3, Check, X, ToggleLeft, ToggleRight, Copy } from "lucide-react";
 import { toast } from "sonner";
+import { SEED_PROFILE_BLOCKS } from "@/lib/nexusSeeds";
 
 const BLOCK_TYPES = [
   { key: "stats", label: "Statistiques" },
@@ -27,7 +28,13 @@ export default function ProfileBlockBuilder({ accent }) {
     queryKey: ["nexus-profile-blocks"],
     queryFn: async () => {
       const res = await base44.entities.NexusProfileBlock.filter({}, "sort_order", 200);
-      return Array.isArray(res) ? res : res?.items || [];
+      let list = Array.isArray(res) ? res : res?.items || [];
+      if (list.length === 0) {
+        await base44.entities.NexusProfileBlock.bulkCreate(SEED_PROFILE_BLOCKS);
+        const res2 = await base44.entities.NexusProfileBlock.filter({}, "sort_order", 200);
+        list = Array.isArray(res2) ? res2 : res2?.items || [];
+      }
+      return list;
     },
   });
 
@@ -81,6 +88,24 @@ export default function ProfileBlockBuilder({ accent }) {
   const toggleVisible = async (b) => {
     await base44.entities.NexusProfileBlock.update(b.id, { is_visible: !b.is_visible });
     qc.invalidateQueries({ queryKey: ["nexus-profile-blocks"] });
+  };
+
+  const handleDuplicate = async (b) => {
+    const newKey = `${b.key}_copy_${Date.now().toString(36)}`;
+    try {
+      await base44.entities.NexusProfileBlock.create({
+        key: newKey,
+        name: `${b.name} (copie)`,
+        description: b.description || "",
+        block_type: b.block_type,
+        is_visible: b.is_visible,
+        sort_order: blocks.length,
+      });
+      qc.invalidateQueries({ queryKey: ["nexus-profile-blocks"] });
+      toast.success("Bloc dupliqué");
+    } catch {
+      toast.error("Duplication impossible");
+    }
   };
 
   return (
@@ -155,11 +180,12 @@ export default function ProfileBlockBuilder({ accent }) {
                   {b.description && <p className="text-[10px] text-white/30 truncate">{b.description}</p>}
                 </div>
                 <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: "rgba(168,85,247,0.15)", color: "#c084fc" }}>{bt?.label || b.block_type}</span>
-                <button onClick={() => toggleVisible(b)} className="shrink-0 tap-sm">
+                <button onClick={() => toggleVisible(b)} className="shrink-0 tap-sm" title={b.is_visible ? "Masquer" : "Afficher"}>
                   {b.is_visible ? <ToggleRight className="w-4 h-4 text-green-400" /> : <ToggleLeft className="w-4 h-4 text-white/20" />}
                 </button>
-                <button onClick={() => handleEdit(b)} className="shrink-0 text-white/30 hover:text-white transition tap-sm"><Edit3 className="w-3.5 h-3.5" /></button>
-                <button onClick={() => handleDelete(b.id)} className="shrink-0 text-red-400/60 hover:text-red-400 transition tap-sm"><Trash2 className="w-3.5 h-3.5" /></button>
+                <button onClick={() => handleEdit(b)} className="shrink-0 text-white/30 hover:text-white transition tap-sm" title="Modifier"><Edit3 className="w-3.5 h-3.5" /></button>
+                <button onClick={() => handleDuplicate(b)} className="shrink-0 text-white/30 hover:text-white transition tap-sm" title="Dupliquer"><Copy className="w-3.5 h-3.5" /></button>
+                <button onClick={() => handleDelete(b.id)} className="shrink-0 text-red-400/60 hover:text-red-400 transition tap-sm" title="Supprimer"><Trash2 className="w-3.5 h-3.5" /></button>
               </div>
             );
           })}

@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Plus, Trash2, Edit3, Check, X, ToggleLeft, ToggleRight } from "lucide-react";
+import { Plus, Trash2, Edit3, Check, X, ToggleLeft, ToggleRight, Copy } from "lucide-react";
 import { toast } from "sonner";
+import { SEED_GLOBAL_EXTENSIONS } from "@/lib/nexusSeeds";
 
 export default function GlobalExtensionBuilder({ accent }) {
   const qc = useQueryClient();
@@ -14,7 +15,13 @@ export default function GlobalExtensionBuilder({ accent }) {
     queryKey: ["nexus-global-extensions"],
     queryFn: async () => {
       const res = await base44.entities.NexusGlobalExtension.filter({}, "sort_order", 200);
-      return Array.isArray(res) ? res : res?.items || [];
+      let list = Array.isArray(res) ? res : res?.items || [];
+      if (list.length === 0) {
+        await base44.entities.NexusGlobalExtension.bulkCreate(SEED_GLOBAL_EXTENSIONS);
+        const res2 = await base44.entities.NexusGlobalExtension.filter({}, "sort_order", 200);
+        list = Array.isArray(res2) ? res2 : res2?.items || [];
+      }
+      return list;
     },
   });
 
@@ -68,6 +75,25 @@ export default function GlobalExtensionBuilder({ accent }) {
   const toggleActive = async (e) => {
     await base44.entities.NexusGlobalExtension.update(e.id, { is_active: !e.is_active });
     qc.invalidateQueries({ queryKey: ["nexus-global-extensions"] });
+  };
+
+  const handleDuplicate = async (e) => {
+    const newKey = `${e.key}_copy_${Date.now().toString(36)}`;
+    try {
+      await base44.entities.NexusGlobalExtension.create({
+        key: newKey,
+        name: `${e.name} (copie)`,
+        description: e.description || "",
+        category: e.category || "Général",
+        config: e.config || {},
+        sort_order: extensions.length,
+        is_active: e.is_active,
+      });
+      qc.invalidateQueries({ queryKey: ["nexus-global-extensions"] });
+      toast.success("Extension dupliquée");
+    } catch {
+      toast.error("Duplication impossible");
+    }
   };
 
   return (
@@ -140,11 +166,12 @@ export default function GlobalExtensionBuilder({ accent }) {
                 {e.description && <p className="text-[10px] text-white/30 truncate">{e.description}</p>}
               </div>
               <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: "rgba(59,130,246,0.15)", color: "#60a5fa" }}>{e.category}</span>
-              <button onClick={() => toggleActive(e)} className="shrink-0 tap-sm">
+              <button onClick={() => toggleActive(e)} className="shrink-0 tap-sm" title={e.is_active ? "Désactiver" : "Activer"}>
                 {e.is_active ? <ToggleRight className="w-4 h-4 text-green-400" /> : <ToggleLeft className="w-4 h-4 text-white/20" />}
               </button>
-              <button onClick={() => handleEdit(e)} className="shrink-0 text-white/30 hover:text-white transition tap-sm"><Edit3 className="w-3.5 h-3.5" /></button>
-              <button onClick={() => handleDelete(e.id)} className="shrink-0 text-red-400/60 hover:text-red-400 transition tap-sm"><Trash2 className="w-3.5 h-3.5" /></button>
+              <button onClick={() => handleEdit(e)} className="shrink-0 text-white/30 hover:text-white transition tap-sm" title="Modifier"><Edit3 className="w-3.5 h-3.5" /></button>
+              <button onClick={() => handleDuplicate(e)} className="shrink-0 text-white/30 hover:text-white transition tap-sm" title="Dupliquer"><Copy className="w-3.5 h-3.5" /></button>
+              <button onClick={() => handleDelete(e.id)} className="shrink-0 text-red-400/60 hover:text-red-400 transition tap-sm" title="Supprimer"><Trash2 className="w-3.5 h-3.5" /></button>
             </div>
           ))}
           {extensions.length === 0 && <p className="text-center text-xs text-white/30 py-6">Aucune extension. Ajoutez des fonctionnalités sur mesure par catégorie.</p>}

@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Plus, Trash2, Edit3, Check, X, ToggleLeft, ToggleRight } from "lucide-react";
+import { Plus, Trash2, Edit3, Check, X, ToggleLeft, ToggleRight, Copy } from "lucide-react";
 import { toast } from "sonner";
+import { SEED_PERMISSIONS } from "@/lib/nexusSeeds";
 
-const CATEGORIES = ["Général", "Membres", "Messages", "Vocal", "Modération", "Salons", "Rôles", "Invitations"];
+const CATEGORIES = ["Général", "Membres", "Messages", "Vocal", "Modération", "Salons", "Rôles", "Invitations", "Événements"];
 
 export default function PermissionBuilder({ accent }) {
   const qc = useQueryClient();
@@ -16,7 +17,13 @@ export default function PermissionBuilder({ accent }) {
     queryKey: ["nexus-permissions"],
     queryFn: async () => {
       const res = await base44.entities.NexusPermission.filter({}, "sort_order", 200);
-      return Array.isArray(res) ? res : res?.items || [];
+      let list = Array.isArray(res) ? res : res?.items || [];
+      if (list.length === 0) {
+        await base44.entities.NexusPermission.bulkCreate(SEED_PERMISSIONS);
+        const res2 = await base44.entities.NexusPermission.filter({}, "sort_order", 200);
+        list = Array.isArray(res2) ? res2 : res2?.items || [];
+      }
+      return list;
     },
   });
 
@@ -70,6 +77,26 @@ export default function PermissionBuilder({ accent }) {
   const toggleActive = async (p) => {
     await base44.entities.NexusPermission.update(p.id, { is_active: !p.is_active });
     qc.invalidateQueries({ queryKey: ["nexus-permissions"] });
+  };
+
+  const handleDuplicate = async (p) => {
+    const newKey = `${p.key}_copy_${Date.now().toString(36)}`;
+    try {
+      await base44.entities.NexusPermission.create({
+        key: newKey,
+        label: `${p.label} (copie)`,
+        description: p.description || "",
+        category: p.category || "Général",
+        default_value: p.default_value,
+        highlight: p.highlight,
+        sort_order: permissions.length,
+        is_active: true,
+      });
+      qc.invalidateQueries({ queryKey: ["nexus-permissions"] });
+      toast.success("Permission dupliquée");
+    } catch {
+      toast.error("Duplication impossible");
+    }
   };
 
   // Group by category
@@ -174,10 +201,13 @@ export default function PermissionBuilder({ accent }) {
                     <button onClick={() => toggleActive(p)} className="shrink-0 tap-sm" title={p.is_active ? "Désactiver" : "Activer"}>
                       {p.is_active ? <ToggleRight className="w-4 h-4 text-green-400" /> : <ToggleLeft className="w-4 h-4 text-white/20" />}
                     </button>
-                    <button onClick={() => handleEdit(p)} className="shrink-0 text-white/30 hover:text-white transition tap-sm">
+                    <button onClick={() => handleEdit(p)} className="shrink-0 text-white/30 hover:text-white transition tap-sm" title="Modifier">
                       <Edit3 className="w-3.5 h-3.5" />
                     </button>
-                    <button onClick={() => handleDelete(p.id)} className="shrink-0 text-red-400/60 hover:text-red-400 transition tap-sm">
+                    <button onClick={() => handleDuplicate(p)} className="shrink-0 text-white/30 hover:text-white transition tap-sm" title="Dupliquer">
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => handleDelete(p.id)} className="shrink-0 text-red-400/60 hover:text-red-400 transition tap-sm" title="Supprimer">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
