@@ -4,17 +4,15 @@
   "properties": {
     "name": {
       "type": "string",
-      "description": "Nom du template/gabarit"
+      "description": "Nom de la configuration globale"
     },
     "description": {
       "type": "string",
-      "maxLength": 1000,
-      "description": "Description du template"
+      "maxLength": 1000
     },
     "is_default": {
       "type": "boolean",
-      "default": false,
-      "description": "Template par defaut applique aux nouveaux serveurs"
+      "default": false
     },
     "channels": {
       "type": "array",
@@ -123,8 +121,7 @@
           }
         }
       },
-      "default": [],
-      "description": "Categories et salons par defaut du template"
+      "default": []
     },
     "custom_roles": {
       "type": "array",
@@ -231,21 +228,17 @@
           }
         }
       },
-      "default": [],
-      "description": "Roles types et permissions globales du template"
+      "default": []
     },
     "welcome_enabled": {
       "type": "boolean",
-      "default": false,
-      "description": "Activer le message de bienvenue automatique par defaut"
+      "default": false
     },
     "welcome_message": {
-      "type": "string",
-      "description": "Texte du message de bienvenue. Supporte {user}."
+      "type": "string"
     },
     "welcome_channel_id": {
-      "type": "string",
-      "description": "ID du salon de bienvenue par defaut"
+      "type": "string"
     },
     "interactive_buttons": {
       "type": "array",
@@ -263,8 +256,148 @@
           }
         }
       },
-      "default": [],
-      "description": "Boutons interactifs par defaut"
+      "default": []
+    },
+    "profile_popup_config": {
+      "type": "object",
+      "properties": {
+        "show_activity": {
+          "type": "boolean",
+          "default": true
+        },
+        "show_trophies": {
+          "type": "boolean",
+          "default": true
+        },
+        "show_xp": {
+          "type": "boolean",
+          "default": true
+        },
+        "show_level": {
+          "type": "boolean",
+          "default": true
+        },
+        "show_roles": {
+          "type": "boolean",
+          "default": true
+        },
+        "show_dm_input": {
+          "type": "boolean",
+          "default": true
+        },
+        "allow_reports": {
+          "type": "boolean",
+          "default": true
+        },
+        "show_custom_status": {
+          "type": "boolean",
+          "default": true
+        },
+        "show_badges": {
+          "type": "boolean",
+          "default": true
+        },
+        "show_friend_status": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "default": {}
+    },
+    "appearance_config": {
+      "type": "object",
+      "properties": {
+        "allowed_themes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "custom_theme_bg_required": {
+          "type": "boolean",
+          "default": true
+        },
+        "max_custom_themes": {
+          "type": "number",
+          "default": 10
+        },
+        "min_boost_for_themes": {
+          "type": "number",
+          "default": 1
+        },
+        "min_boost_for_banner": {
+          "type": "number",
+          "default": 2
+        },
+        "min_boost_for_animated_icon": {
+          "type": "number",
+          "default": 1
+        },
+        "min_boost_for_custom_emojis": {
+          "type": "number",
+          "default": 1
+        }
+      },
+      "default": {}
+    },
+    "invitation_config": {
+      "type": "object",
+      "properties": {
+        "default_expiration": {
+          "type": "string",
+          "enum": [
+            "never",
+            "1h",
+            "24h",
+            "7d"
+          ],
+          "default": "never"
+        },
+        "allow_member_invites": {
+          "type": "boolean",
+          "default": false
+        },
+        "code_length": {
+          "type": "number",
+          "default": 8
+        },
+        "max_uses": {
+          "type": "number",
+          "default": 0
+        },
+        "require_approval": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "default": {}
+    },
+    "category_extensions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "category_name": {
+            "type": "string"
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      },
+      "default": []
     }
   },
   "required": [
