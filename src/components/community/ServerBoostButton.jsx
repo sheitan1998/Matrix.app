@@ -38,14 +38,14 @@ export default function ServerBoostButton({ server, user, flashBoosts, onBoosted
         action: "boostServer",
         serverId: server.id,
       });
-      if (res?.data?.error) {
-        toast.error(res.data.error);
+      if (res?.error) {
+        toast.error(res.error);
         return;
       }
-      toast.success(`Serveur boosté ! (${res.data.boosts}/${MAX_BOOSTS})`);
+      toast.success(`Serveur boosté ! (${res.boosts}/${MAX_BOOSTS})`);
       trackActivity("server_boosts");
       invalidate();
-      if (onBoosted) onBoosted(res.data.boosts, res.data.newFlashBoosts);
+      if (onBoosted) onBoosted(res.boosts, res.newFlashBoosts);
     } catch (err) {
       toast.error(err?.message || "Erreur lors du boost");
     }

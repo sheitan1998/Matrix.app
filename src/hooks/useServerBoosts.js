@@ -21,7 +21,7 @@ export function useServerBoosts(serverId, initialBoosts = 0) {
         action: "getServerBoosts",
         serverId,
       });
-      return res?.data || { boosts: [], server_boosts: 0, legacy_count: 0 };
+      return res || { boosts: [], server_boosts: 0, legacy_count: 0 };
     },
     enabled: !!serverId,
     refetchInterval: 60000, // auto-refresh every 60s to catch expirations

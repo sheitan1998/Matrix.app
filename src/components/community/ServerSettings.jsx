@@ -66,15 +66,20 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
   });
 
   const updateMember = async (memberId, data) => {
-    await base44.functions.invoke("serverMembership", {
-      action: "updateMember",
-      memberId,
-      serverId: server.id,
-      ...data,
-    });
-    refetchMembers();
-    toast.success("Membre mis à jour");
-    setMemberAction(null);
+    try {
+      await base44.functions.invoke("serverMembership", {
+        action: "updateMember",
+        memberId,
+        serverId: server.id,
+        ...data,
+      });
+      refetchMembers();
+      toast.success("Membre mis à jour");
+      setMemberAction(null);
+    } catch (err) {
+      const msg = err?.message || "Erreur lors de la mise à jour du membre";
+      toast.error(msg);
+    }
   };
 
   const handleBan = async (member) => {
