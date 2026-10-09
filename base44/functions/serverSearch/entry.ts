@@ -8,6 +8,16 @@ const PLAYER_BOOST_COST = 50; // 50 Trix for player ad boost
 const BOOST_DURATION_HOURS = 24;
 const SERVER_BOOST_DURATION_DAYS = 30; // 30 days for community server boosts
 
+/**
+ * Normalize a User.list() response to always return an array.
+ * The SDK may return a page object { items, next_cursor, has_more }
+ * or a plain array depending on the version and call form.
+ */
+async function listAllUsers(sdk: any): Promise<any[]> {
+  const res = await sdk.asServiceRole.entities.User.list('-created_date', 500);
+  return Array.isArray(res) ? res : (res?.items || []);
+}
+
 export default async function(req: Request): Promise<Response> {
   try {
     const body = await req.json().catch(() => ({}));
@@ -110,7 +120,8 @@ export default async function(req: Request): Promise<Response> {
       const isAuthorized = (apiKey && apiKey === process.env.CRON_SECRET) || user.role === 'admin';
       if (!isAuthorized) return Response.json({ error: 'Forbidden' }, { status: 403 });
       // Archive current month values before resetting
-      const allServersForArchive = await base44.asServiceRole.entities.ServerAd.list('-created_date', 500);
+      const archivePage = await base44.asServiceRole.entities.ServerAd.list('-created_date', 500);
+      const allServersForArchive = Array.isArray(archivePage) ? archivePage : (archivePage?.items || []);
       for (const s of allServersForArchive) {
         await base44.asServiceRole.entities.ServerAd.update(s.id, {
           votes_last_month: s.votes_month || 0,
@@ -590,7 +601,7 @@ export default async function(req: Request): Promise<Response> {
           return Response.json({ error: 'Too many requests' }, { status: 429 });
         }
 
-        const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
+        const allUsers = await listAllUsers(base44);
         const inputPseudo = (pseudo || '').trim().toLowerCase();
         const inputTag = (tag || '').trim().toLowerCase();
 
@@ -650,7 +661,7 @@ export default async function(req: Request): Promise<Response> {
         if (!ids || !Array.isArray(ids) || ids.length === 0) {
           return Response.json({ users: [] });
         }
-        const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
+        const allUsers = await listAllUsers(base44);
         const idSet = new Set(ids);
         const users = allUsers
           .filter(u => idSet.has(u.id))
@@ -681,7 +692,7 @@ export default async function(req: Request): Promise<Response> {
         if (!emails || !Array.isArray(emails) || emails.length === 0) {
           return Response.json({ users: [] });
         }
-        const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
+        const allUsers = await listAllUsers(base44);
         const userMap = {};
         for (const u of allUsers) {
           if (u.email) userMap[u.email.toLowerCase()] = u;
@@ -714,7 +725,7 @@ export default async function(req: Request): Promise<Response> {
         const senderId = user.id;
 
         // Find the target user
-        const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
+        const allUsers = await listAllUsers(base44);
         const inputPseudo = (pseudo || '').trim().toLowerCase();
         const inputTag = (tag || '').trim().toLowerCase();
         const query = (pseudo || email || '').trim().toLowerCase();
@@ -794,7 +805,7 @@ export default async function(req: Request): Promise<Response> {
         }
 
         // Look up target user to get their email (needed for user_email field on their record)
-        const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
+        const allUsers = await listAllUsers(base44);
         const target = allUsers.find(u => u.id === target_user_id);
 
         if (!target) return Response.json({ error: 'Utilisateur introuvable.' }, { status: 404 });
@@ -849,7 +860,7 @@ export default async function(req: Request): Promise<Response> {
         const myId = user.id;
 
         // Find the friend's email by their user ID
-        const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
+        const allUsers = await listAllUsers(base44);
         const friend = allUsers.find(u => u.id === friend_user_id);
         if (!friend) return Response.json({ error: 'Utilisateur introuvable.' }, { status: 404 });
         const friendEmail = friend.email;
@@ -884,7 +895,7 @@ export default async function(req: Request): Promise<Response> {
         const myEmail = user.email;
         const myId = user.id;
 
-        const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
+        const allUsers = await listAllUsers(base44);
         const friend = allUsers.find(u => u.id === friend_user_id);
         const friendEmail = friend?.email || '';
 
@@ -941,7 +952,7 @@ export default async function(req: Request): Promise<Response> {
         const myId = user.id;
 
         // Find the friend's email by their user ID
-        const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
+        const allUsers = await listAllUsers(base44);
         const friend = allUsers.find(u => u.id === friend_user_id);
         const friendEmail = friend?.email || '';
 
@@ -1067,15 +1078,15 @@ export default async function(req: Request): Promise<Response> {
         const serverBoosts = srv.boosts || 0;
         const activeCount = boosts.filter((b) => b.is_active).length;
 
-        // The authoritative count is the number of active (non-expired) boost records.
-        // If there are NO records at all, keep the existing server.boosts value
-        // (it may represent legacy boosts created before the tracking system).
-        const hasRecords = boosts.length > 0;
-        const finalCount = hasRecords ? activeCount : serverBoosts;
-        const legacyCount = hasRecords ? Math.max(0, serverBoosts - activeCount) : 0;
+        // The authoritative count is the stored server.boosts value.
+        // Active records validate it, but we never let the count drop below
+        // the stored value (which preserves legacy boosts even if records
+        // expired or were cleaned up).
+        const finalCount = Math.max(activeCount, serverBoosts);
+        const legacyCount = Math.max(0, finalCount - activeCount);
 
-        // Only resync the counter when we have records to base it on
-        if (hasRecords && serverBoosts !== finalCount) {
+        // Resync the counter if it has drifted below the actual count
+        if (serverBoosts !== finalCount) {
           await base44.asServiceRole.entities.Server.update(serverId, { boosts: finalCount });
         }
 
@@ -1127,7 +1138,7 @@ export default async function(req: Request): Promise<Response> {
           return Response.json({ can_dm: true });
         }
 
-        const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
+        const allUsers = await listAllUsers(base44);
         const target = allUsers.find(u => u.email?.toLowerCase() === target_email.toLowerCase());
 
         if (!target) return Response.json({ can_dm: true }); // Default allow if user not found
@@ -1178,9 +1189,10 @@ export default async function(req: Request): Promise<Response> {
           });
         }
 
-        // 2. Resync ALL servers with boosts > 0 to their actual active record count.
-        //    This removes legacy/orphaned boosts (no record, no dates) from the counter
-        //    and corrects any drift between server.boosts and tracked records.
+        // 2. Only resync servers that HAVE active records — don't zero out
+        //    servers whose records all expired (they may have legacy boosts
+        //    that predate the tracking system, or boosts done recently whose
+        //    records are still active but the counter was already correct).
         const serversPage = await base44.asServiceRole.entities.Server.filter({ boosts: { $gt: 0 } }, null, 500);
         const servers = serversPage?.items || serversPage || [];
         let synced = 0;
@@ -1189,8 +1201,10 @@ export default async function(req: Request): Promise<Response> {
             server_id: srv.id,
             expires_at: { $gt: now }
           });
-          const activeCount = (activePage?.items || activePage || []).length;
-          if ((srv.boosts || 0) !== activeCount) {
+          const activeRecords = activePage?.items || activePage || [];
+          const activeCount = activeRecords.length;
+          // Only resync if there ARE active records and the count differs
+          if (activeCount > 0 && (srv.boosts || 0) !== activeCount) {
             await base44.asServiceRole.entities.Server.update(srv.id, { boosts: activeCount });
             synced++;
           }
@@ -1208,7 +1222,7 @@ export default async function(req: Request): Promise<Response> {
       // ---- Search public creators/users (for Prospecteur Creator tab) ----
       case 'searchCreators': {
         const { query } = params;
-        const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
+        const allUsers = await listAllUsers(base44);
 
         // Filter: public profiles (is_private !== true) with a pseudo
         let publicUsers = allUsers.filter(u => u.is_private !== true && u.pseudo);
