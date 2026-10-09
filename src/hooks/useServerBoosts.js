@@ -13,7 +13,7 @@ import { base44 } from "@/api/base44Client";
 export function useServerBoosts(serverId, initialBoosts = 0) {
   const qc = useQueryClient();
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["server-boosts", serverId],
     queryFn: async () => {
       if (!serverId) return { boosts: [], server_boosts: 0, legacy_count: 0 };
@@ -26,6 +26,7 @@ export function useServerBoosts(serverId, initialBoosts = 0) {
     enabled: !!serverId,
     refetchInterval: 60000, // auto-refresh every 60s to catch expirations
     staleTime: 0,
+    placeholderData: (prev) => prev,
     initialData: serverId
       ? { boosts: [], server_boosts: initialBoosts, legacy_count: 0 }
       : undefined,
@@ -37,7 +38,7 @@ export function useServerBoosts(serverId, initialBoosts = 0) {
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["server-boosts", serverId] });
 
-  return { activeCount, boosts, legacyCount, loading: isLoading, refetch, invalidate };
+  return { activeCount, boosts, legacyCount, loading: isLoading, isFetching, refetch, invalidate };
 }
 
 /**
@@ -45,15 +46,19 @@ export function useServerBoosts(serverId, initialBoosts = 0) {
  * from the stale `server.boosts` value, so the parent can update its state
  * and the global counter stays in sync with the panel.
  */
-export function useBoostCountSync(serverBoosts, activeCount, flashBoosts, onBoosted) {
+export function useBoostCountSync(serverBoosts, activeCount, flashBoosts, onBoosted, isFetching) {
   const onBoostedRef = useRef(onBoosted);
   onBoostedRef.current = onBoosted;
   const flashRef = useRef(flashBoosts);
   flashRef.current = flashBoosts;
+  const isFetchingRef = useRef(isFetching);
+  isFetchingRef.current = isFetching;
 
   useEffect(() => {
+    // Don't sync while a refetch is in progress — the activeCount may be stale
+    if (isFetchingRef.current) return;
     if (activeCount != null && activeCount !== serverBoosts) {
       onBoostedRef.current?.(activeCount, flashRef.current);
     }
-  }, [activeCount, serverBoosts]);
+  }, [activeCount, serverBoosts, isFetching]);
 }

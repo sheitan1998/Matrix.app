@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Crown, Shield, MessageCircle } from "lucide-react";
@@ -21,7 +21,9 @@ export default function MembersList({ server, theme, currentUserEmail, onOpenDm 
   const { data: members = [] } = useQuery({
     queryKey: ["server-members", server.id],
     queryFn: () => base44.functions.invoke("serverMembership", { action: "getMembers", serverId: server.id }).then(res => res?.members || []),
-    refetchInterval: 15000,
+    refetchInterval: 30000,
+    placeholderData: (prev) => prev,
+    retry: 1,
   });
 
   // Real-time subscription for instant member updates
@@ -36,7 +38,10 @@ export default function MembersList({ server, theme, currentUserEmail, onOpenDm 
   const accent = theme?.accent || "hsl(var(--primary))";
 
   // Fetch fresh user data (pseudo, activity, last_seen, avatar) for all members
-  const memberEmails = members.map((m) => m.user_email).filter(Boolean);
+  const memberEmails = useMemo(
+    () => members.map((m) => m.user_email).filter(Boolean),
+    [members]
+  );
   const { data: userData = [], isLoading: usersLoading } = useQuery({
     queryKey: ["member-activities", memberEmails.join(",")],
     queryFn: () =>
@@ -45,7 +50,9 @@ export default function MembersList({ server, theme, currentUserEmail, onOpenDm 
         emails: memberEmails,
       }),
     enabled: memberEmails.length > 0,
-    refetchInterval: 15000,
+    refetchInterval: 30000,
+    placeholderData: (prev) => prev,
+    retry: 1,
     select: (res) => res?.users || [],
   });
 

@@ -1067,16 +1067,22 @@ export default async function(req: Request): Promise<Response> {
         const serverBoosts = srv.boosts || 0;
         const activeCount = boosts.filter((b) => b.is_active).length;
 
-        // Real-time sync: if the server counter drifted (expired boost not yet cleaned by cron,
-        // or legacy boosts with no record), resync it now so the panel always shows live data.
-        if (serverBoosts !== activeCount) {
-          await base44.asServiceRole.entities.Server.update(serverId, { boosts: activeCount });
+        // The authoritative count is the number of active (non-expired) boost records.
+        // If there are NO records at all, keep the existing server.boosts value
+        // (it may represent legacy boosts created before the tracking system).
+        const hasRecords = boosts.length > 0;
+        const finalCount = hasRecords ? activeCount : serverBoosts;
+        const legacyCount = hasRecords ? Math.max(0, serverBoosts - activeCount) : 0;
+
+        // Only resync the counter when we have records to base it on
+        if (hasRecords && serverBoosts !== finalCount) {
+          await base44.asServiceRole.entities.Server.update(serverId, { boosts: finalCount });
         }
 
         return Response.json({
           boosts,
-          server_boosts: activeCount,
-          legacy_count: 0,
+          server_boosts: finalCount,
+          legacy_count: legacyCount,
         });
       }
 

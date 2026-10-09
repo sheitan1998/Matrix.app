@@ -12,8 +12,8 @@ export default function ServerBoostButton({ server, user, flashBoosts, onBoosted
   const { trackActivity } = useProgression();
   const [loading, setLoading] = useState(false);
   const [showLevels, setShowLevels] = useState(false);
-  const { activeCount, invalidate } = useServerBoosts(server?.id, server?.boosts);
-  useBoostCountSync(server?.boosts || 0, activeCount, flashBoosts, onBoosted);
+  const { activeCount, invalidate, isFetching } = useServerBoosts(server?.id, server?.boosts);
+  useBoostCountSync(server?.boosts || 0, activeCount, flashBoosts, onBoosted, isFetching);
 
   const currentBoosts = activeCount;
   const boostLevel = getBoostLevelInfo(currentBoosts);
@@ -44,7 +44,9 @@ export default function ServerBoostButton({ server, user, flashBoosts, onBoosted
       }
       toast.success(`Serveur boosté ! (${res.boosts}/${MAX_BOOSTS})`);
       trackActivity("server_boosts");
-      invalidate();
+      // Invalidate and wait for fresh data before syncing the parent,
+      // so the stale cached count doesn't overwrite the new value.
+      await invalidate();
       if (onBoosted) onBoosted(res.boosts, res.newFlashBoosts);
     } catch (err) {
       toast.error(err?.message || "Erreur lors du boost");
