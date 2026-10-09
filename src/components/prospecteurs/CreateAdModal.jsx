@@ -86,22 +86,24 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (adType === "server") {
-      if (!form.title.trim() || !form.description.trim() || !form.discord_link.trim()) return;
+      if (!form.title.trim() || !form.description.trim()) return;
       const webUrl = form.website_url.trim();
       if (webUrl && !webUrl.startsWith("https://")) {
         toast.error("Le lien du site web doit commencer par https://");
         return;
       }
       const link = form.discord_link.trim().toLowerCase();
-      if (serverSubType === "nexus") {
-        if (link.includes("discord.gg") || link.includes("discord.com") || link.includes("discordapp.com")) {
-          toast.error("Les liens Discord ne sont pas acceptés dans la catégorie Nexus. Utilisez un lien de serveur Nexus.");
-          return;
-        }
-      } else {
-        if (!link.includes("discord.gg") && !link.includes("discord.com") && !link.includes("discordapp.com")) {
-          toast.error("Un lien Discord est requis pour la catégorie Serveurs Discord.");
-          return;
+      if (link) {
+        if (serverSubType === "nexus") {
+          if (link.includes("discord.gg") || link.includes("discord.com") || link.includes("discordapp.com")) {
+            toast.error("Les liens Discord ne sont pas acceptés dans la catégorie Nexus. Utilisez un lien de serveur Nexus.");
+            return;
+          }
+        } else {
+          if (!link.includes("discord.gg") && !link.includes("discord.com") && !link.includes("discordapp.com")) {
+            toast.error("Le lien doit être un lien Discord valide (discord.gg, discord.com).");
+            return;
+          }
         }
       }
     } else {
@@ -341,28 +343,31 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
             )}
           </div>
 
-          {/* Categories (multi-select, server only) */}
+          {/* Category (single select, server only) */}
           {adType === "server" && (
             <div>
-              <label className={labelClass}>Catégories du serveur</label>
-              <MultiTagSelect
-                options={availableCategories.map((c) => ({ value: c.name, label: c.name }))}
-                value={form.categories || []}
-                onChange={(cats) => {
-                  const slugs = cats
-                    .map((name) => availableCategories.find((c) => c.name === name)?.slug)
-                    .filter(Boolean);
+              <label className={labelClass}>Catégorie du serveur</label>
+              <select
+                value={form.category || ""}
+                onChange={(e) => {
+                  const name = e.target.value;
+                  const slug = availableCategories.find((c) => c.name === name)?.slug || (name ? name.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") : "");
                   setForm((prev) => ({
                     ...prev,
-                    categories: cats,
-                    category: cats[0] || prev.category,
-                    category_slugs: slugs,
-                    category_slug: slugs[0] || prev.category_slug,
+                    category: name,
+                    category_slug: slug,
+                    categories: name ? [name] : [],
+                    category_slugs: slug ? [slug] : [],
                   }));
                 }}
-                placeholder="Sélectionner une ou plusieurs catégories"
-                max={8}
-              />
+                className="w-full h-10 px-3 rounded-lg text-sm text-white outline-none"
+                style={inputStyle}
+              >
+                <option value="">— Sélectionner une catégorie —</option>
+                {availableCategories.map((c) => (
+                  <option key={c.name} value={c.name}>{c.name}</option>
+                ))}
+              </select>
             </div>
           )}
 
@@ -461,11 +466,11 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
           {adType === "server" && (
             <div>
               <label className={labelClass}>
-                {serverSubType === "nexus" ? "Lien du serveur Nexus *" : "Lien d'invitation Discord *"}
+                {serverSubType === "nexus" ? "Lien du serveur Nexus" : "Lien d'invitation Discord"}
+                <span className="text-white/20 ml-1 normal-case tracking-normal">(optionnel)</span>
               </label>
               <input
                 type="url"
-                required
                 value={form.discord_link}
                 onChange={(e) => handleChange("discord_link", e.target.value)}
                 placeholder={serverSubType === "nexus" ? "https://matrix.app/serveur/..." : "https://discord.gg/..."}
@@ -474,8 +479,8 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
               />
               <p className="text-[9px] text-white/30 mt-1">
                 {serverSubType === "nexus"
-                  ? "⚠️ Seuls les liens de serveurs Nexus sont acceptés."
-                  : "⚠️ Un lien Discord valide est requis."}
+                  ? "Seuls les liens de serveurs Nexus sont acceptés."
+                  : "Le lien doit être un lien Discord valide."}
               </p>
             </div>
           )}
