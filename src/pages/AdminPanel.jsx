@@ -17,6 +17,7 @@ import ContentModerationPanel from "@/components/admin/ContentModerationPanel";
 import StickerManager from "@/components/admin/StickerManager";
 import AffiliationManager from "@/components/admin/AffiliationManager";
 import ServerCategoryManager from "@/components/admin/ServerCategoryManager";
+import NexusServerManager from "@/components/admin/NexusServerManager";
 
 export default function AdminPanel() {
   const nav = useNavigate();
@@ -99,6 +100,7 @@ export default function AdminPanel() {
     { id: "stickers", label: "Stickers", icon: Sticker },
     { id: "affiliates", label: "Affiliés & Partenaires", icon: Star, section: "Créateurs" },
     { id: "categories", label: "Catégories Serveurs", icon: Server, section: "Annuaire" },
+    { id: "nexus-servers", label: "Serveurs Nexus", icon: Server },
     { id: "broadcast", label: "Annonces", icon: Megaphone },
   ];
 
@@ -205,6 +207,7 @@ export default function AdminPanel() {
         {tab === "stickers" && <StickerManager />}
         {tab === "affiliates" && <AffiliationManager />}
         {tab === "categories" && <ServerCategoryManager />}
+        {tab === "nexus-servers" && <NexusServerManager />}
           </div>
         </div>
       </div>
