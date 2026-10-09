@@ -48,18 +48,18 @@ export default function Prospecteurs() {
 
   // Count current user's servers (for "Mes Serveurs" button visibility)
   useEffect(() => {
-    if (!user) { setMyServersCount(0); return; }
+    if (!user) {setMyServersCount(0);return;}
     const loadCount = async () => {
       try {
         const [nexus, discord] = await Promise.all([
-          fetchUniverseServers("nexus"),
-          fetchUniverseServers("discord"),
-        ]);
+        fetchUniverseServers("nexus"),
+        fetchUniverseServers("discord")]
+        );
         const count = [...(nexus || []), ...(discord || [])].filter(
           (s) => s.author_email === user.email
         ).length;
         setMyServersCount(count);
-      } catch { /* silent */ }
+      } catch {/* silent */}
     };
     loadCount();
   }, [user]);
@@ -116,10 +116,10 @@ export default function Prospecteurs() {
     const counts = { all: typedServers.length };
     for (const cat of categories) {
       counts[cat.slug] = typedServers.filter((s) =>
-        s.category_slug === cat.slug ||
-        s.category === cat.name ||
-        (Array.isArray(s.category_slugs) && s.category_slugs.includes(cat.slug)) ||
-        (Array.isArray(s.categories) && s.categories.includes(cat.name))
+      s.category_slug === cat.slug ||
+      s.category === cat.name ||
+      Array.isArray(s.category_slugs) && s.category_slugs.includes(cat.slug) ||
+      Array.isArray(s.categories) && s.categories.includes(cat.name)
       ).length;
     }
     return counts;
@@ -256,17 +256,17 @@ export default function Prospecteurs() {
               <span className="text-xs font-bold">Retour au Hub</span>
             </Link>
             <div className="flex items-center gap-2">
-              {user && myServersCount > 0 && (
-                <button
-                  onClick={() => setShowMyServers(true)}
-                  className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold transition hover:opacity-90 tap-sm"
-                  style={{ background: "rgba(138,79,255,0.12)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.25)" }}>
+              {user && myServersCount > 0 &&
+              <button
+                onClick={() => setShowMyServers(true)}
+                className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold transition hover:opacity-90 tap-sm"
+                style={{ background: "rgba(138,79,255,0.12)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.25)" }}>
                   <ListIcon className="w-4 h-4" />
                   <span className="hidden sm:inline">Mes serveurs</span>
                   <span className="sm:hidden">Mes serveurs</span>
                   <span className="ml-1 px-1.5 py-0.5 rounded text-[9px] font-black" style={{ background: "rgba(138,79,255,0.2)" }}>{myServersCount}</span>
                 </button>
-              )}
+              }
               <button
                 onClick={() => openCreateModal(activeTab)}
                 className="flex items-center gap-1.5 h-9 px-4 rounded-xl text-xs font-bold text-white transition hover:opacity-90 tap-sm"
@@ -313,8 +313,8 @@ export default function Prospecteurs() {
               onClick={() => setShowReminder(true)}
               className="h-10 px-3 rounded-xl text-xs font-black tracking-wider uppercase transition flex items-center justify-center gap-1.5 tap-sm"
               style={{ background: "rgba(138,79,255,0.12)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.25)" }}
-              title="Configurer un rappel sonore"
-            >
+              title="Configurer un rappel sonore">
+              
               <Bell className="w-4 h-4" />
               <span className="hidden sm:inline">Sonnerie</span>
             </button>
@@ -356,7 +356,7 @@ export default function Prospecteurs() {
 
           {/* Server list with search + sort */}
           <div
-            className="rounded-2xl p-4 sm:p-5"
+            className="rounded-2xl p-4 sm:p-5 hidden"
             style={{
               background: "rgba(18,9,28,0.6)",
               border: `1px solid ${activeTabConfig?.color}30`
@@ -440,27 +440,27 @@ export default function Prospecteurs() {
 
       }
 
-      {showMyServers && user && (
-        <MyServersModal
-          user={user}
-          onClose={() => setShowMyServers(false)}
-          onEdit={(ad) => {
-            setShowMyServers(false);
-            setEditingAd(ad);
-            setCreateType(ad.type || "server");
-            setCreateServerType(ad.server_type || "nexus");
-            setShowCreateModal(true);
-          }}
-        />
-      )}
+      {showMyServers && user &&
+      <MyServersModal
+        user={user}
+        onClose={() => setShowMyServers(false)}
+        onEdit={(ad) => {
+          setShowMyServers(false);
+          setEditingAd(ad);
+          setCreateType(ad.type || "server");
+          setCreateServerType(ad.server_type || "nexus");
+          setShowCreateModal(true);
+        }} />
 
-      {showReminder && (
-        <ServerReminderModal user={user} onClose={() => setShowReminder(false)} />
-      )}
+      }
 
-      {showVoteAutoSetup && user && (
-        <VoteAutoSetupModal user={user} onClose={() => setShowVoteAutoSetup(false)} />
-      )}
+      {showReminder &&
+      <ServerReminderModal user={user} onClose={() => setShowReminder(false)} />
+      }
+
+      {showVoteAutoSetup && user &&
+      <VoteAutoSetupModal user={user} onClose={() => setShowVoteAutoSetup(false)} />
+      }
     </div>);
 
 }
