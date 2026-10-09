@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { uploadImageWithToast } from "@/lib/imageModeration";
 import MultiTagSelect from "@/components/prospecteurs/MultiTagSelect";
+import CategorySelect from "@/components/prospecteurs/CategorySelect";
 
 const GAMES = [
   "GTA RP", "GTA V", "Minecraft", "Rust", "ARK: Survival Evolved", "Palworld",
@@ -347,11 +348,11 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
           {adType === "server" && (
             <div>
               <label className={labelClass}>Catégorie du serveur</label>
-              <select
+              <CategorySelect
                 value={form.category || ""}
-                onChange={(e) => {
-                  const name = e.target.value;
-                  const slug = availableCategories.find((c) => c.name === name)?.slug || (name ? name.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") : "");
+                onChange={(c) => {
+                  const name = c.name;
+                  const slug = c.slug || (name ? name.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") : "");
                   setForm((prev) => ({
                     ...prev,
                     category: name,
@@ -360,14 +361,9 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
                     category_slugs: slug ? [slug] : [],
                   }));
                 }}
-                className="w-full h-10 px-3 rounded-lg text-sm text-white outline-none"
-                style={{ ...inputStyle, colorScheme: "dark" }}
-              >
-                <option value="">— Sélectionner une catégorie —</option>
-                {availableCategories.map((c) => (
-                  <option key={c.name} value={c.name}>{c.name}</option>
-                ))}
-              </select>
+                options={availableCategories}
+                placeholder="— Sélectionner une catégorie —"
+              />
             </div>
           )}
 
