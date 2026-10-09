@@ -152,6 +152,48 @@
       "default": [],
       "description": "Boutons interactifs personnalisises affiches sous le message de bienvenue"
     },
+    "automation_configs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "rule_key": {
+            "type": "string",
+            "description": "Cle de la regle d'automatisation (ex: welcome_message, goodbye_message, boost_thanks)"
+          },
+          "channel_id": {
+            "type": "string",
+            "description": "ID du salon cible ou poster le message"
+          },
+          "message": {
+            "type": "string",
+            "description": "Texte personnalise du message. Si vide, un message par defaut s'applique. Supporte {user}."
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      },
+      "default": [],
+      "description": "Configuration par regle d'automatisation (salon cible, message personnalise, activation)"
+    },
+    "enabled_extensions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Cles des extensions globales activees sur ce serveur"
+    },
+    "enabled_automation_rules": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Cles des regles d'automatisation globales activees sur ce serveur"
+    },
     "channels": {
       "type": "array",
       "items": {

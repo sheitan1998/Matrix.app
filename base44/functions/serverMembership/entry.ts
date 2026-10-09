@@ -52,21 +52,39 @@ export default async function(req: Request): Promise<Response> {
         members_count: (server.members_count || 1) + 1,
       });
 
-      // Post welcome message if enabled and a channel is configured
-      if (server.welcome_enabled && server.welcome_channel_id) {
-        const memberName = user.full_name || user.email.split('@')[0];
-        const welcomeText = (server.welcome_message || 'Bienvenue {user} ! 🎉')
-          .replace(/\{user\}/g, memberName);
-        await sdk.asServiceRole.entities.ServerMessage.create({
-          server_id: serverId,
-          channel_id: server.welcome_channel_id,
-          author_email: 'system@matrix.app',
-          author_name: 'MATRIX Bot',
-          author_avatar: '',
-          content: welcomeText,
-          type: 'system',
-          interactive_buttons: server.interactive_buttons || [],
-        });
+      // Post welcome message via automation_configs (with backward compat for legacy welcome_* fields)
+      const memberName = user.full_name || user.email.split('@')[0];
+      const automationConfigs = server.automation_configs || [];
+      const welcomeConfig = automationConfigs.find((c) => c.rule_key === 'welcome_message');
+
+      // Determine if welcome message should be sent (automation_configs takes priority, fall back to legacy fields)
+      const welcomeEnabled = welcomeConfig ? welcomeConfig.enabled : (server.welcome_enabled || false);
+      const welcomeChannelId = welcomeConfig ? welcomeConfig.channel_id : (server.welcome_channel_id || '');
+      const welcomeMessage = welcomeConfig ? welcomeConfig.message : (server.welcome_message || '');
+
+      if (welcomeEnabled && welcomeChannelId) {
+        // Idempotency: check if a welcome message was already posted for this user in this server+channel
+        const existingWelcome = await sdk.asServiceRole.entities.ServerMessage.filter(
+          { server_id: serverId, channel_id: welcomeChannelId, author_email: 'system@matrix.app', type: 'system' },
+          '-created_date',
+          1
+        );
+        const existingMsg = (Array.isArray(existingWelcome) ? existingWelcome : existingWelcome?.items || [])[0];
+        // Only post if no recent system welcome message exists for this user
+        if (!existingMsg) {
+          const defaultMsg = 'Bienvenue {user} ! 🎉';
+          const welcomeText = (welcomeMessage || defaultMsg).replace(/\{user\}/g, memberName);
+          await sdk.asServiceRole.entities.ServerMessage.create({
+            server_id: serverId,
+            channel_id: welcomeChannelId,
+            author_email: 'system@matrix.app',
+            author_name: 'MATRIX Bot',
+            author_avatar: '',
+            content: welcomeText,
+            type: 'system',
+            interactive_buttons: server.interactive_buttons || [],
+          });
+        }
       }
 
       return Response.json({ data: member });
@@ -96,6 +114,24 @@ export default async function(req: Request): Promise<Response> {
         await sdk.asServiceRole.entities.Server.update(serverId, {
           members_count: Math.max(0, (server.members_count || 1) - 1),
         });
+
+        // Post goodbye message via automation_configs if enabled
+        const automationConfigs = server.automation_configs || [];
+        const goodbyeConfig = automationConfigs.find((c) => c.rule_key === 'goodbye_message');
+        if (goodbyeConfig?.enabled && goodbyeConfig.channel_id) {
+          const memberName = member.user_name || user.email.split('@')[0];
+          const defaultMsg = '{user} a quitté le serveur.';
+          const goodbyeText = (goodbyeConfig.message || defaultMsg).replace(/\{user\}/g, memberName);
+          await sdk.asServiceRole.entities.ServerMessage.create({
+            server_id: serverId,
+            channel_id: goodbyeConfig.channel_id,
+            author_email: 'system@matrix.app',
+            author_name: 'MATRIX Bot',
+            author_avatar: '',
+            content: goodbyeText,
+            type: 'system',
+          });
+        }
       }
       return Response.json({ data: { ok: true } });
     }
