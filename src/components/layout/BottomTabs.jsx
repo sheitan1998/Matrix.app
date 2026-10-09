@@ -4,12 +4,12 @@ import { Home, MessageCircle, Dices, Clapperboard, LayoutGrid } from "lucide-rea
 import { cn } from "@/lib/utils";
 
 const TABS = [
-  { to: "/stream", icon: Home, label: "Accueil" },
-  { to: "/community", icon: MessageCircle, label: "Nexus" },
-  { to: "/casino", icon: Dices, label: "Game" },
-  { to: "/shorts", icon: Clapperboard, label: "Shorts" },
-  { to: "/", icon: LayoutGrid, label: "Univers" },
-];
+{ to: "/stream", icon: Home, label: "Accueil" },
+{ to: "/community", icon: MessageCircle, label: "Nexus" },
+{ to: "/casino", icon: Dices, label: "Game" },
+{ to: "/shorts", icon: Clapperboard, label: "Shorts" },
+{ to: "/", icon: LayoutGrid, label: "Univers" }];
+
 
 // Per-tab last visited path memory (persists across tab switches in memory)
 const tabMemory = {
@@ -17,7 +17,7 @@ const tabMemory = {
   "/community": "/community",
   "/casino": "/casino",
   "/shorts": "/shorts",
-  "/": "/",
+  "/": "/"
 };
 
 export function updateTabMemory(pathname) {
@@ -41,8 +41,8 @@ export default function BottomTabs() {
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t border-border bg-background/95 backdrop-blur-xl"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-    >
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+      
       <div className="flex">
         {TABS.map(({ to, icon: Icon, label }) => {
           const active = activeTab?.to === to;
@@ -61,16 +61,16 @@ export default function BottomTabs() {
                 }
               }}
               className={cn(
-                "flex-1 flex flex-col items-center justify-center gap-1 min-h-[56px] transition-colors select-none",
+                "flex-1 flex flex-col items-center justify-center gap-1 min-h-[56px] transition-colors select-none hidden",
                 active ? "text-primary" : "text-muted-foreground"
-              )}
-            >
+              )}>
+              
               <Icon className="w-5 h-5" strokeWidth={active ? 2.5 : 1.8} />
               <span className="text-[10px] font-semibold">{label}</span>
-            </button>
-          );
+            </button>);
+
         })}
       </div>
-    </nav>
-  );
+    </nav>);
+
 }
