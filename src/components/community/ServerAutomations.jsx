@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Plus, Trash2, MessageSquare, Zap, Eye } from "lucide-react";
+import { Plus, Trash2, MessageSquare, Zap, Eye, ToggleLeft, ToggleRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useNexusAutomationRules } from "@/hooks/useNexusAutomationRules";
 
 function makeId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -12,11 +13,13 @@ const EMOJI_CHOICES = ["👋", "🎉", "🔥", "❤️", "😄", "✨", "🚀", 
 export default function ServerAutomations({ server, theme, channels = [], onUpdate, accent }) {
   const [newBtnLabel, setNewBtnLabel] = useState("");
   const [newBtnEmoji, setNewBtnEmoji] = useState("👋");
+  const { rules: globalRules = [] } = useNexusAutomationRules();
 
   const welcomeEnabled = server.welcome_enabled || false;
   const welcomeMessage = server.welcome_message || "";
   const welcomeChannelId = server.welcome_channel_id || "";
   const interactiveButtons = server.interactive_buttons || [];
+  const enabledRules = server.enabled_automation_rules || [];
 
   const textChannels = (channels || []).filter((c) => c.type === "text" || c.type === "announce");
 
@@ -56,6 +59,13 @@ export default function ServerAutomations({ server, theme, channels = [], onUpda
     });
   };
 
+  const toggleRule = (ruleKey) => {
+    const newRules = enabledRules.includes(ruleKey)
+      ? enabledRules.filter((k) => k !== ruleKey)
+      : [...enabledRules, ruleKey];
+    onUpdate({ enabled_automation_rules: newRules });
+  };
+
   const previewMessage = welcomeMessage.replace(/\{user\}/g, "NouveauMembre") || "Bienvenue {user} ! 🎉";
 
   return (
@@ -64,6 +74,37 @@ export default function ServerAutomations({ server, theme, channels = [], onUpda
         <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Automatisations</p>
         <p className="text-xs text-muted-foreground">Configurez le message de bienvenue automatique et les boutons d'interaction personnalisés.</p>
       </div>
+
+      {/* Global automation rules from admin panel */}
+      {globalRules.length > 0 && (
+        <div className="rounded-2xl border overflow-hidden" style={{ borderColor: theme?.border, background: "rgba(255,255,255,0.03)" }}>
+          <div className="flex items-center gap-2 px-3 py-2.5" style={{ background: "rgba(255,255,255,0.02)" }}>
+            <Zap className="w-4 h-4" style={{ color: accent }} />
+            <span className="text-sm font-bold text-white">Règles d'automatisation globales</span>
+            <span className="text-[9px] text-muted-foreground ml-auto">{enabledRules.length}/{globalRules.length} actives</span>
+          </div>
+          <div className="p-3 space-y-1.5">
+            <p className="text-[11px] text-muted-foreground mb-1">Règles définies par l'administration. Activez celles que vous souhaitez appliquer sur ce serveur.</p>
+            {globalRules.map((rule) => {
+              const isEnabled = enabledRules.includes(rule.key);
+              return (
+                <div key={rule.id} className="flex items-center gap-2 p-2 rounded-lg" style={{ background: isEnabled ? accent + "08" : "transparent" }}>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-white truncate">{rule.name}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{rule.description}</p>
+                  </div>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded-full shrink-0" style={{ background: accent + "15", color: accent }}>
+                    {rule.trigger_type}
+                  </span>
+                  <button onClick={() => toggleRule(rule.key)} className={cn("shrink-0 tap-sm", !rule.is_active && "opacity-40 cursor-not-allowed")} disabled={!rule.is_active} title={rule.is_active ? (isEnabled ? "Désactiver" : "Activer") : "Règle désactivée par l'admin"}>
+                    {isEnabled ? <ToggleRight className="w-5 h-5 text-green-400" /> : <ToggleLeft className="w-5 h-4 text-white/20" />}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Welcome Message */}
       <div className="rounded-2xl border overflow-hidden" style={{ borderColor: theme?.border, background: "rgba(255,255,255,0.03)" }}>

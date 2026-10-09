@@ -8,6 +8,7 @@ import ProfileAnimationLayer from "@/components/profile/ProfileAnimationLayer";
 import { getCosmeticIconImageUrl } from "@/lib/cosmeticAssetUrl";
 import { isUserOnline, getActivityIcon } from "@/hooks/usePresence";
 import ReportContentModal from "@/components/admin/ReportContentModal";
+import { useNexusProfileBlocks } from "@/hooks/useNexusProfileBlocks";
 
 const PANEL_ID = "user-profile-side-panel";
 
@@ -25,6 +26,13 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
   const [dmInput, setDmInput] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
   const [showReportModal, setShowReportModal] = useState(false);
+  const { blocks: profileBlocks = [] } = useNexusProfileBlocks();
+
+  const isBlockVisible = (key) => {
+    if (!profileBlocks || profileBlocks.length === 0) return true;
+    const block = profileBlocks.find((b) => b.key === key);
+    return block ? block.is_visible : true;
+  };
 
   useEffect(() => {
     if (!open || (!userId && !userEmail)) return;
@@ -341,6 +349,7 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
           )}
 
           {/* Actions */}
+          {isBlockVisible("friend_status") && (
           <div className="flex gap-2 mt-3">
             {friendStatus !== "blocked" && (
               <button
@@ -385,11 +394,12 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
               </button>
             )}
           </div>
+          )}
 
           {friendStatus === "blocked" && (
             <p className="text-center text-[10px] text-white/30 mt-2">Cet utilisateur est bloqué.</p>
           )}
-          {friendStatus !== "blocked" && (
+          {friendStatus !== "blocked" && isBlockVisible("report_button") && (
             <button onClick={() => setShowReportModal(true)} className="text-[10px] text-white/30 hover:text-red-400 transition mx-auto block mt-1">
               Signaler cet utilisateur
             </button>
@@ -397,7 +407,7 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
         </div>
 
         {/* Footer — DM input */}
-        {friendStatus !== "blocked" && friendStatus === "accepted" && (
+        {isBlockVisible("dm_input") && friendStatus !== "blocked" && friendStatus === "accepted" && (
           <div className="px-5 py-3" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
             <div className="flex items-center gap-2">
               <input

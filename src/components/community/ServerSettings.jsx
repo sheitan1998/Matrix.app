@@ -13,6 +13,7 @@ import ServerCustomEmojis from "@/components/community/ServerCustomEmojis";
 import AnimatedMedia from "@/components/community/AnimatedMedia";
 import ServerCustomThemes from "@/components/community/ServerCustomThemes";
 import RoleManager from "@/components/community/RoleManager";
+import { useNexusGlobalExtensions } from "@/hooks/useNexusGlobalExtensions";
 import { isAnimatedFile } from "@/lib/serverMedia";
 import { useServerBoosts } from "@/hooks/useServerBoosts";
 import { getBoostLevel } from "@/lib/boostPerks";
@@ -61,6 +62,7 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
   const { trackActivity } = useProgression();
   const { activeCount: boostCount } = useServerBoosts(server.id, server.boosts);
   const currentBoostLevel = getBoostLevel(boostCount);
+  const { extensions: globalExtensions = [] } = useNexusGlobalExtensions();
 
   const { data: members = [], refetch: refetchMembers } = useQuery({
     queryKey: ["server-members", server.id],
@@ -224,6 +226,7 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
           { key: "automations", label: "Automatisations" },
           { key: "members", label: "Membres" },
           { key: "boosts", label: "Boosts" },
+          { key: "extensions", label: "Extensions" },
         ].map((t) => (
           <button key={t.key} onClick={() => setTab(t.key)}
             className={cn("shrink-0 px-4 py-1.5 rounded-xl text-xs font-bold transition",
@@ -737,6 +740,49 @@ export default function ServerSettings({ server, theme, onClose, onUpdate, onDel
             <BoostLevelBadge boosts={boostCount} accent={accent} />
             <ServerBoostsPanel server={server} theme={theme} />
             <ServerBoostLevels currentBoosts={boostCount} />
+          </>
+        )}
+
+        {/* EXTENSIONS */}
+        {tab === "extensions" && (
+          <>
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Extensions globales</p>
+            <p className="text-xs text-muted-foreground">Extensions définies par l'administration globale. Activez celles que vous souhaitez utiliser sur ce serveur.</p>
+            {globalExtensions.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">Aucune extension disponible</p>
+            ) : (
+              <div className="space-y-2">
+                {globalExtensions.map((ext) => {
+                  const enabledExtensions = server.enabled_extensions || [];
+                  const isEnabled = enabledExtensions.includes(ext.key);
+                  return (
+                    <div key={ext.id} className="p-3 rounded-2xl border flex items-center gap-3" style={{ borderColor: theme?.border, background: isEnabled ? accent + "08" : "rgba(255,255,255,0.03)" }}>
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: accent + "15" }}>
+                        <Zap className="w-4 h-4" style={{ color: accent }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-white">{ext.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{ext.description}</p>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full inline-block mt-1" style={{ background: accent + "15", color: accent }}>{ext.category}</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const newExts = isEnabled
+                            ? enabledExtensions.filter((k) => k !== ext.key)
+                            : [...enabledExtensions, ext.key];
+                          onUpdate({ enabled_extensions: newExts });
+                        }}
+                        disabled={!ext.is_active}
+                        className={cn("w-10 h-5 rounded-full transition shrink-0", !ext.is_active ? "opacity-30 cursor-not-allowed" : "", isEnabled ? "bg-green-500" : "bg-white/20")}
+                        title={!ext.is_active ? "Désactivée par l'admin" : isEnabled ? "Désactiver" : "Activer"}
+                      >
+                        <div className={cn("w-4 h-4 rounded-full bg-white transition-transform", isEnabled ? "translate-x-5" : "translate-x-0.5")} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </>
         )}
       </div>
