@@ -230,8 +230,6 @@ export default function UserProfilePopup({ userId, userEmail, open, onClose, onO
               {isAdmin && <Shield className="w-3.5 h-3.5" style={{ color: "#fbbf24" }} />}
             </div>
             <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="text-[11px] text-white/40 font-mono">{displayName}</span>
-              {pseudoTag && <span className="text-[11px] text-white/30 font-mono">#{pseudoTag}</span>}
               {/* Achievement icons */}
               {trophies > 0 && (
                 <span className="flex items-center gap-0.5 ml-1">

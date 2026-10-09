@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { SEED_PERMISSIONS } from "@/lib/nexusSeeds";
 
@@ -8,10 +9,19 @@ export { SEED_PERMISSIONS };
 /**
  * Fetches all NexusPermission records dynamically from the database.
  * Seeds defaults on first load if empty.
+ * Subscribes to real-time changes so admin panel edits are reflected instantly in server settings.
  * Returns permissions grouped by category — same shape as the old hardcoded PERMISSION_CATEGORIES.
  */
 export function useNexusPermissions() {
   const qc = useQueryClient();
+
+  // Real-time subscription: invalidate the cache immediately when any permission changes
+  useEffect(() => {
+    const unsubscribe = base44.entities.NexusPermission.subscribe(() => {
+      qc.invalidateQueries({ queryKey: ["nexus-permissions"] });
+    });
+    return unsubscribe;
+  }, [qc]);
 
   const { data: permissions = [], isLoading } = useQuery({
     queryKey: ["nexus-permissions"],
@@ -27,7 +37,7 @@ export function useNexusPermissions() {
 
       return list;
     },
-    staleTime: 30000,
+    staleTime: 0,
   });
 
   // Group by category, same shape as PERMISSION_CATEGORIES
