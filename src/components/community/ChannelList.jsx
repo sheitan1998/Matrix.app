@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useImperativeHandle, forwardRef } from "react";
 import { useServerVoice } from "@/hooks/useServerVoice";
 import SpeakingRing from "@/components/community/SpeakingRing";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
@@ -13,8 +13,33 @@ const CHANNEL_TYPES = [
   { key: "category", icon: Folder },
 ];
 
-export default function ChannelList({ channels, activeChannel, setActiveChannel, canManage, theme, onReorder, onRemove, onContextMenu, serverId }) {
+const ChannelList = forwardRef(({ channels, activeChannel, setActiveChannel, canManage, theme, onReorder, onRemove, onContextMenu, serverId }, ref) => {
   const [collapsed, setCollapsed] = useState({});
+
+  // Collapse all categories by default when channels load
+  useEffect(() => {
+    const catIds = (channels || []).filter(c => c.type === "category").map(c => c.id);
+    if (catIds.length > 0) {
+      setCollapsed(prev => {
+        const next = { ...prev };
+        for (const id of catIds) {
+          if (next[id] === undefined) next[id] = true;
+        }
+        return next;
+      });
+    }
+  }, [channels]);
+
+  // Expose expand-all to parent (dropdown menu)
+  useImperativeHandle(ref, () => ({
+    expandAll: () => setCollapsed({}),
+    collapseAll: () => {
+      const catIds = (channels || []).filter(c => c.type === "category").map(c => c.id);
+      const next = {};
+      for (const id of catIds) next[id] = true;
+      setCollapsed(next);
+    },
+  }));
 
   // Live voice rooms for this server (realtime) + who is speaking
   const { rooms: voiceRooms, speakingEmails } = useServerVoice(serverId);
@@ -207,4 +232,7 @@ export default function ChannelList({ channels, activeChannel, setActiveChannel,
       </div>
     </DragDropContext>
   );
-}
+});
+
+ChannelList.displayName = "ChannelList";
+export default ChannelList;

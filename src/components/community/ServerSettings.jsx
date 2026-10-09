@@ -42,9 +42,9 @@ function durationToDate(key) {
   return new Date(Date.now() + ms).toISOString();
 }
 
-export default function ServerSettings({ server, theme, onClose, onUpdate, onDelete, uploadIcon, uploadBanner, uploadingIcon, uploadingBanner, copyInvite, channels = [] }) {
+export default function ServerSettings({ server, theme, onClose, onUpdate, onDelete, uploadIcon, uploadBanner, uploadingIcon, uploadingBanner, copyInvite, channels = [], initialTab }) {
   const qc = useQueryClient();
-  const [tab, setTab] = useState("general");
+  const [tab, setTab] = useState(initialTab || "general");
   const [memberAction, setMemberAction] = useState(null);
   const [banDuration, setBanDuration] = useState("24h");
   const [newRoleName, setNewRoleName] = useState("");

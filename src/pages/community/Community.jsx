@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Sparkles, Plus, Hash, Volume2, Megaphone, Settings, Trash2, Search, UserPlus, Link2, MessageCircle, X, Zap, ArrowRight, Folder, MessageSquare, SlidersHorizontal } from "lucide-react";
+import ServerDropdownHeader from "@/components/community/ServerDropdownHeader";
 import ChannelCreateModal from "@/components/community/ChannelCreateModal";
 import ChannelList from "@/components/community/ChannelList";
 import ForumChannel from "@/components/community/ForumChannel";
@@ -74,6 +75,8 @@ export default function Community() {
   const [userMemberships, setUserMemberships] = useState([]);
   const [joinedServerIds, setJoinedServerIds] = useState(new Set());
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [settingsTab, setSettingsTab] = useState("general");
+  const channelListRef = useRef(null);
   const [searchParams] = useSearchParams();
   const qc = useQueryClient();
   const { progress } = useProgression();
@@ -233,6 +236,25 @@ export default function Community() {
     setSelectedServer(s);
     setActiveChannel(null);
     setShowSettings(false);
+  };
+
+  const leaveServer = async () => {
+    if (!selectedServer?.id) return;
+    try {
+      await base44.functions.invoke("serverMembership", { action: "leave", serverId: selectedServer.id });
+      setJoinedServerIds((prev) => { const next = new Set(prev); next.delete(selectedServer.id); return next; });
+      qc.invalidateQueries({ queryKey: ["servers"] });
+      setSelectedServer(null);
+      setActiveChannel(null);
+      toast.success(`Tu as quitté "${selectedServer.name}"`);
+    } catch (e) {
+      toast.error("Erreur lors du départ du serveur");
+    }
+  };
+
+  const openSettingsTab = (tab) => {
+    setSettingsTab(tab);
+    setShowSettings(true);
   };
 
   const confirmJoinServer = async () => {
@@ -420,30 +442,19 @@ export default function Community() {
                 <AnimatedMedia src={selectedServer.banner_url} className="w-full h-full object-cover" />
               </div>
           }
-            <div className="p-3 border-b shrink-0 flex items-center justify-between" style={{ borderColor: theme.border }}>
-              <p className="text-xs font-black text-muted-foreground uppercase tracking-widest">Salons</p>
-              <div className="flex items-center gap-1">
-                {(canManageChannels || selectedServer.allow_member_invites) && selectedServer.invite_code &&
-                  <button
-                    onClick={() => inviteToServer(selectedServer)}
-                    className="w-5 h-5 rounded-md flex items-center justify-center transition hover:opacity-80 text-muted-foreground hover:text-white"
-                    title="Inviter des membres">
-                    <UserPlus className="w-3 h-3" />
-                  </button>
-                }
-                {canManageChannels &&
-              <button
-                onClick={() => openChannelModal("text")}
-                className="w-5 h-5 rounded-md flex items-center justify-center transition hover:opacity-80"
-                style={{ background: theme.accent, color: "#000" }}
-                title="Créer un salon">
-                    <Plus className="w-3 h-3" />
-                  </button>
-                }
-              </div>
-            </div>
+            <ServerDropdownHeader
+              server={selectedServer}
+              theme={theme}
+              isOwner={isOwner}
+              channels={channels}
+              onInvite={() => inviteToServer(selectedServer)}
+              onOpenSettings={openSettingsTab}
+              onLeaveServer={leaveServer}
+              onExpandAll={() => channelListRef.current?.expandAll()}
+            />
 
             <ChannelList
+              ref={channelListRef}
               channels={channels}
               activeChannel={activeChannel}
               setActiveChannel={setActiveChannel}
@@ -470,6 +481,7 @@ export default function Community() {
           <ServerSettings
             server={selectedServer}
             theme={theme}
+            initialTab={settingsTab}
             onClose={() => setShowSettings(false)}
             onUpdate={updateServer}
             onDelete={deleteServer}

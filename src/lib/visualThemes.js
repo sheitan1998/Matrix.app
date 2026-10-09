@@ -81,15 +81,19 @@ function hexToRgba(hex, alpha) {
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
 }
 
-// Converts a stored custom theme { id, name, emoji, accent, bg_from, bg_to } into a full theme object
+// Converts a stored custom theme { id, name, emoji, accent, bg_from, bg_to, image_url } into a full theme object
 export function buildCustomTheme(t) {
   return {
     key: `custom_${t.id}`,
     label: t.name,
     emoji: t.emoji || "🎨",
-    bg: `linear-gradient(135deg, ${t.bg_from} 0%, ${t.bg_to} 100%)`,
+    bg: t.image_url
+      ? `linear-gradient(135deg, ${hexToRgba(t.bg_from || "#0b0420", 0.75)} 0%, ${hexToRgba(t.bg_to || "#1e0638", 0.75)} 100%), url(${t.image_url}) center / cover`
+      : `linear-gradient(135deg, ${t.bg_from} 0%, ${t.bg_to} 100%)`,
     accent: t.accent,
-    card: hexToRgba(t.bg_from, 0.95),
+    card: t.image_url
+      ? `linear-gradient(135deg, ${hexToRgba(t.bg_from || "#0b0420", 0.92)} 0%, ${hexToRgba(t.bg_to || "#1e0638", 0.92)} 100%), url(${t.image_url}) center / cover`
+      : hexToRgba(t.bg_from, 0.95),
     border: hexToRgba(t.accent, 0.2),
   };
 }

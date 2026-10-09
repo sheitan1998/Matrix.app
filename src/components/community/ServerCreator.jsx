@@ -140,12 +140,9 @@ export default function ServerCreator({ onClose, onCreated }) {
                 {uploadingIcon ? "Upload..." : "Importer une image"}
               </button>
             </div>
-            <Input
-              placeholder="Ou colle une URL d'image/vidéo..."
-              value={iconUrl}
-              onChange={(e) => setIconUrl(e.target.value)}
-              className="bg-secondary/60 mt-2 h-9 text-xs"
-            />
+            {!iconUrl && (
+              <p className="text-[10px] text-muted-foreground mt-1.5">Importe une image depuis ton appareil pour définir l'avatar.</p>
+            )}
           </div>
 
           {/* Theme */}
