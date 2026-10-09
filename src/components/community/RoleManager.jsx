@@ -5,53 +5,14 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useNexusPermissions } from "@/hooks/useNexusPermissions";
 
-const PERMISSION_CATEGORIES = [
-  {
-    title: "Général",
-    icon: Settings,
-    permissions: [
-      { key: "view_channels", label: "Voir les salons", default: true },
-      { key: "manage_channels", label: "Gérer les salons", default: false },
-      { key: "manage_roles", label: "Gérer les rôles", default: false },
-      { key: "manage_emojis", label: "Créer et gérer les expressions (émojis/stickers)", default: false },
-      { key: "view_logs", label: "Voir les logs", default: false },
-      { key: "create_invite", label: "Créer une invitation", default: true },
-      { key: "change_nicknames", label: "Changer le pseudo des membres", default: false },
-      { key: "administrator", label: "Administrateur global du serveur", default: false, highlight: true },
-    ],
-  },
-  {
-    title: "Membres",
-    icon: Users,
-    permissions: [
-      { key: "kick_members", label: "Expulser des membres", default: false },
-      { key: "accept_members", label: "Accepter ou refuser des membres", default: false },
-      { key: "ban_members", label: "Bannir des membres", default: false },
-      { key: "timeout_members", label: "Exclure temporairement (timeout)", default: false },
-    ],
-  },
-  {
-    title: "Messages",
-    icon: MessageSquare,
-    permissions: [
-      { key: "send_messages", label: "Envoyer des messages", default: true },
-      { key: "attach_files", label: "Joindre des fichiers", default: true },
-      { key: "embed_links", label: "Intégrer des liens", default: true },
-      { key: "use_emojis", label: "Utiliser des émojis", default: true },
-      { key: "use_stickers", label: "Utiliser des stickers", default: true },
-      { key: "use_gifs", label: "Utiliser des GIFs", default: true },
-    ],
-  },
-  {
-    title: "Vocal",
-    icon: Mic,
-    permissions: [
-      { key: "voice_connect", label: "Se connecter aux salons vocaux", default: true },
-      { key: "voice_move_members", label: "Déplacer des membres", default: false },
-    ],
-  },
-];
+const CATEGORY_ICONS = {
+  "Général": Settings,
+  "Membres": Users,
+  "Messages": MessageSquare,
+  "Vocal": Mic,
+};
 
 const SYSTEM_ROLES = [
   { key: "owner", label: "Fondateur", color: "#f59e0b", isSystem: true },
@@ -59,16 +20,6 @@ const SYSTEM_ROLES = [
   { key: "moderator", label: "Modérateur", color: "#3b82f6", isSystem: true },
   { key: "member", label: "Membre", color: "#888888", isSystem: true },
 ];
-
-function getPermDefaults() {
-  const defaults = {};
-  for (const cat of PERMISSION_CATEGORIES) {
-    for (const p of cat.permissions) {
-      defaults[p.key] = p.default;
-    }
-  }
-  return defaults;
-}
 
 export default function RoleManager({ server, theme, onUpdate, members, onUpdateMember, accent: propAccent, currentBoostLevel }) {
   const accent = propAccent || theme?.accent || "#a855f7";
@@ -78,6 +29,10 @@ export default function RoleManager({ server, theme, onUpdate, members, onUpdate
   const [newRoleColor, setNewRoleColor] = useState("#a855f7");
   const [showAssign, setShowAssign] = useState(null);
   const [collapsedCats, setCollapsedCats] = useState({});
+
+  // Dynamic permissions loaded from the database (NexusPermission entity)
+  // Admin creates/modifies permissions in the panel — they appear here automatically
+  const { permissionCategories, permDefaults } = useNexusPermissions();
 
   const allRoles = [
     ...SYSTEM_ROLES.map(r => ({ ...r, id: r.key, permissions: {} })),
@@ -94,7 +49,7 @@ export default function RoleManager({ server, theme, onUpdate, members, onUpdate
       name: newRoleName.trim(),
       color: newRoleColor,
       icon: "",
-      permissions: getPermDefaults(),
+      permissions: { ...permDefaults },
     };
     onUpdate({ custom_roles: [...customRoles, role] });
     setNewRoleName("");
@@ -119,7 +74,7 @@ export default function RoleManager({ server, theme, onUpdate, members, onUpdate
     if (!role) return;
     const updatedPerms = { ...(role.permissions || {}), [permKey]: value };
     if (permKey === "administrator" && value) {
-      for (const cat of PERMISSION_CATEGORIES) {
+      for (const cat of permissionCategories) {
         for (const p of cat.permissions) {
           if (p.key !== "administrator") updatedPerms[p.key] = true;
         }
@@ -233,9 +188,9 @@ export default function RoleManager({ server, theme, onUpdate, members, onUpdate
           {/* Permissions */}
           <div className="space-y-2">
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Permissions</p>
-            {PERMISSION_CATEGORIES.map((cat) => {
+            {permissionCategories.map((cat) => {
               const isCollapsed = collapsedCats[cat.title];
-              const CatIcon = cat.icon;
+              const CatIcon = CATEGORY_ICONS[cat.title] || Settings;
               return (
                 <div key={cat.title} className="rounded-xl overflow-hidden" style={{ background: "rgba(255,255,255,0.02)" }}>
                   <button onClick={() => toggleCat(cat.title)}

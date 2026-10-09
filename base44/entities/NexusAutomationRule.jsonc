@@ -1,0 +1,81 @@
+{
+  "name": "NexusAutomationRule",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string",
+      "description": "Cl\u00e9 technique unique"
+    },
+    "name": {
+      "type": "string",
+      "description": "Nom affich\u00e9"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
+    },
+    "trigger_type": {
+      "type": "string",
+      "enum": [
+        "member_join",
+        "member_leave",
+        "message_sent",
+        "role_assigned",
+        "boost_received",
+        "channel_created",
+        "custom"
+      ],
+      "default": "member_join",
+      "description": "\u00c9v\u00e9nement qui d\u00e9clenche l'automatisation"
+    },
+    "action_type": {
+      "type": "string",
+      "enum": [
+        "send_message",
+        "assign_role",
+        "toggle_permission",
+        "create_channel",
+        "custom"
+      ],
+      "default": "send_message",
+      "description": "Action ex\u00e9cut\u00e9e lorsque le d\u00e9clencheur se produit"
+    },
+    "config": {
+      "type": "object",
+      "additionalProperties": true,
+      "default": {},
+      "description": "Configuration de l'action (message, r\u00f4le cible, etc.)"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "sort_order": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "key",
+    "name",
+    "trigger_type"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {},
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
