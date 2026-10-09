@@ -111,15 +111,21 @@ export default function ProfileContent({ onClose }) {
   };
 
   const saveProfile = async () => {
+    const cleanPseudo = editPseudo.trim();
+    if (!cleanPseudo) { toast.error("Le pseudo ne peut pas être vide."); return; }
+    if (cleanPseudo.includes("#")) { toast.error("Le pseudo ne doit pas contenir #."); return; }
     setSaving(true);
     try {
-      const updates = { bio: editBio.trim(), pseudo: editPseudo.trim() };
-      if (!user.pseudo_tag) updates.pseudo_tag = String(Math.floor(1000 + Math.random() * 9000));
-      await base44.auth.updateMe(updates);
-      setUser((u) => ({ ...u, ...updates }));
+      const res = await base44.functions.invoke("updateProfile", {
+        pseudo: cleanPseudo,
+        bio: editBio.trim(),
+      });
+      const data = res?.data || res;
+      if (data?.error) { toast.error(data.error); return; }
+      setUser((u) => ({ ...u, pseudo: data?.user?.pseudo ?? cleanPseudo, bio: data?.user?.bio ?? editBio.trim(), pseudo_tag: data?.user?.pseudo_tag ?? u?.pseudo_tag }));
       setEditing(false);
       toast.success("Profil mis à jour");
-    } catch {toast.error("Erreur");}
+    } catch (err) { toast.error(err?.message || "Erreur lors de la mise à jour du profil"); }
     setSaving(false);
   };
 
