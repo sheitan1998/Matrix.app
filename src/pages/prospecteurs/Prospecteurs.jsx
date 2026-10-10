@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { fetchUniverseServers, detectServerType, slugify } from "@/lib/serverDirectory";
+import { fetchAllServers, fetchUniverseServers, detectServerType, slugify } from "@/lib/serverDirectory";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Plus, Server as ServerIcon, MessageCircle, Trophy, Bell } from "lucide-react";
+import { ArrowLeft, Plus, Server as ServerIcon, Trophy, Bell } from "lucide-react";
 import { toast } from "sonner";
 import ProspecteursHeader from "@/components/prospecteurs/ProspecteursHeader";
 import ProspecteursSidebar from "@/components/prospecteurs/ProspecteursSidebar";
@@ -16,10 +16,6 @@ import ServerReminderModal from "@/components/prospecteurs/ServerReminderModal";
 import VoteAutoSetupModal from "@/components/prospecteurs/VoteAutoSetupModal";
 import { List as ListIcon } from "lucide-react";
 
-const TABS = [
-{ id: "nexus", label: "Serveurs Nexus", icon: ServerIcon, color: "#22c55e" },
-{ id: "discord", label: "Serveurs Discord", icon: MessageCircle, color: "#5865F2" }];
-
 
 export default function Prospecteurs() {
   const navigate = useNavigate();
@@ -27,7 +23,6 @@ export default function Prospecteurs() {
   const [ads, setAds] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("nexus");
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("votes_month");
@@ -51,11 +46,8 @@ export default function Prospecteurs() {
     if (!user) {setMyServersCount(0);return;}
     const loadCount = async () => {
       try {
-        const [nexus, discord] = await Promise.all([
-        fetchUniverseServers("nexus"),
-        fetchUniverseServers("discord")]
-        );
-        const count = [...(nexus || []), ...(discord || [])].filter(
+        const all = await fetchAllServers();
+        const count = (all || []).filter(
           (s) => s.author_email === user.email
         ).length;
         setMyServersCount(count);
@@ -64,15 +56,15 @@ export default function Prospecteurs() {
     loadCount();
   }, [user]);
 
-  // Strict isolation: only the active universe's servers are fetched from the database
+  // Unified fetch: all server ads (Nexus + Discord) in one list
   useEffect(() => {
     let active = true;
     setLoading(true);
-    fetchUniverseServers(activeTab).
+    fetchAllServers().
     then((list) => {if (active) setAds(list || []);}).
     finally(() => {if (active) setLoading(false);});
     return () => {active = false;};
-  }, [activeTab]);
+  }, []);
 
   const typedServers = ads;
 
@@ -125,10 +117,8 @@ export default function Prospecteurs() {
     return counts;
   }, [typedServers, categories]);
 
-  // Filtered categories for current tab
-  const tabCategories = useMemo(() => {
-    return categories.filter((c) => c.type === activeTab || c.type === "both");
-  }, [categories, activeTab]);
+  // All categories shown in unified view
+  const tabCategories = useMemo(() => categories, [categories]);
 
   const handleVote = (adId, data) => {
     setAds((prev) => prev.map((a) => a.id === adId ? {
@@ -154,7 +144,7 @@ export default function Prospecteurs() {
   // Server universe is always derived from the invite link (Discord invite = Discord, else Nexus)
   const withUniverse = (data) =>
   data.type === "server" ? { ...data, server_type: detectServerType(data.discord_link) } : data;
-  const belongsToTab = (ad) => ad.type === "server" && ad.server_type === activeTab;
+  const belongsToTab = (ad) => ad.type === "server";
 
   const handleUpdateAd = async (data) => {
     if (!editingAd) return;
@@ -190,25 +180,17 @@ export default function Prospecteurs() {
     }
   };
 
-  const openCreateModal = (serverType = "nexus") => {
+  const openCreateModal = () => {
     if (!user) {
       toast.info("Connecte-toi pour publier un serveur");
       navigate("/login?returnTo=" + encodeURIComponent(window.location.pathname));
       return;
     }
     setCreateType("server");
-    setCreateServerType(serverType);
+    setCreateServerType("nexus");
     setEditingAd(null);
     setShowCreateModal(true);
   };
-
-  const handleTabChange = (tabId) => {
-    setActiveTab(tabId);
-    setSelectedCategory(null);
-    setSearch("");
-  };
-
-  const activeTabConfig = TABS.find((t) => t.id === activeTab);
 
   return (
     <div
@@ -268,7 +250,7 @@ export default function Prospecteurs() {
                 </button>
               }
               <button
-                onClick={() => openCreateModal(activeTab)}
+                onClick={() => openCreateModal()}
                 className="flex items-center gap-1.5 h-9 px-4 rounded-xl text-xs font-bold text-white transition hover:opacity-90 tap-sm"
                 style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)", boxShadow: "0 0 12px rgba(168,85,247,0.25)" }}>
                 
@@ -279,36 +261,19 @@ export default function Prospecteurs() {
             </div>
           </div>
 
-          {/* Tabs: Nexus / Discord */}
-          <div className="flex gap-2 mb-5">
-            {TABS.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => handleTabChange(tab.id)}
-                  className="flex-1 sm:flex-none h-10 px-5 rounded-xl text-xs font-black tracking-wider uppercase transition flex items-center justify-center gap-2 tap-sm"
-                  style={
-                  isActive ?
-                  {
-                    background: `${tab.color}20`,
-                    color: tab.color,
-                    border: `1px solid ${tab.color}50`,
-                    boxShadow: `0 0 12px ${tab.color}20`
-                  } :
-                  {
-                    background: "rgba(18,9,28,0.6)",
-                    color: "rgba(255,255,255,0.4)",
-                    border: "1px solid rgba(138,79,255,0.1)"
-                  }
-                  }>
-                  
-                  <Icon className="w-4 h-4" />
-                  {tab.label}
-                </button>);
-
-            })}
+          {/* Unified header + actions */}
+          <div className="flex items-center gap-2 mb-5">
+            <div
+              className="flex-1 h-10 px-5 rounded-xl flex items-center gap-2"
+              style={{
+                background: "rgba(168,85,247,0.10)",
+                border: "1px solid rgba(168,85,247,0.25)",
+              }}
+            >
+              <ServerIcon className="w-4 h-4" style={{ color: "#a855f7" }} />
+              <span className="text-xs font-black tracking-wider uppercase text-white">Vos serveurs</span>
+              <span className="text-[9px] text-white/40 ml-1">· Nexus & Discord réunis</span>
+            </div>
             <button
               onClick={() => setShowReminder(true)}
               className="h-10 px-3 rounded-xl text-xs font-black tracking-wider uppercase transition flex items-center justify-center gap-1.5 tap-sm"
@@ -320,7 +285,7 @@ export default function Prospecteurs() {
             </button>
             <button
               onClick={() => setShowTop10(true)}
-              className="h-10 px-4 rounded-xl text-xs font-black tracking-wider uppercase transition flex items-center justify-center gap-1.5 tap-sm ml-auto"
+              className="h-10 px-4 rounded-xl text-xs font-black tracking-wider uppercase transition flex items-center justify-center gap-1.5 tap-sm"
               style={{ background: "rgba(251,191,36,0.12)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.25)" }}>
               
               <Trophy className="w-4 h-4" />
@@ -333,7 +298,7 @@ export default function Prospecteurs() {
           <div className="mb-5">
             <div className="flex items-center gap-2 mb-3">
               <h2 className="text-xs font-black tracking-wider uppercase text-white">
-                Catégories {activeTabConfig?.label}
+                Catégories
               </h2>
               <span className="text-[9px] text-white/40 ml-auto">
                 {tabCategories.length} catégorie{tabCategories.length !== 1 ? "s" : ""}
@@ -344,7 +309,7 @@ export default function Prospecteurs() {
               selectedSlug={selectedCategory}
               onSelect={(slug) => {
                 if (slug) {
-                  navigate(`/prospecteurs/category/${slug}?type=${activeTab}`);
+                  navigate(`/prospecteurs/category/${slug}`);
                 } else {
                   setSelectedCategory(null);
                 }
@@ -427,7 +392,7 @@ export default function Prospecteurs() {
       </div>
 
       {showTop10 &&
-      <Top10Modal activeTab={activeTab} servers={ads} loading={loading} onClose={() => setShowTop10(false)} />
+      <Top10Modal servers={ads} loading={loading} onClose={() => setShowTop10(false)} />
       }
 
       {showCreateModal &&

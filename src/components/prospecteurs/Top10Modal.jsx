@@ -1,12 +1,11 @@
 import React from "react";
 import ServerRankingBlock from "@/components/prospecteurs/ServerRankingBlock";
 import { sortByScore } from "@/lib/serverDirectory";
-import { X, Trophy, Crown } from "lucide-react";
+import { X, Trophy } from "lucide-react";
 
-export default function Top10Modal({ activeTab, servers, loading, onClose }) {
+export default function Top10Modal({ servers, loading, onClose }) {
   const top10 = sortByScore(servers).slice(0, 10);
-  const isDiscord = activeTab === "discord";
-  const accent = isDiscord ? "#5865F2" : "#22c55e";
+  const accent = "#a855f7";
 
   return (
     <div
@@ -21,7 +20,7 @@ export default function Top10Modal({ activeTab, servers, loading, onClose }) {
       >
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-black text-white uppercase tracking-wider">
-            {isDiscord ? "Classement Discord" : "Classement Nexus"}
+            Classement des serveurs
           </h2>
           <button
             onClick={onClose}
@@ -32,8 +31,8 @@ export default function Top10Modal({ activeTab, servers, loading, onClose }) {
           </button>
         </div>
         <ServerRankingBlock
-          title={isDiscord ? "Top 10 Serveurs Discord" : "Top 10 Serveurs Nexus"}
-          icon={isDiscord ? Crown : Trophy}
+          title="Top 10 Serveurs"
+          icon={Trophy}
           servers={top10}
           accentColor={accent}
           loading={loading}

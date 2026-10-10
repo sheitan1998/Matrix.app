@@ -1,25 +1,18 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Trophy, Server as ServerIcon, MessageCircle } from "lucide-react";
+import { ArrowLeft, Trophy, Server as ServerIcon } from "lucide-react";
 import ProspecteursHeader from "@/components/prospecteurs/ProspecteursHeader";
 import ProspecteursSidebar from "@/components/prospecteurs/ProspecteursSidebar";
 import ServerDirectoryCard from "@/components/prospecteurs/ServerDirectoryCard";
 import ServerSearchBar from "@/components/prospecteurs/ServerSearchBar";
 import ServerRankingBlock from "@/components/prospecteurs/ServerRankingBlock";
-import { fetchUniverseServers, sortByScore } from "@/lib/serverDirectory";
-
-const UNIVERSES = {
-  nexus: { label: "Serveurs Nexus", color: "#22c55e", icon: ServerIcon },
-  discord: { label: "Serveurs Discord", color: "#5865F2", icon: MessageCircle },
-};
+import { fetchAllServers, sortByScore } from "@/lib/serverDirectory";
 
 export default function CategoryServers() {
   const { slug } = useParams();
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [category, setCategory] = useState(null);
-  const [universe, setUniverse] = useState("nexus");
   const [servers, setServers] = useState([]);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -36,12 +29,8 @@ export default function CategoryServers() {
       setCategory(cat);
       if (!cat) { setLoading(false); return; }
 
-      // A category belongs to one universe; "both" categories follow the tab the user came from
-      const requested = searchParams.get("type") === "discord" ? "discord" : "nexus";
-      const uni = cat.type === "both" ? requested : cat.type;
-      setUniverse(uni);
-
-      const list = await fetchUniverseServers(uni, {
+      // Unified: fetch all server ads matching this category (Nexus + Discord combined)
+      const list = await fetchAllServers({
         $or: [
           { category_slug: slug },
           { category: cat.name },
@@ -53,7 +42,7 @@ export default function CategoryServers() {
       setLoading(false);
     };
     fetchData();
-  }, [slug, searchParams]);
+  }, [slug]);
 
   const top5 = useMemo(() => sortByScore(servers).slice(0, 5), [servers]);
 
@@ -90,9 +79,7 @@ export default function CategoryServers() {
     );
   }
 
-  const uniConfig = UNIVERSES[universe];
-  const UniIcon = uniConfig.icon;
-  const accentColor = uniConfig.color;
+  const accentColor = "#a855f7";
 
   return (
     <div className="min-h-screen relative" style={{ background: "linear-gradient(180deg, rgba(18,9,28,0.85) 0%, rgba(26,14,46,0.82) 40%, rgba(18,9,28,0.88) 100%)" }}>
@@ -106,8 +93,6 @@ export default function CategoryServers() {
               <ArrowLeft className="w-4 h-4" />
               <span className="text-xs font-bold">Annuaire</span>
             </button>
-            <span className="text-white/20 text-xs">/</span>
-            <span className="text-xs font-bold" style={{ color: accentColor }}>{uniConfig.label}</span>
             <span className="text-white/20 text-xs">/</span>
             <span className="text-xs font-bold text-white">{category?.name || "..."}</span>
           </div>
@@ -123,7 +108,7 @@ export default function CategoryServers() {
             <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between">
               <div>
                 <span className="inline-flex items-center gap-1 text-[8px] font-black px-2 py-0.5 rounded uppercase mb-1" style={{ background: `${accentColor}25`, color: accentColor }}>
-                  <UniIcon className="w-2.5 h-2.5" /> {uniConfig.label}
+                  <ServerIcon className="w-2.5 h-2.5" /> Serveurs
                 </span>
                 <h1 className="text-lg sm:text-2xl font-black text-white">{category?.name}</h1>
                 <span className="text-[10px] text-white/40">{servers.length} serveur{servers.length !== 1 ? "s" : ""}</span>
@@ -146,7 +131,7 @@ export default function CategoryServers() {
           {/* Full list */}
           <div className="rounded-2xl p-4 sm:p-5" style={{ background: "rgba(18,9,28,0.6)", border: `1px solid ${accentColor}30` }}>
             <div className="flex items-center gap-2 mb-3">
-              <h2 className="text-xs font-black tracking-wider uppercase text-white">Tous les serveurs {category?.name}</h2>
+              <h2 className="text-xs font-black tracking-wider uppercase text-white">Tous les serveurs — {category?.name}</h2>
               <span className="text-[9px] text-white/40 ml-auto">{visibleServers.length} serveur{visibleServers.length !== 1 ? "s" : ""}</span>
             </div>
             <div className="mb-4">

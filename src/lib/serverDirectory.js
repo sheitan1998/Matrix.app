@@ -21,3 +21,7 @@ export const slugify = (text) =>
 // Strictly isolated query: only real server ads (no player ads) of ONE universe
 export const fetchUniverseServers = (serverType, extraQuery = {}) =>
   base44.entities.ServerAd.filter({ type: "server", server_type: serverType, ...extraQuery }, "-created_date", 500);
+
+// Unified query: fetches all server ads (Nexus + Discord combined) in one call
+export const fetchAllServers = (extraQuery = {}) =>
+  base44.entities.ServerAd.filter({ type: "server", ...extraQuery }, "-created_date", 500);
