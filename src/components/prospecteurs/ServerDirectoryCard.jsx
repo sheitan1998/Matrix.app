@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ArrowUp, Flame, ExternalLink, Users, Zap, Pencil, Trash2, Share2, Check, ThumbsUp, MousePointerClick } from "lucide-react";
+import { ArrowUp, Flame, ExternalLink, Users, Zap, Pencil, Trash2, Share2, Check, ThumbsUp, MousePointerClick, Globe } from "lucide-react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
@@ -415,6 +415,19 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
             title={server.discord_link}
           >
             <ExternalLink className="w-3 h-3" />
+          </a>
+        )}
+        {server.website_url && (
+          <a
+            href={server.website_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={handleTrackClick}
+            className="h-7 px-2 rounded-md flex items-center justify-center transition tap-sm text-[9px] font-bold"
+            style={{ background: "rgba(34,197,94,0.12)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.25)" }}
+            title={server.website_url}
+          >
+            <Globe className="w-3 h-3" />
           </a>
         )}
       </div>
