@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { fetchAllServers, fetchUniverseServers, detectServerType, slugify } from "@/lib/serverDirectory";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Plus, Server as ServerIcon, Trophy, Bell } from "lucide-react";
+import { ArrowLeft, Plus, Server as ServerIcon, Trophy, Bell, Bot } from "lucide-react";
 import { toast } from "sonner";
 import ProspecteursHeader from "@/components/prospecteurs/ProspecteursHeader";
 import ProspecteursSidebar from "@/components/prospecteurs/ProspecteursSidebar";
@@ -249,6 +249,16 @@ export default function Prospecteurs() {
                   <span className="ml-1 px-1.5 py-0.5 rounded text-[9px] font-black" style={{ background: "rgba(138,79,255,0.2)" }}>{myServersCount}</span>
                 </button>
               }
+              <a
+                href="https://discord.com/oauth2/authorize?client_id=1545540078565330994&scope=bot%20applications.commands&permissions=1099511647232"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold transition hover:opacity-90 tap-sm"
+                style={{ background: "rgba(88,101,242,0.12)", color: "#5865F2", border: "1px solid rgba(88,101,242,0.25)" }}>
+                <Bot className="w-4 h-4" />
+                <span className="hidden sm:inline">Inviter le bot Discord</span>
+                <span className="sm:hidden">Bot Discord</span>
+              </a>
               <button
                 onClick={() => openCreateModal()}
                 className="flex items-center gap-1.5 h-9 px-4 rounded-xl text-xs font-bold text-white transition hover:opacity-90 tap-sm"
