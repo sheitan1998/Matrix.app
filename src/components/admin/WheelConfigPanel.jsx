@@ -41,6 +41,10 @@ const DEFAULT_CONFIG = {
   wheel_scale: 100,
   wheel_pos_x: 50,
   wheel_pos_y: 50,
+  title_image: "",
+  title_image_scale: 100,
+  title_image_pos_x: 50,
+  title_image_pos_y: 50,
   rewards: [
     { id: "perdu", label: "Perdu", desc: "Réessayez !", icon: "💀", amount: 0, weight: 65, type: "lose", bg_color: "#3a3a3a", bg_image: "" },
     { id: "1000", label: "1 000 jetons", desc: "Petit gain", amount: 1000, weight: 55, type: "tokens", bg_color: "#00bfff", bg_image: "" },
@@ -135,6 +139,10 @@ export default function WheelConfigPanel() {
         wheel_scale: Number(config.wheel_scale),
         wheel_pos_x: Number(config.wheel_pos_x),
         wheel_pos_y: Number(config.wheel_pos_y),
+        title_image: config.title_image,
+        title_image_scale: Number(config.title_image_scale),
+        title_image_pos_x: Number(config.title_image_pos_x),
+        title_image_pos_y: Number(config.title_image_pos_y),
         spin_cost: Number(config.spin_cost),
         reset_hour_utc: Number(config.reset_hour_utc),
         title_style: config.title_style,
@@ -186,6 +194,40 @@ export default function WheelConfigPanel() {
         <ImageUploadField label="Icône du jeu (emoji ou URL)" value={config.icon || ""} onChange={v => updateField("icon", v)} hint="Affichée à côté du titre et dans les cartes de jeu." />
         <ImageUploadField label="Icône centrale de la roue (emoji ou URL)" value={config.center_icon || ""} onChange={v => updateField("center_icon", v)} hint="Logo affiché au centre de la roue de la Fortune." aspect="square" />
         <ImageUploadField label="Bannière de présentation" value={config.banner_image || ""} onChange={v => updateField("banner_image", v)} hint="Image de présentation affichée en haut de la page du jeu." />
+      </div>
+
+      {/* Title neon image */}
+      <div className="rounded-2xl border border-white/10 p-4 space-y-3" style={{ background: "rgba(15,10,25,0.6)" }}>
+        <p className="text-xs font-bold text-white/60 uppercase">Image de titre néon</p>
+        <ImageUploadField label="Image graphique de titre (remplace le texte)" value={config.title_image || ""} onChange={v => updateField("title_image", v)} hint="Image néon affichée à la place du titre textuel." aspect="square" />
+        {config.title_image && (
+          <>
+            <div className="rounded-xl p-3 text-center" style={{ background: "rgba(0,0,0,0.3)" }}>
+              <img src={config.title_image} alt="Aperçu titre" className="h-auto mx-auto" style={{ maxHeight: 100 }} />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-white/50 mb-1 block">Échelle ({config.title_image_scale ?? 100}%)</label>
+              <input type="range" min="50" max="200" value={config.title_image_scale ?? 100} onChange={e => updateField("title_image_scale", Number(e.target.value))}
+                className="w-full accent-cyan-400" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] font-bold text-white/50 mb-1 block">Décalage X ({config.title_image_pos_x ?? 50}%)</label>
+                <input type="range" min="0" max="100" value={config.title_image_pos_x ?? 50} onChange={e => updateField("title_image_pos_x", Number(e.target.value))}
+                  className="w-full accent-fuchsia-400" />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-white/50 mb-1 block">Décalage Y ({config.title_image_pos_y ?? 50}%)</label>
+                <input type="range" min="0" max="100" value={config.title_image_pos_y ?? 50} onChange={e => updateField("title_image_pos_y", Number(e.target.value))}
+                  className="w-full accent-fuchsia-400" />
+              </div>
+            </div>
+            <button onClick={() => { updateField("title_image_scale", 100); updateField("title_image_pos_x", 50); updateField("title_image_pos_y", 50); }}
+              className="px-2 py-1 rounded-lg text-[10px] font-bold text-white/60 border border-white/10 hover:bg-white/5">
+              Centrer / Réinitialiser
+            </button>
+          </>
+        )}
       </div>
 
       {/* Title typography */}

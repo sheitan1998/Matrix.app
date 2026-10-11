@@ -164,6 +164,12 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
   // Convert percentage offsets to pixel shifts relative to container center
   const wheelOffsetX = (wheelPosX - 50) * 4; // -200px to +200px
   const wheelOffsetY = (wheelPosY - 50) * 3; // -150px to +150px
+  const titleImage = gameConfig?.title_image ? bustImageCache(gameConfig.title_image, gameConfig?.updated_date) : "";
+  const titleScale = Number(gameConfig?.title_image_scale ?? 100);
+  const titlePosX = Number(gameConfig?.title_image_pos_x ?? 50);
+  const titlePosY = Number(gameConfig?.title_image_pos_y ?? 50);
+  const titleOffsetX = (titlePosX - 50) * 4;
+  const titleOffsetY = (titlePosY - 50) * 3;
 
   return (
     <div
@@ -177,35 +183,46 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
         backgroundColor: bgColor
       }}>
       
-      {/* Title */}
-      <div className="text-center mb-4">
-        <h2 style={{
-          fontFamily: getFontCss(ts?.font),
-          fontSize: `${ts?.size || 18}px`,
-          fontWeight: ts?.font === "Titan One" ? 400 : 900,
-          letterSpacing: "0.05em",
-          ...(!ts || ts?.color_style === "gradient" ? {
-            background: `linear-gradient(135deg, ${ts?.color || "#00ffff"}, ${ts?.color2 || "#ff00ff"})`,
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            textShadow: "none"
-          } : ts?.color_style === "neon" ? {
-            color: ts?.color || "#00ffff",
-            textShadow: `0 0 6px ${ts?.color || "#00ffff"}, 0 0 14px ${ts?.color || "#00ffff"}, 0 0 28px ${ts?.color2 || "#ff00ff"}`
-          } : {
-            color: ts?.color || "#00ffff",
-            textShadow: "none"
-          })
-        }}>{gameConfig?.title || 'ROUE DE LA FORTUNE'}</h2>
-      </div>
+      {/* Title — neon image or text fallback */}
+      {titleImage ? (
+        <div className="mb-4 flex justify-center" style={{
+          transform: `scale(${titleScale / 100}) translate(${titleOffsetX}px, ${titleOffsetY}px)`,
+          transformOrigin: "center center",
+        }}>
+          <img src={titleImage} alt={gameConfig?.title || "Roue de la Fortune"} className="h-auto" style={{ maxHeight: 140, maxWidth: "100%" }} />
+        </div>
+      ) : (
+        <div className="text-center mb-4">
+          <h2 style={{
+            fontFamily: getFontCss(ts?.font),
+            fontSize: `${ts?.size || 18}px`,
+            fontWeight: ts?.font === "Titan One" ? 400 : 900,
+            letterSpacing: "0.05em",
+            ...(!ts || ts?.color_style === "gradient" ? {
+              background: `linear-gradient(135deg, ${ts?.color || "#00ffff"}, ${ts?.color2 || "#ff00ff"})`,
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              textShadow: "none"
+            } : ts?.color_style === "neon" ? {
+              color: ts?.color || "#00ffff",
+              textShadow: `0 0 6px ${ts?.color || "#00ffff"}, 0 0 14px ${ts?.color || "#00ffff"}, 0 0 28px ${ts?.color2 || "#ff00ff"}`
+            } : {
+              color: ts?.color || "#00ffff",
+              textShadow: "none"
+            })
+          }}>{gameConfig?.title || 'ROUE DE LA FORTUNE'}</h2>
+        </div>
+      )}
 
-      {/* Wheel container */}
-      <div className="relative w-full max-w-sm mb-6" style={{
-        transform: `scale(${wheelScale / 100}) translate(${wheelOffsetX}px, ${wheelOffsetY}px)`,
-        transformOrigin: "center center",
-      }}>
-        {/* Radial glow backdrop — integrates wheel with background */}
-        <div className="absolute inset-0 -z-10 rounded-full" style={{
+      {/* Wheel + Rewards layout — outer container stays fixed, inner wheel wrapper gets the transform */}
+      <div className="relative w-full max-w-sm mb-6 mx-auto">
+        {/* Wheel wrapper — only the wheel, with admin scale/position */}
+        <div className="relative" style={{
+          transform: `scale(${wheelScale / 100}) translate(${wheelOffsetX}px, ${wheelOffsetY}px)`,
+          transformOrigin: "center center",
+        }}>
+        {/* Radial glow backdrop — pointer-events-none so it never blocks clicks */}
+        <div className="absolute inset-0 -z-10 rounded-full pointer-events-none" style={{
           background: "radial-gradient(circle at center, rgba(168,85,247,0.18) 0%, rgba(0,242,255,0.08) 45%, transparent 70%)",
           transform: "scale(1.3)"
         }} />
@@ -317,7 +334,8 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
           </svg>
         </div>
         )}
-        {/* Rewards panel — floating right on desktop */}
+        </div>
+        {/* Rewards panel — sibling, absolute right on desktop */}
         <div className="hidden lg:block absolute top-0 left-full ml-10 w-56 px-4 py-3 rounded-xl" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(255,255,255,0.06)" }}>
           <p className="text-[11px] font-bold text-white/50 mb-2">Récompenses possibles :</p>
           <div className="flex flex-col gap-1.5">
@@ -342,24 +360,26 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
         </div>
       </div>
 
-      {/* Result display — mobile only (desktop shows it inside rewards panel) */}
-      {showResult && result &&
-      <div className="lg:hidden mb-4 text-center animate-in fade-in duration-500">
-          <div className="text-4xl mb-1">
-            {result.type === "lose" ? "😢" : result.type === "trix" ? "🌟" : result.amount >= 1000000 ? "💎" : "💰"}
+      {/* Result display — mobile only (fixed-height slot so it never shifts the layout) */}
+      <div className="lg:hidden mb-4 h-16 flex items-center justify-center">
+        {showResult && result &&
+        <div className="text-center animate-in fade-in duration-500">
+            <div className="text-4xl mb-1">
+              {result.type === "lose" ? "😢" : result.type === "trix" ? "🌟" : result.amount >= 1000000 ? "💎" : "💰"}
+            </div>
+            <p className="text-lg font-black" style={{ color: result.type === "lose" ? "#ef4444" : result.type === "trix" ? "#00ff7f" : "#22c55e" }}>
+              {result.label}
+            </p>
+            {result.desc && <p className="text-xs text-white/50">{result.desc}</p>}
           </div>
-          <p className="text-lg font-black" style={{ color: result.type === "lose" ? "#ef4444" : result.type === "trix" ? "#00ff7f" : "#22c55e" }}>
-            {result.label}
-          </p>
-          {result.desc && <p className="text-xs text-white/50">{result.desc}</p>}
-        </div>
-      }
+        }
+      </div>
 
-      {/* Spin button */}
+      {/* Spin button — z-30 ensures it stays above any wheel overflow */}
       <button
         onClick={handleSpin}
         disabled={!canSpin || statusLoading || configLoading}
-        className="px-8 py-3 rounded-xl text-sm font-black text-white transition hover:opacity-90 disabled:opacity-40 tap-sm flex items-center gap-2"
+        className="relative z-30 px-8 py-3 rounded-xl text-sm font-black text-white transition hover:opacity-90 disabled:opacity-40 tap-sm flex items-center gap-2"
         style={{
           background: spinning ? "rgba(255,255,255,0.1)" : canSpinFree ?
           "linear-gradient(135deg, #22c55e, #16a34a)" :
