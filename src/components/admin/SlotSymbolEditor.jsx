@@ -162,7 +162,7 @@ export default function SlotSymbolEditor({ themeKey }) {
               title="Multiplicateur"
             />
 
-            {/* Rare */}
+            {/* Rare (weight) */}
             <input
               type="number"
               value={sym.rare || 1}
@@ -170,6 +170,20 @@ export default function SlotSymbolEditor({ themeKey }) {
               className="w-12 px-1 py-1.5 rounded-lg text-xs bg-white/5 border border-white/10 text-white text-center"
               title="Rareté (poids)"
             />
+
+            {/* Rarity tier */}
+            <select
+              value={sym.rarity || "Commun"}
+              onChange={(e) => updateSymbol(sym.id, { rarity: e.target.value })}
+              className="px-1.5 py-1.5 rounded-lg text-[10px] bg-white/5 border border-white/10 text-white"
+              style={{ colorScheme: 'dark' }}
+              title="Niveau de rareté"
+            >
+              <option value="Commun">Commun</option>
+              <option value="Rare">Rare</option>
+              <option value="Épique">Épique</option>
+              <option value="Légendaire">Légendaire</option>
+            </select>
 
             {/* Wild */}
             <button

@@ -216,9 +216,14 @@ export default async function(req) {
         let result;
 
         if (isWin) {
-          result = selectReward(rewards);
+          result = { ...selectReward(rewards) };
+          // Mode 3 symboles : gain = 50% du gain attribue pour 5 symboles
+          if (mode === '3' && result.amount > 0) {
+            result = { ...result, amount: Math.floor(result.amount / 2) };
+          }
           if (result.type === 'relance') {
-            updates.free_ticket_date = null;
+            // La relance donne un ticket achete (la limite stricte 1 ticket gratuit / 24h est preservee)
+            updates.purchased_tickets = (player.purchased_tickets || 0) + 1;
           } else if (result.type === 'tokens') {
             updates.balance = (player.balance || 0) + result.amount;
             updates.total_won = (player.total_won || 0) + result.amount;

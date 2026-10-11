@@ -65,6 +65,7 @@ export default function SlotConfigPanel() {
           grid_pos_y: config.grid_pos_y,
           symbol_size: config.symbol_size,
           bg_image: config.bg_image,
+          bg_color: config.bg_color,
           control_pos_x: config.control_pos_x,
           control_pos_y: config.control_pos_y,
           control_scale: config.control_scale,
@@ -81,6 +82,7 @@ export default function SlotConfigPanel() {
           grid_pos_y: config.grid_pos_y,
           symbol_size: config.symbol_size,
           bg_image: config.bg_image,
+          bg_color: config.bg_color,
           control_pos_x: config.control_pos_x,
           control_pos_y: config.control_pos_y,
           control_scale: config.control_scale,
@@ -221,6 +223,25 @@ export default function SlotConfigPanel() {
                 onError={(e) => { e.target.style.display = "none"; }}
               />
             )}
+            {/* Couleur de fond */}
+            <div className="mt-3">
+              <label className="text-xs font-bold text-white/60 mb-1.5 block">Couleur de fond (si pas d'image)</label>
+              <div className="flex gap-2 items-center">
+                <input
+                  type="color"
+                  value={currentConfig.bg_color || "#0a050f"}
+                  onChange={(e) => updateField("bg_color", e.target.value)}
+                  className="w-10 h-9 rounded-lg border border-white/10 bg-transparent cursor-pointer"
+                />
+                <input
+                  type="text"
+                  value={currentConfig.bg_color || ""}
+                  onChange={(e) => updateField("bg_color", e.target.value)}
+                  placeholder="#0a050f"
+                  className="flex-1 px-3 py-2 rounded-lg text-xs bg-white/5 border border-white/10 text-white font-mono placeholder-white/30"
+                />
+              </div>
+            </div>
           </div>
           {sliders.map(s => (
             <div key={s.key}>

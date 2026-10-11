@@ -39,6 +39,17 @@
       "default": 5,
       "description": "Poids dans le pool de tirage (plus eleve = plus frequent)"
     },
+    "rarity": {
+      "type": "string",
+      "enum": [
+        "Commun",
+        "Rare",
+        "\u00c9pique",
+        "L\u00e9gendaire"
+      ],
+      "default": "Commun",
+      "description": "Niveau de rarete du symbole"
+    },
     "is_wild": {
       "type": "boolean",
       "default": false,

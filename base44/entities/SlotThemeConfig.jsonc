@@ -11,6 +11,11 @@
       "default": "",
       "description": "URL de l'image de fond (surcharge celle par defaut du theme)"
     },
+    "bg_color": {
+      "type": "string",
+      "default": "",
+      "description": "Couleur de fond (utilisee si pas d'image de fond)"
+    },
     "grid_width": {
       "type": "number",
       "default": 70,

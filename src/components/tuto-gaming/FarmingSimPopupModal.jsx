@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { X, Loader2, Images } from "lucide-react";
+import { X, Loader2, Images, ChevronDown, ChevronRight } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { normalizeAppAssetUrl } from "@/lib/urlUtils";
 import GalleryLightboxViewer from "@/components/tuto-gaming/GalleryLightboxViewer";
@@ -8,6 +8,16 @@ export default function FarmingSimPopupModal({ popupKey, title, onClose }) {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lightbox, setLightbox] = useState(null);
+  const [collapsedCats, setCollapsedCats] = useState(new Set());
+
+  const toggleCat = (slug) => {
+    setCollapsedCats(prev => {
+      const next = new Set(prev);
+      if (next.has(slug)) next.delete(slug);
+      else next.add(slug);
+      return next;
+    });
+  };
 
   const fetchCategories = useCallback(async () => {
     if (!popupKey) return;
@@ -126,7 +136,14 @@ export default function FarmingSimPopupModal({ popupKey, title, onClose }) {
                   const subs = getSubs(cat.slug);
                   return (
                     <div key={cat.id}>
-                      <div className="flex items-center gap-2 mb-3">
+                      <button
+                        onClick={() => toggleCat(cat.slug)}
+                        className="w-full flex items-center gap-2 mb-3 group"
+                      >
+                        {collapsedCats.has(cat.slug) ?
+                          <ChevronRight className="w-4 h-4 text-white/40 group-hover:text-white/70 transition" /> :
+                          <ChevronDown className="w-4 h-4 text-white/40 group-hover:text-white/70 transition" />
+                        }
                         <span className="block w-1 h-4 rounded-full" style={{ background: "#7DA627" }} />
                         <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white">
                           {cat.title}
@@ -134,8 +151,10 @@ export default function FarmingSimPopupModal({ popupKey, title, onClose }) {
                         {subs.length > 0 && (
                           <span className="text-[10px] text-white/30 ml-auto">{subs.length} entrée{subs.length > 1 ? "s" : ""}</span>
                         )}
-                      </div>
+                      </button>
 
+                      {!collapsedCats.has(cat.slug) && (
+                      <>
                       {/* Category-level image (if it has one directly) */}
                       {cat.img && (
                         <button
@@ -199,6 +218,8 @@ export default function FarmingSimPopupModal({ popupKey, title, onClose }) {
                           <span className="text-xs text-white/30">Bientôt disponible</span>
                         </div>
                       ) : null}
+                      </>
+                      )}
                     </div>
                   );
                 })}
