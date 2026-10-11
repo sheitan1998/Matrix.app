@@ -175,6 +175,8 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
   const rpPosY = Number(gameConfig?.rewards_panel_pos_y ?? 50);
   const rpOffsetX = (rpPosX - 50) * 4;
   const rpOffsetY = (rpPosY - 50) * 3;
+  const resultEmoji = !result ? "" : result.type === "lose" ? "😢" : result.type === "trix" ? "🌟" : result.amount >= 1000000 ? "💎" : "💰";
+  const resultColor = result?.type === "lose" ? "#ef4444" : result?.type === "trix" ? "#00ff7f" : "#22c55e";
 
   return (
     <div
@@ -340,13 +342,12 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
         </div>
           }
         </div>
-        {/* Rewards panel — sibling, absolute right on desktop, with admin scale/position */}
-        <div className="hidden lg:block absolute top-0 left-full w-56 rounded-xl px-4 ml-10 py-16" style={{
-          background: "rgba(15,10,25,0.6)",
-          border: "1px solid rgba(255,255,255,0.06)",
+        {/* Right column (desktop) — absolute, so nothing inside it can shift the wheel or the layout; admin scale/position */}
+        <div className="hidden lg:flex flex-col gap-2 absolute top-0 left-full w-56 ml-10" style={{
           transform: `scale(${rpScale / 100}) translate(${rpOffsetX}px, ${rpOffsetY}px)`,
           transformOrigin: "top left"
         }}>
+        <div className="rounded-xl px-4 py-16" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(255,255,255,0.06)" }}>
           <p className="text-[11px] font-bold text-white/50 mb-2">Récompenses possibles :</p>
           <div className="flex flex-col gap-1.5">
             {segments.map((s, i) =>
@@ -355,32 +356,29 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
               </span>
             )}
           </div>
-          {/* Result display — absolute within rewards panel so it never grows the panel or shifts the wheel */}
-          {showResult && result &&
-          <div className="absolute bottom-0 left-0 right-0 pt-3 text-center animate-in fade-in duration-500" style={{ borderTop: "1px solid rgba(255,255,255,0.06)", background: "rgba(15,10,25,0.95)" }}>
-              <div className="text-3xl mb-1">
-                {result.type === "lose" ? "😢" : result.type === "trix" ? "🌟" : result.amount >= 1000000 ? "💎" : "💰"}
-              </div>
-              <p className="text-base font-black" style={{ color: result.type === "lose" ? "#ef4444" : result.type === "trix" ? "#00ff7f" : "#22c55e" }}>
-                {result.label}
-              </p>
-              {result.desc && <p className="text-[10px] text-white/50">{result.desc}</p>}
+        </div>
+        {/* Result — compact, just below the rewards panel (inside the absolute column, zero layout impact) */}
+        {showResult && result &&
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl animate-in fade-in duration-500" style={{ background: "rgba(15,10,25,0.85)", border: `1px solid ${resultColor}40` }}>
+            <span className="text-xl leading-none">{resultEmoji}</span>
+            <div className="min-w-0">
+              <p className="text-xs font-black truncate" style={{ color: resultColor }}>{result.label}</p>
+              {result.desc && <p className="text-[9px] text-white/50 truncate">{result.desc}</p>}
             </div>
-          }
+          </div>
+        }
         </div>
       </div>
 
       {/* Result display — mobile only (fixed-height slot so it never shifts the layout) */}
-      <div className="lg:hidden mb-4 h-16 flex items-center justify-center">
+      <div className="lg:hidden mb-4 h-12 overflow-hidden flex items-center justify-center">
         {showResult && result &&
-        <div className="text-center animate-in fade-in duration-500">
-            <div className="text-4xl mb-1">
-              {result.type === "lose" ? "😢" : result.type === "trix" ? "🌟" : result.amount >= 1000000 ? "💎" : "💰"}
+        <div className="flex items-center gap-2 animate-in fade-in duration-500">
+            <span className="text-2xl leading-none">{resultEmoji}</span>
+            <div>
+              <p className="text-sm font-black" style={{ color: resultColor }}>{result.label}</p>
+              {result.desc && <p className="text-[10px] text-white/50">{result.desc}</p>}
             </div>
-            <p className="text-lg font-black" style={{ color: result.type === "lose" ? "#ef4444" : result.type === "trix" ? "#00ff7f" : "#22c55e" }}>
-              {result.label}
-            </p>
-            {result.desc && <p className="text-xs text-white/50">{result.desc}</p>}
           </div>
         }
       </div>
@@ -389,7 +387,7 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
       <button
         onClick={handleSpin}
         disabled={!canSpin || statusLoading || configLoading}
-        className="relative z-30 px-8 py-3 rounded-xl text-sm font-black text-white transition hover:opacity-90 disabled:opacity-40 tap-sm flex items-center gap-2"
+        className="relative z-30 h-12 min-w-[220px] px-8 rounded-xl text-sm font-black text-white transition hover:opacity-90 disabled:opacity-40 tap-sm flex items-center justify-center gap-2"
         style={{
           background: spinning ? "rgba(255,255,255,0.1)" : canSpinFree ?
           "linear-gradient(135deg, #22c55e, #16a34a)" :
@@ -407,13 +405,12 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
       </button>
 
       {/* Free spin status / countdown */}
-      {!freeSpinAvailable && !spinning && nextResetAt &&
-      <div className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg" style={{ background: "rgba(15,10,25,0.5)", border: "1px solid rgba(255,255,255,0.06)" }}>
-          <Clock className="w-3 h-3 text-white/40" />
-          <span className="text-[10px] text-white/50">Prochain lancer gratuit dans</span>
-          <span className="text-[10px] font-bold" style={{ color: "#22c55e" }}>{formatTimeUntil(nextResetAt)}</span>
-        </div>
-      }
+      {/* Slot always reserved (fixed height) — showing/hiding only toggles visibility, never shifts the layout */}
+      <div className={`mt-2 h-7 flex items-center gap-1.5 px-3 rounded-lg ${!freeSpinAvailable && !spinning && nextResetAt ? "" : "invisible"}`} style={{ background: "rgba(15,10,25,0.5)", border: "1px solid rgba(255,255,255,0.06)" }}>
+        <Clock className="w-3 h-3 text-white/40" />
+        <span className="text-[10px] text-white/50">Prochain lancer gratuit dans</span>
+        <span className="text-[10px] font-bold" style={{ color: "#22c55e" }}>{formatTimeUntil(nextResetAt)}</span>
+      </div>
 
       {/* Rewards — mobile fallback (below wheel) */}
       <div className="lg:hidden mt-3 px-4 py-2 rounded-xl w-full max-w-sm" style={{ background: "rgba(15,10,25,0.4)", border: "1px solid rgba(255,255,255,0.04)" }}>
