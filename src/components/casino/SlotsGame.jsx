@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import CasinoToken from "./CasinoToken";
 import { casinoPlaceBet } from "@/hooks/useCasinoJackpot";
 import { base44 } from "@/api/base44Client";
-import { SLOT_THEMES, DEFAULT_THEME, BET_STEPS, pickRandom, formatBet } from "./slotThemes";
+import { SLOT_THEMES, DEFAULT_THEME, pickRandom, formatBet, THEME_UNLOCK } from "./slotThemes";
 import SlotReelGrid from "./SlotReelGrid";
 import SlotControlBar from "./SlotControlBar";
 import PaytableModal from "./PaytableModal";
@@ -71,18 +71,30 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
 
   const [finalGrid, setFinalGrid] = useState(() => generateRandomGrid(SYMBOLS));
   const [result, setResult] = useState(null);
-  const [bet, setBet] = useState(500);
+  const [bet, setBet] = useState(() => {
+    const cfg = THEME_UNLOCK[themeId];
+    return cfg ? cfg.minBet : 500;
+  });
   const [lastWin, setLastWin] = useState(0);
   const [winningCells, setWinningCells] = useState(null);
   const [gridConfig, setGridConfig] = useState(null);
   const [imgAspect, setImgAspect] = useState(16 / 9);
+  const [bgLoaded, setBgLoaded] = useState(false);
 
-  const handleImgLoad = (e) => {
-    const img = e.target;
-    if (img.naturalWidth && img.naturalHeight) {
-      setImgAspect(img.naturalWidth / img.naturalHeight);
-    }
-  };
+  const bgSrc = gridConfig?.bg_image || theme.bgImage;
+
+  // Préchargement de l'image de fond pour éviter le flicker/FOUC
+  useEffect(() => {
+    setBgLoaded(false);
+    if (!bgSrc) { setBgLoaded(true); return; }
+    const img = new Image();
+    img.onload = () => {
+      if (img.naturalWidth && img.naturalHeight) setImgAspect(img.naturalWidth / img.naturalHeight);
+      setBgLoaded(true);
+    };
+    img.onerror = () => setBgLoaded(true);
+    img.src = bgSrc;
+  }, [bgSrc]);
 
   useEffect(() => {balanceRef.current = balance;}, [balance]);
   useEffect(() => {autoSpinningRef.current = autoSpinning;}, [autoSpinning]);
@@ -103,6 +115,12 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
   useEffect(() => {
     setFinalGrid(generateRandomGrid(SYMBOLS));
   }, [SYMBOLS]);
+
+  // Reset bet to theme minimum when theme changes
+  useEffect(() => {
+    const cfg = THEME_UNLOCK[themeId];
+    if (cfg) setBet(cfg.minBet);
+  }, [themeId]);
 
   // Fetch grid config from admin (realtime sync)
   useEffect(() => {
@@ -239,9 +257,11 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
     doSpin();
   };
 
+  const minBet = THEME_UNLOCK[themeId]?.minBet || 100;
+
   const changeBet = (newBet) => {
     if (spinning || autoSpinning) return;
-    setBet(Math.max(100, Math.min(1000000, newBet)));
+    setBet(Math.max(minBet, Math.min(1000000, newBet)));
   };
 
   return (
@@ -255,12 +275,14 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
       }}>
         {/* Background image fills wrapper exactly (no object-fit crop) */}
         <img
-          src={gridConfig?.bg_image || theme.bgImage}
+          src={bgSrc}
           alt=""
           draggable={false}
           onContextMenu={(e) => e.preventDefault()}
-          onLoad={handleImgLoad}
+          style={{ opacity: bgLoaded ? 1 : 0, transition: "opacity 0.3s ease" }}
           className="absolute inset-0 w-full h-full" />
+        {/* Fond neutre temporaire pendant le préchargement */}
+        {!bgLoaded && <div className="absolute inset-0" style={{ background: "#000" }} />}
 
         {/* Dark overlay */}
         <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.3)" }} />

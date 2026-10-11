@@ -5,7 +5,7 @@ import { DEFAULT_GRID_CONFIG } from "@/components/casino/SlotReelGrid";
 import SlotSymbolEditor from "@/components/admin/SlotSymbolEditor";
 import ButtonStylesEditor from "@/components/admin/ButtonStylesEditor";
 import ImageUploadField from "@/components/admin/ImageUploadField";
-import { Save, RotateCcw, Loader2 } from "lucide-react";
+import { Save, RotateCcw, Loader2, Copy } from "lucide-react";
 import { toast } from "sonner";
 
 export default function SlotConfigPanel() {
@@ -118,6 +118,43 @@ export default function SlotConfigPanel() {
       ...prev,
       [selectedTheme]: { ...DEFAULT_GRID_CONFIG, theme_key: selectedTheme },
     }));
+  };
+
+  const copyToAllThemes = async () => {
+    const src = configs[selectedTheme];
+    if (!src) { toast.error("Aucune configuration à copier"); return; }
+    setSaving(true);
+    const fields = [
+      "grid_width", "grid_height", "grid_gap", "grid_pos_x", "grid_pos_y",
+      "symbol_size", "control_pos_x", "control_pos_y", "control_scale",
+      "button_gap", "spin_pos_x", "spin_pos_y", "spin_scale",
+      "paytable_pos_x", "paytable_pos_y", "paytable_scale", "win_rate",
+    ];
+    const sharedData = {};
+    fields.forEach(f => { sharedData[f] = src[f]; });
+    try {
+      const updates = [];
+      for (const [key] of Object.entries(SLOT_THEMES)) {
+        if (key === selectedTheme) continue;
+        const existing = configs[key];
+        const payload = { ...sharedData, theme_key: key };
+        if (existing?.id) {
+          updates.push(base44.entities.SlotThemeConfig.update(existing.id, payload));
+        } else {
+          updates.push(base44.entities.SlotThemeConfig.create(payload));
+        }
+      }
+      await Promise.all(updates);
+      toast.success("Configuration copiée vers tous les thèmes");
+      // Reload
+      const records = await base44.entities.SlotThemeConfig.list();
+      const map = {};
+      records.forEach(r => { map[r.theme_key] = r; });
+      setConfigs(map);
+    } catch {
+      toast.error("Erreur lors de la copie");
+    }
+    setSaving(false);
   };
 
   if (loading) {
@@ -286,6 +323,15 @@ export default function SlotConfigPanel() {
             >
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
               Sauvegarder
+            </button>
+            <button
+              onClick={copyToAllThemes}
+              disabled={saving}
+              className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold text-white transition hover:text-white disabled:opacity-50"
+              style={{ background: "rgba(197,160,89,0.15)", border: "1px solid rgba(197,160,89,0.3)" }}
+            >
+              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Copy className="w-3.5 h-3.5" />}
+              Copier vers tous
             </button>
             <button
               onClick={resetConfig}

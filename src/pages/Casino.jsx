@@ -256,6 +256,7 @@ export default function Casino() {
       {/* Theme selection modal */}
       <ThemeSelectionModal
         show={showThemeSelect}
+        balance={casinoCoins}
         onSelect={(themeKey) => {
           setSelectedTheme(themeKey);
           setShowThemeSelect(false);

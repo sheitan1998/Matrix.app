@@ -253,3 +253,19 @@ export const SLOT_THEMES = {
 export const DEFAULT_THEME = "classic";
 
 export const BET_STEPS = [100, 500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000];
+
+// Seuils de déblocage et mises minimales par thème
+export const THEME_UNLOCK = {
+  classic: { threshold: 0,       minBet: 100,     label: "Débloqué par défaut" },
+  nature:  { threshold: 100000,  minBet: 100000,  label: "Déblocage à 100K jetons" },
+  enfer:   { threshold: 500000,  minBet: 500000,  label: "Déblocage à 500K jetons" },
+  paradis: { threshold: 1000000, minBet: 1000000, label: "Déblocage à 1M jetons" },
+  savane:  { threshold: 5000000, minBet: 5000000, label: "Déblocage à 5M jetons" },
+  ovni:    { threshold: 10000000, minBet: 10000000, label: "Déblocage à 10M jetons" },
+};
+
+export function isThemeUnlocked(themeKey, balance) {
+  const cfg = THEME_UNLOCK[themeKey];
+  if (!cfg) return true;
+  return (balance || 0) >= cfg.threshold;
+}
