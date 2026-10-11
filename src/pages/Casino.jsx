@@ -152,15 +152,25 @@ export default function Casino() {
         </div>
       </header>
 
-      {/* Quick access: Scratch tickets — fixed top-right */}
-      <button
+      {/* Scratch tickets poster — fixed top-right, below the header */}
+      <motion.button
+        initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.4, delay: 0.3 }}
+        whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
         onClick={() => { setScreen("scratch"); trackActivity("nexus_games"); }}
-        className="fixed top-4 right-4 z-50 w-12 h-12 rounded-full flex items-center justify-center transition hover:scale-110 tap-sm"
-        style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)", boxShadow: "0 0 20px rgba(168,85,247,0.4)" }}
+        className="fixed top-20 right-4 z-40 w-28 sm:w-32 rounded-2xl overflow-hidden group block tap-sm"
+        style={{ border: "2px solid rgba(168,85,247,0.35)", boxShadow: "0 0 20px rgba(168,85,247,0.15), 0 8px 30px rgba(0,0,0,0.5)" }}
         title="Tickets à Gratter"
       >
-        <Ticket className="w-5 h-5 text-white" />
-      </button>
+        <img src={SCRATCH_CARD_IMG} alt="Tickets à Gratter" className="w-full h-auto block" style={{ objectFit: "contain" }} />
+        <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.1) 0%, transparent 50%, rgba(0,242,255,0.12) 100%)" }} />
+        <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-lg flex items-center gap-1"
+          style={{ background: "rgba(10,5,15,0.8)", backdropFilter: "blur(8px)", border: "1px solid rgba(168,85,247,0.3)" }}>
+          <Ticket className="w-3 h-3" style={{ color: "#a855f7" }} />
+          <span className="text-[9px] font-black" style={{ color: "#a855f7" }}>GRATTER</span>
+        </div>
+      </motion.button>
 
       {/* Responsible gaming notice */}
       
