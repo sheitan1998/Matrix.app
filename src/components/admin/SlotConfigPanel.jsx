@@ -4,6 +4,7 @@ import { SLOT_THEMES } from "@/components/casino/slotThemes";
 import { DEFAULT_GRID_CONFIG } from "@/components/casino/SlotReelGrid";
 import SlotSymbolEditor from "@/components/admin/SlotSymbolEditor";
 import ButtonStylesEditor from "@/components/admin/ButtonStylesEditor";
+import ImageUploadField from "@/components/admin/ImageUploadField";
 import { Save, RotateCcw, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -207,22 +208,12 @@ export default function SlotConfigPanel() {
         <div className="rounded-2xl border border-white/10 p-4 space-y-4" style={{ background: "rgba(15,10,25,0.6)" }}>
           {/* Image de fond */}
           <div>
-            <label className="text-xs font-bold text-white/60 mb-1.5 block">Image de fond du slot</label>
-            <input
-              type="text"
+            <ImageUploadField
+              label="Image de fond du slot"
               value={currentConfig.bg_image || ""}
-              onChange={(e) => updateField("bg_image", e.target.value)}
-              placeholder="URL de l'image (laisser vide pour l'image par défaut)"
-              className="w-full px-3 py-2 rounded-lg text-xs bg-white/5 border border-white/10 text-white placeholder-white/30"
+              onChange={(v) => updateField("bg_image", v)}
+              hint="Upload ou URL de l'image (laisser vide pour l'image par défaut du thème)"
             />
-            {currentConfig.bg_image && (
-              <img
-                src={currentConfig.bg_image}
-                alt=""
-                className="mt-2 w-full h-20 object-cover rounded-lg"
-                onError={(e) => { e.target.style.display = "none"; }}
-              />
-            )}
             {/* Couleur de fond */}
             <div className="mt-3">
               <label className="text-xs font-bold text-white/60 mb-1.5 block">Couleur de fond (si pas d'image)</label>

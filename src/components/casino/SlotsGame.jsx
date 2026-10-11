@@ -285,7 +285,8 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
           onBetChange={changeBet}
           onPaytable={() => setShowPaytable(true)}
           theme={theme}
-          buttonStyles={gridConfig?.button_styles} />
+          buttonStyles={gridConfig?.button_styles}
+          gridConfig={gridConfig} />
       </div>
 
       {/* Paytable modal */}

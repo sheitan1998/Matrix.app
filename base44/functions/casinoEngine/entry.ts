@@ -12,13 +12,13 @@ const XP_PER_LEVEL = 5000;
 
 // ===== Slots symbol table (mirrors client) =====
 const SLOTS_SYMBOLS = [
-  { s: '7',    mult: 50, rare: 1 },
-  { s: '💎',   mult: 30, rare: 1 },
-  { s: 'WILD', mult: 20, rare: 2 },
-  { s: 'BAR',  mult: 15, rare: 2 },
-  { s: '🍒',   mult: 8,  rare: 5 },
-  { s: '🍇',   mult: 5,  rare: 6 },
-  { s: '🍉',   mult: 4,  rare: 6 },
+  { s: '7',    mult: 5,   rare: 1 },
+  { s: '💎',   mult: 3,   rare: 1 },
+  { s: 'WILD', mult: 2,   rare: 2 },
+  { s: 'BAR',  mult: 1.5, rare: 2 },
+  { s: '🍒',   mult: 0.8, rare: 5 },
+  { s: '🍇',   mult: 0.5, rare: 6 },
+  { s: '🍉',   mult: 0.4, rare: 6 },
 ];
 
 // ===== Casino achievements (Nexus Game specific) =====
@@ -89,10 +89,22 @@ async function getPlayer(base44: any, user: any) {
   });
 }
 
-function pickSlotsSymbol() {
+function pickSlotsSymbol(symbols: any[] = SLOTS_SYMBOLS) {
   const pool: any[] = [];
-  SLOTS_SYMBOLS.forEach(sym => { for (let i = 0; i < sym.rare; i++) pool.push(sym); });
+  symbols.forEach(sym => { for (let i = 0; i < sym.rare; i++) pool.push(sym); });
   return pool[Math.floor(Math.random() * pool.length)];
+}
+
+async function getSlotsSymbols(base44: any, theme_key?: string) {
+  if (theme_key) {
+    try {
+      const records = await base44.asServiceRole.entities.SlotSymbol.filter({ theme_key });
+      if (records.length >= 2) {
+        return records.map(r => ({ s: r.symbol, mult: r.mult, rare: r.rare }));
+      }
+    } catch {}
+  }
+  return SLOTS_SYMBOLS;
 }
 
 // ===== Main handler =====
@@ -218,7 +230,8 @@ export default async function(req: Request): Promise<Response> {
           payout = effectiveJackpot;
         } else if (isWin) {
           if (game === 'slots') {
-            const sym = pickSlotsSymbol();
+            const slotsSymbols = await getSlotsSymbols(base44, theme_key);
+            const sym = pickSlotsSymbol(slotsSymbols);
             multiplier = sym.mult;
             slotsSymbol = sym.s;
             payout = betAmount * multiplier;

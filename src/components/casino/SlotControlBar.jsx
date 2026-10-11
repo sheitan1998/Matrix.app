@@ -113,11 +113,14 @@ function CounterPanel({ balance, bet, lastWin }) {
 
 export default function SlotControlBar({
   balance, bet, lastWin, spinning, autoSpinning, autoCount,
-  onSpin, onToggleAuto, onBetChange, onPaytable, theme, buttonStyles
+  onSpin, onToggleAuto, onBetChange, onPaytable, theme, buttonStyles, gridConfig
 }) {
   const styles = buttonStyles || {};
   const containerRef = useRef(null);
   const [scale, setScale] = useState(1);
+  const controlScale = (gridConfig?.control_scale || 100) / 100;
+  const controlPosX = gridConfig?.control_pos_x ?? 50;
+  const controlPosY = gridConfig?.control_pos_y ?? 50;
 
   useEffect(() => {
     const el = containerRef.current;
@@ -155,7 +158,7 @@ export default function SlotControlBar({
   const maxBet = () => onBetChange(BET_STEPS[BET_STEPS.length - 1]);
 
   return (
-    <div ref={containerRef} className="absolute inset-0" style={{ zIndex: 15 }}>
+    <div ref={containerRef} className="absolute inset-0" style={{ zIndex: 15, transform: `translate(${(controlPosX - 50) * 2}%, ${(controlPosY - 50) * 2}%) scale(${controlScale})`, transformOrigin: "center bottom" }}>
 
       {/* ─── Engraved counter panel (Credits | Bet | Win) ─── */}
       <div style={posStyle("counter_panel")} className="pointer-events-none">
@@ -183,7 +186,7 @@ export default function SlotControlBar({
           size="sm"
           whileTap
         >
-          <span className="text-[10px]">{autoSpinning ? `■ ${autoCount}` : "▶ A"}</span>
+          <span className="text-[10px]">{autoSpinning ? `■ ${autoCount}` : "AUTO"}</span>
         </MetalButtonSVG>
       </div>
 

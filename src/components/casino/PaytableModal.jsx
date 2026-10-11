@@ -17,16 +17,17 @@ export default function PaytableModal({ show, theme, onClose, symbols }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-          style={{ background: "rgba(0,0,0,0.8)", backdropFilter: "blur(8px)" }}
+          className="fixed inset-0 z-[100] flex justify-end"
+          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
           onClick={onClose}
         >
           <motion.div
-            initial={{ scale: 0.9, y: 20 }}
-            animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.9, y: 20 }}
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md rounded-2xl overflow-hidden"
+            className="w-full max-w-sm h-full overflow-y-auto scrollbar-thin"
             style={{
               background: theme.controlBg,
               border: `1px solid ${theme.frameAccent}50`,
