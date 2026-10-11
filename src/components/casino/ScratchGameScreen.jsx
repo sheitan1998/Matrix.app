@@ -198,7 +198,8 @@ export default function ScratchGameScreen({ balance, setBalance, onBack }) {
             key={scratchKey}
             grid={scratchGrid}
             result={scratchResult}
-            onRevealed={handleRevealed} />
+            onRevealed={handleRevealed}
+            cardBackgroundImage={gameConfig?.card_background_image} />
           
           </div> :
         scratchResult && revealed ?

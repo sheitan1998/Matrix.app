@@ -87,6 +87,10 @@
       "type": "string",
       "description": "URL de l'image de fond de la page de jeu"
     },
+    "card_background_image": {
+      "type": "string",
+      "description": "URL de l'image de fond (cadre) du ticket a gratter"
+    },
     "background_color": {
       "type": "string",
       "default": "#0a050f",

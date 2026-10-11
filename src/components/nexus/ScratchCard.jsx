@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 
 const SCRATCH_RADIUS = 42;
-const REVEAL_THRESHOLD = 50;
+const REVEAL_THRESHOLD = 70;
 const COIN_IMAGE =
   "https://media.base44.com/images/public/69e14a987a927963a9924d5a/aca8e7da3_ChatGPT_Image_3_aot_2026__16_22_42-removebg-preview.png";
 
@@ -9,7 +9,7 @@ const COIN_IMAGE =
  * Carte à gratter (canvas) — texture métallisée, brosse texturée à bords irréguliers,
  * curseur en pièce de monnaie et particules de résidu.
  */
-export default function ScratchCard({ grid, result, onRevealed, disabled, onScratchStart }) {
+export default function ScratchCard({ grid, result, onRevealed, disabled, onScratchStart, cardBackgroundImage }) {
   const canvasRef = useRef(null);
   const particleCanvasRef = useRef(null);
   const isDrawingRef = useRef(false);
@@ -124,21 +124,21 @@ export default function ScratchCard({ grid, result, onRevealed, disabled, onScra
     if (now - lastParticleSpawnRef.current < 30) return;
     lastParticleSpawnRef.current = now;
 
-    const count = 3 + Math.floor(Math.random() * 3);
+    const count = 1 + Math.floor(Math.random() * 2);
     for (let i = 0; i < count; i++) {
       particlesRef.current.push({
         x: x + (Math.random() - 0.5) * SCRATCH_RADIUS,
         y: y + (Math.random() - 0.5) * SCRATCH_RADIUS,
-        vx: (Math.random() - 0.5) * 3,
-        vy: -Math.random() * 2 - 0.5,
-        size: 1.5 + Math.random() * 2.5,
+        vx: (Math.random() - 0.5) * 2,
+        vy: -Math.random() * 1.5 - 0.3,
+        size: 1.5 + Math.random() * 2,
         color: Math.random() > 0.5 ? "#b0b0b0" : "#d4af37",
         createdAt: now,
       });
     }
     // Cap particle count
-    if (particlesRef.current.length > 120) {
-      particlesRef.current.splice(0, particlesRef.current.length - 120);
+    if (particlesRef.current.length > 60) {
+      particlesRef.current.splice(0, particlesRef.current.length - 60);
     }
   }, []);
 
@@ -298,7 +298,14 @@ export default function ScratchCard({ grid, result, onRevealed, disabled, onScra
       {/* Symbol grid + canvas */}
       <div
         className="relative rounded-2xl overflow-hidden grid grid-cols-3"
-        style={{ aspectRatio: "3 / 2", touchAction: "none", background: "rgba(10,5,15,0.8)" }}
+        style={{
+          aspectRatio: "3 / 2",
+          touchAction: "none",
+          background: cardBackgroundImage ? "transparent" : "rgba(10,5,15,0.8)",
+          backgroundImage: cardBackgroundImage ? `url(${cardBackgroundImage})` : undefined,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
       >
         {grid.map((sym, i) => (
           <div
@@ -369,10 +376,10 @@ export default function ScratchCard({ grid, result, onRevealed, disabled, onScra
             alt=""
             className="absolute pointer-events-none"
             style={{
-              left: coinPos.x - 18,
-              top: coinPos.y - 18,
-              width: 36,
-              height: 36,
+              left: coinPos.x - 24,
+              top: coinPos.y - 24,
+              width: 48,
+              height: 48,
               zIndex: 20,
               filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))",
             }}

@@ -16,6 +16,7 @@ const DEFAULT_CONFIG = {
   banner_image: "",
   icon: "🎫",
   background_image: "",
+  card_background_image: "",
   background_color: "#0a050f",
   ticket_price: 10000,
   win_rate: 30,
@@ -136,6 +137,7 @@ export default function ScratchCardConfigPanel() {
         banner_image: config.banner_image,
         icon: config.icon,
         background_image: config.background_image,
+        card_background_image: config.card_background_image,
         background_color: config.background_color,
         ticket_price: Number(config.ticket_price),
         win_rate: Number(config.win_rate),
@@ -196,6 +198,7 @@ export default function ScratchCardConfigPanel() {
       <div className="rounded-2xl border border-white/10 p-4 space-y-3" style={{ background: "rgba(15,10,25,0.6)" }}>
         <p className="text-xs font-bold text-white/60 uppercase">Fonds & arrière-plans</p>
         <ImageUploadField label="Image de fond de la page" value={config.background_image || ""} onChange={v => updateField("background_image", v)} hint="Image de fond de l'écran de jeu. Si vide, la couleur de fond est utilisée." />
+        <ImageUploadField label="Image de fond du ticket (cadre)" value={config.card_background_image || ""} onChange={v => updateField("card_background_image", v)} hint="Image de fond (cadre décoratif) affichée derrière la grille de grattage du ticket." />
         <div>
           <label className="text-[10px] font-bold text-white/50 mb-1 block">Couleur de fond (si pas d'image)</label>
           <div className="flex gap-2 items-center">
