@@ -28,7 +28,7 @@ export default function CasinoPlayersManager() {
     setResetting(playerId);
     try {
       await base44.entities.CasinoPlayer.update(playerId, {
-        balance: 0,
+        balance: 5000,
         total_won: 0,
         total_wagered: 0,
         total_bets: 0,
@@ -49,7 +49,7 @@ export default function CasinoPlayersManager() {
     try {
       await base44.entities.CasinoPlayer.updateMany({}, {
         $set: {
-          balance: 0,
+          balance: 5000,
           total_won: 0,
           total_wagered: 0,
           total_bets: 0,
