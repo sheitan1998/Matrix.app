@@ -1,13 +1,15 @@
 import React, { useState } from "react";
-import { Coins, Ticket, CircleDashed } from "lucide-react";
+import { Coins, Ticket, CircleDashed, Users } from "lucide-react";
 import SlotConfigPanel from "@/components/admin/SlotConfigPanel";
 import ScratchCardConfigPanel from "@/components/admin/ScratchCardConfigPanel";
 import WheelConfigPanel from "@/components/admin/WheelConfigPanel";
+import CasinoPlayersManager from "@/components/admin/CasinoPlayersManager";
 
 const SUB_TABS = [
   { id: "slots", label: "Machines à sous", icon: Coins, color: "#d4af37" },
   { id: "scratch", label: "Tickets à gratter", icon: Ticket, color: "#a855f7" },
   { id: "wheel", label: "Roue de la Fortune", icon: CircleDashed, color: "#00ffff" },
+  { id: "players", label: "Joueurs & Gains", icon: Users, color: "#22c55e" },
 ];
 
 export default function CasinoManager() {
@@ -46,6 +48,7 @@ export default function CasinoManager() {
         {subTab === "slots" && <SlotConfigPanel />}
         {subTab === "scratch" && <ScratchCardConfigPanel />}
         {subTab === "wheel" && <WheelConfigPanel />}
+        {subTab === "players" && <CasinoPlayersManager />}
       </div>
     </div>
   );

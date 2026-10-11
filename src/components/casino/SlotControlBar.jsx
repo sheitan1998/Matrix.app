@@ -121,6 +121,10 @@ export default function SlotControlBar({
   const controlScale = (gridConfig?.control_scale || 100) / 100;
   const controlPosX = gridConfig?.control_pos_x ?? 50;
   const controlPosY = gridConfig?.control_pos_y ?? 0;
+  const buttonGap = gridConfig?.button_gap ?? 8;
+  const spinScale = (gridConfig?.spin_scale || 100) / 100;
+  const spinPosX = gridConfig?.spin_pos_x ?? 85;
+  const spinPosY = gridConfig?.spin_pos_y ?? 92;
 
   useEffect(() => {
     const el = containerRef.current;
@@ -166,7 +170,7 @@ export default function SlotControlBar({
       </div>
 
       {/* ─── Compact action button group ─── */}
-      <div style={posStyle("action_group")} className="flex items-center gap-2">
+      <div style={{ ...posStyle("action_group"), gap: `${buttonGap}px` }} className="flex items-center">
         <MetalButtonSVG onClick={decreaseBet} disabled={spinning || autoSpinning} variant="red" size="sm" whileTap>
           <span className="text-base leading-none">−</span>
         </MetalButtonSVG>
@@ -190,7 +194,11 @@ export default function SlotControlBar({
       {/* ─── SPIN button (centerpiece) ─── */}
       <motion.button
         style={{
-          ...posStyle("spin"),
+          position: "absolute",
+          left: `${spinPosX}%`,
+          top: `${spinPosY}%`,
+          transform: `translate(-50%, -50%) scale(${scale * spinScale})`,
+          zIndex: 20,
           background: spinning || autoSpinning
             ? "linear-gradient(180deg, #555 0%, #333 50%, #222 100%)"
             : "linear-gradient(180deg, #f5d77a 0%, #d4af37 40%, #8b6914 100%)",

@@ -14,6 +14,10 @@ export const DEFAULT_GRID_CONFIG = {
   control_pos_x: 50,
   control_pos_y: 0,
   control_scale: 100,
+  button_gap: 8,
+  spin_pos_x: 85,
+  spin_pos_y: 92,
+  spin_scale: 100,
 };
 
 function SymbolCell({ sym, isWinning, symbolSize }) {

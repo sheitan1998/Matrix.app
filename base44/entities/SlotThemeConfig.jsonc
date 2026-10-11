@@ -54,17 +54,37 @@
     "control_pos_y": {
       "type": "number",
       "default": 0,
-      "description": "Decalage vertical des boutons vers le haut en pourcentage (0 = en bas, 10 = remonte de 10%)"
+      "description": "Decalage vertical des boutons vers le haut en pourcentage (0 = en bas)"
     },
     "control_scale": {
       "type": "number",
       "default": 100,
       "description": "Echelle des boutons en pourcentage (50-200)"
     },
+    "button_gap": {
+      "type": "number",
+      "default": 8,
+      "description": "Espacement entre les boutons de controle en pixels"
+    },
+    "spin_pos_x": {
+      "type": "number",
+      "default": 85,
+      "description": "Position horizontale du bouton SPIN en pourcentage"
+    },
+    "spin_pos_y": {
+      "type": "number",
+      "default": 92,
+      "description": "Position verticale du bouton SPIN en pourcentage"
+    },
+    "spin_scale": {
+      "type": "number",
+      "default": 100,
+      "description": "Echelle du bouton SPIN en pourcentage (50-200)"
+    },
     "paytable_pos_x": {
       "type": "number",
       "default": 100,
-      "description": "Position horizontale du panneau de gains en pourcentage (100 = droite, 0 = gauche)"
+      "description": "Position horizontale du panneau de gains en pourcentage (100 = droite)"
     },
     "paytable_pos_y": {
       "type": "number",

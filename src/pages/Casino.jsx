@@ -152,7 +152,8 @@ export default function Casino() {
         </div>
       </header>
 
-      {/* Scratch tickets poster — fixed top-right, below the header */}
+      {/* Scratch tickets poster — fixed top-right — visible only on casino home screen */}
+      {screen === "home" &&
       <motion.button
         initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4, delay: 0.3 }}
@@ -171,6 +172,7 @@ export default function Casino() {
           <span className="text-[9px] font-black" style={{ color: "#a855f7" }}>GRATTER</span>
         </div>
       </motion.button>
+      }
 
       {/* Responsible gaming notice */}
       
