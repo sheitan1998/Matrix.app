@@ -162,7 +162,7 @@ export default function Casino() {
         style={{ border: "2px solid rgba(168,85,247,0.35)", boxShadow: "0 0 20px rgba(168,85,247,0.15), 0 8px 30px rgba(0,0,0,0.5)" }}
         title="Tickets à Gratter">
         
-        <img src={SCRATCH_CARD_IMG} alt="Tickets à Gratter" className="w-full h-auto block py-10 mx-1" style={{ objectFit: "contain" }} />
+        <img src={SCRATCH_CARD_IMG} alt="Tickets à Gratter" className="w-full h-auto block mx-1 py-6" style={{ objectFit: "contain" }} />
         <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
         style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.1) 0%, transparent 50%, rgba(0,242,255,0.12) 100%)" }} />
         <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-lg flex items-center gap-1"
