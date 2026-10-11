@@ -38,6 +38,9 @@ const DEFAULT_CONFIG = {
   spin_cost: 20000,
   reset_hour_utc: 12,
   wheel_border: { width: 4, style: "solid", color: "#a855f7", color2: "#00ffff", image: "" },
+  wheel_scale: 100,
+  wheel_pos_x: 50,
+  wheel_pos_y: 50,
   rewards: [
     { id: "perdu", label: "Perdu", desc: "Réessayez !", icon: "💀", amount: 0, weight: 65, type: "lose", bg_color: "#3a3a3a", bg_image: "" },
     { id: "1000", label: "1 000 jetons", desc: "Petit gain", amount: 1000, weight: 55, type: "tokens", bg_color: "#00bfff", bg_image: "" },
@@ -129,6 +132,9 @@ export default function WheelConfigPanel() {
         background_pos_x: Number(config.background_pos_x),
         background_pos_y: Number(config.background_pos_y),
         wheel_border: config.wheel_border,
+        wheel_scale: Number(config.wheel_scale),
+        wheel_pos_x: Number(config.wheel_pos_x),
+        wheel_pos_y: Number(config.wheel_pos_y),
         spin_cost: Number(config.spin_cost),
         reset_hour_utc: Number(config.reset_hour_utc),
         title_style: config.title_style,
@@ -397,6 +403,32 @@ export default function WheelConfigPanel() {
           )}
         </div>
         <ImageUploadField label="Image de contour (optionnel)" value={config.wheel_border?.image || ""} onChange={v => updateWheelBorder("image", v)} hint="Image de contour de la roue. Surcharge la couleur si définie." aspect="square" />
+      </div>
+
+      {/* Wheel layout & positioning */}
+      <div className="rounded-2xl border border-white/10 p-4 space-y-3" style={{ background: "rgba(15,10,25,0.6)" }}>
+        <p className="text-xs font-bold text-white/60 uppercase">Disposition & taille de la roue</p>
+        <div>
+          <label className="text-[10px] font-bold text-white/50 mb-1 block">Échelle ({config.wheel_scale ?? 100}%)</label>
+          <input type="range" min="50" max="200" value={config.wheel_scale ?? 100} onChange={e => updateField("wheel_scale", Number(e.target.value))}
+            className="w-full accent-cyan-400" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-[10px] font-bold text-white/50 mb-1 block">Décalage X ({config.wheel_pos_x ?? 50}%)</label>
+            <input type="range" min="0" max="100" value={config.wheel_pos_x ?? 50} onChange={e => updateField("wheel_pos_x", Number(e.target.value))}
+              className="w-full accent-fuchsia-400" />
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-white/50 mb-1 block">Décalage Y ({config.wheel_pos_y ?? 50}%)</label>
+            <input type="range" min="0" max="100" value={config.wheel_pos_y ?? 50} onChange={e => updateField("wheel_pos_y", Number(e.target.value))}
+              className="w-full accent-fuchsia-400" />
+          </div>
+        </div>
+        <button onClick={() => { updateField("wheel_scale", 100); updateField("wheel_pos_x", 50); updateField("wheel_pos_y", 50); }}
+          className="px-2 py-1 rounded-lg text-[10px] font-bold text-white/60 border border-white/10 hover:bg-white/5">
+          Centrer / Réinitialiser
+        </button>
       </div>
 
       {/* Rewards config */}

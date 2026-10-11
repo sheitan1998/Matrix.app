@@ -148,6 +148,21 @@
       "default": {},
       "description": "Configuration du contour exterieur de la roue"
     },
+    "wheel_scale": {
+      "type": "number",
+      "default": 100,
+      "description": "Echelle de la roue en pourcentage (50-200, 100 = taille par defaut)"
+    },
+    "wheel_pos_x": {
+      "type": "number",
+      "default": 50,
+      "description": "Decalage horizontal de la roue en pourcentage (0-100, 50 = centre)"
+    },
+    "wheel_pos_y": {
+      "type": "number",
+      "default": 50,
+      "description": "Decalage vertical de la roue en pourcentage (0-100, 50 = centre)"
+    },
     "ticket_price": {
       "type": "number",
       "default": 10000,

@@ -158,6 +158,12 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
   const bgScale = Number(gameConfig?.background_scale ?? 100);
   const bgPosX = Number(gameConfig?.background_pos_x ?? 50);
   const bgPosY = Number(gameConfig?.background_pos_y ?? 50);
+  const wheelScale = Number(gameConfig?.wheel_scale ?? 100);
+  const wheelPosX = Number(gameConfig?.wheel_pos_x ?? 50);
+  const wheelPosY = Number(gameConfig?.wheel_pos_y ?? 50);
+  // Convert percentage offsets to pixel shifts relative to container center
+  const wheelOffsetX = (wheelPosX - 50) * 4; // -200px to +200px
+  const wheelOffsetY = (wheelPosY - 50) * 3; // -150px to +150px
 
   return (
     <div
@@ -194,7 +200,10 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
       </div>
 
       {/* Wheel container */}
-      <div className="relative w-full max-w-sm mb-6">
+      <div className="relative w-full max-w-sm mb-6" style={{
+        transform: `scale(${wheelScale / 100}) translate(${wheelOffsetX}px, ${wheelOffsetY}px)`,
+        transformOrigin: "center center",
+      }}>
         {/* Radial glow backdrop — integrates wheel with background */}
         <div className="absolute inset-0 -z-10 rounded-full" style={{
           background: "radial-gradient(circle at center, rgba(168,85,247,0.18) 0%, rgba(0,242,255,0.08) 45%, transparent 70%)",
