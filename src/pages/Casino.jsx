@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
@@ -14,6 +14,8 @@ import { formatBet } from "@/components/casino/slotThemes";
 import { toast } from "sonner";
 import { useProgression } from "@/context/ProgressionContext";
 import ThemeSelectionModal from "@/components/casino/ThemeSelectionModal";
+import { useAssetPreloader } from "@/hooks/useAssetPreloader";
+import { getCasinoAssets } from "@/lib/casinoAssets";
 
 const CASINO_BALANCE_KEY = "matrix_casino_coins";
 const SLOTS_CARD_IMG = "/media/tuto-gaming/62275f2a2_generated_image.png";
@@ -53,6 +55,9 @@ export default function Casino() {
   const [newAchievements, setNewAchievements] = useState([]);
   const [selectedTheme, setSelectedTheme] = useState(null);
   const [showThemeSelect, setShowThemeSelect] = useState(false);
+
+  // Préchargement des assets casino (slots, roue, tickets, tokens)
+  useAssetPreloader(getCasinoAssets());
 
   // Fetch 24h gains on mount
   useEffect(() => {
@@ -270,7 +275,7 @@ export default function Casino() {
 }
 
 // ─── Casino Home (lobby) ───
-function CasinoHome({ balance, onPlay, onScratch, onWheel }) {
+const CasinoHome = memo(function CasinoHome({ balance, onPlay, onScratch, onWheel }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-100px)] px-4 py-8">
       {/* Game cards grid */}
@@ -368,18 +373,17 @@ function CasinoHome({ balance, onPlay, onScratch, onWheel }) {
 
       
     </div>);
+    });
 
-}
-
-// ─── Floating token background decoration ───
-function FloatingTokens() {
-  const tokens = Array.from({ length: 6 }, (_, i) => ({
+    // ─── Floating token background decoration ───
+    function FloatingTokens() {
+    const tokens = useMemo(() => Array.from({ length: 6 }, (_, i) => ({
     id: i,
     x: Math.random() * 100,
     delay: Math.random() * 6,
     duration: 8 + Math.random() * 6,
     size: 30 + Math.floor(Math.random() * 30)
-  }));
+    })), []);
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
       {tokens.map((t) =>

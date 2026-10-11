@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import CasinoToken from "./CasinoToken";
@@ -59,7 +59,7 @@ function computeWinningCells(winRow, winCount) {
 export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
   const theme = SLOT_THEMES[themeId] || SLOT_THEMES[DEFAULT_THEME];
   const [customSymbols, setCustomSymbols] = useState(null);
-  const SYMBOLS = customSymbols || theme.symbols;
+  const SYMBOLS = useMemo(() => customSymbols || theme.symbols, [customSymbols, theme.symbols]);
 
   const [spinning, setSpinning] = useState(false);
   const [autoSpinning, setAutoSpinning] = useState(false);

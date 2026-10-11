@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo, memo } from "react";
 import { pickRandom } from "./slotThemes";
 import WinLineOverlay from "./WinLineOverlay";
 import { normalizeAppAssetUrl } from "@/lib/urlUtils";
@@ -20,14 +20,30 @@ export const DEFAULT_GRID_CONFIG = {
   spin_scale: 100,
 };
 
-function SymbolCell({ sym, isWinning, symbolSize }) {
+const SymbolCell = memo(function SymbolCell({ sym, isWinning, symbolSize }) {
+  const cellStyle = useMemo(() => ({
+    filter: isWinning ? `drop-shadow(0 0 8px ${sym.glow}) drop-shadow(0 0 16px ${sym.glow})` : "none",
+    transform: isWinning ? "scale(1.12)" : "scale(1)",
+  }), [isWinning, sym.glow]);
+
+  const imgStyle = useMemo(() => ({
+    maxWidth: `${symbolSize * 1.5}px`,
+    maxHeight: `${symbolSize * 1.5}px`,
+  }), [symbolSize]);
+
+  const textStyle = useMemo(() => ({
+    fontSize: `${symbolSize}px`,
+    color: sym.color,
+    textShadow: isWinning
+      ? `0 0 8px ${sym.glow}, 0 0 16px ${sym.glow}`
+      : `0 0 3px ${sym.glow}`,
+    fontFamily: "'Arial Black', sans-serif",
+  }), [symbolSize, sym.color, sym.glow, isWinning]);
+
   return (
     <div
       className="flex items-center justify-center transition-all duration-300 w-full h-full"
-      style={{
-        filter: isWinning ? `drop-shadow(0 0 8px ${sym.glow}) drop-shadow(0 0 16px ${sym.glow})` : "none",
-        transform: isWinning ? "scale(1.12)" : "scale(1)",
-      }}
+      style={cellStyle}
     >
       {sym.image_url ? (
         <img
@@ -36,20 +52,10 @@ function SymbolCell({ sym, isWinning, symbolSize }) {
           draggable={false}
           onContextMenu={(e) => e.preventDefault()}
           className="object-contain"
-          style={{ maxWidth: `${symbolSize * 1.5}px`, maxHeight: `${symbolSize * 1.5}px` }}
+          style={imgStyle}
         />
       ) : sym.isText ? (
-        <span
-          className="font-black leading-none"
-          style={{
-            fontSize: `${symbolSize}px`,
-            color: sym.color,
-            textShadow: isWinning
-              ? `0 0 8px ${sym.glow}, 0 0 16px ${sym.glow}`
-              : `0 0 3px ${sym.glow}`,
-            fontFamily: "'Arial Black', sans-serif",
-          }}
-        >
+        <span className="font-black leading-none" style={textStyle}>
           {sym.s}
         </span>
       ) : (
@@ -57,9 +63,9 @@ function SymbolCell({ sym, isWinning, symbolSize }) {
       )}
     </div>
   );
-}
+});
 
-function ReelColumn({ spinning, finalSymbols, stopDelay, showResult, symbols, theme, columnIndex, winningCells, symbolSize, gridGap }) {
+const ReelColumn = memo(function ReelColumn({ spinning, finalSymbols, stopDelay, showResult, symbols, theme, columnIndex, winningCells, symbolSize, gridGap }) {
   const [displaySyms, setDisplaySyms] = useState(finalSymbols);
   const [stopped, setStopped] = useState(false);
   const intervalRef = useRef(null);
@@ -81,8 +87,10 @@ function ReelColumn({ spinning, finalSymbols, stopDelay, showResult, symbols, th
     return () => { clearInterval(intervalRef.current); clearTimeout(timeoutRef.current); };
   }, [spinning, finalSymbols, stopDelay]);
 
+  const colStyle = useMemo(() => ({ gap: `${gridGap}px` }), [gridGap]);
+
   return (
-    <div className="flex flex-col flex-1 overflow-hidden" style={{ gap: `${gridGap}px` }}>
+    <div className="flex flex-col flex-1 overflow-hidden" style={colStyle}>
       {displaySyms.map((sym, rowIdx) => {
         const isWinning = stopped && showResult && winningCells?.[columnIndex]?.[rowIdx];
         return (
@@ -100,24 +108,26 @@ function ReelColumn({ spinning, finalSymbols, stopDelay, showResult, symbols, th
       })}
     </div>
   );
-}
+});
 
-export default function SlotReelGrid({ spinning, finalGrid, showResult, theme, winningCells, gridConfig, symbols }) {
-  const SYMBOLS = symbols || theme.symbols;
-  const config = gridConfig || DEFAULT_GRID_CONFIG;
+function SlotReelGrid({ spinning, finalGrid, showResult, theme, winningCells, gridConfig, symbols }) {
+  const SYMBOLS = useMemo(() => symbols || theme.symbols, [symbols, theme.symbols]);
+  const config = useMemo(() => gridConfig || DEFAULT_GRID_CONFIG, [gridConfig]);
+
+  const gridStyle = useMemo(() => ({
+    left: `${config.grid_pos_x}%`,
+    top: `${config.grid_pos_y}%`,
+    transform: "translate(-50%, -50%)",
+    width: `${config.grid_width}%`,
+    height: `${config.grid_height}%`,
+  }), [config.grid_pos_x, config.grid_pos_y, config.grid_width, config.grid_height]);
 
   return (
     <div className="absolute inset-0">
       {/* Grille positionnee selon la config admin */}
       <div
         className="absolute"
-        style={{
-          left: `${config.grid_pos_x}%`,
-          top: `${config.grid_pos_y}%`,
-          transform: "translate(-50%, -50%)",
-          width: `${config.grid_width}%`,
-          height: `${config.grid_height}%`,
-        }}
+        style={gridStyle}
       >
         <div className="relative w-full h-full">
           {/* Rouleaux */}
@@ -151,3 +161,5 @@ export default function SlotReelGrid({ spinning, finalGrid, showResult, theme, w
     </div>
   );
 }
+
+export default memo(SlotReelGrid);

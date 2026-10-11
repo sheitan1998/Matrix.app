@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useMemo, memo } from "react";
 import { motion } from "framer-motion";
 import CasinoToken from "./CasinoToken";
 import { formatBet, BET_STEPS } from "./slotThemes";
@@ -111,7 +111,7 @@ function CounterPanel({ balance, bet, lastWin }) {
   );
 }
 
-export default function SlotControlBar({
+function SlotControlBar({
   balance, bet, lastWin, spinning, autoSpinning, autoCount,
   onSpin, onToggleAuto, onBetChange, onPaytable, theme, buttonStyles, gridConfig
 }) {
@@ -161,8 +161,42 @@ export default function SlotControlBar({
   };
   const maxBet = () => onBetChange(BET_STEPS[BET_STEPS.length - 1]);
 
+  const containerStyle = useMemo(() => ({
+    zIndex: 15,
+    transform: `translate(${(controlPosX - 50) * 2}%, ${-controlPosY}%) scale(${controlScale})`,
+    transformOrigin: "center bottom",
+  }), [controlPosX, controlPosY, controlScale]);
+
+  const actionGroupStyle = useMemo(() => ({
+    ...posStyle("action_group"),
+    gap: `${buttonGap}px`,
+  }), [posStyle, buttonGap]);
+
+  const spinButtonStyle = useMemo(() => ({
+    position: "absolute",
+    left: `${spinPosX}%`,
+    top: `${spinPosY}%`,
+    transform: `translate(-50%, -50%) scale(${scale * spinScale})`,
+    zIndex: 20,
+    background: spinning || autoSpinning
+      ? "linear-gradient(180deg, #555 0%, #333 50%, #222 100%)"
+      : "linear-gradient(180deg, #f5d77a 0%, #d4af37 40%, #8b6914 100%)",
+    border: "2px solid #ffd700",
+    borderRadius: "14px",
+    boxShadow: `
+      inset 0 2px 2px rgba(255,255,255,0.4),
+      inset 0 -3px 6px rgba(0,0,0,0.5),
+      inset 0 0 12px rgba(255,215,0,0.2),
+      0 3px 6px rgba(0,0,0,0.6),
+      0 0 20px rgba(255,215,0,0.3)
+    `,
+    textShadow: "0 1px 3px rgba(0,0,0,0.8), 0 0 10px rgba(255,215,0,0.5)",
+    clipPath: "polygon(6% 0, 94% 0, 100% 12%, 100% 88%, 94% 100%, 6% 100%, 0 88%, 0 12%)",
+    color: "#fff",
+  }), [spinPosX, spinPosY, scale, spinScale, spinning, autoSpinning]);
+
   return (
-    <div ref={containerRef} className="absolute inset-0" style={{ zIndex: 15, transform: `translate(${(controlPosX - 50) * 2}%, ${-controlPosY}%) scale(${controlScale})`, transformOrigin: "center bottom" }}>
+    <div ref={containerRef} className="absolute inset-0" style={containerStyle}>
 
       {/* ─── Engraved counter panel (Credits | Bet | Win) ─── */}
       <div style={posStyle("counter_panel")} className="pointer-events-none">
@@ -170,7 +204,7 @@ export default function SlotControlBar({
       </div>
 
       {/* ─── Compact action button group ─── */}
-      <div style={{ ...posStyle("action_group"), gap: `${buttonGap}px` }} className="flex items-center">
+      <div style={actionGroupStyle} className="flex items-center">
         <MetalButtonSVG onClick={decreaseBet} disabled={spinning || autoSpinning} variant="red" size="sm" whileTap>
           <span className="text-base leading-none">−</span>
         </MetalButtonSVG>
@@ -193,28 +227,7 @@ export default function SlotControlBar({
 
       {/* ─── SPIN button (centerpiece) ─── */}
       <motion.button
-        style={{
-          position: "absolute",
-          left: `${spinPosX}%`,
-          top: `${spinPosY}%`,
-          transform: `translate(-50%, -50%) scale(${scale * spinScale})`,
-          zIndex: 20,
-          background: spinning || autoSpinning
-            ? "linear-gradient(180deg, #555 0%, #333 50%, #222 100%)"
-            : "linear-gradient(180deg, #f5d77a 0%, #d4af37 40%, #8b6914 100%)",
-          border: "2px solid #ffd700",
-          borderRadius: "14px",
-          boxShadow: `
-            inset 0 2px 2px rgba(255,255,255,0.4),
-            inset 0 -3px 6px rgba(0,0,0,0.5),
-            inset 0 0 12px rgba(255,215,0,0.2),
-            0 3px 6px rgba(0,0,0,0.6),
-            0 0 20px rgba(255,215,0,0.3)
-          `,
-          textShadow: "0 1px 3px rgba(0,0,0,0.8), 0 0 10px rgba(255,215,0,0.5)",
-          clipPath: "polygon(6% 0, 94% 0, 100% 12%, 100% 88%, 94% 100%, 6% 100%, 0 88%, 0 12%)",
-          color: "#fff",
-        }}
+        style={spinButtonStyle}
         onClick={onSpin}
         disabled={spinning || autoSpinning}
         whileTap={{ scale: 0.92 }}
@@ -225,3 +238,5 @@ export default function SlotControlBar({
     </div>
   );
 }
+
+export default memo(SlotControlBar);

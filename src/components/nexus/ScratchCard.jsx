@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback } from "react";
+import React, { useRef, useState, useEffect, useCallback, memo } from "react";
 
 const SCRATCH_RADIUS = 42;
 const REVEAL_RATIO = 0.9; // part des icônes à découvrir pour déclencher la révélation
@@ -10,7 +10,7 @@ const COIN_IMAGE =
  * Carte à gratter (canvas) — texture métallisée, brosse texturée à bords irréguliers,
  * curseur en pièce de monnaie et particules de résidu.
  */
-export default function ScratchCard({ grid, result, onRevealed, disabled, onScratchStart, cardBackgroundImage }) {
+function ScratchCard({ grid, result, onRevealed, disabled, onScratchStart, cardBackgroundImage }) {
   const canvasRef = useRef(null);
   const particleCanvasRef = useRef(null);
   const isDrawingRef = useRef(false);
@@ -434,3 +434,5 @@ export default function ScratchCard({ grid, result, onRevealed, disabled, onScra
     </div>
   );
 }
+
+export default memo(ScratchCard);
