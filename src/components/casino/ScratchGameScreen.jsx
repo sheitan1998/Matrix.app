@@ -31,15 +31,15 @@ export default function ScratchGameScreen({ balance, setBalance, onBack }) {
       try {
         const records = await base44.entities.CasinoGameConfig.filter({ game_key: 'scratch' });
         setGameConfig(records[0] || null);
-      } catch { /* silent */ }
+      } catch {/* silent */}
     };
     loadConfig();
     const unsubscribe = base44.entities.CasinoGameConfig.subscribe((event) => {
-      if (event.type === 'delete') { setGameConfig(null); return; }
+      if (event.type === 'delete') {setGameConfig(null);return;}
       const rec = event.data;
       if (rec?.game_key === 'scratch') setGameConfig(rec);
     });
-    return () => { unsubscribe(); };
+    return () => {unsubscribe();};
   }, []);
 
   const fetchStatus = useCallback(async () => {
@@ -56,7 +56,7 @@ export default function ScratchGameScreen({ balance, setBalance, onBack }) {
     setLoading(false);
   }, [setBalance]);
 
-  useEffect(() => { fetchStatus(); }, [fetchStatus]);
+  useEffect(() => {fetchStatus();}, [fetchStatus]);
 
   const handleBuyTicket = async () => {
     setActionLoading(true);
@@ -90,7 +90,7 @@ export default function ScratchGameScreen({ balance, setBalance, onBack }) {
       }
       setScratchResult(data.result);
       setScratchGrid(data.grid);
-      setScratchKey(k => k + 1);
+      setScratchKey((k) => k + 1);
       setBalance(data.balance);
       setFreeTicketAvailable(data.freeTicketAvailable);
       setPurchasedTickets(data.purchasedTickets);
@@ -118,7 +118,7 @@ export default function ScratchGameScreen({ balance, setBalance, onBack }) {
     const diff = new Date(nextResetTime).getTime() - Date.now();
     if (diff <= 0) return "Disponible";
     const h = Math.floor(diff / (60 * 60 * 1000));
-    const m = Math.floor((diff % (60 * 60 * 1000)) / (60 * 1000));
+    const m = Math.floor(diff % (60 * 60 * 1000) / (60 * 1000));
     return `${h}h ${m}m`;
   };
 
@@ -130,23 +130,23 @@ export default function ScratchGameScreen({ balance, setBalance, onBack }) {
   const bgColor = gameConfig?.background_color || '#0a050f';
   const modeWinRate = selectedMode === "5" ? gameConfig?.scratch_mode_5_win_rate : gameConfig?.scratch_mode_3_win_rate;
   const rewards = gameConfig?.rewards?.length ? gameConfig.rewards : [
-    { icon: "🎯", label: "Relance" },
-    { icon: "💰", label: "10K" },
-    { icon: "💰", label: "50K" },
-    { icon: "💰", label: "100K" },
-    { icon: "💎", label: "1M" },
-    { icon: "😢", label: "Perdu" },
-  ];
+  { icon: "🎯", label: "Relance" },
+  { icon: "💰", label: "10K" },
+  { icon: "💰", label: "50K" },
+  { icon: "💰", label: "100K" },
+  { icon: "💎", label: "1M" },
+  { icon: "😢", label: "Perdu" }];
+
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-100px)] px-4 py-8" style={bgImage ? { backgroundImage: `url(${bustImageCache(bgImage, gameConfig?.updated_date)})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: bgColor }}>
       {/* Title */}
       <div className="flex items-center gap-2 mb-6">
-        {gameIcon && /^https?:\/\//i.test(gameIcon) ? (
-          <img src={bustImageCache(gameIcon, gameConfig?.updated_date)} alt="" className="w-6 h-6 object-contain" />
-        ) : (
-          <Sparkles className="w-5 h-5" style={{ color: "#a855f7" }} />
-        )}
+        {gameIcon && /^https?:\/\//i.test(gameIcon) ?
+        <img src={bustImageCache(gameIcon, gameConfig?.updated_date)} alt="" className="w-6 h-6 object-contain" /> :
+
+        <Sparkles className="w-5 h-5" style={{ color: "#a855f7" }} />
+        }
         <h2 className="text-xl font-black text-white">{gameTitle}</h2>
       </div>
 
@@ -173,20 +173,20 @@ export default function ScratchGameScreen({ balance, setBalance, onBack }) {
       <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-xl w-full max-w-md" style={{ background: "rgba(15,10,25,0.4)", border: "1px solid rgba(255,255,255,0.04)" }}>
         <Clock className="w-3 h-3 text-white/40 shrink-0" />
         <p className="text-[11px] text-white/50">
-          {freeTicketAvailable
-            ? "Ticket gratuit disponible ! Grattez-le avant qu'il ne soit perdu."
-            : `Prochain ticket gratuit dans ${formatResetCountdown()} (réarmement à 15h00)`}
+          {freeTicketAvailable ?
+          "Ticket gratuit disponible ! Grattez-le avant qu'il ne soit perdu." :
+          `Prochain ticket gratuit dans ${formatResetCountdown()} (réarmement à 15h00)`}
         </p>
       </div>
 
       {/* Scratch card area */}
       <div className="p-5 rounded-2xl mb-4 w-full max-w-md" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(168,85,247,0.15)" }}>
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
+        {loading ?
+        <div className="flex items-center justify-center py-12">
             <div className="w-8 h-8 border-3 border-white/10 rounded-full animate-spin" style={{ borderTopColor: "#a855f7" }} />
-          </div>
-        ) : isScratching ? (
-          <div>
+          </div> :
+        isScratching ?
+        <div>
             <p className="text-center text-sm text-white/60 mb-4">
               Grattez la carte pour révéler les symboles !
               <br />
@@ -195,14 +195,14 @@ export default function ScratchGameScreen({ balance, setBalance, onBack }) {
               </span>
             </p>
             <ScratchCard
-              key={scratchKey}
-              grid={scratchGrid}
-              result={scratchResult}
-              onRevealed={handleRevealed}
-            />
-          </div>
-        ) : scratchResult && revealed ? (
-          <div className="text-center py-6">
+            key={scratchKey}
+            grid={scratchGrid}
+            result={scratchResult}
+            onRevealed={handleRevealed} />
+          
+          </div> :
+        scratchResult && revealed ?
+        <div className="text-center py-6">
             <div className="text-5xl mb-3">
               {scratchResult.type === "lose" ? "😢" : scratchResult.amount >= 1000000 ? "💎" : "💰"}
             </div>
@@ -211,76 +211,76 @@ export default function ScratchGameScreen({ balance, setBalance, onBack }) {
             </p>
             {scratchResult.desc && <p className="text-sm text-white/50 mb-4">{scratchResult.desc}</p>}
             <button
-              onClick={() => { setScratchResult(null); setScratchGrid(null); setRevealed(false); }}
-              className="px-5 py-2 rounded-xl text-sm font-bold text-white transition hover:opacity-90 tap-sm"
-              style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}
-            >
+            onClick={() => {setScratchResult(null);setScratchGrid(null);setRevealed(false);}}
+            className="px-5 py-2 rounded-xl text-sm font-bold text-white transition hover:opacity-90 tap-sm"
+            style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
+            
               <RefreshCw className="w-3.5 h-3.5 inline mr-1.5" /> Nouveau ticket
             </button>
-          </div>
-        ) : (
-          <div className="text-center py-6">
+          </div> :
+
+        <div className="text-center py-6">
             {/* Mode selection */}
             <div className="text-5xl mb-3">🎟️</div>
             <p className="text-sm text-white/60 mb-4">Choisissez un mode de jeu :</p>
             <div className="grid grid-cols-2 gap-3 mb-5">
               <button
-                onClick={() => setSelectedMode("3")}
-                className="p-3 rounded-xl text-sm font-bold transition tap-sm flex flex-col items-center gap-1"
-                style={selectedMode === "3"
-                  ? { background: "linear-gradient(135deg, #a855f7, #6d28d9)", color: "#fff", border: "1px solid rgba(168,85,247,0.5)" }
-                  : { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}
-              >
+              onClick={() => setSelectedMode("3")}
+              className="p-3 rounded-xl text-sm font-bold transition tap-sm flex flex-col items-center gap-1"
+              style={selectedMode === "3" ?
+              { background: "linear-gradient(135deg, #a855f7, #6d28d9)", color: "#fff", border: "1px solid rgba(168,85,247,0.5)" } :
+              { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              
                 <LayoutGrid className="w-5 h-5" />
                 <span>3 identiques</span>
-                <span className="text-[9px] opacity-60">{gameConfig?.scratch_mode_3_win_rate ?? 30}% de gain</span>
+                <span className="text-[9px] opacity-60 hidden">{gameConfig?.scratch_mode_3_win_rate ?? 30}% de gain</span>
               </button>
               <button
-                onClick={() => setSelectedMode("5")}
-                className="p-3 rounded-xl text-sm font-bold transition tap-sm flex flex-col items-center gap-1"
-                style={selectedMode === "5"
-                  ? { background: "linear-gradient(135deg, #a855f7, #6d28d9)", color: "#fff", border: "1px solid rgba(168,85,247,0.5)" }
-                  : { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}
-              >
+              onClick={() => setSelectedMode("5")}
+              className="p-3 rounded-xl text-sm font-bold transition tap-sm flex flex-col items-center gap-1"
+              style={selectedMode === "5" ?
+              { background: "linear-gradient(135deg, #a855f7, #6d28d9)", color: "#fff", border: "1px solid rgba(168,85,247,0.5)" } :
+              { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              
                 <Target className="w-5 h-5" />
                 <span>5 identiques</span>
-                <span className="text-[9px] opacity-60">{gameConfig?.scratch_mode_5_win_rate ?? 15}% de gain</span>
+                <span className="text-[9px] opacity-60 hidden">{gameConfig?.scratch_mode_5_win_rate ?? 15}% de gain</span>
               </button>
             </div>
 
             {/* Ticket buttons */}
-            {canScratch ? (
-              <div className="flex flex-col gap-3 justify-center">
-                {freeTicketAvailable && (
-                  <button
-                    onClick={() => handleScratch("free")}
-                    disabled={actionLoading}
-                    className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition hover:opacity-90 tap-sm flex items-center justify-center gap-2"
-                    style={{ background: "linear-gradient(135deg, #22c55e, #16a34a)" }}
-                  >
+            {canScratch ?
+          <div className="flex flex-col gap-3 justify-center">
+                {freeTicketAvailable &&
+            <button
+              onClick={() => handleScratch("free")}
+              disabled={actionLoading}
+              className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition hover:opacity-90 tap-sm flex items-center justify-center gap-2"
+              style={{ background: "linear-gradient(135deg, #22c55e, #16a34a)" }}>
+              
                     <Gift className="w-4 h-4" /> Ticket gratuit quotidien
                   </button>
-                )}
-                {purchasedTickets > 0 && (
-                  <button
-                    onClick={() => handleScratch("purchased")}
-                    disabled={actionLoading}
-                    className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition hover:opacity-90 tap-sm flex items-center justify-center gap-2"
-                    style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}
-                  >
+            }
+                {purchasedTickets > 0 &&
+            <button
+              onClick={() => handleScratch("purchased")}
+              disabled={actionLoading}
+              className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition hover:opacity-90 tap-sm flex items-center justify-center gap-2"
+              style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
+              
                     <Ticket className="w-4 h-4" /> Gratter un ticket acheté ({purchasedTickets})
                   </button>
-                )}
-              </div>
-            ) : (
-              <div className="py-4">
+            }
+              </div> :
+
+          <div className="py-4">
                 <div className="text-4xl mb-3 opacity-50">🎫</div>
                 <p className="text-sm text-white/40 mb-2">Aucun ticket disponible.</p>
                 <p className="text-xs text-white/30">Achetez un ticket ci-dessous ou attendez le prochain ticket gratuit à 15h00.</p>
               </div>
-            )}
+          }
           </div>
-        )}
+        }
       </div>
 
       {/* Buy ticket */}
@@ -296,8 +296,8 @@ export default function ScratchGameScreen({ balance, setBalance, onBack }) {
           onClick={handleBuyTicket}
           disabled={actionLoading || balance < TICKET_PRICE}
           className="px-4 py-2 rounded-xl text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-30 tap-sm shrink-0"
-          style={{ background: balance >= TICKET_PRICE ? "linear-gradient(135deg, #a855f7, #6d28d9)" : "rgba(255,255,255,0.05)" }}
-        >
+          style={{ background: balance >= TICKET_PRICE ? "linear-gradient(135deg, #a855f7, #6d28d9)" : "rgba(255,255,255,0.05)" }}>
+          
           {balance < TICKET_PRICE ? "Solde insuffisant" : "Acheter"}
         </button>
       </div>
@@ -308,20 +308,20 @@ export default function ScratchGameScreen({ balance, setBalance, onBack }) {
           Récompenses ({Number(modeWinRate ?? 30)}% de chances de gain en mode {selectedMode} identiques) :
         </p>
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
-          {rewards.map((r, i) => (
-            <div key={i} className="p-1.5 rounded-lg text-center" style={{ background: "rgba(255,255,255,0.02)" }}>
+          {rewards.map((r, i) =>
+          <div key={i} className="p-1.5 rounded-lg text-center" style={{ background: "rgba(255,255,255,0.02)" }}>
               <div className="text-sm">
-                {r.icon && /^https?:\/\//i.test(r.icon) ? (
-                  <img src={bustImageCache(r.icon, gameConfig?.updated_date)} alt="" className="w-5 h-5 object-contain mx-auto" />
-                ) : (
-                  r.icon || "✨"
-                )}
+                {r.icon && /^https?:\/\//i.test(r.icon) ?
+              <img src={bustImageCache(r.icon, gameConfig?.updated_date)} alt="" className="w-5 h-5 object-contain mx-auto" /> :
+
+              r.icon || "✨"
+              }
               </div>
               <p className="text-[8px] font-bold text-white/70">{r.label}</p>
             </div>
-          ))}
+          )}
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
