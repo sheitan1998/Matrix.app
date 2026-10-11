@@ -309,21 +309,33 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
         </div>
         )}
         {/* Rewards panel — floating right on desktop */}
-        <div className="hidden lg:block absolute top-0 left-full ml-6 w-48 px-3 py-2 rounded-xl" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(255,255,255,0.06)" }}>
-          <p className="text-[10px] font-bold text-white/50 mb-2">Récompenses possibles :</p>
+        <div className="hidden lg:block absolute top-0 left-full ml-10 w-56 px-4 py-3 rounded-xl" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <p className="text-[11px] font-bold text-white/50 mb-2">Récompenses possibles :</p>
           <div className="flex flex-col gap-1.5">
             {segments.map((s, i) =>
-            <span key={i} className="px-2 py-1 rounded-full text-[10px] font-bold flex items-center gap-1.5" style={{ background: `${s.color}30`, border: `1px solid ${s.glow}40`, color: s.glow }}>
+            <span key={i} className="px-2.5 py-1.5 rounded-full text-[11px] font-bold flex items-center gap-1.5" style={{ background: `${s.color}30`, border: `1px solid ${s.glow}40`, color: s.glow }}>
                 {/^https?:\/\//i.test(s.icon) ? <img src={bustImageCache(s.icon, gameConfig?.updated_date)} alt="" className="inline-block h-4 w-4 object-contain" /> : <span className="text-sm">{s.icon}</span>} {s.label}
               </span>
             )}
           </div>
+          {/* Result display — below rewards on desktop */}
+          {showResult && result &&
+          <div className="mt-3 pt-3 text-center animate-in fade-in duration-500" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="text-3xl mb-1">
+                {result.type === "lose" ? "😢" : result.type === "trix" ? "🌟" : result.amount >= 1000000 ? "💎" : "💰"}
+              </div>
+              <p className="text-base font-black" style={{ color: result.type === "lose" ? "#ef4444" : result.type === "trix" ? "#00ff7f" : "#22c55e" }}>
+                {result.label}
+              </p>
+              {result.desc && <p className="text-[10px] text-white/50">{result.desc}</p>}
+            </div>
+          }
         </div>
       </div>
 
-      {/* Result display */}
+      {/* Result display — mobile only (desktop shows it inside rewards panel) */}
       {showResult && result &&
-      <div className="mb-4 text-center animate-in fade-in duration-500">
+      <div className="lg:hidden mb-4 text-center animate-in fade-in duration-500">
           <div className="text-4xl mb-1">
             {result.type === "lose" ? "😢" : result.type === "trix" ? "🌟" : result.amount >= 1000000 ? "💎" : "💰"}
           </div>
