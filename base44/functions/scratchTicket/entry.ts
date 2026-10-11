@@ -14,6 +14,15 @@ const DEFAULT_REWARDS = [
   { type: "tokens",   label: "💎 1 000 000 jetons",      desc: "Gain exceptionnel !",                    weight: 2,  amount: 1000000 },
 ];
 
+const DEFAULT_SCRATCH_SYMBOLS = [
+  { id: "cherry",   icon: "🍒", label: "Cerise" },
+  { id: "lemon",    icon: "🍋", label: "Citron" },
+  { id: "bell",     icon: "🔔", label: "Cloche" },
+  { id: "star",    icon: "⭐", label: "Étoile" },
+  { id: "diamond",  icon: "💎", label: "Diamant" },
+  { id: "seven",    icon: "7️⃣", label: "Sept" },
+];
+
 // ===== Helpers =====
 
 function getLastResetTime(resetHour) {
@@ -69,6 +78,13 @@ function buildRewards(config) {
   return DEFAULT_REWARDS;
 }
 
+function getScratchSymbols(config) {
+  if (config?.scratch_symbols && Array.isArray(config.scratch_symbols) && config.scratch_symbols.length >= 3) {
+    return config.scratch_symbols;
+  }
+  return DEFAULT_SCRATCH_SYMBOLS;
+}
+
 function selectReward(rewards) {
   const totalWeight = rewards.reduce((s, r) => s + r.weight, 0);
   let roll = Math.random() * totalWeight;
@@ -79,12 +95,54 @@ function selectReward(rewards) {
   return rewards[0];
 }
 
+/**
+ * Genere une grille de symboles pour le ticket a gratter.
+ * - isWin=true : place exactement matchCount instances du symbole gagnant.
+ * - isWin=false : aucun symbole n'atteint matchCount occurrences.
+ */
+function generateGrid(symbols, matchCount, isWin, gridSize = 9) {
+  if (symbols.length < 2) return Array(gridSize).fill(symbols[0] || { id: "x", icon: "❓", label: "?" });
+  const grid = Array(gridSize).fill(null);
+
+  // Shuffle positions
+  const positions = [...Array(gridSize).keys()];
+  for (let i = positions.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [positions[i], positions[j]] = [positions[j], positions[i]];
+  }
+
+  if (isWin) {
+    const winSym = symbols[Math.floor(Math.random() * symbols.length)];
+    for (let i = 0; i < matchCount && i < gridSize; i++) {
+      grid[positions[i]] = winSym;
+    }
+    const otherSyms = symbols.filter(s => s.id !== winSym.id);
+    for (let i = matchCount; i < gridSize; i++) {
+      grid[positions[i]] = otherSyms.length > 0
+        ? otherSyms[Math.floor(Math.random() * otherSyms.length)]
+        : symbols[Math.floor(Math.random() * symbols.length)];
+    }
+  } else {
+    const counts = {};
+    symbols.forEach(s => { counts[s.id] = 0; });
+    for (let i = 0; i < gridSize; i++) {
+      let available = symbols.filter(s => counts[s.id] < matchCount - 1);
+      if (available.length === 0) available = symbols;
+      const sym = available[Math.floor(Math.random() * available.length)];
+      grid[i] = sym;
+      counts[sym.id]++;
+    }
+  }
+
+  return grid;
+}
+
 // ===== Handler =====
 
 export default async function(req) {
   try {
     const body = await req.json().catch(() => ({}));
-    const { action, ticketType } = body;
+    const { action, ticketType, gameMode } = body;
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -92,7 +150,6 @@ export default async function(req) {
     const player = await getPlayer(base44, user);
     const config = await getGameConfig(base44);
     const TICKET_PRICE = config?.ticket_price || DEFAULT_TICKET_PRICE;
-    const WIN_RATE = config?.win_rate !== undefined ? config.win_rate / 100 : DEFAULT_WIN_RATE;
     const RESET_HOUR = config?.reset_hour_utc !== undefined ? config.reset_hour_utc : DEFAULT_RESET_HOUR;
     const rewards = buildRewards(config);
 
@@ -130,6 +187,14 @@ export default async function(req) {
       }
 
       case 'scratch': {
+        const mode = gameMode === '5' ? '5' : '3';
+        const matchCount = mode === '5' ? 5 : 3;
+        const modeWinRate = mode === '5'
+          ? (config?.scratch_mode_5_win_rate !== undefined ? config.scratch_mode_5_win_rate / 100 : 0.15)
+          : (config?.scratch_mode_3_win_rate !== undefined
+              ? config.scratch_mode_3_win_rate / 100
+              : (config?.win_rate !== undefined ? config.win_rate / 100 : DEFAULT_WIN_RATE));
+
         const updates = {};
         const freeAvailable = isFreeTicketAvailable(player.free_ticket_date, RESET_HOUR);
 
@@ -147,7 +212,7 @@ export default async function(req) {
           return Response.json({ error: 'Type de ticket invalide' }, { status: 400 });
         }
 
-        const isWin = Math.random() < WIN_RATE;
+        const isWin = Math.random() < modeWinRate;
         let result;
 
         if (isWin) {
@@ -165,18 +230,24 @@ export default async function(req) {
           result = { type: 'lose', label: 'Perdu', desc: 'Réessayez !', amount: 0 };
         }
 
+        const symbols = getScratchSymbols(config);
+        const grid = generateGrid(symbols, matchCount, isWin);
+
         await base44.asServiceRole.entities.CasinoPlayer.update(player.id, updates);
 
         const newBalance = updates.balance !== undefined ? updates.balance : (player.balance || 0);
         const newPurchasedTickets = updates.purchased_tickets !== undefined ? updates.purchased_tickets : (player.purchased_tickets || 0);
         const newFreeAvailable = updates.free_ticket_date === null ? true : (updates.free_ticket_date ? false : freeAvailable);
 
-        console.log('[scratchTicket] scratch by', user.email, '| ticket:', ticketType, '| win:', isWin, '| result:', result.label);
+        console.log('[scratchTicket] scratch by', user.email, '| ticket:', ticketType, '| mode:', mode, '| win:', isWin, '| result:', result.label);
 
         return Response.json({
           success: true,
           isWin,
           result,
+          grid,
+          gameMode: mode,
+          matchCount,
           balance: newBalance,
           purchasedTickets: newPurchasedTickets,
           freeTicketAvailable: newFreeAvailable,

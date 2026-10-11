@@ -19,6 +19,8 @@ const DEFAULT_CONFIG = {
   background_color: "#0a050f",
   ticket_price: 10000,
   win_rate: 30,
+  scratch_mode_3_win_rate: 30,
+  scratch_mode_5_win_rate: 15,
   reset_hour_utc: 15,
   rewards: [
     { id: "relance", label: "🎯 Relance !", desc: "Un nouveau ticket gratuit pour rejouer", weight: 40, amount: 0, type: "relance" },
@@ -27,18 +29,32 @@ const DEFAULT_CONFIG = {
     { id: "100000", label: "💰 100 000 jetons", desc: "Gros gain", weight: 8, amount: 100000, type: "tokens" },
     { id: "1000000", label: "💎 1 000 000 jetons", desc: "Gain exceptionnel !", weight: 2, amount: 1000000, type: "tokens" },
   ],
+  scratch_symbols: [
+    { id: "cherry", icon: "🍒", label: "Cerise" },
+    { id: "lemon", icon: "🍋", label: "Citron" },
+    { id: "bell", icon: "🔔", label: "Cloche" },
+    { id: "star", icon: "⭐", label: "Étoile" },
+    { id: "diamond", icon: "💎", label: "Diamant" },
+    { id: "seven", icon: "7️⃣", label: "Sept" },
+  ],
 };
 
 export default function ScratchCardConfigPanel() {
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
   const loadConfig = useCallback(async () => {
     setLoading(true);
     try {
       const records = await base44.entities.CasinoGameConfig.filter({ game_key: GAME_KEY });
       if (records.length > 0) {
-        setConfig({ ...DEFAULT_CONFIG, ...records[0], rewards: records[0].rewards?.length ? records[0].rewards : DEFAULT_CONFIG.rewards });
+        setConfig({
+          ...DEFAULT_CONFIG,
+          ...records[0],
+          rewards: records[0].rewards?.length ? records[0].rewards : DEFAULT_CONFIG.rewards,
+          scratch_symbols: records[0].scratch_symbols?.length ? records[0].scratch_symbols : DEFAULT_CONFIG.scratch_symbols,
+        });
       } else {
         setConfig({ ...DEFAULT_CONFIG });
       }
@@ -48,9 +64,7 @@ export default function ScratchCardConfigPanel() {
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    loadConfig();
-  }, [loadConfig]);
+  useEffect(() => { loadConfig(); }, [loadConfig]);
 
   const updateField = useCallback((field, value) => {
     setConfig(prev => prev ? { ...prev, [field]: value } : prev);
@@ -81,6 +95,33 @@ export default function ScratchCardConfigPanel() {
     });
   };
 
+  // Scratch symbols management
+  const updateSymbol = useCallback((index, field, value) => {
+    setConfig(prev => {
+      if (!prev) return prev;
+      const symbols = [...(prev.scratch_symbols || [])];
+      symbols[index] = { ...symbols[index], [field]: value };
+      return { ...prev, scratch_symbols: symbols };
+    });
+  }, []);
+
+  const addSymbol = () => {
+    setConfig(prev => {
+      if (!prev) return prev;
+      const existing = prev.scratch_symbols || [];
+      return { ...prev, scratch_symbols: [...existing, { id: `sym_${Date.now()}`, icon: "❓", label: "Nouveau symbole" }] };
+    });
+  };
+
+  const removeSymbol = (index) => {
+    setConfig(prev => {
+      if (!prev) return prev;
+      const symbols = [...(prev.scratch_symbols || [])];
+      symbols.splice(index, 1);
+      return { ...prev, scratch_symbols: symbols };
+    });
+  };
+
   const save = async () => {
     setSaving(true);
     try {
@@ -98,6 +139,9 @@ export default function ScratchCardConfigPanel() {
         background_color: config.background_color,
         ticket_price: Number(config.ticket_price),
         win_rate: Number(config.win_rate),
+        scratch_mode_3_win_rate: Number(config.scratch_mode_3_win_rate),
+        scratch_mode_5_win_rate: Number(config.scratch_mode_5_win_rate),
+        scratch_symbols: config.scratch_symbols || [],
         reset_hour_utc: Number(config.reset_hour_utc),
         rewards: config.rewards,
       };
@@ -126,7 +170,7 @@ export default function ScratchCardConfigPanel() {
     <div className="space-y-4">
       <div className="rounded-2xl border border-white/10 p-4" style={{ background: "rgba(15,10,25,0.6)" }}>
         <h4 className="text-sm font-black text-white uppercase tracking-tight mb-1">Tickets à Gratter — Configuration</h4>
-        <p className="text-[10px] text-white/40">Modifiez les assets, textes, prix, probabilités et horaires de reset.</p>
+        <p className="text-[10px] text-white/40">Modifiez les assets, textes, prix, probabilités, symboles et horaires de reset.</p>
       </div>
 
       {/* Visual assets */}
@@ -191,15 +235,10 @@ export default function ScratchCardConfigPanel() {
       {/* Economic params */}
       <div className="rounded-2xl border border-white/10 p-4 space-y-3" style={{ background: "rgba(15,10,25,0.6)" }}>
         <p className="text-xs font-bold text-white/60 uppercase">Paramètres économiques</p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="text-[10px] font-bold text-white/50 mb-1 block">Prix d'un ticket (jetons)</label>
             <input type="number" value={config.ticket_price || 0} onChange={e => updateField("ticket_price", e.target.value)}
-              className="w-full px-3 py-2 rounded-lg text-xs bg-white/5 border border-white/10 text-white" />
-          </div>
-          <div>
-            <label className="text-[10px] font-bold text-white/50 mb-1 block">Taux de victoire (%)</label>
-            <input type="number" min="0" max="100" value={config.win_rate || 0} onChange={e => updateField("win_rate", e.target.value)}
               className="w-full px-3 py-2 rounded-lg text-xs bg-white/5 border border-white/10 text-white" />
           </div>
           <div>
@@ -207,6 +246,57 @@ export default function ScratchCardConfigPanel() {
             <input type="number" min="0" max="23" value={config.reset_hour_utc ?? 15} onChange={e => updateField("reset_hour_utc", e.target.value)}
               className="w-full px-3 py-2 rounded-lg text-xs bg-white/5 border border-white/10 text-white" />
           </div>
+        </div>
+      </div>
+
+      {/* Win rates per mode */}
+      <div className="rounded-2xl border border-white/10 p-4 space-y-3" style={{ background: "rgba(15,10,25,0.6)" }}>
+        <p className="text-xs font-bold text-white/60 uppercase">Taux de gain par mode</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label className="text-[10px] font-bold text-white/50 mb-1 block">Taux global (%)</label>
+            <input type="number" min="0" max="100" step="0.01" value={config.win_rate ?? 0} onChange={e => updateField("win_rate", e.target.value)}
+              className="w-full px-3 py-2 rounded-lg text-xs bg-white/5 border border-white/10 text-white" />
+            <p className="text-[9px] text-white/30 mt-1">Fallback (0.00 - 100.00)</p>
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-white/50 mb-1 block">Mode 3 identiques (%)</label>
+            <input type="number" min="0" max="100" step="0.01" value={config.scratch_mode_3_win_rate ?? 30} onChange={e => updateField("scratch_mode_3_win_rate", e.target.value)}
+              className="w-full px-3 py-2 rounded-lg text-xs bg-white/5 border border-white/10 text-white" />
+            <p className="text-[9px] text-white/30 mt-1">0.00 - 100.00</p>
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-white/50 mb-1 block">Mode 5 identiques (%)</label>
+            <input type="number" min="0" max="100" step="0.01" value={config.scratch_mode_5_win_rate ?? 15} onChange={e => updateField("scratch_mode_5_win_rate", e.target.value)}
+              className="w-full px-3 py-2 rounded-lg text-xs bg-white/5 border border-white/10 text-white" />
+            <p className="text-[9px] text-white/30 mt-1">0.00 - 100.00</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Scratch symbols */}
+      <div className="rounded-2xl border border-white/10 p-4 space-y-3" style={{ background: "rgba(15,10,25,0.6)" }}>
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-bold text-white/60 uppercase">Symboles de la grille</p>
+          <button onClick={addSymbol} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold text-white/60 border border-white/10 hover:bg-white/5">
+            <Plus className="w-3 h-3" /> Ajouter
+          </button>
+        </div>
+        <p className="text-[9px] text-white/30">Symboles affichés dans la grille de grattage. Minimum 3 symboles distincts. Utilisez des emojis ou des URLs d'images.</p>
+        <div className="space-y-2">
+          {(config.scratch_symbols || []).map((s, i) => (
+            <div key={i} className="p-2 rounded-lg flex items-center gap-2" style={{ background: "rgba(0,0,0,0.2)" }}>
+              <input type="text" value={s.icon || ""} onChange={e => updateSymbol(i, "icon", e.target.value)} placeholder="Emoji ou URL"
+                className="w-16 px-2 py-1.5 rounded text-[10px] bg-white/5 border border-white/10 text-white text-center" />
+              <input type="text" value={s.label || ""} onChange={e => updateSymbol(i, "label", e.target.value)} placeholder="Nom du symbole"
+                className="flex-1 px-2 py-1.5 rounded text-[10px] bg-white/5 border border-white/10 text-white" />
+              <input type="text" value={s.id || ""} onChange={e => updateSymbol(i, "id", e.target.value)} placeholder="ID"
+                className="w-24 px-2 py-1.5 rounded text-[10px] bg-white/5 border border-white/10 text-white font-mono" />
+              <button onClick={() => removeSymbol(i)} className="w-7 h-7 rounded flex items-center justify-center text-white/30 hover:text-red-500">
+                <Trash2 className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
         </div>
       </div>
 

@@ -157,7 +157,39 @@
     "win_rate": {
       "type": "number",
       "default": 30,
-      "description": "Taux de victoire en pourcentage (0-100)"
+      "description": "Taux de victoire global en pourcentage (0-100), utilise comme fallback"
+    },
+    "scratch_mode_3_win_rate": {
+      "type": "number",
+      "default": 30,
+      "description": "Taux de victoire (%) pour le mode 3 symboles identiques (0-100)"
+    },
+    "scratch_mode_5_win_rate": {
+      "type": "number",
+      "default": 15,
+      "description": "Taux de victoire (%) pour le mode 5 symboles identiques (0-100)"
+    },
+    "scratch_symbols": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Identifiant unique du symbole"
+          },
+          "icon": {
+            "type": "string",
+            "description": "Emoji ou URL de l'image du symbole"
+          },
+          "label": {
+            "type": "string",
+            "description": "Nom affiche du symbole"
+          }
+        }
+      },
+      "default": [],
+      "description": "Symboles personnalises utilises dans la grille de grattage (min 3)"
     },
     "reset_hour_utc": {
       "type": "number",

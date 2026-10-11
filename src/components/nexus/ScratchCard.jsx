@@ -1,31 +1,29 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 
-const SCRATCH_RADIUS = 28;
-const REVEAL_THRESHOLD = 55; // % of scratched area to auto-reveal
+const SCRATCH_RADIUS = 40;
+const REVEAL_THRESHOLD = 50; // % of scratched area to auto-reveal
 
 /**
  * Composant de carte à gratter interactif (canvas).
- * Le résultat est déterminé côté backend et passé via `result`.
- * L'utilisateur gratte avec la souris pour révéler le résultat.
+ * Affiche une grille 3x3 de symboles sous l'overlay à gratter.
+ * Le résultat et la grille sont déterminés côté backend.
  */
-export default function ScratchCard({ result, onRevealed, disabled, onScratchStart }) {
+export default function ScratchCard({ grid, result, onRevealed, disabled, onScratchStart }) {
   const canvasRef = useRef(null);
-  const [isDrawing, setIsDrawing] = useState(false);
+  const isDrawingRef = useRef(false);
+  const revealedRef = useRef(false);
   const [revealed, setRevealed] = useState(false);
   const [progress, setProgress] = useState(0);
 
   // Initialize scratch overlay
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || !grid) return;
     const ctx = canvas.getContext("2d");
-
-    // Set canvas size to match displayed size
     const rect = canvas.getBoundingClientRect();
     canvas.width = rect.width;
     canvas.height = rect.height;
 
-    // Draw scratch overlay
     const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
     gradient.addColorStop(0, "#2a1a3e");
     gradient.addColorStop(0.5, "#1a1a2e");
@@ -33,7 +31,6 @@ export default function ScratchCard({ result, onRevealed, disabled, onScratchSta
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Add texture pattern
     ctx.fillStyle = "rgba(168, 85, 247, 0.08)";
     for (let i = 0; i < canvas.width; i += 20) {
       for (let j = 0; j < canvas.height; j += 20) {
@@ -41,16 +38,16 @@ export default function ScratchCard({ result, onRevealed, disabled, onScratchSta
       }
     }
 
-    // Add text
     ctx.fillStyle = "rgba(168, 85, 247, 0.5)";
-    ctx.font = "bold 18px Inter, sans-serif";
+    ctx.font = "bold 16px Inter, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText("✦ GRATTEZ ICI ✦", canvas.width / 2, canvas.height / 2);
 
+    revealedRef.current = false;
     setRevealed(false);
     setProgress(0);
-  }, [result]);
+  }, [grid]);
 
   const getScratchPercent = useCallback(() => {
     const canvas = canvasRef.current;
@@ -94,17 +91,43 @@ export default function ScratchCard({ result, onRevealed, disabled, onScratchSta
     };
   };
 
+  const doReveal = useCallback(() => {
+    if (revealedRef.current) return;
+    const pct = getScratchPercent();
+    if (pct > REVEAL_THRESHOLD) {
+      revealedRef.current = true;
+      setRevealed(true);
+      isDrawingRef.current = false;
+      if (onRevealed) onRevealed();
+    }
+  }, [getScratchPercent, onRevealed]);
+
+  // Global mouseup/touchend — stop drawing even if cursor left the canvas
+  useEffect(() => {
+    const handleGlobalEnd = () => {
+      if (!isDrawingRef.current) return;
+      isDrawingRef.current = false;
+      doReveal();
+    };
+    window.addEventListener("mouseup", handleGlobalEnd);
+    window.addEventListener("touchend", handleGlobalEnd);
+    return () => {
+      window.removeEventListener("mouseup", handleGlobalEnd);
+      window.removeEventListener("touchend", handleGlobalEnd);
+    };
+  }, [doReveal]);
+
   const handleStart = (e) => {
-    if (revealed || disabled) return;
+    if (revealedRef.current || disabled) return;
     e.preventDefault();
     if (onScratchStart) onScratchStart();
-    setIsDrawing(true);
+    isDrawingRef.current = true;
     const coords = getCoords(e);
     if (coords) scratch(coords.x, coords.y);
   };
 
   const handleMove = (e) => {
-    if (!isDrawing || revealed || disabled) return;
+    if (!isDrawingRef.current || revealedRef.current || disabled) return;
     e.preventDefault();
     const coords = getCoords(e);
     if (coords) {
@@ -112,90 +135,87 @@ export default function ScratchCard({ result, onRevealed, disabled, onScratchSta
       const pct = getScratchPercent();
       setProgress(pct);
       if (pct > REVEAL_THRESHOLD) {
+        revealedRef.current = true;
         setRevealed(true);
-        setIsDrawing(false);
+        isDrawingRef.current = false;
         if (onRevealed) onRevealed();
       }
     }
   };
 
-  const handleEnd = () => {
-    setIsDrawing(false);
-    if (revealed) return;
-    const pct = getScratchPercent();
-    if (pct > REVEAL_THRESHOLD) {
-      setRevealed(true);
-      if (onRevealed) onRevealed();
-    }
-  };
-
   const handleRevealNow = () => {
-    if (revealed) return;
+    if (revealedRef.current) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    revealedRef.current = true;
     setRevealed(true);
-    setIsDrawing(false);
+    isDrawingRef.current = false;
     if (onRevealed) onRevealed();
   };
 
-  if (!result) return null;
+  if (!grid) return null;
 
-  const isWin = result.type !== "lose";
+  const isWin = result?.type !== "lose" && result?.type !== undefined;
   const resultColor = isWin
-    ? (result.amount >= 1000000 ? "#fbbf24" : result.amount >= 50000 ? "#a855f7" : "#22c55e")
+    ? (result?.amount >= 1000000 ? "#fbbf24" : result?.amount >= 50000 ? "#a855f7" : "#22c55e")
     : "#ef4444";
 
   return (
     <div className="relative w-full max-w-sm mx-auto select-none">
-      {/* Result underneath */}
+      {/* Symbol grid + canvas */}
       <div
-        className="absolute inset-0 rounded-2xl flex flex-col items-center justify-center overflow-hidden"
-        style={{
-          background: isWin
-            ? `linear-gradient(135deg, ${resultColor}15, ${resultColor}05)`
-            : "linear-gradient(135deg, rgba(239,68,68,0.08), rgba(239,68,68,0.02))",
-          border: `2px solid ${resultColor}40`,
-        }}
+        className="relative rounded-2xl overflow-hidden grid grid-cols-3"
+        style={{ aspectRatio: "3 / 2", touchAction: "none", background: "rgba(10,5,15,0.8)" }}
       >
-        <div className="text-4xl mb-2">{isWin ? (result.amount >= 1000000 ? "💎" : "💰") : "😢"}</div>
-        <p className="text-lg font-black text-center px-4" style={{ color: resultColor }}>
-          {result.label}
-        </p>
-        {result.desc && (
-          <p className="text-xs text-white/50 text-center px-4 mt-1">{result.desc}</p>
-        )}
-        {isWin && result.amount > 0 && (
-          <p className="text-2xl font-black mt-2 font-mono" style={{ color: resultColor }}>
-            +{result.amount.toLocaleString("fr-FR")}
-          </p>
-        )}
-      </div>
+        {grid.map((sym, i) => (
+          <div
+            key={i}
+            className="flex items-center justify-center"
+            style={{
+              background: isWin && revealed ? `linear-gradient(135deg, ${resultColor}10, transparent)` : "transparent",
+            }}
+          >
+            {sym?.icon && /^https?:\/\//i.test(sym.icon) ? (
+              <img src={sym.icon} alt={sym?.label || ""} className="w-8 h-8 object-contain" />
+            ) : (
+              <span className="text-3xl">{sym?.icon || "❓"}</span>
+            )}
+          </div>
+        ))}
 
-      {/* Scratch canvas overlay */}
-      <div
-        className="relative rounded-2xl overflow-hidden"
-        style={{ aspectRatio: "3 / 2", touchAction: "none" }}
-      >
+        {/* Result overlay (after reveal) */}
+        {revealed && result && (
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-center"
+            style={{ background: "rgba(10,5,15,0.85)", backdropFilter: "blur(4px)" }}
+          >
+            <div className="text-3xl mb-1">{isWin ? (result.amount >= 1000000 ? "💎" : "💰") : "😢"}</div>
+            <p className="text-sm font-black text-center px-4" style={{ color: resultColor }}>
+              {result.label}
+            </p>
+            {result.desc && (
+              <p className="text-[10px] text-white/50 text-center px-4 mt-0.5">{result.desc}</p>
+            )}
+            {isWin && result.amount > 0 && (
+              <p className="text-xl font-black mt-1 font-mono" style={{ color: resultColor }}>
+                +{result.amount.toLocaleString("fr-FR")}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Scratch canvas overlay */}
         <canvas
           ref={canvasRef}
           onMouseDown={handleStart}
           onMouseMove={handleMove}
-          onMouseUp={handleEnd}
-          onMouseLeave={handleEnd}
           onTouchStart={handleStart}
           onTouchMove={handleMove}
-          onTouchEnd={handleEnd}
           className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing"
           style={{ opacity: revealed ? 0 : 1, transition: "opacity 0.3s" }}
         />
-        {revealed && (
-          <button
-            onClick={handleRevealNow}
-            className="absolute inset-0 pointer-events-none"
-          />
-        )}
       </div>
 
       {/* Progress bar */}

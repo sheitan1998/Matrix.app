@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
-import { Ticket, Coins, Gift, RefreshCw, ShoppingCart, Clock, Sparkles } from "lucide-react";
+import { Ticket, Coins, Gift, RefreshCw, ShoppingCart, Clock, Sparkles, Target, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
 import ScratchCard from "@/components/nexus/ScratchCard";
 import { formatBet } from "@/components/casino/slotThemes";
@@ -11,7 +11,7 @@ const TICKET_PRICE = 10000;
 
 /**
  * Écran du mini-jeu "Tickets à Gratter" intégré au Casino.
- * Synchronise le solde avec le Casino via les props balance/setBalance.
+ * Deux modes : 3 symboles identiques ou 5 symboles identiques.
  */
 export default function ScratchGameScreen({ balance, setBalance, onBack }) {
   const [freeTicketAvailable, setFreeTicketAvailable] = useState(false);
@@ -20,9 +20,11 @@ export default function ScratchGameScreen({ balance, setBalance, onBack }) {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [scratchResult, setScratchResult] = useState(null);
+  const [scratchGrid, setScratchGrid] = useState(null);
   const [scratchKey, setScratchKey] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [gameConfig, setGameConfig] = useState(null);
+  const [selectedMode, setSelectedMode] = useState("3");
 
   useEffect(() => {
     const loadConfig = async () => {
@@ -32,7 +34,6 @@ export default function ScratchGameScreen({ balance, setBalance, onBack }) {
       } catch { /* silent */ }
     };
     loadConfig();
-    // Realtime: refresh config instantly when admin saves changes
     const unsubscribe = base44.entities.CasinoGameConfig.subscribe((event) => {
       if (event.type === 'delete') { setGameConfig(null); return; }
       const rec = event.data;
@@ -80,7 +81,7 @@ export default function ScratchGameScreen({ balance, setBalance, onBack }) {
     setActionLoading(true);
     setRevealed(false);
     try {
-      const res = await base44.functions.invoke("scratchTicket", { action: "scratch", ticketType });
+      const res = await base44.functions.invoke("scratchTicket", { action: "scratch", ticketType, gameMode: selectedMode });
       const data = res?.data || res;
       if (data.error) {
         toast.error(data.error);
@@ -88,6 +89,7 @@ export default function ScratchGameScreen({ balance, setBalance, onBack }) {
         return;
       }
       setScratchResult(data.result);
+      setScratchGrid(data.grid);
       setScratchKey(k => k + 1);
       setBalance(data.balance);
       setFreeTicketAvailable(data.freeTicketAvailable);
@@ -102,7 +104,7 @@ export default function ScratchGameScreen({ balance, setBalance, onBack }) {
     setRevealed(true);
     if (scratchResult) {
       if (scratchResult.type === "lose") {
-        toast.error("Perdu ! Réessayez demain.");
+        toast.error("Perdu ! Réessayez.");
       } else if (scratchResult.type === "relance") {
         toast.success("🎯 Relance ! Vous avez un nouveau ticket gratuit.");
       } else {
@@ -126,6 +128,7 @@ export default function ScratchGameScreen({ balance, setBalance, onBack }) {
   const gameIcon = gameConfig?.icon;
   const bgImage = gameConfig?.background_image;
   const bgColor = gameConfig?.background_color || '#0a050f';
+  const modeWinRate = selectedMode === "5" ? gameConfig?.scratch_mode_5_win_rate : gameConfig?.scratch_mode_3_win_rate;
   const rewards = gameConfig?.rewards?.length ? gameConfig.rewards : [
     { icon: "🎯", label: "Relance" },
     { icon: "💰", label: "10K" },
@@ -184,9 +187,16 @@ export default function ScratchGameScreen({ balance, setBalance, onBack }) {
           </div>
         ) : isScratching ? (
           <div>
-            <p className="text-center text-sm text-white/60 mb-4">Grattez la carte pour révéler votre gain !</p>
+            <p className="text-center text-sm text-white/60 mb-4">
+              Grattez la carte pour révéler les symboles !
+              <br />
+              <span className="text-[11px] text-white/40">
+                Trouvez {selectedMode === "5" ? "5" : "3"} symboles identiques pour gagner.
+              </span>
+            </p>
             <ScratchCard
               key={scratchKey}
+              grid={scratchGrid}
               result={scratchResult}
               onRevealed={handleRevealed}
             />
@@ -201,45 +211,74 @@ export default function ScratchGameScreen({ balance, setBalance, onBack }) {
             </p>
             {scratchResult.desc && <p className="text-sm text-white/50 mb-4">{scratchResult.desc}</p>}
             <button
-              onClick={() => { setScratchResult(null); setRevealed(false); }}
+              onClick={() => { setScratchResult(null); setScratchGrid(null); setRevealed(false); }}
               className="px-5 py-2 rounded-xl text-sm font-bold text-white transition hover:opacity-90 tap-sm"
               style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}
             >
               <RefreshCw className="w-3.5 h-3.5 inline mr-1.5" /> Nouveau ticket
             </button>
           </div>
-        ) : canScratch ? (
-          <div className="text-center py-6">
-            <div className="text-5xl mb-3">🎟️</div>
-            <p className="text-sm text-white/60 mb-4">Sélectionnez un ticket à gratter :</p>
-            <div className="flex flex-col gap-3 justify-center">
-              {freeTicketAvailable && (
-                <button
-                  onClick={() => handleScratch("free")}
-                  disabled={actionLoading}
-                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition hover:opacity-90 tap-sm flex items-center justify-center gap-2"
-                  style={{ background: "linear-gradient(135deg, #22c55e, #16a34a)" }}
-                >
-                  <Gift className="w-4 h-4" /> Ticket gratuit quotidien
-                </button>
-              )}
-              {purchasedTickets > 0 && (
-                <button
-                  onClick={() => handleScratch("purchased")}
-                  disabled={actionLoading}
-                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition hover:opacity-90 tap-sm flex items-center justify-center gap-2"
-                  style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}
-                >
-                  <Ticket className="w-4 h-4" /> Gratter un ticket acheté ({purchasedTickets})
-                </button>
-              )}
-            </div>
-          </div>
         ) : (
           <div className="text-center py-6">
-            <div className="text-5xl mb-3 opacity-50">🎫</div>
-            <p className="text-sm text-white/40 mb-3">Aucun ticket disponible.</p>
-            <p className="text-xs text-white/30">Achetez un ticket ci-dessous ou attendez le prochain ticket gratuit à 15h00.</p>
+            {/* Mode selection */}
+            <div className="text-5xl mb-3">🎟️</div>
+            <p className="text-sm text-white/60 mb-4">Choisissez un mode de jeu :</p>
+            <div className="grid grid-cols-2 gap-3 mb-5">
+              <button
+                onClick={() => setSelectedMode("3")}
+                className="p-3 rounded-xl text-sm font-bold transition tap-sm flex flex-col items-center gap-1"
+                style={selectedMode === "3"
+                  ? { background: "linear-gradient(135deg, #a855f7, #6d28d9)", color: "#fff", border: "1px solid rgba(168,85,247,0.5)" }
+                  : { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}
+              >
+                <LayoutGrid className="w-5 h-5" />
+                <span>3 identiques</span>
+                <span className="text-[9px] opacity-60">{gameConfig?.scratch_mode_3_win_rate ?? 30}% de gain</span>
+              </button>
+              <button
+                onClick={() => setSelectedMode("5")}
+                className="p-3 rounded-xl text-sm font-bold transition tap-sm flex flex-col items-center gap-1"
+                style={selectedMode === "5"
+                  ? { background: "linear-gradient(135deg, #a855f7, #6d28d9)", color: "#fff", border: "1px solid rgba(168,85,247,0.5)" }
+                  : { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}
+              >
+                <Target className="w-5 h-5" />
+                <span>5 identiques</span>
+                <span className="text-[9px] opacity-60">{gameConfig?.scratch_mode_5_win_rate ?? 15}% de gain</span>
+              </button>
+            </div>
+
+            {/* Ticket buttons */}
+            {canScratch ? (
+              <div className="flex flex-col gap-3 justify-center">
+                {freeTicketAvailable && (
+                  <button
+                    onClick={() => handleScratch("free")}
+                    disabled={actionLoading}
+                    className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition hover:opacity-90 tap-sm flex items-center justify-center gap-2"
+                    style={{ background: "linear-gradient(135deg, #22c55e, #16a34a)" }}
+                  >
+                    <Gift className="w-4 h-4" /> Ticket gratuit quotidien
+                  </button>
+                )}
+                {purchasedTickets > 0 && (
+                  <button
+                    onClick={() => handleScratch("purchased")}
+                    disabled={actionLoading}
+                    className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition hover:opacity-90 tap-sm flex items-center justify-center gap-2"
+                    style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}
+                  >
+                    <Ticket className="w-4 h-4" /> Gratter un ticket acheté ({purchasedTickets})
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="py-4">
+                <div className="text-4xl mb-3 opacity-50">🎫</div>
+                <p className="text-sm text-white/40 mb-2">Aucun ticket disponible.</p>
+                <p className="text-xs text-white/30">Achetez un ticket ci-dessous ou attendez le prochain ticket gratuit à 15h00.</p>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -265,7 +304,9 @@ export default function ScratchGameScreen({ balance, setBalance, onBack }) {
 
       {/* Rewards table */}
       <div className="mt-5 p-3 rounded-xl w-full max-w-md" style={{ background: "rgba(15,10,25,0.4)", border: "1px solid rgba(255,255,255,0.04)" }}>
-        <p className="text-[11px] font-bold text-white/60 mb-2">Récompenses ({Number(gameConfig?.win_rate ?? 30)}% de chances de gain) :</p>
+        <p className="text-[11px] font-bold text-white/60 mb-2">
+          Récompenses ({Number(modeWinRate ?? 30)}% de chances de gain en mode {selectedMode} identiques) :
+        </p>
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
           {rewards.map((r, i) => (
             <div key={i} className="p-1.5 rounded-lg text-center" style={{ background: "rgba(255,255,255,0.02)" }}>

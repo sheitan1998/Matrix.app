@@ -152,6 +152,16 @@ export default function Casino() {
         </div>
       </header>
 
+      {/* Quick access: Scratch tickets — fixed top-right */}
+      <button
+        onClick={() => { setScreen("scratch"); trackActivity("nexus_games"); }}
+        className="fixed top-4 right-4 z-50 w-12 h-12 rounded-full flex items-center justify-center transition hover:scale-110 tap-sm"
+        style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)", boxShadow: "0 0 20px rgba(168,85,247,0.4)" }}
+        title="Tickets à Gratter"
+      >
+        <Ticket className="w-5 h-5 text-white" />
+      </button>
+
       {/* Responsible gaming notice */}
       
 
