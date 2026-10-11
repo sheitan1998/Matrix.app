@@ -1,7 +1,8 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 
 const SCRATCH_RADIUS = 42;
-const REVEAL_THRESHOLD = 90;
+const REVEAL_RATIO = 0.9; // part des icônes à découvrir pour déclencher la révélation
+const CELL_CLEARED_RATIO = 0.75; // une icône est "affichée" quand 75% de sa zone centrale est grattée
 const COIN_IMAGE =
   "https://media.base44.com/images/public/69e14a987a927963a9924d5a/aca8e7da3_ChatGPT_Image_3_aot_2026__16_22_42-removebg-preview.png";
 
@@ -28,6 +29,7 @@ export default function ScratchCard({ grid, result, onRevealed, disabled, onScra
     const pCanvas = particleCanvasRef.current;
     if (!canvas || !grid) return;
     const ctx = canvas.getContext("2d");
+    ctx.globalCompositeOperation = "source-over";
     const rect = canvas.getBoundingClientRect();
     canvas.width = rect.width;
     canvas.height = rect.height;
@@ -150,6 +152,8 @@ export default function ScratchCard({ grid, result, onRevealed, disabled, onScra
       if (!canvas) return;
       const ctx = canvas.getContext("2d");
       ctx.globalCompositeOperation = "destination-out";
+      // Opaque fill so scratched pixels become fully transparent
+      ctx.fillStyle = "#000";
 
       // Main circle
       ctx.beginPath();
@@ -172,33 +176,51 @@ export default function ScratchCard({ grid, result, onRevealed, disabled, onScra
     []
   );
 
-  const getScratchPercent = useCallback(() => {
+  // Analyse la zone centrale de chaque case (où se trouve l'icône)
+  // → { progress: % moyen gratté, shouldReveal: assez d'icônes découvertes }
+  const getRevealStats = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return 0;
-    const ctx = canvas.getContext("2d");
-    try {
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const pixels = imageData.data;
-      let transparent = 0;
-      for (let i = 3; i < pixels.length; i += 4) {
-        if (pixels[i] === 0) transparent++;
+    const total = grid?.length || 0;
+    if (!canvas || !total || !canvas.width || !canvas.height) return { progress: 0, shouldReveal: false };
+    const { width, height } = canvas;
+    const data = canvas.getContext("2d").getImageData(0, 0, width, height).data;
+    const cols = 3;
+    const rows = Math.ceil(total / cols);
+    const cellW = width / cols;
+    const cellH = height / rows;
+    let revealedCells = 0;
+    let coverageSum = 0;
+    for (let c = 0; c < total; c++) {
+      const cx = (c % cols) * cellW;
+      const cy = Math.floor(c / cols) * cellH;
+      const x0 = Math.floor(cx + cellW * 0.25), x1 = Math.floor(cx + cellW * 0.75);
+      const y0 = Math.floor(cy + cellH * 0.25), y1 = Math.floor(cy + cellH * 0.75);
+      let cleared = 0, sampled = 0;
+      for (let y = y0; y < y1; y += 2) {
+        for (let x = x0; x < x1; x += 2) {
+          sampled++;
+          if (data[(y * width + x) * 4 + 3] < 128) cleared++;
+        }
       }
-      return (transparent / (pixels.length / 4)) * 100;
-    } catch {
-      return 0;
+      const ratio = sampled ? cleared / sampled : 0;
+      coverageSum += Math.min(ratio / CELL_CLEARED_RATIO, 1);
+      if (ratio >= CELL_CLEARED_RATIO) revealedCells++;
     }
-  }, []);
+    const required = Math.max(1, Math.floor(total * REVEAL_RATIO));
+    return { progress: (coverageSum / total) * 100, shouldReveal: revealedCells >= required };
+  }, [grid]);
 
   const doReveal = useCallback(() => {
     if (revealedRef.current) return;
-    const pct = getScratchPercent();
-    if (pct > REVEAL_THRESHOLD) {
+    const { progress: pct, shouldReveal } = getRevealStats();
+    setProgress(pct);
+    if (shouldReveal) {
       revealedRef.current = true;
       setRevealed(true);
       isDrawingRef.current = false;
       if (onRevealed) onRevealed();
     }
-  }, [getScratchPercent, onRevealed]);
+  }, [getRevealStats, onRevealed]);
 
   // Global mouseup/touchend — stop drawing even if cursor left the canvas
   useEffect(() => {
@@ -258,9 +280,9 @@ export default function ScratchCard({ grid, result, onRevealed, disabled, onScra
       const now = Date.now();
       if (now - lastCheckRef.current > 250) {
         lastCheckRef.current = now;
-        const pct = getScratchPercent();
+        const { progress: pct, shouldReveal } = getRevealStats();
         setProgress(pct);
-        if (pct > REVEAL_THRESHOLD) {
+        if (shouldReveal) {
           revealedRef.current = true;
           setRevealed(true);
           isDrawingRef.current = false;
@@ -402,7 +424,7 @@ export default function ScratchCard({ grid, result, onRevealed, disabled, onScra
               style={{ width: `${Math.min(progress, 100)}%`, background: "linear-gradient(90deg, #a855f7, #6d28d9)" }}
             />
           </div>
-          {progress > 10 && progress < REVEAL_THRESHOLD && (
+          {progress > 10 && (
             <button onClick={handleRevealNow} className="text-[10px] text-white/40 hover:text-white/70 shrink-0 tap-sm">
               Révéler
             </button>
