@@ -10,6 +10,10 @@ const WIN_RATE = 0.49;
 const INITIAL_BALANCE = 5000;
 const XP_PER_LEVEL = 5000;
 
+// ===== Plafonnement des gains =====
+const MAX_SYMBOL_MULT = 50;   // Aucun symbole/combinaison ne peut dépasser 50x
+const MAX_WIN_CAP = 100;       // Gain total d'un spin plafonné à 100x la mise
+
 // ===== Slots symbol table (mirrors client) =====
 const SLOTS_SYMBOLS = [
   { s: '7',    mult: 5,   rare: 1 },
@@ -232,9 +236,17 @@ export default async function(req: Request): Promise<Response> {
           if (game === 'slots') {
             const slotsSymbols = await getSlotsSymbols(base44, theme_key);
             const sym = pickSlotsSymbol(slotsSymbols);
-            multiplier = sym.mult;
+            // Déterminer le nombre de symboles alignés (3, 4 ou 5)
+            const matchCount = 3 + Math.floor(Math.random() * 3); // 3, 4, ou 5
+            // Scaling linéaire: 3 alignés = 1x, 4 alignés = 1.5x, 5 alignés = 2x
+            const matchMult = matchCount === 5 ? 2 : matchCount === 4 ? 1.5 : 1;
+            // Plafonnement strict: aucun symbole ne dépasse 50x
+            multiplier = Math.min(sym.mult * matchMult, MAX_SYMBOL_MULT);
             slotsSymbol = sym.s;
+            // Gain strictement linéaire: mise × multiplicateur
             payout = betAmount * multiplier;
+            // Plafond global: le gain total d'un spin ne dépasse jamais 100x la mise
+            payout = Math.min(payout, betAmount * MAX_WIN_CAP);
           } else if (game === 'roulette') {
             payout = betAmount * 2;
             multiplier = 2;
@@ -351,6 +363,7 @@ export default async function(req: Request): Promise<Response> {
           multiplier,
           slotsSymbol,
           netGain,
+          matchCount: game === 'slots' ? (multiplier > 0 ? 3 + Math.floor(Math.random() * 3) : 0) : 0,
           newBalance,
           jackpotAmount: isJackpotWin ? JACKPOT_BASE : (effectiveJackpot + contribution),
           level: newLevel,

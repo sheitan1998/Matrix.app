@@ -100,6 +100,48 @@ export default function SlotSymbolEditor({ themeKey }) {
         </button>
       </div>
 
+      {/* ─── Table de transparence des multiplicateurs ─── */}
+      <div className="rounded-xl border border-white/10 p-3 mb-3" style={{ background: "rgba(15,10,25,0.4)" }}>
+        <p className="text-[10px] font-black text-white/60 uppercase mb-2">Table des gains (par mise)</p>
+        <div className="overflow-x-auto scrollbar-thin">
+          <table className="w-full text-[10px]">
+            <thead>
+              <tr className="text-white/40 border-b border-white/5">
+                <th className="text-left px-2 py-1 font-bold">Symbole</th>
+                <th className="text-right px-2 py-1 font-bold">Base</th>
+                <th className="text-right px-2 py-1 font-bold">3 alignés</th>
+                <th className="text-right px-2 py-1 font-bold">4 alignés</th>
+                <th className="text-right px-2 py-1 font-bold">5 alignés</th>
+              </tr>
+            </thead>
+            <tbody>
+              {symbols.map((sym) => {
+                const base = sym.mult || 0;
+                const m3 = base * 1;
+                const m4 = base * 1.5;
+                const m5 = base * 2;
+                const over = m5 > 50;
+                return (
+                  <tr key={sym.id} className="border-b border-white/5">
+                    <td className="px-2 py-1 font-bold text-white/80">
+                      {sym.image_url ? (
+                        <img src={normalizeAppAssetUrl(sym.image_url)} alt="" className="inline-block w-4 h-4 object-contain align-middle mr-1" />
+                      ) : null}
+                      {sym.symbol}
+                    </td>
+                    <td className="px-2 py-1 text-right text-white/50">{base}x</td>
+                    <td className="px-2 py-1 text-right text-white/70">{m3}x</td>
+                    <td className="px-2 py-1 text-right text-white/70">{m4}x</td>
+                    <td className={`px-2 py-1 text-right font-black ${over ? "text-red-400" : "text-white"}`}>{m5}x {over && "⚠️"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-[9px] text-white/30 mt-2">Plafond: 50x par symbole | Gain max: 100x la mise par spin | Calcul linéaire (mise × multiplicateur)</p>
+      </div>
+
       <div className="space-y-2">
         {symbols.map((sym) => (
           <div key={sym.id} className="flex items-center gap-2 p-2 rounded-xl" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>

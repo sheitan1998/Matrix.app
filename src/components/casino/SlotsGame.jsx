@@ -190,7 +190,7 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
     if (serverResult.win) {
       const winSym = SYMBOLS.find((s) => s.s === serverResult.slotsSymbol) || SYMBOLS[0];
       const winRow = Math.floor(Math.random() * 3);
-      const winCount = Math.min(5, 3 + Math.floor(Math.random() * 3));
+      const winCount = serverResult.matchCount || Math.min(5, 3 + Math.floor(Math.random() * 3));
       grid = generateWinningGrid(SYMBOLS, winSym, winRow, winCount);
       winCells = computeWinningCells(winRow, winCount);
     } else {
