@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 
 const SCRATCH_RADIUS = 42;
-const REVEAL_THRESHOLD = 70;
+const REVEAL_THRESHOLD = 90;
 const COIN_IMAGE =
   "https://media.base44.com/images/public/69e14a987a927963a9924d5a/aca8e7da3_ChatGPT_Image_3_aot_2026__16_22_42-removebg-preview.png";
 
@@ -17,6 +17,7 @@ export default function ScratchCard({ grid, result, onRevealed, disabled, onScra
   const particlesRef = useRef([]);
   const animFrameRef = useRef(null);
   const lastParticleSpawnRef = useRef(0);
+  const lastCheckRef = useRef(0);
   const [revealed, setRevealed] = useState(false);
   const [progress, setProgress] = useState(0);
   const [coinPos, setCoinPos] = useState({ x: -200, y: -200, visible: false });
@@ -253,14 +254,19 @@ export default function ScratchCard({ grid, result, onRevealed, disabled, onScra
       scratch(coords.x, coords.y);
       spawnParticles(coords.x, coords.y);
       setCoinPos({ x: coords.rectX, y: coords.rectY, visible: true });
-      const pct = getScratchPercent();
-      setProgress(pct);
-      if (pct > REVEAL_THRESHOLD) {
-        revealedRef.current = true;
-        setRevealed(true);
-        isDrawingRef.current = false;
-        setCoinPos((prev) => ({ ...prev, visible: false }));
-        if (onRevealed) onRevealed();
+      // Throttle the expensive pixel-count check to avoid freezing
+      const now = Date.now();
+      if (now - lastCheckRef.current > 250) {
+        lastCheckRef.current = now;
+        const pct = getScratchPercent();
+        setProgress(pct);
+        if (pct > REVEAL_THRESHOLD) {
+          revealedRef.current = true;
+          setRevealed(true);
+          isDrawingRef.current = false;
+          setCoinPos((prev) => ({ ...prev, visible: false }));
+          if (onRevealed) onRevealed();
+        }
       }
     }
   };
