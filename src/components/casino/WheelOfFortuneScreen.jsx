@@ -336,7 +336,7 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
           }
         </div>
         {/* Rewards panel — sibling, absolute right on desktop */}
-        <div className="hidden lg:block absolute top-0 left-full ml-10 w-56 rounded-xl px-2 py-10" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="hidden lg:block absolute top-0 left-full w-56 rounded-xl px-2 py-10 mr-10 ml-10" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(255,255,255,0.06)" }}>
           <p className="text-[11px] font-bold text-white/50 mb-2">Récompenses possibles :</p>
           <div className="flex flex-col gap-1.5">
             {segments.map((s, i) =>
