@@ -4,9 +4,9 @@ import CasinoToken from "./CasinoToken";
 import { formatBet, BET_STEPS } from "./slotThemes";
 
 const DEFAULT_POSITIONS = {
-  counter_panel: { x: 28, y: 90 },
-  spin: { x: 85, y: 88 },
-  action_group: { x: 60, y: 90 },
+  counter_panel: { x: 28, y: 94 },
+  spin: { x: 85, y: 92 },
+  action_group: { x: 60, y: 94 },
 };
 
 /* ─── Reusable SVG button texture: brushed metal with gold beveled border ─── */
@@ -120,7 +120,7 @@ export default function SlotControlBar({
   const [scale, setScale] = useState(1);
   const controlScale = (gridConfig?.control_scale || 100) / 100;
   const controlPosX = gridConfig?.control_pos_x ?? 50;
-  const controlPosY = gridConfig?.control_pos_y ?? 50;
+  const controlPosY = gridConfig?.control_pos_y ?? 0;
 
   useEffect(() => {
     const el = containerRef.current;
@@ -158,7 +158,7 @@ export default function SlotControlBar({
   const maxBet = () => onBetChange(BET_STEPS[BET_STEPS.length - 1]);
 
   return (
-    <div ref={containerRef} className="absolute inset-0" style={{ zIndex: 15, transform: `translate(${(controlPosX - 50) * 2}%, ${(controlPosY - 50) * 2}%) scale(${controlScale})`, transformOrigin: "center bottom" }}>
+    <div ref={containerRef} className="absolute inset-0" style={{ zIndex: 15, transform: `translate(${(controlPosX - 50) * 2}%, ${-controlPosY}%) scale(${controlScale})`, transformOrigin: "center bottom" }}>
 
       {/* ─── Engraved counter panel (Credits | Bet | Win) ─── */}
       <div style={posStyle("counter_panel")} className="pointer-events-none">
@@ -175,9 +175,6 @@ export default function SlotControlBar({
         </MetalButtonSVG>
         <MetalButtonSVG onClick={maxBet} disabled={spinning || autoSpinning} variant="default" size="sm" whileTap>
           MAX
-        </MetalButtonSVG>
-        <MetalButtonSVG onClick={onPaytable} disabled={spinning} variant="purple" size="sm" whileTap>
-          <span className="text-[10px]">☰</span>
         </MetalButtonSVG>
         <MetalButtonSVG
           onClick={onToggleAuto}

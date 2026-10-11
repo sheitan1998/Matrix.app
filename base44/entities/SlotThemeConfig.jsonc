@@ -49,17 +49,32 @@
     "control_pos_x": {
       "type": "number",
       "default": 50,
-      "description": "Position horizontale des boutons en pourcentage"
+      "description": "Position horizontale des boutons en pourcentage (50 = centre)"
     },
     "control_pos_y": {
       "type": "number",
-      "default": 4,
-      "description": "Position verticale des boutons depuis le bas en pourcentage"
+      "default": 0,
+      "description": "Decalage vertical des boutons vers le haut en pourcentage (0 = en bas, 10 = remonte de 10%)"
     },
     "control_scale": {
       "type": "number",
       "default": 100,
       "description": "Echelle des boutons en pourcentage (50-200)"
+    },
+    "paytable_pos_x": {
+      "type": "number",
+      "default": 100,
+      "description": "Position horizontale du panneau de gains en pourcentage (100 = droite, 0 = gauche)"
+    },
+    "paytable_pos_y": {
+      "type": "number",
+      "default": 50,
+      "description": "Position verticale du panneau de gains en pourcentage (50 = centre)"
+    },
+    "paytable_scale": {
+      "type": "number",
+      "default": 100,
+      "description": "Echelle du panneau de gains en pourcentage (50-200)"
     },
     "win_rate": {
       "type": "number",
@@ -69,7 +84,7 @@
     "button_styles": {
       "type": "object",
       "default": {},
-      "description": "Configuration des styles et positions des boutons par theme (spin, auto, bet_minus, bet_plus, max_bet, paytable)"
+      "description": "Configuration des styles et positions des boutons par theme (spin, auto, bet_minus, bet_plus, max_bet)"
     },
     "description": {
       "type": "string",

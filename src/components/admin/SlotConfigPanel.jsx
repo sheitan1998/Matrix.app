@@ -70,6 +70,9 @@ export default function SlotConfigPanel() {
           control_pos_x: config.control_pos_x,
           control_pos_y: config.control_pos_y,
           control_scale: config.control_scale,
+          paytable_pos_x: config.paytable_pos_x,
+          paytable_pos_y: config.paytable_pos_y,
+          paytable_scale: config.paytable_scale,
           win_rate: config.win_rate,
           button_styles: config.button_styles,
         });
@@ -87,6 +90,9 @@ export default function SlotConfigPanel() {
           control_pos_x: config.control_pos_x,
           control_pos_y: config.control_pos_y,
           control_scale: config.control_scale,
+          paytable_pos_x: config.paytable_pos_x,
+          paytable_pos_y: config.paytable_pos_y,
+          paytable_scale: config.paytable_scale,
           win_rate: config.win_rate,
           button_styles: config.button_styles,
         });
@@ -123,8 +129,11 @@ export default function SlotConfigPanel() {
     { key: "grid_gap", label: "Espacement", min: 0, max: 20, unit: "px" },
     { key: "symbol_size", label: "Taille symboles", min: 12, max: 60, unit: "px" },
     { key: "control_pos_x", label: "Boutons: Position X", min: 0, max: 100, unit: "%" },
-    { key: "control_pos_y", label: "Boutons: Position Y", min: 0, max: 40, unit: "%" },
+    { key: "control_pos_y", label: "Boutons: Position Y (depuis bas)", min: 0, max: 40, unit: "%" },
     { key: "control_scale", label: "Boutons: Taille", min: 50, max: 200, unit: "%" },
+    { key: "paytable_pos_x", label: "Gains: Position X", min: 0, max: 100, unit: "%" },
+    { key: "paytable_pos_y", label: "Gains: Position Y", min: 0, max: 100, unit: "%" },
+    { key: "paytable_scale", label: "Gains: Taille", min: 50, max: 200, unit: "%" },
     { key: "win_rate", label: "Taux de victoire (RTP)", min: 0, max: 100, unit: "%" },
   ];
 

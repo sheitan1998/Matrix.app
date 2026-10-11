@@ -290,7 +290,7 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
       </div>
 
       {/* Paytable modal */}
-      <PaytableModal show={showPaytable} theme={theme} onClose={() => setShowPaytable(false)} symbols={SYMBOLS} />
+      <PaytableModal show={showPaytable} theme={theme} onClose={() => setShowPaytable(false)} symbols={SYMBOLS} gridConfig={gridConfig} />
     </div>
   );
 

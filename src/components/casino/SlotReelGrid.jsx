@@ -12,7 +12,7 @@ export const DEFAULT_GRID_CONFIG = {
   symbol_size: 28,
   bg_image: "",
   control_pos_x: 50,
-  control_pos_y: 4,
+  control_pos_y: 0,
   control_scale: 100,
 };
 
