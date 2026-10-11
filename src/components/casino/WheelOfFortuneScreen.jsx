@@ -341,11 +341,11 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
           }
         </div>
         {/* Rewards panel — sibling, absolute right on desktop, with admin scale/position */}
-        <div className="hidden lg:block absolute top-0 left-full w-56 rounded-xl px-4 py-3 ml-10" style={{
+        <div className="hidden lg:block absolute top-0 left-full w-56 rounded-xl px-4 ml-10 py-12" style={{
           background: "rgba(15,10,25,0.6)",
           border: "1px solid rgba(255,255,255,0.06)",
           transform: `scale(${rpScale / 100}) translate(${rpOffsetX}px, ${rpOffsetY}px)`,
-          transformOrigin: "top left",
+          transformOrigin: "top left"
         }}>
           <p className="text-[11px] font-bold text-white/50 mb-2">Récompenses possibles :</p>
           <div className="flex flex-col gap-1.5">
