@@ -184,78 +184,78 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
       }}>
       
       {/* Title — neon image or text fallback */}
-      {titleImage ? (
-        <div className="mb-4 flex justify-center" style={{
-          transform: `scale(${titleScale / 100}) translate(${titleOffsetX}px, ${titleOffsetY}px)`,
-          transformOrigin: "center center",
-        }}>
+      {titleImage ?
+      <div className="mb-4 flex justify-center" style={{
+        transform: `scale(${titleScale / 100}) translate(${titleOffsetX}px, ${titleOffsetY}px)`,
+        transformOrigin: "center center"
+      }}>
           <img src={titleImage} alt={gameConfig?.title || "Roue de la Fortune"} className="h-auto" style={{ maxHeight: 140, maxWidth: "100%" }} />
-        </div>
-      ) : (
-        <div className="text-center mb-4">
+        </div> :
+
+      <div className="text-center mb-4">
           <h2 style={{
-            fontFamily: getFontCss(ts?.font),
-            fontSize: `${ts?.size || 18}px`,
-            fontWeight: ts?.font === "Titan One" ? 400 : 900,
-            letterSpacing: "0.05em",
-            ...(!ts || ts?.color_style === "gradient" ? {
-              background: `linear-gradient(135deg, ${ts?.color || "#00ffff"}, ${ts?.color2 || "#ff00ff"})`,
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              textShadow: "none"
-            } : ts?.color_style === "neon" ? {
-              color: ts?.color || "#00ffff",
-              textShadow: `0 0 6px ${ts?.color || "#00ffff"}, 0 0 14px ${ts?.color || "#00ffff"}, 0 0 28px ${ts?.color2 || "#ff00ff"}`
-            } : {
-              color: ts?.color || "#00ffff",
-              textShadow: "none"
-            })
-          }}>{gameConfig?.title || 'ROUE DE LA FORTUNE'}</h2>
+          fontFamily: getFontCss(ts?.font),
+          fontSize: `${ts?.size || 18}px`,
+          fontWeight: ts?.font === "Titan One" ? 400 : 900,
+          letterSpacing: "0.05em",
+          ...(!ts || ts?.color_style === "gradient" ? {
+            background: `linear-gradient(135deg, ${ts?.color || "#00ffff"}, ${ts?.color2 || "#ff00ff"})`,
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            textShadow: "none"
+          } : ts?.color_style === "neon" ? {
+            color: ts?.color || "#00ffff",
+            textShadow: `0 0 6px ${ts?.color || "#00ffff"}, 0 0 14px ${ts?.color || "#00ffff"}, 0 0 28px ${ts?.color2 || "#ff00ff"}`
+          } : {
+            color: ts?.color || "#00ffff",
+            textShadow: "none"
+          })
+        }}>{gameConfig?.title || 'ROUE DE LA FORTUNE'}</h2>
         </div>
-      )}
+      }
 
       {/* Wheel + Rewards layout — outer container stays fixed, inner wheel wrapper gets the transform */}
       <div className="relative w-full max-w-sm mb-6 mx-auto">
         {/* Wheel wrapper — only the wheel, with admin scale/position */}
         <div className="relative" style={{
           transform: `scale(${wheelScale / 100}) translate(${wheelOffsetX}px, ${wheelOffsetY}px)`,
-          transformOrigin: "center center",
+          transformOrigin: "center center"
         }}>
         {/* Radial glow backdrop — pointer-events-none so it never blocks clicks */}
         <div className="absolute inset-0 -z-10 rounded-full pointer-events-none" style={{
-          background: "radial-gradient(circle at center, rgba(168,85,247,0.18) 0%, rgba(0,242,255,0.08) 45%, transparent 70%)",
-          transform: "scale(1.3)"
-        }} />
+            background: "radial-gradient(circle at center, rgba(168,85,247,0.18) 0%, rgba(0,242,255,0.08) 45%, transparent 70%)",
+            transform: "scale(1.3)"
+          }} />
         {/* Pointer */}
         <div className="absolute left-1/2 -translate-x-1/2 -top-1 z-20 flex flex-col items-center">
           <div className="w-0 h-0" style={{
-            borderLeft: "12px solid transparent",
-            borderRight: "12px solid transparent",
-            borderTop: "20px solid #ffd700",
-            filter: "drop-shadow(0 0 6px rgba(255,215,0,0.6))"
-          }} />
+              borderLeft: "12px solid transparent",
+              borderRight: "12px solid transparent",
+              borderTop: "20px solid #ffd700",
+              filter: "drop-shadow(0 0 6px rgba(255,215,0,0.6))"
+            }} />
         </div>
 
         {/* SVG Wheel — skeleton pendant le chargement de la config admin */}
-        {configLoading ? (
-          <div className="w-full aspect-square rounded-full animate-pulse" style={{ background: "rgba(168,85,247,0.08)", border: "2px solid rgba(168,85,247,0.15)" }} />
-        ) : (
-        <div ref={wheelRef} className="relative" style={{
-          transition: `transform ${SPIN_DURATION}ms cubic-bezier(0.17, 0.67, 0.12, 0.99)`,
-          transform: `rotate(${rotation}deg)`,
-          willChange: "transform"
-        }}>
+        {configLoading ?
+          <div className="w-full aspect-square rounded-full animate-pulse" style={{ background: "rgba(168,85,247,0.08)", border: "2px solid rgba(168,85,247,0.15)" }} /> :
+
+          <div ref={wheelRef} className="relative" style={{
+            transition: `transform ${SPIN_DURATION}ms cubic-bezier(0.17, 0.67, 0.12, 0.99)`,
+            transform: `rotate(${rotation}deg)`,
+            willChange: "transform"
+          }}>
           <svg viewBox="0 0 300 300" className="w-full h-full" style={{ filter: "drop-shadow(0 0 20px rgba(168,85,247,0.3))" }}>
             {/* Outer ring — configurable wheel border */}
             {(() => {
-              const wb = gameConfig?.wheel_border;
-              const w = wb?.width ?? 4;
-              const style = wb?.style || "solid";
-              const c1 = wb?.color || "#a855f7";
-              const c2 = wb?.color2 || "#00ffff";
-              if (wb?.image) {
-                return (
-                  <>
+                const wb = gameConfig?.wheel_border;
+                const w = wb?.width ?? 4;
+                const style = wb?.style || "solid";
+                const c1 = wb?.color || "#a855f7";
+                const c2 = wb?.color2 || "#00ffff";
+                if (wb?.image) {
+                  return (
+                    <>
                     <defs>
                       <pattern id="wb-img" patternUnits="userSpaceOnUse" width="296" height="296" x="2" y="2">
                         <image href={bustImageCache(wb.image, gameConfig?.updated_date)} x="0" y="0" width="296" height="296" preserveAspectRatio="xMidYMid slice" />
@@ -263,10 +263,10 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
                     </defs>
                     <circle cx="150" cy="150" r="148" fill="none" stroke="url(#wb-img)" strokeWidth={w} />
                   </>);
-              }
-              if (style === "gradient") {
-                return (
-                  <>
+                }
+                if (style === "gradient") {
+                  return (
+                    <>
                     <defs>
                       <linearGradient id="wb-grad" x1="0%" y1="0%" x2="100%" y2="100%">
                         <stop offset="0%" stopColor={c1} />
@@ -275,68 +275,68 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
                     </defs>
                     <circle cx="150" cy="150" r="148" fill="none" stroke="url(#wb-grad)" strokeWidth={w} />
                   </>);
-              }
-              if (style === "neon") {
-                return <circle cx="150" cy="150" r="148" fill="none" stroke={c1} strokeWidth={w} style={{ filter: `drop-shadow(0 0 6px ${c1}) drop-shadow(0 0 12px ${c2})` }} />;
-              }
-              return <circle cx="150" cy="150" r="148" fill="none" stroke={c1} strokeWidth={w} />;
-            })()}
+                }
+                if (style === "neon") {
+                  return <circle cx="150" cy="150" r="148" fill="none" stroke={c1} strokeWidth={w} style={{ filter: `drop-shadow(0 0 6px ${c1}) drop-shadow(0 0 12px ${c2})` }} />;
+                }
+                return <circle cx="150" cy="150" r="148" fill="none" stroke={c1} strokeWidth={w} />;
+              })()}
             <circle cx="150" cy="150" r="144" fill="none" stroke="rgba(168,85,247,0.4)" strokeWidth="2" />
 
             {/* Segments */}
             {segments.map((seg, i) => {
-              const startAngle = i * segmentAngle;
-              const endAngle = (i + 1) * segmentAngle;
-              const path = describeArc(150, 150, 140, startAngle, endAngle);
-              const textPos = polarToCartesian(150, 150, 90, startAngle + segmentAngle / 2);
-              const segImgId = `seg-bg-${i}`;
-              const segFill = seg.bg_image ? `url(#${segImgId})` : seg.bg_color || seg.color;
-              return (
-                <g key={i}>
+                const startAngle = i * segmentAngle;
+                const endAngle = (i + 1) * segmentAngle;
+                const path = describeArc(150, 150, 140, startAngle, endAngle);
+                const textPos = polarToCartesian(150, 150, 90, startAngle + segmentAngle / 2);
+                const segImgId = `seg-bg-${i}`;
+                const segFill = seg.bg_image ? `url(#${segImgId})` : seg.bg_color || seg.color;
+                return (
+                  <g key={i}>
                   {seg.bg_image &&
-                  <defs>
+                    <defs>
                       <pattern id={segImgId} patternUnits="userSpaceOnUse" width="280" height="280" x="10" y="10">
                         <image href={bustImageCache(seg.bg_image, gameConfig?.updated_date)} x="0" y="0" width="280" height="280" preserveAspectRatio="xMidYMid slice" />
                       </pattern>
                     </defs>
-                  }
+                    }
                   <path d={path} fill={segFill} stroke="rgba(0,0,0,0.3)" strokeWidth="1" />
                   {/* Glow border */}
                   <path d={path} fill="none" stroke={seg.glow} strokeWidth="0.5" opacity="0.6" />
                   {/* Icon */}
                   {/^https?:\/\//i.test(seg.icon) ?
-                  <image href={bustImageCache(seg.icon, gameConfig?.updated_date)} x={textPos.x - seg.icon_size / 2} y={textPos.y - seg.icon_size / 2} width={seg.icon_size} height={seg.icon_size} preserveAspectRatio="xMidYMid meet"
-                  transform={`rotate(${seg.icon_rotation} ${textPos.x} ${textPos.y})`} /> :
-                  <text x={textPos.x} y={textPos.y} textAnchor="middle" dominantBaseline="middle" fontSize={seg.icon_size}
-                  style={{ filter: `drop-shadow(0 0 4px ${seg.glow})` }}
-                  transform={`rotate(${seg.icon_rotation} ${textPos.x} ${textPos.y})`}>{seg.icon}</text>
-                  }
+                    <image href={bustImageCache(seg.icon, gameConfig?.updated_date)} x={textPos.x - seg.icon_size / 2} y={textPos.y - seg.icon_size / 2} width={seg.icon_size} height={seg.icon_size} preserveAspectRatio="xMidYMid meet"
+                    transform={`rotate(${seg.icon_rotation} ${textPos.x} ${textPos.y})`} /> :
+                    <text x={textPos.x} y={textPos.y} textAnchor="middle" dominantBaseline="middle" fontSize={seg.icon_size}
+                    style={{ filter: `drop-shadow(0 0 4px ${seg.glow})` }}
+                    transform={`rotate(${seg.icon_rotation} ${textPos.x} ${textPos.y})`}>{seg.icon}</text>
+                    }
                 </g>);
-            })}
+              })}
 
             {/* Center hub */}
             <circle cx="150" cy="150" r="30" fill="#1a0a2e" stroke="#a855f7" strokeWidth="2" />
             <circle cx="150" cy="150" r="27" fill="none" stroke="rgba(0,242,255,0.4)" strokeWidth="1" />
             {(() => {
-              const ci = gameConfig?.center_icon;
-              const isImg = ci && /^https?:\/\//i.test(ci);
-              const src = isImg ? bustImageCache(ci, gameConfig?.updated_date) : TOKEN_URL;
-              return (
-                <image
-                  href={src}
-                  x="122"
-                  y="122"
-                  width="56"
-                  height="56"
-                  preserveAspectRatio="xMidYMid meet"
-                  style={{ filter: "drop-shadow(0 0 8px rgba(168,85,247,0.6))" }} />);
-            })()}
+                const ci = gameConfig?.center_icon;
+                const isImg = ci && /^https?:\/\//i.test(ci);
+                const src = isImg ? bustImageCache(ci, gameConfig?.updated_date) : TOKEN_URL;
+                return (
+                  <image
+                    href={src}
+                    x="122"
+                    y="122"
+                    width="56"
+                    height="56"
+                    preserveAspectRatio="xMidYMid meet"
+                    style={{ filter: "drop-shadow(0 0 8px rgba(168,85,247,0.6))" }} />);
+              })()}
           </svg>
         </div>
-        )}
+          }
         </div>
         {/* Rewards panel — sibling, absolute right on desktop */}
-        <div className="hidden lg:block absolute top-0 left-full ml-10 w-56 px-4 py-3 rounded-xl" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="hidden lg:block absolute top-0 left-full ml-10 w-56 rounded-xl px-2 py-10" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(255,255,255,0.06)" }}>
           <p className="text-[11px] font-bold text-white/50 mb-2">Récompenses possibles :</p>
           <div className="flex flex-col gap-1.5">
             {segments.map((s, i) =>
