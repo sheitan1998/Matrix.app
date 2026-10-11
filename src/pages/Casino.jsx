@@ -157,16 +157,16 @@ export default function Casino() {
         initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4, delay: 0.3 }}
         whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-        onClick={() => { setScreen("scratch"); trackActivity("nexus_games"); }}
+        onClick={() => {setScreen("scratch");trackActivity("nexus_games");}}
         className="fixed top-20 right-4 z-40 w-28 sm:w-32 rounded-2xl overflow-hidden group block tap-sm"
         style={{ border: "2px solid rgba(168,85,247,0.35)", boxShadow: "0 0 20px rgba(168,85,247,0.15), 0 8px 30px rgba(0,0,0,0.5)" }}
-        title="Tickets à Gratter"
-      >
-        <img src={SCRATCH_CARD_IMG} alt="Tickets à Gratter" className="w-full h-auto block" style={{ objectFit: "contain" }} />
+        title="Tickets à Gratter">
+        
+        <img src={SCRATCH_CARD_IMG} alt="Tickets à Gratter" className="w-full h-auto block py-10 mx-1" style={{ objectFit: "contain" }} />
         <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-          style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.1) 0%, transparent 50%, rgba(0,242,255,0.12) 100%)" }} />
+        style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.1) 0%, transparent 50%, rgba(0,242,255,0.12) 100%)" }} />
         <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-lg flex items-center gap-1"
-          style={{ background: "rgba(10,5,15,0.8)", backdropFilter: "blur(8px)", border: "1px solid rgba(168,85,247,0.3)" }}>
+        style={{ background: "rgba(10,5,15,0.8)", backdropFilter: "blur(8px)", border: "1px solid rgba(168,85,247,0.3)" }}>
           <Ticket className="w-3 h-3" style={{ color: "#a855f7" }} />
           <span className="text-[9px] font-black" style={{ color: "#a855f7" }}>GRATTER</span>
         </div>
@@ -185,13 +185,13 @@ export default function Casino() {
           <motion.div key="home"
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.3 }}>
-              <CasinoHome balance={casinoCoins} onPlay={() => setShowThemeSelect(true)} onScratch={() => { setScreen("scratch"); trackActivity("nexus_games"); }} onWheel={() => { setScreen("wheel"); trackActivity("nexus_games"); }} />
+              <CasinoHome balance={casinoCoins} onPlay={() => setShowThemeSelect(true)} onScratch={() => {setScreen("scratch");trackActivity("nexus_games");}} onWheel={() => {setScreen("wheel");trackActivity("nexus_games");}} />
             </motion.div> :
           screen === "shop" ?
           <motion.div key="shop"
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.3 }}>
-              <CasinoShop balance={casinoCoins} onBack={() => setScreen("home")} onPurchaseSuccess={() => { casinoGetBalance().then((b) => setCasinoCoins(b)).catch(() => {}); casinoGetWon24h().then((w) => setWon24h(w)).catch(() => {}); }} />
+              <CasinoShop balance={casinoCoins} onBack={() => setScreen("home")} onPurchaseSuccess={() => {casinoGetBalance().then((b) => setCasinoCoins(b)).catch(() => {});casinoGetWon24h().then((w) => setWon24h(w)).catch(() => {});}} />
             </motion.div> :
           screen === "profile" ?
           <motion.div key="profile"
@@ -274,32 +274,32 @@ function CasinoHome({ balance, onPlay, onScratch, onWheel }) {
       <div className="flex flex-col sm:flex-row gap-5 items-center justify-center w-full max-w-3xl">
       {/* Clickable Slots card with user's image */}
       <motion.button
-        initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        whileHover={{ scale: 1.02, y: -4 }}
-        whileTap={{ scale: 0.98 }}
-        onClick={onPlay}
-        className="relative overflow-hidden rounded-2xl text-left w-full max-w-sm group"
-        style={{
-          border: "2px solid rgba(197,160,89,0.35)",
-          boxShadow: "0 0 30px rgba(197,160,89,0.15), 0 8px 30px rgba(0,0,0,0.5)"
-        }}>
+          initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          whileHover={{ scale: 1.02, y: -4 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={onPlay}
+          className="relative overflow-hidden rounded-2xl text-left w-full max-w-sm group"
+          style={{
+            border: "2px solid rgba(197,160,89,0.35)",
+            boxShadow: "0 0 30px rgba(197,160,89,0.15), 0 8px 30px rgba(0,0,0,0.5)"
+          }}>
 
         {/* The image fills the entire card */}
         <img
-          src={SLOTS_CARD_IMG}
-          alt="Machines à Sous"
-          className="w-full h-auto block"
-          style={{ objectFit: "contain" }} />
+            src={SLOTS_CARD_IMG}
+            alt="Machines à Sous"
+            className="w-full h-auto block"
+            style={{ objectFit: "contain" }} />
         
 
         {/* Subtle hover glow overlay */}
         <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-        style={{ background: "linear-gradient(135deg, rgba(197,160,89,0.1) 0%, transparent 50%, rgba(139,68,173,0.12) 100%)" }} />
+          style={{ background: "linear-gradient(135deg, rgba(197,160,89,0.1) 0%, transparent 50%, rgba(139,68,173,0.12) 100%)" }} />
 
         {/* Play indicator */}
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl flex items-center gap-2 transition group-hover:scale-105"
-        style={{ background: "rgba(10,5,15,0.8)", backdropFilter: "blur(8px)", border: "1px solid rgba(197,160,89,0.3)" }}>
+          style={{ background: "rgba(10,5,15,0.8)", backdropFilter: "blur(8px)", border: "1px solid rgba(197,160,89,0.3)" }}>
           <Sparkles className="w-4 h-4" style={{ color: "#C5A059" }} />
           <span className="text-sm font-black" style={{ color: "#C5A059" }}>JOUER</span>
         </div>
@@ -307,31 +307,31 @@ function CasinoHome({ balance, onPlay, onScratch, onWheel }) {
 
       {/* Wheel of Fortune vignette */}
       <motion.button
-        initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.5 }}
-        whileHover={{ scale: 1.02, y: -4 }}
-        whileTap={{ scale: 0.98 }}
-        onClick={onWheel}
-        className="relative overflow-hidden rounded-2xl text-left w-full max-w-sm group"
-        style={{
-          border: "2px solid rgba(0,242,255,0.35)",
-          boxShadow: "0 0 30px rgba(0,242,255,0.15), 0 8px 30px rgba(0,0,0,0.5)"
-        }}>
+          initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+          whileHover={{ scale: 1.02, y: -4 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={onWheel}
+          className="relative overflow-hidden rounded-2xl text-left w-full max-w-sm group"
+          style={{
+            border: "2px solid rgba(0,242,255,0.35)",
+            boxShadow: "0 0 30px rgba(0,242,255,0.15), 0 8px 30px rgba(0,0,0,0.5)"
+          }}>
 
         {/* The image fills the entire card */}
         <img
-          src={WHEEL_CARD_IMG}
-          alt="Roue de la Fortune"
-          className="w-full h-auto block"
-          style={{ objectFit: "contain" }} />
+            src={WHEEL_CARD_IMG}
+            alt="Roue de la Fortune"
+            className="w-full h-auto block"
+            style={{ objectFit: "contain" }} />
 
         {/* Subtle hover glow overlay */}
         <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-        style={{ background: "linear-gradient(135deg, rgba(0,242,255,0.1) 0%, transparent 50%, rgba(255,0,255,0.12) 100%)" }} />
+          style={{ background: "linear-gradient(135deg, rgba(0,242,255,0.1) 0%, transparent 50%, rgba(255,0,255,0.12) 100%)" }} />
 
         {/* Play indicator */}
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl flex items-center gap-2 transition group-hover:scale-105"
-        style={{ background: "rgba(10,5,15,0.8)", backdropFilter: "blur(8px)", border: "1px solid rgba(0,242,255,0.3)" }}>
+          style={{ background: "rgba(10,5,15,0.8)", backdropFilter: "blur(8px)", border: "1px solid rgba(0,242,255,0.3)" }}>
           <CircleDashed className="w-4 h-4" style={{ color: "#00ffff" }} />
           <span className="text-sm font-black" style={{ color: "#00ffff" }}>LANCEZ</span>
         </div>
