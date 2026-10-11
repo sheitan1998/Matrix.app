@@ -193,8 +193,10 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
         }}>{gameConfig?.title || 'ROUE DE LA FORTUNE'}</h2>
       </div>
 
+      {/* Wheel + rewards side-by-side */}
+      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 w-full max-w-2xl mb-6">
       {/* Wheel container */}
-      <div className="relative w-full max-w-sm mb-6">
+      <div className="relative w-full max-w-sm shrink-0">
         {/* Radial glow backdrop — integrates wheel with background */}
         <div className="absolute inset-0 -z-10 rounded-full" style={{
           background: "radial-gradient(circle at center, rgba(168,85,247,0.18) 0%, rgba(0,242,255,0.08) 45%, transparent 70%)",
@@ -310,6 +312,19 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
         )}
       </div>
 
+      {/* Rewards column (right side) */}
+      <div className="flex-1 w-full sm:w-auto px-3 py-2 rounded-xl" style={{ background: "rgba(15,10,25,0.4)", border: "1px solid rgba(255,255,255,0.04)" }}>
+        <p className="text-[10px] font-bold text-white/50 mb-2 text-center sm:text-left">Récompenses possibles :</p>
+        <div className="flex flex-col gap-1.5">
+          {segments.map((s, i) =>
+          <span key={i} className="px-2 py-1 rounded-full text-[10px] font-bold flex items-center gap-1.5" style={{ background: `${s.color}30`, border: `1px solid ${s.glow}40`, color: s.glow }}>
+              {/^https?:\/\//i.test(s.icon) ? <img src={bustImageCache(s.icon, gameConfig?.updated_date)} alt="" className="inline-block h-4 w-4 object-contain" /> : <span className="text-sm">{s.icon}</span>} {s.label}
+            </span>
+          )}
+        </div>
+      </div>
+      </div>
+
       {/* Result display */}
       {showResult && result &&
       <div className="mb-4 text-center animate-in fade-in duration-500">
@@ -354,22 +369,6 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
       }
 
       {/* Balance + rewards table */}
-      
-
-
-
-      
-
-      <div className="mt-3 px-4 py-2 rounded-xl w-full max-w-sm" style={{ background: "rgba(15,10,25,0.4)", border: "1px solid rgba(255,255,255,0.04)" }}>
-        <p className="text-[10px] font-bold text-white/50 mb-1.5 text-center">Récompenses possibles :</p>
-        <div className="flex flex-wrap justify-center gap-1.5">
-          {segments.map((s, i) =>
-          <span key={i} className="px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: `${s.color}30`, border: `1px solid ${s.glow}40`, color: s.glow }}>
-              {/^https?:\/\//i.test(s.icon) ? <img src={bustImageCache(s.icon, gameConfig?.updated_date)} alt="" className="inline-block h-4 w-4 object-contain align-middle" /> : s.icon} {s.label}
-            </span>
-          )}
-        </div>
-      </div>
 
       {/* Rules summary */}
       <div className="mt-3 px-4 py-2 rounded-xl w-full max-w-sm text-center" style={{ background: "rgba(15,10,25,0.3)", border: "1px solid rgba(255,255,255,0.03)" }}>
