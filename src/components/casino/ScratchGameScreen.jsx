@@ -233,7 +233,7 @@ export default function ScratchGameScreen({ balance, setBalance, onBack }) {
               
                 <LayoutGrid className="w-5 h-5" />
                 <span>3 identiques</span>
-                <span className="text-[9px] opacity-60 hidden">{gameConfig?.scratch_mode_3_win_rate ?? 30}% de gain</span>
+                
               </button>
               <button
               onClick={() => setSelectedMode("5")}
@@ -244,7 +244,7 @@ export default function ScratchGameScreen({ balance, setBalance, onBack }) {
               
                 <Target className="w-5 h-5" />
                 <span>5 identiques</span>
-                <span className="text-[9px] opacity-60 hidden">{gameConfig?.scratch_mode_5_win_rate ?? 15}% de gain</span>
+                
               </button>
             </div>
 
