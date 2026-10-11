@@ -134,6 +134,9 @@ export default function SlotsGame({ balance, setBalance, themeId, onWin }) {
             color: r.color,
             glow: r.glow,
             mult: r.mult,
+            mult_3: r.mult_3 ?? r.mult ?? 1,
+            mult_4: r.mult_4 ?? r.mult ?? 1,
+            mult_5: r.mult_5 ?? r.mult ?? 1,
             rare: r.rare,
             isWild: r.is_wild,
             isText: r.is_text

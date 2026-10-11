@@ -84,10 +84,18 @@ export default function PaytableModal({ show, theme, onClose, symbols, gridConfi
                           {sym.isWild && <p className="text-[9px] font-black" style={{ color: theme.frameAccent }}>WILD</p>}
                         </div>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <CasinoToken size={14} />
-                        <span className="text-sm font-mono font-black" style={{ color: sym.color }}>
-                          ×{sym.mult}
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-white/40">3×</span>
+                        <span className="text-xs font-mono font-bold" style={{ color: sym.color }}>
+                          {sym.mult_3 ?? sym.mult ?? 1}×
+                        </span>
+                        <span className="text-[10px] text-white/40 ml-1">4×</span>
+                        <span className="text-xs font-mono font-bold" style={{ color: sym.color }}>
+                          {sym.mult_4 ?? sym.mult ?? 1}×
+                        </span>
+                        <span className="text-[10px] text-white/40 ml-1">5×</span>
+                        <span className="text-xs font-mono font-black" style={{ color: sym.color }}>
+                          {sym.mult_5 ?? sym.mult ?? 1}×
                         </span>
                       </div>
                     </div>

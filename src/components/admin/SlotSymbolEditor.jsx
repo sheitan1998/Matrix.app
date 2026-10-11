@@ -41,7 +41,10 @@ export default function SlotSymbolEditor({ themeKey }) {
         label: "Nouveau symbole",
         color: "#ffffff",
         glow: "#ffffff",
-        mult: 5,
+        mult: 2,
+        mult_3: 2,
+        mult_4: 3,
+        mult_5: 4,
         rare: 5,
         is_wild: false,
         is_text: false,
@@ -116,10 +119,9 @@ export default function SlotSymbolEditor({ themeKey }) {
             </thead>
             <tbody>
               {symbols.map((sym) => {
-                const base = sym.mult || 0;
-                const m3 = base * 1;
-                const m4 = base * 1.5;
-                const m5 = base * 2;
+                const m3 = sym.mult_3 ?? sym.mult ?? 1;
+                const m4 = sym.mult_4 ?? sym.mult ?? 1;
+                const m5 = sym.mult_5 ?? sym.mult ?? 1;
                 const over = m5 > 50;
                 return (
                   <tr key={sym.id} className="border-b border-white/5">
@@ -129,7 +131,7 @@ export default function SlotSymbolEditor({ themeKey }) {
                       ) : null}
                       {sym.symbol}
                     </td>
-                    <td className="px-2 py-1 text-right text-white/50">{base}x</td>
+                    <td className="px-2 py-1 text-right text-white/50">{sym.mult ?? 1}x</td>
                     <td className="px-2 py-1 text-right text-white/70">{m3}x</td>
                     <td className="px-2 py-1 text-right text-white/70">{m4}x</td>
                     <td className={`px-2 py-1 text-right font-black ${over ? "text-red-400" : "text-white"}`}>{m5}x {over && "⚠️"}</td>
@@ -195,13 +197,32 @@ export default function SlotSymbolEditor({ themeKey }) {
               className="w-20 px-2 py-1.5 rounded-lg text-xs bg-white/5 border border-white/10 text-white placeholder-white/30"
             />
 
-            {/* Mult */}
+            {/* Mult 3 alignés */}
             <input
               type="number"
-              value={sym.mult || 1}
-              onChange={(e) => updateSymbol(sym.id, { mult: parseInt(e.target.value) || 1 })}
+              step="0.1"
+              value={sym.mult_3 ?? sym.mult ?? 1}
+              onChange={(e) => updateSymbol(sym.id, { mult_3: parseFloat(e.target.value) || 0 })}
               className="w-12 px-1 py-1.5 rounded-lg text-xs bg-white/5 border border-white/10 text-white text-center"
-              title="Multiplicateur"
+              title="Multiplicateur 3 alignés"
+            />
+            {/* Mult 4 alignés */}
+            <input
+              type="number"
+              step="0.1"
+              value={sym.mult_4 ?? sym.mult ?? 1}
+              onChange={(e) => updateSymbol(sym.id, { mult_4: parseFloat(e.target.value) || 0 })}
+              className="w-12 px-1 py-1.5 rounded-lg text-xs bg-white/5 border border-white/10 text-white text-center"
+              title="Multiplicateur 4 alignés"
+            />
+            {/* Mult 5 alignés */}
+            <input
+              type="number"
+              step="0.1"
+              value={sym.mult_5 ?? sym.mult ?? 1}
+              onChange={(e) => updateSymbol(sym.id, { mult_5: parseFloat(e.target.value) || 0 })}
+              className="w-12 px-1 py-1.5 rounded-lg text-xs bg-white/5 border border-white/10 text-white text-center"
+              title="Multiplicateur 5 alignés"
             />
 
             {/* Rare (weight) */}

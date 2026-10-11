@@ -31,8 +31,23 @@
     },
     "mult": {
       "type": "number",
-      "default": 5,
-      "description": "Multiplicateur de gain"
+      "default": 2,
+      "description": "Multiplicateur de base (legacy, utilise si mult_3/4/5 non definis)"
+    },
+    "mult_3": {
+      "type": "number",
+      "default": 2,
+      "description": "Multiplicateur pour 3 symboles alignes"
+    },
+    "mult_4": {
+      "type": "number",
+      "default": 3,
+      "description": "Multiplicateur pour 4 symboles alignes"
+    },
+    "mult_5": {
+      "type": "number",
+      "default": 4,
+      "description": "Multiplicateur pour 5 symboles alignes"
     },
     "rare": {
       "type": "number",

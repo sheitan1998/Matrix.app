@@ -16,13 +16,13 @@ const MAX_WIN_CAP = 100;       // Gain total d'un spin plafonné à 100x la mise
 
 // ===== Slots symbol table (mirrors client) =====
 const SLOTS_SYMBOLS = [
-  { s: '7',    mult: 5,   rare: 1 },
-  { s: '💎',   mult: 3,   rare: 1 },
-  { s: 'WILD', mult: 2,   rare: 2 },
-  { s: 'BAR',  mult: 1.5, rare: 2 },
-  { s: '🍒',   mult: 0.8, rare: 5 },
-  { s: '🍇',   mult: 0.5, rare: 6 },
-  { s: '🍉',   mult: 0.4, rare: 6 },
+  { s: '7',    mult: 5,   mult_3: 2,   mult_4: 3,   mult_5: 5,   rare: 1 },
+  { s: '💎',   mult: 3,   mult_3: 1,   mult_4: 2,   mult_5: 3,   rare: 1 },
+  { s: 'WILD', mult: 2,   mult_3: 1,   mult_4: 1.5, mult_5: 2,   rare: 2 },
+  { s: 'BAR',  mult: 1.5, mult_3: 0.5, mult_4: 1,   mult_5: 1.5, rare: 2 },
+  { s: '🍒',   mult: 0.8, mult_3: 0.3, mult_4: 0.5, mult_5: 0.8, rare: 5 },
+  { s: '🍇',   mult: 0.5, mult_3: 0.2, mult_4: 0.3, mult_5: 0.5, rare: 6 },
+  { s: '🍉',   mult: 0.4, mult_3: 0.1, mult_4: 0.2, mult_5: 0.4, rare: 6 },
 ];
 
 // ===== Casino achievements (Nexus Game specific) =====
@@ -104,7 +104,14 @@ async function getSlotsSymbols(base44: any, theme_key?: string) {
     try {
       const records = await base44.asServiceRole.entities.SlotSymbol.filter({ theme_key });
       if (records.length >= 2) {
-        return records.map(r => ({ s: r.symbol, mult: r.mult, rare: r.rare }));
+        return records.map(r => ({
+          s: r.symbol,
+          mult: r.mult,
+          mult_3: r.mult_3 ?? r.mult ?? 1,
+          mult_4: r.mult_4 ?? r.mult ?? 1,
+          mult_5: r.mult_5 ?? r.mult ?? 1,
+          rare: r.rare,
+        }));
       }
     } catch {}
   }
@@ -238,12 +245,17 @@ export default async function(req: Request): Promise<Response> {
             const sym = pickSlotsSymbol(slotsSymbols);
             // Déterminer le nombre de symboles alignés (3, 4 ou 5)
             const matchCount = 3 + Math.floor(Math.random() * 3); // 3, 4, ou 5
-            // Scaling linéaire: 3 alignés = 1x, 4 alignés = 1.5x, 5 alignés = 2x
-            const matchMult = matchCount === 5 ? 2 : matchCount === 4 ? 1.5 : 1;
+            // Utiliser DIRECTEMENT le multiplicateur défini dans l'éditeur de symboles (panel admin)
+            // Aucun coefficient caché ni multiplicateur de ligne supplémentaire
+            const matchMult = matchCount === 5
+              ? (sym.mult_5 ?? sym.mult ?? 1)
+              : matchCount === 4
+                ? (sym.mult_4 ?? sym.mult ?? 1)
+                : (sym.mult_3 ?? sym.mult ?? 1);
             // Plafonnement strict: aucun symbole ne dépasse 50x
-            multiplier = Math.min(sym.mult * matchMult, MAX_SYMBOL_MULT);
+            multiplier = Math.min(matchMult, MAX_SYMBOL_MULT);
             slotsSymbol = sym.s;
-            // Gain strictement linéaire: mise × multiplicateur
+            // Gain strictement linéaire: Gain Total = Mise courante × Multiplicateur
             payout = betAmount * multiplier;
             // Plafond global: le gain total d'un spin ne dépasse jamais 100x la mise
             payout = Math.min(payout, betAmount * MAX_WIN_CAP);
