@@ -45,6 +45,9 @@ const DEFAULT_CONFIG = {
   title_image_scale: 100,
   title_image_pos_x: 50,
   title_image_pos_y: 50,
+  rewards_panel_scale: 100,
+  rewards_panel_pos_x: 50,
+  rewards_panel_pos_y: 50,
   rewards: [
     { id: "perdu", label: "Perdu", desc: "Réessayez !", icon: "💀", amount: 0, weight: 65, type: "lose", bg_color: "#3a3a3a", bg_image: "" },
     { id: "1000", label: "1 000 jetons", desc: "Petit gain", amount: 1000, weight: 55, type: "tokens", bg_color: "#00bfff", bg_image: "" },
@@ -143,6 +146,9 @@ export default function WheelConfigPanel() {
         title_image_scale: Number(config.title_image_scale),
         title_image_pos_x: Number(config.title_image_pos_x),
         title_image_pos_y: Number(config.title_image_pos_y),
+        rewards_panel_scale: Number(config.rewards_panel_scale),
+        rewards_panel_pos_x: Number(config.rewards_panel_pos_x),
+        rewards_panel_pos_y: Number(config.rewards_panel_pos_y),
         spin_cost: Number(config.spin_cost),
         reset_hour_utc: Number(config.reset_hour_utc),
         title_style: config.title_style,
@@ -468,6 +474,32 @@ export default function WheelConfigPanel() {
           </div>
         </div>
         <button onClick={() => { updateField("wheel_scale", 100); updateField("wheel_pos_x", 50); updateField("wheel_pos_y", 50); }}
+          className="px-2 py-1 rounded-lg text-[10px] font-bold text-white/60 border border-white/10 hover:bg-white/5">
+          Centrer / Réinitialiser
+        </button>
+      </div>
+
+      {/* Rewards panel layout & positioning */}
+      <div className="rounded-2xl border border-white/10 p-4 space-y-3" style={{ background: "rgba(15,10,25,0.6)" }}>
+        <p className="text-xs font-bold text-white/60 uppercase">Panneau "Récompenses possibles"</p>
+        <div>
+          <label className="text-[10px] font-bold text-white/50 mb-1 block">Échelle ({config.rewards_panel_scale ?? 100}%)</label>
+          <input type="range" min="50" max="200" value={config.rewards_panel_scale ?? 100} onChange={e => updateField("rewards_panel_scale", Number(e.target.value))}
+            className="w-full accent-cyan-400" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-[10px] font-bold text-white/50 mb-1 block">Décalage X ({config.rewards_panel_pos_x ?? 50}%)</label>
+            <input type="range" min="0" max="100" value={config.rewards_panel_pos_x ?? 50} onChange={e => updateField("rewards_panel_pos_x", Number(e.target.value))}
+              className="w-full accent-fuchsia-400" />
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-white/50 mb-1 block">Décalage Y ({config.rewards_panel_pos_y ?? 50}%)</label>
+            <input type="range" min="0" max="100" value={config.rewards_panel_pos_y ?? 50} onChange={e => updateField("rewards_panel_pos_y", Number(e.target.value))}
+              className="w-full accent-fuchsia-400" />
+          </div>
+        </div>
+        <button onClick={() => { updateField("rewards_panel_scale", 100); updateField("rewards_panel_pos_x", 50); updateField("rewards_panel_pos_y", 50); }}
           className="px-2 py-1 rounded-lg text-[10px] font-bold text-white/60 border border-white/10 hover:bg-white/5">
           Centrer / Réinitialiser
         </button>

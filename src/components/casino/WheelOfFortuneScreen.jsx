@@ -170,6 +170,11 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
   const titlePosY = Number(gameConfig?.title_image_pos_y ?? 50);
   const titleOffsetX = (titlePosX - 50) * 4;
   const titleOffsetY = (titlePosY - 50) * 3;
+  const rpScale = Number(gameConfig?.rewards_panel_scale ?? 100);
+  const rpPosX = Number(gameConfig?.rewards_panel_pos_x ?? 50);
+  const rpPosY = Number(gameConfig?.rewards_panel_pos_y ?? 50);
+  const rpOffsetX = (rpPosX - 50) * 4;
+  const rpOffsetY = (rpPosY - 50) * 3;
 
   return (
     <div
@@ -335,8 +340,13 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
         </div>
           }
         </div>
-        {/* Rewards panel — sibling, absolute right on desktop */}
-        <div className="hidden lg:block absolute top-0 left-full w-56 rounded-xl px-2 py-10 mr-10 ml-10" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(255,255,255,0.06)" }}>
+        {/* Rewards panel — sibling, absolute right on desktop, with admin scale/position */}
+        <div className="hidden lg:block absolute top-0 left-full w-56 rounded-xl px-4 py-3 ml-10" style={{
+          background: "rgba(15,10,25,0.6)",
+          border: "1px solid rgba(255,255,255,0.06)",
+          transform: `scale(${rpScale / 100}) translate(${rpOffsetX}px, ${rpOffsetY}px)`,
+          transformOrigin: "top left",
+        }}>
           <p className="text-[11px] font-bold text-white/50 mb-2">Récompenses possibles :</p>
           <div className="flex flex-col gap-1.5">
             {segments.map((s, i) =>
@@ -345,9 +355,9 @@ export default function WheelOfFortuneScreen({ balance, setBalance, onBack }) {
               </span>
             )}
           </div>
-          {/* Result display — below rewards on desktop */}
+          {/* Result display — absolute within rewards panel so it never grows the panel or shifts the wheel */}
           {showResult && result &&
-          <div className="mt-3 pt-3 text-center animate-in fade-in duration-500" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="absolute bottom-0 left-0 right-0 pt-3 text-center animate-in fade-in duration-500" style={{ borderTop: "1px solid rgba(255,255,255,0.06)", background: "rgba(15,10,25,0.95)" }}>
               <div className="text-3xl mb-1">
                 {result.type === "lose" ? "😢" : result.type === "trix" ? "🌟" : result.amount >= 1000000 ? "💎" : "💰"}
               </div>

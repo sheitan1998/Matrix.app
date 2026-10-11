@@ -295,38 +295,6 @@ function CasinoHome({ balance, onPlay, onScratch, onWheel }) {
         </div>
       </motion.button>
 
-      {/* Scratch card vignette */}
-      <motion.button
-        initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.35 }}
-        whileHover={{ scale: 1.02, y: -4 }}
-        whileTap={{ scale: 0.98 }}
-        onClick={onScratch}
-        className="relative overflow-hidden rounded-2xl text-left w-full max-w-sm group"
-        style={{
-          border: "2px solid rgba(168,85,247,0.35)",
-          boxShadow: "0 0 30px rgba(168,85,247,0.15), 0 8px 30px rgba(0,0,0,0.5)"
-        }}>
-
-        {/* The image fills the entire card */}
-        <img
-          src={SCRATCH_CARD_IMG}
-          alt="Tickets à Gratter"
-          className="w-full h-auto block"
-          style={{ objectFit: "contain" }} />
-
-        {/* Subtle hover glow overlay */}
-        <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-        style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.1) 0%, transparent 50%, rgba(0,242,255,0.12) 100%)" }} />
-
-        {/* Play indicator */}
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl flex items-center gap-2 transition group-hover:scale-105"
-        style={{ background: "rgba(10,5,15,0.8)", backdropFilter: "blur(8px)", border: "1px solid rgba(168,85,247,0.3)" }}>
-          <Ticket className="w-4 h-4" style={{ color: "#a855f7" }} />
-          <span className="text-sm font-black" style={{ color: "#a855f7" }}>GRATTER</span>
-        </div>
-      </motion.button>
-
       {/* Wheel of Fortune vignette */}
       <motion.button
         initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}

@@ -182,6 +182,21 @@
       "default": 50,
       "description": "Decalage vertical de la roue en pourcentage (0-100, 50 = centre)"
     },
+    "rewards_panel_scale": {
+      "type": "number",
+      "default": 100,
+      "description": "Echelle du panneau des recompenses en pourcentage (50-200, 100 = taille par defaut)"
+    },
+    "rewards_panel_pos_x": {
+      "type": "number",
+      "default": 50,
+      "description": "Position horizontale du panneau des recompenses en pourcentage (0-100, 50 = centre)"
+    },
+    "rewards_panel_pos_y": {
+      "type": "number",
+      "default": 50,
+      "description": "Position verticale du panneau des recompenses en pourcentage (0-100, 50 = centre)"
+    },
     "ticket_price": {
       "type": "number",
       "default": 10000,
