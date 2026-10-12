@@ -27,6 +27,10 @@
       "type": "boolean",
       "default": false,
       "description": "Statut live actuel (mis \u00e0 jour par le workflow)"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [
