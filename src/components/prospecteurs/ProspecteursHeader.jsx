@@ -10,9 +10,9 @@ export default function ProspecteursHeader({ user, trixBalance }) {
       style={{
         background: "rgba(18, 9, 28, 0.95)",
         backdropFilter: "blur(16px)",
-        borderBottom: "1px solid rgba(138, 79, 255, 0.2)",
-      }}
-    >
+        borderBottom: "1px solid rgba(138, 79, 255, 0.2)"
+      }}>
+      
       {/* Left: MATRIX logo */}
       <Link to="/" className="flex items-center gap-2 tap-sm">
         <span className="text-xl font-black text-white tracking-tight">
@@ -25,16 +25,16 @@ export default function ProspecteursHeader({ user, trixBalance }) {
         className="hidden sm:flex items-center px-5 py-1.5 rounded-full"
         style={{
           background: "rgba(138, 79, 255, 0.1)",
-          border: "1px solid rgba(138, 79, 255, 0.3)",
-        }}
-      >
-        <span className="text-[11px] font-black tracking-[0.2em] uppercase text-white">
+          border: "1px solid rgba(138, 79, 255, 0.3)"
+        }}>
+        
+        <span className="text-[11px] font-black tracking-[0.2em] uppercase text-white hidden">
           Recherche Prospecteurs
         </span>
       </div>
 
       {/* Right: Trix Wallet + Messaging + Profile */}
       <HeaderActions />
-    </header>
-  );
+    </header>);
+
 }
