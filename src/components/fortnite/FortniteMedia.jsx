@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Play, Volume2, VolumeX } from 'lucide-react';
 
-export default function FortniteMedia({ item, detail = false, active = false }) {
+export default function FortniteMedia({ item, detail = false, active = false, thumbnail = false }) {
   const [muted, setMuted] = useState(true);
   const [failed, setFailed] = useState(false);
-  const image = item.image || item.images?.featured || item.images?.icon || item.images?.smallIcon;
+  const hdImage = item.image || item.images?.featured || item.images?.icon || item.images?.smallIcon;
+  const thumbImage = item.images?.smallIcon || item.images?.icon || item.images?.featured || item.image;
+  const image = thumbnail ? thumbImage : hdImage;
   const video = item.video || (/\.(mp4|webm)(\?|$)/i.test(item.images?.animated || '') ? item.images.animated : null);
   const playing = !failed && (detail || active);
 
@@ -51,12 +53,6 @@ export default function FortniteMedia({ item, detail = false, active = false }) 
           {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
           {muted ? 'Activer le son' : 'Couper le son'}
         </button>
-      )}
-
-      {detail && !video && (
-        <p className="absolute bottom-3 rounded-lg bg-background/90 px-3 py-2 text-xs text-muted-foreground">
-          Animation non fournie par la source pour cet objet.
-        </p>
       )}
 
       {detail && failed && (

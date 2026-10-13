@@ -32,6 +32,12 @@ function purgeAllCache() {
   clearCatalogCache();
 }
 
+function dataResponse(data, ttl = 3600) {
+  return Response.json(data, {
+    headers: { 'Cache-Control': `public, max-age=${ttl}, s-maxage=${ttl}` },
+  });
+}
+
 // ─── Config ───
 let configPending = null;
 async function getConfig(base44, fresh = false) {
@@ -112,7 +118,7 @@ export default async function(req) {
         base44.entities.FortniteMap.count(query),
       ]);
       const items = await enrichMaps(page.items || []);
-      return Response.json({ items, total, has_more: page.has_more, next_cursor: page.next_cursor });
+      return dataResponse({ items, total, has_more: page.has_more, next_cursor: page.next_cursor });
     }
 
     const adminAction = ['purgeCache', 'getConfig', 'updateConfig', 'testConnection'].includes(action);
@@ -122,7 +128,7 @@ export default async function(req) {
     if (action === 'getCreativeMaps' || action === 'getApiFeaturedMaps') {
       if (config?.show_api_maps === false) return Response.json(action === 'getApiFeaturedMaps' ? [] : { items: [], has_more: false });
       const result = await creativePage(body);
-      return Response.json(action === 'getApiFeaturedMaps' ? result.items : result);
+      return dataResponse(action === 'getApiFeaturedMaps' ? result.items : result, 900);
     }
 
     if (action === 'getFeaturedMaps') {
@@ -132,24 +138,24 @@ export default async function(req) {
         );
         return await enrichMaps(page.items || []);
       });
-      return Response.json(result);
+      return dataResponse(result, 900);
     }
 
     if (action === 'getCosmeticDetails') {
       const id = String(body.id || '').trim().slice(0, 200);
       if (!id) return Response.json({ error: 'Identifiant requis' }, { status: 400 });
       const catalog = await getCatalog('cosmetics');
-      return Response.json(catalog.items.find(item => item.id === id) || null);
+      return dataResponse(catalog.items.find(item => item.id === id) || null);
     }
 
     // ── Public: 24-item pages, shared hourly catalogue cache ──
     if (action === 'getDailyShop') {
       if (config?.show_daily_shop === false) return Response.json({ entries: [], total: 0, has_more: false, next_page: null });
-      return Response.json(await getCatalogPage('shop', body));
+      return dataResponse(await getCatalogPage('shop', body));
     }
     if (action === 'searchCosmetics') {
       if (config?.show_cosmetics === false) return Response.json({ items: [], total: 0, has_more: false, next_page: null });
-      return Response.json(await getCatalogPage('cosmetics', body));
+      return dataResponse(await getCatalogPage('cosmetics', body));
     }
 
     // ── Public: Player stats ──
@@ -270,7 +276,7 @@ export default async function(req) {
       if (!catalog) return Response.json([]);
       const items = catalog.items.filter(i => (i.set_name || i.series || '').toLowerCase() === setName.toLowerCase()).slice(0, 12);
       setCached(cacheKey, items);
-      return Response.json(items);
+      return dataResponse(items);
     }
 
     // ── Public: Section visibility config ──

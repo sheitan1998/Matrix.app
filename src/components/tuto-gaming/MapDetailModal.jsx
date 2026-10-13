@@ -172,10 +172,10 @@ export default function MapDetailModal({ map, onClose, user, onEdit }) {
             <Eye className="w-3.5 h-3.5" />
             <span>{map.views || 0} vue{(map.views || 0) > 1 ? "s" : ""}</span>
           </div>}
-          {map.description && (
+          {(map.description || map.api_description) && (
             <div>
               <h3 className="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-1.5">Description</h3>
-              <p className="text-sm text-white/70 leading-relaxed whitespace-pre-wrap">{map.description}</p>
+              <p className="text-sm text-white/70 leading-relaxed whitespace-pre-wrap">{map.description || map.api_description}</p>
             </div>
           )}
 

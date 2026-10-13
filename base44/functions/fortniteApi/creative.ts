@@ -41,7 +41,7 @@ export async function islandSnapshot(code) {
       creator_name: meta?.creatorCode || live?.creatorName || 'Créateur non fourni',
       image_url: image, live_players: known ? live.ccu : null,
       last_synced_at: known ? live.updatedAt : null, category: category(meta?.tags), tags: meta?.tags || [],
-      created_in: meta?.createdIn || null, description: '', is_api: true, players_kind: 'peak_ccu_10_minutes',
+      created_in: meta?.createdIn || null, description: meta?.description || meta?.longDescription || live?.description || '', is_api: true, players_kind: 'peak_ccu_10_minutes',
       source: 'Epic Games + fortnite.fyi', cached_at: new Date().toISOString() };
   });
 }
@@ -96,6 +96,7 @@ export async function enrichMaps(maps) {
     const snapshot = await islandSnapshot(map.map_code);
     return { ...map, api_title: snapshot?.title || null, api_creator: snapshot?.creator_name || null,
       api_thumbnail: snapshot?.image_url || null, live_players: snapshot?.live_players ?? null,
-      last_synced_at: snapshot?.last_synced_at || null, players_kind: 'peak_ccu_10_minutes' };
+      last_synced_at: snapshot?.last_synced_at || null, api_description: snapshot?.description || null,
+      players_kind: 'peak_ccu_10_minutes' };
   });
 }

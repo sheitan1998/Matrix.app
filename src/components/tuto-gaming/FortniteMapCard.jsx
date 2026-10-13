@@ -76,7 +76,7 @@ export default function FortniteMapCard({ map, index = 0, onClick, user }) {
           <span className="text-[11px] text-white/50 truncate">{map.creator_name}</span>
         </div>
         {map.description && (
-          <p className="text-[11px] text-white/40 line-clamp-2 mb-3 leading-relaxed">{map.description}</p>
+          <p className="text-[11px] text-white/50 line-clamp-3 mb-3 leading-relaxed">{map.description}</p>
         )}
 
         {/* Map code + copy */}
