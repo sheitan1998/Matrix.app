@@ -265,7 +265,24 @@ export default async function(req) {
       const cacheKey = 'api_featured_maps';
       const cached = getCached(cacheKey, 15);
       if (cached) return Response.json(cached);
-      const maps = await getApiFeaturedMaps();
+      let maps = await getApiFeaturedMaps();
+      if (!maps || maps.length === 0) {
+        const dbMaps = await base44.asServiceRole.entities.FortniteMap.filter(
+          { is_featured: true, is_approved: true },
+          { sort: 'sort_order', limit: 12 }
+        );
+        maps = (dbMaps?.items || dbMaps || []).map(m => ({
+          id: m.id,
+          map_code: m.map_code,
+          title: m.title,
+          creator_name: m.creator_name,
+          image_url: m.image_url,
+          live_players: m.live_players || 0,
+          category: m.category,
+          description: m.description || '',
+          is_api: false,
+        }));
+      }
       setCached(cacheKey, maps);
       return Response.json(maps);
     }
