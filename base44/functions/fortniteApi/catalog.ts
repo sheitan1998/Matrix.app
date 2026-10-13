@@ -13,10 +13,10 @@ function normalize(item) {
     type: item.type?.value || item.type || 'item', rarity: item.rarity?.value || 'common',
     image: images.featured || images.icon || images.smallIcon || null,
     images: { featured: images.featured || null, icon: images.icon || null, smallIcon: images.smallIcon || null, animated: images.animated || null },
-    video: item.video || null, audio: item.audio || null, series: item.series?.value || null,
+    video: item.video || null, audio: item.audio || null, series: item.series?.value || item.set?.value || null,
     rarity_display: item.rarity?.displayValue || item.rarity?.value || 'Common',
     added: item.added?.date || item.added || null,
-    season: item.introduction?.text || null,
+    season: item.introduction?.chapter?.season || null,
   };
 }
 
