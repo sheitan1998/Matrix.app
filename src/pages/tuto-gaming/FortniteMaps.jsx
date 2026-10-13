@@ -1,14 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Search, Loader2, ArrowLeft, Plus, Map as MapIcon, User, Lock } from "lucide-react";
-import { toast } from "sonner";
+import { Search, Loader2, ArrowLeft, Map as MapIcon, ShoppingBag, Shirt, User } from "lucide-react";
 import FortniteMapCard from "@/components/tuto-gaming/FortniteMapCard";
 import FeaturedMaps from "@/components/fortnite/FeaturedMaps";
-import PlayerStatsSearch from "@/components/fortnite/PlayerStatsSearch";
-import ApiFeaturedMaps from "@/components/fortnite/ApiFeaturedMaps";
-import DailyShop from "@/components/fortnite/DailyShop";
-import CosmeticsSearch from "@/components/fortnite/CosmeticsSearch";
 import SubmitMapModal from "@/components/tuto-gaming/SubmitMapModal";
 import MapDetailModal from "@/components/tuto-gaming/MapDetailModal";
 import { FORTNITE_BANNER, MAP_CATEGORIES } from "@/components/tuto-gaming/fortniteMapsData";
@@ -19,18 +14,17 @@ export default function FortniteMaps() {
   usePageSEO({
     title: "Fortnite Maps - Cartes créatives | MATRIX",
     description: "Découvrez et partagez les meilleures cartes créatives Fortnite. Explorez, votez et publiez vos maps préférées.",
-    path: "/fortnite-maps"
+    path: "/fortnite-maps",
   });
+
   const [maps, setMaps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const [showSubmit, setShowSubmit] = useState(false);
-  const [showMyMaps, setShowMyMaps] = useState(false);
   const [selectedMap, setSelectedMap] = useState(null);
   const [editMap, setEditMap] = useState(null);
   const [user, setUser] = useState(null);
-  const [isCreator, setIsCreator] = useState(false);
   const [sections, setSections] = useState({
     show_api_maps: true,
     show_daily_shop: true,
@@ -42,37 +36,30 @@ export default function FortniteMaps() {
 
   const fetchMaps = useCallback(async () => {
     try {
-      const all = await base44.entities.FortniteMap.list("-created_date", 200);
-      setMaps(all.filter((m) => m.is_approved !== false));
+      const [dbMapsRes, apiMapsRes] = await Promise.all([
+        base44.entities.FortniteMap.list("-created_date", 200),
+        base44.functions.invoke("fortniteApi", { action: "getApiFeaturedMaps" }),
+      ]);
+      const dbMaps = (dbMapsRes || []).filter((m) => m.is_approved !== false);
+      const apiMaps = (apiMapsRes?.data || []).map((m) => ({ ...m, is_api: true }));
+      const dbCodes = new Set(dbMaps.map((m) => m.map_code));
+      const uniqueApiMaps = apiMaps.filter((m) => m.map_code && !dbCodes.has(m.map_code));
+      setMaps([...dbMaps, ...uniqueApiMaps]);
     } catch {
-
-      /* silent */} finally {
-      setLoading(false);
+      /* silent */
     }
+    setLoading(false);
   }, []);
 
   useEffect(() => {
     fetchMaps();
-    base44.functions.invoke("fortniteApi", { action: "getSectionsConfig" }).then((res) => {
-      if (res.data) setSections(res.data);
-    }).catch(() => {});
-    (async () => {
-      try {
-        const me = await base44.auth.me();
-        setUser(me);
-        if (me?.email) {
-          const progressRes = await base44.entities.UserProgress.filter(
-            { user_email: me.email },
-            { limit: 1 }
-          );
-          const progress = progressRes?.items?.[0] || progressRes?.[0];
-          const badges = Array.isArray(progress?.badges) ? progress.badges : [];
-          setIsCreator(badges.includes("creator") || me.role === "admin");
-        }
-      } catch {
-        setIsCreator(false);
-      }
-    })();
+    base44.functions
+      .invoke("fortniteApi", { action: "getSectionsConfig" })
+      .then((res) => {
+        if (res.data) setSections(res.data);
+      })
+      .catch(() => {});
+    base44.auth.me().then(setUser).catch(() => {});
   }, [fetchMaps]);
 
   // Realtime subscription
@@ -81,12 +68,14 @@ export default function FortniteMaps() {
       if (event.type === "create") {
         setMaps((prev) => [event.data, ...prev]);
       } else if (event.type === "update") {
-        setMaps((prev) => prev.map((m) => m.id === event.data.id ? event.data : m));
+        setMaps((prev) => prev.map((m) => (m.id === event.data.id ? event.data : m)));
       } else if (event.type === "delete") {
         setMaps((prev) => prev.filter((m) => m.id !== event.data.id));
       }
     });
-    return () => {unsubscribe();};
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   // Filter maps
@@ -99,78 +88,47 @@ export default function FortniteMaps() {
     return true;
   });
 
-  const myMaps = user ? maps.filter((m) => m.user_email === user.email) : [];
-
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 max-w-7xl mx-auto pb-12">
       {/* Back */}
       <Link
         to="/tuto-gaming"
-        className="inline-flex items-center gap-1.5 text-white/40 hover:text-white transition mb-5 tap-sm">
-        
+        className="inline-flex items-center gap-1.5 text-white/40 hover:text-white transition mb-5 tap-sm"
+      >
         <ArrowLeft className="w-4 h-4" />
         <span className="text-xs font-bold">Retour au Hub</span>
       </Link>
 
-      {/* Banner */}
-      <div className="relative rounded-2xl overflow-hidden mb-6" style={{ border: "1px solid rgba(191,90,242,0.2)" }}>
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-      </div>
-
-      {/* Action buttons */}
+      {/* Navigation buttons */}
       <div className="flex items-center gap-2 mb-5 flex-wrap">
-        <button
-          onClick={() => isCreator ? setShowSubmit(true) : toast.error("Réservé aux créateurs. Demandez le statut créateur via le support.")}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-black text-white transition hover:opacity-90 tap-sm"
-          style={{ background: "linear-gradient(135deg, #BF5AF2, #7C3AED)" }}>
-          
-          {isCreator ? <Plus className="w-4 h-4" /> : <Lock className="w-4 h-4" />} Ajouter ma map
-        </button>
-        {user &&
-        <button
-          onClick={() => setShowMyMaps(!showMyMaps)}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition tap-sm"
-          style={
-          showMyMaps ?
-          { background: "rgba(191,90,242,0.15)", border: "1px solid rgba(191,90,242,0.3)", color: "#BF5AF2" } :
-          { background: "rgba(13,5,24,0.7)", border: "1px solid rgba(191,90,242,0.2)", color: "rgba(255,255,255,0.7)" }
-          }>
-          
-            <User className="w-3.5 h-3.5" /> Mes publications {myMaps.length > 0 && `(${myMaps.length})`}
-          </button>
-        }
+        {sections.show_daily_shop && (
+          <Link
+            to="/fortnite-shop"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition tap-sm"
+            style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", color: "#f59e0b" }}
+          >
+            <ShoppingBag className="w-4 h-4" /> Boutique du Jour
+          </Link>
+        )}
+        {sections.show_cosmetics && (
+          <Link
+            to="/fortnite-cosmetics"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition tap-sm"
+            style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)", color: "#22c55e" }}
+          >
+            <Shirt className="w-4 h-4" /> Cosmétiques
+          </Link>
+        )}
+        {sections.show_player_stats && (
+          <Link
+            to="/fortnite-stats"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition tap-sm"
+            style={{ background: "rgba(191,90,242,0.1)", border: "1px solid rgba(191,90,242,0.2)", color: "#BF5AF2" }}
+          >
+            <User className="w-4 h-4" /> Statistiques Joueur
+          </Link>
+        )}
       </div>
-
-      {/* My Maps section */}
-      {showMyMaps && user &&
-      <div className="mb-6 p-4 rounded-xl" style={{ background: "rgba(13,5,24,0.5)", border: "1px solid rgba(191,90,242,0.15)" }}>
-          <h2 className="text-xs font-black uppercase tracking-wider text-white/60 mb-3">Mes publications</h2>
-          {myMaps.length === 0 ?
-        <p className="text-xs text-white/30 text-center py-4">Vous n'avez pas encore publié de map.</p> :
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {myMaps.map((m, i) =>
-          <FortniteMapCard key={m.id} map={m} index={i} onClick={setSelectedMap} user={user} />
-          )}
-            </div>
-        }
-        </div>
-      }
 
       {/* Search */}
       <div className="max-w-xl mb-4">
@@ -179,16 +137,16 @@ export default function FortniteMaps() {
           style={{
             borderRadius: "9999px",
             background: "rgba(13,5,24,0.7)",
-            border: "1.5px solid rgba(191,90,242,0.25)"
-          }}>
-          
+            border: "1.5px solid rgba(191,90,242,0.25)",
+          }}
+        >
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Rechercher par titre ou créateur..."
-            className="w-full h-11 px-5 pr-11 bg-transparent text-sm text-white placeholder:text-white/30 outline-none" />
-          
+            className="w-full h-11 px-5 pr-11 bg-transparent text-sm text-white placeholder:text-white/30 outline-none"
+          />
           <div className="absolute right-4">
             <Search className="w-4 h-4" style={{ color: "#BF5AF2" }} />
           </div>
@@ -197,20 +155,20 @@ export default function FortniteMaps() {
 
       {/* Category filters */}
       <div className="flex items-center gap-1.5 mb-5 overflow-x-auto no-scrollbar pb-1">
-        {MAP_CATEGORIES.map((cat) =>
-        <button
-          key={cat.id}
-          onClick={() => setActiveCategory(cat.id)}
-          className="px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition tap-sm"
-          style={
-          activeCategory === cat.id ?
-          { background: `${cat.color}20`, color: cat.color, border: `1px solid ${cat.color}50` } :
-          { background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.4)", border: "1px solid rgba(255,255,255,0.06)" }
-          }>
-          
+        {MAP_CATEGORIES.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => setActiveCategory(cat.id)}
+            className="px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition tap-sm"
+            style={
+              activeCategory === cat.id
+                ? { background: `${cat.color}20`, color: cat.color, border: `1px solid ${cat.color}50` }
+                : { background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.4)", border: "1px solid rgba(255,255,255,0.06)" }
+            }
+          >
             {cat.label}
           </button>
-        )}
+        ))}
       </div>
 
       {/* Page title */}
@@ -220,18 +178,6 @@ export default function FortniteMaps() {
       {/* Featured maps with live player counts (manual) */}
       <FeaturedMaps />
 
-      {/* API featured creative maps */}
-      {sections.show_api_maps && <ApiFeaturedMaps />}
-
-      {/* Daily shop */}
-      {sections.show_daily_shop && <DailyShop />}
-
-      {/* Cosmetics search */}
-      {sections.show_cosmetics && <CosmeticsSearch />}
-
-      {/* Player stats search */}
-      {sections.show_player_stats && <PlayerStatsSearch />}
-
       {/* Results count */}
       <div className="flex items-center justify-between mb-3">
         <span className="text-[10px] text-white/30 uppercase tracking-wider">
@@ -240,44 +186,48 @@ export default function FortniteMaps() {
       </div>
 
       {/* Maps grid */}
-      {loading ?
-      <div className="flex justify-center py-12">
+      {loading ? (
+        <div className="flex justify-center py-12">
           <Loader2 className="w-6 h-6 animate-spin text-white/30" />
-        </div> :
-      filteredMaps.length === 0 ?
-      <div className="text-center py-16">
+        </div>
+      ) : filteredMaps.length === 0 ? (
+        <div className="text-center py-16">
           <MapIcon className="w-12 h-12 text-white/10 mx-auto mb-4" />
           <p className="text-sm text-white/40 mb-2">
             {search ? `Aucune map trouvée pour "${search}"` : "Aucune map disponible pour le moment."}
           </p>
-          {!search &&
-        <p className="text-xs text-white/30">Soyez le premier à en ajouter une !</p>
-        }
-        </div> :
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-          {filteredMaps.map((m, i) =>
-        <FortniteMapCard key={m.id} map={m} index={i} onClick={setSelectedMap} user={user} />
-        )}
         </div>
-        }
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+          {filteredMaps.map((m, i) => (
+            <FortniteMapCard key={m.id} map={m} index={i} onClick={setSelectedMap} user={user} />
+          ))}
+        </div>
+      )}
 
       {/* Detail modal */}
       <MapDetailModal
         map={selectedMap}
         user={user}
         onClose={() => setSelectedMap(null)}
-        onEdit={(m) => { setSelectedMap(null); setEditMap(m); setShowSubmit(true); }}
+        onEdit={(m) => {
+          setSelectedMap(null);
+          setEditMap(m);
+          setShowSubmit(true);
+        }}
       />
 
-      {/* Submit / Edit modal */}
+      {/* Edit modal */}
       <SubmitMapModal
         open={showSubmit}
         editMap={editMap}
-        onClose={() => { setShowSubmit(false); setEditMap(null); }}
+        onClose={() => {
+          setShowSubmit(false);
+          setEditMap(null);
+        }}
         onSuccess={fetchMaps}
         userEmail={user?.email}
       />
-    </div>);
-
+    </div>
+  );
 }

@@ -155,7 +155,8 @@ async function getDailyShop() {
         type: item?.type?.value || item?.type || 'item',
         rarity: item?.rarity?.value || entry?.rarity || 'common',
         price: entry?.finalPrice || entry?.regularPrice || 0,
-        image: item?.images?.icon || item?.images?.smallIcon || null,
+        image: item?.images?.featured || item?.images?.icon || item?.images?.smallIcon || null,
+        images: item?.images || null,
         series: item?.series?.value || item?.set?.value || null,
         layout: entry?.layout?.name || null,
       });
@@ -164,7 +165,7 @@ async function getDailyShop() {
 
   return {
     date: shopData?.date || new Date().toISOString().slice(0, 10),
-    entries: entries.slice(0, 60),
+    entries: entries,
   };
 }
 
@@ -192,9 +193,12 @@ async function searchCosmetics(query, type) {
     description: c?.description || '',
     type: c?.type?.value || c?.type || 'item',
     rarity: c?.rarity?.value || c?.rarity || 'common',
-    image: c?.images?.icon || c?.images?.smallIcon || null,
+    image: c?.images?.featured || c?.images?.icon || c?.images?.smallIcon || null,
+    images: c?.images || null,
     series: c?.series?.value || null,
+    rarity_display: c?.rarity?.displayValue || c?.rarity?.value || 'Common',
     added: c?.added?.date || null,
+    season: c?.introduction?.chapter?.season || null,
   }));
 }
 
@@ -326,6 +330,75 @@ export default async function(req) {
       const stats = await getPlayerStats(pseudo.trim(), config?.fortnite_api_key);
       setCached(cacheKey, stats);
       return Response.json(stats);
+    }
+
+    // ── Public: Vote on a cosmetic ──
+    if (action === 'voteCosmetic') {
+      const user = await base44.auth.me();
+      if (!user) return Response.json({ error: 'Connexion requise pour voter' }, { status: 401 });
+      const { cosmetic_id, cosmetic_name, cosmetic_type, cosmetic_image, cosmetic_rarity, vote_type } = body;
+      if (!cosmetic_id || !vote_type) return Response.json({ error: 'cosmetic_id et vote_type requis' }, { status: 400 });
+      const score = vote_type === 'top' ? 2 : vote_type === 'love' ? 1 : vote_type === 'meh' ? -1 : 0;
+      const existing = await base44.asServiceRole.entities.FortniteCosmeticVote.filter(
+        { cosmetic_id, user_email: user.email }, { limit: 1 }
+      );
+      const existingVote = existing?.items?.[0] || existing?.[0];
+      if (existingVote) {
+        await base44.asServiceRole.entities.FortniteCosmeticVote.update(existingVote.id, {
+          vote_type, score, cosmetic_name, cosmetic_type, cosmetic_image, cosmetic_rarity,
+        });
+        return Response.json({ ok: true, vote_type, score, updated: true });
+      }
+      await base44.asServiceRole.entities.FortniteCosmeticVote.create({
+        cosmetic_id, cosmetic_name, cosmetic_type, cosmetic_image, cosmetic_rarity,
+        vote_type, score, user_email: user.email,
+      });
+      return Response.json({ ok: true, vote_type, score, created: true });
+    }
+
+    // ── Public: Get user's vote for a cosmetic ──
+    if (action === 'getUserCosmeticVote') {
+      const user = await base44.auth.me();
+      if (!user) return Response.json({ vote_type: null });
+      const { cosmetic_id } = body;
+      if (!cosmetic_id) return Response.json({ vote_type: null });
+      const existing = await base44.asServiceRole.entities.FortniteCosmeticVote.filter(
+        { cosmetic_id, user_email: user.email }, { limit: 1 }
+      );
+      const existingVote = existing?.items?.[0] || existing?.[0];
+      return Response.json({ vote_type: existingVote?.vote_type || null });
+    }
+
+    // ── Public: Cosmetic leaderboard ──
+    if (action === 'getCosmeticLeaderboard') {
+      const cacheKey = 'cosmetic_leaderboard';
+      const cached = getCached(cacheKey, 15);
+      if (cached) return Response.json(cached);
+      const aggResult = await base44.asServiceRole.entities.FortniteCosmeticVote.aggregate({
+        groupBy: 'cosmetic_id', sum: 'score', count: true, sort: '-sum_score', limit: 50,
+      });
+      const rows = aggResult?.rows || [];
+      if (rows.length === 0) return Response.json([]);
+      const cosmeticIds = rows.map(r => r.cosmetic_id);
+      const metaResult = await base44.asServiceRole.entities.FortniteCosmeticVote.filter(
+        { cosmetic_id: { $in: cosmeticIds } }, { sort: '-created_date', limit: 100 }
+      );
+      const metaRecords = metaResult?.items || metaResult || [];
+      const metaMap = {};
+      for (const rec of metaRecords) {
+        if (!metaMap[rec.cosmetic_id]) metaMap[rec.cosmetic_id] = rec;
+      }
+      const leaderboard = rows.map(r => ({
+        cosmetic_id: r.cosmetic_id,
+        score: r.sum_score || 0,
+        votes: r.count || 0,
+        cosmetic_name: metaMap[r.cosmetic_id]?.cosmetic_name || 'Inconnu',
+        cosmetic_type: metaMap[r.cosmetic_id]?.cosmetic_type || 'item',
+        cosmetic_image: metaMap[r.cosmetic_id]?.cosmetic_image || null,
+        cosmetic_rarity: metaMap[r.cosmetic_id]?.cosmetic_rarity || 'common',
+      }));
+      setCached(cacheKey, leaderboard);
+      return Response.json(leaderboard);
     }
 
     // ── Public: Section visibility config ──

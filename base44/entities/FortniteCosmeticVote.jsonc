@@ -1,0 +1,60 @@
+{
+  "name": "FortniteCosmeticVote",
+  "type": "object",
+  "properties": {
+    "cosmetic_id": {
+      "type": "string",
+      "description": "ID du cosm\u00e9tique Fortnite"
+    },
+    "cosmetic_name": {
+      "type": "string",
+      "description": "Nom du cosm\u00e9tique (cache)"
+    },
+    "cosmetic_type": {
+      "type": "string",
+      "description": "Type du cosm\u00e9tique (outfit, pickaxe, backbling, emote, glider, wrap)"
+    },
+    "cosmetic_image": {
+      "type": "string",
+      "description": "URL de l'image du cosm\u00e9tique (cache)"
+    },
+    "cosmetic_rarity": {
+      "type": "string",
+      "description": "Raret\u00e9 du cosm\u00e9tique (cache)"
+    },
+    "vote_type": {
+      "type": "string",
+      "enum": [
+        "top",
+        "love",
+        "meh"
+      ],
+      "description": "Type de vote: top (\ud83d\udc4d), love (\u2764\ufe0f), meh (\ud83d\udc4e)"
+    },
+    "score": {
+      "type": "number",
+      "description": "Score pond\u00e9r\u00e9: top=2, love=1, meh=-1"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email de l'utilisateur MATRIX"
+    }
+  },
+  "required": [
+    "cosmetic_id",
+    "vote_type",
+    "user_email"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {},
+    "update": {
+      "data.user_email": "{{user.email}}"
+    },
+    "delete": {
+      "data.user_email": "{{user.email}}"
+    }
+  }
+}
