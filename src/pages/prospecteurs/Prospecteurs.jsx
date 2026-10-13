@@ -325,7 +325,7 @@ export default function Prospecteurs() {
               selectedSlug={selectedCategory}
               onSelect={(slug) => {
                 if (slug) {
-                  navigate(`/prospecteurs/category/${slug}`);
+                  navigate(`/best-serveurs/category/${slug}`);
                 } else {
                   setSelectedCategory(null);
                 }

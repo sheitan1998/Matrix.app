@@ -8,6 +8,7 @@ import PageLoader from '@/components/PageLoader';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import ParamRedirect from '@/components/ParamRedirect';
 import LanguageBridge from '@/components/profile/LanguageBridge';
 import AuthGate from '@/components/AuthGate';
 import Login from '@/pages/Login';
@@ -160,7 +161,7 @@ const AuthenticatedApp = () => {
         <Route path="/servers/:slug" element={<ServerProfile />} />
         {/* 301 redirects — old URLs → new URLs */}
         <Route path="/prospecteurs" element={<Navigate to="/best-serveurs" replace />} />
-        <Route path="/prospecteurs/category/:slug" element={<Navigate to="/best-serveurs/category/:slug" replace />} />
+        <Route path="/prospecteurs/category/:slug" element={<ParamRedirect to="/best-serveurs/category" param="slug" />} />
         <Route path="/community" element={<Navigate to="/nexus" replace />} />
         <Route path="/tuto-gaming/fortnite" element={<Navigate to="/fortnite-maps" replace />} />
         {/* New routes */}
