@@ -1,0 +1,240 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
+
+// ─── In-memory cache ───
+const cache = new Map();
+const CACHE_PREFIX = 'fn:';
+
+function getCached(key, ttlMinutes) {
+  const entry = cache.get(CACHE_PREFIX + key);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > ttlMinutes * 60 * 1000) {
+    cache.delete(CACHE_PREFIX + key);
+    return null;
+  }
+  return entry.data;
+}
+
+function setCached(key, data) {
+  cache.set(CACHE_PREFIX + key, { data, timestamp: Date.now() });
+  if (cache.size > 120) {
+    const sorted = [...cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
+    for (let i = 0; i < 60; i++) cache.delete(sorted[i][0]);
+  }
+}
+
+function purgeAllCache() {
+  for (const key of cache.keys()) {
+    if (key.startsWith(CACHE_PREFIX)) cache.delete(key);
+  }
+}
+
+// ─── Config ───
+async function getConfig(base44) {
+  const result = await base44.asServiceRole.entities.FortniteConfig.filter({}, { limit: 1 });
+  return result?.items?.[0] || result?.[0] || null;
+}
+
+// ─── EOS OAuth (client_credentials) ───
+async function getEosToken(config) {
+  const cached = getCached('eos_token', 55);
+  if (cached) return cached;
+
+  const basicAuth = btoa(`${config.client_id}:${config.client_secret}`);
+  const res = await fetch('https://api.epicgames.dev/auth/v1/oauth/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': `Basic ${basicAuth}`,
+    },
+    body: `grant_type=client_credentials&deployment_id=${config.sandbox_id}`,
+    signal: AbortSignal.timeout(10000),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`EOS auth failed (${res.status}): ${text}`);
+  }
+  const data = await res.json();
+  setCached('eos_token', data.access_token);
+  return data.access_token;
+}
+
+// ─── Fortnite Data API (public, no auth) ───
+async function getIslandMetadata(islandCode) {
+  const res = await fetch(`https://api.fortnite.com/ecosystem/v1/islands/${islandCode}`, {
+    headers: { 'Accept': 'application/json' },
+    signal: AbortSignal.timeout(10000),
+  });
+  if (!res.ok) return null;
+  return await res.json();
+}
+
+async function getIslandMetrics(islandCode) {
+  const res = await fetch(`https://api.fortnite.com/ecosystem/v1/islands/${islandCode}/metrics`, {
+    headers: { 'Accept': 'application/json' },
+    signal: AbortSignal.timeout(10000),
+  });
+  if (!res.ok) return null;
+  return await res.json();
+}
+
+// ─── Player stats (fortnite-api.com, free) ───
+async function getPlayerStats(pseudo, apiKey) {
+  const headers = { 'Accept': 'application/json' };
+  if (apiKey) headers['Authorization'] = apiKey;
+  const res = await fetch(`https://fortnite-api.com/v2/stats/br/v2?name=${encodeURIComponent(pseudo)}`, {
+    headers,
+    signal: AbortSignal.timeout(15000),
+  });
+  if (res.status === 401) return { error: 'Clé API fortnite-api.com requise. Ajoutez-la dans le Panel Admin > Fortnite > Clés API.' };
+  if (res.status === 403) return { error: 'Joueur introuvable ou statistiques privées' };
+  if (res.status === 429) return { error: 'Trop de requêtes, réessayez dans quelques minutes' };
+  if (!res.ok) return { error: `Erreur API (${res.status})` };
+  return await res.json();
+}
+
+// ─── Main handler ───
+export default async function(req) {
+  try {
+    const base44 = createClientFromRequest(req);
+    const body = await req.json().catch(() => ({}));
+    const action = body.action;
+
+    const config = await getConfig(base44);
+    const cacheTtl = config?.cache_ttl_minutes || 12;
+
+    // ── Public: Featured maps with live metrics ──
+    if (action === 'getFeaturedMaps') {
+      const cacheKey = 'featured_maps';
+      const cached = getCached(cacheKey, cacheTtl);
+      if (cached) return Response.json(cached);
+
+      const mapsResult = await base44.asServiceRole.entities.FortniteMap.filter(
+        { is_featured: true, is_approved: { $ne: false } },
+        { sort: 'sort_order', limit: 50 }
+      );
+      const maps = mapsResult?.items || mapsResult || [];
+
+      const enriched = await Promise.allSettled(
+        maps.map(async (map) => {
+          const meta = await getIslandMetadata(map.map_code);
+          const metrics = await getIslandMetrics(map.map_code);
+          let livePlayers = 0;
+          if (metrics?.windows) {
+            const tenMin = metrics.windows.find(w => w?.bucket === 'ten_minutes' || w?.interval === 'ten_minutes');
+            livePlayers = tenMin?.metrics?.peakCCU || tenMin?.peakCCU || 0;
+          }
+          if (metrics?.metrics?.peakCCU) livePlayers = metrics.metrics.peakCCU;
+          return {
+            ...map,
+            api_title: meta?.islandName || meta?.name || null,
+            api_creator: meta?.creatorName || meta?.creator || null,
+            api_thumbnail: meta?.image || meta?.thumbnail || meta?.images?.[0] || null,
+            live_players: livePlayers || map.live_players || 0,
+            last_synced_at: new Date().toISOString(),
+          };
+        })
+      );
+
+      const result = enriched
+        .filter(r => r.status === 'fulfilled')
+        .map(r => r.value);
+
+      setCached(cacheKey, result);
+
+      // Update live_players in DB (fire-and-forget)
+      for (const map of result) {
+        if (map.live_players > 0) {
+          base44.asServiceRole.entities.FortniteMap.update(map.id, {
+            live_players: map.live_players,
+            last_synced_at: map.last_synced_at,
+          }).catch(() => {});
+        }
+      }
+
+      return Response.json(result);
+    }
+
+    // ── Public: Player stats ──
+    if (action === 'getPlayerStats') {
+      const pseudo = body.pseudo;
+      if (!pseudo || pseudo.trim().length < 2) {
+        return Response.json({ error: 'Pseudo requis (min 2 caractères)' }, { status: 400 });
+      }
+
+      const cacheKey = `player:${pseudo.toLowerCase().trim()}`;
+      const cached = getCached(cacheKey, cacheTtl);
+      if (cached) return Response.json(cached);
+
+      const stats = await getPlayerStats(pseudo.trim(), config?.fortnite_api_key);
+      setCached(cacheKey, stats);
+      return Response.json(stats);
+    }
+
+    // ── Admin actions ──
+    if (action === 'purgeCache' || action === 'getConfig' || action === 'updateConfig' || action === 'testConnection') {
+      const user = await base44.auth.me();
+      if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
+
+      if (action === 'purgeCache') {
+        purgeAllCache();
+        return Response.json({ ok: true, cleared: true, message: 'Cache purgé avec succès' });
+      }
+
+      if (action === 'getConfig') {
+        return Response.json({
+          cache_ttl_minutes: config?.cache_ttl_minutes || 12,
+          sync_enabled: config?.sync_enabled ?? true,
+          last_sync_at: config?.last_sync_at || null,
+          product_id: config?.product_id ? '✓ Configuré' : 'Non configuré',
+          application_id: config?.application_id ? '✓ Configuré' : 'Non configuré',
+          sandbox_id: config?.sandbox_id ? '✓ Configuré' : 'Non configuré',
+          client_id: config?.client_id ? config.client_id.slice(0, 4) + '••••••••' : 'Non configuré',
+          client_secret: config?.client_secret ? '✓ Configuré' : 'Non configuré',
+          fortnite_api_key: config?.fortnite_api_key ? '✓ Configuré' : 'Non configuré',
+        });
+      }
+
+      if (action === 'updateConfig') {
+        const updateData = {};
+        if (body.cache_ttl_minutes !== undefined) updateData.cache_ttl_minutes = body.cache_ttl_minutes;
+        if (body.sync_enabled !== undefined) updateData.sync_enabled = body.sync_enabled;
+        if (body.client_id) updateData.client_id = body.client_id;
+        if (body.client_secret) updateData.client_secret = body.client_secret;
+        if (body.product_id) updateData.product_id = body.product_id;
+        if (body.sandbox_id) updateData.sandbox_id = body.sandbox_id;
+        if (body.fortnite_api_key) updateData.fortnite_api_key = body.fortnite_api_key;
+        if (body.application_id) updateData.application_id = body.application_id;
+
+        if (config) {
+          await base44.asServiceRole.entities.FortniteConfig.update(config.id, updateData);
+        } else {
+          await base44.asServiceRole.entities.FortniteConfig.create({
+            cache_ttl_minutes: 12,
+            sync_enabled: true,
+            ...updateData,
+          });
+        }
+        purgeAllCache();
+        return Response.json({ ok: true, message: 'Configuration mise à jour' });
+      }
+
+      if (action === 'testConnection') {
+        if (!config?.client_id || !config?.client_secret) {
+          return Response.json({ ok: false, error: 'Clés EOS non configurées' });
+        }
+        try {
+          const token = await getEosToken(config);
+          return Response.json({ ok: true, message: 'Connexion EOS réussie', token_preview: token?.slice(0, 8) + '...' });
+        } catch (e) {
+          return Response.json({ ok: false, error: e.message });
+        }
+      }
+    }
+
+    return Response.json({ error: 'Action inconnue' }, { status: 400 });
+  } catch (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+}

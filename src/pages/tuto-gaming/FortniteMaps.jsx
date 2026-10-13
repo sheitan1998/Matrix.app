@@ -4,6 +4,8 @@ import { base44 } from "@/api/base44Client";
 import { Search, Loader2, ArrowLeft, Plus, Map as MapIcon, User, Lock } from "lucide-react";
 import { toast } from "sonner";
 import FortniteMapCard from "@/components/tuto-gaming/FortniteMapCard";
+import FeaturedMaps from "@/components/fortnite/FeaturedMaps";
+import PlayerStatsSearch from "@/components/fortnite/PlayerStatsSearch";
 import SubmitMapModal from "@/components/tuto-gaming/SubmitMapModal";
 import MapDetailModal from "@/components/tuto-gaming/MapDetailModal";
 import { FORTNITE_BANNER, MAP_CATEGORIES } from "@/components/tuto-gaming/fortniteMapsData";
@@ -202,6 +204,12 @@ export default function FortniteMaps() {
       {/* Page title */}
       <h1 className="text-2xl font-black text-white mb-1">Fortnite Maps</h1>
       <p className="text-xs text-white/40 mb-4">Découvrez et partagez les meilleures cartes créatives Fortnite</p>
+
+      {/* Featured maps with live player counts */}
+      <FeaturedMaps />
+
+      {/* Player stats search */}
+      <PlayerStatsSearch />
 
       {/* Results count */}
       <div className="flex items-center justify-between mb-3">

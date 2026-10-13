@@ -57,6 +57,26 @@
       "default": true,
       "description": "Indique si la map est approuv\u00e9e et visible dans le catalogue"
     },
+    "is_featured": {
+      "type": "boolean",
+      "default": false,
+      "description": "Map mise en avant sur la page Fortnite (section vedette)"
+    },
+    "sort_order": {
+      "type": "number",
+      "default": 0,
+      "description": "Ordre d'affichage dans la section vedette (plus bas = premier)"
+    },
+    "live_players": {
+      "type": "number",
+      "default": 0,
+      "description": "Nombre de joueurs en direct (peak CCU, mis en cache depuis l'API Fortnite Data)"
+    },
+    "last_synced_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Derni\u00e8re synchronisation des metrics API pour cette map"
+    },
     "likes": {
       "type": "number",
       "default": 0,

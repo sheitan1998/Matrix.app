@@ -1,0 +1,74 @@
+{
+  "name": "FortniteConfig",
+  "type": "object",
+  "properties": {
+    "product_id": {
+      "type": "string",
+      "description": "Epic Games Product ID"
+    },
+    "application_id": {
+      "type": "string",
+      "description": "Epic Games Application ID"
+    },
+    "sandbox_id": {
+      "type": "string",
+      "description": "Epic Games Sandbox (Deployment) ID"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "Epic Games EOS Client ID"
+    },
+    "client_secret": {
+      "type": "string",
+      "description": "Epic Games EOS Client Secret"
+    },
+    "fortnite_api_key": {
+      "type": "string",
+      "description": "Cl\u00e9 API fortnite-api.com (gratuite) pour les statistiques joueurs"
+    },
+    "cache_ttl_minutes": {
+      "type": "number",
+      "default": 12,
+      "description": "Dur\u00e9e du cache serveur en minutes (10-15 recommand\u00e9)"
+    },
+    "sync_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Activer la synchronisation automatique des metrics"
+    },
+    "last_sync_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Derni\u00e8re synchronisation des metrics API"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
+    }
+  },
+  "required": [
+    "client_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

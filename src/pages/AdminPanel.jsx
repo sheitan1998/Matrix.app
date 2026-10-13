@@ -18,6 +18,7 @@ import StickerManager from "@/components/admin/StickerManager";
 import AffiliationManager from "@/components/admin/AffiliationManager";
 import ServerCategoryManager from "@/components/admin/ServerCategoryManager";
 import NexusServerManager from "@/components/admin/NexusServerManager";
+import FortniteAdmin from "@/components/admin/FortniteAdmin";
 
 export default function AdminPanel() {
   const nav = useNavigate();
@@ -102,6 +103,7 @@ export default function AdminPanel() {
     { id: "categories", label: "Catégories Serveurs", icon: Server, section: "Annuaire" },
     { id: "nexus-servers", label: "Serveurs Nexus", icon: Server },
     { id: "broadcast", label: "Annonces", icon: Megaphone },
+    { id: "fortnite", label: "Fortnite API", icon: Gamepad2, section: "Intégrations" },
   ];
 
   return (
@@ -208,6 +210,7 @@ export default function AdminPanel() {
         {tab === "affiliates" && <AffiliationManager />}
         {tab === "categories" && <ServerCategoryManager />}
         {tab === "nexus-servers" && <NexusServerManager />}
+        {tab === "fortnite" && <FortniteAdmin />}
           </div>
         </div>
       </div>
