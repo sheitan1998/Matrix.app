@@ -36,6 +36,26 @@
       "default": true,
       "description": "Activer la synchronisation automatique des metrics"
     },
+    "show_api_maps": {
+      "type": "boolean",
+      "default": true,
+      "description": "Afficher les cartes populaires UEFN/Cr\u00e9atif depuis l'API fortnite-api.com"
+    },
+    "show_daily_shop": {
+      "type": "boolean",
+      "default": true,
+      "description": "Afficher la boutique du jour (Shop BR) sur la page Fortnite Maps"
+    },
+    "show_cosmetics": {
+      "type": "boolean",
+      "default": true,
+      "description": "Afficher la recherche de cosm\u00e9tiques (skins, pioches, sacs, emotes)"
+    },
+    "show_player_stats": {
+      "type": "boolean",
+      "default": true,
+      "description": "Afficher le bloc de recherche de statistiques joueur"
+    },
     "last_sync_at": {
       "type": "string",
       "format": "date-time",

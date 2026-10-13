@@ -78,7 +78,7 @@ async function getIslandMetrics(islandCode) {
   return await res.json();
 }
 
-// ─── Player stats (fortnite-api.com, free) ───
+// ─── Player stats (fortnite-api.com, needs API key) ───
 async function getPlayerStats(pseudo, apiKey) {
   const headers = { 'Accept': 'application/json' };
   if (apiKey) headers['Authorization'] = apiKey;
@@ -93,6 +93,111 @@ async function getPlayerStats(pseudo, apiKey) {
   return await res.json();
 }
 
+// ─── Fortnite-API.com public endpoints (no key needed) ───
+
+// Curated list of popular creative island codes (enriched via Fortnite Data API)
+const POPULAR_ISLAND_CODES = [
+  '8023-8844-7893', '1118-1592-5299', '6531-4403-0728', '3547-3601-8751',
+  '2446-2862-5173', '9364-6812-3209', '8783-4744-5484', '4055-3151-0475',
+  '2776-1193-2604', '5445-4196-2698', '0487-8548-5072', '6031-8062-4748',
+];
+
+// Featured creative maps (cache 15 min) - enriches curated codes via Fortnite Data API
+async function getApiFeaturedMaps() {
+  const results = await Promise.allSettled(
+    POPULAR_ISLAND_CODES.map(async (code) => {
+      const meta = await getIslandMetadata(code);
+      if (!meta) return null;
+      const metrics = await getIslandMetrics(code).catch(() => null);
+      let livePlayers = 0;
+      if (metrics?.windows) {
+        const tenMin = metrics.windows.find(w => w?.bucket === 'ten_minutes' || w?.interval === 'ten_minutes');
+        livePlayers = tenMin?.metrics?.peakCCU || tenMin?.peakCCU || 0;
+      }
+      if (metrics?.metrics?.peakCCU) livePlayers = metrics.metrics.peakCCU;
+      return {
+        id: `api_${code}`,
+        map_code: code,
+        title: meta?.islandName || meta?.name || 'Carte Créative',
+        creator_name: meta?.creatorName || meta?.creator || 'Inconnu',
+        image_url: meta?.image || meta?.thumbnail || meta?.images?.[0] || null,
+        live_players: livePlayers || 0,
+        category: meta?.category || 'autre',
+        description: meta?.description || '',
+        is_api: true,
+      };
+    })
+  );
+  return results
+    .filter(r => r.status === 'fulfilled' && r.value)
+    .map(r => r.value);
+}
+
+// Daily shop (cache 60 min) - from fortnite-api.com /v2/shop
+async function getDailyShop() {
+  const res = await fetch('https://fortnite-api.com/v2/shop', {
+    headers: { 'Accept': 'application/json' },
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!res.ok) return { error: `Erreur API Shop (${res.status})` };
+  const data = await res.json();
+  const shopData = data?.data || {};
+  const rawEntries = shopData?.entries || [];
+
+  const entries = [];
+  for (const entry of rawEntries) {
+    const items = entry?.brItems || entry?.tracks || entry?.instruments || [];
+    for (const item of items) {
+      entries.push({
+        id: item?.id || entry?.offerId || Math.random().toString(36),
+        name: item?.name || 'Inconnu',
+        description: item?.description || '',
+        type: item?.type?.value || item?.type || 'item',
+        rarity: item?.rarity?.value || entry?.rarity || 'common',
+        price: entry?.finalPrice || entry?.regularPrice || 0,
+        image: item?.images?.icon || item?.images?.smallIcon || null,
+        series: item?.series?.value || item?.set?.value || null,
+        layout: entry?.layout?.name || null,
+      });
+    }
+  }
+
+  return {
+    date: shopData?.date || new Date().toISOString().slice(0, 10),
+    entries: entries.slice(0, 60),
+  };
+}
+
+// Cosmetics search (cache 15 min per query)
+async function searchCosmetics(query, type) {
+  const params = new URLSearchParams();
+  if (query) {
+    params.set('name', query);
+    params.set('matchMethod', 'contains');
+  }
+  if (type && type !== 'all') params.set('type', type);
+  const url = `https://fortnite-api.com/v2/cosmetics/br/search/all?${params.toString()}`;
+
+  const res = await fetch(url, {
+    headers: { 'Accept': 'application/json' },
+    signal: AbortSignal.timeout(15000),
+  });
+  if (res.status === 404) return [];
+  if (!res.ok) return [];
+  const data = await res.json();
+  const cosmetics = data?.data || [];
+  return cosmetics.slice(0, 60).map(c => ({
+    id: c?.id || Math.random().toString(36),
+    name: c?.name || 'Inconnu',
+    description: c?.description || '',
+    type: c?.type?.value || c?.type || 'item',
+    rarity: c?.rarity?.value || c?.rarity || 'common',
+    image: c?.images?.icon || c?.images?.smallIcon || null,
+    series: c?.series?.value || null,
+    added: c?.added?.date || null,
+  }));
+}
+
 // ─── Main handler ───
 export default async function(req) {
   try {
@@ -103,7 +208,7 @@ export default async function(req) {
     const config = await getConfig(base44);
     const cacheTtl = config?.cache_ttl_minutes || 12;
 
-    // ── Public: Featured maps with live metrics ──
+    // ── Public: Featured maps (manual + API enriched) ──
     if (action === 'getFeaturedMaps') {
       const cacheKey = 'featured_maps';
       const cached = getCached(cacheKey, cacheTtl);
@@ -142,7 +247,6 @@ export default async function(req) {
 
       setCached(cacheKey, result);
 
-      // Update live_players in DB (fire-and-forget)
       for (const map of result) {
         if (map.live_players > 0) {
           base44.asServiceRole.entities.FortniteMap.update(map.id, {
@@ -155,8 +259,44 @@ export default async function(req) {
       return Response.json(result);
     }
 
+    // ── Public: API featured maps (fortnite-api.com creative) ──
+    if (action === 'getApiFeaturedMaps') {
+      if (config?.show_api_maps === false) return Response.json([]);
+      const cacheKey = 'api_featured_maps';
+      const cached = getCached(cacheKey, 15);
+      if (cached) return Response.json(cached);
+      const maps = await getApiFeaturedMaps();
+      setCached(cacheKey, maps);
+      return Response.json(maps);
+    }
+
+    // ── Public: Daily shop ──
+    if (action === 'getDailyShop') {
+      if (config?.show_daily_shop === false) return Response.json({ entries: [] });
+      const cacheKey = 'daily_shop';
+      const cached = getCached(cacheKey, 60);
+      if (cached) return Response.json(cached);
+      const shop = await getDailyShop();
+      setCached(cacheKey, shop);
+      return Response.json(shop);
+    }
+
+    // ── Public: Cosmetics search ──
+    if (action === 'searchCosmetics') {
+      if (config?.show_cosmetics === false) return Response.json([]);
+      const query = (body.query || '').trim();
+      const type = body.type || 'all';
+      const cacheKey = `cosmetics:${type}:${query.toLowerCase()}`;
+      const cached = getCached(cacheKey, 15);
+      if (cached) return Response.json(cached);
+      const cosmetics = await searchCosmetics(query, type);
+      setCached(cacheKey, cosmetics);
+      return Response.json(cosmetics);
+    }
+
     // ── Public: Player stats ──
     if (action === 'getPlayerStats') {
+      if (config?.show_player_stats === false) return Response.json({ error: 'Section désactivée' });
       const pseudo = body.pseudo;
       if (!pseudo || pseudo.trim().length < 2) {
         return Response.json({ error: 'Pseudo requis (min 2 caractères)' }, { status: 400 });
@@ -169,6 +309,16 @@ export default async function(req) {
       const stats = await getPlayerStats(pseudo.trim(), config?.fortnite_api_key);
       setCached(cacheKey, stats);
       return Response.json(stats);
+    }
+
+    // ── Public: Section visibility config ──
+    if (action === 'getSectionsConfig') {
+      return Response.json({
+        show_api_maps: config?.show_api_maps ?? true,
+        show_daily_shop: config?.show_daily_shop ?? true,
+        show_cosmetics: config?.show_cosmetics ?? true,
+        show_player_stats: config?.show_player_stats ?? true,
+      });
     }
 
     // ── Admin actions ──
@@ -187,6 +337,10 @@ export default async function(req) {
           cache_ttl_minutes: config?.cache_ttl_minutes || 12,
           sync_enabled: config?.sync_enabled ?? true,
           last_sync_at: config?.last_sync_at || null,
+          show_api_maps: config?.show_api_maps ?? true,
+          show_daily_shop: config?.show_daily_shop ?? true,
+          show_cosmetics: config?.show_cosmetics ?? true,
+          show_player_stats: config?.show_player_stats ?? true,
           product_id: config?.product_id ? '✓ Configuré' : 'Non configuré',
           application_id: config?.application_id ? '✓ Configuré' : 'Non configuré',
           sandbox_id: config?.sandbox_id ? '✓ Configuré' : 'Non configuré',
@@ -200,6 +354,10 @@ export default async function(req) {
         const updateData = {};
         if (body.cache_ttl_minutes !== undefined) updateData.cache_ttl_minutes = body.cache_ttl_minutes;
         if (body.sync_enabled !== undefined) updateData.sync_enabled = body.sync_enabled;
+        if (body.show_api_maps !== undefined) updateData.show_api_maps = body.show_api_maps;
+        if (body.show_daily_shop !== undefined) updateData.show_daily_shop = body.show_daily_shop;
+        if (body.show_cosmetics !== undefined) updateData.show_cosmetics = body.show_cosmetics;
+        if (body.show_player_stats !== undefined) updateData.show_player_stats = body.show_player_stats;
         if (body.client_id) updateData.client_id = body.client_id;
         if (body.client_secret) updateData.client_secret = body.client_secret;
         if (body.product_id) updateData.product_id = body.product_id;

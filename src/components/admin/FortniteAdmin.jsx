@@ -1,10 +1,17 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
-import { Loader2, Star, Trash2, RefreshCw, KeyRound, Save, AlertTriangle, CheckCircle2, GripVertical, Plus, Clock } from "lucide-react";
+import { Loader2, Star, Trash2, RefreshCw, KeyRound, Save, AlertTriangle, CheckCircle2, GripVertical, Plus, Clock, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
 
 export default function FortniteAdmin() {
   const [tab, setTab] = useState("maps");
+  const [sectionsForm, setSectionsForm] = useState({
+    show_api_maps: true,
+    show_daily_shop: true,
+    show_cosmetics: true,
+    show_player_stats: true,
+  });
+  const [savingSections, setSavingSections] = useState(false);
   const [maps, setMaps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [config, setConfig] = useState(null);
@@ -42,6 +49,12 @@ export default function FortniteAdmin() {
         sandbox_id: "",
         cache_ttl_minutes: cfg?.cache_ttl_minutes || 12,
         sync_enabled: cfg?.sync_enabled ?? true,
+      });
+      setSectionsForm({
+        show_api_maps: cfg?.show_api_maps ?? true,
+        show_daily_shop: cfg?.show_daily_shop ?? true,
+        show_cosmetics: cfg?.show_cosmetics ?? true,
+        show_player_stats: cfg?.show_player_stats ?? true,
       });
     } catch { /* silent */ }
     setLoading(false);
@@ -103,6 +116,21 @@ export default function FortniteAdmin() {
     setSavingConfig(false);
   };
 
+  const handleSaveSections = async () => {
+    setSavingSections(true);
+    try {
+      const res = await base44.functions.invoke("fortniteApi", {
+        action: "updateConfig",
+        show_api_maps: sectionsForm.show_api_maps,
+        show_daily_shop: sectionsForm.show_daily_shop,
+        show_cosmetics: sectionsForm.show_cosmetics,
+        show_player_stats: sectionsForm.show_player_stats,
+      });
+      toast.success(res.data?.message || "Sections mises à jour");
+    } catch { toast.error("Erreur"); }
+    setSavingSections(false);
+  };
+
   const handleTestConnection = async () => {
     setTesting(true);
     setTestResult(null);
@@ -126,6 +154,7 @@ export default function FortniteAdmin() {
       {/* Tabs */}
       <div className="flex gap-1 border-b border-white/10">
         <TabButton active={tab === "maps"} onClick={() => setTab("maps")} icon={Star} label="Codes Islands" />
+        <TabButton active={tab === "sections"} onClick={() => setTab("sections")} icon={LayoutGrid} label="Sections" />
         <TabButton active={tab === "sync"} onClick={() => setTab("sync")} icon={RefreshCw} label="Sync & Cache" />
         <TabButton active={tab === "keys"} onClick={() => setTab("keys")} icon={KeyRound} label="Clés API" />
       </div>
@@ -178,6 +207,53 @@ export default function FortniteAdmin() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── Sections tab ── */}
+      {tab === "sections" && (
+        <div className="space-y-4">
+          <div className="rounded-xl p-4" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(255,255,255,0.06)" }}>
+            <h3 className="text-sm font-black text-white mb-1">Sections affichées sur la page Fortnite Maps</h3>
+            <p className="text-[10px] text-white/40 mb-4">Activez ou désactivez les sections API affichées publiquement. Les cartes ajoutées manuellement restent toujours visibles.</p>
+
+            <div className="space-y-3">
+              <SectionToggle
+                label="Cartes Créatives Populaires"
+                desc="Cartes UEFN/Créatif en vedette via fortnite-api.com (cache 15 min)"
+                checked={sectionsForm.show_api_maps}
+                onChange={(v) => setSectionsForm(prev => ({ ...prev, show_api_maps: v }))}
+              />
+              <SectionToggle
+                label="Boutique du Jour"
+                desc="Contenu du shop BR quotidien (cache 60 min)"
+                checked={sectionsForm.show_daily_shop}
+                onChange={(v) => setSectionsForm(prev => ({ ...prev, show_daily_shop: v }))}
+              />
+              <SectionToggle
+                label="Recherche de Cosmétiques"
+                desc="Skins, sacs, pioches, emotes via fortnite-api.com (cache 15 min)"
+                checked={sectionsForm.show_cosmetics}
+                onChange={(v) => setSectionsForm(prev => ({ ...prev, show_cosmetics: v }))}
+              />
+              <SectionToggle
+                label="Statistiques Joueur"
+                desc="Recherche de stats BR par pseudo Epic Games"
+                checked={sectionsForm.show_player_stats}
+                onChange={(v) => setSectionsForm(prev => ({ ...prev, show_player_stats: v }))}
+              />
+            </div>
+
+            <button
+              onClick={handleSaveSections}
+              disabled={savingSections}
+              className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-white transition hover:opacity-90 tap-sm"
+              style={{ background: "linear-gradient(135deg, #BF5AF2, #7C3AED)" }}
+            >
+              {savingSections ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              Enregistrer
+            </button>
+          </div>
         </div>
       )}
 
@@ -329,6 +405,24 @@ function KeyInput({ label, value, onChange, placeholder, type = "text" }) {
         className="w-full h-10 px-3 mt-1 rounded-lg text-xs text-white font-mono outline-none placeholder:text-white/20"
         style={{ background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.08)" }}
       />
+    </div>
+  );
+}
+
+function SectionToggle({ label, desc, checked, onChange }) {
+  return (
+    <div className="flex items-center justify-between p-3 rounded-lg" style={{ background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.05)" }}>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-bold text-white">{label}</p>
+        <p className="text-[9px] text-white/30 mt-0.5">{desc}</p>
+      </div>
+      <button
+        onClick={() => onChange(!checked)}
+        className="w-11 h-6 rounded-full transition relative shrink-0 ml-3"
+        style={{ background: checked ? "rgba(191,90,242,0.4)" : "rgba(255,255,255,0.1)" }}
+      >
+        <span className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all" style={{ left: checked ? "22px" : "2px" }} />
+      </button>
     </div>
   );
 }

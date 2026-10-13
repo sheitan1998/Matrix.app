@@ -6,6 +6,9 @@ import { toast } from "sonner";
 import FortniteMapCard from "@/components/tuto-gaming/FortniteMapCard";
 import FeaturedMaps from "@/components/fortnite/FeaturedMaps";
 import PlayerStatsSearch from "@/components/fortnite/PlayerStatsSearch";
+import ApiFeaturedMaps from "@/components/fortnite/ApiFeaturedMaps";
+import DailyShop from "@/components/fortnite/DailyShop";
+import CosmeticsSearch from "@/components/fortnite/CosmeticsSearch";
 import SubmitMapModal from "@/components/tuto-gaming/SubmitMapModal";
 import MapDetailModal from "@/components/tuto-gaming/MapDetailModal";
 import { FORTNITE_BANNER, MAP_CATEGORIES } from "@/components/tuto-gaming/fortniteMapsData";
@@ -28,6 +31,12 @@ export default function FortniteMaps() {
   const [editMap, setEditMap] = useState(null);
   const [user, setUser] = useState(null);
   const [isCreator, setIsCreator] = useState(false);
+  const [sections, setSections] = useState({
+    show_api_maps: true,
+    show_daily_shop: true,
+    show_cosmetics: true,
+    show_player_stats: true,
+  });
   const { assets } = useTutoGamingAssets();
   const fortniteBanner = getAssetUrl(assets, "fortnite_banner", FORTNITE_BANNER);
 
@@ -44,6 +53,9 @@ export default function FortniteMaps() {
 
   useEffect(() => {
     fetchMaps();
+    base44.functions.invoke("fortniteApi", { action: "getSectionsConfig" }).then((res) => {
+      if (res.data) setSections(res.data);
+    }).catch(() => {});
     (async () => {
       try {
         const me = await base44.auth.me();
@@ -205,11 +217,20 @@ export default function FortniteMaps() {
       <h1 className="text-2xl font-black text-white mb-1">Fortnite Maps</h1>
       <p className="text-xs text-white/40 mb-4">Découvrez et partagez les meilleures cartes créatives Fortnite</p>
 
-      {/* Featured maps with live player counts */}
+      {/* Featured maps with live player counts (manual) */}
       <FeaturedMaps />
 
+      {/* API featured creative maps */}
+      {sections.show_api_maps && <ApiFeaturedMaps />}
+
+      {/* Daily shop */}
+      {sections.show_daily_shop && <DailyShop />}
+
+      {/* Cosmetics search */}
+      {sections.show_cosmetics && <CosmeticsSearch />}
+
       {/* Player stats search */}
-      <PlayerStatsSearch />
+      {sections.show_player_stats && <PlayerStatsSearch />}
 
       {/* Results count */}
       <div className="flex items-center justify-between mb-3">
