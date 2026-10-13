@@ -7,6 +7,8 @@ import { getRarityStyle } from "@/components/fortnite/rarityUtils";
 import ShopItemModal from "@/components/fortnite/ShopItemModal";
 import usePageSEO from "@/hooks/usePageSEO";
 
+const PAGE_SIZE = 24;
+
 export default function FortniteShop() {
   usePageSEO({
     title: "Boutique Fortnite du Jour | MATRIX",
@@ -17,6 +19,7 @@ export default function FortniteShop() {
   const [shop, setShop] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const fetchShop = useCallback(async () => {
     try {
@@ -32,36 +35,28 @@ export default function FortniteShop() {
     fetchShop();
   }, [fetchShop]);
 
-  // Group entries by layout
-  const grouped = {};
-  if (shop?.entries) {
-    for (const entry of shop.entries) {
-      const layout = entry.layout || "Autres";
-      if (!grouped[layout]) grouped[layout] = [];
-      grouped[layout].push(entry);
-    }
-  }
+  const allItems = shop?.entries || [];
+  const visibleItems = allItems.slice(0, visibleCount);
+  const hasMore = visibleCount < allItems.length;
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 max-w-7xl mx-auto pb-12">
-      {/* Back */}
       <Link to="/fortnite-maps" className="inline-flex items-center gap-1.5 text-white/40 hover:text-white transition mb-5 tap-sm">
         <ArrowLeft className="w-4 h-4" />
         <span className="text-xs font-bold">Cartes Fortnite</span>
       </Link>
 
-      {/* Title */}
       <div className="flex items-center gap-2 mb-1">
         <ShoppingBag className="w-5 h-5" style={{ color: "#f59e0b" }} />
         <h1 className="text-2xl font-black text-white">Boutique du Jour</h1>
       </div>
-      <p className="text-xs text-white/40 mb-4">Tous les objets disponibles dans la boutique Fortnite d'aujourd'hui</p>
+      <p className="text-xs text-white/40 mb-4">Tous les objets Battle Royale disponibles dans la boutique Fortnite d'aujourd'hui</p>
 
       {loading ? (
         <div className="flex justify-center py-12">
           <Loader2 className="w-6 h-6 animate-spin text-white/30" />
         </div>
-      ) : !shop || shop.error || !shop.entries || shop.entries.length === 0 ? (
+      ) : !shop || shop.error || allItems.length === 0 ? (
         <div className="text-center py-16">
           <ShoppingBag className="w-12 h-12 text-white/10 mx-auto mb-4" />
           <p className="text-sm text-white/40">Boutique indisponible pour le moment.</p>
@@ -75,16 +70,25 @@ export default function FortniteShop() {
             </div>
           )}
 
-          {Object.entries(grouped).map(([layout, items]) => (
-            <div key={layout} className="mb-8">
-              <h2 className="text-sm font-black text-white uppercase tracking-tight mb-3">{layout}</h2>
-              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
-                {items.map((item, i) => (
-                  <ShopCard key={item.id || i} item={item} index={i} onClick={() => setSelectedItem(item)} />
-                ))}
-              </div>
+          <p className="text-[10px] text-white/30 mb-3">{allItems.length} objets disponibles</p>
+
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
+            {visibleItems.map((item, i) => (
+              <ShopCard key={item.id || i} item={item} index={i} onClick={() => setSelectedItem(item)} />
+            ))}
+          </div>
+
+          {hasMore && (
+            <div className="flex justify-center mt-6">
+              <button
+                onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                className="px-6 py-2.5 rounded-lg text-xs font-bold text-white transition hover:opacity-90 tap-sm"
+                style={{ background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)", color: "#f59e0b" }}
+              >
+                Voir plus ({allItems.length - visibleCount} restants)
+              </button>
             </div>
-          ))}
+          )}
         </>
       )}
 
@@ -102,17 +106,17 @@ function ShopCard({ item, index, onClick }) {
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: index * 0.02, duration: 0.3 }}
+      transition={{ delay: Math.min(index * 0.02, 0.4), duration: 0.3 }}
       onClick={onClick}
       className="rounded-lg overflow-hidden flex flex-col cursor-pointer transition hover:scale-105"
       style={{ background: style.bg, border: `1px solid ${style.border}` }}
     >
-      <div className="relative aspect-square overflow-hidden" style={{ background: "rgba(0,0,0,0.3)" }}>
+      <div className="relative aspect-square overflow-hidden" style={{ background: style.bg }}>
         {mainImage ? (
           <img src={mainImage} alt={item.name} className="w-full h-full object-contain p-2" loading="lazy" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <span className="text-2xl opacity-20">🎮</span>
+            <span className="text-2xl" style={{ color: style.text, opacity: 0.3 }}>🎮</span>
           </div>
         )}
       </div>

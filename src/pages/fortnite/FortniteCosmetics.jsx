@@ -7,6 +7,8 @@ import { getRarityStyle } from "@/components/fortnite/rarityUtils";
 import CosmeticDetailModal from "@/components/fortnite/CosmeticDetailModal";
 import usePageSEO from "@/hooks/usePageSEO";
 
+const PAGE_SIZE = 24;
+
 const TYPE_LABELS = {
   all: "Tous",
   outfit: "Skins",
@@ -43,11 +45,13 @@ export default function FortniteCosmetics() {
   const [user, setUser] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const handleSearch = useCallback(async (searchQuery, searchType) => {
     if (!searchQuery.trim()) return;
     setLoading(true);
     setSearched(true);
+    setVisibleCount(PAGE_SIZE);
     try {
       const res = await base44.functions.invoke("fortniteApi", {
         action: "searchCosmetics",
@@ -82,22 +86,22 @@ export default function FortniteCosmetics() {
     handleSearch(query, type);
   };
 
+  const visibleResults = results.slice(0, visibleCount);
+  const hasMoreResults = visibleCount < results.length;
+
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 max-w-7xl mx-auto pb-12">
-      {/* Back */}
       <Link to="/fortnite-maps" className="inline-flex items-center gap-1.5 text-white/40 hover:text-white transition mb-5 tap-sm">
         <ArrowLeft className="w-4 h-4" />
         <span className="text-xs font-bold">Cartes Fortnite</span>
       </Link>
 
-      {/* Title */}
       <div className="flex items-center gap-2 mb-1">
         <Shirt className="w-5 h-5" style={{ color: "#22c55e" }} />
         <h1 className="text-2xl font-black text-white">Cosmétiques Fortnite</h1>
       </div>
       <p className="text-xs text-white/40 mb-4">Recherchez et votez pour vos cosmétiques préférés</p>
 
-      {/* Tabs */}
       <div className="flex gap-1 mb-5 border-b border-white/10">
         <button
           onClick={() => setTab("search")}
@@ -120,7 +124,6 @@ export default function FortniteCosmetics() {
         </button>
       </div>
 
-      {/* Search tab */}
       {tab === "search" && (
         <>
           <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2 mb-4">
@@ -175,16 +178,27 @@ export default function FortniteCosmetics() {
                 {results.length} résultat{results.length > 1 ? "s" : ""}
               </p>
               <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
-                {results.map((item, i) => (
+                {visibleResults.map((item, i) => (
                   <CosmeticCard key={item.id || i} item={item} index={i} onClick={() => setSelectedItem(item)} />
                 ))}
               </div>
+
+              {hasMoreResults && (
+                <div className="flex justify-center mt-6">
+                  <button
+                    onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                    className="px-6 py-2.5 rounded-lg text-xs font-bold text-white transition hover:opacity-90 tap-sm"
+                    style={{ background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)", color: "#22c55e" }}
+                  >
+                    Voir plus ({results.length - visibleCount} restants)
+                  </button>
+                </div>
+              )}
             </>
           )}
         </>
       )}
 
-      {/* Leaderboard tab */}
       {tab === "leaderboard" && (
         leaderboardLoading ? (
           <div className="flex justify-center py-8">
@@ -205,7 +219,7 @@ export default function FortniteCosmetics() {
                   key={item.cosmetic_id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.03 }}
+                  transition={{ delay: Math.min(i * 0.03, 0.6) }}
                   className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition hover:scale-[1.01]"
                   style={{ background: style.bg, border: `1px solid ${style.border}` }}
                   onClick={() =>
@@ -258,17 +272,17 @@ function CosmeticCard({ item, index, onClick }) {
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: index * 0.02, duration: 0.3 }}
+      transition={{ delay: Math.min(index * 0.02, 0.4), duration: 0.3 }}
       onClick={onClick}
       className="rounded-lg overflow-hidden flex flex-col cursor-pointer transition hover:scale-105"
       style={{ background: style.bg, border: `1px solid ${style.border}` }}
     >
-      <div className="relative aspect-square overflow-hidden" style={{ background: "rgba(0,0,0,0.3)" }}>
+      <div className="relative aspect-square overflow-hidden" style={{ background: style.bg }}>
         {mainImage ? (
           <img src={mainImage} alt={item.name} className="w-full h-full object-contain p-2" loading="lazy" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <span className="text-2xl opacity-20">🎨</span>
+            <span className="text-2xl" style={{ color: style.text, opacity: 0.3 }}>🎨</span>
           </div>
         )}
       </div>

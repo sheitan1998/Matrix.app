@@ -37,10 +37,10 @@ export default function FortniteMaps() {
   const fetchMaps = useCallback(async () => {
     try {
       const [dbMapsRes, apiMapsRes] = await Promise.all([
-        base44.entities.FortniteMap.list("-created_date", 200),
+        base44.entities.FortniteMap.filter({}, { sort: "-created_date", limit: 200 }),
         base44.functions.invoke("fortniteApi", { action: "getApiFeaturedMaps" }),
       ]);
-      const dbMaps = (dbMapsRes || []).filter((m) => m.is_approved !== false);
+      const dbMaps = (dbMapsRes?.items || dbMapsRes || []).filter((m) => m.is_approved !== false);
       const apiMaps = (apiMapsRes?.data || []).map((m) => ({ ...m, is_api: true }));
       const dbCodes = new Set(dbMaps.map((m) => m.map_code));
       const uniqueApiMaps = apiMaps.filter((m) => m.map_code && !dbCodes.has(m.map_code));

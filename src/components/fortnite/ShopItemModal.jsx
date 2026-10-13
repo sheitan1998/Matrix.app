@@ -40,16 +40,25 @@ export default function ShopItemModal({ item, onClose }) {
           </button>
         </div>
 
-        {/* Image */}
-        <div className="relative overflow-hidden" style={{ background: "rgba(0,0,0,0.3)" }}>
-          {mainImage ? (
+        {/* Media */}
+        <div className="relative overflow-hidden" style={{ background: style.bg }}>
+          {item.video ? (
+            <video src={item.video} autoPlay loop muted playsInline className="w-full h-64 sm:h-80 object-contain p-4" />
+          ) : mainImage ? (
             <img src={mainImage} alt={item.name} className="w-full h-64 sm:h-80 object-contain p-4" />
           ) : (
             <div className="h-64 sm:h-80 flex items-center justify-center">
-              <span className="text-4xl opacity-20">🎮</span>
+              <span className="text-4xl" style={{ color: style.text, opacity: 0.2 }}>🎮</span>
             </div>
           )}
         </div>
+
+        {/* Audio */}
+        {item.audio && !item.video && (
+          <div className="px-5 pt-3">
+            <audio src={item.audio} controls className="w-full h-8" />
+          </div>
+        )}
 
         {/* Details */}
         <div className="p-5 space-y-3">

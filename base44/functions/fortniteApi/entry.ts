@@ -146,7 +146,7 @@ async function getDailyShop() {
 
   const entries = [];
   for (const entry of rawEntries) {
-    const items = entry?.brItems || entry?.tracks || entry?.instruments || [];
+    const items = entry?.brItems || [];
     for (const item of items) {
       entries.push({
         id: item?.id || entry?.offerId || Math.random().toString(36),
@@ -157,6 +157,8 @@ async function getDailyShop() {
         price: entry?.finalPrice || entry?.regularPrice || 0,
         image: item?.images?.featured || item?.images?.icon || item?.images?.smallIcon || null,
         images: item?.images || null,
+        video: item?.video || null,
+        audio: item?.audio || null,
         series: item?.series?.value || item?.set?.value || null,
         layout: entry?.layout?.name || null,
       });
@@ -187,7 +189,7 @@ async function searchCosmetics(query, type) {
   if (!res.ok) return [];
   const data = await res.json();
   const cosmetics = data?.data || [];
-  return cosmetics.slice(0, 60).map(c => ({
+  return cosmetics.slice(0, 200).map(c => ({
     id: c?.id || Math.random().toString(36),
     name: c?.name || 'Inconnu',
     description: c?.description || '',
@@ -195,6 +197,8 @@ async function searchCosmetics(query, type) {
     rarity: c?.rarity?.value || c?.rarity || 'common',
     image: c?.images?.featured || c?.images?.icon || c?.images?.smallIcon || null,
     images: c?.images || null,
+    video: c?.video || null,
+    audio: c?.audio || null,
     series: c?.series?.value || null,
     rarity_display: c?.rarity?.displayValue || c?.rarity?.value || 'Common',
     added: c?.added?.date || null,
