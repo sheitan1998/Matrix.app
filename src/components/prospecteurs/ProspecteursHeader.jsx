@@ -21,17 +21,17 @@ export default function ProspecteursHeader({ user, trixBalance }) {
       </Link>
 
       {/* Center: RECHERCHE PROSPECTEURS pill */}
-      <div
-        className="hidden sm:flex items-center px-5 py-1.5 rounded-full"
-        style={{
-          background: "rgba(138, 79, 255, 0.1)",
-          border: "1px solid rgba(138, 79, 255, 0.3)"
-        }}>
-        
-        <span className="text-[11px] font-black tracking-[0.2em] uppercase text-white hidden">
-          Best Serveur
-        </span>
-      </div>
+      
+
+
+
+
+
+
+
+
+
+      
 
       {/* Right: Trix Wallet + Messaging + Profile */}
       <HeaderActions />
