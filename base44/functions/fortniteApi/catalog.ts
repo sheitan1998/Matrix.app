@@ -14,9 +14,11 @@ function normalize(item) {
     image: images.featured || images.icon || images.smallIcon || null,
     images: { featured: images.featured || null, icon: images.icon || null, smallIcon: images.smallIcon || null, animated: images.animated || null },
     video: item.video || null, audio: item.audio || null, series: item.series?.value || item.set?.value || null,
+    set_display: item.set?.displayValue || item.set?.text || item.series?.value || null,
     rarity_display: item.rarity?.displayValue || item.rarity?.value || 'Common',
     added: item.added?.date || item.added || null,
     season: item.introduction?.chapter?.season || null,
+    chapter: item.introduction?.chapter?.number || item.introduction?.number || null,
   };
 }
 

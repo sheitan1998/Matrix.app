@@ -287,7 +287,7 @@ export default async function(req) {
       if (!user) return Response.json({ error: 'Connexion requise pour voter' }, { status: 401 });
       const { cosmetic_id, cosmetic_name, cosmetic_type, cosmetic_image, cosmetic_rarity, vote_type } = body;
       if (!cosmetic_id || !vote_type) return Response.json({ error: 'cosmetic_id et vote_type requis' }, { status: 400 });
-      const score = vote_type === 'top' ? 2 : vote_type === 'love' ? 1 : vote_type === 'meh' ? -1 : 0;
+      const score = vote_type === 'fire' ? 2 : vote_type === 'love' ? 1 : vote_type === 'meh' ? -1 : vote_type === 'trash' ? -2 : 0;
       const existing = await base44.asServiceRole.entities.FortniteCosmeticVote.filter(
         { cosmetic_id, user_email: user.email }, { limit: 1 }
       );
@@ -348,6 +348,44 @@ export default async function(req) {
       }));
       setCached(cacheKey, leaderboard);
       return Response.json(leaderboard);
+    }
+
+    // ── Public: Vote counts for a batch of cosmetics ──
+    if (action === 'getCosmeticVoteCounts') {
+      const ids = Array.isArray(body.cosmetic_ids) ? body.cosmetic_ids.filter(id => id && typeof id === 'string') : [];
+      if (ids.length === 0) return Response.json({});
+      const aggResult = await base44.asServiceRole.entities.FortniteCosmeticVote.aggregate({
+        query: { cosmetic_id: { $in: ids } }, groupBy: 'cosmetic_id', count: true, limit: 1000,
+      });
+      const rows = aggResult?.rows || [];
+      const counts = {};
+      for (const row of rows) counts[row.cosmetic_id] = { total: row.count || 0 };
+      // Also get per-type breakdown via filter
+      const records = await base44.asServiceRole.entities.FortniteCosmeticVote.filter(
+        { cosmetic_id: { $in: ids } }, { limit: 5000, fields: ['cosmetic_id', 'vote_type'] }
+      );
+      const recs = records?.items || records || [];
+      for (const rec of recs) {
+        if (!counts[rec.cosmetic_id]) counts[rec.cosmetic_id] = { total: 0 };
+        const vt = rec.vote_type;
+        if (!counts[rec.cosmetic_id][vt]) counts[rec.cosmetic_id][vt] = 0;
+        counts[rec.cosmetic_id][vt]++;
+      }
+      return Response.json(counts);
+    }
+
+    // ── Public: Items from the same set/series ──
+    if (action === 'getSetItems') {
+      const setName = String(body.set || body.series || '').trim();
+      if (!setName) return Response.json([]);
+      const cacheKey = `set:${setName.toLowerCase()}`;
+      const cached = getCached(cacheKey, 30);
+      if (cached) return Response.json(cached);
+      const catalog = await getCatalog('cosmetics').catch(() => null);
+      if (!catalog) return Response.json([]);
+      const items = catalog.items.filter(i => (i.series || '').toLowerCase() === setName.toLowerCase()).slice(0, 12);
+      setCached(cacheKey, items);
+      return Response.json(items);
     }
 
     // ── Public: Section visibility config ──

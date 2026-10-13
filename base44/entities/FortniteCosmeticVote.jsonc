@@ -25,15 +25,16 @@
     "vote_type": {
       "type": "string",
       "enum": [
-        "top",
+        "fire",
         "love",
-        "meh"
+        "meh",
+        "trash"
       ],
-      "description": "Type de vote: top (\ud83d\udc4d), love (\u2764\ufe0f), meh (\ud83d\udc4e)"
+      "description": "Type de vote: fire (\ud83d\udd25), love (\ud83d\ude0d), meh (\ud83d\ude10), trash (\ud83d\udca9)"
     },
     "score": {
       "type": "number",
-      "description": "Score pond\u00e9r\u00e9: top=2, love=1, meh=-1"
+      "description": "Score pond\u00e9r\u00e9: fire=2, love=1, meh=-1, trash=-2"
     },
     "user_email": {
       "type": "string",
