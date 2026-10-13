@@ -5,7 +5,7 @@ import { Search, Shirt, Loader2, ArrowLeft, Trophy } from "lucide-react";
 import { motion } from "framer-motion";
 import { getRarityStyle } from "@/components/fortnite/rarityUtils";
 import CosmeticDetailModal from "@/components/fortnite/CosmeticDetailModal";
-import CosmeticReactionBar from "@/components/fortnite/CosmeticReactionBar";
+import FortniteCosmeticCard from "@/components/fortnite/FortniteCosmeticCard";
 import usePageSEO from "@/hooks/usePageSEO";
 import useFortniteCatalog from "@/components/fortnite/useFortniteCatalog";
 import useVoteCounts from "@/components/fortnite/useVoteCounts";
@@ -138,7 +138,7 @@ export default function FortniteCosmetics() {
               <p className="text-[10px] text-white/30 mb-3">{total} résultat{total > 1 ? "s" : ""}</p>
               <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
                 {results.map((item, i) => (
-                  <CosmeticCard key={item.id || i} item={item} index={i} onClick={() => setSelectedItem(item)} user={user} voteCounts={voteCounts?.[item.id]} />
+                  <FortniteCosmeticCard key={item.id || i} item={item} onClick={() => setSelectedItem(item)} user={user} voteCounts={voteCounts?.[item.id]} />
                 ))}
               </div>
 
@@ -207,40 +207,5 @@ export default function FortniteCosmetics() {
 
       <CosmeticDetailModal cosmetic={selectedItem} onClose={() => setSelectedItem(null)} user={user} />
     </div>
-  );
-}
-
-function CosmeticCard({ item, index, onClick, user, voteCounts }) {
-  const style = getRarityStyle(item.rarity);
-  const images = item.images || {};
-  const mainImage = images.featured || images.icon || images.smallIcon || item.image;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: Math.min(index * 0.02, 0.4), duration: 0.3 }}
-      onClick={onClick}
-      className="rounded-xl overflow-hidden flex flex-col cursor-pointer transition hover:scale-105 hover:shadow-2xl"
-      style={{ background: style.bg, border: `1px solid ${style.border}`, boxShadow: `0 0 20px ${style.glow}` }}
-    >
-      <div className="relative aspect-square overflow-hidden flex items-center justify-center" style={{ background: style.bg }}>
-        {mainImage ? (
-          <img src={mainImage} alt={item.name} className="w-full h-full object-contain p-2" loading="lazy" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <span className="text-2xl opacity-30">🎨</span>
-          </div>
-        )}
-      </div>
-      <div className="p-1.5 sm:p-2" style={{ background: "rgba(0,0,0,0.3)" }}>
-        <p className="text-[9px] sm:text-[10px] font-bold text-white truncate">{item.name}</p>
-        <div className="flex items-center justify-between mt-1 mb-1">
-          <span className="text-[8px] sm:text-[9px] uppercase font-bold" style={{ color: style.text }}>{item.type}</span>
-          {item.series && <span className="text-[8px] sm:text-[9px] font-bold truncate max-w-[50%]" style={{ color: style.text }}>{item.series}</span>}
-        </div>
-        <CosmeticReactionBar cosmetic={item} user={user} counts={voteCounts} compact />
-      </div>
-    </motion.div>
   );
 }

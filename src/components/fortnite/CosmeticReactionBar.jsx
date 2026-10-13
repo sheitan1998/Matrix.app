@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
+import { useQueryClient } from '@tanstack/react-query';
 
 const REACTIONS = [
   { type: "fire",  emoji: "🔥", label: "Feu",     color: "#f97316" },
@@ -10,6 +11,7 @@ const REACTIONS = [
 ];
 
 export default function CosmeticReactionBar({ cosmetic, user, counts, compact }) {
+  const queryClient = useQueryClient();
   const [userVote, setUserVote] = useState(null);
   const [localCounts, setLocalCounts] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -19,12 +21,14 @@ export default function CosmeticReactionBar({ cosmetic, user, counts, compact })
   }, [counts]);
 
   useEffect(() => {
-    if (!user || !cosmetic?.id) return;
+    if (!user || !cosmetic?.id) { setUserVote(null); return; }
+    if (counts && Object.prototype.hasOwnProperty.call(counts, 'user_vote')) { setUserVote(counts.user_vote); return; }
+    if (compact) return;
     base44.functions
       .invoke("fortniteApi", { action: "getUserCosmeticVote", cosmetic_id: cosmetic.id })
       .then((res) => setUserVote(res.data?.vote_type || null))
       .catch(() => {});
-  }, [user, cosmetic?.id]);
+  }, [user, cosmetic?.id, counts?.user_vote, compact]);
 
   const handleVote = async (voteType) => {
     if (!user) {
@@ -34,6 +38,7 @@ export default function CosmeticReactionBar({ cosmetic, user, counts, compact })
     if (loading) return;
     setLoading(true);
     const prevVote = userVote;
+    const prevCounts = localCounts;
     setUserVote(voteType);
     // Optimistic count update
     if (localCounts) {
@@ -54,14 +59,16 @@ export default function CosmeticReactionBar({ cosmetic, user, counts, compact })
         vote_type: voteType,
       });
       if (res.data?.ok) {
-        // Keep optimistic state
+        queryClient.invalidateQueries({ queryKey: ['fortniteVotes'] });
       } else if (res.data?.error) {
         toast.error(res.data.error);
         setUserVote(prevVote);
+        setLocalCounts(prevCounts);
       }
     } catch {
       toast.error("Erreur lors du vote");
       setUserVote(prevVote);
+      setLocalCounts(prevCounts);
     }
     setLoading(false);
   };

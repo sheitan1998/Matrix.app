@@ -17,6 +17,16 @@ export const RARITY_COLORS = {
   default:     { bg: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)", border: "rgba(100,116,139,0.4)", text: "#94a3b8", glow: "rgba(100,116,139,0.2)" },
 };
 
+export function getFortniteItemStyle(item) {
+  const fallback = getRarityStyle(item.rarity);
+  const valid = value => typeof value === 'string' && /^[a-f\d]{6}([a-f\d]{2})?$/i.test(value);
+  const colors = item.shop_colors
+    ? [item.shop_colors.color1, item.shop_colors.color2, item.shop_colors.color3].filter(valid)
+    : (item.series_colors || []).filter(valid);
+  if (colors.length < 2) return fallback;
+  return { ...fallback, bg: `linear-gradient(135deg, ${colors.map((color, index) => `#${color} ${Math.round(index * 100 / (colors.length - 1))}%`).join(', ')})`, border: `#${colors[0]}` };
+}
+
 export function getRarityStyle(rarity) {
   const key = (rarity || "common").toLowerCase().replace(/\s/g, "");
   return RARITY_COLORS[key] || RARITY_COLORS.common;

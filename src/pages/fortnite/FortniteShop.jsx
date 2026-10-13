@@ -1,10 +1,8 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ShoppingBag, Coins, Loader2, ArrowLeft, Calendar } from "lucide-react";
-import { motion } from "framer-motion";
-import { getRarityStyle } from "@/components/fortnite/rarityUtils";
+import { ShoppingBag, Loader2, ArrowLeft, Calendar } from "lucide-react";
 import ShopItemModal from "@/components/fortnite/ShopItemModal";
-import CosmeticReactionBar from "@/components/fortnite/CosmeticReactionBar";
+import FortniteShopSection from "@/components/fortnite/FortniteShopSection";
 import usePageSEO from "@/hooks/usePageSEO";
 import useFortniteCatalog from "@/components/fortnite/useFortniteCatalog";
 import useVoteCounts from "@/components/fortnite/useVoteCounts";
@@ -26,7 +24,7 @@ export default function FortniteShop() {
   const sections = useMemo(() => {
     const map = {};
     for (const item of visibleItems) {
-      const key = item.layout || "Autres";
+      const key = item.section_id || item.layout || 'other';
       if (!map[key]) map[key] = [];
       map[key].push(item);
     }
@@ -50,7 +48,7 @@ export default function FortniteShop() {
         <ShoppingBag className="w-5 h-5" style={{ color: "#f59e0b" }} />
         <h1 className="text-2xl font-black text-white">Boutique du Jour</h1>
       </div>
-      <p className="text-xs text-white/40 mb-4">Tous les objets Battle Royale disponibles dans la boutique Fortnite d'aujourd'hui</p>
+      <p className="text-xs text-white/40 mb-4">Offres, packs et sections officiels de la boutique Fortnite du jour</p>
 
       {loading ? (
         <div className="flex justify-center py-12">
@@ -70,22 +68,11 @@ export default function FortniteShop() {
             </div>
           )}
 
-          <p className="text-[10px] text-white/30 mb-4">{total} objets disponibles</p>
+          <p className="text-[10px] text-white/30 mb-4">{total} offres disponibles · cache 1 heure</p>
 
           {/* Sections grouped by layout */}
-          {sections.map(([sectionName, sectionItems]) => (
-            <div key={sectionName} className="mb-8">
-              <h2 className="text-sm font-black text-white uppercase tracking-wide mb-3 flex items-center gap-2">
-                <span className="w-1 h-4 rounded-full" style={{ background: "#f59e0b" }} />
-                {sectionName}
-                <span className="text-[10px] text-white/30 font-normal normal-case">{sectionItems.length} objet{sectionItems.length > 1 ? "s" : ""}</span>
-              </h2>
-              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
-                {sectionItems.map((item, i) => (
-                  <ShopCard key={`${item.offer_id || item.id}:${i}`} item={item} index={i} onClick={() => setSelectedItem(item)} user={user} voteCounts={voteCounts?.[item.id]} />
-                ))}
-              </div>
-            </div>
+          {sections.map(([sectionId, sectionItems]) => (
+            <FortniteShopSection key={sectionId} items={sectionItems} onSelect={setSelectedItem} user={user} voteCounts={voteCounts} />
           ))}
 
           {hasMore && (
@@ -106,47 +93,5 @@ export default function FortniteShop() {
       {error && <p role="alert" className="mt-3 text-sm text-destructive">Chargement impossible. Réessayez dans quelques instants.</p>}
       <ShopItemModal item={selectedItem} onClose={() => setSelectedItem(null)} user={user} />
     </div>
-  );
-}
-
-function ShopCard({ item, index, onClick, user, voteCounts }) {
-  const style = getRarityStyle(item.rarity);
-  const images = item.images || {};
-  const mainImage = images.featured || images.icon || images.smallIcon || item.image;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: Math.min(index * 0.02, 0.4), duration: 0.3 }}
-      onClick={onClick}
-      className="rounded-xl overflow-hidden flex flex-col cursor-pointer transition hover:scale-105 hover:shadow-2xl"
-      style={{ background: style.bg, border: `1px solid ${style.border}`, boxShadow: `0 0 20px ${style.glow}` }}
-    >
-      <div className="relative aspect-square overflow-hidden flex items-center justify-center" style={{ background: style.bg }}>
-        {mainImage ? (
-          <img src={mainImage} alt={item.name} className="w-full h-full object-contain p-2" loading="lazy" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <span className="text-2xl opacity-30">🎮</span>
-          </div>
-        )}
-        {item.price > 0 && (
-          <div className="absolute bottom-1 right-1 flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-black" style={{ background: "rgba(0,0,0,0.7)", color: "#fbbf24" }}>
-            <Coins className="w-2.5 h-2.5" />
-            {item.price}
-          </div>
-        )}
-      </div>
-      <div className="p-1.5 sm:p-2" style={{ background: "rgba(0,0,0,0.3)" }}>
-        <p className="text-[9px] sm:text-[10px] font-bold text-white truncate">{item.name}</p>
-        <div className="flex items-center justify-between mt-1 mb-1">
-          <span className="text-[8px] sm:text-[9px] uppercase font-bold" style={{ color: style.text }}>
-            {item.type}
-          </span>
-        </div>
-        <CosmeticReactionBar cosmetic={item} user={user} counts={voteCounts} compact />
-      </div>
-    </motion.div>
   );
 }

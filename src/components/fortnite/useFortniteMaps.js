@@ -12,6 +12,8 @@ export default function useFortniteMaps(search, category) {
   const result = useInfiniteQuery({
     queryKey: ['fortniteMaps', term, category],
     initialPageParam: null,
+    staleTime: 900000,
+    refetchInterval: 900000,
     retry: false,
     queryFn: async ({ pageParam }) => {
       const { data } = await base44.functions.invoke('fortniteApi', {

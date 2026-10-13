@@ -1,18 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 
-// Fetches vote counts for a batch of cosmetic IDs in one call.
 export default function useVoteCounts(ids, enabled = true) {
-  const [counts, setCounts] = useState(null);
-
-  useEffect(() => {
-    if (!enabled || !ids || ids.length === 0) return;
-    let cancelled = false;
-    base44.functions.invoke('fortniteApi', { action: 'getCosmeticVoteCounts', cosmetic_ids: ids })
-      .then((res) => { if (!cancelled) setCounts(res.data || {}); })
-      .catch(() => { if (!cancelled) setCounts({}); });
-    return () => { cancelled = true; };
-  }, [ids?.join(','), enabled]);
-
-  return counts;
+  const result = useQuery({
+    queryKey: ['fortniteVotes', (ids || []).join(',')], enabled: enabled && !!ids?.length, staleTime: 30000, retry: false,
+    queryFn: async () => {
+      const counts = {};
+      for (let index = 0; index < ids.length; index += 250) {
+        const { data } = await base44.functions.invoke('fortniteApi', { action: 'getCosmeticVoteCounts', cosmetic_ids: ids.slice(index, index + 250) });
+        Object.assign(counts, data);
+      }
+      return counts;
+    },
+  });
+  return result.data || null;
 }

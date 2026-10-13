@@ -1,30 +1,15 @@
-import { waitUntil } from 'base44:runtime';
+import { cached, clearCache } from './cache.ts';
+import { normalize } from './assets.ts';
+import { shopOffers } from './offers.ts';
 
 const HOUR = 60 * 60 * 1000;
-const catalogs = new Map();
-const BR_TYPES = new Set(['outfit', 'pickaxe', 'backpack', 'backbling', 'emote', 'dance', 'glider']);
 const TYPE_ALIASES = { backbling: 'backpack', dance: 'emote', contrail: 'skydive' };
 const canonicalType = type => TYPE_ALIASES[type] || type;
 
-function normalize(item) {
-  const images = item.images || {};
-  return {
-    id: item.id, name: item.name || 'Inconnu', description: item.description || '',
-    type: item.type?.value || item.type || 'item', rarity: item.rarity?.value || 'common',
-    image: images.featured || images.icon || images.smallIcon || null,
-    images: { featured: images.featured || null, icon: images.icon || null, smallIcon: images.smallIcon || null, animated: images.animated || null },
-    video: item.video || null, audio: item.audio || null, series: item.series?.value || item.set?.value || null,
-    set_display: item.set?.displayValue || item.set?.text || item.series?.value || null,
-    rarity_display: item.rarity?.displayValue || item.rarity?.value || 'Common',
-    added: item.added?.date || item.added || null,
-    season: item.introduction?.chapter?.season || null,
-    chapter: item.introduction?.chapter?.number || item.introduction?.number || null,
-  };
-}
 
 async function download(kind) {
   const endpoint = kind === 'shop' ? 'shop' : 'cosmetics/br';
-  const response = await fetch(`https://fortnite-api.com/v2/${endpoint}`, {
+  const response = await fetch(`https://fortnite-api.com/v2/${endpoint}?language=fr`, {
     headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(30000),
   });
   if (!response.ok) throw new Error(`Fortnite-API indisponible (${response.status})`);
@@ -34,31 +19,11 @@ async function download(kind) {
     return { items: data.map(normalize), cached_at: new Date().toISOString() };
   }
   if (!Array.isArray(data?.entries)) throw new Error('Boutique Fortnite invalide');
-  const items = [];
-  for (const entry of data.entries) {
-    for (const item of entry.brItems || []) {
-      if (!BR_TYPES.has(item.type?.value || item.type)) continue;
-      items.push({ ...normalize(item), price: entry.finalPrice ?? entry.regularPrice ?? 0,
-        offer_id: entry.offerId || item.id, layout: entry.layout?.name || null });
-    }
-  }
-  return { items, date: data.date, cached_at: new Date().toISOString() };
+  return { items: shopOffers(data), date: data.date, vbuck_icon: data.vbuckIcon, cached_at: new Date().toISOString() };
 }
 
 async function getCatalog(kind) {
-  let state = catalogs.get(kind);
-  if (!state) { state = { data: null, nextRefresh: 0, pending: null, error: null }; catalogs.set(kind, state); }
-  if (Date.now() >= state.nextRefresh && !state.pending) {
-    state.nextRefresh = Date.now() + HOUR;
-    state.pending = download(kind).then(data => { state.data = data; state.error = null; return data; })
-      .catch(error => { state.error = error; throw error; }).finally(() => { state.pending = null; });
-  }
-  if (state.data) {
-    if (state.pending) waitUntil(state.pending.catch(error => console.warn('Fortnite cache refresh:', error.message)));
-    return state.data;
-  }
-  if (state.pending) return await state.pending;
-  throw state.error || new Error('Catalogue temporairement indisponible');
+  return await cached(`catalog:${kind}`, HOUR, () => download(kind));
 }
 
 export { getCatalog };
@@ -80,4 +45,4 @@ export async function getCatalogPage(kind, options = {}) {
   return kind === 'shop' ? { ...result, date: catalog.date, entries: items } : { ...result, items };
 }
 
-export function clearCatalogCache() { catalogs.clear(); }
+export function clearCatalogCache() { clearCache(); }

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { Loader2, Users, Flame, Copy, Check } from "lucide-react";
 import { motion } from "framer-motion";
+import LivePlayersBadge from '@/components/fortnite/LivePlayersBadge';
 
 function formatPlayers(n) {
   if (!n || n <= 0) return "0";
@@ -45,7 +46,7 @@ export default function FeaturedMaps() {
       <div className="flex items-center gap-2 mb-4">
         <Flame className="w-4 h-4" style={{ color: "#f59e0b" }} />
         <h2 className="text-sm font-black text-white uppercase tracking-tight">Cartes en Vedette</h2>
-        <span className="text-[9px] text-white/30 uppercase tracking-wider ml-auto">Live</span>
+        <span className="text-[9px] text-white/30 uppercase tracking-wider ml-auto">Relevés · cache 15 min</span>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -90,11 +91,7 @@ function FeaturedMapCard({ map, index = 0 }) {
           </div>
         )}
         {/* Live players badge */}
-        <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-bold text-white" style={{ background: "rgba(0,0,0,0.7)" }}>
-          <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#22c55e" }} />
-          <Users className="w-2.5 h-2.5" style={{ color: "#22c55e" }} />
-          {formatPlayers(map.live_players)} joueurs
-        </div>
+        <div className="absolute top-2 right-2"><LivePlayersBadge map={map} /></div>
         {/* Featured badge */}
         <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider" style={{ background: "rgba(245,158,11,0.2)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.4)" }}>
           ★ Vedette

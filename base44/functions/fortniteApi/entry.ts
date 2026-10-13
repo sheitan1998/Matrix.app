@@ -1,5 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 import { getCatalogPage, getCatalog, clearCatalogCache } from './catalog.ts';
+import { creativePage, enrichMaps } from './creative.ts';
+import { cached } from './cache.ts';
 
 // ─── In-memory cache ───
 const cache = new Map();
@@ -71,25 +73,6 @@ async function getEosToken(config) {
   return data.access_token;
 }
 
-// ─── Fortnite Data API (public, no auth) ───
-async function getIslandMetadata(islandCode) {
-  const res = await fetch(`https://api.fortnite.com/ecosystem/v1/islands/${islandCode}`, {
-    headers: { 'Accept': 'application/json' },
-    signal: AbortSignal.timeout(10000),
-  });
-  if (!res.ok) return null;
-  return await res.json();
-}
-
-async function getIslandMetrics(islandCode) {
-  const res = await fetch(`https://api.fortnite.com/ecosystem/v1/islands/${islandCode}/metrics`, {
-    headers: { 'Accept': 'application/json' },
-    signal: AbortSignal.timeout(10000),
-  });
-  if (!res.ok) return null;
-  return await res.json();
-}
-
 // ─── Player stats (fortnite-api.com, needs API key) ───
 async function getPlayerStats(pseudo, apiKey) {
   const headers = { 'Accept': 'application/json' };
@@ -105,47 +88,7 @@ async function getPlayerStats(pseudo, apiKey) {
   return await res.json();
 }
 
-// ─── Fortnite-API.com public endpoints (no key needed) ───
-
-// Curated list of popular creative island codes (enriched via Fortnite Data API)
-const POPULAR_ISLAND_CODES = [
-  '8023-8844-7893', '1118-1592-5299', '6531-4403-0728', '3547-3601-8751',
-  '2446-2862-5173', '9364-6812-3209', '8783-4744-5484', '4055-3151-0475',
-  '2776-1193-2604', '5445-4196-2698', '0487-8548-5072', '6031-8062-4748',
-];
-
-// Featured creative maps (cache 15 min) - enriches curated codes via Fortnite Data API
-async function getApiFeaturedMaps() {
-  const results = await Promise.allSettled(
-    POPULAR_ISLAND_CODES.map(async (code) => {
-      const meta = await getIslandMetadata(code);
-      if (!meta) return null;
-      const metrics = await getIslandMetrics(code).catch(() => null);
-      let livePlayers = 0;
-      if (metrics?.windows) {
-        const tenMin = metrics.windows.find(w => w?.bucket === 'ten_minutes' || w?.interval === 'ten_minutes');
-        livePlayers = tenMin?.metrics?.peakCCU || tenMin?.peakCCU || 0;
-      }
-      if (metrics?.metrics?.peakCCU) livePlayers = metrics.metrics.peakCCU;
-      return {
-        id: `api_${code}`,
-        map_code: code,
-        title: meta?.islandName || meta?.name || 'Carte Créative',
-        creator_name: meta?.creatorName || meta?.creator || 'Inconnu',
-        image_url: meta?.image || meta?.thumbnail || meta?.images?.[0] || null,
-        live_players: livePlayers || 0,
-        category: meta?.category || 'autre',
-        description: meta?.description || '',
-        is_api: true,
-      };
-    })
-  );
-  return results
-    .filter(r => r.status === 'fulfilled' && r.value)
-    .map(r => r.value);
-}
-
-// Hourly catalogue cache and server pagination are isolated in catalog.ts.
+// Public catalogues and Creative discovery use shared stale-while-revalidate caches.
 
 // ─── Main handler ───
 export default async function(req) {
@@ -168,90 +111,35 @@ export default async function(req) {
         base44.entities.FortniteMap.filter(query, { sort: '-created_date', limit, ...(body.cursor ? { cursor: body.cursor } : {}) }),
         base44.entities.FortniteMap.count(query),
       ]);
-      return Response.json({ items: page.items, total, has_more: page.has_more, next_cursor: page.next_cursor });
+      const items = await enrichMaps(page.items || []);
+      return Response.json({ items, total, has_more: page.has_more, next_cursor: page.next_cursor });
     }
 
     const adminAction = ['purgeCache', 'getConfig', 'updateConfig', 'testConnection'].includes(action);
     const config = await getConfig(base44, adminAction);
     const cacheTtl = config?.cache_ttl_minutes || 12;
 
-    // ── Public: Featured maps (manual + API enriched) ──
+    if (action === 'getCreativeMaps' || action === 'getApiFeaturedMaps') {
+      if (config?.show_api_maps === false) return Response.json(action === 'getApiFeaturedMaps' ? [] : { items: [], has_more: false });
+      const result = await creativePage(body);
+      return Response.json(action === 'getApiFeaturedMaps' ? result.items : result);
+    }
+
     if (action === 'getFeaturedMaps') {
-      const cacheKey = 'featured_maps';
-      const cached = getCached(cacheKey, cacheTtl);
-      if (cached) return Response.json(cached);
-
-      const mapsResult = await base44.asServiceRole.entities.FortniteMap.filter(
-        { is_featured: true, is_approved: { $ne: false } },
-        { sort: 'sort_order', limit: 50 }
-      );
-      const maps = mapsResult?.items || mapsResult || [];
-
-      const enriched = await Promise.allSettled(
-        maps.map(async (map) => {
-          const meta = await getIslandMetadata(map.map_code);
-          const metrics = await getIslandMetrics(map.map_code);
-          let livePlayers = 0;
-          if (metrics?.windows) {
-            const tenMin = metrics.windows.find(w => w?.bucket === 'ten_minutes' || w?.interval === 'ten_minutes');
-            livePlayers = tenMin?.metrics?.peakCCU || tenMin?.peakCCU || 0;
-          }
-          if (metrics?.metrics?.peakCCU) livePlayers = metrics.metrics.peakCCU;
-          return {
-            ...map,
-            api_title: meta?.islandName || meta?.name || null,
-            api_creator: meta?.creatorName || meta?.creator || null,
-            api_thumbnail: meta?.image || meta?.thumbnail || meta?.images?.[0] || null,
-            live_players: livePlayers || map.live_players || 0,
-            last_synced_at: new Date().toISOString(),
-          };
-        })
-      );
-
-      const result = enriched
-        .filter(r => r.status === 'fulfilled')
-        .map(r => r.value);
-
-      setCached(cacheKey, result);
-
-      for (const map of result) {
-        if (map.live_players > 0) {
-          base44.asServiceRole.entities.FortniteMap.update(map.id, {
-            live_players: map.live_players,
-            last_synced_at: map.last_synced_at,
-          }).catch(() => {});
-        }
-      }
-
+      const result = await cached('featured:stored', 15 * 60 * 1000, async () => {
+        const page = await base44.entities.FortniteMap.filter(
+          { is_featured: true, is_approved: { $ne: false } }, { sort: 'sort_order', limit: 24 }
+        );
+        return await enrichMaps(page.items || []);
+      });
       return Response.json(result);
     }
 
-    // ── Public: API featured maps (fortnite-api.com creative) ──
-    if (action === 'getApiFeaturedMaps') {
-      if (config?.show_api_maps === false) return Response.json([]);
-      const cacheKey = 'api_featured_maps';
-      const cached = getCached(cacheKey, 15);
-      if (cached) return Response.json(cached);
-      let maps = await getApiFeaturedMaps();
-      if (!maps || maps.length === 0) {
-        const dbMaps = await base44.asServiceRole.entities.FortniteMap.filter(
-          { is_featured: true, is_approved: true },
-          { sort: 'sort_order', limit: 12 }
-        );
-        maps = (dbMaps?.items || dbMaps || []).map(m => ({
-          id: m.id,
-          map_code: m.map_code,
-          title: m.title,
-          creator_name: m.creator_name,
-          image_url: m.image_url,
-          live_players: m.live_players || 0,
-          category: m.category,
-          description: m.description || '',
-          is_api: false,
-        }));
-      }
-      setCached(cacheKey, maps);
-      return Response.json(maps);
+    if (action === 'getCosmeticDetails') {
+      const id = String(body.id || '').trim().slice(0, 200);
+      if (!id) return Response.json({ error: 'Identifiant requis' }, { status: 400 });
+      const catalog = await getCatalog('cosmetics');
+      return Response.json(catalog.items.find(item => item.id === id) || null);
     }
 
     // ── Public: 24-item pages, shared hourly catalogue cache ──
@@ -354,23 +242,20 @@ export default async function(req) {
     if (action === 'getCosmeticVoteCounts') {
       const ids = Array.isArray(body.cosmetic_ids) ? body.cosmetic_ids.filter(id => id && typeof id === 'string') : [];
       if (ids.length === 0) return Response.json({});
-      const aggResult = await base44.asServiceRole.entities.FortniteCosmeticVote.aggregate({
-        query: { cosmetic_id: { $in: ids } }, groupBy: 'cosmetic_id', count: true, limit: 1000,
-      });
-      const rows = aggResult?.rows || [];
-      const counts = {};
-      for (const row of rows) counts[row.cosmetic_id] = { total: row.count || 0 };
-      // Also get per-type breakdown via filter
-      const records = await base44.asServiceRole.entities.FortniteCosmeticVote.filter(
-        { cosmetic_id: { $in: ids } }, { limit: 5000, fields: ['cosmetic_id', 'vote_type'] }
-      );
-      const recs = records?.items || records || [];
-      for (const rec of recs) {
-        if (!counts[rec.cosmetic_id]) counts[rec.cosmetic_id] = { total: 0 };
-        const vt = rec.vote_type;
-        if (!counts[rec.cosmetic_id][vt]) counts[rec.cosmetic_id][vt] = 0;
-        counts[rec.cosmetic_id][vt]++;
+      const user = await base44.auth.isAuthenticated() ? await base44.auth.me() : null;
+      const [aggResult, ownVotes] = await Promise.all([
+        base44.asServiceRole.entities.FortniteCosmeticVote.aggregate({
+          query: { cosmetic_id: { $in: ids } }, groupBy: ['cosmetic_id', 'vote_type'], limit: 1000,
+        }),
+        user ? base44.entities.FortniteCosmeticVote.filter({ cosmetic_id: { $in: ids }, user_email: user.email },
+          { limit: Math.min(ids.length, 1000), fields: ['cosmetic_id', 'vote_type'] }) : Promise.resolve({ items: [] }),
+      ]);
+      const counts = Object.fromEntries(ids.map(id => [id, { total: 0, user_vote: null }]));
+      for (const row of aggResult.rows || []) {
+        counts[row.cosmetic_id][row.vote_type] = row.count || 0;
+        counts[row.cosmetic_id].total += row.count || 0;
       }
+      for (const vote of ownVotes.items || []) counts[vote.cosmetic_id].user_vote = vote.vote_type;
       return Response.json(counts);
     }
 
@@ -383,7 +268,7 @@ export default async function(req) {
       if (cached) return Response.json(cached);
       const catalog = await getCatalog('cosmetics').catch(() => null);
       if (!catalog) return Response.json([]);
-      const items = catalog.items.filter(i => (i.series || '').toLowerCase() === setName.toLowerCase()).slice(0, 12);
+      const items = catalog.items.filter(i => (i.set_name || i.series || '').toLowerCase() === setName.toLowerCase()).slice(0, 12);
       setCached(cacheKey, items);
       return Response.json(items);
     }
