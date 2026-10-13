@@ -1,8 +1,14 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Copy, Check, User, Images } from "lucide-react";
+import { Copy, Check, User, Images, Radio } from "lucide-react";
 import { getCategoryMeta } from "@/components/tuto-gaming/fortniteMapsData";
 import VoteButtons from "@/components/tuto-gaming/VoteButtons";
+
+function formatPlayers(n) {
+  if (!n || n <= 0) return null;
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
+  return String(n);
+}
 
 export default function FortniteMapCard({ map, index = 0, onClick, user }) {
   const [copied, setCopied] = useState(false);
@@ -61,6 +67,16 @@ export default function FortniteMapCard({ map, index = 0, onClick, user }) {
             style={{ background: "rgba(0,0,0,0.6)" }}
           >
             <Images className="w-2.5 h-2.5" /> {imageCount}
+          </span>
+        )}
+        {/* Live players badge */}
+        {formatPlayers(map.live_players) && (
+          <span
+            className="absolute bottom-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-bold text-white"
+            style={{ background: "rgba(0,0,0,0.7)" }}
+          >
+            <Radio className="w-2.5 h-2.5" style={{ color: "#22c55e" }} />
+            {formatPlayers(map.live_players)} joueurs
           </span>
         )}
       </div>

@@ -1,30 +1,20 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Search, Shirt, Loader2, ArrowLeft, Trophy } from "lucide-react";
 import { motion } from "framer-motion";
 import { getRarityStyle } from "@/components/fortnite/rarityUtils";
 import CosmeticDetailModal from "@/components/fortnite/CosmeticDetailModal";
+import CosmeticReactionBar from "@/components/fortnite/CosmeticReactionBar";
 import usePageSEO from "@/hooks/usePageSEO";
 import useFortniteCatalog from "@/components/fortnite/useFortniteCatalog";
+import useVoteCounts from "@/components/fortnite/useVoteCounts";
 
 const TYPE_LABELS = {
-  all: "Tous",
-  outfit: "Skins",
-  backbling: "Sacs",
-  pickaxe: "Pioches",
-  emote: "Emotes",
-  glider: "Deltaplanes",
-  wrap: "Habillages",
-  music: "Musiques",
-  spray: "Tags",
-  toy: "Jouets",
-  dance: "Danses",
-  loadingscreen: "Écrans",
-  skydive: "Trails",
-  contrail: "Trails",
-  emoji: "Emojis",
-  pet: "Animaux",
+  all: "Tous", outfit: "Skins", backbling: "Sacs", pickaxe: "Pioches",
+  emote: "Emotes", glider: "Deltaplanes", wrap: "Habillages", music: "Musiques",
+  spray: "Tags", toy: "Jouets", dance: "Danses", loadingscreen: "Écrans",
+  skydive: "Trails", contrail: "Trails", emoji: "Emojis", pet: "Animaux",
 };
 
 export default function FortniteCosmetics() {
@@ -39,21 +29,22 @@ export default function FortniteCosmetics() {
   const [type, setType] = useState("all");
   const [appliedSearch, setAppliedSearch] = useState({ query: '', type: 'all' });
   const { items: results, total, loading, loadingMore, hasMore: hasMoreResults, loadMore, error } = useFortniteCatalog('searchCosmetics', appliedSearch);
-  const searched = true;
   const [selectedItem, setSelectedItem] = useState(null);
   const [user, setUser] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
   const handleSearch = (searchQuery, searchType) => setAppliedSearch({ query: searchQuery.trim(), type: searchType });
 
+  // Batch fetch vote counts for visible items
+  const itemIds = useMemo(() => results.map(i => i.id).filter(Boolean), [results]);
+  const voteCounts = useVoteCounts(itemIds, itemIds.length > 0);
+
   const fetchLeaderboard = useCallback(async () => {
     setLeaderboardLoading(true);
     try {
       const res = await base44.functions.invoke("fortniteApi", { action: "getCosmeticLeaderboard" });
       setLeaderboard(res.data || []);
-    } catch {
-      /* silent */
-    }
+    } catch { /* silent */ }
     setLeaderboardLoading(false);
   }, []);
 
@@ -66,8 +57,6 @@ export default function FortniteCosmetics() {
     e.preventDefault();
     handleSearch(query, type);
   };
-
-  const visibleResults = results;
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 max-w-7xl mx-auto pb-12">
@@ -85,20 +74,13 @@ export default function FortniteCosmetics() {
       <div className="flex gap-1 mb-5 border-b border-white/10">
         <button
           onClick={() => setTab("search")}
-          className={`px-3 py-2 text-xs font-bold uppercase tracking-wider border-b-2 -mb-px transition tap-sm ${
-            tab === "search" ? "text-white border-[#22c55e]" : "text-white/40 border-transparent hover:text-white/60"
-          }`}
+          className={`px-3 py-2 text-xs font-bold uppercase tracking-wider border-b-2 -mb-px transition tap-sm ${tab === "search" ? "text-white border-[#22c55e]" : "text-white/40 border-transparent hover:text-white/60"}`}
         >
           Recherche
         </button>
         <button
-          onClick={() => {
-            setTab("leaderboard");
-            fetchLeaderboard();
-          }}
-          className={`px-3 py-2 text-xs font-bold uppercase tracking-wider border-b-2 -mb-px transition tap-sm ${
-            tab === "leaderboard" ? "text-white border-[#22c55e]" : "text-white/40 border-transparent hover:text-white/60"
-          }`}
+          onClick={() => { setTab("leaderboard"); fetchLeaderboard(); }}
+          className={`px-3 py-2 text-xs font-bold uppercase tracking-wider border-b-2 -mb-px transition tap-sm ${tab === "leaderboard" ? "text-white border-[#22c55e]" : "text-white/40 border-transparent hover:text-white/60"}`}
         >
           Classement
         </button>
@@ -125,9 +107,7 @@ export default function FortniteCosmetics() {
               style={{ background: "rgba(13,5,24,0.7)", border: "1.5px solid rgba(34,197,94,0.25)", colorScheme: "dark" }}
             >
               {Object.entries(TYPE_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
+                <option key={value} value={value}>{label}</option>
               ))}
             </select>
             <button
@@ -147,7 +127,7 @@ export default function FortniteCosmetics() {
           )}
 
           {error && <p role="alert" className="text-sm text-destructive mb-3">Chargement impossible. Réessayez dans quelques instants.</p>}
-          {!loading && !error && searched && results.length === 0 && (
+          {!loading && !error && results.length === 0 && (
             <div className="text-center py-8">
               <p className="text-sm text-white/40">Aucun cosmétique trouvé pour "{query}"</p>
             </div>
@@ -155,12 +135,10 @@ export default function FortniteCosmetics() {
 
           {!loading && results.length > 0 && (
             <>
-              <p className="text-[10px] text-white/30 mb-3">
-                {total} résultat{total > 1 ? "s" : ""}
-              </p>
+              <p className="text-[10px] text-white/30 mb-3">{total} résultat{total > 1 ? "s" : ""}</p>
               <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
-                {visibleResults.map((item, i) => (
-                  <CosmeticCard key={item.id || i} item={item} index={i} onClick={() => setSelectedItem(item)} />
+                {results.map((item, i) => (
+                  <CosmeticCard key={item.id || i} item={item} index={i} onClick={() => setSelectedItem(item)} user={user} voteCounts={voteCounts?.[item.id]} />
                 ))}
               </div>
 
@@ -206,32 +184,19 @@ export default function FortniteCosmetics() {
                   style={{ background: style.bg, border: `1px solid ${style.border}` }}
                   onClick={() =>
                     setSelectedItem({
-                      id: item.cosmetic_id,
-                      name: item.cosmetic_name,
-                      type: item.cosmetic_type,
-                      image: item.cosmetic_image,
-                      rarity: item.cosmetic_rarity,
+                      id: item.cosmetic_id, name: item.cosmetic_name, type: item.cosmetic_type,
+                      image: item.cosmetic_image, rarity: item.cosmetic_rarity,
                     })
                   }
                 >
-                  <span
-                    className="text-lg font-black w-8 text-center"
-                    style={{ color: i < 3 ? "#fbbf24" : "rgba(255,255,255,0.3)" }}
-                  >
-                    #{i + 1}
-                  </span>
-                  {item.cosmetic_image && (
-                    <img src={item.cosmetic_image} alt={item.cosmetic_name} className="w-10 h-10 object-contain rounded" />
-                  )}
+                  <span className="text-lg font-black w-8 text-center" style={{ color: i < 3 ? "#fbbf24" : "rgba(255,255,255,0.3)" }}>#{i + 1}</span>
+                  {item.cosmetic_image && <img src={item.cosmetic_image} alt={item.cosmetic_name} className="w-10 h-10 object-contain rounded" />}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-white truncate">{item.cosmetic_name}</p>
-                    <p className="text-[10px] text-white/40 uppercase">
-                      {item.cosmetic_type} · {item.votes} vote{item.votes > 1 ? "s" : ""}
-                    </p>
+                    <p className="text-[10px] text-white/50 uppercase">{item.cosmetic_type} · {item.votes} vote{item.votes > 1 ? "s" : ""}</p>
                   </div>
                   <span className="text-sm font-black" style={{ color: item.score > 0 ? "#22c55e" : "#ef4444" }}>
-                    {item.score > 0 ? "+" : ""}
-                    {item.score}
+                    {item.score > 0 ? "+" : ""}{item.score}
                   </span>
                 </motion.div>
               );
@@ -245,7 +210,7 @@ export default function FortniteCosmetics() {
   );
 }
 
-function CosmeticCard({ item, index, onClick }) {
+function CosmeticCard({ item, index, onClick, user, voteCounts }) {
   const style = getRarityStyle(item.rarity);
   const images = item.images || {};
   const mainImage = images.featured || images.icon || images.smallIcon || item.image;
@@ -256,30 +221,25 @@ function CosmeticCard({ item, index, onClick }) {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: Math.min(index * 0.02, 0.4), duration: 0.3 }}
       onClick={onClick}
-      className="rounded-lg overflow-hidden flex flex-col cursor-pointer transition hover:scale-105"
-      style={{ background: style.bg, border: `1px solid ${style.border}` }}
+      className="rounded-xl overflow-hidden flex flex-col cursor-pointer transition hover:scale-105 hover:shadow-2xl"
+      style={{ background: style.bg, border: `1px solid ${style.border}`, boxShadow: `0 0 20px ${style.glow}` }}
     >
-      <div className="relative aspect-square overflow-hidden" style={{ background: style.bg }}>
+      <div className="relative aspect-square overflow-hidden flex items-center justify-center" style={{ background: style.bg }}>
         {mainImage ? (
           <img src={mainImage} alt={item.name} className="w-full h-full object-contain p-2" loading="lazy" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <span className="text-2xl" style={{ color: style.text, opacity: 0.3 }}>🎨</span>
+            <span className="text-2xl opacity-30">🎨</span>
           </div>
         )}
       </div>
-      <div className="p-1.5 sm:p-2">
+      <div className="p-1.5 sm:p-2" style={{ background: "rgba(0,0,0,0.3)" }}>
         <p className="text-[9px] sm:text-[10px] font-bold text-white truncate">{item.name}</p>
-        <div className="flex items-center justify-between mt-1">
-          <span className="text-[8px] sm:text-[9px] uppercase" style={{ color: style.text }}>
-            {item.type}
-          </span>
-          {item.series && (
-            <span className="text-[8px] sm:text-[9px] font-bold" style={{ color: style.text }}>
-              {item.series}
-            </span>
-          )}
+        <div className="flex items-center justify-between mt-1 mb-1">
+          <span className="text-[8px] sm:text-[9px] uppercase font-bold" style={{ color: style.text }}>{item.type}</span>
+          {item.series && <span className="text-[8px] sm:text-[9px] font-bold truncate max-w-[50%]" style={{ color: style.text }}>{item.series}</span>}
         </div>
+        <CosmeticReactionBar cosmetic={item} user={user} counts={voteCounts} compact />
       </div>
     </motion.div>
   );

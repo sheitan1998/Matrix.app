@@ -3,6 +3,12 @@ import { base44 } from "@/api/base44Client";
 import { Loader2, Users, Flame, Copy, Check } from "lucide-react";
 import { motion } from "framer-motion";
 
+function formatPlayers(n) {
+  if (!n || n <= 0) return "0";
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
+  return String(n);
+}
+
 export default function FeaturedMaps() {
   const [maps, setMaps] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -85,8 +91,9 @@ function FeaturedMapCard({ map, index = 0 }) {
         )}
         {/* Live players badge */}
         <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-bold text-white" style={{ background: "rgba(0,0,0,0.7)" }}>
+          <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#22c55e" }} />
           <Users className="w-2.5 h-2.5" style={{ color: "#22c55e" }} />
-          {map.live_players || 0}
+          {formatPlayers(map.live_players)} joueurs
         </div>
         {/* Featured badge */}
         <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider" style={{ background: "rgba(245,158,11,0.2)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.4)" }}>

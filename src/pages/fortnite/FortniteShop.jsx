@@ -1,11 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ShoppingBag, Coins, Loader2, ArrowLeft, Calendar } from "lucide-react";
 import { motion } from "framer-motion";
 import { getRarityStyle } from "@/components/fortnite/rarityUtils";
 import ShopItemModal from "@/components/fortnite/ShopItemModal";
+import CosmeticReactionBar from "@/components/fortnite/CosmeticReactionBar";
 import usePageSEO from "@/hooks/usePageSEO";
 import useFortniteCatalog from "@/components/fortnite/useFortniteCatalog";
+import useVoteCounts from "@/components/fortnite/useVoteCounts";
+import { base44 } from "@/api/base44Client";
 
 export default function FortniteShop() {
   usePageSEO({
@@ -15,9 +18,26 @@ export default function FortniteShop() {
   });
 
   const [selectedItem, setSelectedItem] = useState(null);
+  const [user, setUser] = useState(null);
   const { items: allItems, total, date, loading, loadingMore, hasMore, loadMore, error } = useFortniteCatalog('getDailyShop');
-  const shop = { date, entries: allItems, error: error?.message };
   const visibleItems = allItems;
+
+  // Group items by layout section
+  const sections = useMemo(() => {
+    const map = {};
+    for (const item of visibleItems) {
+      const key = item.layout || "Autres";
+      if (!map[key]) map[key] = [];
+      map[key].push(item);
+    }
+    return Object.entries(map);
+  }, [visibleItems]);
+
+  // Batch fetch vote counts for all visible items
+  const itemIds = useMemo(() => visibleItems.map(i => i.id).filter(Boolean), [visibleItems]);
+  const voteCounts = useVoteCounts(itemIds, itemIds.length > 0);
+
+  useEffect(() => { base44.auth.me().then(setUser).catch(() => {}); }, []);
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 max-w-7xl mx-auto pb-12">
@@ -36,27 +56,37 @@ export default function FortniteShop() {
         <div className="flex justify-center py-12">
           <Loader2 className="w-6 h-6 animate-spin text-white/30" />
         </div>
-      ) : !shop || shop.error || allItems.length === 0 ? (
+      ) : error || allItems.length === 0 ? (
         <div className="text-center py-16">
           <ShoppingBag className="w-12 h-12 text-white/10 mx-auto mb-4" />
           <p className="text-sm text-white/40">Boutique indisponible pour le moment.</p>
         </div>
       ) : (
         <>
-          {shop.date && (
+          {date && (
             <div className="flex items-center gap-1.5 mb-5 text-xs text-white/40">
               <Calendar className="w-3.5 h-3.5" />
-              {new Date(shop.date).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
+              {new Date(date).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
             </div>
           )}
 
-          <p className="text-[10px] text-white/30 mb-3">{total} objets disponibles</p>
+          <p className="text-[10px] text-white/30 mb-4">{total} objets disponibles</p>
 
-          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
-            {visibleItems.map((item, i) => (
-              <ShopCard key={`${item.offer_id || i}:${item.id}`} item={item} index={i} onClick={() => setSelectedItem(item)} />
-            ))}
-          </div>
+          {/* Sections grouped by layout */}
+          {sections.map(([sectionName, sectionItems]) => (
+            <div key={sectionName} className="mb-8">
+              <h2 className="text-sm font-black text-white uppercase tracking-wide mb-3 flex items-center gap-2">
+                <span className="w-1 h-4 rounded-full" style={{ background: "#f59e0b" }} />
+                {sectionName}
+                <span className="text-[10px] text-white/30 font-normal normal-case">{sectionItems.length} objet{sectionItems.length > 1 ? "s" : ""}</span>
+              </h2>
+              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
+                {sectionItems.map((item, i) => (
+                  <ShopCard key={`${item.offer_id || item.id}:${i}`} item={item} index={i} onClick={() => setSelectedItem(item)} user={user} voteCounts={voteCounts?.[item.id]} />
+                ))}
+              </div>
+            </div>
+          ))}
 
           {hasMore && (
             <div className="flex justify-center mt-6">
@@ -74,12 +104,12 @@ export default function FortniteShop() {
       )}
 
       {error && <p role="alert" className="mt-3 text-sm text-destructive">Chargement impossible. Réessayez dans quelques instants.</p>}
-      <ShopItemModal item={selectedItem} onClose={() => setSelectedItem(null)} />
+      <ShopItemModal item={selectedItem} onClose={() => setSelectedItem(null)} user={user} />
     </div>
   );
 }
 
-function ShopCard({ item, index, onClick }) {
+function ShopCard({ item, index, onClick, user, voteCounts }) {
   const style = getRarityStyle(item.rarity);
   const images = item.images || {};
   const mainImage = images.featured || images.icon || images.smallIcon || item.image;
@@ -90,31 +120,32 @@ function ShopCard({ item, index, onClick }) {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: Math.min(index * 0.02, 0.4), duration: 0.3 }}
       onClick={onClick}
-      className="rounded-lg overflow-hidden flex flex-col cursor-pointer transition hover:scale-105"
-      style={{ background: style.bg, border: `1px solid ${style.border}` }}
+      className="rounded-xl overflow-hidden flex flex-col cursor-pointer transition hover:scale-105 hover:shadow-2xl"
+      style={{ background: style.bg, border: `1px solid ${style.border}`, boxShadow: `0 0 20px ${style.glow}` }}
     >
-      <div className="relative aspect-square overflow-hidden" style={{ background: style.bg }}>
+      <div className="relative aspect-square overflow-hidden flex items-center justify-center" style={{ background: style.bg }}>
         {mainImage ? (
           <img src={mainImage} alt={item.name} className="w-full h-full object-contain p-2" loading="lazy" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <span className="text-2xl" style={{ color: style.text, opacity: 0.3 }}>🎮</span>
+            <span className="text-2xl opacity-30">🎮</span>
+          </div>
+        )}
+        {item.price > 0 && (
+          <div className="absolute bottom-1 right-1 flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-black" style={{ background: "rgba(0,0,0,0.7)", color: "#fbbf24" }}>
+            <Coins className="w-2.5 h-2.5" />
+            {item.price}
           </div>
         )}
       </div>
-      <div className="p-1.5 sm:p-2">
+      <div className="p-1.5 sm:p-2" style={{ background: "rgba(0,0,0,0.3)" }}>
         <p className="text-[9px] sm:text-[10px] font-bold text-white truncate">{item.name}</p>
-        <div className="flex items-center justify-between mt-1">
-          <span className="text-[8px] sm:text-[9px] uppercase" style={{ color: style.text }}>
+        <div className="flex items-center justify-between mt-1 mb-1">
+          <span className="text-[8px] sm:text-[9px] uppercase font-bold" style={{ color: style.text }}>
             {item.type}
           </span>
-          {item.price > 0 && (
-            <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] font-black" style={{ color: "#fbbf24" }}>
-              <Coins className="w-2.5 h-2.5" />
-              {item.price}
-            </span>
-          )}
         </div>
+        <CosmeticReactionBar cosmetic={item} user={user} counts={voteCounts} compact />
       </div>
     </motion.div>
   );
