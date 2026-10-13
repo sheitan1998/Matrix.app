@@ -9,6 +9,7 @@ import MapDetailModal from "@/components/tuto-gaming/MapDetailModal";
 import { FORTNITE_BANNER, MAP_CATEGORIES } from "@/components/tuto-gaming/fortniteMapsData";
 import { useTutoGamingAssets, getAssetUrl } from "@/hooks/useTutoGamingAssets";
 import usePageSEO from "@/hooks/usePageSEO";
+import useFortniteMaps from "@/components/fortnite/useFortniteMaps";
 
 export default function FortniteMaps() {
   usePageSEO({
@@ -17,10 +18,9 @@ export default function FortniteMaps() {
     path: "/fortnite-maps",
   });
 
-  const [maps, setMaps] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
+  const { maps: filteredMaps, total, loading, error, hasMore, loadingMore, loadMore, refresh: fetchMaps } = useFortniteMaps(search, activeCategory);
   const [showSubmit, setShowSubmit] = useState(false);
   const [selectedMap, setSelectedMap] = useState(null);
   const [editMap, setEditMap] = useState(null);
@@ -34,25 +34,7 @@ export default function FortniteMaps() {
   const { assets } = useTutoGamingAssets();
   const fortniteBanner = getAssetUrl(assets, "fortnite_banner", FORTNITE_BANNER);
 
-  const fetchMaps = useCallback(async () => {
-    try {
-      const [dbMapsRes, apiMapsRes] = await Promise.all([
-        base44.entities.FortniteMap.filter({}, { sort: "-created_date", limit: 200 }),
-        base44.functions.invoke("fortniteApi", { action: "getApiFeaturedMaps" }),
-      ]);
-      const dbMaps = (dbMapsRes?.items || dbMapsRes || []).filter((m) => m.is_approved !== false);
-      const apiMaps = (apiMapsRes?.data || []).map((m) => ({ ...m, is_api: true }));
-      const dbCodes = new Set(dbMaps.map((m) => m.map_code));
-      const uniqueApiMaps = apiMaps.filter((m) => m.map_code && !dbCodes.has(m.map_code));
-      setMaps([...dbMaps, ...uniqueApiMaps]);
-    } catch {
-      /* silent */
-    }
-    setLoading(false);
-  }, []);
-
   useEffect(() => {
-    fetchMaps();
     base44.functions
       .invoke("fortniteApi", { action: "getSectionsConfig" })
       .then((res) => {
@@ -60,33 +42,7 @@ export default function FortniteMaps() {
       })
       .catch(() => {});
     base44.auth.me().then(setUser).catch(() => {});
-  }, [fetchMaps]);
-
-  // Realtime subscription
-  useEffect(() => {
-    const unsubscribe = base44.entities.FortniteMap.subscribe((event) => {
-      if (event.type === "create") {
-        setMaps((prev) => [event.data, ...prev]);
-      } else if (event.type === "update") {
-        setMaps((prev) => prev.map((m) => (m.id === event.data.id ? event.data : m)));
-      } else if (event.type === "delete") {
-        setMaps((prev) => prev.filter((m) => m.id !== event.data.id));
-      }
-    });
-    return () => {
-      unsubscribe();
-    };
   }, []);
-
-  // Filter maps
-  const filteredMaps = maps.filter((m) => {
-    if (activeCategory !== "all" && m.category !== activeCategory) return false;
-    if (search) {
-      const s = search.toLowerCase();
-      if (!m.title?.toLowerCase().includes(s) && !m.creator_name?.toLowerCase().includes(s)) return false;
-    }
-    return true;
-  });
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 max-w-7xl mx-auto pb-12">
@@ -181,7 +137,7 @@ export default function FortniteMaps() {
       {/* Results count */}
       <div className="flex items-center justify-between mb-3">
         <span className="text-[10px] text-white/30 uppercase tracking-wider">
-          {filteredMaps.length} map{filteredMaps.length > 1 ? "s" : ""}
+          {total} map{total > 1 ? "s" : ""}
         </span>
       </div>
 
@@ -190,6 +146,8 @@ export default function FortniteMaps() {
         <div className="flex justify-center py-12">
           <Loader2 className="w-6 h-6 animate-spin text-white/30" />
         </div>
+      ) : error ? (
+        <p role="alert" className="py-8 text-center text-sm text-destructive">Impossible de charger les cartes. <button onClick={fetchMaps} className="underline">Réessayer</button></p>
       ) : filteredMaps.length === 0 ? (
         <div className="text-center py-16">
           <MapIcon className="w-12 h-12 text-white/10 mx-auto mb-4" />
@@ -202,6 +160,14 @@ export default function FortniteMaps() {
           {filteredMaps.map((m, i) => (
             <FortniteMapCard key={m.id} map={m} index={i} onClick={setSelectedMap} user={user} />
           ))}
+        </div>
+      )}
+
+      {hasMore && (
+        <div className="flex justify-center mt-6">
+          <button onClick={loadMore} disabled={loadingMore} className="rounded-lg bg-primary px-6 py-2.5 text-xs font-bold text-primary-foreground disabled:opacity-50">
+            {loadingMore ? "Chargement…" : "Voir plus"}
+          </button>
         </div>
       )}
 

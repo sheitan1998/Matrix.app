@@ -57,8 +57,10 @@ export default function CosmeticsSearch() {
         action: "searchCosmetics",
         query: searchQuery.trim(),
         type: searchType,
+        page: 1,
+        limit: 24,
       });
-      setResults(res.data || []);
+      setResults(res.data?.items || []);
     } catch {
       setResults([]);
     } finally {

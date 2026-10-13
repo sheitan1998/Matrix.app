@@ -62,14 +62,14 @@ export default function DailyShop() {
       </div>
 
       <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
-        {shop.entries.slice(0, 24).map((item, i) => (
+        {shop.entries.map((item, i) => (
           <ShopItem key={item.id || i} item={item} index={i} />
         ))}
       </div>
 
-      {shop.entries.length > 24 && (
+      {shop.total > shop.entries.length && (
         <p className="text-[10px] text-white/30 text-center mt-3">
-          +{shop.entries.length - 24} autres objets disponibles
+          +{shop.total - shop.entries.length} autres objets disponibles
         </p>
       )}
     </div>

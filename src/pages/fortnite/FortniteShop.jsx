@@ -6,8 +6,7 @@ import { motion } from "framer-motion";
 import { getRarityStyle } from "@/components/fortnite/rarityUtils";
 import ShopItemModal from "@/components/fortnite/ShopItemModal";
 import usePageSEO from "@/hooks/usePageSEO";
-
-const PAGE_SIZE = 24;
+import useFortniteCatalog from "@/components/fortnite/useFortniteCatalog";
 
 export default function FortniteShop() {
   usePageSEO({
@@ -16,28 +15,10 @@ export default function FortniteShop() {
     path: "/fortnite-shop",
   });
 
-  const [shop, setShop] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-
-  const fetchShop = useCallback(async () => {
-    try {
-      const res = await base44.functions.invoke("fortniteApi", { action: "getDailyShop" });
-      setShop(res.data);
-    } catch {
-      /* silent */
-    }
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    fetchShop();
-  }, [fetchShop]);
-
-  const allItems = shop?.entries || [];
-  const visibleItems = allItems.slice(0, visibleCount);
-  const hasMore = visibleCount < allItems.length;
+  const { items: allItems, total, date, loading, loadingMore, hasMore, loadMore, error } = useFortniteCatalog('getDailyShop');
+  const shop = { date, entries: allItems, error: error?.message };
+  const visibleItems = allItems;
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 max-w-7xl mx-auto pb-12">
@@ -70,28 +51,30 @@ export default function FortniteShop() {
             </div>
           )}
 
-          <p className="text-[10px] text-white/30 mb-3">{allItems.length} objets disponibles</p>
+          <p className="text-[10px] text-white/30 mb-3">{total} objets disponibles</p>
 
           <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
             {visibleItems.map((item, i) => (
-              <ShopCard key={item.id || i} item={item} index={i} onClick={() => setSelectedItem(item)} />
+              <ShopCard key={`${item.offer_id || i}:${item.id}`} item={item} index={i} onClick={() => setSelectedItem(item)} />
             ))}
           </div>
 
           {hasMore && (
             <div className="flex justify-center mt-6">
               <button
-                onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                onClick={loadMore}
+                disabled={loadingMore}
                 className="px-6 py-2.5 rounded-lg text-xs font-bold text-white transition hover:opacity-90 tap-sm"
                 style={{ background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)", color: "#f59e0b" }}
               >
-                Voir plus ({allItems.length - visibleCount} restants)
+                {loadingMore ? "Chargement…" : `Voir plus (${Math.max(0, total - allItems.length)} restants)`}
               </button>
             </div>
           )}
         </>
       )}
 
+      {error && <p role="alert" className="mt-3 text-sm text-destructive">Chargement impossible. Réessayez dans quelques instants.</p>}
       <ShopItemModal item={selectedItem} onClose={() => setSelectedItem(null)} />
     </div>
   );

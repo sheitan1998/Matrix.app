@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
+import { getCatalogPage, clearCatalogCache } from './catalog.ts';
 
 // ─── In-memory cache ───
 const cache = new Map();
@@ -26,12 +27,23 @@ function purgeAllCache() {
   for (const key of cache.keys()) {
     if (key.startsWith(CACHE_PREFIX)) cache.delete(key);
   }
+  clearCatalogCache();
 }
 
 // ─── Config ───
-async function getConfig(base44) {
-  const result = await base44.asServiceRole.entities.FortniteConfig.filter({}, { limit: 1 });
-  return result?.items?.[0] || result?.[0] || null;
+let configPending = null;
+async function getConfig(base44, fresh = false) {
+  const cached = !fresh && getCached('config', 1);
+  if (cached) return cached.value;
+  const load = async () => {
+    const result = await base44.asServiceRole.entities.FortniteConfig.filter({}, { limit: 1 });
+    const value = result.items?.[0] || null;
+    setCached('config', { value });
+    return value;
+  };
+  if (fresh) return await load();
+  if (!configPending) configPending = load().finally(() => { configPending = null; });
+  return await configPending;
 }
 
 // ─── EOS OAuth (client_credentials) ───
@@ -133,78 +145,7 @@ async function getApiFeaturedMaps() {
     .map(r => r.value);
 }
 
-// Daily shop (cache 60 min) - from fortnite-api.com /v2/shop
-async function getDailyShop() {
-  const res = await fetch('https://fortnite-api.com/v2/shop', {
-    headers: { 'Accept': 'application/json' },
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!res.ok) return { error: `Erreur API Shop (${res.status})` };
-  const data = await res.json();
-  const shopData = data?.data || {};
-  const rawEntries = shopData?.entries || [];
-
-  const entries = [];
-  for (const entry of rawEntries) {
-    const items = entry?.brItems || [];
-    for (const item of items) {
-      entries.push({
-        id: item?.id || entry?.offerId || Math.random().toString(36),
-        name: item?.name || 'Inconnu',
-        description: item?.description || '',
-        type: item?.type?.value || item?.type || 'item',
-        rarity: item?.rarity?.value || entry?.rarity || 'common',
-        price: entry?.finalPrice || entry?.regularPrice || 0,
-        image: item?.images?.featured || item?.images?.icon || item?.images?.smallIcon || null,
-        images: item?.images || null,
-        video: item?.video || null,
-        audio: item?.audio || null,
-        series: item?.series?.value || item?.set?.value || null,
-        layout: entry?.layout?.name || null,
-      });
-    }
-  }
-
-  return {
-    date: shopData?.date || new Date().toISOString().slice(0, 10),
-    entries: entries,
-  };
-}
-
-// Cosmetics search (cache 15 min per query)
-async function searchCosmetics(query, type) {
-  const params = new URLSearchParams();
-  if (query) {
-    params.set('name', query);
-    params.set('matchMethod', 'contains');
-  }
-  if (type && type !== 'all') params.set('type', type);
-  const url = `https://fortnite-api.com/v2/cosmetics/br/search/all?${params.toString()}`;
-
-  const res = await fetch(url, {
-    headers: { 'Accept': 'application/json' },
-    signal: AbortSignal.timeout(15000),
-  });
-  if (res.status === 404) return [];
-  if (!res.ok) return [];
-  const data = await res.json();
-  const cosmetics = data?.data || [];
-  return cosmetics.slice(0, 200).map(c => ({
-    id: c?.id || Math.random().toString(36),
-    name: c?.name || 'Inconnu',
-    description: c?.description || '',
-    type: c?.type?.value || c?.type || 'item',
-    rarity: c?.rarity?.value || c?.rarity || 'common',
-    image: c?.images?.featured || c?.images?.icon || c?.images?.smallIcon || null,
-    images: c?.images || null,
-    video: c?.video || null,
-    audio: c?.audio || null,
-    series: c?.series?.value || null,
-    rarity_display: c?.rarity?.displayValue || c?.rarity?.value || 'Common',
-    added: c?.added?.date || null,
-    season: c?.introduction?.chapter?.season || null,
-  }));
-}
+// Hourly catalogue cache and server pagination are isolated in catalog.ts.
 
 // ─── Main handler ───
 export default async function(req) {
@@ -213,7 +154,25 @@ export default async function(req) {
     const body = await req.json().catch(() => ({}));
     const action = body.action;
 
-    const config = await getConfig(base44);
+    // Stored maps are returned immediately, without any external island API call.
+    if (action === 'getMaps') {
+      const query = {};
+      if (body.category && body.category !== 'all') query.category = String(body.category);
+      const term = String(body.search || '').trim().slice(0, 100);
+      if (term) {
+        const pattern = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        query.$or = [{ title: { $regex: pattern, $options: 'i' } }, { creator_name: { $regex: pattern, $options: 'i' } }];
+      }
+      const limit = Math.min(24, Math.max(1, Math.floor(Number(body.limit) || 24)));
+      const [page, total] = await Promise.all([
+        base44.entities.FortniteMap.filter(query, { sort: '-created_date', limit, ...(body.cursor ? { cursor: body.cursor } : {}) }),
+        base44.entities.FortniteMap.count(query),
+      ]);
+      return Response.json({ items: page.items, total, has_more: page.has_more, next_cursor: page.next_cursor });
+    }
+
+    const adminAction = ['purgeCache', 'getConfig', 'updateConfig', 'testConnection'].includes(action);
+    const config = await getConfig(base44, adminAction);
     const cacheTtl = config?.cache_ttl_minutes || 12;
 
     // ── Public: Featured maps (manual + API enriched) ──
@@ -295,28 +254,14 @@ export default async function(req) {
       return Response.json(maps);
     }
 
-    // ── Public: Daily shop ──
+    // ── Public: 24-item pages, shared hourly catalogue cache ──
     if (action === 'getDailyShop') {
-      if (config?.show_daily_shop === false) return Response.json({ entries: [] });
-      const cacheKey = 'daily_shop';
-      const cached = getCached(cacheKey, 60);
-      if (cached) return Response.json(cached);
-      const shop = await getDailyShop();
-      setCached(cacheKey, shop);
-      return Response.json(shop);
+      if (config?.show_daily_shop === false) return Response.json({ entries: [], total: 0, has_more: false, next_page: null });
+      return Response.json(await getCatalogPage('shop', body));
     }
-
-    // ── Public: Cosmetics search ──
     if (action === 'searchCosmetics') {
-      if (config?.show_cosmetics === false) return Response.json([]);
-      const query = (body.query || '').trim();
-      const type = body.type || 'all';
-      const cacheKey = `cosmetics:${type}:${query.toLowerCase()}`;
-      const cached = getCached(cacheKey, 15);
-      if (cached) return Response.json(cached);
-      const cosmetics = await searchCosmetics(query, type);
-      setCached(cacheKey, cosmetics);
-      return Response.json(cosmetics);
+      if (config?.show_cosmetics === false) return Response.json({ items: [], total: 0, has_more: false, next_page: null });
+      return Response.json(await getCatalogPage('cosmetics', body));
     }
 
     // ── Public: Player stats ──

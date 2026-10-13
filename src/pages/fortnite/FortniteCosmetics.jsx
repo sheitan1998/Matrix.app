@@ -6,8 +6,7 @@ import { motion } from "framer-motion";
 import { getRarityStyle } from "@/components/fortnite/rarityUtils";
 import CosmeticDetailModal from "@/components/fortnite/CosmeticDetailModal";
 import usePageSEO from "@/hooks/usePageSEO";
-
-const PAGE_SIZE = 24;
+import useFortniteCatalog from "@/components/fortnite/useFortniteCatalog";
 
 const TYPE_LABELS = {
   all: "Tous",
@@ -38,32 +37,14 @@ export default function FortniteCosmetics() {
   const [tab, setTab] = useState("search");
   const [query, setQuery] = useState("");
   const [type, setType] = useState("all");
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
+  const [appliedSearch, setAppliedSearch] = useState({ query: '', type: 'all' });
+  const { items: results, total, loading, loadingMore, hasMore: hasMoreResults, loadMore, error } = useFortniteCatalog('searchCosmetics', appliedSearch);
+  const searched = true;
   const [selectedItem, setSelectedItem] = useState(null);
   const [user, setUser] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-
-  const handleSearch = useCallback(async (searchQuery, searchType) => {
-    if (!searchQuery.trim()) return;
-    setLoading(true);
-    setSearched(true);
-    setVisibleCount(PAGE_SIZE);
-    try {
-      const res = await base44.functions.invoke("fortniteApi", {
-        action: "searchCosmetics",
-        query: searchQuery.trim(),
-        type: searchType,
-      });
-      setResults(res.data || []);
-    } catch {
-      setResults([]);
-    }
-    setLoading(false);
-  }, []);
+  const handleSearch = (searchQuery, searchType) => setAppliedSearch({ query: searchQuery.trim(), type: searchType });
 
   const fetchLeaderboard = useCallback(async () => {
     setLeaderboardLoading(true);
@@ -86,8 +67,7 @@ export default function FortniteCosmetics() {
     handleSearch(query, type);
   };
 
-  const visibleResults = results.slice(0, visibleCount);
-  const hasMoreResults = visibleCount < results.length;
+  const visibleResults = results;
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 max-w-7xl mx-auto pb-12">
@@ -152,7 +132,7 @@ export default function FortniteCosmetics() {
             </select>
             <button
               type="submit"
-              disabled={loading || !query.trim()}
+              disabled={loading}
               className="px-5 h-11 rounded-lg text-xs font-black text-white transition hover:opacity-90 disabled:opacity-50 tap-sm whitespace-nowrap"
               style={{ background: "linear-gradient(135deg, #22c55e, #16a34a)" }}
             >
@@ -166,7 +146,8 @@ export default function FortniteCosmetics() {
             </div>
           )}
 
-          {!loading && searched && results.length === 0 && (
+          {error && <p role="alert" className="text-sm text-destructive mb-3">Chargement impossible. Réessayez dans quelques instants.</p>}
+          {!loading && !error && searched && results.length === 0 && (
             <div className="text-center py-8">
               <p className="text-sm text-white/40">Aucun cosmétique trouvé pour "{query}"</p>
             </div>
@@ -175,7 +156,7 @@ export default function FortniteCosmetics() {
           {!loading && results.length > 0 && (
             <>
               <p className="text-[10px] text-white/30 mb-3">
-                {results.length} résultat{results.length > 1 ? "s" : ""}
+                {total} résultat{total > 1 ? "s" : ""}
               </p>
               <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
                 {visibleResults.map((item, i) => (
@@ -186,11 +167,12 @@ export default function FortniteCosmetics() {
               {hasMoreResults && (
                 <div className="flex justify-center mt-6">
                   <button
-                    onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                    onClick={loadMore}
+                    disabled={loadingMore}
                     className="px-6 py-2.5 rounded-lg text-xs font-bold text-white transition hover:opacity-90 tap-sm"
                     style={{ background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)", color: "#22c55e" }}
                   >
-                    Voir plus ({results.length - visibleCount} restants)
+                    {loadingMore ? "Chargement…" : `Voir plus (${Math.max(0, total - results.length)} restants)`}
                   </button>
                 </div>
               )}
