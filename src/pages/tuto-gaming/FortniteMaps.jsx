@@ -8,8 +8,14 @@ import SubmitMapModal from "@/components/tuto-gaming/SubmitMapModal";
 import MapDetailModal from "@/components/tuto-gaming/MapDetailModal";
 import { FORTNITE_BANNER, MAP_CATEGORIES } from "@/components/tuto-gaming/fortniteMapsData";
 import { useTutoGamingAssets, getAssetUrl } from "@/hooks/useTutoGamingAssets";
+import usePageSEO from "@/hooks/usePageSEO";
 
 export default function FortniteMaps() {
+  usePageSEO({
+    title: "Fortnite Maps - Cartes créatives | MATRIX",
+    description: "Découvrez et partagez les meilleures cartes créatives Fortnite. Explorez, votez et publiez vos maps préférées.",
+    path: "/fortnite-maps"
+  });
   const [maps, setMaps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -192,6 +198,10 @@ export default function FortniteMaps() {
           </button>
         )}
       </div>
+
+      {/* Page title */}
+      <h1 className="text-2xl font-black text-white mb-1">Fortnite Maps</h1>
+      <p className="text-xs text-white/40 mb-4">Découvrez et partagez les meilleures cartes créatives Fortnite</p>
 
       {/* Results count */}
       <div className="flex items-center justify-between mb-3">

@@ -6,6 +6,7 @@ import ChannelCreateModal from "@/components/community/ChannelCreateModal";
 import ChannelList from "@/components/community/ChannelList";
 import ForumChannel from "@/components/community/ForumChannel";
 import HeaderActions from "@/components/layout/HeaderActions";
+import usePageSEO from "@/hooks/usePageSEO";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import ServerCreator from "@/components/community/ServerCreator";
@@ -55,6 +56,11 @@ const defaultChannels = [
 
 
 export default function Community() {
+  usePageSEO({
+    title: "Nexus - Communauté MATRIX | Salons, serveurs & chat",
+    description: "Rejoignez Nexus, la communauté MATRIX. Créez des serveurs, discutez en temps réel, partagez en vocal et texte.",
+    path: "/nexus"
+  });
   const [user, setUser] = useState(null);
   const [selectedServer, setSelectedServer] = useState(null);
   const [activeChannel, setActiveChannel] = useState(null);

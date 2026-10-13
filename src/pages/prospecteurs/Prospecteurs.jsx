@@ -15,9 +15,15 @@ import MyServersModal from "@/components/prospecteurs/MyServersModal";
 import ServerReminderModal from "@/components/prospecteurs/ServerReminderModal";
 import VoteAutoSetupModal from "@/components/prospecteurs/VoteAutoSetupModal";
 import { List as ListIcon } from "lucide-react";
+import usePageSEO from "@/hooks/usePageSEO";
 
 
 export default function Prospecteurs() {
+  usePageSEO({
+    title: "Best Serveur - Annuaire des serveurs de jeu | MATRIX",
+    description: "Découvrez et votez pour les meilleurs serveurs de jeu. Trouvez des joueurs, recrutez et explorez des serveurs Nexus et Discord.",
+    path: "/best-serveurs"
+  });
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [ads, setAds] = useState([]);
