@@ -61,6 +61,8 @@ async function getCatalog(kind) {
   throw state.error || new Error('Catalogue temporairement indisponible');
 }
 
+export { getCatalog };
+
 export async function getCatalogPage(kind, options = {}) {
   const catalog = await getCatalog(kind);
   const page = Math.max(1, Math.floor(Number(options.page) || 1));

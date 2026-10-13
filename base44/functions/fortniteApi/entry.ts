@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
-import { getCatalogPage, clearCatalogCache } from './catalog.ts';
+import { getCatalogPage, getCatalog, clearCatalogCache } from './catalog.ts';
 
 // ─── In-memory cache ───
 const cache = new Map();
