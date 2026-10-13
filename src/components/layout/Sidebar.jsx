@@ -43,11 +43,11 @@ const categories = [
 ];
 
 const universes = [
-  { to: "/community", label: "Communauté", icon: MessageCircle },
+  { to: "/nexus", label: "Communauté", icon: MessageCircle },
   { to: "/ai", label: "AI Studio", icon: Sparkles },
   { to: "/casino", label: "Casino", icon: Dices },
   { to: "/market", label: "Marketplace", icon: ShoppingBag },
-  { to: "/prospecteurs", label: "Prospecteurs", icon: Search },
+  { to: "/best-serveurs", label: "Best Serveur", icon: Search },
   { to: "/playlists", label: "Playlists", icon: Music2 },
   { to: "/outils", label: "Outils", icon: Wrench },
   { to: "/sondages", label: "Sondages", icon: BarChart3 },

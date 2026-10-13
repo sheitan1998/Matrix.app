@@ -144,7 +144,7 @@ export default function VoiceRooms() {
     <div className="space-y-5">
       {/* Booster CTA */}
       {user && !user.community_plan && (
-        <Link to="/community/subscription"
+        <Link to="/nexus/subscription"
           className="flex items-center gap-3 p-3 rounded-2xl border border-premium/30 bg-premium/5 hover:bg-premium/10 transition">
           <Zap className="w-4 h-4 text-premium shrink-0" />
           <div className="flex-1 min-w-0">

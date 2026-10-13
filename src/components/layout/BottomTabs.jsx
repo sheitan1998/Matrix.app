@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 const TABS = [
 { to: "/stream", icon: Home, label: "Accueil" },
-{ to: "/community", icon: MessageCircle, label: "Nexus" },
+{ to: "/nexus", icon: MessageCircle, label: "Nexus" },
 { to: "/casino", icon: Dices, label: "Game" },
 { to: "/shorts", icon: Clapperboard, label: "Shorts" },
 { to: "/", icon: LayoutGrid, label: "Univers" }];
@@ -14,7 +14,7 @@ const TABS = [
 // Per-tab last visited path memory (persists across tab switches in memory)
 const tabMemory = {
   "/stream": "/stream",
-  "/community": "/community",
+  "/nexus": "/nexus",
   "/casino": "/casino",
   "/shorts": "/shorts",
   "/": "/"

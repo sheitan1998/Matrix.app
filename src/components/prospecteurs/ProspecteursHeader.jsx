@@ -29,7 +29,7 @@ export default function ProspecteursHeader({ user, trixBalance }) {
         }}>
         
         <span className="text-[11px] font-black tracking-[0.2em] uppercase text-white hidden">
-          Recherche Prospecteurs
+          Best Serveur
         </span>
       </div>
 

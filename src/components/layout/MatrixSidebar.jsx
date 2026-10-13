@@ -4,13 +4,13 @@ import { Tv2, Users, Cpu, Dices, Clapperboard, ListMusic, ShoppingBag, Calendar,
 
 const MENU = [
   { icon: Tv2, label: "Streaming", path: "/stream" },
-  { icon: Users, label: "Communauté", path: "/community" },
+  { icon: Users, label: "Communauté", path: "/nexus" },
   { icon: Cpu, label: "AI Studio", path: "/ai" },
   { icon: Dices, label: "Casino", path: "/casino", badge: "18+" },
   { icon: Clapperboard, label: "Video Studio", path: "/video-studio", badge: "NEW" },
   { icon: ListMusic, label: "Playlists", path: "/playlists", badge: "NEW" },
   { icon: ShoppingBag, label: "Marketplace", path: "/market" },
-  { icon: Calendar, label: "Événements", path: "/community" },
+  { icon: Calendar, label: "Événements", path: "/nexus" },
   { icon: Trophy, label: "Arena", path: "/casino" },
   { icon: Compass, label: "Explorer", path: "/stream" },
 ];

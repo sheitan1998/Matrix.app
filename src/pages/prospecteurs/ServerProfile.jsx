@@ -115,7 +115,7 @@ export default function ServerProfile() {
       });
       if (res.data?.success) {
         toast.success("Serveur supprimé");
-        navigate("/prospecteurs");
+        navigate("/best-serveurs");
       }
     } catch {
       toast.error("Erreur lors de la suppression");
@@ -136,7 +136,7 @@ export default function ServerProfile() {
         <ServerIcon className="w-12 h-12 text-white/20" />
         <p className="text-sm text-white/50">{error || "Serveur introuvable"}</p>
         <Link
-          to="/prospecteurs"
+          to="/best-serveurs"
           className="h-9 px-4 rounded-lg text-xs font-bold flex items-center gap-1.5 tap-sm"
           style={{ background: "rgba(138,79,255,0.15)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}
         >
@@ -216,7 +216,7 @@ export default function ServerProfile() {
         {/* Action bar */}
         <div className="flex items-center gap-2 mb-4">
           <Link
-            to="/prospecteurs"
+            to="/best-serveurs"
             className="h-9 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 tap-sm"
             style={{ background: "rgba(138,79,255,0.1)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}
           >
@@ -359,7 +359,7 @@ export default function ServerProfile() {
         {isOwner && (
           <div className="flex items-center gap-2">
             <Link
-              to="/prospecteurs"
+              to="/best-serveurs"
               className="h-8 px-3 rounded-lg text-[10px] font-bold flex items-center gap-1 tap-sm"
               style={{ background: "rgba(138,79,255,0.1)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}
             >

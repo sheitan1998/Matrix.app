@@ -158,8 +158,15 @@ const AuthenticatedApp = () => {
         <Route path="/oauth/consent" element={<OAuthConsent />} />
         <Route path="/nexus/invite/:code" element={<NexusInvite />} />
         <Route path="/servers/:slug" element={<ServerProfile />} />
-        <Route path="/prospecteurs" element={<Prospecteurs />} />
-        <Route path="/prospecteurs/category/:slug" element={<CategoryServers />} />
+        {/* 301 redirects — old URLs → new URLs */}
+        <Route path="/prospecteurs" element={<Navigate to="/best-serveurs" replace />} />
+        <Route path="/prospecteurs/category/:slug" element={<Navigate to="/best-serveurs/category/:slug" replace />} />
+        <Route path="/community" element={<Navigate to="/nexus" replace />} />
+        <Route path="/tuto-gaming/fortnite" element={<Navigate to="/fortnite-maps" replace />} />
+        {/* New routes */}
+        <Route path="/best-serveurs" element={<Prospecteurs />} />
+        <Route path="/best-serveurs/category/:slug" element={<CategoryServers />} />
+        <Route path="/fortnite-maps" element={<FortniteMaps />} />
         <Route path="/creator/:username" element={<CreatorProfile />} />
         <Route path="/page/:slug" element={<DynamicPage />} />
         <Route path="/" element={<Landing />} />
@@ -171,10 +178,9 @@ const AuthenticatedApp = () => {
           <Route path="/tuto-gaming/farming-simulator-25" element={<FarmingSimulator25 />} />
           <Route path="/tuto-gaming/farming-simulator-25/mods" element={<FarmingMods />} />
           <Route path="/tuto-gaming/farming-simulator-25/:categoryId" element={<FarmingSimCategory />} />
-          <Route path="/tuto-gaming/fortnite" element={<FortniteMaps />} />
         </Route>
         <Route element={<ProtectedRoute unauthenticatedElement={<AuthGate />} />}>
-          <Route path="/community" element={<Community />} />
+          <Route path="/nexus" element={<Community />} />
         <Route path="/shorts" element={<Shorts />} />
         <Route path="/market" element={<MarketHome />} />
         <Route path="/market/browse" element={<Marketplace />} />

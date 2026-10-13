@@ -8,7 +8,7 @@ import { playMessageSound } from "@/lib/messageSound";
 import { messageAlertsEnabled } from '@/lib/notificationPreferences';
 
 const EXCLUDED_PREFIXES = [
-  "/twitch", "/community", "/mon-profil", "/login", "/register",
+  "/twitch", "/nexus", "/mon-profil", "/login", "/register",
   "/forgot-password", "/reset-password", "/oauth",
 ];
 

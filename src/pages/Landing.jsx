@@ -17,10 +17,10 @@ import LandingSEO from "@/components/landing/LandingSEO";
 const LEFT_CARDS = [
 { path: "/stream", label: "Youtube", desc: "Vidéos, lives, shorts. Crée ta chaîne et partage ton contenu.", icon: Youtube, iconUrl: "/media/tuto-gaming/c4e71cf23_yt_icon_red_digital.png", color: "#FF0000" },
 { path: "/twitch", label: "Twitch", desc: "Streams en direct, clips, discussions et rencontres.", icon: Radio, color: "#9146FF" },
-{ path: "/community", label: "Nexus", desc: "Discute, réagis, commente. Rejoins ou crée des salons vocaux.", icon: MessageCircle, color: "#3B82F6" },
+{ path: "/nexus", label: "Nexus", desc: "Discute, réagis, commente. Rejoins ou crée des salons vocaux.", icon: MessageCircle, color: "#3B82F6" },
 
 { path: "/casino", label: "Nexus Game", desc: "Roulette, machines à sous, blackjack et plus encore.", icon: Dices, color: "#F59E0B", badge: "18+" },
-{ path: "/prospecteurs", label: "Recherche Joueur/Serveur", desc: "Trouve des joueurs, recrute ou explore des serveurs de jeu.", icon: Search, color: "#8a4fff" },
+{ path: "/best-serveurs", label: "Best Serveur", desc: "Trouve des joueurs, recrute ou explore des serveurs de jeu.", icon: Search, color: "#8a4fff" },
 { path: "/tuto-gaming", label: "Tuto Gaming Entraide", desc: "Guides, astuces, entraide et base de connaissances pour tous les jeux.", icon: GraduationCap, color: "#BF5AF2" }];
 
 

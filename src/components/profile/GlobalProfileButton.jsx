@@ -6,7 +6,7 @@ import { User } from "lucide-react";
 import ProfileContent from "@/components/profile/ProfileContent";
 
 const EXCLUDED_PREFIXES = [
-  "/twitch", "/community", "/mon-profil", "/login", "/register",
+  "/twitch", "/nexus", "/mon-profil", "/login", "/register",
   "/forgot-password", "/reset-password", "/oauth",
 ];
 

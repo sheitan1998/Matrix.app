@@ -81,7 +81,7 @@ export default function CommunitySubscription() {
   return (
     <div className="min-h-screen bg-background">
       <div className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-xl px-4 py-3 flex items-center gap-3">
-        <Link to="/community" className="text-muted-foreground hover:text-foreground transition">
+        <Link to="/nexus" className="text-muted-foreground hover:text-foreground transition">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <span className="font-black text-lg">Abonnement Communauté</span>

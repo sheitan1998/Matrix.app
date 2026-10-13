@@ -19,7 +19,7 @@ export default function ProspecteursSidebar({ active = "servers", user, onConfig
   return (
     <div className="w-24 sm:w-32 shrink-0 sticky top-16 self-start flex flex-col gap-1 p-2">
       <Link
-        to="/prospecteurs"
+        to="/best-serveurs"
         className={`flex flex-col items-center gap-1 p-2.5 rounded-xl transition ${active === "servers" ? "text-white" : "text-white/40 hover:text-white"}`}
         style={active === "servers" ? { background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)" } : { background: "rgba(255,255,255,0.02)" }}>
         

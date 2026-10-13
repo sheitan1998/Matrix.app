@@ -86,7 +86,7 @@ export default function NexusInvite() {
           </div>
           <h1 className="text-xl font-black text-white">Bienvenue !</h1>
           <p className="text-sm text-white/50">Tu as rejoint "{server.name}" avec succès.</p>
-          <button onClick={() => nav("/community")} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white" style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
+          <button onClick={() => nav("/nexus")} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white" style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
             <MessageCircle className="w-4 h-4" /> Ouvrir la communauté
           </button>
         </div>

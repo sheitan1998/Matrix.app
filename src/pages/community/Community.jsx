@@ -327,7 +327,7 @@ export default function Community() {
 
         <>
             <Link to="/" className="text-muted-foreground hover:text-foreground transition"><ArrowLeft className="w-5 h-5" /></Link>
-            <span className="font-black text-lg"><span className="text-premium">M</span>ATRIX Community</span>
+            <span className="font-black text-lg"><span className="text-premium">N</span>exus</span>
             <div className="ml-auto flex items-center gap-2 overflow-hidden">
               <HeaderActions />
               <button onClick={() => setShowInviteJoin(true)}
@@ -513,7 +513,7 @@ export default function Community() {
                 <MessageCircle className="w-10 h-10" style={{ color: "#a855f7" }} />
               </div>
               <div>
-                <p className="font-black text-2xl text-white">Bienvenue sur MATRIX Community</p>
+                <p className="font-black text-2xl text-white">Bienvenue sur Nexus</p>
                 <p className="text-sm text-muted-foreground max-w-sm mt-2">Sélectionne un serveur à gauche ou crée le tien pour commencer à discuter avec la communauté.</p>
               </div>
               <div className="flex gap-2 mt-2">

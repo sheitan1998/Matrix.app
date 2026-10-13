@@ -72,7 +72,7 @@ export default function CategoryServers() {
       <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: "#12091c" }}>
         <ServerIcon className="w-12 h-12 text-white/20" />
         <p className="text-sm text-white/50">Catégorie introuvable</p>
-        <Link to="/prospecteurs" className="h-9 px-4 rounded-lg text-xs font-bold flex items-center gap-1.5" style={{ background: "rgba(138,79,255,0.15)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}>
+        <Link to="/best-serveurs" className="h-9 px-4 rounded-lg text-xs font-bold flex items-center gap-1.5" style={{ background: "rgba(138,79,255,0.15)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}>
           <ArrowLeft className="w-4 h-4" /> Retour à l'annuaire
         </Link>
       </div>
@@ -89,7 +89,7 @@ export default function CategoryServers() {
         <div className="flex-1 px-4 sm:px-6 py-5">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 mb-5">
-            <button onClick={() => navigate("/prospecteurs")} className="inline-flex items-center gap-1.5 text-white/50 hover:text-white transition tap-sm">
+            <button onClick={() => navigate("/best-serveurs")} className="inline-flex items-center gap-1.5 text-white/50 hover:text-white transition tap-sm">
               <ArrowLeft className="w-4 h-4" />
               <span className="text-xs font-bold">Annuaire</span>
             </button>
