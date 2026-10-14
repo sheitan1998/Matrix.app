@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Loader2, Download, Star, RefreshCw } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import ModHubDetailModal from "@/components/tuto-gaming/ModHubDetailModal";
 
 export default function ModHubGrid() {
   const [mods, setMods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  const [selectedModId, setSelectedModId] = useState(null);
 
   const fetchMods = useCallback(async (p = 1) => {
     setLoading(true);
@@ -59,9 +61,10 @@ export default function ModHubGrid() {
         <>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
             {mods.map((mod) => (
-              <div
+              <button
                 key={mod.id}
-                className="group rounded-xl bg-white/5 border border-white/10 hover:border-[#7DA627]/40 transition overflow-hidden flex flex-col"
+                onClick={() => setSelectedModId(mod.id)}
+                className="group rounded-xl bg-white/5 border border-white/10 hover:border-[#7DA627]/40 transition overflow-hidden flex flex-col text-left"
               >
                 <div className="aspect-square overflow-hidden bg-black/30">
                   {mod.img ? (
@@ -70,6 +73,7 @@ export default function ModHubGrid() {
                       alt={mod.title}
                       loading="lazy"
                       className="w-full h-full object-cover group-hover:scale-105 transition"
+                      onError={(e) => { e.target.style.display = 'none'; }}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-white/20">—</div>
@@ -84,18 +88,13 @@ export default function ModHubGrid() {
                       <span className="text-[10px] text-white/60">{mod.rating.toFixed(1)} ({mod.votes})</span>
                     </div>
                   )}
-                  <a
-                    href={mod.downloadUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-auto inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[11px] font-bold transition"
-                    style={{ background: "#7DA627", color: "#0a0a0a" }}
-                  >
+                  <span className="mt-auto inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[11px] font-bold transition"
+                    style={{ background: "#7DA627", color: "#0a0a0a" }}>
                     <Download className="w-3 h-3" />
-                    Télécharger
-                  </a>
+                    Détails
+                  </span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
 
@@ -111,6 +110,10 @@ export default function ModHubGrid() {
             </div>
           )}
         </>
+      )}
+
+      {selectedModId && (
+        <ModHubDetailModal modId={selectedModId} onClose={() => setSelectedModId(null)} />
       )}
     </div>
   );

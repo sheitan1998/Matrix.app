@@ -1,11 +1,12 @@
 import React, { useState, useCallback } from "react";
-import { Search, Loader2, X, ChevronLeft, ChevronRight, Sword, Shield, Package, Skull, Layers } from "lucide-react";
+import { Search, Loader2, X, ChevronLeft, ChevronRight, Sword, Shield, Package, Skull, Layers, FlaskConical } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const CATEGORIES = [
   { id: "all", label: "Tout", icon: Package },
   { id: "equipment", label: "Équipements", icon: Shield },
   { id: "weapons", label: "Armes", icon: Sword },
+  { id: "consumables", label: "Consommables", icon: FlaskConical },
   { id: "resources", label: "Ressources", icon: Package },
   { id: "monsters", label: "Bestiaire", icon: Skull },
   { id: "sets", label: "Panoplies", icon: Layers },
@@ -83,7 +84,7 @@ export default function Dofus() {
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-white mb-1">Encyclopédie Dofus</h1>
-          <p className="text-sm text-white/50">Équipements, armes, ressources, bestiaire et panoplies — données DofusDB</p>
+          <p className="text-sm text-white/50">Équipements, armes, consommables, bestiaire et panoplies — données DofusDB</p>
         </div>
 
         {/* Tabs */}
@@ -171,6 +172,7 @@ export default function Dofus() {
                         alt={item.name}
                         loading="lazy"
                         className="max-w-full max-h-full object-contain p-2 group-hover:scale-105 transition"
+                        onError={(e) => { e.target.style.display = 'none'; }}
                       />
                     ) : (
                       <Package className="w-8 h-8 text-white/20" />
@@ -224,7 +226,12 @@ export default function Dofus() {
             <div className="flex items-start gap-4 mb-4">
               <div className="w-24 h-24 flex items-center justify-center bg-black/40 rounded-xl flex-shrink-0">
                 {selectedItem.img ? (
-                  <img src={selectedItem.img} alt={selectedItem.name} className="max-w-full max-h-full object-contain p-2" />
+                  <img
+                    src={selectedItem.img}
+                    alt={selectedItem.name}
+                    className="max-w-full max-h-full object-contain p-2"
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
                 ) : (
                   <Package className="w-10 h-10 text-white/20" />
                 )}
@@ -251,36 +258,51 @@ export default function Dofus() {
               <div className="flex justify-center py-6">
                 <Loader2 className="w-6 h-6 animate-spin text-yellow-500" />
               </div>
-            ) : itemDetails?.recipes?.length > 0 ? (
-              <div className="mb-4">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-white/40 mb-2">Recette de craft</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {itemDetails.recipes.map((r) => (
-                    <div key={r.id} className="flex items-center gap-2 p-2 rounded-lg bg-white/5">
-                      {r.ingredientImg ? (
-                        <img src={r.ingredientImg} alt={r.ingredientName} className="w-8 h-8 object-contain" loading="lazy" />
-                      ) : (
-                        <div className="w-8 h-8 bg-white/5 rounded" />
-                      )}
-                      <div className="min-w-0">
-                        <p className="text-xs text-white truncate">{r.ingredientName}</p>
-                        <p className="text-[10px] text-yellow-500">x{r.quantity}</p>
-                      </div>
+            ) : (
+              <>
+                {itemDetails?.recipes?.length > 0 && (
+                  <div className="mb-4">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-white/40 mb-2">Recette de craft</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {itemDetails.recipes.map((r) => (
+                        <div key={r.id} className="flex items-center gap-2 p-2 rounded-lg bg-white/5">
+                          {r.ingredientImg ? (
+                            <img
+                              src={r.ingredientImg}
+                              alt={r.ingredientName}
+                              className="w-8 h-8 object-contain"
+                              loading="lazy"
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                          ) : (
+                            <div className="w-8 h-8 bg-white/5 rounded" />
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-xs text-white truncate">{r.ingredientName}</p>
+                            <p className="text-[10px] text-yellow-500">x{r.quantity}</p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
+                  </div>
+                )}
 
-            {itemDetails?.effects?.length > 0 && (
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-white/40 mb-2">Effets</h3>
-                <div className="space-y-1">
-                  {itemDetails.effects.map((e, i) => (
-                    <p key={i} className="text-sm text-white/70">Effet #{e.id}: {e.value}</p>
-                  ))}
-                </div>
-              </div>
+                {itemDetails?.effects?.length > 0 && (
+                  <div>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-white/40 mb-2">Effets</h3>
+                    <div className="space-y-1">
+                      {itemDetails.effects.map((e, i) => (
+                        <p key={i} className="text-sm text-white/70">
+                          {e.from > 0 && e.to > 0
+                            ? `${e.from} à ${e.to}`
+                            : e.from > 0 ? e.from : ''}
+                          {e.effectId ? ` (Effet #${e.effectId})` : ''}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

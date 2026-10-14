@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { Search, Loader2, ShoppingBag, Trophy, Package } from "lucide-react";
+import { Search, Loader2, ShoppingBag, Trophy, Package, ExternalLink, User } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const PLATFORMS = [
@@ -9,11 +9,16 @@ const PLATFORMS = [
   { id: "xbox", label: "Xbox" },
 ];
 
+const RARITY_COLORS = {
+  common: "#9ca3af", uncommon: "#22c55e", rare: "#3b82f6",
+  very_rare: "#a855f7", import: "#f59e0b", exotic: "#ec4899",
+  black_market: "#1f2937", limited: "#ef4444", premium: "#fbbf24",
+};
+
 export default function RocketLeague() {
   const [tab, setTab] = useState("shop");
   const [loading, setLoading] = useState(false);
   const [shopCategories, setShopCategories] = useState([]);
-  const [dbCategories, setDbCategories] = useState([]);
   const [platform, setPlatform] = useState("epic");
   const [gamertag, setGamertag] = useState("");
   const [playerStats, setPlayerStats] = useState(null);
@@ -26,18 +31,6 @@ export default function RocketLeague() {
       setShopCategories((res.data || res).categories || []);
     } catch {
       setShopCategories([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const fetchDb = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await base44.functions.invoke("rocketLeagueApi", { action: "searchItems" });
-      setDbCategories((res.data || res).categories || []);
-    } catch {
-      setDbCategories([]);
     } finally {
       setLoading(false);
     }
@@ -70,7 +63,6 @@ export default function RocketLeague() {
 
   React.useEffect(() => {
     if (tab === "shop" && shopCategories.length === 0) fetchShop();
-    if (tab === "database" && dbCategories.length === 0) fetchDb();
   }, [tab]);
 
   return (
@@ -86,7 +78,6 @@ export default function RocketLeague() {
           {[
             { id: "shop", label: "Item Shop", icon: ShoppingBag },
             { id: "stats", label: "Stats Joueurs", icon: Trophy },
-            { id: "database", label: "Base de données", icon: Package },
           ].map((t) => {
             const Icon = t.icon;
             return (
@@ -113,22 +104,30 @@ export default function RocketLeague() {
         {/* Item Shop */}
         {tab === "shop" && !loading && (
           <div>
+            <div className="mb-4 p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/30">
+              <p className="text-sm text-cyan-300">
+                Parcourez les catégories d'objets Rocket League. Cliquez sur une catégorie pour accéder au catalogue complet sur RL Garage.
+              </p>
+            </div>
             {shopCategories.length === 0 ? (
               <div className="text-center py-20 text-white/40">
                 <p>Catégories indisponibles temporairement.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                 {shopCategories.map((cat, i) => (
                   <a
                     key={i}
                     href={cat.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10 hover:border-cyan-500/40 transition"
+                    className="group flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 border border-white/10 hover:border-cyan-500/40 transition"
                   >
-                    <ShoppingBag className="w-5 h-5 text-cyan-400 flex-shrink-0" />
-                    <span className="text-sm font-bold text-white">{cat.label}</span>
+                    <div className="w-12 h-12 rounded-lg bg-cyan-500/10 flex items-center justify-center group-hover:scale-110 transition">
+                      <Package className="w-6 h-6 text-cyan-400" />
+                    </div>
+                    <span className="text-sm font-bold text-white text-center">{cat.label}</span>
+                    <ExternalLink className="w-3 h-3 text-white/30 group-hover:text-cyan-400 transition" />
                   </a>
                 ))}
               </div>
@@ -138,7 +137,7 @@ export default function RocketLeague() {
 
         {/* Stats Tracker */}
         {tab === "stats" && !loading && (
-          <div className="max-w-2xl">
+          <div className="max-w-3xl">
             <div className="flex gap-2 mb-6 flex-wrap">
               <select
                 value={platform}
@@ -173,9 +172,14 @@ export default function RocketLeague() {
 
             {playerStats && (
               <div className="space-y-4">
-                <div className="flex items-center gap-4 p-4 rounded-xl bg-white/5">
-                  {playerStats.avatar && (
+                {/* Profile header */}
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
+                  {playerStats.avatar ? (
                     <img src={playerStats.avatar} alt="" className="w-16 h-16 rounded-full" />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                      <User className="w-8 h-8 text-cyan-400" />
+                    </div>
                   )}
                   <div>
                     <h2 className="text-xl font-bold text-white">{playerStats.username}</h2>
@@ -183,47 +187,45 @@ export default function RocketLeague() {
                   </div>
                 </div>
 
+                {/* Ranked stats */}
                 {playerStats.ranks?.length > 0 && (
                   <div>
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-white/40 mb-2">Rangs</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-white/40 mb-3">Rangs classés</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       {playerStats.ranks.map((rank, i) => (
-                        <div key={i} className="p-3 rounded-lg bg-white/5 border border-white/10">
-                          <p className="text-sm font-bold text-white">{rank.playlist}</p>
-                          <p className="text-cyan-400">{rank.rank} {rank.tier}</p>
+                        <div
+                          key={i}
+                          className="p-4 rounded-xl bg-white/5 border border-white/10 hover:border-cyan-500/30 transition"
+                        >
+                          <p className="text-sm font-bold text-white mb-1">{rank.playlist}</p>
+                          <p className="text-cyan-400 font-bold">{rank.rank}</p>
+                          {rank.tier && <p className="text-xs text-white/60">{rank.tier}</p>}
                           {rank.division && <p className="text-xs text-white/50">{rank.division}</p>}
-                          {rank.rating > 0 && <p className="text-xs text-white/40">MMR: {rank.rating}</p>}
+                          {rank.rating > 0 && (
+                            <p className="text-xs text-white/40 mt-1">MMR: {rank.rating}</p>
+                          )}
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
-              </div>
-            )}
-          </div>
-        )}
 
-        {/* Item Database */}
-        {tab === "database" && !loading && (
-          <div>
-            {dbCategories.length === 0 ? (
-              <div className="text-center py-20 text-white/40">
-                <p>Catégories indisponibles.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                {dbCategories.map((cat, i) => (
-                  <a
-                    key={i}
-                    href={cat.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10 hover:border-cyan-500/40 transition"
-                  >
-                    <Package className="w-5 h-5 text-cyan-400 flex-shrink-0" />
-                    <span className="text-sm font-bold text-white">{cat.label}</span>
-                  </a>
-                ))}
+                {/* Overview stats */}
+                {playerStats.overview && Object.keys(playerStats.overview).length > 0 && (
+                  <div>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-white/40 mb-3">Statistiques générales</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {Object.entries(playerStats.overview).slice(0, 8).map(([key, stat]) => (
+                        <div key={key} className="p-3 rounded-lg bg-white/5 border border-white/10">
+                          <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1">
+                            {key.replace(/([A-Z])/g, ' $1').trim()}
+                          </p>
+                          <p className="text-lg font-bold text-white">{stat.value ?? '—'}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
