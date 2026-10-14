@@ -172,11 +172,11 @@ export default async function(req) {
       const search = String(body.search || '').trim().slice(0,100);
       const ids = action === 'getSetBonuses' ? [...new Set((body.ids||[]).map(Number).filter(id=>Number.isInteger(id)&&id>0))].slice(0,16) : null;
       if (ids && !ids.length) return dataResponse({sets:[]});
-      const cacheKey = `sets:v3:${lang}:${limit}:${skip}:${search}:${ids?.join(',')||''}`;
+      const cacheKey = `sets:v4:${lang}:${limit}:${skip}:${search}:${ids?.join(',')||''}`;
       const cached = getCached(cacheKey);
       if (cached) return dataResponse(cached);
       const params = {'$limit':String(limit),'$skip':String(skip),'$sort[level]':'-1'};
-      if (search) {params[`name.${lang}[$regex]`]=search.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');params[`name.${lang}[$options]`]='i';}
+      if (search) params[`name.${lang}[$regex]`]='(?i)'+search.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
       if (ids) params['id[$in]']=ids.map(String);
       const res = await fetch(`https://api.dofusdb.fr/item-sets?${buildQuery(params)}`,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(10000)});
       if (!res.ok) throw new Error(`DofusDB (${res.status})`);

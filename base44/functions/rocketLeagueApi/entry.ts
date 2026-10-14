@@ -1,7 +1,7 @@
 import { secrets } from 'base44:runtime';
 import { createApiCache, dataResponse } from "../../shared/apiCache.ts";
 import { rocketFallback, normalizeRocketRanks } from "../../shared/rocketLeagueData.ts";
-import { rocketAsset, getRocketItemDetails } from "../../shared/rocketItemAssets.ts";
+import { rocketAsset, rocketHdAsset, getRocketItemDetails } from "../../shared/rocketItemAssets.ts";
 
 const CACHE_TTL_SHOP = 15 * 60 * 1000;
 const CACHE_TTL_STATS = 5 * 60 * 1000;
@@ -48,7 +48,7 @@ export default async function(req) {
       const cacheKey = 'rl_shop_items_native_v3';
       const cached = getCached(cacheKey, CACHE_TTL_SHOP);
       if (cached) return dataResponse(cached, 900);
-      const fallback = { items: rocketFallback.map(item=>({...item,img:rocketAsset(item.id),hdImg:rocketAsset(item.id)})), source: 'reference', message: 'Catalogue natif : disponibilité du jour non confirmée.', cached_at: new Date().toISOString() };
+      const fallback = { items: rocketFallback.map(item=>({...item,img:rocketAsset(item.id),hdImg:rocketHdAsset(item.id)})), source: 'reference', message: 'Catalogue natif : disponibilité du jour non confirmée.', cached_at: new Date().toISOString() };
       const apiKey = secrets.get('TRN_API_KEY');
       if (!apiKey) return dataResponse(fallback, 60);
       try {
@@ -68,10 +68,10 @@ export default async function(req) {
     if (action === 'getItemDetails') {
       const item = rocketFallback.find(item=>item.id===String(body.id));
       if (!item) return Response.json({error:'Objet introuvable.'},{status:404});
-      const cached = getCached(`native-item:${item.id}`,CACHE_TTL_ITEMS);
+      const cached = getCached(`native-item-hd:${item.id}`,CACHE_TTL_ITEMS);
       if (cached) return dataResponse(cached);
       const details = await getRocketItemDetails(item);
-      setCached(`native-item:${item.id}`,details);
+      setCached(`native-item-hd:${item.id}`,details);
       return dataResponse(details);
     }
 

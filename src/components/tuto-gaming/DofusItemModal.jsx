@@ -9,7 +9,7 @@ export default function DofusItemModal({item,onClose,category}) {
   const isItem=!['monsters','sets'].includes(category);
   const {data:details,isFetching,isError}=useQuery({queryKey:['dofus-details',item.id],enabled:isItem&&item.source!=='reference',initialData:item,staleTime:0,retry:false,queryFn:async()=>{const {data}=await base44.functions.invoke('dofusApi',{action:'getItemDetails',id:item.id,lang:'fr'});if(data.error)throw new Error(data.error);return data;}});
   return <Dialog open onOpenChange={open=>!open&&onClose()}><DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-    <div className="flex items-center gap-4 pr-8"><CatalogueImage src={details.img||item.img} alt={item.name} kind={item.category} className="w-24 h-24 rounded-xl shrink-0"/><div><DialogTitle>{item.name}</DialogTitle><DialogDescription>{item.type} · Niveau {item.level||0}</DialogDescription></div></div>
+    <div className="flex items-center gap-4 pr-8"><CatalogueImage src={details.img||item.img} alt={item.name} kind={item.category} className="w-24 h-24 rounded-xl shrink-0"/><div><DialogTitle>{item.name}</DialogTitle><DialogDescription>{details.type||item.type} · Niveau {item.level||0}</DialogDescription></div></div>
     <p className="text-sm text-muted-foreground whitespace-pre-line">{details.description||item.description}</p>
     {isFetching&&<p className="flex gap-2 text-xs text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin"/>Actualisation des détails...</p>}
     {(isError||details.source==='reference')&&<p role="status" className="text-xs text-muted-foreground">Données de référence sauvegardées ; le service est temporairement indisponible.</p>}
