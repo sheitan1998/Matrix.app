@@ -1,4 +1,6 @@
 import { createApiCache, dataResponse } from "../../shared/apiCache.ts";
+import { dofusFallback, fallbackDofusPage } from "../../shared/dofusFallback.ts";
+import { normalizeDofusItem, loadDofusRecipes } from "../../shared/dofusData.ts";
 
 const CACHE_TTL = 60 * 60 * 1000;
 const CACHE_TTL_TYPES = 24 * 60 * 60 * 1000;
@@ -18,7 +20,7 @@ async function getItemTypes() {
   if (cached) return cached;
   const res = await fetch('https://api.dofusdb.fr/item-types?$limit=1000', {
     headers: { Accept: 'application/json' },
-    signal: AbortSignal.timeout(15000),
+    signal: AbortSignal.timeout(4000),
   });
   if (!res.ok) throw new Error(`DofusDB types (${res.status})`);
   const data = await res.json();
@@ -28,8 +30,8 @@ async function getItemTypes() {
 }
 
 async function getTypeIdsForCategory(category) {
-  if (!category || category === 'all' || category === 'monsters' || category === 'sets') return null;
-  const superTypeIds = CATEGORY_SUPER_TYPES[category];
+  if (category === 'monsters' || category === 'sets') return null;
+  const superTypeIds = !category || category === 'all' ? [...CATEGORY_SUPER_TYPES.equipment, ...CATEGORY_SUPER_TYPES.weapons, ...CATEGORY_SUPER_TYPES.consumables] : CATEGORY_SUPER_TYPES[category];
   if (!superTypeIds) return null;
   const allTypes = await getItemTypes();
   return allTypes.filter(t => superTypeIds.includes(t.superTypeId)).map(t => t.id);
@@ -60,120 +62,62 @@ export default async function(req) {
     const lang = body.lang || 'fr';
 
     if (action === 'searchItems') {
-      const limit = Math.min(24, Math.max(1, Number(body.limit) || 24));
+      const limit = Math.min(50, Math.max(1, Number(body.limit) || 50));
       const page = Math.max(1, Number(body.page) || 1);
       const skip = (page - 1) * limit;
       const search = String(body.search || '').trim().slice(0, 100);
       const minLevel = Number(body.minLevel) || 0;
       const maxLevel = Number(body.maxLevel) || 0;
       const category = String(body.category || 'all');
-
-      const params = {
-        '$limit': String(limit),
-        '$skip': String(skip),
-        '$sort': '-level',
-      };
-      if (search) {
-        params[`name.${lang}[$regex]`] = search;
-        params[`name.${lang}[$options]`] = 'i';
-      }
-      if (minLevel > 0) params['level[$gte]'] = String(minLevel);
-      if (maxLevel > 0) params['level[$lte]'] = String(maxLevel);
-
-      const typeIds = await getTypeIdsForCategory(category);
-      if (typeIds && typeIds.length > 0) {
-        params['typeId[$in]'] = typeIds.map(String);
-      }
-
-      const cacheKey = `search:${lang}:${limit}:${skip}:${search}:${minLevel}:${maxLevel}:${category}`;
+      const cacheKey = `search:v2:${lang}:${limit}:${skip}:${search}:${minLevel}:${maxLevel}:${category}`;
       const cached = getCached(cacheKey);
       if (cached) return dataResponse(cached);
-
-      const url = `https://api.dofusdb.fr/items?${buildQuery(params)}`;
-      const res = await fetch(url, {
-        headers: { Accept: 'application/json' },
-        signal: AbortSignal.timeout(15000),
-      });
-      if (!res.ok) throw new Error(`DofusDB (${res.status})`);
-      const data = await res.json();
-
-      const result = {
-        items: (data.data || []).map(item => ({
-          id: item.id,
-          name: item.name?.[lang] || item.name?.fr || 'Inconnu',
-          level: item.level || 0,
-          img: imgUrl(item),
-          type: item.type?.name?.[lang] || item.type?.name?.fr || '',
-          typeId: item.typeId || 0,
-          description: item.description?.[lang] || item.description?.fr || '',
-          effects: (item.effects || []).map(e => ({
-            from: e.from || 0,
-            to: e.to || 0,
-            effectId: e.effectId || 0,
-          })),
-          hasRecipe: !!item.hasRecipe,
-          recipeIds: item.recipeIds || [],
-        })),
-        total: data.total || 0,
-        page,
-        has_more: skip + limit < (data.total || 0),
-      };
-      setCached(cacheKey, result);
-      return dataResponse(result);
+      try {
+        const params = { '$limit': String(limit), '$skip': String(skip), '$sort[level]': '-1' };
+        if (search) { params[`name.${lang}[$regex]`] = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); params[`name.${lang}[$options]`] = 'i'; }
+        if (minLevel > 0) params['level[$gte]'] = String(minLevel);
+        if (maxLevel > 0) params['level[$lte]'] = String(maxLevel);
+        const typeIds = await getTypeIdsForCategory(category);
+        if (typeIds?.length) params['typeId[$in]'] = typeIds.map(String);
+        // dofusdb.fr/api/v1/items returns 404; api.dofusdb.fr is the verified JSON API.
+        const res = await fetch(`https://api.dofusdb.fr/items?${buildQuery(params)}`, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(4000) });
+        if (!res.ok) throw new Error(`DofusDB (${res.status})`);
+        const data = await res.json();
+        const items = (data.data || []).map(item => normalizeDofusItem(item, lang));
+        if (page === 1 && category === 'all' && !search && !minLevel && !maxLevel && items.length < 20) return dataResponse(fallbackDofusPage(body), 60);
+        try {
+          const recipes = await loadDofusRecipes(items.filter(i => i.hasRecipe).map(i => i.id), lang);
+          for (const item of items) item.recipes = recipes.get(item.id) || [];
+        } catch {
+          for (const item of items) { item.recipes = dofusFallback.find(i => i.id === item.id)?.recipes || []; item.recipeUnavailable = item.hasRecipe && !item.recipes.length; }
+        }
+        const result = { items, total: data.total || 0, page, has_more: skip + items.length < (data.total || 0), source: 'live' };
+        setCached(cacheKey, result);
+        return dataResponse(result);
+      } catch { return dataResponse(fallbackDofusPage(body), 60); }
     }
 
     if (action === 'getItemDetails') {
       const id = Number(body.id);
-      if (!id) return Response.json({ error: 'ID requis' }, { status: 400 });
-
-      const cacheKey = `item:${id}:${lang}`;
+      if (!Number.isInteger(id) || id <= 0) return Response.json({ error: 'ID requis' }, { status: 400 });
+      const cacheKey = `item:v2:${id}:${lang}`;
       const cached = getCached(cacheKey);
       if (cached) return dataResponse(cached);
-
-      const res = await fetch(`https://api.dofusdb.fr/items/${id}`, {
-        headers: { Accept: 'application/json' },
-        signal: AbortSignal.timeout(15000),
-      });
-      if (!res.ok) throw new Error(`DofusDB (${res.status})`);
-      const item = await res.json();
-
-      let recipes = [];
-      if (item.recipeIds?.length) {
-        const recipeResults = await Promise.allSettled(
-          item.recipeIds.slice(0, 10).map(rid =>
-            fetch(`https://api.dofusdb.fr/recipes/${rid}`, {
-              headers: { Accept: 'application/json' },
-              signal: AbortSignal.timeout(10000),
-            }).then(r => r.ok ? r.json() : null)
-          )
-        );
-        recipes = recipeResults
-          .filter(r => r.status === 'fulfilled' && r.value)
-          .map(r => ({
-            id: r.value.id,
-            quantity: r.value.quantity || 1,
-            ingredientId: r.value.ingredientId,
-            ingredientName: r.value.ingredient?.name?.[lang] || r.value.ingredient?.name?.fr || '',
-            ingredientImg: r.value.ingredient?.img || (r.value.ingredient?.iconId ? `https://api.dofusdb.fr/img/items/${r.value.ingredient.iconId}.png` : null),
-          }));
+      try {
+        const res = await fetch(`https://api.dofusdb.fr/items/${id}`, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(4000) });
+        if (!res.ok) throw new Error(`DofusDB (${res.status})`);
+        const item = await res.json();
+        const result = { ...normalizeDofusItem(item, lang), recipes: [] };
+        if (item.hasRecipe) {
+          try { result.recipes = (await loadDofusRecipes([id], lang)).get(id) || []; }
+          catch { result.recipes = dofusFallback.find(i => i.id === id)?.recipes || []; result.recipeUnavailable = !result.recipes.length; }
+        }
+        setCached(cacheKey, result);
+        return dataResponse(result);
+      } catch {
+        const fallback = dofusFallback.find(item => item.id === id);
+        return fallback ? dataResponse(fallback, 60) : Response.json({ error: 'Détails DofusDB temporairement indisponibles.' }, { status: 503 });
       }
-
-      const result = {
-        id: item.id,
-        name: item.name?.[lang] || item.name?.fr || 'Inconnu',
-        level: item.level || 0,
-        img: imgUrl(item),
-        type: item.type?.name?.[lang] || item.type?.name?.fr || '',
-        description: item.description?.[lang] || item.description?.fr || '',
-        effects: (item.effects || []).map(e => ({
-          from: e.from || 0,
-          to: e.to || 0,
-          effectId: e.effectId || 0,
-        })),
-        recipes,
-      };
-      setCached(cacheKey, result);
-      return dataResponse(result);
     }
 
     if (action === 'getMonsters') {
@@ -199,7 +143,7 @@ export default async function(req) {
       const url = `https://api.dofusdb.fr/monsters?${buildQuery(params)}`;
       const res = await fetch(url, {
         headers: { Accept: 'application/json' },
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(4000),
       });
       if (!res.ok) throw new Error(`DofusDB (${res.status})`);
       const data = await res.json();
@@ -243,7 +187,7 @@ export default async function(req) {
       const url = `https://api.dofusdb.fr/item-sets?${buildQuery(params)}`;
       const res = await fetch(url, {
         headers: { Accept: 'application/json' },
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(4000),
       });
       if (!res.ok) throw new Error(`DofusDB (${res.status})`);
       const data = await res.json();
