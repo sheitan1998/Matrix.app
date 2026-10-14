@@ -183,6 +183,9 @@ const AuthenticatedApp = () => {
         <Route path="/page/:slug" element={<DynamicPage />} />
         <Route path="/" element={<Landing />} />
         <Route element={<TutoGamingLayout />}>
+          <Route path="/farming" element={<FarmingSimulator25 />} />
+          <Route path="/tuto-gaming/dofus" element={<Navigate to="/dofus" replace />} />
+          <Route path="/tuto-gaming/rocket-league" element={<Navigate to="/rocket-league" replace />} />
           <Route path="/tuto-gaming" element={<TutoGamingHub />} />
           <Route path="/tuto-gaming/:gameSlug" element={<GameDetailPage />} />
           <Route path="/tuto-gaming/:gameSlug/quest/:questId" element={<QuestDetailPage />} />

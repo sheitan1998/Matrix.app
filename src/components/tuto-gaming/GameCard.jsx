@@ -95,7 +95,8 @@ export default function GameCard({ game, guideCount = 0, index = 0 }) {
   );
 
   if (isActive) {
-    return <Link to={`/tuto-gaming/${game.slug}`}>{cardContent}</Link>;
+    const dedicatedRoutes = { dofus: '/dofus', 'rocket-league': '/rocket-league', 'farming-simulator-25': '/farming' };
+    return <Link to={dedicatedRoutes[game.slug] || `/tuto-gaming/${game.slug}`}>{cardContent}</Link>;
   }
   return <div className="opacity-70 cursor-not-allowed">{cardContent}</div>;
 }
