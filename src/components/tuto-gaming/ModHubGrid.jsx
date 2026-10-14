@@ -1,120 +1,20 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { Loader2, Download, Star, RefreshCw } from "lucide-react";
-import { base44 } from "@/api/base44Client";
-import ModHubDetailModal from "@/components/tuto-gaming/ModHubDetailModal";
-
+import React, { useState } from 'react';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { Loader2,RefreshCw } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
+import ModHubDetailModal from '@/components/tuto-gaming/ModHubDetailModal';
+import ModHubCard from '@/components/tuto-gaming/ModHubCard';
+import { FARMING_FALLBACK } from '@/components/tuto-gaming/farmingFallback';
 export default function ModHubGrid() {
-  const [mods, setMods] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(false);
-  const [selectedModId, setSelectedModId] = useState(null);
-
-  const fetchMods = useCallback(async (p = 1) => {
-    setLoading(true);
-    try {
-      const res = await base44.functions.invoke("farmingModApi", {
-        action: "getMods",
-        page: p,
-        limit: 24,
-        filter: "latest",
-      });
-      const data = res.data || res;
-      setMods(data.items || []);
-      setHasMore(data.has_more || false);
-      setPage(p);
-    } catch {
-      setMods([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchMods(); }, [fetchMods]);
-
-  return (
-    <div className="mb-8">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-xl font-bold text-white">ModHub & Téléchargements</h2>
-          <p className="text-xs text-white/50">Mods officiels GIANTS Software — Farming Simulator 25</p>
-        </div>
-        <button
-          onClick={() => fetchMods(1)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition"
-          style={{ background: "#7DA627", color: "#0a0a0a" }}
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-          Actualiser
-        </button>
-      </div>
-
-      {loading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#7DA627" }} />
-        </div>
-      ) : mods.length === 0 ? (
-        <div className="text-center py-12 text-white/40">
-          <p>ModHub temporairement indisponible.</p>
-        </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            {mods.map((mod) => (
-              <button
-                key={mod.id}
-                onClick={() => setSelectedModId(mod.id)}
-                className="group rounded-xl bg-white/5 border border-white/10 hover:border-[#7DA627]/40 transition overflow-hidden flex flex-col text-left"
-              >
-                <div className="aspect-square overflow-hidden bg-black/30">
-                  {mod.img ? (
-                    <img
-                      src={mod.img}
-                      alt={mod.title}
-                      loading="lazy"
-                      className="w-full h-full object-cover group-hover:scale-105 transition"
-                      onError={(e) => { e.target.style.display = 'none'; }}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-white/20">—</div>
-                  )}
-                </div>
-                <div className="p-2 flex-1 flex flex-col">
-                  <p className="text-xs font-bold text-white line-clamp-2 mb-1">{mod.title}</p>
-                  <p className="text-[10px] text-white/40 truncate mb-1">Par {mod.author}</p>
-                  {mod.rating > 0 && (
-                    <div className="flex items-center gap-1 mb-2">
-                      <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
-                      <span className="text-[10px] text-white/60">{mod.rating.toFixed(1)} ({mod.votes})</span>
-                    </div>
-                  )}
-                  <span className="mt-auto inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[11px] font-bold transition"
-                    style={{ background: "#7DA627", color: "#0a0a0a" }}>
-                    <Download className="w-3 h-3" />
-                    Détails
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
-
-          {hasMore && (
-            <div className="flex justify-center mt-6">
-              <button
-                onClick={() => fetchMods(page + 1)}
-                className="px-6 py-2 rounded-lg text-sm font-bold transition"
-                style={{ background: "rgba(125,166,39,0.15)", color: "#7DA627", border: "1px solid rgba(125,166,39,0.3)" }}
-              >
-                Charger plus de mods
-              </button>
-            </div>
-          )}
-        </>
-      )}
-
-      {selectedModId && (
-        <ModHubDetailModal modId={selectedModId} onClose={() => setSelectedModId(null)} />
-      )}
-    </div>
-  );
+  const [selectedMod,setSelectedMod]=useState(null);
+  const {data,isFetching,isFetchingNextPage,hasNextPage,fetchNextPage,refetch,isError}=useInfiniteQuery({queryKey:['farming-modhub'],initialPageParam:1,initialData:{pages:[{items:FARMING_FALLBACK,page:1,has_more:false,source:'reference'}],pageParams:[1]},staleTime:0,retry:false,getNextPageParam:page=>page.has_more?page.page+1:undefined,queryFn:async({pageParam})=>{const {data}=await base44.functions.invoke('farmingModApi',{action:'getMods',page:pageParam,limit:24,filter:'latest'});if(data.error||!data.items?.length)throw new Error('ModHub indisponible');return data;}});
+  const mods=data.pages.flatMap(p=>p.items);
+  return <section className="mb-8 text-foreground" id="modhub">
+    <div className="flex items-center justify-between gap-3 mb-4"><div><h2 className="text-xl font-bold">ModHub & Téléchargements</h2><p className="text-xs text-muted-foreground">Mods du ModHub GIANTS Software pour Farming Simulator 25</p></div><button onClick={()=>refetch()} disabled={isFetching} className="flex items-center gap-2 bg-primary text-primary-foreground px-3 py-2 rounded-lg text-xs font-semibold disabled:opacity-50"><RefreshCw className="w-4 h-4"/>Actualiser</button></div>
+    {(data.pages[0].source==='reference'||isError)&&<p role="status" className="text-xs text-muted-foreground mb-4">Catalogue de référence sauvegardé. Les derniers mods seront affichés dès que le ModHub répondra.</p>}
+    {isFetching&&<p className="flex items-center gap-2 text-xs text-muted-foreground mb-4"><Loader2 className="w-4 h-4 animate-spin"/>Actualisation du catalogue...</p>}
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">{mods.map(mod=><ModHubCard key={mod.id} mod={mod} onSelect={setSelectedMod}/>)}</div>
+    {hasNextPage&&<div className="flex justify-center mt-6"><button onClick={()=>fetchNextPage()} disabled={isFetching} className="bg-secondary text-secondary-foreground rounded-lg px-5 py-2 disabled:opacity-50">{isFetchingNextPage?'Chargement...':'Charger plus de mods'}</button></div>}
+    {selectedMod&&<ModHubDetailModal modId={selectedMod.id} initialMod={selectedMod} onClose={()=>setSelectedMod(null)}/>}
+  </section>;
 }
