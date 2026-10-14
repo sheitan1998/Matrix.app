@@ -1,5 +1,6 @@
 import { createApiCache, dataResponse } from "../../shared/apiCache.ts";
-import { modText, parseModDetails } from "../../shared/farmingModDetails.ts";
+import { modText } from "../../shared/farmingModDetails.ts";
+import { getGiantsMod, probeGiantsDownload } from "../../shared/giantsMedia.ts";
 
 const CACHE_TTL = 60 * 60 * 1000;
 const { getCached: rawGetCached, setCached } = createApiCache(80);
@@ -71,18 +72,16 @@ export default async function(req) {
     }
 
     if (action === 'getModDetails') {
-      const modId = String(body.modId || '').trim();
-      if (!/^\d{1,10}$/.test(modId)) return Response.json({ error: 'modId requis' }, { status: 400 });
-      const cacheKey = `mod:v2:${modId}`;
-      const cached = getCached(cacheKey);
-      if (cached) return dataResponse(cached);
-      const res = await fetch(`https://www.farming-simulator.com/mod.php?mod_id=${modId}&title=fs2025&lang=en`, {
-        headers: { Accept: 'text/html', 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(8000),
-      });
-      if (!res.ok) throw new Error(`GIANTS ModHub (${res.status})`);
-      const result = parseModDetails(await res.text(), modId);
-      setCached(cacheKey, result);
-      return dataResponse(result);
+      return dataResponse(await getGiantsMod(body.modId));
+    }
+
+    if (action === 'prepareDownload') {
+      const modId = String(body.modId || '');
+      const file = await probeGiantsDownload(modId);
+      const appUrl = req.headers.get('X-Base44-App-Url');
+      if (!appUrl) return Response.json({ error: 'Adresse de téléchargement interne indisponible.' }, { status: 503 });
+      const endpoint = new URL('/functions/fs25Download', new URL(appUrl).origin).href;
+      return Response.json({ filename: file.filename, size: file.size, endpoint, modId });
     }
 
     return Response.json({ error: 'Action inconnue' }, { status: 400 });

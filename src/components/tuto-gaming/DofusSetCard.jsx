@@ -1,0 +1,3 @@
+import React from 'react';
+import CatalogueImage from '@/components/tuto-gaming/CatalogueImage';
+export default function DofusSetCard({set,onClick}){return <button onClick={onClick} className="rounded-xl border bg-card overflow-hidden text-left hover:border-primary"><div className="grid grid-cols-2">{set.members.slice(0,4).map(item=><CatalogueImage key={item.id} src={item.img} alt={item.name} className="aspect-square w-full p-2"/>)}</div><div className="p-3"><h2 className="font-semibold text-sm">{set.name}</h2><p className="text-xs text-muted-foreground mt-1">Niveau {set.level} · {set.members.length} pièces</p></div></button>;}

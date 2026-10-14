@@ -1,0 +1,2 @@
+const images={octane:'1d349731e61509568153',fennec:'59a07ffb751560084126',dominus:'b094084cc71575549720',breakout:'ef9bd5b25b1600443062',zomba:'a9b0c2535e1481307196',draco:'b3889bd6c91494864809',cristiano:'a67e907fb81451699877',infinium:'8a0c05f0601518046267','dueling-dragons':'b50e027ce81512417574',hellfire:'2edd5c32581499318998',atomizer:'8a7b232a1f1522776922','party-time':'4c9d399f811506784704'};
+export function rocketAsset(id){return images[id]?`https://rocket-league.com/content/media/items/avatar/220px/${images[id]}.png`:null;}

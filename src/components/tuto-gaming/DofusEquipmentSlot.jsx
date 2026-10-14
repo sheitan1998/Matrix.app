@@ -1,0 +1,4 @@
+import React from 'react';
+import { Plus,X } from 'lucide-react';
+import CatalogueImage from '@/components/tuto-gaming/CatalogueImage';
+export default function DofusEquipmentSlot({slot,item,onChoose,onRemove}){return <div className="rounded-xl border bg-card p-3 flex items-center gap-3"><button onClick={onChoose} className="flex items-center gap-3 flex-1 text-left">{item?<CatalogueImage src={item.img} alt={item.name} className="h-16 w-16 rounded-lg shrink-0"/>:<span className="h-16 w-16 rounded-lg bg-muted flex items-center justify-center shrink-0"><Plus className="w-5 h-5 text-muted-foreground"/></span>}<div><h3 className="text-xs text-muted-foreground">{slot.name}</h3><p className="text-sm font-semibold">{item?.name||'Choisir un équipement'}</p>{item&&<p className="text-xs text-muted-foreground">Niveau {item.level}</p>}</div></button>{item&&<button aria-label={`Retirer ${slot.name}`} onClick={onRemove}><X className="w-4 h-4"/></button>}</div>;}

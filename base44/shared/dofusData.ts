@@ -1,7 +1,11 @@
 export function normalizeDofusItem(item,lang='fr') {
   const superType=item.type?.superTypeId;
   const category=superType===2?'weapons':[6,70].includes(superType)?'consumables':superType===9?'resources':'equipment';
-  return {id:item.id,name:item.name?.[lang]||item.name?.fr||'Inconnu',level:item.level||0,img:item.img||(item.iconId?`https://api.dofusdb.fr/img/items/${item.iconId}.png`:null),type:item.type?.name?.[lang]||item.type?.name?.fr||'',typeId:item.typeId,category,description:item.description?.[lang]||item.description?.fr||'',effects:(item.effects||[]).map(e=>({from:e.from??0,to:e.to??0,effectId:e.effectId})),hasRecipe:!!item.hasRecipe,source:'live'};
+  return {id:item.id,name:item.name?.[lang]||item.name?.fr||'Inconnu',level:item.level||0,img:item.img||(item.iconId?`https://api.dofusdb.fr/img/items/${item.iconId}.png`:null),type:item.type?.name?.[lang]||item.type?.name?.fr||'',typeId:item.typeId,itemSetId:item.itemSetId||0,category,description:item.description?.[lang]||item.description?.fr||'',effects:(item.effects||[]).map(e=>({from:e.from??0,to:e.to??0,effectId:e.effectId,category:e.category,characteristic:e.characteristic})),hasRecipe:!!item.hasRecipe,source:'live'};
+}
+export function normalizeDofusSet(set,lang='fr') {
+  const members=(set.items||[]).filter(i=>typeof i==='object').map(i=>normalizeDofusItem(i,lang));
+  return {id:set.id,name:set.name?.[lang]||set.name?.fr||'Panoplie',level:set.level||0,category:'sets',type:'Panoplie',img:members[0]?.img||null,members,bonuses:(set.effects||[]).map(effects=>effects.map(e=>({from:e.from??0,to:e.to??0,effectId:e.effectId,category:e.category}))),source:'live'};
 }
 export async function loadDofusRecipes(ids,lang='fr') {
   if(!ids.length)return new Map();

@@ -1,0 +1,12 @@
+import React,{useState} from 'react';
+import {useQuery} from '@tanstack/react-query';
+import {Loader2} from 'lucide-react';
+import {base44} from '@/api/base44Client';
+import {Dialog,DialogContent,DialogTitle,DialogDescription} from '@/components/ui/dialog';
+import GamingRemoteImage from '@/components/tuto-gaming/GamingRemoteImage';
+export default function RocketItemModal({item,onClose}){
+  const [paint,setPaint]=useState(null);
+  const {data,isFetching,isError}=useQuery({queryKey:['rocket-native-item',item.id],retry:false,staleTime:3600000,queryFn:async()=>{const {data}=await base44.functions.invoke('rocketLeagueApi',{action:'getItemDetails',id:item.id});return data;}});
+  const details=data||item;
+  return <Dialog open onOpenChange={open=>!open&&onClose()}><DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto"><DialogTitle>{item.name}</DialogTitle><DialogDescription>{item.type} · {item.rarity}{paint?` · ${paint.name}`:''}</DialogDescription><GamingRemoteImage src={paint?.img||details.hdImg||details.img} alt={`${item.name}${paint?` ${paint.name}`:''}`} className="aspect-video w-full rounded-xl p-4"/>{details.hitbox&&<p className="text-sm"><span className="text-muted-foreground">Hitbox :</span> {details.hitbox}</p>}<section><h3 className="font-semibold mb-3">Variantes de couleur / Peintures</h3><div className="flex flex-wrap gap-2"><button onClick={()=>setPaint(null)} className={`px-3 py-2 rounded-lg border text-xs ${!paint?'border-primary bg-primary/10':''}`}>Original</button>{details.variants?.map(v=><button key={v.name} onClick={()=>setPaint(v)} className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs ${paint?.name===v.name?'border-primary bg-primary/10':''}`}><span className="w-3 h-3 rounded-full border" style={{backgroundColor:v.color}}/>{v.name}</button>)}</div>{isFetching&&<p className="flex gap-2 items-center text-xs text-muted-foreground mt-3"><Loader2 className="w-4 h-4 animate-spin"/>Chargement des variantes officielles...</p>}{isError&&<p role="alert" className="text-xs text-destructive mt-3">Variantes indisponibles pour le moment. Le visuel original reste consultable.</p>}{data&&!data.variants?.length&&<p className="text-xs text-muted-foreground mt-3">Aucune peinture disponible pour cet objet.</p>}</section><p className="text-xs text-muted-foreground">Visuels d’objets natifs sur MATRIX. Disponibilité et prix de la boutique du jour non confirmés.</p></DialogContent></Dialog>;
+}
