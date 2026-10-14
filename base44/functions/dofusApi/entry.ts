@@ -26,8 +26,8 @@ export default async function(req) {
       params.set('$skip', String(skip));
       params.set('$sort', '-level');
       if (search) {
-        params.set(`name[${lang}][$regex]`, search);
-        params.set(`name[${lang}][$options]`, 'i');
+        params.set(`name.${lang}[$regex]`, search);
+        params.set(`name.${lang}[$options]`, 'i');
       }
       if (minLevel > 0) params.set('level[$gte]', String(minLevel));
       if (maxLevel > 0) params.set('level[$lte]', String(maxLevel));
@@ -133,8 +133,8 @@ export default async function(req) {
         $sort: '-level',
       });
       if (search) {
-        params.set(`name[${lang}][$regex]`, search);
-        params.set(`name[${lang}][$options]`, 'i');
+        params.set(`name.${lang}[$regex]`, search);
+        params.set(`name.${lang}[$options]`, 'i');
       }
 
       const cacheKey = `monsters:${lang}:${limit}:${skip}:${search}`;
@@ -176,8 +176,8 @@ export default async function(req) {
         $sort: '-level',
       });
       if (search) {
-        params.set(`name[${lang}][$regex]`, search);
-        params.set(`name[${lang}][$options]`, 'i');
+        params.set(`name.${lang}[$regex]`, search);
+        params.set(`name.${lang}[$options]`, 'i');
       }
 
       const cacheKey = `sets:${lang}:${limit}:${skip}:${search}`;

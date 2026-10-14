@@ -29,45 +29,27 @@ export default async function(req) {
       if (!res.ok) throw new Error(`GIANTS ModHub (${res.status})`);
       const html = await res.text();
 
-      // Parse mod cards from HTML
+      // Parse mod cards by splitting on mod-item blocks (CPU-efficient)
       const mods = [];
-      const modRegex = /mod_id=(\d+)[^>]*title=fs2025[^>]*>[\s\S]*?src="(https:\/\/cdn\d+\.giants-software\.com\/modHub\/storage\/[^"]*iconBig\.jpg)"[^>]*>[\s\S]*?<h\d[^>]*>([^<]+)<\/h\d>[\s\S]*?By:\s*([^<\n]+?)[\s\S]*?(\d+\.?\d*)\s*\((\d+)\)/gi;
-      let match;
-      while ((match = modRegex.exec(html)) !== null) {
-        const modId = match[1];
-        const img = match[2];
-        const title = match[3].trim();
-        const author = match[4].trim();
-        const rating = parseFloat(match[5]) || 0;
-        const votes = parseInt(match[6]) || 0;
-
+      const blocks = html.split('class="mod-item"');
+      for (let i = 1; i < blocks.length; i++) {
+        const block = blocks[i].slice(0, 2000);
+        const idMatch = block.match(/mod_id=(\d+)/);
+        if (!idMatch) continue;
+        const imgMatch = block.match(/src="(https:\/\/cdn\d+\.giants-software\.com\/modHub\/storage\/[^"]*iconBig\.jpg)"/);
+        const titleMatch = block.match(/<h4>([^<]+)<\/h4>/);
+        const authorMatch = block.match(/By:\s*([^<]+)/);
+        const ratingMatch = block.match(/([\d.]+)&nbsp;\((\d+)\)/);
         mods.push({
-          id: modId,
-          title,
-          author,
-          img,
-          rating,
-          votes,
-          downloadUrl: `https://www.farming-simulator.com/mod.php?mod_id=${modId}&title=fs2025`,
-          detailUrl: `https://www.farming-simulator.com/mod.php?mod_id=${modId}&title=fs2025`,
+          id: idMatch[1],
+          title: titleMatch?.[1]?.trim() || 'Mod FS25',
+          author: authorMatch?.[1]?.trim() || 'Inconnu',
+          img: imgMatch?.[1] || null,
+          rating: parseFloat(ratingMatch?.[1]) || 0,
+          votes: parseInt(ratingMatch?.[2]) || 0,
+          downloadUrl: `https://www.farming-simulator.com/mod.php?mod_id=${idMatch[1]}&title=fs2025`,
+          detailUrl: `https://www.farming-simulator.com/mod.php?mod_id=${idMatch[1]}&title=fs2025`,
         });
-      }
-
-      // Fallback: simpler regex if main parser finds nothing
-      if (mods.length === 0) {
-        const simpleRegex = /mod_id=(\d+)&title=fs2025[^"]*"[^>]*>[\s\S]*?src="(https:\/\/cdn\d+\.giants-software\.com\/[^"]*iconBig\.jpg)"/gi;
-        while ((match = simpleRegex.exec(html)) !== null) {
-          mods.push({
-            id: match[1],
-            title: 'Mod FS25',
-            author: 'Inconnu',
-            img: match[2],
-            rating: 0,
-            votes: 0,
-            downloadUrl: `https://www.farming-simulator.com/mod.php?mod_id=${match[1]}&title=fs2025`,
-            detailUrl: `https://www.farming-simulator.com/mod.php?mod_id=${match[1]}&title=fs2025`,
-          });
-        }
       }
 
       const result = {

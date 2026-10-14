@@ -1,12 +1,6 @@
 import React, { useState, useCallback } from "react";
-import { Search, Loader2, ShoppingBag, Trophy, Package, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Search, Loader2, ShoppingBag, Trophy, Package } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-
-const RARITY_COLORS = {
-  common: "#9ca3af", uncommon: "#22c55e", rare: "#3b82f6",
-  very_rare: "#a855f7", import: "#f59e0b", exotic: "#ec4899",
-  black_market: "#6b7280", limited: "#ef4444", premium: "#fbbf24",
-};
 
 const PLATFORMS = [
   { id: "epic", label: "Epic" },
@@ -18,13 +12,8 @@ const PLATFORMS = [
 export default function RocketLeague() {
   const [tab, setTab] = useState("shop");
   const [loading, setLoading] = useState(false);
-  const [shopItems, setShopItems] = useState([]);
-  const [dbItems, setDbItems] = useState([]);
-  const [dbPage, setDbPage] = useState(1);
-  const [dbTotal, setDbTotal] = useState(0);
-  const [dbHasMore, setDbHasMore] = useState(false);
-  const [rarityFilter, setRarityFilter] = useState("all");
-  const [dbSearch, setDbSearch] = useState("");
+  const [shopCategories, setShopCategories] = useState([]);
+  const [dbCategories, setDbCategories] = useState([]);
   const [platform, setPlatform] = useState("epic");
   const [gamertag, setGamertag] = useState("");
   const [playerStats, setPlayerStats] = useState(null);
@@ -34,34 +23,25 @@ export default function RocketLeague() {
     setLoading(true);
     try {
       const res = await base44.functions.invoke("rocketLeagueApi", { action: "getItemShop" });
-      setShopItems((res.data || res).items || []);
+      setShopCategories((res.data || res).categories || []);
     } catch {
-      setShopItems([]);
+      setShopCategories([]);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const fetchDb = useCallback(async (p = 1, s = dbSearch, r = rarityFilter) => {
+  const fetchDb = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await base44.functions.invoke("rocketLeagueApi", {
-        action: "searchItems",
-        page: p,
-        search: s,
-        rarity: r,
-      });
-      const data = res.data || res;
-      setDbItems(data.items || []);
-      setDbTotal(data.total || 0);
-      setDbHasMore(data.has_more || false);
-      setDbPage(p);
+      const res = await base44.functions.invoke("rocketLeagueApi", { action: "searchItems" });
+      setDbCategories((res.data || res).categories || []);
     } catch {
-      setDbItems([]);
+      setDbCategories([]);
     } finally {
       setLoading(false);
     }
-  }, [dbSearch, rarityFilter]);
+  }, []);
 
   const fetchStats = useCallback(async () => {
     if (!gamertag.trim()) return;
@@ -89,8 +69,8 @@ export default function RocketLeague() {
   }, [platform, gamertag]);
 
   React.useEffect(() => {
-    if (tab === "shop" && shopItems.length === 0) fetchShop();
-    if (tab === "database" && dbItems.length === 0) fetchDb();
+    if (tab === "shop" && shopCategories.length === 0) fetchShop();
+    if (tab === "database" && dbCategories.length === 0) fetchDb();
   }, [tab]);
 
   return (
@@ -133,30 +113,23 @@ export default function RocketLeague() {
         {/* Item Shop */}
         {tab === "shop" && !loading && (
           <div>
-            {shopItems.length === 0 ? (
+            {shopCategories.length === 0 ? (
               <div className="text-center py-20 text-white/40">
-                <p>Boutique indisponible temporairement.</p>
+                <p>Catégories indisponibles temporairement.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                {shopItems.map((item, i) => (
-                  <div
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {shopCategories.map((cat, i) => (
+                  <a
                     key={i}
-                    className="rounded-xl border overflow-hidden"
-                    style={{ borderColor: item.rarityColor + "40", background: item.rarityColor + "10" }}
+                    href={cat.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10 hover:border-cyan-500/40 transition"
                   >
-                    <div className="aspect-square flex items-center justify-center" style={{ background: item.rarityColor + "15" }}>
-                      {item.img ? (
-                        <img src={item.img} alt={item.name} loading="lazy" className="max-w-full max-h-full object-contain p-2" />
-                      ) : (
-                        <Package className="w-8 h-8 text-white/20" />
-                      )}
-                    </div>
-                    <div className="p-2">
-                      <p className="text-xs font-bold text-white truncate">{item.name}</p>
-                      {item.price > 0 && <p className="text-[10px] text-cyan-400">{item.price} crédits</p>}
-                    </div>
-                  </div>
+                    <ShoppingBag className="w-5 h-5 text-cyan-400 flex-shrink-0" />
+                    <span className="text-sm font-bold text-white">{cat.label}</span>
+                  </a>
                 ))}
               </div>
             )}
@@ -233,84 +206,25 @@ export default function RocketLeague() {
         {/* Item Database */}
         {tab === "database" && !loading && (
           <div>
-            <div className="flex gap-2 mb-6 flex-wrap">
-              <div className="relative flex-1 min-w-[200px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-                <input
-                  type="text"
-                  value={dbSearch}
-                  onChange={(e) => setDbSearch(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && fetchDb(1, dbSearch, rarityFilter)}
-                  placeholder="Rechercher un objet..."
-                  className="w-full pl-10 pr-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm placeholder:text-white/30"
-                />
-              </div>
-              <select
-                value={rarityFilter}
-                onChange={(e) => { setRarityFilter(e.target.value); fetchDb(1, dbSearch, e.target.value); }}
-                className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm"
-              >
-                <option value="all" className="bg-[#0a0f1a]">Toutes raretés</option>
-                <option value="common" className="bg-[#0a0f1a]">Common</option>
-                <option value="rare" className="bg-[#0a0f1a]">Rare</option>
-                <option value="very_rare" className="bg-[#0a0f1a]">Very Rare</option>
-                <option value="import" className="bg-[#0a0f1a]">Import</option>
-                <option value="exotic" className="bg-[#0a0f1a]">Exotic</option>
-                <option value="black_market" className="bg-[#0a0f1a]">Black Market</option>
-              </select>
-              <button
-                onClick={() => fetchDb(1, dbSearch, rarityFilter)}
-                className="px-4 py-2 rounded-lg bg-cyan-500 text-black text-sm font-bold hover:bg-cyan-400 transition"
-              >
-                Rechercher
-              </button>
-            </div>
-
-            {dbItems.length === 0 ? (
+            {dbCategories.length === 0 ? (
               <div className="text-center py-20 text-white/40">
-                <p>Aucun résultat.</p>
+                <p>Catégories indisponibles.</p>
               </div>
             ) : (
-              <>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                  {dbItems.map((item, i) => (
-                    <div
-                      key={i}
-                      className="rounded-xl border overflow-hidden"
-                      style={{ borderColor: item.rarityColor + "40", background: item.rarityColor + "10" }}
-                    >
-                      <div className="aspect-square flex items-center justify-center" style={{ background: item.rarityColor + "15" }}>
-                        {item.img ? (
-                          <img src={item.img} alt={item.name} loading="lazy" className="max-w-full max-h-full object-contain p-2" />
-                        ) : (
-                          <Package className="w-8 h-8 text-white/20" />
-                        )}
-                      </div>
-                      <div className="p-2">
-                        <p className="text-xs font-bold text-white truncate">{item.name}</p>
-                        <p className="text-[10px] capitalize" style={{ color: item.rarityColor }}>{item.rarity?.replace(/_/g, " ")}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex items-center justify-center gap-4 mt-8">
-                  <button
-                    onClick={() => fetchDb(dbPage - 1)}
-                    disabled={dbPage <= 1}
-                    className="p-2 rounded-lg bg-white/5 text-white/60 hover:text-white disabled:opacity-30"
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {dbCategories.map((cat, i) => (
+                  <a
+                    key={i}
+                    href={cat.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10 hover:border-cyan-500/40 transition"
                   >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  <span className="text-sm text-white/60">Page {dbPage} — {dbTotal} résultats</span>
-                  <button
-                    onClick={() => fetchDb(dbPage + 1)}
-                    disabled={!dbHasMore}
-                    className="p-2 rounded-lg bg-white/5 text-white/60 hover:text-white disabled:opacity-30"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                </div>
-              </>
+                    <Package className="w-5 h-5 text-cyan-400 flex-shrink-0" />
+                    <span className="text-sm font-bold text-white">{cat.label}</span>
+                  </a>
+                ))}
+              </div>
             )}
           </div>
         )}

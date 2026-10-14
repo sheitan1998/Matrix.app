@@ -8,6 +8,29 @@ const { getCached, setCached } = createApiCache(80);
 
 const PLATFORM_MAP = { epic: 'epic', steam: 'steam', psn: 'psn', xbox: 'xbl' };
 
+const RL_CATEGORIES = [
+  { label: 'New Items', url: 'https://rocket-league.com/items/new' },
+  { label: 'Popular Items', url: 'https://rocket-league.com/items/popular' },
+  { label: 'Rocket Passes', url: 'https://rocket-league.com/items/rocketpass' },
+  { label: 'Series & Misc', url: 'https://rocket-league.com/items/misc' },
+  { label: 'Bodies', url: 'https://rocket-league.com/items/bodies' },
+  { label: 'Decals', url: 'https://rocket-league.com/items/decals' },
+  { label: 'Paint Finishes', url: 'https://rocket-league.com/items/paints' },
+  { label: 'Wheels', url: 'https://rocket-league.com/items/wheels' },
+  { label: 'Rocket Boosts', url: 'https://rocket-league.com/items/boosts' },
+  { label: 'Toppers', url: 'https://rocket-league.com/items/toppers' },
+  { label: 'Antennas', url: 'https://rocket-league.com/items/antennas' },
+  { label: 'Goal Explosions', url: 'https://rocket-league.com/items/explosions' },
+  { label: 'Trails', url: 'https://rocket-league.com/items/trails' },
+  { label: 'Player Anthems', url: 'https://rocket-league.com/items/anthems' },
+  { label: 'Player Banners', url: 'https://rocket-league.com/items/banners' },
+  { label: 'Avatar Borders', url: 'https://rocket-league.com/items/borders' },
+  { label: 'Engine Audio', url: 'https://rocket-league.com/items/engines' },
+  { label: 'Titles', url: 'https://rocket-league.com/items/titles' },
+  { label: 'Stickers', url: 'https://rocket-league.com/items/stickers' },
+  { label: 'Avatars', url: 'https://rocket-league.com/items/avatars' },
+];
+
 const RARITY_COLORS = {
   common: '#9ca3af', uncommon: '#22c55e', rare: '#3b82f6',
   very_rare: '#a855f7', import: '#f59e0b', exotic: '#ec4899', black_market: '#6b7280',
@@ -23,43 +46,7 @@ export default async function(req) {
       const cacheKey = 'rl_shop';
       const cached = getCached(cacheKey, CACHE_TTL_SHOP);
       if (cached) return dataResponse(cached, 900);
-
-      const res = await fetch('https://rocket-league.com/items/shop', {
-        headers: { 'Accept': 'text/html', 'User-Agent': 'Mozilla/5.0' },
-        signal: AbortSignal.timeout(15000),
-      });
-      if (!res.ok) throw new Error(`RL Garage (${res.status})`);
-      const html = await res.text();
-
-      // Parse item shop HTML — extract item cards
-      const items = [];
-      const cardRegex = /data-name="([^"]*)"[^>]*data-rarity="([^"]*)"[^>]*data-price="([^"]*)"[^>]*data-img="([^"]*)"/gi;
-      let match;
-      while ((match = cardRegex.exec(html)) !== null) {
-        items.push({
-          name: match[1],
-          rarity: match[2],
-          price: Number(match[3]) || 0,
-          img: match[4],
-          rarityColor: RARITY_COLORS[match[2]] || '#9ca3af',
-        });
-      }
-
-      // Fallback: try alternative parsing if no items found
-      if (items.length === 0) {
-        const imgRegex = /<img[^>]*src="(https:\/\/cdn\.rocketleague\.com\/[^"]*)"[^>]*alt="([^"]*)"/gi;
-        while ((match = imgRegex.exec(html)) !== null) {
-          items.push({
-            name: match[2],
-            rarity: 'common',
-            price: 0,
-            img: match[1],
-            rarityColor: '#9ca3af',
-          });
-        }
-      }
-
-      const result = { items: items.slice(0, 24), total: items.length, cached_at: new Date().toISOString() };
+      const result = { categories: RL_CATEGORIES, cached_at: new Date().toISOString() };
       setCached(cacheKey, result);
       return dataResponse(result, 900);
     }
@@ -118,46 +105,10 @@ export default async function(req) {
     }
 
     if (action === 'searchItems') {
-      const limit = Math.min(24, Math.max(1, Number(body.limit) || 24));
-      const page = Math.max(1, Number(body.page) || 1);
-      const search = String(body.search || '').trim().slice(0, 100);
-      const rarity = String(body.rarity || 'all');
-
-      const cacheKey = `items:${search}:${rarity}:${page}:${limit}`;
+      const cacheKey = `items:categories`;
       const cached = getCached(cacheKey, CACHE_TTL_ITEMS);
       if (cached) return dataResponse(cached, 3600);
-
-      const res = await fetch('https://rocketleague.com/items', {
-        headers: { 'Accept': 'text/html', 'User-Agent': 'Mozilla/5.0' },
-        signal: AbortSignal.timeout(15000),
-      });
-      if (!res.ok) throw new Error(`RL Garage (${res.status})`);
-      const html = await res.text();
-
-      const allItems = [];
-      const cardRegex = /data-name="([^"]*)"[^>]*data-rarity="([^"]*)"[^>]*data-type="([^"]*)"[^>]*data-img="([^"]*)"/gi;
-      let match;
-      while ((match = cardRegex.exec(html)) !== null) {
-        allItems.push({
-          name: match[1],
-          rarity: match[2],
-          type: match[3],
-          img: match[4],
-          rarityColor: RARITY_COLORS[match[2]] || '#9ca3af',
-        });
-      }
-
-      let filtered = allItems;
-      if (search) filtered = filtered.filter(i => i.name.toLowerCase().includes(search.toLowerCase()));
-      if (rarity !== 'all') filtered = filtered.filter(i => i.rarity === rarity);
-
-      const start = (page - 1) * limit;
-      const result = {
-        items: filtered.slice(start, start + limit),
-        total: filtered.length,
-        page,
-        has_more: start + limit < filtered.length,
-      };
+      const result = { categories: RL_CATEGORIES, total: RL_CATEGORIES.length };
       setCached(cacheKey, result);
       return dataResponse(result, 3600);
     }
