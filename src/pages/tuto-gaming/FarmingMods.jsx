@@ -4,6 +4,7 @@ import { ArrowLeft, Loader2, Package, Download, ShieldCheck, ShieldAlert, Wrench
 import { base44 } from "@/api/base44Client";
 import FarmingModCard from "@/components/tuto-gaming/FarmingModCard";
 import FarmingModCreatorPanel from "@/components/tuto-gaming/FarmingModCreatorPanel";
+import ModHubGrid from "@/components/tuto-gaming/ModHubGrid";
 
 const CATEGORIES = [
   { id: "all", label: "Tous", icon: Package },
@@ -139,6 +140,16 @@ export default function FarmingMods() {
 
       {/* Mods grid */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 pb-12">
+        {/* Official ModHub */}
+        <ModHubGrid />
+
+        {/* Community mods */}
+        <div className="mb-3">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="block w-1 h-6 rounded-full" style={{ background: "#a3c649" }} />
+            <h2 className="text-lg font-black uppercase tracking-tight text-white">Mods Communauté</h2>
+          </div>
+        </div>
         {loading ? (
           <div className="flex justify-center py-16">
             <Loader2 className="w-8 h-8 animate-spin text-white/30" />

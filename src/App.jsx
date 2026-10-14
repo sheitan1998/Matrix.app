@@ -93,6 +93,8 @@ const FortniteMaps = lazy(() => import('@/pages/tuto-gaming/FortniteMaps'));
 const FortniteShop = lazy(() => import('@/pages/fortnite/FortniteShop'));
 const FortniteCosmetics = lazy(() => import('@/pages/fortnite/FortniteCosmetics'));
 const FortniteStats = lazy(() => import('@/pages/fortnite/FortniteStats'));
+const Dofus = lazy(() => import('@/pages/tuto-gaming/Dofus'));
+const RocketLeague = lazy(() => import('@/pages/tuto-gaming/RocketLeague'));
 const DynamicPage = lazy(() => import('@/pages/DynamicPage'));
 const TwitchHome = lazy(() => import('@/pages/twitch/TwitchHome'));
 const TwitchWatch = lazy(() => import('@/pages/twitch/TwitchWatch'));
@@ -175,6 +177,8 @@ const AuthenticatedApp = () => {
         <Route path="/fortnite-shop" element={<FortniteShop />} />
         <Route path="/fortnite-cosmetics" element={<FortniteCosmetics />} />
         <Route path="/fortnite-stats" element={<FortniteStats />} />
+        <Route path="/dofus" element={<Dofus />} />
+        <Route path="/rocket-league" element={<RocketLeague />} />
         <Route path="/creator/:username" element={<CreatorProfile />} />
         <Route path="/page/:slug" element={<DynamicPage />} />
         <Route path="/" element={<Landing />} />

@@ -2,41 +2,14 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 import { getCatalogPage, getCatalog, clearCatalogCache } from './catalog.ts';
 import { creativePage, enrichMaps } from './creative.ts';
 import { cached } from './cache.ts';
+import { createApiCache, dataResponse } from "../../shared/apiCache.ts";
 
-// ─── In-memory cache ───
-const cache = new Map();
+// ─── In-memory cache (shared module, fn: prefix) ───
+const { getCached: rawGetCached, setCached: rawSetCached, purgeAll: rawPurgeAll } = createApiCache(120);
 const CACHE_PREFIX = 'fn:';
-
-function getCached(key, ttlMinutes) {
-  const entry = cache.get(CACHE_PREFIX + key);
-  if (!entry) return null;
-  if (Date.now() - entry.timestamp > ttlMinutes * 60 * 1000) {
-    cache.delete(CACHE_PREFIX + key);
-    return null;
-  }
-  return entry.data;
-}
-
-function setCached(key, data) {
-  cache.set(CACHE_PREFIX + key, { data, timestamp: Date.now() });
-  if (cache.size > 120) {
-    const sorted = [...cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
-    for (let i = 0; i < 60; i++) cache.delete(sorted[i][0]);
-  }
-}
-
-function purgeAllCache() {
-  for (const key of cache.keys()) {
-    if (key.startsWith(CACHE_PREFIX)) cache.delete(key);
-  }
-  clearCatalogCache();
-}
-
-function dataResponse(data, ttl = 3600) {
-  return Response.json(data, {
-    headers: { 'Cache-Control': `public, max-age=${ttl}, s-maxage=${ttl}` },
-  });
-}
+function getCached(key, ttlMinutes) { return rawGetCached(CACHE_PREFIX + key, ttlMinutes * 60 * 1000); }
+function setCached(key, data) { rawSetCached(CACHE_PREFIX + key, data); }
+function purgeAllCache() { rawPurgeAll(CACHE_PREFIX); clearCatalogCache(); }
 
 // ─── Config ───
 let configPending = null;
@@ -118,7 +91,7 @@ export default async function(req) {
         base44.entities.FortniteMap.count(query),
       ]);
       const items = await enrichMaps(page.items || []);
-      return dataResponse({ items, total, has_more: page.has_more, next_cursor: page.next_cursor });
+      return dataResponse({ items, total, has_more: page.has_more, next_cursor: page.next_cursor }, 86400);
     }
 
     const adminAction = ['purgeCache', 'getConfig', 'updateConfig', 'testConnection'].includes(action);
@@ -128,7 +101,7 @@ export default async function(req) {
     if (action === 'getCreativeMaps' || action === 'getApiFeaturedMaps') {
       if (config?.show_api_maps === false) return Response.json(action === 'getApiFeaturedMaps' ? [] : { items: [], has_more: false });
       const result = await creativePage(body);
-      return dataResponse(action === 'getApiFeaturedMaps' ? result.items : result, 900);
+      return dataResponse(action === 'getApiFeaturedMaps' ? result.items : result, 86400);
     }
 
     if (action === 'getFeaturedMaps') {
@@ -138,7 +111,7 @@ export default async function(req) {
         );
         return await enrichMaps(page.items || []);
       });
-      return dataResponse(result, 900);
+      return dataResponse(result, 86400);
     }
 
     if (action === 'getCosmeticDetails') {
