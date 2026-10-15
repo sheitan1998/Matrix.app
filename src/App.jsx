@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { Toaster as SonnerToaster } from "sonner"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useState, useEffect, lazy, Suspense } from 'react';
 import PageLoader from '@/components/PageLoader';
 import PageNotFound from './lib/PageNotFound';
@@ -103,6 +103,11 @@ const TwitchCategoryPage = lazy(() => import('@/pages/twitch/TwitchCategoryPage'
 const TwitchCallback = lazy(() => import('@/pages/twitch/TwitchCallback'));
 const TwitchChannelPage = lazy(() => import('@/pages/twitch/TwitchChannelPage'));
 
+function CanonicalFarmingRedirect() {
+  const { search } = useLocation();
+  return <Navigate to={`/farming${search}`} replace />;
+}
+
 // Updater — eager (runs on startup)
 import UpdateModal from '@/components/UpdateModal';
 import { checkForUpdates } from '@/lib/updater';
@@ -190,7 +195,7 @@ const AuthenticatedApp = () => {
           <Route path="/tuto-gaming/:gameSlug" element={<GameDetailPage />} />
           <Route path="/tuto-gaming/:gameSlug/quest/:questId" element={<QuestDetailPage />} />
           <Route path="/tuto-gaming/:gameSlug/wiki/:entryId" element={<WikiEntryDetailPage />} />
-          <Route path="/tuto-gaming/farming-simulator-25" element={<FarmingSimulator25 />} />
+          <Route path="/tuto-gaming/farming-simulator-25" element={<CanonicalFarmingRedirect />} />
           <Route path="/tuto-gaming/farming-simulator-25/mods" element={<FarmingMods />} />
           <Route path="/tuto-gaming/farming-simulator-25/:categoryId" element={<FarmingSimCategory />} />
         </Route>
