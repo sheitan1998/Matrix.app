@@ -26,9 +26,7 @@ import {
 } from '../base44/shared/rocketLeagueMedia.ts';
 import {
   resolveRocketImageSources,
-  rocketFallbackColors,
 } from '../src/components/tuto-gaming/rocketLeagueImages.js';
-import { rocketVehicleProfile } from '../src/components/tuto-gaming/rocketLeagueVisualProfile.js';
 
 test('normalizes a BakkesMod-compatible product dump and adds the versioned paint set', () => {
   const items = normalizeRocketLeagueCatalogPayload({
@@ -363,33 +361,25 @@ test('image sources accept distinct HTTPS URLs without schematic generated fallb
   assert.deepEqual(resolveRocketImageSources({ src: 'data:image/svg+xml,invalid' }), []);
 });
 
-test('local MATRIX image fallbacks are deterministic and honor paint colors', () => {
-  assert.deepEqual(rocketFallbackColors('Octane'), rocketFallbackColors('Octane'));
-  assert.deepEqual(rocketFallbackColors('Cobalt', '#2563eb'), {
-    primary: '#2563eb',
-    secondary: '#7c3aed',
-  });
-  assert.notDeepEqual(rocketFallbackColors('Octane'), rocketFallbackColors('Fennec'));
-  assert.equal(rocketVehicleProfile('Fennec', 'Zomba').family, 'boxy');
-  assert.equal(rocketVehicleProfile('Dominus', 'Draco').family, 'sport');
-  assert.notEqual(
-    rocketVehicleProfile('Octane', 'Zomba').wheelSpokes,
-    rocketVehicleProfile('Octane', 'Draco').wheelSpokes,
-  );
-});
-
 test('Rocket League media UI contains no generic car icon, spinner, or JSON export', async () => {
-  const [imageComponent, fallbackArt, garage, page, proxy] = await Promise.all([
+  const [imageComponent, fallbackCard, garage, page, proxy] = await Promise.all([
     readFile(new URL('../src/components/tuto-gaming/RocketLeagueImage.jsx', import.meta.url), 'utf8'),
-    readFile(new URL('../src/components/tuto-gaming/RocketLeagueFallbackArt.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/tuto-gaming/RocketLeagueFallbackCard.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../src/components/tuto-gaming/RocketLeagueGarage.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../src/pages/tuto-gaming/RocketLeague.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../base44/functions/api/entry.ts', import.meta.url), 'utf8'),
   ]);
-  assert.doesNotMatch(`${imageComponent}\n${fallbackArt}\n${garage}\n${page}`, /CarFront|Loader2|animate-spin|initials/);
+  assert.doesNotMatch(
+    `${imageComponent}\n${fallbackCard}\n${garage}\n${page}`,
+    /CarFront|Loader2|animate-spin|initials|rocketVehicleProfile/,
+  );
+  assert.doesNotMatch(fallbackCard, /<svg|<canvas|<path|<line|radial-gradient|linear-gradient/i);
   assert.doesNotMatch(garage, /exportJson|serializeRocketPreset|>\s*JSON\s*</);
   assert.match(imageComponent, /functions\.fetch\('\/api\/rocket-league-proxy'/);
-  assert.match(fallbackArt, /<svg/);
+  assert.match(fallbackCard, /name \|\| 'Objet non sélectionné'/);
+  assert.match(fallbackCard, /categoryLabel/);
+  assert.match(fallbackCard, /rarityLabel/);
+  assert.match(fallbackCard, /Prix estimé/);
   assert.match(garage, /id="preset-preview-box"/);
   assert.match(proxy, /ROUTE_SUFFIX = '\/api\/rocket-league-proxy'/);
   assert.match(proxy, /'X-Proxy-Cache': cacheStatus/);

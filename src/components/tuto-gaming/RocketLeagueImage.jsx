@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { resolveRocketImageSources, rocketFallbackColors } from './rocketLeagueImages';
-import RocketLeagueFallbackArt from './RocketLeagueFallbackArt';
+import { resolveRocketImageSources } from './rocketLeagueImages';
+import RocketLeagueFallbackCard from './RocketLeagueFallbackCard';
 
 const IMAGE_TIMEOUT_MS = 3_000;
 const PROXY_TIMEOUT_MS = 6_000;
@@ -13,11 +13,13 @@ export default function RocketLeagueImage({
   className = '',
   contain = true,
   fallbackLabel = '',
-  accent = '',
   captureRemote = true,
   showFallback = true,
-  bodyName = '',
-  wheelName = '',
+  fallbackCategory = '',
+  fallbackRarity = '',
+  fallbackPrice = null,
+  fallbackPriceEstimated = true,
+  fallbackSummary = '',
 }) {
   const candidates = useMemo(
     () => resolveRocketImageSources({ src, sources }),
@@ -31,7 +33,6 @@ export default function RocketLeagueImage({
   const current = candidates[index] || '';
   const imageSource = phase === 'direct' ? current : phase === 'proxy-image' ? proxyUrl : '';
   const label = fallbackLabel || alt || 'Visuel indisponible';
-  const colors = rocketFallbackColors(label, accent);
 
   useEffect(() => {
     setIndex(0);
@@ -115,18 +116,15 @@ export default function RocketLeagueImage({
   return (
     <div
       className={`relative flex items-center justify-center overflow-hidden ${showFallback ? 'bg-slate-950' : 'bg-transparent'} ${className}`}
-      style={{
-        backgroundImage: showFallback
-          ? `radial-gradient(circle at 22% 18%, ${colors.primary}88, transparent 42%), linear-gradient(135deg, #111827, ${colors.secondary}55)`
-          : 'none',
-      }}
     >
       {showFallback && (
-        <RocketLeagueFallbackArt
-          label={label}
-          bodyName={bodyName}
-          wheelName={wheelName}
-          accent={accent}
+        <RocketLeagueFallbackCard
+          name={label}
+          category={fallbackCategory}
+          rarity={fallbackRarity}
+          price={fallbackPrice}
+          priceEstimated={fallbackPriceEstimated}
+          summary={fallbackSummary}
         />
       )}
       {imageSource && (
