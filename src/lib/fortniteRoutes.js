@@ -11,6 +11,7 @@ export function fortniteMapPath(map) {
 }
 
 export function fortniteCosmeticPath(item) {
-  const id = typeof item?.id === "string" ? item.id.trim() : "";
+  const rawId = typeof item?.id === "string" ? item.id.trim() : "";
+  const id = typeof rawId.toWellFormed === "function" ? rawId.toWellFormed() : rawId;
   return id ? `/fortnite-cosmetics/${encodeURIComponent(id)}` : "/fortnite-cosmetics";
 }

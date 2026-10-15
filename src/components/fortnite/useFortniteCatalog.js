@@ -14,10 +14,10 @@ export default function useFortniteCatalog(action, { query = '', type = 'all', e
     initialPageParam: 1,
     staleTime: 60 * 60 * 1000,
     retry: false,
-    queryFn: async ({ pageParam, signal }) => {
+    queryFn: async ({ pageParam }) => {
       const { data } = await base44.functions.invoke('fortniteApi', { action, query: term, type, page: pageParam, limit: 24 });
-      if (signal.aborted) throw new DOMException('Requête remplacée', 'AbortError');
-      if (data.error) throw new Error(data.error);
+      if (data?.error) throw new Error(data.error);
+      if (!data) throw new Error('Réponse du catalogue invalide');
       return data;
     },
     getNextPageParam: page => page.has_more ? page.next_page : undefined,
@@ -29,7 +29,7 @@ export default function useFortniteCatalog(action, { query = '', type = 'all', e
     loading: enabled && result.isPending,
     loadingMore: result.isFetchingNextPage,
     hasMore: !!result.hasNextPage,
-    loadMore: () => !result.isFetchingNextPage && result.fetchNextPage(),
+    loadMore: () => !result.isFetchingNextPage && result.fetchNextPage({ cancelRefetch: false }),
     error: result.error,
   };
 }
