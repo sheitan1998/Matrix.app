@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import RocketLeagueImage from '@/components/tuto-gaming/RocketLeagueImage';
 import RocketItemModal from '@/components/tuto-gaming/RocketItemModal';
-import { ROCKET_LEAGUE_CATEGORY_LABELS } from '../../../base44/shared/rocketLeagueCatalog';
+import { ROCKET_LEAGUE_CATEGORY_LABELS } from '@/components/tuto-gaming/rocketLeagueCatalog';
 import useRocketLeagueCatalog from './useRocketLeagueCatalog';
 
 export default function RocketLeagueShop() {

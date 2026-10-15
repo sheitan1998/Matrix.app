@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import {
   getLocalRocketLeagueCatalog,
   ROCKET_LEAGUE_CATEGORY_LABELS,
-} from '../../../base44/shared/rocketLeagueCatalog';
+} from '@/components/tuto-gaming/rocketLeagueCatalog';
 
 function groupCatalog(items, metadata = {}) {
   return {
