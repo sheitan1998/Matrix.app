@@ -4,11 +4,19 @@ export const EMPTY_ROCKET_SELECTION = Object.freeze({
   body: null,
   decal: null,
   wheels: null,
-  paint: 'original',
+  paint: 'paint-original',
+  finish: 'finish-matte',
   goalExplosion: null,
 });
 
-const SELECTION_KEYS = ['body', 'decal', 'wheels', 'goalExplosion'];
+const LEGACY_PAINT_IDS = new Set([
+  'original',
+  'titanium-white',
+  'crimson',
+  'cobalt',
+  'forest-green',
+  'saffron',
+]);
 
 function stringOrNull(value) {
   return typeof value === 'string' && value.length <= 200 ? value : null;
@@ -16,12 +24,17 @@ function stringOrNull(value) {
 
 export function normalizeRocketSelection(value) {
   const source = value && typeof value === 'object' ? value : {};
-  const selection = { ...EMPTY_ROCKET_SELECTION };
-  for (const key of SELECTION_KEYS) selection[key] = stringOrNull(source[key]);
-  selection.paint = typeof source.paint === 'string' && source.paint.length <= 40
-    ? source.paint
-    : EMPTY_ROCKET_SELECTION.paint;
-  return selection;
+  const paint = stringOrNull(source.paint);
+  return {
+    body: stringOrNull(source.body),
+    decal: stringOrNull(source.decal),
+    wheels: stringOrNull(source.wheels),
+    paint: paint && LEGACY_PAINT_IDS.has(paint)
+      ? `paint-${paint}`
+      : paint || EMPTY_ROCKET_SELECTION.paint,
+    finish: stringOrNull(source.finish) || EMPTY_ROCKET_SELECTION.finish,
+    goalExplosion: stringOrNull(source.goalExplosion),
+  };
 }
 
 function normalizePreset(value) {

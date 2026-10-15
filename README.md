@@ -32,15 +32,16 @@ Run the app: `npm run dev`
 
 ### Rocket League
 
-The `/rocket-league` experience uses the configured Tracker Network integration as its
-only item and image source. When `TRN_API_KEY` is missing, rejected, or returns no
-catalogue, MATRIX shows an explicit unavailable/empty state and does not substitute
-sample items.
+The `/rocket-league` item shop and **Custom Preset / Garage** use the checked-in
+MATRIX catalogue and remain available offline. The garage covers bodies, paints,
+finishes, wheels, decals, and goal explosions. Presets and the current draft are
+stored locally under the versioned key `matrix:rocket-league:garage:v1`; corrupt or
+unavailable browser storage safely falls back to an empty usable garage, and up to
+50 named presets are retained.
 
-The **Custom Preset / Garage** tab builds presets from the body, decal, wheel, and goal
-explosion visuals present in the current Tracker response. Presets and the current
-draft are stored locally under the versioned key `matrix:rocket-league:garage:v1`;
-up to 50 named presets are retained. Run its focused storage tests with:
+Player lookup is the only Tracker Network integration. Configure the server-side
+`TRN_API_KEY` environment variable; it is sent only by `rocketLeagueApi` using the
+`TRN-Api-Key` header and is never exposed to the browser. Run the focused tests with:
 
 ```sh
 npm run test:rocket-league

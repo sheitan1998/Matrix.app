@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { ImageOff, Loader2 } from 'lucide-react';
 
-export default function RocketLeagueImage({ src, alt, className = '', contain = true }) {
+export default function RocketLeagueImage({
+  src,
+  alt,
+  className = '',
+  contain = true,
+  fallbackLabel = '',
+  accent = '#334155',
+}) {
   const [status, setStatus] = useState(src ? 'loading' : 'missing');
 
   useEffect(() => {
@@ -27,14 +34,14 @@ export default function RocketLeagueImage({ src, alt, className = '', contain = 
           <span className="sr-only">Chargement du visuel</span>
         </span>
       )}
-      {status === 'error' && (
-        <span className="p-3 text-center text-xs text-muted-foreground" role="status">
-          Le visuel fourni par Tracker est indisponible.
-        </span>
-      )}
-      {status === 'missing' && (
-        <span className="p-3 text-center text-xs text-muted-foreground">
-          Aucun visuel fourni par Tracker.
+      {(status === 'error' || status === 'missing') && (
+        <span
+          className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-3 text-center text-xs font-semibold text-white"
+          style={{ background: `radial-gradient(circle at 30% 20%, ${accent}, #0f172a 75%)` }}
+          role={status === 'error' ? 'status' : undefined}
+        >
+          <ImageOff aria-hidden="true" className="h-7 w-7 opacity-80" />
+          <span>{fallbackLabel || alt || 'Visuel local'}</span>
         </span>
       )}
     </div>
