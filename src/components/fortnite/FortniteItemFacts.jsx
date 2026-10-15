@@ -12,7 +12,7 @@ export default function FortniteItemFacts({ item }) {
   return <div className="space-y-4">
     {item.price != null && <div><p className="mb-1 text-xs text-muted-foreground">Prix de l’offre{item.is_bundle ? ' complète' : ''}</p><VbuckPrice item={item} /></div>}
     {item.description && <p className="text-sm leading-relaxed text-foreground/80">{item.description}</p>}
-    <dl className="grid grid-cols-2 gap-3">{facts.filter(([, value]) => value).map(([label, value]) => <div key={label} className="rounded-lg bg-muted p-3">
+    <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">{facts.filter(([, value]) => value).map(([label, value]) => <div key={label} className="rounded-lg border border-white/10 bg-white/5 p-3 backdrop-blur-sm">
       <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</dt><dd className="mt-1 text-sm font-bold text-foreground">{value}</dd>
     </div>)}</dl>
     {item.audio && <audio src={item.audio} controls loop className="w-full" aria-label={`Audio de ${item.name}`} />}

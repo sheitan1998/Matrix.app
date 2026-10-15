@@ -39,22 +39,25 @@ export default function FortniteItemDialog({ item, onClose, onSelect, user, full
   return <Dialog open={!!item} onOpenChange={open => { if (!open) onClose(); }}>
     {item && full && <DialogContent className={fullscreen
         ? 'inset-0 left-0 top-0 z-[101] flex h-[100dvh] max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-y-auto rounded-none border-0 p-0 sm:rounded-none md:flex-row [&>button]:hidden data-[state=open]:animate-none data-[state=closed]:animate-none'
-        : 'z-[101] flex max-h-[92dvh] max-w-6xl flex-col gap-0 overflow-y-auto p-0 md:flex-row [&>button]:hidden'} aria-describedby="fortnite-media-note">
-        <div className={`group/media relative shrink-0 ${fullscreen ? 'h-[45dvh] md:h-full md:w-2/3' : 'h-72 md:h-auto md:min-h-[60vh] md:w-3/5'}`} style={{ background: style.bg }}>
+        : 'z-[101] flex max-h-[92dvh] max-w-6xl flex-col gap-0 overflow-y-auto p-0 md:flex-row [&>button]:hidden'} aria-describedby="fortnite-media-note"
+        style={{ borderColor: style.border, boxShadow: `0 0 48px ${style.glow}` }}>
+        <div className={`group/media relative shrink-0 bg-[#080b12]/95 backdrop-blur-xl ${fullscreen ? 'h-[45dvh] md:h-full md:w-2/3' : 'h-72 md:h-auto md:min-h-[60vh] md:w-3/5'}`}>
           <FortniteMedia key={full.id} item={full} detail />
         </div>
-        <div className="min-w-0 flex-1 overflow-y-auto bg-background text-foreground">
-          <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-border bg-background p-5">
+        <div className="min-w-0 flex-1 overflow-y-auto bg-[#080b12]/95 text-foreground backdrop-blur-xl">
+          <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-white/10 bg-[#080b12]/90 p-5 backdrop-blur-xl">
             <DialogTitle className="text-xl font-black">{full.name}</DialogTitle><DialogClose className="shrink-0 rounded-lg bg-muted p-2" aria-label="Fermer"><X className="h-5 w-5" /></DialogClose>
           </header>
           <div className="space-y-5 p-5">
-            <DialogDescription id="fortnite-media-note" className="text-xs">Aperçu fourni par Fortnite-API. Le son s’active dans le lecteur ; certains objets n’ont pas de vidéo.</DialogDescription>
+            <DialogDescription id="fortnite-media-note" className="text-xs">Aperçu communautaire direct fourni par Fortnite.GG lorsqu’il est disponible. La vidéo reste muette et l’image officielle prend automatiquement le relais.</DialogDescription>
             {loading && <span className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />Chargement des détails…</span>}
             {error && <p role="status" className="text-xs text-muted-foreground">Détails complémentaires indisponibles.</p>}
-            <button type="button" onClick={share} className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted px-3 py-2 text-xs font-bold">
-              {shareStatus ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
-              {shareStatus || 'Partager'}
-            </button>
+            <div className="flex justify-start sm:justify-end">
+              <button type="button" onClick={share} className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-xs font-bold sm:w-auto">
+                {shareStatus ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+                {shareStatus || 'Partager'}
+              </button>
+            </div>
             {shareError && <p role="alert" className="text-xs text-destructive">{shareError}</p>}
             <FortniteItemFacts item={full} />
             <section className="border-t border-border pt-4"><h3 className="mb-2 text-xs uppercase text-muted-foreground">Réactions communautaires</h3><CosmeticReactionBar key={full.id} cosmetic={full} user={user} counts={counts} compact={false} /></section>

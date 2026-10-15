@@ -9,8 +9,13 @@ import {
   FORTNITE_MEDIA_BACKGROUND_CLASS,
   getFortniteImageCandidates,
   getFortniteMediaBadge,
+  getCommunityVideoCandidates,
+  getFortniteGgResolverUrl,
+  getFortniteVideoCandidates,
   getFortniteVideoUrl,
+  isAllowedFortniteVideoUrl,
   isOfficialFortniteVideoUrl,
+  normalizeFortniteCosmeticId,
 } from "../src/lib/fortniteMedia.js";
 import { canonicalUrl, copyText, shareOrCopy } from "../src/lib/share.js";
 
@@ -52,10 +57,32 @@ test("accepts only direct official MP4 or WebM Fortnite previews", () => {
   assert.equal(isOfficialFortniteVideoUrl("https://notepicgames.com/emote.mp4"), false);
 });
 
+test("builds deterministic Fortnite.GG candidates from safely resolved item IDs", () => {
+  assert.equal(normalizeFortniteCosmeticId(" EID_DanceMoves "), "EID_DanceMoves");
+  assert.equal(normalizeFortniteCosmeticId("../../video"), "");
+  assert.equal(normalizeFortniteCosmeticId("EID_DanceMoves?next=bad"), "");
+  assert.equal(getFortniteGgResolverUrl("EID_DanceMoves"), "https://fortnite.gg/api/item?id=EID_DanceMoves");
+  const item = { id: "EID_DanceMoves", community_media: { cosmetic_id: "eid_dancemoves", numeric_id: "3740" } };
+  assert.deepEqual(getCommunityVideoCandidates(item), [
+    "https://fnggcdn.com/items/3740/video-sd.mp4",
+    "https://fnggcdn.com/items/3740/video.mp4",
+  ]);
+  assert.deepEqual(getFortniteVideoCandidates(item, true), getCommunityVideoCandidates(item));
+  assert.deepEqual(getCommunityVideoCandidates({ ...item, id: "EID_Other" }), []);
+  assert.equal(isAllowedFortniteVideoUrl("https://fnggcdn.com/items/3740/video-sd.mp4"), true);
+  assert.equal(isAllowedFortniteVideoUrl("https://youtube.com/items/3740/video.mp4"), false);
+  assert.equal(isAllowedFortniteVideoUrl("https://cdn.example/items/3740/video.mp4"), false);
+});
+
 test("Fortnite media uses required HTML5 attributes and a dark non-green fallback", async () => {
   const source = await import("node:fs/promises")
     .then(({ readFile }) => readFile(new URL("../src/components/fortnite/FortniteMedia.jsx", import.meta.url), "utf8"));
   assert.match(source, /<video[\s\S]*?\sautoPlay\s[\s\S]*?\sloop\s[\s\S]*?\smuted\s[\s\S]*?\splaysInline\s/);
+  assert.match(source, /onError=\{advanceVideoCandidate\}/);
+  assert.match(source, /setVideoIndex\(index => index \+ 1\)/);
+  assert.match(source, /setVideoIndex\(0\)/);
+  assert.ok(source.indexOf("<img") < source.indexOf("<video"), "the image fallback stays mounted behind video candidates");
+  assert.doesNotMatch(source, /Vidéo indisponible/);
   assert.equal(FORTNITE_MEDIA_BACKGROUND_CLASS, "bg-[#080b12]/95 backdrop-blur-xl");
   assert.doesNotMatch(FORTNITE_MEDIA_BACKGROUND_CLASS, /green|emerald|#(?:0f0|00ff00|22c55e)/i);
 });

@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 import { getCatalogPage, getCatalog, clearCatalogCache } from './catalog.ts';
 import { creativePage, enrichMaps, islandSnapshot } from './creative.ts';
 import { cached } from './cache.ts';
+import { normalizeCosmeticId, resolveCommunityMedia } from './communityMedia.ts';
 import { createApiCache, dataResponse } from "../../shared/apiCache.ts";
 
 // ─── In-memory cache (shared module, fn: prefix) ───
@@ -133,10 +134,13 @@ export default async function(req) {
     }
 
     if (action === 'getCosmeticDetails') {
-      const id = String(body.id || '').trim().slice(0, 200);
+      const id = normalizeCosmeticId(body.id);
       if (!id) return Response.json({ error: 'Identifiant requis' }, { status: 400 });
       const catalog = await getCatalog('cosmetics');
-      return dataResponse(catalog.items.find(item => item.id === id) || null);
+      const item = catalog.items.find(item => item.id === id) || null;
+      if (!item) return dataResponse(null);
+      const community_media = await resolveCommunityMedia(id).catch(() => null);
+      return dataResponse({ ...item, community_media });
     }
 
     // ── Public: 24-item pages, shared hourly catalogue cache ──
