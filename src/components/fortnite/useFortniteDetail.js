@@ -4,10 +4,14 @@ import { base44 } from '@/api/base44Client';
 export default function useFortniteDetail(item) {
   const details = useQuery({
     queryKey: ['fortniteDetail', item?.id], enabled: !!item?.id, staleTime: 3600000, retry: false,
-    queryFn: async () => (await base44.functions.invoke('fortniteApi', { action: 'getCosmeticDetails', id: item.id })).data,
+    queryFn: async () => {
+      const data = (await base44.functions.invoke('fortniteApi', { action: 'getCosmeticDetails', id: item.id })).data;
+      if (!data) throw new Error('Cosmétique Fortnite introuvable');
+      return data;
+    },
   });
-  const full = item ? { ...item, ...details.data, name: item.name, image: item.image || details.data?.image,
-    images: item.images || details.data?.images } : null;
+  const full = item ? { ...item, ...details.data, name: details.data?.name || item.name,
+    image: item.image || details.data?.image, images: item.images || details.data?.images } : null;
   const setName = full?.set_name || full?.series;
   const set = useQuery({
     queryKey: ['fortniteSet', setName], enabled: !!setName, staleTime: 3600000, retry: false,

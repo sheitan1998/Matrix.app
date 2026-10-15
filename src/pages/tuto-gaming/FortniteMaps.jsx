@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect, useCallback } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Search, Loader2, ArrowLeft, Map as MapIcon, ShoppingBag, Shirt, User } from "lucide-react";
 import FortniteMapCard from "@/components/tuto-gaming/FortniteMapCard";
@@ -11,19 +11,26 @@ import { FORTNITE_BANNER, MAP_CATEGORIES } from "@/components/tuto-gaming/fortni
 import { useTutoGamingAssets, getAssetUrl } from "@/hooks/useTutoGamingAssets";
 import usePageSEO from "@/hooks/usePageSEO";
 import useFortniteMaps from "@/components/fortnite/useFortniteMaps";
+import useFortniteMapDetail from "@/components/fortnite/useFortniteMapDetail";
+import { fortniteMapPath, normalizeFortniteMapCode } from "@/lib/fortniteRoutes";
 
 export default function FortniteMaps() {
+  const navigate = useNavigate();
+  const { mapCode: routeMapCode } = useParams();
+  const mapCode = normalizeFortniteMapCode(routeMapCode);
   usePageSEO({
     title: "Fortnite Maps - Cartes créatives | MATRIX",
     description: "Découvrez et partagez les meilleures cartes créatives Fortnite. Explorez, votez et publiez vos maps préférées.",
-    path: "/fortnite-maps",
+    path: mapCode ? fortniteMapPath({ map_code: mapCode }) : "/fortnite-maps",
   });
 
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const { maps: filteredMaps, total, loading, error, hasMore, loadingMore, loadMore, refresh: fetchMaps } = useFortniteMaps(search, activeCategory);
   const [showSubmit, setShowSubmit] = useState(false);
-  const [selectedMap, setSelectedMap] = useState(null);
+  const [selectedCandidate, setSelectedCandidate] = useState(null);
+  const { map: linkedMap, loading: linkedMapLoading, error: linkedMapError } = useFortniteMapDetail(mapCode, selectedCandidate);
+  const selectedMap = selectedCandidate?.map_code === mapCode ? selectedCandidate : linkedMap;
   const [editMap, setEditMap] = useState(null);
   const [user, setUser] = useState(null);
   const [sections, setSections] = useState({
@@ -44,6 +51,20 @@ export default function FortniteMaps() {
       .catch(() => {});
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!mapCode) setSelectedCandidate(null);
+  }, [mapCode]);
+
+  const selectMap = useCallback((map) => {
+    setSelectedCandidate(map);
+    navigate(fortniteMapPath(map));
+  }, [navigate]);
+
+  const closeMap = useCallback(() => {
+    setSelectedCandidate(null);
+    navigate("/fortnite-maps", { replace: true });
+  }, [navigate]);
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 max-w-7xl mx-auto pb-12">
@@ -132,9 +153,9 @@ export default function FortniteMaps() {
       <h1 className="text-2xl font-black text-white mb-1">Fortnite Maps</h1>
       <p className="text-xs text-white/40 mb-4">Découvrez et partagez les meilleures cartes créatives Fortnite</p>
 
-      {sections.show_api_maps && <ApiFeaturedMaps search={search} category={activeCategory} user={user} />}
+      {sections.show_api_maps && <ApiFeaturedMaps search={search} category={activeCategory} user={user} onSelect={selectMap} />}
       {/* Featured maps with live player counts (manual) */}
-      <FeaturedMaps />
+      <FeaturedMaps onSelect={selectMap} user={user} />
       <h2 className="mb-3 text-lg font-black text-foreground">Cartes de la communauté</h2>
 
       {/* Results count */}
@@ -161,7 +182,7 @@ export default function FortniteMaps() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
           {filteredMaps.map((m, i) => (
-            <FortniteMapCard key={m.id} map={m} index={i} onClick={setSelectedMap} user={user} />
+            <FortniteMapCard key={m.id} map={m} index={i} onClick={selectMap} user={user} />
           ))}
         </div>
       )}
@@ -174,13 +195,25 @@ export default function FortniteMaps() {
         </div>
       )}
 
+      {linkedMapLoading && !selectedMap && (
+        <div role="status" className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80">
+          <Loader2 className="h-7 w-7 animate-spin text-white" />
+          <span className="sr-only">Chargement de la carte</span>
+        </div>
+      )}
+      {(linkedMapError || (routeMapCode && !mapCode)) && !selectedMap && (
+        <div role="alert" className="fixed bottom-4 left-1/2 z-[102] -translate-x-1/2 rounded-lg bg-red-950 px-4 py-3 text-sm text-red-100">
+          Carte introuvable. <button type="button" onClick={closeMap} className="underline">Fermer</button>
+        </div>
+      )}
+
       {/* Detail modal */}
       <MapDetailModal
         map={selectedMap}
         user={user}
-        onClose={() => setSelectedMap(null)}
+        onClose={closeMap}
         onEdit={(m) => {
-          setSelectedMap(null);
+          closeMap();
           setEditMap(m);
           setShowSubmit(true);
         }}

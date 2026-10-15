@@ -12,6 +12,7 @@
     "tauri:generate-latest-json": "node scripts/generate-latest-json.mjs",
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
+    "test:fortnite": "node --test tests/fortniteRoutes.test.js",
     "typecheck": "tsc -p ./jsconfig.json",
     "preview": "vite preview"
   },

@@ -174,8 +174,10 @@ const AuthenticatedApp = () => {
         <Route path="/best-serveurs/category/:slug" element={<CategoryServers />} />
         <Route path="/fortnite-map" element={<Navigate to="/fortnite-maps" replace />} />
         <Route path="/fortnite-maps" element={<FortniteMaps />} />
+        <Route path="/fortnite-maps/:mapCode" element={<FortniteMaps />} />
         <Route path="/fortnite-shop" element={<FortniteShop />} />
         <Route path="/fortnite-cosmetics" element={<FortniteCosmetics />} />
+        <Route path="/fortnite-cosmetics/:cosmeticId" element={<FortniteCosmetics />} />
         <Route path="/fortnite-stats" element={<FortniteStats />} />
         <Route path="/dofus" element={<Dofus />} />
         <Route path="/rocket-league" element={<RocketLeague />} />

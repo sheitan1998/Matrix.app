@@ -8,10 +8,14 @@ import FortniteItemGallery from '@/components/fortnite/FortniteItemGallery';
 import CosmeticReactionBar from '@/components/fortnite/CosmeticReactionBar';
 import useFortniteDetail from '@/components/fortnite/useFortniteDetail';
 
-export default function FortniteItemDialog({ item, onClose, user, fullscreen = false }) {
+export default function FortniteItemDialog({ item, onClose, onSelect, user, fullscreen = false }) {
   const [active, setActive] = useState(item);
   useEffect(() => setActive(item), [item]);
   const { full, loading, error, setItems, counts } = useFortniteDetail(active);
+  const selectItem = (nextItem) => {
+    setActive(nextItem);
+    onSelect?.(nextItem);
+  };
   const style = full ? getFortniteItemStyle(full) : {};
   return <Dialog open={!!item} onOpenChange={open => { if (!open) onClose(); }}>
     {item && full && <DialogContent className={fullscreen
@@ -29,9 +33,9 @@ export default function FortniteItemDialog({ item, onClose, user, fullscreen = f
             {loading && <span className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />Chargement des détails…</span>}
             {error && <p role="status" className="text-xs text-muted-foreground">Détails complémentaires indisponibles.</p>}
             <FortniteItemFacts item={full} />
-            <section className="border-t border-border pt-4"><h3 className="mb-2 text-xs uppercase text-muted-foreground">Réactions communautaires</h3><CosmeticReactionBar key={full.id} cosmetic={full} user={user} counts={counts} /></section>
-            <FortniteItemGallery title="Contenu de l’offre" items={full.included_items?.length > 1 ? full.included_items : []} onSelect={setActive} />
-            <FortniteItemGallery title="Même ensemble" items={setItems.filter(i => i.id !== full.id)} onSelect={setActive} />
+            <section className="border-t border-border pt-4"><h3 className="mb-2 text-xs uppercase text-muted-foreground">Réactions communautaires</h3><CosmeticReactionBar key={full.id} cosmetic={full} user={user} counts={counts} compact={false} /></section>
+            <FortniteItemGallery title="Contenu de l’offre" items={full.included_items?.length > 1 ? full.included_items : []} onSelect={selectItem} />
+            <FortniteItemGallery title="Même ensemble" items={setItems.filter(i => i.id !== full.id)} onSelect={selectItem} />
           </div>
         </div>
       </DialogContent>}
