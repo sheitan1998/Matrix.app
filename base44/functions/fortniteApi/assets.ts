@@ -1,3 +1,28 @@
+const OFFICIAL_VIDEO_HOSTS = ['fortnite-api.com', 'fortniteapi.io', 'epicgames.com', 'fortnite.com'];
+
+function directAssetUrl(value) {
+  if (typeof value === 'string') return value;
+  if (!value || typeof value !== 'object') return '';
+  return [value.url, value.src, value.video].find(candidate => typeof candidate === 'string') || '';
+}
+
+function officialVideoUrl(value) {
+  const candidate = directAssetUrl(value).trim();
+  if (!candidate) return null;
+  try {
+    const url = new URL(candidate);
+    const host = url.hostname.toLowerCase();
+    const officialHost = OFFICIAL_VIDEO_HOSTS.some(domain => host === domain || host.endsWith(`.${domain}`));
+    return url.protocol === 'https:'
+      && officialHost
+      && ['.mp4', '.webm'].some(extension => url.pathname.toLowerCase().endsWith(extension))
+      ? url.href
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 export function normalize(item) {
   const images = item.images || {};
   return {
@@ -9,8 +34,9 @@ export function normalize(item) {
     images: { featured: images.featured || images.large || item.albumArt || null, large: images.large || images.featured || null,
       icon: images.icon || images.small || null,
       smallIcon: images.smallIcon || null,
-      animated: typeof images.animated === 'string' && /^https:\/\//.test(images.animated) ? images.animated : null },
-    video: typeof item.video === 'string' && /^https:\/\//.test(item.video) ? item.video : null,
+      animated: officialVideoUrl(images.animated) },
+    gameplayItem: officialVideoUrl(item.gameplayItem),
+    video: officialVideoUrl(item.video),
     audio: typeof item.audio === 'string' && /^https:\/\//.test(item.audio) ? item.audio : null,
     series: item.series?.value || null, series_colors: item.series?.colors || [],
     set_name: item.set?.value || null, set_display: item.set?.text || item.set?.displayValue || null,

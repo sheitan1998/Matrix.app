@@ -6,9 +6,11 @@ import {
   normalizeFortniteMapCode,
 } from "../src/lib/fortniteRoutes.js";
 import {
+  FORTNITE_MEDIA_BACKGROUND_CLASS,
   getFortniteImageCandidates,
   getFortniteMediaBadge,
   getFortniteVideoUrl,
+  isOfficialFortniteVideoUrl,
 } from "../src/lib/fortniteMedia.js";
 import { canonicalUrl, copyText, shareOrCopy } from "../src/lib/share.js";
 
@@ -28,12 +30,34 @@ test("builds encoded cosmetic links and rejects missing identifiers", () => {
   assert.equal(fortniteCosmeticPath({}), "/fortnite-cosmetics");
 });
 
-test("accepts only secure MP4 or WebM Fortnite previews", () => {
-  assert.equal(getFortniteVideoUrl({ video: "https://cdn.example/emote.mp4" }), "https://cdn.example/emote.mp4");
-  assert.equal(getFortniteVideoUrl({ images: { animated: "https://cdn.example/skin.webm?v=2" } }), "https://cdn.example/skin.webm?v=2");
-  assert.equal(getFortniteVideoUrl({ video: "http://cdn.example/emote.mp4" }), "");
-  assert.equal(getFortniteVideoUrl({ video: "https://cdn.example/file.svg" }), "");
+test("accepts only direct official MP4 or WebM Fortnite previews", () => {
+  assert.equal(
+    getFortniteVideoUrl({ gameplayItem: "https://media.fortnite-api.com/gameplay/emote.mp4" }),
+    "https://media.fortnite-api.com/gameplay/emote.mp4",
+  );
+  assert.equal(
+    getFortniteVideoUrl({ images: { animated: "https://cdn-live.prd.on.epicgames.com/skin.webm?v=2" } }),
+    "https://cdn-live.prd.on.epicgames.com/skin.webm?v=2",
+  );
+  assert.equal(getFortniteVideoUrl({ video: "https://youtube.com/watch?v=abc" }), "");
+  assert.equal(getFortniteVideoUrl({ video: "https://youtu.be/abc" }), "");
+  assert.equal(getFortniteVideoUrl({ video: "https://youtube.com/embed/abc.mp4" }), "");
+  assert.equal(getFortniteVideoUrl({ video: "https://cdn.example/emote.mp4" }), "");
+  assert.equal(getFortniteVideoUrl({ video: "http://fortnite-api.com/emote.mp4" }), "");
+  assert.equal(getFortniteVideoUrl({ video: "https://fortnite-api.com/cosmetics/emote" }), "");
+  assert.equal(getFortniteVideoUrl({ video: "https://fortnite-api.com/file.mp4.html" }), "");
   assert.equal(getFortniteVideoUrl({ video: "   " }), "");
+  assert.equal(isOfficialFortniteVideoUrl("https://fortnite-api.com/emote.mp4"), true);
+  assert.equal(isOfficialFortniteVideoUrl("https://epicgames.com/emote.webm"), true);
+  assert.equal(isOfficialFortniteVideoUrl("https://notepicgames.com/emote.mp4"), false);
+});
+
+test("Fortnite media uses required HTML5 attributes and a dark non-green fallback", async () => {
+  const source = await import("node:fs/promises")
+    .then(({ readFile }) => readFile(new URL("../src/components/fortnite/FortniteMedia.jsx", import.meta.url), "utf8"));
+  assert.match(source, /<video[\s\S]*?\sautoPlay\s[\s\S]*?\sloop\s[\s\S]*?\smuted\s[\s\S]*?\splaysInline\s/);
+  assert.equal(FORTNITE_MEDIA_BACKGROUND_CLASS, "bg-[#080b12]/95 backdrop-blur-xl");
+  assert.doesNotMatch(FORTNITE_MEDIA_BACKGROUND_CLASS, /green|emerald|#(?:0f0|00ff00|22c55e)/i);
 });
 
 test("prefers official HD images and exposes contextual media badges", () => {
