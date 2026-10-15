@@ -1,4 +1,5 @@
 // Reference snapshot from DofusDB, 14 October 2026. Real effects and crafting ingredients.
+/** @type {Array<[number,string,string,number,number,string,Array<[number,number,number]>,Array<[number,number,string,number]>]>} */
 const rows = [
   [70,"Amulette du Hibou","equipment",8,1001,"Amulette",[[10,13,126]],[[16524,3,"Relique d'Incarnam",164068],[385,3,"Bave de Bouftou",15057]]],
   [77,"Amulette de l'Ours","equipment",8,1005,"Amulette",[[10,13,118]],[[16524,3,"Relique d'Incarnam",164068],[1984,3,"Cendres Éternelles",48671]]],
@@ -25,15 +26,16 @@ const rows = [
   [580,"Potion Ghetto Raide","consumables",50,12018,"Potion",[[150,0,139]],[[395,5,"Trèfle à 5 feuilles",36067],[1983,1,"Graisse Gélatineuse",15379],[400,1,"Orge",34082]]],
   [1182,"Potion de Mini Soin","consumables",1,12016,"Potion",[[11,0,110]],[[421,4,"Ortie",36642]]]
 ];
+const typeIds={Amulette:1,Anneau:9,Bottes:11,Ceinture:10,'Épée':6};
 export const DOFUS_FALLBACK = rows.map(([id,name,category,level,icon,type,effects,recipes]) => ({
-  id,name,category,level,type,img:`https://api.dofusdb.fr/img/items/${icon}.png`,hasRecipe:true,source:'reference',
+  id,name,category,level,type,typeId:typeIds[type]||0,img:`https://api.dofusdb.fr/img/items/${icon}.png`,hasRecipe:true,source:'reference',
   description: category === 'consumables' ? 'Consommable Dofus. Effets et recette issus du catalogue DofusDB sauvegardé.' : `${type} de niveau ${level}. Caractéristiques et recette issues du catalogue DofusDB sauvegardé.`,
   effects:effects.map(([from,to,effectId])=>({from,to,effectId})),
   recipes:recipes.map(([id,quantity,ingredientName,icon])=>({id,quantity,ingredientName,ingredientImg:`https://api.dofusdb.fr/img/items/${icon}.png`}))
 }));
-export function getDofusFallback({category='all',search='',minLevel=0,maxLevel=0,page=1,limit=50}={}) {
+export function getDofusFallback({category='all',typeIds:requestedTypes=[],search='',minLevel=0,maxLevel=0,page=1,limit=50}={}) {
   const needle=search.toLocaleLowerCase('fr');
-  const matches=DOFUS_FALLBACK.filter(i=>(category==='all'||i.category===category)&&(!needle||i.name.toLocaleLowerCase('fr').includes(needle))&&i.level>=Number(minLevel||0)&&(!Number(maxLevel)||i.level<=Number(maxLevel)));
+  const matches=DOFUS_FALLBACK.filter(i=>(category==='all'||i.category===category)&&(!requestedTypes.length||requestedTypes.includes(i.typeId))&&(!needle||i.name.toLocaleLowerCase('fr').includes(needle))&&i.level>=Number(minLevel||0)&&(!Number(maxLevel)||i.level<=Number(maxLevel)));
   const skip=(page-1)*limit;
   return {items:matches.slice(skip,skip+limit),total:matches.length,page,has_more:skip+limit<matches.length,source:'reference'};
 }
