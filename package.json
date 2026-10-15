@@ -13,6 +13,10 @@
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
     "test:rocket-league": "node --test tests/rocketLeaguePresetStorage.test.js",
+    "test:fs25": "node --test tests/farming-mods.test.ts",
+    "test": "node --test tests/dofusBuilderMath.test.js tests/dofusData.test.js",
+    "test:dofus": "node --test tests/dofusBuilderMath.test.js tests/dofusData.test.js",
+    "test:fortnite": "node --test tests/fortniteRoutes.test.js",
     "typecheck": "tsc -p ./jsconfig.json",
     "preview": "vite preview"
   },

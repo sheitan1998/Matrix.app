@@ -1,6 +1,6 @@
 import { createApiCache, dataResponse } from "../../shared/apiCache.ts";
 import { dofusFallback, fallbackDofusPage } from "../../shared/dofusFallback.ts";
-import { normalizeDofusItem, normalizeDofusSet, loadDofusRecipes } from "../../shared/dofusData.ts";
+import { normalizeDofusBreed, normalizeDofusItem, normalizeDofusSet, normalizeDofusSpell, loadDofusRecipes } from "../../shared/dofusData.ts";
 
 const CACHE_TTL = 60 * 60 * 1000;
 const CACHE_TTL_TYPES = 24 * 60 * 60 * 1000;
@@ -54,11 +54,76 @@ function imgUrl(item) {
   return null;
 }
 
+async function fetchDofusCollection(path, params, timeout=8000) {
+  const res=await fetch(`https://api.dofusdb.fr/${path}?${buildQuery(params)}`,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(timeout)});
+  if(!res.ok)throw new Error(`DofusDB ${path} (${res.status})`);
+  return res.json();
+}
+async function fetchDofusByIds(path,ids,timeout=12000) {
+  const rows=[];
+  for(let index=0;index<ids.length;index+=50){
+    const batch=ids.slice(index,index+50);
+    const response=await fetchDofusCollection(path,{'$limit':String(batch.length),'id[$in]':batch.map(String)},timeout);
+    rows.push(...(response.data||[]));
+  }
+  return rows;
+}
+
 export default async function(req) {
   try {
     const body = await req.json().catch(() => ({}));
     const action = body.action;
     const lang = body.lang || 'fr';
+
+    if (action === 'getItemTypes') {
+      const types=await getItemTypes();
+      const allowedSuperTypes=new Set([...CATEGORY_SUPER_TYPES.equipment,...CATEGORY_SUPER_TYPES.weapons]);
+      return dataResponse({
+        types:types
+          .filter(type=>allowedSuperTypes.has(type.superTypeId))
+          .map(type=>({id:type.id,name:type.name?.[lang]||type.name?.fr||`Type ${type.id}`,theme:type.superTypeId===2?'weapons':'equipment'}))
+          .sort((a,b)=>a.name.localeCompare(b.name,lang)),
+        source:'live',
+      });
+    }
+
+    if (action === 'getBreeds') {
+      const cacheKey=`breeds:v1:${lang}`;
+      const cached=rawGetCached(cacheKey,CACHE_TTL_TYPES);
+      if(cached)return dataResponse(cached);
+      const data=await fetchDofusCollection('breeds',{'$limit':'30','$sort[sortIndex]':'1'});
+      const result={breeds:(data.data||[]).map(breed=>normalizeDofusBreed(breed,lang)),source:'live'};
+      setCached(cacheKey,result);
+      return dataResponse(result);
+    }
+
+    if (action === 'getBreedSpells') {
+      const breedId=Number(body.breedId);
+      if(!Number.isInteger(breedId)||breedId<=0)return Response.json({error:'Classe requise'},{status:400});
+      const cacheKey=`breed-spells:v1:${breedId}:${lang}`;
+      const cached=rawGetCached(cacheKey,CACHE_TTL_TYPES);
+      if(cached)return dataResponse(cached);
+      const breedResponse=await fetch(`https://api.dofusdb.fr/breeds/${breedId}`,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(8000)});
+      if(!breedResponse.ok)throw new Error(`DofusDB breeds (${breedResponse.status})`);
+      const breed=await breedResponse.json();
+      const spellIds=[...new Set((breed.breedSpellsId||[]).map(Number).filter(Number.isInteger))];
+      if(!spellIds.length)return dataResponse({breed:normalizeDofusBreed(breed,lang),spells:[],source:'live'});
+      const spells=await fetchDofusByIds('spells',spellIds);
+      const levelIds=[...new Set(spells.flatMap(spell=>spell.spellLevels||[]).map(Number).filter(Number.isInteger))];
+      const levels=levelIds.length?await fetchDofusByIds('spell-levels',levelIds):[];
+      const effectIds=[...new Set(levels.flatMap(level=>[...(level.effects||[]),...(level.criticalEffect||[])]).map(effect=>Number(effect.effectId)).filter(Number.isInteger))];
+      const effects=effectIds.length?await fetchDofusByIds('effects',effectIds):[];
+      const effectDefinitions=new Map(effects.map(effect=>[effect.id,effect]));
+      const result={
+        breed:normalizeDofusBreed(breed,lang),
+        spells:spells
+          .map(spell=>normalizeDofusSpell(spell,levels.filter(level=>level.spellId===spell.id),effectDefinitions,lang))
+          .sort((a,b)=>a.levels[0]?.minPlayerLevel-b.levels[0]?.minPlayerLevel||a.name.localeCompare(b.name,lang)),
+        source:'live',
+      };
+      setCached(cacheKey,result);
+      return dataResponse(result);
+    }
 
     if (action === 'searchItems') {
       const limit = Math.min(50, Math.max(1, Number(body.limit) || 50));

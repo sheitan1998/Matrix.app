@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 import { getCatalogPage, getCatalog, clearCatalogCache } from './catalog.ts';
-import { creativePage, enrichMaps } from './creative.ts';
+import { creativePage, enrichMaps, islandSnapshot } from './creative.ts';
 import { cached } from './cache.ts';
 import { createApiCache, dataResponse } from "../../shared/apiCache.ts";
 
@@ -91,7 +91,20 @@ export default async function(req) {
         base44.entities.FortniteMap.count(query),
       ]);
       const items = await enrichMaps(page.items || []);
-      return dataResponse({ items, total, has_more: page.has_more, next_cursor: page.next_cursor }, 86400);
+      return dataResponse({ items, total, has_more: page.has_more, next_cursor: page.next_cursor }, 900);
+    }
+
+    if (action === 'getMapDetails') {
+      const code = String(body.code || '').trim().toUpperCase();
+      if (!/^\d{4}-\d{4}-\d{4}$/.test(code)) {
+        return Response.json({ error: 'Code de carte invalide' }, { status: 400 });
+      }
+      const stored = await base44.entities.FortniteMap.filter({ map_code: code }, { limit: 1 });
+      if (stored.items?.[0]) {
+        const [map] = await enrichMaps([stored.items[0]]);
+        return dataResponse(map, 900);
+      }
+      return dataResponse(await islandSnapshot(code), 900);
     }
 
     const adminAction = ['purgeCache', 'getConfig', 'updateConfig', 'testConnection'].includes(action);
@@ -101,7 +114,7 @@ export default async function(req) {
     if (action === 'getCreativeMaps' || action === 'getApiFeaturedMaps') {
       if (config?.show_api_maps === false) return Response.json(action === 'getApiFeaturedMaps' ? [] : { items: [], has_more: false });
       const result = await creativePage(body);
-      return dataResponse(action === 'getApiFeaturedMaps' ? result.items : result, 86400);
+      return dataResponse(action === 'getApiFeaturedMaps' ? result.items : result, 900);
     }
 
     if (action === 'getFeaturedMaps') {
@@ -111,7 +124,7 @@ export default async function(req) {
         );
         return await enrichMaps(page.items || []);
       });
-      return dataResponse(result, 86400);
+      return dataResponse(result, 900);
     }
 
     if (action === 'getCosmeticDetails') {

@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Copy, Check, User, Images, Radio } from "lucide-react";
+import { Copy, Check, User, Images } from "lucide-react";
 import { getCategoryMeta } from "@/components/tuto-gaming/fortniteMapsData";
 import VoteButtons from "@/components/tuto-gaming/VoteButtons";
 import LivePlayersBadge from '@/components/fortnite/LivePlayersBadge';
+import FortniteMapImage from "@/components/fortnite/FortniteMapImage";
 
-export default function FortniteMapCard({ map, index = 0, onClick, user }) {
+export default function FortniteMapCard({ map, index = 0, onClick, user, featured = false }) {
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState("");
   const cat = getCategoryMeta(map.category);
   const imageCount = (map.gallery?.length || 0) || (map.image_url ? 1 : 0);
 
@@ -15,10 +17,11 @@ export default function FortniteMapCard({ map, index = 0, onClick, user }) {
     e.stopPropagation();
     try {
       await navigator.clipboard.writeText(map.map_code);
+      setCopyError("");
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      /* silent */
+      setCopyError("Impossible de copier le code.");
     }
   };
 
@@ -28,32 +31,30 @@ export default function FortniteMapCard({ map, index = 0, onClick, user }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.4 }}
       onClick={() => onClick?.(map)}
-      className="group rounded-xl overflow-hidden flex flex-col cursor-pointer transition hover:border-purple-500/40"
+      onKeyDown={(event) => {
+        if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) {
+          event.preventDefault();
+          onClick?.(map);
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label={`Voir les détails de ${map.title}`}
+      className="group rounded-xl overflow-hidden flex flex-col cursor-pointer transition hover:border-purple-500/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-400"
       style={{
         background: "#0D0518",
         border: "1px solid rgba(191,90,242,0.15)",
       }}
     >
       {/* Thumbnail */}
-      <div className="relative h-36 sm:h-40 overflow-hidden" style={{ background: "#1a0a2e" }}>
-        {map.image_url ? (
-          <img
-            src={map.image_url}
-            alt={map.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            loading="lazy"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <span className="text-3xl opacity-30">🗺️</span>
-          </div>
-        )}
+      <div className="relative aspect-video overflow-hidden" style={{ background: "#1a0a2e" }}>
+        <FortniteMapImage map={map} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
         {/* Category badge */}
         <span
           className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider"
           style={{ background: `${cat.color}25`, color: cat.color, border: `1px solid ${cat.color}40` }}
         >
-          {cat.label}
+          {featured ? "★ Vedette" : cat.label}
         </span>
         {/* Gallery count badge */}
         {imageCount > 1 && (
@@ -106,6 +107,7 @@ export default function FortniteMapCard({ map, index = 0, onClick, user }) {
         {copied && (
           <span className="text-[9px] text-green-400 text-center mt-1 font-bold">Copié !</span>
         )}
+        {copyError && <span role="alert" className="mt-1 text-center text-[9px] text-red-400">{copyError}</span>}
         {!map.is_api && <VoteButtons
           contentType="fortnite_map"
           contentId={map.id}
