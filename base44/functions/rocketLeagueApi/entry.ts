@@ -7,13 +7,23 @@ import {
 } from "../../shared/rocketLeagueCatalog.ts";
 import {
   requestRocketLeaguePlayerStats,
-  ROCKET_PLAYER_NOT_FOUND_MESSAGE,
 } from "../../shared/rocketLeagueTracker.ts";
 
 const CACHE_TTL_STATS = 5 * 60 * 1000;
 const CACHE_TTL_CATALOG = 60 * 60 * 1000;
 const MAX_CATALOG_BYTES = 8 * 1024 * 1024;
 const { getCached, setCached } = createApiCache(80);
+
+function trackerHttpStatus(code, upstreamStatus) {
+  if (code === 'invalid_request') return 400;
+  if (code === 'not_found') return 404;
+  if (code === 'private_or_forbidden') return 403;
+  if (code === 'rate_limited') return 429;
+  if (code === 'timeout') return 504;
+  if (code === 'invalid_api_key' || code === 'missing_api_key') return 503;
+  if (upstreamStatus && upstreamStatus >= 500) return 502;
+  return 502;
+}
 function configuredImageHosts() {
   return new Set(String(process.env.ROCKET_LEAGUE_IMAGE_HOSTS || '')
     .split(',')
@@ -121,8 +131,7 @@ export default async function(req) {
           upstreamStatus: result.error.upstreamStatus,
           platform,
         });
-        const status = result.error.upstreamStatus
-          || (result.error.code === 'invalid_request' ? 400 : 503);
+        const status = trackerHttpStatus(result.error.code, result.error.upstreamStatus);
         return Response.json({
           error: result.error.message,
           code: result.error.code,
@@ -137,8 +146,8 @@ export default async function(req) {
   } catch (error) {
     console.error('Rocket League API request failed', error);
     return Response.json({
-      error: ROCKET_PLAYER_NOT_FOUND_MESSAGE,
+      error: 'Le service Rocket League est temporairement indisponible.',
       code: 'internal_error',
-    });
+    }, { status: 500 });
   }
 }

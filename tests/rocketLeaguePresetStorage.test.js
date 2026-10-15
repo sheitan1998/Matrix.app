@@ -13,6 +13,7 @@ import {
   safeRocketFilename,
   saveRocketGarage,
 } from '../src/components/tuto-gaming/rocketLeaguePresetStorage.js';
+import { captureRocketLeaguePreview } from '../src/components/tuto-gaming/rocketLeaguePreviewCapture.js';
 
 function memoryStorage(initial = {}) {
   const values = new Map(Object.entries(initial));
@@ -36,6 +37,23 @@ test('returns an empty garage when persisted JSON is malformed', () => {
 
 test('creates a filesystem-safe deterministic image filename', () => {
   assert.equal(safeRocketFilename('Preset été / "bleu"'), 'Preset-ete-bleu.png');
+});
+
+test('captures only the supplied preset preview container', async () => {
+  const preview = { id: 'preset-preview' };
+  const outsidePage = { id: 'page-root' };
+  let capturedElement;
+  const blob = new Blob(['png'], { type: 'image/png' });
+  const result = await captureRocketLeaguePreview(preview, async (element, options) => {
+    capturedElement = element;
+    assert.notEqual(element, outsidePage);
+    assert.equal(options.useCORS, false);
+    assert.equal(options.allowTaint, false);
+    assert.equal(options.imageTimeout, 5_000);
+    return { toBlob: callback => callback(blob) };
+  });
+  assert.equal(capturedElement, preview);
+  assert.equal(result, blob);
 });
 
 test('round-trips an exact, bounded URL-safe shared configuration', () => {

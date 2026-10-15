@@ -41,6 +41,14 @@ allowlist of HTTPS image hosts: image URLs from every other host are discarded.
 These variables belong to the Base44 function environment and must never use the
 `VITE_` prefix.
 
+Allowed item images are attempted directly, then through the internal
+`rocketLeagueImage` Base44 function. That proxy is not public-purpose: it accepts
+POST only, revalidates the exact host allowlist on every redirect, resolves DNS
+and rejects private/reserved addresses, applies rate limiting and timeouts, and
+accepts only PNG/JPEG/WebP/AVIF responses up to 8 MiB. Successful responses are
+cached for one day. Configure only image hosts for which the project has an
+explicit redistribution or hotlinking right.
+
 When that feed is absent or unavailable, the server uses the pinned LGPL metadata
 snapshot `@rocketleagueapi/items` v3.2.16 from its versioned GitHub URL. It was
 extracted from game data in October 2024 and is not an official or live Psyonix
@@ -48,8 +56,9 @@ API. TRN only supplies player statistics; BakkesMod exposes local game data rath
 than a hosted API; RL Garage has no documented public catalogue API or image reuse
 grant. No public official Rocket League item-image CDN is available, so MATRIX
 does not hotlink RL Garage or fabricate official HD URLs. Sources without an
-explicitly allowlisted image host use a bounded neutral “visuel indisponible”
-state instead of a schematic illustration.
+explicitly allowlisted image host use an explicitly textual MATRIX fallback.
+The pinned community snapshot contains item metadata but no image URLs; BakkesMod
+thumbnail fields are local Unreal asset identifiers rather than public web URLs.
 
 The garage covers bodies, colors, wheels, decals, and goal explosions. Presets
 and the current draft are stored locally under the versioned key
@@ -63,7 +72,14 @@ slow, or blocked by CORS.
 
 Player lookup is the only Tracker Network integration. Configure the server-side
 `TRN_API_KEY` environment variable; it is sent only by `rocketLeagueApi` using the
-`TRN-Api-Key` header and is never exposed to the browser. Run the focused tests with:
+official `TRN-Api-Key` header and is never exposed to the browser. Epic, Steam,
+PSN, and Xbox (`xbl`) identifiers are encoded server-side. MATRIX displays only
+the overview and ranked segments TRN actually returns, including 1v1, 2v2, 3v3,
+and tournament details when present. Private profiles, API-key rejection, missing
+players, rate limits, timeouts, and upstream outages remain distinct errors.
+TRN access requires an approved key and remains subject to Tracker Network's
+rate limits and API terms; without one, the UI reports that the tracker is not
+configured rather than inventing statistics. Run the focused tests with:
 
 ```sh
 npm run test:rocket-league

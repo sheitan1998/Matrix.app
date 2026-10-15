@@ -1,13 +1,13 @@
 import React, { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, CarFront, ShoppingBag, Trophy } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, Trophy } from 'lucide-react';
 import RocketLeagueGarage from '@/components/tuto-gaming/RocketLeagueGarage';
 import RocketLeagueShop from '@/components/tuto-gaming/RocketLeagueShop';
 import RocketStatsTracker from '@/components/tuto-gaming/RocketStatsTracker';
 
 const TABS = [
   { id: 'shop', label: 'Item Shop', icon: ShoppingBag },
-  { id: 'garage', label: 'Custom Preset / Garage', icon: CarFront },
+  { id: 'garage', label: 'Custom Preset / Garage', icon: null },
   { id: 'stats', label: 'Stats Joueurs', icon: Trophy },
 ];
 
@@ -42,7 +42,7 @@ export default function RocketLeague() {
               onClick={() => setTab(id)}
               className={`flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold ${tab === id ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'}`}
             >
-              <Icon aria-hidden="true" className="h-4 w-4" />
+              {Icon && <Icon aria-hidden="true" className="h-4 w-4" />}
               {label}
             </button>
           ))}
