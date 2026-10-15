@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import RocketRankResults from '@/components/tuto-gaming/RocketRankResults';
+const PLAYER_NOT_FOUND_MESSAGE = 'Joueur introuvable ou profil privé';
 export default function RocketStatsTracker() {
   const [platform,setPlatform]=useState('epic');
   const [gamertag,setGamertag]=useState('');
@@ -9,8 +10,8 @@ export default function RocketStatsTracker() {
   const [error,setError]=useState('');
   const [stats,setStats]=useState(null);
   async function submit(e){e.preventDefault();if(loading)return;setError('');setStats(null);if(!gamertag.trim()){setError('Saisissez un pseudo.');return;}setLoading(true);
-    try{const {data}=await base44.functions.invoke('rocketLeagueApi',{action:'getPlayerStats',platform,gamertag:gamertag.trim()});if(data.error)setError(data.error);else setStats(data);}
-    catch{setError('Le service de statistiques est temporairement indisponible. Réessayez plus tard.');}
+    try{const {data}=await base44.functions.invoke('rocketLeagueApi',{action:'getPlayerStats',platform,gamertag:gamertag.trim()});if(data?.error)setError(PLAYER_NOT_FOUND_MESSAGE);else if(data)setStats(data);else setError(PLAYER_NOT_FOUND_MESSAGE);}
+    catch{setError(PLAYER_NOT_FOUND_MESSAGE);}
     finally{setLoading(false);}
   }
   return <section className="max-w-3xl space-y-4"><h2 className="text-xl font-bold">Tracker de statistiques</h2>

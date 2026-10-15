@@ -30,16 +30,18 @@ test('returns an empty garage when persisted JSON is malformed', () => {
 
 test('normalizes unsupported values and preserves valid selections', () => {
   assert.deepEqual(normalizeRocketSelection({
-    body: 'octane',
+    body: 'body-octane',
     decal: 42,
-    wheels: 'zomba',
+    wheels: 'wheels-zomba',
     paint: 'crimson',
+    finish: 'finish-anodized-pearl',
     goalExplosion: null,
   }), {
-    body: 'octane',
+    body: 'body-octane',
     decal: null,
-    wheels: 'zomba',
-    paint: 'crimson',
+    wheels: 'wheels-zomba',
+    paint: 'paint-crimson',
+    finish: 'finish-anodized-pearl',
     goalExplosion: null,
   });
 });
@@ -47,11 +49,27 @@ test('normalizes unsupported values and preserves valid selections', () => {
 test('round-trips a versioned draft and named preset', () => {
   const storage = memoryStorage();
   const state = {
-    draft: { ...EMPTY_ROCKET_SELECTION, body: 'fennec', paint: 'cobalt' },
+    draft: {
+      ...EMPTY_ROCKET_SELECTION,
+      body: 'body-fennec',
+      decal: 'decal-mainframe',
+      wheels: 'wheels-zomba',
+      paint: 'paint-cobalt',
+      finish: 'finish-anodized-pearl',
+      goalExplosion: 'goal-dueling-dragons',
+    },
     presets: [{
       id: 'preset-1',
       name: 'Bleu',
-      selection: { ...EMPTY_ROCKET_SELECTION, body: 'fennec', paint: 'cobalt' },
+      selection: {
+        ...EMPTY_ROCKET_SELECTION,
+        body: 'body-fennec',
+        decal: 'decal-mainframe',
+        wheels: 'wheels-zomba',
+        paint: 'paint-cobalt',
+        finish: 'finish-anodized-pearl',
+        goalExplosion: 'goal-dueling-dragons',
+      },
       savedAt: '2026-10-15T12:00:00.000Z',
     }],
   };
@@ -70,4 +88,12 @@ test('reports storage write failures without throwing', () => {
     },
   };
   assert.equal(saveRocketGarage(storage, { draft: EMPTY_ROCKET_SELECTION, presets: [] }), false);
+});
+
+test('remains usable when browser storage is unavailable', () => {
+  assert.deepEqual(loadRocketGarage(null), {
+    draft: { ...EMPTY_ROCKET_SELECTION },
+    presets: [],
+  });
+  assert.equal(saveRocketGarage(null, { draft: EMPTY_ROCKET_SELECTION, presets: [] }), false);
 });
