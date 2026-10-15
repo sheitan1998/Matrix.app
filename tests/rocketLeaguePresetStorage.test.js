@@ -1,0 +1,73 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  EMPTY_ROCKET_SELECTION,
+  ROCKET_PRESET_STORAGE_KEY,
+  loadRocketGarage,
+  normalizeRocketSelection,
+  saveRocketGarage,
+} from '../src/components/tuto-gaming/rocketLeaguePresetStorage.js';
+
+function memoryStorage(initial = {}) {
+  const values = new Map(Object.entries(initial));
+  return {
+    getItem(key) {
+      return values.has(key) ? values.get(key) : null;
+    },
+    setItem(key, value) {
+      values.set(key, value);
+    },
+  };
+}
+
+test('returns an empty garage when persisted JSON is malformed', () => {
+  const storage = memoryStorage({ [ROCKET_PRESET_STORAGE_KEY]: '{broken' });
+  assert.deepEqual(loadRocketGarage(storage), {
+    draft: { ...EMPTY_ROCKET_SELECTION },
+    presets: [],
+  });
+});
+
+test('normalizes unsupported values and preserves valid selections', () => {
+  assert.deepEqual(normalizeRocketSelection({
+    body: 'octane',
+    decal: 42,
+    wheels: 'zomba',
+    paint: 'crimson',
+    goalExplosion: null,
+  }), {
+    body: 'octane',
+    decal: null,
+    wheels: 'zomba',
+    paint: 'crimson',
+    goalExplosion: null,
+  });
+});
+
+test('round-trips a versioned draft and named preset', () => {
+  const storage = memoryStorage();
+  const state = {
+    draft: { ...EMPTY_ROCKET_SELECTION, body: 'fennec', paint: 'cobalt' },
+    presets: [{
+      id: 'preset-1',
+      name: 'Bleu',
+      selection: { ...EMPTY_ROCKET_SELECTION, body: 'fennec', paint: 'cobalt' },
+      savedAt: '2026-10-15T12:00:00.000Z',
+    }],
+  };
+
+  assert.equal(saveRocketGarage(storage, state), true);
+  assert.deepEqual(loadRocketGarage(storage), state);
+});
+
+test('reports storage write failures without throwing', () => {
+  const storage = {
+    getItem() {
+      return null;
+    },
+    setItem() {
+      throw new Error('quota');
+    },
+  };
+  assert.equal(saveRocketGarage(storage, { draft: EMPTY_ROCKET_SELECTION, presets: [] }), false);
+});

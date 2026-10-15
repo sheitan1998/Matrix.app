@@ -30,6 +30,22 @@ VITE_BASE44_FUNCTIONS_VERSION=prod
 
 Run the app: `npm run dev`
 
+### Rocket League
+
+The `/rocket-league` experience uses the configured Tracker Network integration as its
+only item and image source. When `TRN_API_KEY` is missing, rejected, or returns no
+catalogue, MATRIX shows an explicit unavailable/empty state and does not substitute
+sample items.
+
+The **Custom Preset / Garage** tab builds presets from the body, decal, wheel, and goal
+explosion visuals present in the current Tracker response. Presets and the current
+draft are stored locally under the versioned key `matrix:rocket-league:garage:v1`;
+up to 50 named presets are retained. Run its focused storage tests with:
+
+```sh
+npm run test:rocket-league
+```
+
 ### Desktop OAuth & OTA updates (Tauri)
 
 - OAuth desktop flow now uses the canonical callback `https://matrix-hub.app/oauth/callback`, then forwards desktop returns via deep link `matrix://oauth/callback`.
