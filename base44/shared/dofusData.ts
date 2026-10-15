@@ -10,6 +10,112 @@ export function normalizeDofusSet(set,lang='fr') {
 function localized(value,lang) {
   return value?.[lang]||value?.fr||'';
 }
+function normalizedRewardItems(reward,lang) {
+  const quantityById=new Map();
+  for(const [index,entry] of (reward?.itemsReward||[]).entries()){
+    if(Array.isArray(entry))quantityById.set(Number(entry[0]),Number(entry[1])||1);
+    else quantityById.set(Number(entry),Number(reward?.itemsQuantityReward?.[index])||1);
+  }
+  return (reward?.items||[]).map(item=>({
+    id:Number(item.id),
+    name:localized(item.name,lang)||`Ressource ${item.id}`,
+    quantity:quantityById.get(Number(item.id))||1,
+    img:item.img||(item.iconId?`https://api.dofusdb.fr/img/items/${item.iconId}.png`:null),
+  }));
+}
+function normalizeReward(reward,lang) {
+  return {
+    id:Number(reward.id),
+    experienceRatio:Number(reward.experienceRatio)||0,
+    kamasRatio:Number(reward.kamasRatio)||0,
+    kamasScaleWithPlayerLevel:!!reward.kamasScaleWithPlayerLevel,
+    criterions:String(reward.criterions||''),
+    items:normalizedRewardItems(reward,lang),
+    emoteIds:(reward.emotesReward||[]).map(Number),
+    spellIds:(reward.spellsReward||[]).map(Number),
+    titleIds:(reward.titlesReward||[]).map(Number),
+    ornamentIds:(reward.ornamentsReward||[]).map(Number),
+  };
+}
+export function normalizeDofusAchievement(achievement,lang='fr',detailed=false) {
+  const category=achievement.category;
+  const result={
+    id:Number(achievement.id),
+    name:localized(achievement.name,lang)||`Succès ${achievement.id}`,
+    description:localized(achievement.description,lang),
+    points:Number(achievement.points)||0,
+    level:Number(achievement.level)||0,
+    img:achievement.img||(achievement.iconId!=null?`https://api.dofusdb.fr/img/achievements/${achievement.iconId}.png`:null),
+    category:category?{
+      id:Number(category.id),
+      name:localized(category.name,lang)||`Catégorie ${category.id}`,
+      parent:category.parent?{id:Number(category.parent.id),name:localized(category.parent.name,lang)||`Catégorie ${category.parent.id}`}:null,
+    }:null,
+    prerequisites:{
+      quests:(achievement.need?.quests||[]).map(Number),
+      achievements:(achievement.need?.achievements||[]).map(Number),
+    },
+    updatedAt:achievement.updatedAt||null,
+  };
+  if(!detailed)return result;
+  return {
+    ...result,
+    objectives:(achievement.objectives||[])
+      .filter(Boolean)
+      .map(objective=>({id:Number(objective.id),order:Number(objective.order)||0,name:localized(objective.name,lang)||`Objectif ${objective.id}`}))
+      .sort((a,b)=>a.order-b.order||a.id-b.id),
+    rewards:(achievement.rewards||[]).map(reward=>normalizeReward(reward,lang)),
+  };
+}
+export function normalizeDofusQuest(quest,lang='fr',category=null,detailed=false,referenceNames={}) {
+  const result={
+    id:Number(quest.id),
+    name:localized(quest.name,lang)||`Quête ${quest.id}`,
+    levelMin:Math.max(1,Number(quest.levelMin)||1),
+    levelMax:Math.max(1,Number(quest.levelMax)||Number(quest.levelMin)||1),
+    isDungeonQuest:!!quest.isDungeonQuest,
+    isPartyQuest:!!quest.isPartyQuest,
+    isEvent:!!quest.isEvent,
+    category:category?{id:Number(category.id),name:localized(category.name,lang)||`Catégorie ${category.id}`}:null,
+    stepCount:Array.isArray(quest.stepIds)?quest.stepIds.length:0,
+    prerequisites:{
+      level:Math.max(1,Number(quest.levelMin)||1),
+      quests:(quest.need?.quests||[]).map(Number),
+      achievements:(quest.need?.achievements||[]).map(Number),
+    },
+    updatedAt:quest.updatedAt||null,
+  };
+  if(!detailed)return result;
+  const stepOrder=new Map((quest.stepIds||[]).map((id,index)=>[Number(id),index]));
+  return {
+    ...result,
+    startPositions:(quest.startPosition||[]).map(position=>({mapId:Number(position.mapId)||null,npcId:Number(position.npcId)||null})),
+    steps:(quest.steps||[]).map(step=>({
+      id:Number(step.id),
+      order:stepOrder.get(Number(step.id))??Number.MAX_SAFE_INTEGER,
+      name:localized(step.name,lang)||`Étape ${step.id}`,
+      description:localized(step.description,lang),
+      optimalLevel:Number(step.optimalLevel)||result.levelMin,
+      duration:Number(step.duration)||1,
+      objectives:(step.objectives||[]).map(objective=>{
+        const text=localized(objective.text,lang)||`Objectif ${objective.id}`;
+        const resolvedText=text.replace(/\{(npc|item|monster),(\d+)\}/g,(match,type,id)=>referenceNames[`${type}:${id}`]||match);
+        const map=objective.map;
+        const coords=objective.coords||map&&{x:map.posX,y:map.posY};
+        return {
+          id:Number(objective.id),
+          typeId:Number(objective.typeId),
+          text:resolvedText,
+          unresolvedReferences:/\{(?:npc|item|monster),\d+\}/.test(resolvedText),
+          coords:coords&&Number.isFinite(Number(coords.x))&&Number.isFinite(Number(coords.y))?{x:Number(coords.x),y:Number(coords.y)}:null,
+          mapId:Number(objective.mapId)||Number(map?.id)||null,
+          isCombat:[6,7,11,13,14,16].includes(Number(objective.typeId)),
+        };
+      }),
+      rewards:(step.rewards||[]).map(reward=>normalizeReward(reward,lang)),
+    })).sort((a,b)=>a.order-b.order||a.id-b.id),
+  };
+}
 const ANKAMA_UNITY_BREED_ASSETS='https://static.ankama.com/dofus/ng/modules/mmorpg/encyclopedia/unity/breeds/assets/breeds';
 function formatSpellEffect(template,effect) {
   const first=Number(effect.diceNum||effect.value||0);
