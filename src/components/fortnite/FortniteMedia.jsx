@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pause, Play } from "lucide-react";
 import {
-  FORTNITE_MEDIA_BACKGROUND_CLASS,
   getFortniteImageCandidates,
   getFortniteMediaBadge,
   getFortniteVideoCandidates,
@@ -16,8 +15,8 @@ export default function FortniteMedia({ item, detail = false, active = false, th
   const images = useMemo(() => getFortniteImageCandidates(item, thumbnail), [item, thumbnail]);
   const image = images[imageIndex] || "";
   const videos = useMemo(
-    () => thumbnail ? [] : getFortniteVideoCandidates(item, detail),
-    [detail, item, thumbnail],
+    () => thumbnail ? [] : getFortniteVideoCandidates(item),
+    [item, thumbnail],
   );
   const [videoIndex, setVideoIndex] = useState(0);
   const video = videos[videoIndex] || "";
@@ -84,7 +83,7 @@ export default function FortniteMedia({ item, detail = false, active = false, th
   };
 
   return (
-    <div className={`relative flex h-full w-full items-center justify-center overflow-hidden ${FORTNITE_MEDIA_BACKGROUND_CLASS}`}>
+    <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
       {image ? (
         <img
           src={image}
@@ -118,7 +117,8 @@ export default function FortniteMedia({ item, detail = false, active = false, th
           }}
           onPause={() => setPaused(true)}
           onError={advanceVideoCandidate}
-          className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-300 ${videoReady ? "opacity-100" : "pointer-events-none opacity-0"}`}
+          className="w-full h-full object-cover"
+          style={{ position: "absolute", inset: 0, opacity: videoReady ? 1 : 0, pointerEvents: videoReady ? "auto" : "none" }}
           aria-label={`Aperçu de ${item.name}`}
         >
           Votre navigateur ne prend pas en charge la lecture de cet aperçu.

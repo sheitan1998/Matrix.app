@@ -41,7 +41,7 @@ export default function FortniteItemDialog({ item, onClose, onSelect, user, full
         ? 'inset-0 left-0 top-0 z-[101] flex h-[100dvh] max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-y-auto rounded-none border-0 p-0 sm:rounded-none md:flex-row [&>button]:hidden data-[state=open]:animate-none data-[state=closed]:animate-none'
         : 'z-[101] flex max-h-[92dvh] max-w-6xl flex-col gap-0 overflow-y-auto p-0 md:flex-row [&>button]:hidden'} aria-describedby="fortnite-media-note"
         style={{ borderColor: style.border, boxShadow: `0 0 48px ${style.glow}` }}>
-        <div className={`group/media relative shrink-0 bg-[#080b12]/95 backdrop-blur-xl ${fullscreen ? 'h-[45dvh] md:h-full md:w-2/3' : 'h-72 md:h-auto md:min-h-[60vh] md:w-3/5'}`}>
+        <div className={`group/media relative shrink-0 ${fullscreen ? 'h-[45dvh] md:h-full md:w-2/3' : 'h-72 md:h-auto md:min-h-[60vh] md:w-3/5'}`} style={{ background: style.bg }}>
           <FortniteMedia key={full.id} item={full} detail />
         </div>
         <div className="min-w-0 flex-1 overflow-y-auto bg-[#080b12]/95 text-foreground backdrop-blur-xl">
@@ -49,7 +49,7 @@ export default function FortniteItemDialog({ item, onClose, onSelect, user, full
             <DialogTitle className="text-xl font-black">{full.name}</DialogTitle><DialogClose className="shrink-0 rounded-lg bg-muted p-2" aria-label="Fermer"><X className="h-5 w-5" /></DialogClose>
           </header>
           <div className="space-y-5 p-5">
-            <DialogDescription id="fortnite-media-note" className="text-xs">Aperçu communautaire direct fourni par Fortnite.GG lorsqu’il est disponible. La vidéo reste muette et l’image officielle prend automatiquement le relais.</DialogDescription>
+            <DialogDescription id="fortnite-media-note" className="text-xs">Aperçu officiel fourni par Fortnite-API lorsqu’un fichier direct est disponible. L’image officielle prend automatiquement le relais.</DialogDescription>
             {loading && <span className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />Chargement des détails…</span>}
             {error && <p role="status" className="text-xs text-muted-foreground">Détails complémentaires indisponibles.</p>}
             <div className="flex justify-start sm:justify-end">

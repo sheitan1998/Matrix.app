@@ -17,6 +17,7 @@ export function shopOffers(data) {
       section_category: layout.category || null, layout_rank: layout.rank ?? -1, layout_index: layout.index ?? 9999,
       display_type: layout.displayType || 'tileGrid', section_textures: layout.textureMetadata || [],
       section_text: layout.textMetadata || [], shop_colors: entry.colors || null,
+      display_assets: [entry.displayAsset, entry.newDisplayAsset, ...(entry.displayAssets || [])].filter(Boolean),
       tile_size: entry.tileSize || 'Size_1_x_1', sort_priority: entry.sortPriority ?? 0,
       banner: entry.banner?.value || null, is_bundle: !!entry.bundle,
     };
