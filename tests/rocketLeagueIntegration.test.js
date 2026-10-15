@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  getLocalRocketLeagueCatalog,
-  LOCAL_ROCKET_LEAGUE_ITEMS,
+  COMMUNITY_CATALOG_URL,
   normalizeRocketLeagueCatalogItem,
+  normalizeRocketLeagueCatalogPayload,
   paginateRocketLeagueCatalog,
 } from '../base44/shared/rocketLeagueCatalog.ts';
 import {
@@ -12,29 +12,20 @@ import {
   requestRocketLeaguePlayerStats,
 } from '../base44/shared/rocketLeagueTracker.ts';
 import {
-  generatedRocketImage,
   resolveRocketImageSources,
 } from '../src/components/tuto-gaming/rocketLeagueImages.js';
 
-test('local fallback catalog is comprehensive and garage-ready', () => {
-  const catalog = getLocalRocketLeagueCatalog();
-  const names = new Set(catalog.items.map(item => item.name));
-  for (const required of [
-    'Octane',
-    'Fennec',
-    'Dominus',
-    'Zomba',
-    'Draco',
-    'Dueling Dragons',
-    'Cristianos',
-  ]) {
-    assert.equal(names.has(required), true, `${required} should be available`);
-  }
-  assert.equal(catalog.source, 'local');
-  assert.ok(LOCAL_ROCKET_LEAGUE_ITEMS.length >= 30);
-  for (const category of ['body', 'paint', 'finish', 'wheels', 'decal', 'goalExplosion']) {
-    assert.ok(catalog.garage[category].length >= 4, `${category} should be populated`);
-  }
+test('normalizes a BakkesMod-compatible product dump and adds the versioned paint set', () => {
+  const items = normalizeRocketLeagueCatalogPayload({
+    23: { name: 'Octane', slot: 0, quality: 0 },
+    100: { name: 'Cristiano', slot: 2, quality: 3 },
+    101: { name: 'Ignored topper', slot: 5, quality: 1 },
+  }, { source: 'community-snapshot' });
+  assert.match(COMMUNITY_CATALOG_URL, /\/v3\.2\.16\//);
+  assert.equal(items.some(item => item.id === '23' && item.category === 'body'), true);
+  assert.equal(items.some(item => item.id === '100' && item.category === 'wheels'), true);
+  assert.equal(items.some(item => item.name === 'Ignored topper'), false);
+  assert.ok(items.filter(item => item.category === 'paint').length >= 15);
 });
 
 test('maps every supported platform and sends the API key server-side', async () => {
@@ -137,7 +128,7 @@ test('normalizes API catalog HD images and paginates the complete result', () =>
     imageHd: 'https://cdn.example.test/octane-hd.png',
     image: 'https://cdn.example.test/octane.png',
     price: 500,
-  });
+  }, 0, { allowedImageHosts: new Set(['cdn.example.test']) });
   assert.equal(normalized.image, 'https://cdn.example.test/octane-hd.png');
   assert.deepEqual(normalized.images, [
     'https://cdn.example.test/octane-hd.png',
@@ -149,9 +140,7 @@ test('normalizes API catalog HD images and paginates the complete result', () =>
   assert.equal(page.hasMore, false);
 });
 
-test('image sources prefer supplied HD URLs and end in one deterministic generated fallback', () => {
-  const fallback = generatedRocketImage('Octane', '#f97316');
-  assert.equal(fallback, generatedRocketImage('Octane', '#f97316'));
+test('image sources accept distinct HTTPS URLs without schematic generated fallbacks', () => {
   const sources = resolveRocketImageSources({
     src: 'https://cdn.example.test/standard.png',
     sources: ['https://cdn.example.test/hd.png'],
@@ -162,7 +151,8 @@ test('image sources prefer supplied HD URLs and end in one deterministic generat
     'https://cdn.example.test/hd.png',
     'https://cdn.example.test/standard.png',
   ]);
-  assert.equal(sources.at(-1), fallback);
+  assert.equal(sources.length, 2);
+  assert.deepEqual(resolveRocketImageSources({ src: 'data:image/svg+xml,invalid' }), []);
 });
 
 test('maps reliable overview values and only derives W/L when both values exist', () => {

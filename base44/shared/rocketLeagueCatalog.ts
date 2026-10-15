@@ -1,7 +1,6 @@
 export type RocketLeagueCategory =
   | 'body'
   | 'paint'
-  | 'finish'
   | 'wheels'
   | 'decal'
   | 'goalExplosion';
@@ -13,103 +12,85 @@ export type RocketLeagueCatalogItem = {
   category: RocketLeagueCategory;
   rarity: string;
   image: string | null;
-  images?: string[];
+  images: string[];
   price: number;
   paint: string | null;
   accent: string;
-  source: 'local' | 'api';
+  compatibleBodies: string[];
+  source: 'bakkesmod' | 'community-snapshot' | 'remote';
 };
-
-const item = (
-  id: string,
-  name: string,
-  type: string,
-  category: RocketLeagueCategory,
-  rarity: string,
-  price: number,
-  accent: string,
-): RocketLeagueCatalogItem => ({
-  id,
-  name,
-  type,
-  category,
-  rarity,
-  image: null,
-  price,
-  paint: null,
-  accent,
-  source: 'local',
-});
 
 export const ROCKET_LEAGUE_CATEGORY_LABELS: Record<RocketLeagueCategory, string> = {
   body: 'Carrosseries',
-  paint: 'Peintures',
-  finish: 'Finitions',
+  paint: 'Couleurs',
   wheels: 'Roues',
   decal: 'Stickers',
   goalExplosion: 'Explosions de but',
 };
 
-export const LOCAL_ROCKET_LEAGUE_ITEMS: readonly RocketLeagueCatalogItem[] = Object.freeze([
-  item('body-octane', 'Octane', 'Carrosserie', 'body', 'Importé', 700, '#f97316'),
-  item('body-fennec', 'Fennec', 'Carrosserie', 'body', 'Importé', 700, '#06b6d4'),
-  item('body-dominus', 'Dominus', 'Carrosserie', 'body', 'Premium', 500, '#8b5cf6'),
-  item('body-breakout', 'Breakout', 'Carrosserie', 'body', 'Très rare', 400, '#3b82f6'),
-  item('body-merc', 'Merc', 'Carrosserie', 'body', 'Très rare', 400, '#22c55e'),
-  item('body-endo', 'Endo', 'Carrosserie', 'body', 'Importé', 700, '#ec4899'),
-  item('paint-original', 'Original', 'Peinture', 'paint', 'Standard', 0, '#64748b'),
-  item('paint-titanium-white', 'Blanc titane', 'Peinture', 'paint', 'Peint', 800, '#f8fafc'),
-  item('paint-crimson', 'Cramoisi', 'Peinture', 'paint', 'Peint', 600, '#dc2626'),
-  item('paint-cobalt', 'Cobalt', 'Peinture', 'paint', 'Peint', 600, '#2563eb'),
-  item('paint-forest-green', 'Vert forêt', 'Peinture', 'paint', 'Peint', 600, '#15803d'),
-  item('paint-saffron', 'Safran', 'Peinture', 'paint', 'Peint', 600, '#eab308'),
-  item('finish-anodized-pearl', 'Anodized Pearl', 'Finition', 'finish', 'Très rare', 200, '#c4b5fd'),
-  item('finish-matte', 'Matte', 'Finition', 'finish', 'Rare', 100, '#475569'),
-  item('finish-pearlescent', 'Pearlescent', 'Finition', 'finish', 'Rare', 100, '#67e8f9'),
-  item('finish-metallic-flake', 'Metallic Flake', 'Finition', 'finish', 'Rare', 100, '#fbbf24'),
-  item('wheels-zomba', 'Zomba', 'Roues', 'wheels', 'Exotique', 900, '#a855f7'),
-  item('wheels-draco', 'Draco', 'Roues', 'wheels', 'Exotique', 900, '#ef4444'),
-  item('wheels-cristianos', 'Cristianos', 'Roues', 'wheels', 'Très rare', 400, '#111827'),
-  item('wheels-dieci', 'Dieci', 'Roues', 'wheels', 'Commun', 200, '#f59e0b'),
-  item('wheels-reaper', 'Reaper', 'Roues', 'wheels', 'Très rare', 400, '#94a3b8'),
-  item('wheels-oem', 'OEM', 'Roues', 'wheels', 'Commun', 200, '#0ea5e9'),
-  item('decal-mainframe', 'Mainframe', 'Sticker', 'decal', 'Marché noir', 2000, '#7c3aed'),
-  item('decal-dissolver', 'Dissolver', 'Sticker', 'decal', 'Marché noir', 2000, '#06b6d4'),
-  item('decal-interstellar', 'Interstellar', 'Sticker', 'decal', 'Marché noir', 2000, '#4f46e5'),
-  item('decal-heatwave', 'Heatwave', 'Sticker', 'decal', 'Marché noir', 2000, '#f97316'),
-  item('decal-20xx', '20XX', 'Sticker', 'decal', 'Marché noir', 2000, '#ec4899'),
-  item('decal-storm-watch', 'Storm Watch', 'Sticker', 'decal', 'Marché noir', 2000, '#0ea5e9'),
-  item('goal-dueling-dragons', 'Dueling Dragons', 'Explosion de but', 'goalExplosion', 'Marché noir', 2000, '#ef4444'),
-  item('goal-hellfire', 'Hellfire', 'Explosion de but', 'goalExplosion', 'Marché noir', 2000, '#f97316'),
-  item('goal-shattered', 'Shattered', 'Explosion de but', 'goalExplosion', 'Marché noir', 2000, '#a855f7'),
-  item('goal-big-splash', 'Big Splash', 'Explosion de but', 'goalExplosion', 'Limitée', 800, '#0ea5e9'),
-  item('goal-atomizer', 'Atomizer', 'Explosion de but', 'goalExplosion', 'Marché noir', 2000, '#22c55e'),
-  item('goal-party-time', 'Party Time', 'Explosion de but', 'goalExplosion', 'Marché noir', 2000, '#eab308'),
-]);
+export const COMMUNITY_CATALOG_VERSION = '3.2.16';
+export const COMMUNITY_CATALOG_URL =
+  `https://raw.githubusercontent.com/rocketleagueapi/items/v${COMMUNITY_CATALOG_VERSION}/src/parsed/products.json`;
 
-export function getLocalRocketLeagueCatalog() {
-  const garage = Object.fromEntries(
-    Object.keys(ROCKET_LEAGUE_CATEGORY_LABELS).map(category => [
-      category,
-      LOCAL_ROCKET_LEAGUE_ITEMS.filter(candidate => candidate.category === category),
-    ]),
-  ) as Record<RocketLeagueCategory, RocketLeagueCatalogItem[]>;
+const CATEGORY_BY_SLOT: Record<number, RocketLeagueCategory | undefined> = {
+  0: 'body',
+  1: 'decal',
+  2: 'wheels',
+  15: 'goalExplosion',
+};
 
-  return {
-    items: [...LOCAL_ROCKET_LEAGUE_ITEMS],
-    garage,
-    source: 'local' as const,
-    fetchedAt: null,
-  };
-}
+const TYPE_BY_CATEGORY: Record<RocketLeagueCategory, string> = {
+  body: 'Carrosserie',
+  paint: 'Couleur',
+  wheels: 'Roues',
+  decal: 'Sticker',
+  goalExplosion: 'Explosion de but',
+};
+
+const QUALITY_LABELS: Record<number, string> = {
+  0: 'Commun',
+  1: 'Peu commun',
+  2: 'Rare',
+  3: 'Très rare',
+  4: 'Importé',
+  5: 'Exotique',
+  6: 'Marché noir',
+  7: 'Premium',
+  8: 'Limité',
+  9: 'Héritage',
+};
+
+const PAINTS = [
+  ['original', 'Original', '#64748b'],
+  ['crimson', 'Cramoisi', '#dc2626'],
+  ['lime', 'Citron vert', '#84cc16'],
+  ['black', 'Noir', '#111827'],
+  ['sky-blue', 'Bleu ciel', '#38bdf8'],
+  ['cobalt', 'Cobalt', '#2563eb'],
+  ['burnt-sienna', 'Terre de Sienne', '#92400e'],
+  ['forest-green', 'Vert forêt', '#15803d'],
+  ['purple', 'Violet', '#7e22ce'],
+  ['pink', 'Rose', '#ec4899'],
+  ['orange', 'Orange', '#f97316'],
+  ['grey', 'Gris', '#6b7280'],
+  ['titanium-white', 'Blanc titane', '#f8fafc'],
+  ['saffron', 'Safran', '#eab308'],
+  ['gold', 'Or', '#d4a017'],
+] as const;
 
 const CATEGORIES = new Set(Object.keys(ROCKET_LEAGUE_CATEGORY_LABELS));
+const MAX_ITEMS = 20_000;
 
-function text(value: unknown, fallback = '') {
-  return typeof value === 'string' ? value.trim().slice(0, 200) : fallback;
+function text(value: unknown, fallback = '', maxLength = 200) {
+  return typeof value === 'string' ? value.trim().slice(0, maxLength) : fallback;
 }
 
-function imageUrls(value: any): string[] {
+function safeId(value: unknown, fallback: string) {
+  return text(value, fallback, 120).replace(/[^a-zA-Z0-9_-]/g, '-');
+}
+
+function imageUrls(value: any, allowedImageHosts: ReadonlySet<string>): string[] {
+  if (!allowedImageHosts.size) return [];
   const values = [
     value?.imageHd,
     value?.image_hd,
@@ -121,40 +102,106 @@ function imageUrls(value: any): string[] {
   return [...new Set(values.filter((candidate): candidate is string => {
     if (typeof candidate !== 'string') return false;
     try {
-      return new URL(candidate).protocol === 'https:';
+      const url = new URL(candidate);
+      return url.protocol === 'https:' && allowedImageHosts.has(url.hostname.toLowerCase());
     } catch {
       return false;
     }
   }))];
 }
 
-export function normalizeRocketLeagueCatalogItem(value: any, index = 0): RocketLeagueCatalogItem | null {
+function compatibleBodies(value: any) {
+  const values = value?.compatibleBodies || value?.compatible_bodies || value?.bodies;
+  if (!Array.isArray(values)) return [];
+  return [...new Set(values.map(candidate => safeId(candidate, '')).filter(Boolean))].slice(0, 100);
+}
+
+export function normalizeRocketLeagueCatalogItem(
+  value: any,
+  index = 0,
+  options: {
+    allowedImageHosts?: ReadonlySet<string>;
+    source?: RocketLeagueCatalogItem['source'];
+  } = {},
+): RocketLeagueCatalogItem | null {
   if (!value || typeof value !== 'object') return null;
-  const rawCategory = text(value.category || value.slot || value.typeSlug);
-  const category = CATEGORIES.has(rawCategory) ? rawCategory as RocketLeagueCategory : null;
+  const rawCategory = text(value.category || value.slotName || value.typeSlug);
+  const category = CATEGORIES.has(rawCategory)
+    ? rawCategory as RocketLeagueCategory
+    : CATEGORY_BY_SLOT[Number(value.slot)] || null;
   const name = text(value.name || value.displayName);
   if (!category || !name) return null;
-  const images = imageUrls(value);
-  const rawId = text(value.id || value.slug, `${category}-${index}`);
-  const id = rawId.replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 120);
+  const images = imageUrls(value, options.allowedImageHosts || new Set());
+  const id = safeId(value.id ?? value.productId ?? value.slug, `${category}-${index}`);
   return {
     id,
     name,
-    type: text(value.type || value.typeName, ROCKET_LEAGUE_CATEGORY_LABELS[category]),
+    type: text(value.type || value.typeName, TYPE_BY_CATEGORY[category]),
     category,
-    rarity: text(value.rarity || value.quality, 'Non précisée'),
+    rarity: text(value.rarity || value.qualityName, QUALITY_LABELS[Number(value.quality)] || 'Non précisée'),
     image: images[0] || null,
     images,
     price: Number.isFinite(Number(value.price)) ? Math.max(0, Number(value.price)) : 0,
     paint: text(value.paint || value.paintName) || null,
     accent: /^#[0-9a-f]{6}$/i.test(value.accent) ? value.accent : '#334155',
-    source: 'api',
+    compatibleBodies: compatibleBodies(value),
+    source: options.source || 'remote',
   };
 }
 
-export function paginateRocketLeagueCatalog(items: readonly RocketLeagueCatalogItem[], pageValue: unknown, limitValue: unknown) {
+function paintItems(source: RocketLeagueCatalogItem['source']): RocketLeagueCatalogItem[] {
+  return PAINTS.map(([id, name, accent]) => ({
+    id: `paint-${id}`,
+    name,
+    type: TYPE_BY_CATEGORY.paint,
+    category: 'paint',
+    rarity: 'Couleur standard',
+    image: null,
+    images: [],
+    price: 0,
+    paint: name,
+    accent,
+    compatibleBodies: [],
+    source,
+  }));
+}
+
+export function normalizeRocketLeagueCatalogPayload(
+  payload: unknown,
+  options: {
+    allowedImageHosts?: ReadonlySet<string>;
+    source?: RocketLeagueCatalogItem['source'];
+  } = {},
+) {
+  const source = options.source || 'remote';
+  const candidate = payload && typeof payload === 'object' && !Array.isArray(payload)
+    ? (payload as any).items || (payload as any).data || (payload as any).products || payload
+    : payload;
+  const entries = Array.isArray(candidate)
+    ? candidate.map((value, index) => [index, value] as const)
+    : candidate && typeof candidate === 'object'
+      ? Object.entries(candidate)
+      : [];
+  if (!entries.length || entries.length > MAX_ITEMS) return [];
+  const items = entries
+    .map(([key, value], index) => normalizeRocketLeagueCatalogItem(
+      value && typeof value === 'object' && !Array.isArray(value)
+        ? { id: (value as any).id ?? key, ...value }
+        : value,
+      index,
+      { ...options, source },
+    ))
+    .filter((value): value is RocketLeagueCatalogItem => Boolean(value));
+  return [...paintItems(source), ...items];
+}
+
+export function paginateRocketLeagueCatalog(
+  items: readonly RocketLeagueCatalogItem[],
+  pageValue: unknown,
+  limitValue: unknown,
+) {
   const page = Math.max(1, Math.min(1000, Number(pageValue) || 1));
-  const limit = Math.max(1, Math.min(100, Number(limitValue) || 60));
+  const limit = Math.max(1, Math.min(5000, Number(limitValue) || 1000));
   const offset = (page - 1) * limit;
   return {
     items: items.slice(offset, offset + limit),

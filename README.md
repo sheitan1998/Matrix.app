@@ -32,20 +32,34 @@ Run the app: `npm run dev`
 
 ### Rocket League
 
-The `/rocket-league` item shop and **Custom Preset / Garage** load a paginated
-server-side catalogue when `ROCKET_LEAGUE_CATALOG_URL` is configured. Set
-`ROCKET_LEAGUE_CATALOG_API_KEY` only when that provider requires a bearer token.
-Both variables belong to the Base44 function environment and must never use the
-`VITE_` prefix. The checked-in MATRIX catalogue remains the explicit offline
-fallback when the provider is absent or unavailable.
+The `/rocket-league` item shop and **Custom Preset / Garage** use a paginated,
+cached server-side catalogue. `ROCKET_LEAGUE_CATALOG_URL` may point to an HTTPS
+JSON export produced from BakkesMod's local product database, either as an item
+array or a product-ID object. `ROCKET_LEAGUE_CATALOG_API_KEY` is an optional
+server-side bearer token. `ROCKET_LEAGUE_IMAGE_HOSTS` is a comma-separated
+allowlist of HTTPS image hosts: image URLs from every other host are discarded.
+These variables belong to the Base44 function environment and must never use the
+`VITE_` prefix.
 
-The garage covers bodies, paints, finishes, wheels, decals, and goal explosions.
-Presets and the current draft are stored locally under the versioned key
-`matrix:rocket-league:garage:v1`; corrupt or unavailable browser storage safely
-falls back to an empty usable garage, and up to 50 named presets are retained.
-Shared presets are persisted by the server entity and open at
-`/rocket-league?preset=ID`. JSON and PNG exports are generated in the browser with
-sanitized filenames.
+When that feed is absent or unavailable, the server uses the pinned LGPL metadata
+snapshot `@rocketleagueapi/items` v3.2.16 from its versioned GitHub URL. It was
+extracted from game data in October 2024 and is not an official or live Psyonix
+API. TRN only supplies player statistics; BakkesMod exposes local game data rather
+than a hosted API; RL Garage has no documented public catalogue API or image reuse
+grant. No public official Rocket League item-image CDN is available, so MATRIX
+does not hotlink RL Garage or fabricate official HD URLs. Sources without an
+explicitly allowlisted image host use a bounded neutral “visuel indisponible”
+state instead of a schematic illustration.
+
+The garage covers bodies, colors, wheels, decals, and goal explosions. Presets
+and the current draft are stored locally under the versioned key
+`matrix:rocket-league:garage:v2`; v1 data is migrated on read, corrupt or
+unavailable browser storage safely falls back to an empty usable garage, and up
+to 50 named presets are retained. Share links contain a validated, size-limited,
+base64url configuration at `/rocket-league?preset=...` and require no server
+record. JSON exports contain only `id`, `carrosserie`, `couleur`, `roues`,
+`sticker`, and `explosion`. PNG export captures only the **APERÇU DU PRESET**
+block.
 
 Player lookup is the only Tracker Network integration. Configure the server-side
 `TRN_API_KEY` environment variable; it is sent only by `rocketLeagueApi` using the

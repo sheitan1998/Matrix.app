@@ -1,7 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  createRocketPresetConfig,
+  decodeRocketPresetConfig,
   EMPTY_ROCKET_SELECTION,
+  encodeRocketPresetConfig,
+  MAX_SHARED_PRESET_LENGTH,
+  parseRocketPresetConfig,
   ROCKET_PRESET_STORAGE_KEY,
   loadRocketGarage,
   normalizeRocketSelection,
@@ -31,14 +36,63 @@ test('returns an empty garage when persisted JSON is malformed', () => {
 });
 
 test('exports valid JSON with a filesystem-safe deterministic filename', () => {
-  const preset = {
+  const config = createRocketPresetConfig(
+    { ...EMPTY_ROCKET_SELECTION, body: 'body-octane' },
+    '12345678',
+  );
+  assert.deepEqual(JSON.parse(serializeRocketPreset(config)), {
     id: '12345678',
-    name: 'Preset été / "bleu"',
-    selection: { ...EMPTY_ROCKET_SELECTION, body: 'body-octane' },
-    savedAt: '2026-10-15T12:00:00.000Z',
-  };
-  assert.deepEqual(JSON.parse(serializeRocketPreset(preset)), { version: 1, ...preset });
-  assert.equal(safeRocketFilename(preset.name, 'JSON'), 'Preset-ete-bleu.json');
+    carrosserie: 'body-octane',
+    couleur: 'paint-original',
+    roues: null,
+    sticker: null,
+    explosion: null,
+  });
+  assert.equal(safeRocketFilename('Preset été / "bleu"', 'JSON'), 'Preset-ete-bleu.json');
+});
+
+test('round-trips an exact, bounded URL-safe shared configuration', () => {
+  const config = createRocketPresetConfig({
+    body: 'body-octane',
+    paint: 'paint-cobalt',
+    wheels: 'wheels-zomba',
+    decal: 'decal-mainframe',
+    goalExplosion: 'goal-dueling-dragons',
+  }, 'preset-12345678');
+  const encoded = encodeRocketPresetConfig(config);
+  assert.match(encoded, /^[a-zA-Z0-9_-]+$/);
+  assert.ok(encoded.length <= MAX_SHARED_PRESET_LENGTH);
+  assert.deepEqual(decodeRocketPresetConfig(encoded), {
+    config,
+    selection: {
+      body: 'body-octane',
+      paint: 'paint-cobalt',
+      wheels: 'wheels-zomba',
+      decal: 'decal-mainframe',
+      goalExplosion: 'goal-dueling-dragons',
+    },
+  });
+  assert.equal(decodeRocketPresetConfig(`${encoded}!`), null);
+  assert.equal(decodeRocketPresetConfig('a'.repeat(MAX_SHARED_PRESET_LENGTH + 1)), null);
+});
+
+test('rejects shared configs with missing or extra fields', () => {
+  assert.equal(parseRocketPresetConfig({
+    id: 'preset-12345678',
+    carrosserie: null,
+    couleur: 'paint-original',
+    roues: null,
+    sticker: null,
+  }), null);
+  assert.equal(parseRocketPresetConfig({
+    id: 'preset-12345678',
+    carrosserie: null,
+    couleur: 'paint-original',
+    roues: null,
+    sticker: null,
+    explosion: null,
+    name: 'unexpected',
+  }), null);
 });
 
 test('normalizes unsupported values and preserves valid selections', () => {
@@ -47,14 +101,12 @@ test('normalizes unsupported values and preserves valid selections', () => {
     decal: 42,
     wheels: 'wheels-zomba',
     paint: 'crimson',
-    finish: 'finish-anodized-pearl',
     goalExplosion: null,
   }), {
     body: 'body-octane',
     decal: null,
     wheels: 'wheels-zomba',
     paint: 'paint-crimson',
-    finish: 'finish-anodized-pearl',
     goalExplosion: null,
   });
 });
@@ -68,7 +120,6 @@ test('round-trips a versioned draft and named preset', () => {
       decal: 'decal-mainframe',
       wheels: 'wheels-zomba',
       paint: 'paint-cobalt',
-      finish: 'finish-anodized-pearl',
       goalExplosion: 'goal-dueling-dragons',
     },
     presets: [{
@@ -80,7 +131,6 @@ test('round-trips a versioned draft and named preset', () => {
         decal: 'decal-mainframe',
         wheels: 'wheels-zomba',
         paint: 'paint-cobalt',
-        finish: 'finish-anodized-pearl',
         goalExplosion: 'goal-dueling-dragons',
       },
       savedAt: '2026-10-15T12:00:00.000Z',
