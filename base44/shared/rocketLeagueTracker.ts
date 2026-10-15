@@ -3,6 +3,7 @@ import { normalizeRocketRanks } from './rocketLeagueData.ts';
 export const ROCKET_PLAYER_NOT_FOUND_MESSAGE = 'Joueur introuvable ou profil privé';
 export const ROCKET_TRACKER_ERROR_MESSAGES = Object.freeze({
   missing_api_key: 'Le tracker Rocket League n’est pas configuré.',
+  invalid_api_key: 'La clé Tracker Network configurée est invalide ou non autorisée.',
   rate_limited: 'Le service de statistiques limite les requêtes. Réessayez dans quelques minutes.',
   not_found: ROCKET_PLAYER_NOT_FOUND_MESSAGE,
   private_or_forbidden: ROCKET_PLAYER_NOT_FOUND_MESSAGE,
@@ -123,7 +124,9 @@ export async function requestRocketLeaguePlayerStats({
     const status = Number.isInteger(response?.status) ? response.status : null;
     const code = status === 404
       ? 'not_found'
-      : status === 401 || status === 403
+      : status === 401
+        ? 'invalid_api_key'
+        : status === 403
         ? 'private_or_forbidden'
         : status === 429
           ? 'rate_limited'
@@ -152,6 +155,9 @@ export async function requestRocketLeaguePlayerStats({
       username: trackerProfile.platformInfo.platformUserHandle || identifier,
       avatar: typeof trackerProfile.platformInfo.avatarUrl === 'string'
         ? trackerProfile.platformInfo.avatarUrl
+        : null,
+      season: Number.isFinite(Number(trackerProfile.metadata?.currentSeason))
+        ? Number(trackerProfile.metadata.currentSeason)
         : null,
       ranks: normalizeRocketRanks(trackerProfile.segments),
       overview: normalizeRocketOverview(

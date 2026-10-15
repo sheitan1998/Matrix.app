@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ImageDown, RefreshCw, RotateCcw, Save, Share2, Trash2 } from 'lucide-react';
 import RocketLeagueImage from '@/components/tuto-gaming/RocketLeagueImage';
-import { resolveRocketImageSources } from '@/components/tuto-gaming/rocketLeagueImages';
+import { captureRocketLeaguePreview } from '@/components/tuto-gaming/rocketLeaguePreviewCapture';
 import useRocketLeagueCatalog from './useRocketLeagueCatalog';
 import {
   createRocketPresetConfig,
@@ -58,43 +58,6 @@ function selectionExistsInGarage(selection, garage) {
     const items = garage[key] || [];
     return !id || !items.length || items.some(item => item.id === id);
   });
-}
-
-function PreviewLayer({ item, className }) {
-  const candidates = resolveRocketImageSources({ src: item?.image, sources: item?.images });
-  const signature = candidates.join('|');
-  const [index, setIndex] = useState(0);
-  const [loaded, setLoaded] = useState(false);
-  const source = candidates[index] || '';
-  useEffect(() => {
-    setIndex(0);
-    setLoaded(false);
-  }, [signature]);
-  useEffect(() => {
-    if (!source || loaded) return undefined;
-    const timeout = setTimeout(() => {
-      setLoaded(false);
-      setIndex(value => (value + 1 < candidates.length ? value + 1 : candidates.length));
-    }, 3_000);
-    return () => clearTimeout(timeout);
-  }, [candidates.length, loaded, source]);
-  if (!source) return null;
-  return (
-    <img
-      key={source}
-      src={source}
-      alt=""
-      crossOrigin="anonymous"
-      referrerPolicy="no-referrer"
-      data-html2canvas-ignore="true"
-      onLoad={() => setLoaded(true)}
-      onError={() => {
-        setLoaded(false);
-        setIndex(value => (value + 1 < candidates.length ? value + 1 : candidates.length));
-      }}
-      className={`${className} ${loaded ? 'visible' : 'invisible'}`}
-    />
-  );
 }
 
 export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlError }) {
@@ -200,14 +163,7 @@ export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlEr
     setDownloadingImage(true);
     try {
       const { default: html2canvas } = await import('html2canvas');
-      const canvas = await html2canvas(previewRef.current, {
-        backgroundColor: null,
-        scale: 2,
-        useCORS: false,
-        allowTaint: false,
-      });
-      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-      if (!blob) throw new Error('Image vide');
+      const blob = await captureRocketLeaguePreview(previewRef.current, html2canvas);
       downloadBlob(blob, 'image/png', safeRocketFilename(presetName || 'preset-rocket-league', 'png'));
       setMessage('Image du preset téléchargée.');
     } catch {
@@ -300,7 +256,15 @@ export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlEr
               className="relative isolate overflow-hidden border-b p-4"
               style={{ borderColor: paint.accent, backgroundColor: `${paint.accent}22` }}
             >
-              <PreviewLayer item={resolved.goalExplosion} className="absolute inset-0 -z-10 h-full w-full object-cover opacity-30" />
+              <RocketLeagueImage
+                src={resolved.goalExplosion?.image}
+                sources={resolved.goalExplosion?.images}
+                alt=""
+                showFallback={false}
+                captureRemote={false}
+                contain={false}
+                className="absolute inset-0 -z-10 h-full w-full opacity-30"
+              />
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">APERÇU DU PRESET</p>
               <div className="relative mt-3 aspect-video overflow-hidden rounded-xl bg-background/70">
                 <RocketLeagueImage
@@ -312,9 +276,30 @@ export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlEr
                   captureRemote={false}
                   className="absolute inset-0 h-full w-full"
                 />
-                <PreviewLayer item={resolved.decal} className="absolute inset-0 h-full w-full object-contain opacity-70 mix-blend-screen" />
-                <PreviewLayer item={resolved.wheels} className="absolute bottom-0 left-[8%] h-1/3 w-1/3 object-contain drop-shadow-xl" />
-                <PreviewLayer item={resolved.wheels} className="absolute bottom-0 right-[8%] h-1/3 w-1/3 object-contain drop-shadow-xl" />
+                <RocketLeagueImage
+                  src={resolved.decal?.image}
+                  sources={resolved.decal?.images}
+                  alt=""
+                  showFallback={false}
+                  captureRemote={false}
+                  className="absolute inset-0 h-full w-full opacity-70 mix-blend-screen"
+                />
+                <RocketLeagueImage
+                  src={resolved.wheels?.image}
+                  sources={resolved.wheels?.images}
+                  alt=""
+                  showFallback={false}
+                  captureRemote={false}
+                  className="absolute bottom-0 left-[8%] h-1/3 w-1/3 drop-shadow-xl"
+                />
+                <RocketLeagueImage
+                  src={resolved.wheels?.image}
+                  sources={resolved.wheels?.images}
+                  alt=""
+                  showFallback={false}
+                  captureRemote={false}
+                  className="absolute bottom-0 right-[8%] h-1/3 w-1/3 drop-shadow-xl"
+                />
               </div>
               <p className="mt-2 text-sm font-bold">{resolved.body?.name || 'Octane (aperçu par défaut)'}</p>
               <p className="text-xs text-muted-foreground">

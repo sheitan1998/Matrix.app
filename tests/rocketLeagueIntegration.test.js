@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import {
   COMMUNITY_CATALOG_URL,
   normalizeRocketLeagueCatalogItem,
@@ -11,6 +12,16 @@ import {
   normalizeRocketOverview,
   requestRocketLeaguePlayerStats,
 } from '../base44/shared/rocketLeagueTracker.ts';
+import {
+  allowedRocketImageUrl,
+  assertPublicRocketImageHost,
+  fetchRocketImage,
+  MAX_ROCKET_IMAGE_BYTES,
+  parseRocketImageHosts,
+  readRocketImageBytes,
+  validateRocketImageBytes,
+  validateRocketImageMetadata,
+} from '../base44/shared/rocketLeagueMedia.ts';
 import {
   resolveRocketImageSources,
   rocketFallbackColors,
@@ -68,9 +79,24 @@ test('normalizes private, upstream, malformed, and missing-key failures', async 
       options: { apiKey: undefined, fetchImpl: async () => assert.fail('fetch should not run') },
     },
     {
+      expectedCode: 'not_found',
+      expectedMessage: 'Joueur introuvable ou profil privé',
+      options: { apiKey: 'key', fetchImpl: async () => new Response(null, { status: 404 }) },
+    },
+    {
+      expectedCode: 'invalid_api_key',
+      expectedMessage: 'La clé Tracker Network configurée est invalide ou non autorisée.',
+      options: { apiKey: 'key', fetchImpl: async () => new Response(null, { status: 401 }) },
+    },
+    {
       expectedCode: 'private_or_forbidden',
       expectedMessage: 'Joueur introuvable ou profil privé',
       options: { apiKey: 'key', fetchImpl: async () => new Response(null, { status: 403 }) },
+    },
+    {
+      expectedCode: 'rate_limited',
+      expectedMessage: 'Le service de statistiques limite les requêtes. Réessayez dans quelques minutes.',
+      options: { apiKey: 'key', fetchImpl: async () => new Response(null, { status: 429 }) },
     },
     {
       expectedCode: 'upstream_error',
@@ -100,6 +126,144 @@ test('normalizes private, upstream, malformed, and missing-key failures', async 
     assert.equal(result.error.code, expectedCode);
     assert.equal(result.error.message, expectedMessage);
   }
+});
+
+test('normalizes exact ranked values including tournaments without inventing absent modes', async () => {
+      const result = await requestRocketLeaguePlayerStats({
+        platform: 'epic',
+        playerId: 'Exact Player',
+        apiKey: 'key',
+        fetchImpl: async () => Response.json({
+          data: {
+            platformInfo: { platformSlug: 'epic', platformUserHandle: 'Exact Player' },
+            metadata: { currentSeason: 22 },
+            segments: [
+              {
+                type: 'playlist',
+                attributes: { playlistId: 11, season: 22 },
+                metadata: { name: 'Ranked Doubles 2v2' },
+                stats: {
+                  tier: { metadata: { name: 'Champion II' } },
+                  division: { metadata: { name: 'Division III' } },
+                  rating: { value: 1247 },
+                  matchesPlayed: { value: 42 },
+                  wins: { value: 25 },
+                },
+              },
+              {
+                type: 'playlist',
+                attributes: { playlistId: 34, season: 22 },
+                metadata: { name: 'Tournament Matches' },
+                stats: {
+                  tier: { metadata: { name: 'Diamond III' } },
+                  rating: { value: 1010 },
+                },
+              },
+              {
+                type: 'overview',
+                stats: {
+                  wins: { value: 100 },
+                  goals: { value: 250 },
+                  assists: { value: 80 },
+                  saves: { value: 140 },
+                },
+              },
+            ],
+          },
+        }),
+      });
+      assert.equal(result.ok, true);
+      assert.equal(result.profile.season, 22);
+      assert.deepEqual(result.profile.ranks, [
+        {
+          playlist: '2v2',
+          tier: 'Champion II',
+          division: 'Division III',
+          rating: 1247,
+          season: 22,
+          matchesPlayed: 42,
+          wins: 25,
+        },
+        {
+          playlist: 'Tournois',
+          tier: 'Diamond III',
+          division: null,
+          rating: 1010,
+          season: 22,
+          matchesPlayed: null,
+          wins: null,
+        },
+      ]);
+      assert.equal(result.profile.overview.goals, 250);
+      assert.equal(result.profile.overview.assists, 80);
+      assert.equal(result.profile.overview.saves, 140);
+    });
+
+    test('Rocket League image proxy validation blocks SSRF and unsafe redirects', async () => {
+      const hosts = parseRocketImageHosts('media.example.test,cdn.example.test,localhost,127.0.0.1');
+      assert.deepEqual([...hosts], ['media.example.test', 'cdn.example.test']);
+      assert.equal(
+        allowedRocketImageUrl('https://media.example.test/items/octane.webp', hosts).hostname,
+        'media.example.test',
+      );
+      for (const source of [
+        'http://media.example.test/items/octane.webp',
+        'https://media.example.test.evil.test/items/octane.webp',
+        'https://user:pass@media.example.test/items/octane.webp',
+        'https://media.example.test:8443/items/octane.webp',
+        'https://127.0.0.1/items/octane.webp',
+      ]) {
+        assert.throws(() => allowedRocketImageUrl(source, hosts));
+      }
+      await assert.rejects(
+        assertPublicRocketImageHost(
+          new URL('https://media.example.test/items/octane.webp'),
+          async () => ['127.0.0.1'],
+        ),
+        /réseau privé/,
+      );
+      await assert.rejects(
+        fetchRocketImage('https://media.example.test/items/octane.webp', {
+          allowedHosts: hosts,
+          resolveHost: async () => ['93.184.216.34'],
+          fetchImpl: async () => new Response(null, {
+            status: 302,
+            headers: { Location: 'https://evil.example.test/internal' },
+          }),
+        }),
+        /non autorisée/,
+      );
+    });
+
+    test('Rocket League image proxy accepts only bounded image responses', () => {
+      assert.deepEqual(validateRocketImageMetadata('image/webp', 1024), {
+        contentType: 'image/webp',
+        declaredSize: 1024,
+      });
+
+      assert.throws(() => validateRocketImageMetadata('text/html', 100), /image autorisée/);
+      assert.throws(
+        () => validateRocketImageMetadata('image/png', MAX_ROCKET_IMAGE_BYTES + 1),
+        /8 Mio/,
+      );
+      const png = Uint8Array.from([137, 80, 78, 71, 13, 10, 26, 10]).buffer;
+      assert.doesNotThrow(() => validateRocketImageBytes(png, 'image/png'));
+      assert.throws(
+        () => validateRocketImageBytes(new TextEncoder().encode('<html>').buffer, 'image/png'),
+        /image valide/,
+      );
+    });
+
+test('Rocket League image proxy stops streaming above its byte limit', async () => {
+  const accepted = await readRocketImageBytes(
+    new Response(Uint8Array.from([137, 80, 78, 71])),
+    4,
+  );
+  assert.equal(accepted.byteLength, 4);
+  await assert.rejects(
+    readRocketImageBytes(new Response(new Uint8Array(9)), 8),
+    /8 Mio/,
+  );
 });
 
 test('normalizes Tracker timeouts to the friendly player message', async () => {
@@ -163,6 +327,17 @@ test('local MATRIX image fallbacks are deterministic and honor paint colors', ()
     secondary: '#7c3aed',
   });
   assert.notDeepEqual(rocketFallbackColors('Octane'), rocketFallbackColors('Fennec'));
+});
+
+test('Rocket League media UI contains no generic car icon, spinner, or JSON export', async () => {
+  const [imageComponent, garage, page] = await Promise.all([
+    readFile(new URL('../src/components/tuto-gaming/RocketLeagueImage.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/tuto-gaming/RocketLeagueGarage.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/pages/tuto-gaming/RocketLeague.jsx', import.meta.url), 'utf8'),
+  ]);
+  assert.doesNotMatch(`${imageComponent}\n${garage}\n${page}`, /CarFront|Loader2|animate-spin/);
+  assert.doesNotMatch(garage, /exportJson|serializeRocketPreset|>\s*JSON\s*</);
+  assert.match(imageComponent, /functions\.fetch\('\/rocketLeagueImage'/);
 });
 
 test('maps reliable overview values and only derives W/L when both values exist', () => {
