@@ -12,6 +12,7 @@
     "tauri:generate-latest-json": "node scripts/generate-latest-json.mjs",
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
+    "test:fs25": "node --test tests/farming-mods.test.ts",
     "typecheck": "tsc -p ./jsconfig.json",
     "preview": "vite preview"
   },
