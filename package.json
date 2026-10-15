@@ -13,6 +13,7 @@
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
     "test:rocket-league": "node --test tests/rocketLeaguePresetStorage.test.js",
+    "test:fs25": "node --test tests/farming-mods.test.ts",
     "typecheck": "tsc -p ./jsconfig.json",
     "preview": "vite preview"
   },

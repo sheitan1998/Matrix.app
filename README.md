@@ -46,6 +46,26 @@ up to 50 named presets are retained. Run its focused storage tests with:
 npm run test:rocket-league
 ```
 
+### Catalogue Farming Simulator 25
+
+La route canonique `/farming` présente une sélection du ModHub officiel classée par
+catégories. Un mod peut être partagé avec `/farming?mod=ID`; le bouton retour ferme
+la modale avant de quitter le catalogue.
+
+- Les images et ZIP restent hébergés par GIANTS. Les fonctions backend valident
+  strictement les hôtes `cdnN.giants-software.com`, les chemins ModHub, les types,
+  les redirections et les tailles (5 Mio par image, 2 Gio par ZIP).
+- Le proxy d'images applique une limite de débit et un cache mémoire borné. Les ZIP
+  sont diffusés sans mise en cache et sans exposer de redirection au navigateur.
+- La traduction anglais/allemand vers le français utilise l'intégration LLM Base44
+  côté serveur, avec limite de débit, taille d'entrée et erreurs explicites. Aucun
+  secret ni appel direct au fournisseur de traduction n'est envoyé au client.
+- Le catalogue est une sélection des premières pages des filtres publics ModHub,
+  pas un miroir exhaustif. Une catégorie ou un téléchargement refusé/absent chez
+  GIANTS est signalé comme indisponible; l'application ne contourne pas ces limites.
+Tests ciblés : `npm run test:fs25`.
+Tests ciblés : `npm run test:fs25`.
+
 ### Desktop OAuth & OTA updates (Tauri)
 
 - OAuth desktop flow now uses the canonical callback `https://matrix-hub.app/oauth/callback`, then forwards desktop returns via deep link `matrix://oauth/callback`.
