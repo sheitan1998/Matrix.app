@@ -4,6 +4,30 @@
 @tailwind components;
 @tailwind utilities;
 
+.dofus-map-marker {
+  background: transparent;
+  border: 0;
+}
+
+.dofus-map-marker span {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 2px solid white;
+  border-radius: 9999px;
+  background: var(--marker-color);
+  color: white;
+  font-size: 12px;
+  font-weight: 900;
+  box-shadow: 0 3px 10px rgb(0 0 0 / 45%);
+}
+
+.leaflet-container:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
 @layer base {
   :root {
     /* MATRIX dark theme - default */
