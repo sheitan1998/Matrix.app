@@ -34,8 +34,8 @@ Run the app: `npm run dev`
 
 The `/rocket-league` item shop and **Custom Preset / Garage** use a paginated,
 cached server-side catalogue. `ROCKET_LEAGUE_CATALOG_URL` may point to an HTTPS
-JSON export produced from BakkesMod's local product database, either as an item
-array or a product-ID object. `ROCKET_LEAGUE_CATALOG_API_KEY` is an optional
+structured export produced from BakkesMod's local product database, either as an
+item array or a product-ID object. `ROCKET_LEAGUE_CATALOG_API_KEY` is an optional
 server-side bearer token. `ROCKET_LEAGUE_IMAGE_HOSTS` is a comma-separated
 allowlist of HTTPS image hosts: image URLs from every other host are discarded.
 These variables belong to the Base44 function environment and must never use the
@@ -57,9 +57,9 @@ and the current draft are stored locally under the versioned key
 unavailable browser storage safely falls back to an empty usable garage, and up
 to 50 named presets are retained. Share links contain a validated, size-limited,
 base64url configuration at `/rocket-league?preset=...` and require no server
-record. JSON exports contain only `id`, `carrosserie`, `couleur`, `roues`,
-`sticker`, and `explosion`. PNG export captures only the **APERÇU DU PRESET**
-block.
+record. PNG export captures only the **APERÇU DU PRESET** block, whose local CSS
+fallback remains capture-safe even when a remote image is absent, broken, too
+slow, or blocked by CORS.
 
 Player lookup is the only Tracker Network integration. Configure the server-side
 `TRN_API_KEY` environment variable; it is sent only by `rocketLeagueApi` using the

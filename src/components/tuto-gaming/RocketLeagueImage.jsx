@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { ImageOff, Loader2 } from 'lucide-react';
-import { resolveRocketImageSources } from './rocketLeagueImages';
+import React, { useEffect, useMemo, useState } from 'react';
+import { CarFront } from 'lucide-react';
+import { resolveRocketImageSources, rocketFallbackColors } from './rocketLeagueImages';
 
-const IMAGE_TIMEOUT_MS = 8_000;
+const IMAGE_TIMEOUT_MS = 3_000;
 
 export default function RocketLeagueImage({
   src,
@@ -11,41 +11,53 @@ export default function RocketLeagueImage({
   className = '',
   contain = true,
   fallbackLabel = '',
+  accent = '',
+  captureRemote = true,
 }) {
-  const candidates = resolveRocketImageSources({ src, sources });
+  const candidates = useMemo(
+    () => resolveRocketImageSources({ src, sources }),
+    [src, sources],
+  );
+  const signature = candidates.join('|');
   const [index, setIndex] = useState(0);
-  const [status, setStatus] = useState(candidates.length ? 'loading' : 'fallback');
-  const current = candidates[index] || null;
+  const [loadedSource, setLoadedSource] = useState('');
+  const current = candidates[index] || '';
+  const label = fallbackLabel || alt || 'Rocket League';
+  const colors = rocketFallbackColors(label, accent);
 
   useEffect(() => {
     setIndex(0);
-    setStatus(candidates.length ? 'loading' : 'fallback');
-  }, [src, sources]);
+    setLoadedSource('');
+  }, [signature]);
 
   useEffect(() => {
-    if (status !== 'loading') return undefined;
+    if (!current || loadedSource === current) return undefined;
     const timeout = setTimeout(() => {
-      if (index + 1 < candidates.length) {
-        setIndex(value => value + 1);
-      } else {
-        setStatus('fallback');
-      }
+      setLoadedSource('');
+      setIndex(value => (value + 1 < candidates.length ? value + 1 : candidates.length));
     }, IMAGE_TIMEOUT_MS);
     return () => clearTimeout(timeout);
-  }, [candidates.length, index, status]);
+  }, [candidates.length, current, loadedSource]);
 
   function tryNextSource() {
-    if (index + 1 < candidates.length) {
-      setIndex(value => value + 1);
-      setStatus('loading');
-    } else {
-      setStatus('fallback');
-    }
+    setLoadedSource('');
+    setIndex(value => (value + 1 < candidates.length ? value + 1 : candidates.length));
   }
 
   return (
-    <div className={`relative flex items-center justify-center overflow-hidden bg-muted ${className}`}>
-      {current && status !== 'fallback' && (
+    <div
+      className={`relative flex items-center justify-center overflow-hidden bg-slate-950 ${className}`}
+      style={{
+        backgroundImage: `radial-gradient(circle at 22% 18%, ${colors.primary}88, transparent 42%), linear-gradient(135deg, #111827, ${colors.secondary}55)`,
+      }}
+    >
+      <span className="flex max-w-full flex-col items-center gap-2 px-3 text-center text-white">
+        <span className="rounded-full border border-white/25 bg-black/25 p-2 shadow-lg">
+          <CarFront aria-hidden="true" className="h-5 w-5" />
+        </span>
+        <span className="line-clamp-2 text-xs font-semibold drop-shadow">{label}</span>
+      </span>
+      {current && (
         <img
           key={current}
           src={current}
@@ -53,22 +65,11 @@ export default function RocketLeagueImage({
           loading="lazy"
           crossOrigin="anonymous"
           referrerPolicy="no-referrer"
-          onLoad={() => setStatus('loaded')}
+          data-html2canvas-ignore={captureRemote ? undefined : 'true'}
+          onLoad={() => setLoadedSource(current)}
           onError={tryNextSource}
-          className={`h-full w-full ${contain ? 'object-contain' : 'object-cover'} ${status === 'loaded' ? 'opacity-100' : 'opacity-0'}`}
+          className={`absolute inset-0 h-full w-full transition-opacity duration-200 ${contain ? 'object-contain' : 'object-cover'} ${loadedSource === current ? 'opacity-100' : 'opacity-0'}`}
         />
-      )}
-      {status === 'loading' && (
-        <span className="absolute inset-0 flex items-center justify-center" role="status">
-          <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin" />
-          <span className="sr-only">Chargement du visuel</span>
-        </span>
-      )}
-      {status === 'fallback' && (
-        <span className="flex max-w-full flex-col items-center gap-2 px-3 text-center text-xs text-muted-foreground">
-          <ImageOff aria-hidden="true" className="h-5 w-5" />
-          <span className="line-clamp-2">{fallbackLabel || alt || 'Visuel indisponible'}</span>
-        </span>
       )}
     </div>
   );

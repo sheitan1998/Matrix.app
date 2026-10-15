@@ -13,6 +13,7 @@ import {
 } from '../base44/shared/rocketLeagueTracker.ts';
 import {
   resolveRocketImageSources,
+  rocketFallbackColors,
 } from '../src/components/tuto-gaming/rocketLeagueImages.js';
 
 test('normalizes a BakkesMod-compatible product dump and adds the versioned paint set', () => {
@@ -153,6 +154,15 @@ test('image sources accept distinct HTTPS URLs without schematic generated fallb
   ]);
   assert.equal(sources.length, 2);
   assert.deepEqual(resolveRocketImageSources({ src: 'data:image/svg+xml,invalid' }), []);
+});
+
+test('local MATRIX image fallbacks are deterministic and honor paint colors', () => {
+  assert.deepEqual(rocketFallbackColors('Octane'), rocketFallbackColors('Octane'));
+  assert.deepEqual(rocketFallbackColors('Cobalt', '#2563eb'), {
+    primary: '#2563eb',
+    secondary: '#7c3aed',
+  });
+  assert.notDeepEqual(rocketFallbackColors('Octane'), rocketFallbackColors('Fennec'));
 });
 
 test('maps reliable overview values and only derives W/L when both values exist', () => {
