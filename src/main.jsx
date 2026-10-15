@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from '@/App.jsx'
 import '@/index.css'
+import 'leaflet/dist/leaflet.css'
 import '@/lib/pwa'
 import { initRuntimeAssetUrlPatch } from '@/lib/runtimeAssetUrlPatch'
 

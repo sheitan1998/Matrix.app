@@ -10,6 +10,7 @@ export function normalizeDofusSet(set,lang='fr') {
 function localized(value,lang) {
   return value?.[lang]||value?.fr||'';
 }
+const ANKAMA_UNITY_BREED_ASSETS='https://static.ankama.com/dofus/ng/modules/mmorpg/encyclopedia/unity/breeds/assets/breeds';
 function formatSpellEffect(template,effect) {
   const first=Number(effect.diceNum||effect.value||0);
   const second=Number(effect.diceSide||0);
@@ -24,6 +25,7 @@ function formatSpellEffect(template,effect) {
     .trim();
 }
 export function normalizeDofusBreed(breed,lang='fr') {
+  const fullBody=`${ANKAMA_UNITY_BREED_ASSETS}/sprite${breed.id}.png`;
   return {
     id:breed.id,
     name:localized(breed.shortName,lang)||`Classe ${breed.id}`,
@@ -32,38 +34,53 @@ export function normalizeDofusBreed(breed,lang='fr') {
     img:breed.imgTransparent||breed.img||null,
     symbol:breed.img||null,
     variants:[
-      breed.heads?.male&&{id:'male',name:'Mâle',img:breed.heads.male},
-      breed.heads?.female&&{id:'female',name:'Femelle',img:breed.heads.female},
-    ].filter(Boolean),
+      {id:'male',name:'Mâle',img:fullBody,head:breed.heads?.male||null,crop:'left'},
+      {id:'female',name:'Femelle',img:fullBody,head:breed.heads?.female||null,crop:'right'},
+    ],
+    artworkSource:'Ankama - Encyclopédie DOFUS Unity',
     spellCount:Array.isArray(breed.breedSpellsId)?breed.breedSpellsId.length:0,
   };
 }
-export function normalizeDofusMapArea(area,lang='fr') {
+export function normalizeDofusMapArea(area,positions=new Map(),lang='fr') {
   const coordinates=[];
   for(let index=0;index<(area.shape||[]).length-1;index+=2){
     const x=Number(area.shape[index]);
     const y=Number(area.shape[index+1]);
     if(Number.isFinite(x)&&Number.isFinite(y)&&Math.abs(x)<=200&&Math.abs(y)<=200)coordinates.push([x,y]);
   }
-  const center=coordinates.length
+  const shapeCenter=coordinates.length
     ?{x:Math.round(coordinates.reduce((sum,value)=>sum+value[0],0)/coordinates.length),y:Math.round(coordinates.reduce((sum,value)=>sum+value[1],0)/coordinates.length)}
     :null;
+  const zaapMapId=Number(area.associatedZaapMapId);
+  const entranceMapId=Number(area.entranceMapIds?.[0]);
+  const representativeId=zaapMapId>0?zaapMapId:Number(area.mapIds?.[0])||null;
+  const dungeonMapId=entranceMapId>0?entranceMapId:representativeId;
+  const representative=positions.get(representativeId);
+  const dungeonPosition=positions.get(dungeonMapId);
+  const center=representative?{x:representative.posX,y:representative.posY}:shapeCenter;
   return {
     id:area.id,
     name:localized(area.name,lang)||`Zone ${area.id}`,
     level:Number(area.level)||0,
     center,
     dungeonId:Number(area.dungeonId)>=0?Number(area.dungeonId):null,
+    dungeonPosition:dungeonPosition?{x:dungeonPosition.posX,y:dungeonPosition.posY}:center,
     harvestableCount:Array.isArray(area.harvestables)?area.harvestables.length:0,
     npcCount:Array.isArray(area.npcsIds)?area.npcsIds.length:0,
+    tile:representative?{id:representative.id,x:representative.posX,y:representative.posY,img:representative.img?.['0.25']||null}:null,
   };
 }
-export function normalizeDofusSpell(spell,levels,effectDefinitions,lang='fr') {
+export function normalizeDofusSpell(spell,levels,effectDefinitions,lang='fr',variant=null) {
   return {
     id:spell.id,
     name:localized(spell.name,lang)||`Sort ${spell.id}`,
     description:localized(spell.description,lang),
     img:spell.img||(spell.iconId!=null?`https://api.dofusdb.fr/img/spells/sort_${spell.iconId}.png`:null),
+    variant:variant?{
+      groupId:variant.id,
+      pairedSpellId:variant.pairedSpell?.id||null,
+      pairedSpellName:localized(variant.pairedSpell?.name,lang)||null,
+    }:null,
     levels:(levels||[]).sort((a,b)=>a.grade-b.grade).map(level=>({
       id:level.id,
       grade:level.grade,

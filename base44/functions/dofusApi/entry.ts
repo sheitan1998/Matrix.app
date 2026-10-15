@@ -53,6 +53,28 @@ function imgUrl(item) {
   if (item.iconId) return `https://api.dofusdb.fr/img/items/${item.iconId}.png`;
   return null;
 }
+function bytesToBase64(bytes) {
+  let binary='';
+  for(let index=0;index<bytes.length;index+=0x8000){
+    binary+=String.fromCharCode(...bytes.subarray(index,index+0x8000));
+  }
+  return btoa(binary);
+}
+async function loadBreedArtwork(breedId) {
+  const cacheKey=`breed-artwork:v1:${breedId}`;
+  const cached=rawGetCached(cacheKey,CACHE_TTL_TYPES);
+  if(cached)return cached;
+  const url=`https://static.ankama.com/dofus/ng/modules/mmorpg/encyclopedia/unity/breeds/assets/breeds/sprite${breedId}.png`;
+  const response=await fetch(url,{headers:{Accept:'image/png'},signal:AbortSignal.timeout(8000)});
+  if(!response.ok)throw new Error(`Illustration Ankama (${response.status})`);
+  const contentType=response.headers.get('content-type')||'';
+  if(!contentType.startsWith('image/png'))throw new Error('Format d’illustration Ankama inattendu');
+  const bytes=new Uint8Array(await response.arrayBuffer());
+  if(!bytes.length||bytes.length>300000)throw new Error('Taille d’illustration Ankama invalide');
+  const result={dataUrl:`data:image/png;base64,${bytesToBase64(bytes)}`,sourceUrl:url};
+  setCached(cacheKey,result);
+  return result;
+}
 
 async function fetchDofusCollection(path, params, timeout=8000) {
   const res=await fetch(`https://api.dofusdb.fr/${path}?${buildQuery(params)}`,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(timeout)});
@@ -108,19 +130,31 @@ export default async function(req) {
     }
 
     if (action === 'getBreeds') {
-      const cacheKey=`breeds:v1:${lang}`;
+      const cacheKey=`breeds:v2:${lang}`;
       const cached=rawGetCached(cacheKey,CACHE_TTL_TYPES);
       if(cached)return dataResponse(cached);
       const data=await fetchDofusCollection('breeds',{'$limit':'30','$sort[sortIndex]':'1'});
-      const result={breeds:(data.data||[]).map(breed=>normalizeDofusBreed(breed,lang)),source:'live'};
+      const breeds=await Promise.all((data.data||[]).map(async breed=>{
+        const normalized=normalizeDofusBreed(breed,lang);
+        try{return {...normalized,artworkDataUrl:(await loadBreedArtwork(breed.id)).dataUrl};}
+        catch{return {...normalized,artworkDataUrl:null};}
+      }));
+      const result={breeds,source:'live'};
       setCached(cacheKey,result);
       return dataResponse(result);
+    }
+
+    if (action === 'getBreedArtwork') {
+      const breedId=Number(body.breedId);
+      const allowedIds=new Set([...Array.from({length:18},(_,index)=>index+1),20]);
+      if(!allowedIds.has(breedId))return Response.json({error:'Classe invalide'},{status:400});
+      return dataResponse(await loadBreedArtwork(breedId));
     }
 
     if (action === 'getBreedSpells') {
       const breedId=Number(body.breedId);
       if(!Number.isInteger(breedId)||breedId<=0)return Response.json({error:'Classe requise'},{status:400});
-      const cacheKey=`breed-spells:v1:${breedId}:${lang}`;
+      const cacheKey=`breed-spells:v2:${breedId}:${lang}`;
       const cached=rawGetCached(cacheKey,CACHE_TTL_TYPES);
       if(cached)return dataResponse(cached);
       const breedResponse=await fetch(`https://api.dofusdb.fr/breeds/${breedId}`,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(8000)});
@@ -129,6 +163,16 @@ export default async function(req) {
       const spellIds=[...new Set((breed.breedSpellsId||[]).map(Number).filter(Number.isInteger))];
       if(!spellIds.length)return dataResponse({breed:normalizeDofusBreed(breed,lang),spells:[],source:'live'});
       const spells=await fetchDofusByIds('spells',spellIds);
+      const variantsResponse=await fetchDofusCollection('spell-variants',{'$limit':'50','breedId':String(breedId)});
+      const variantBySpell=new Map();
+      for(const variant of variantsResponse.data||[]){
+        for(const spellId of variant.spellIds||[]){
+          variantBySpell.set(Number(spellId),{
+            id:variant.id,
+            pairedSpell:(variant.spells||[]).find(value=>Number(value.id)!==Number(spellId))||null,
+          });
+        }
+      }
       const levelIds=[...new Set(spells.flatMap(spell=>spell.spellLevels||[]).map(Number).filter(Number.isInteger))];
       const levels=levelIds.length?await fetchDofusByIds('spell-levels',levelIds):[];
       const effectIds=[...new Set(levels.flatMap(level=>[...(level.effects||[]),...(level.criticalEffect||[])]).map(effect=>Number(effect.effectId)).filter(Number.isInteger))];
@@ -137,16 +181,17 @@ export default async function(req) {
       const result={
         breed:normalizeDofusBreed(breed,lang),
         spells:spells
-          .map(spell=>normalizeDofusSpell(spell,levels.filter(level=>level.spellId===spell.id),effectDefinitions,lang))
+          .map(spell=>normalizeDofusSpell(spell,levels.filter(level=>level.spellId===spell.id),effectDefinitions,lang,variantBySpell.get(spell.id)||null))
           .sort((a,b)=>a.levels[0]?.minPlayerLevel-b.levels[0]?.minPlayerLevel||a.name.localeCompare(b.name,lang)),
         source:'live',
+        updatedAt:spells.map(spell=>spell.updatedAt).filter(Boolean).sort().at(-1)||null,
       };
       setCached(cacheKey,result);
       return dataResponse(result);
     }
 
     if (action === 'getMapLayers') {
-      const cacheKey=`map-layers:v1:${lang}`;
+      const cacheKey=`map-layers:v2:${lang}`;
       const cached=rawGetCached(cacheKey,CACHE_TTL_TYPES);
       if(cached)return dataResponse(cached);
       const first=await fetchDofusCollection('subareas',{'$limit':'100','$skip':'0'},15000);
@@ -156,7 +201,14 @@ export default async function(req) {
         const page=await fetchDofusCollection('subareas',{'$limit':String(pageSize),'$skip':String(skip)},15000);
         rows.push(...(page.data||[]));
       }
-      const areas=rows.map(area=>normalizeDofusMapArea(area,lang)).filter(area=>area.center);
+      const representativeIds=[...new Set(rows.flatMap(area=>{
+        const zaapMapId=Number(area.associatedZaapMapId);
+        const entranceMapId=Number(area.entranceMapIds?.[0]);
+        return [zaapMapId>0?zaapMapId:Number(area.mapIds?.[0]),entranceMapId>0?entranceMapId:null];
+      }).filter(id=>Number.isInteger(id)&&id>0))];
+      const positions=representativeIds.length?await fetchDofusByIds('map-positions',representativeIds,15000):[];
+      const positionsById=new Map(positions.map(position=>[Number(position.id),position]));
+      const areas=rows.map(area=>normalizeDofusMapArea(area,positionsById,lang)).filter(area=>area.center);
       const result={
         areas,
         total:Number(first.total)||areas.length,

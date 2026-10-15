@@ -3,13 +3,16 @@ import assert from 'node:assert/strict';
 import { normalizeDofusAlmanax, normalizeDofusBreed, normalizeDofusItem, normalizeDofusMapArea, normalizeDofusSpell } from '../base44/shared/dofusData.ts';
 
 test('normalizes source-backed class metadata',()=>{
-  const breed=normalizeDofusBreed({id:1,shortName:{fr:'Féca'},description:{fr:'Protecteur'},gameplayDescription:{fr:'Défense'},img:'symbol.png',imgTransparent:'hd.png',breedSpellsId:[1,2]},'fr');
-  assert.deepEqual(breed,{id:1,name:'Féca',description:'Protecteur',gameplay:'Défense',img:'hd.png',symbol:'symbol.png',variants:[],spellCount:2});
+  const breed=normalizeDofusBreed({id:1,shortName:{fr:'Féca'},description:{fr:'Protecteur'},gameplayDescription:{fr:'Défense'},img:'symbol.png',imgTransparent:'logo.png',heads:{male:'male.png',female:'female.png'},breedSpellsId:[1,2]},'fr');
+  assert.equal(breed.variants[0].img,'https://static.ankama.com/dofus/ng/modules/mmorpg/encyclopedia/unity/breeds/assets/breeds/sprite1.png');
+  assert.deepEqual(breed.variants.map(value=>[value.id,value.crop,value.head]),[['male','left','male.png'],['female','right','female.png']]);
+  assert.equal(breed.artworkSource,'Ankama - Encyclopédie DOFUS Unity');
 });
 
 test('normalizes map coverage without inventing point details',()=>{
-  const area=normalizeDofusMapArea({id:3,name:{fr:'Forêt'},level:40,shape:[-2,4,2,8,12000,12000],dungeonId:9,harvestables:[1,2],npcsIds:[4]},'fr');
-  assert.deepEqual(area,{id:3,name:'Forêt',level:40,center:{x:0,y:6},dungeonId:9,harvestableCount:2,npcCount:1});
+  const positions=new Map([[42,{id:42,posX:7,posY:-3,img:{'0.25':'map.jpg'}}],[43,{id:43,posX:8,posY:-4,img:{}}]]);
+  const area=normalizeDofusMapArea({id:3,name:{fr:'Forêt'},level:40,shape:[-2,4,2,8,12000,12000],mapIds:[42],associatedZaapMapId:42,entranceMapIds:[43],dungeonId:9,harvestables:[1,2],npcsIds:[4]},positions,'fr');
+  assert.deepEqual(area,{id:3,name:'Forêt',level:40,center:{x:7,y:-3},dungeonId:9,dungeonPosition:{x:8,y:-4},harvestableCount:2,npcCount:1,tile:{id:42,x:7,y:-3,img:'map.jpg'}});
 });
 
 test('normalizes Almanax Meryde, offering and sanitized bonus',()=>{
@@ -36,8 +39,10 @@ test('formats spell effects and retains every supplied rank',()=>{
       [157,{description:{fr:'-#1{{~1~2 à -}}#2 Force'}}],
     ]),
     'fr',
+    {id:77,pairedSpell:{id:2,name:{fr:'Variante'}}},
   );
   assert.equal(spell.levels.length,2);
   assert.equal(spell.levels[0].effects[0].description,'17 à 20 dommages Terre');
   assert.equal(spell.levels[1].effects[0].description,'-40 Force');
+  assert.deepEqual(spell.variant,{groupId:77,pairedSpellId:2,pairedSpellName:'Variante'});
 });
