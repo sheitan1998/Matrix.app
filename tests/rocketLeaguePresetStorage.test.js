@@ -11,7 +11,6 @@ import {
   loadRocketGarage,
   normalizeRocketSelection,
   safeRocketFilename,
-  serializeRocketPreset,
   saveRocketGarage,
 } from '../src/components/tuto-gaming/rocketLeaguePresetStorage.js';
 
@@ -35,20 +34,8 @@ test('returns an empty garage when persisted JSON is malformed', () => {
   });
 });
 
-test('exports valid JSON with a filesystem-safe deterministic filename', () => {
-  const config = createRocketPresetConfig(
-    { ...EMPTY_ROCKET_SELECTION, body: 'body-octane' },
-    '12345678',
-  );
-  assert.deepEqual(JSON.parse(serializeRocketPreset(config)), {
-    id: '12345678',
-    carrosserie: 'body-octane',
-    couleur: 'paint-original',
-    roues: null,
-    sticker: null,
-    explosion: null,
-  });
-  assert.equal(safeRocketFilename('Preset été / "bleu"', 'JSON'), 'Preset-ete-bleu.json');
+test('creates a filesystem-safe deterministic image filename', () => {
+  assert.equal(safeRocketFilename('Preset été / "bleu"'), 'Preset-ete-bleu.png');
 });
 
 test('round-trips an exact, bounded URL-safe shared configuration', () => {

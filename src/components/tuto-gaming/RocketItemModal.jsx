@@ -15,6 +15,7 @@ export default function RocketItemModal({ item, onClose }) {
           sources={item.images}
           alt={item.name}
           fallbackLabel={item.name}
+          accent={item.accent}
           className="aspect-video w-full rounded-xl p-4"
         />
         <dl className="grid gap-3 rounded-xl bg-muted p-4 text-sm sm:grid-cols-2">

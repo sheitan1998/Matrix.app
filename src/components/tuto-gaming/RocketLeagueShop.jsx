@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import RocketLeagueImage from '@/components/tuto-gaming/RocketLeagueImage';
 import RocketItemModal from '@/components/tuto-gaming/RocketItemModal';
 import { ROCKET_LEAGUE_CATEGORY_LABELS } from '@/components/tuto-gaming/rocketLeagueCatalog';
@@ -11,7 +11,6 @@ export default function RocketLeagueShop() {
   const [query, setQuery] = useState('');
   const [visibleCount, setVisibleCount] = useState(120);
   const { data, loading, error, retry } = useRocketLeagueCatalog();
-  if (loading) return <p role="status" className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />Chargement du catalogue complet…</p>;
   const catalog = data || { items: [] };
   const categoryItems = category === 'all'
     ? catalog.items
@@ -25,6 +24,11 @@ export default function RocketLeagueShop() {
   return (
     <section aria-labelledby="rocket-shop-title" className="space-y-4">
       <h2 id="rocket-shop-title" className="text-xl font-bold">Boutique du jour</h2>
+      {loading && (
+        <p className="inline-flex rounded-full border bg-muted px-3 py-1 text-xs text-muted-foreground" role="status">
+          Chargement du catalogue…
+        </p>
+      )}
       {catalog.items.length > 0 && (
         <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground" role="status">
           {catalog.source === 'bakkesmod'
@@ -83,6 +87,7 @@ export default function RocketLeagueShop() {
               sources={item.images}
               alt={item.name}
               fallbackLabel={item.name}
+              accent={item.accent}
               className="aspect-square w-full p-2"
             />
             <span className="block space-y-1 p-3">
@@ -104,7 +109,7 @@ export default function RocketLeagueShop() {
           Afficher plus ({filteredItems.length - visibleCount} restants)
         </button>
       )}
-      {!error && filteredItems.length === 0 && (
+      {!loading && !error && filteredItems.length === 0 && (
         <p className="rounded-xl border p-4 text-sm text-muted-foreground">Aucun objet dans cette catégorie.</p>
       )}
       {selectedItem && <RocketItemModal item={selectedItem} onClose={() => setSelectedItem(null)} />}

@@ -139,21 +139,15 @@ export function normalizePreset(value) {
   };
 }
 
-export function safeRocketFilename(value, extension = 'json') {
+export function safeRocketFilename(value, extension = 'png') {
   const base = String(value || 'preset-rocket-league')
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-zA-Z0-9_-]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 80) || 'preset-rocket-league';
-  const safeExtension = String(extension).replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'json';
+  const safeExtension = String(extension).replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'png';
   return `${base}.${safeExtension}`;
-}
-
-export function serializeRocketPreset(config) {
-  const parsed = parseRocketPresetConfig(config);
-  if (!parsed) throw new TypeError('Configuration Rocket League invalide.');
-  return JSON.stringify(parsed.config, null, 2);
 }
 
 export function loadRocketGarage(storage) {
