@@ -8,7 +8,7 @@ const WIDTHS = { Size_1_x_1: '', Size_2_x_1: 'sm:col-span-2', Size_3_x_1: 'sm:co
 export default function FortniteShopCard({ item, onClick, user, voteCounts }) {
   const [hovered, setHovered] = useState(false);
   const style = getFortniteItemStyle(item);
-  return <article className={`relative flex flex-col overflow-hidden rounded-xl border bg-[#080b12]/90 backdrop-blur-xl ${WIDTHS[item.tile_size] || ''}`} style={{ borderColor: style.border, boxShadow: `0 0 24px ${style.glow}` }} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+  return <article className={`relative flex flex-col overflow-hidden rounded-xl border backdrop-blur-xl ${WIDTHS[item.tile_size] || ''}`} style={{ background: style.bg, borderColor: style.border, boxShadow: `0 0 24px ${style.glow}` }} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
     <button onClick={onClick} className="block w-full flex-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" aria-label={`Voir l’offre ${item.name}`}>
       <div className="group/media relative h-44 sm:h-64"><FortniteMedia item={item} active={hovered} thumbnail />
         {item.banner && <span className="absolute bottom-2 left-2 rounded bg-background/80 px-2 py-1 text-[10px] font-bold text-foreground">{item.banner}</span>}

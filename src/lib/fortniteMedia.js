@@ -16,9 +16,6 @@ const OFFICIAL_VIDEO_HOSTS = [
   "epicgames.com",
   "fortnite.com",
 ];
-const COMMUNITY_VIDEO_HOST = "fnggcdn.com";
-const COSMETIC_ID_RE = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,199}$/;
-const NUMERIC_ID_RE = /^\d{1,12}$/;
 
 function directAssetUrl(value) {
   if (typeof value === "string") return value;
@@ -41,48 +38,30 @@ export function isOfficialFortniteVideoUrl(value) {
   }
 }
 
-export function normalizeFortniteCosmeticId(value) {
-  const id = typeof value === "string" ? value.trim() : "";
-  return COSMETIC_ID_RE.test(id) && !id.includes("..") ? id : "";
-}
-
-export function getFortniteGgResolverUrl(value) {
-  const id = normalizeFortniteCosmeticId(value);
-  if (!id) return "";
-  const url = new URL("https://fortnite.gg/api/item");
-  url.searchParams.set("id", id);
-  return url.href;
-}
-
-export function getCommunityVideoCandidates(item) {
-  const cosmeticId = normalizeFortniteCosmeticId(item?.id);
-  const resolvedCosmeticId = normalizeFortniteCosmeticId(item?.community_media?.cosmetic_id);
-  const numericId = String(item?.community_media?.numeric_id || "");
-  if (!cosmeticId || cosmeticId.toLowerCase() !== resolvedCosmeticId.toLowerCase() || !NUMERIC_ID_RE.test(numericId)) return [];
+function directVideoValues(value) {
+  if (typeof value === "string") return [value];
+  if (Array.isArray(value)) return value.flatMap(directVideoValues);
+  if (!value || typeof value !== "object") return [];
   return [
-    `https://${COMMUNITY_VIDEO_HOST}/items/${numericId}/video-sd.mp4`,
-    `https://${COMMUNITY_VIDEO_HOST}/items/${numericId}/video.mp4`,
+    value.url, value.src, value.video, value.videoUrl, value.gameplayVideo, value.animated,
+    ...(Array.isArray(value.videos) ? value.videos.flatMap(directVideoValues) : []),
+  ].flatMap(directVideoValues);
+}
+
+export function getFortniteVideoCandidates(item) {
+  const displayAssets = [
+    item?.displayAsset, item?.newDisplayAsset,
+    ...(Array.isArray(item?.displayAssets) ? item.displayAssets : []),
+    ...(Array.isArray(item?.display_assets) ? item.display_assets : []),
   ];
-}
-
-export function isAllowedFortniteVideoUrl(value) {
-  if (isOfficialFortniteVideoUrl(value)) return true;
-  const candidate = directAssetUrl(value);
-  try {
-    const url = new URL(candidate);
-    return url.protocol === "https:"
-      && url.hostname.toLowerCase() === COMMUNITY_VIDEO_HOST
-      && /^\/items\/\d{1,12}\/video(?:-sd)?\.mp4$/i.test(url.pathname);
-  } catch {
-    return false;
-  }
-}
-
-export function getFortniteVideoCandidates(item, includeCommunity = false) {
-  const candidates = [item?.gameplayItem, item?.video, item?.images?.animated];
-  const official = candidates.map(directAssetUrl).filter(isOfficialFortniteVideoUrl).map(value => new URL(value.trim()).href);
-  const community = includeCommunity ? getCommunityVideoCandidates(item) : [];
-  return [...new Set([...community, ...official].filter(isAllowedFortniteVideoUrl))];
+  const candidates = [
+    ...(Array.isArray(item?.video_candidates) ? item.video_candidates : []),
+    item?.showcaseVideo, item?.showcase_video, item?.video, item?.gameplayItem, item?.gameplayVideo,
+    item?.images?.animated, ...displayAssets.flatMap(directVideoValues),
+  ];
+  return [...new Set(candidates.flatMap(directVideoValues)
+    .filter(isOfficialFortniteVideoUrl)
+    .map(value => new URL(value.trim()).href))];
 }
 
 export function getFortniteVideoUrl(item) {
@@ -103,5 +82,3 @@ export function getFortniteMediaBadge(item, staticOnly = false) {
   if (type === "emote" || type === "dance") return "Emote";
   return staticOnly ? "Statique" : "Aperçu";
 }
-
-export const FORTNITE_MEDIA_BACKGROUND_CLASS = "bg-[#080b12]/95 backdrop-blur-xl";

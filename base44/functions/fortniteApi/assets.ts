@@ -23,8 +23,32 @@ function officialVideoUrl(value) {
   }
 }
 
+function directValues(value) {
+  if (typeof value === 'string') return [value];
+  if (Array.isArray(value)) return value.flatMap(directValues);
+  if (!value || typeof value !== 'object') return [];
+  return [
+    value.url, value.src, value.video, value.videoUrl, value.gameplayVideo, value.animated,
+    ...(Array.isArray(value.videos) ? value.videos.flatMap(directValues) : []),
+  ].flatMap(directValues);
+}
+
+export function officialVideoUrls(item) {
+  const displayAssets = [
+    item.displayAsset, item.newDisplayAsset,
+    ...(Array.isArray(item.displayAssets) ? item.displayAssets : []),
+    ...(Array.isArray(item.newDisplayAssets) ? item.newDisplayAssets : []),
+  ];
+  const candidates = [
+    item.showcaseVideo, item.video, item.gameplayItem, item.gameplayVideo,
+    item.images?.animated, ...displayAssets.flatMap(directValues),
+  ];
+  return [...new Set(candidates.flatMap(directValues).map(officialVideoUrl).filter(Boolean))];
+}
+
 export function normalize(item) {
   const images = item.images || {};
+  const videoCandidates = officialVideoUrls(item);
   return {
     id: item.id, name: item.name || item.title || 'Objet Fortnite', description: item.description || '',
     type: item.type?.value || item.type || (item.albumArt ? 'music' : 'item'),
@@ -35,10 +59,10 @@ export function normalize(item) {
       icon: images.icon || images.small || null,
       smallIcon: images.smallIcon || null,
       animated: officialVideoUrl(images.animated) },
-    gameplayItem: officialVideoUrl(item.gameplayItem),
-    video: officialVideoUrl(item.video),
+    video_candidates: videoCandidates,
+    showcase_video: item.showcaseVideo || null,
     audio: typeof item.audio === 'string' && /^https:\/\//.test(item.audio) ? item.audio : null,
-    series: item.series?.value || null, series_colors: item.series?.colors || [],
+    series: item.series?.value || null, series_colors: item.series?.colors || [], series_image: item.series?.image || null,
     set_name: item.set?.value || null, set_display: item.set?.text || item.set?.displayValue || null,
     added: item.added?.date || item.added || null,
     season: item.introduction?.season || null, chapter: item.introduction?.chapter || null,

@@ -1,4 +1,4 @@
-// Fortnite.gg-style rarity gradients — full-color backgrounds, not low-opacity tints
+// Fortnite series and rarity palettes used when the API does not provide offer/series colors.
 export const RARITY_COLORS = {
   common:      { bg: "linear-gradient(135deg, #6b7280 0%, #4b5563 100%)", border: "rgba(156,163,175,0.5)",  text: "#d1d5db", glow: "rgba(107,114,128,0.3)" },
   uncommon:    { bg: "linear-gradient(135deg, #16a34a 0%, #15803d 100%)", border: "rgba(34,197,94,0.5)",   text: "#86efac", glow: "rgba(34,197,94,0.3)" },
@@ -9,26 +9,55 @@ export const RARITY_COLORS = {
   marvel:      { bg: "linear-gradient(135deg, #e11d48 0%, #be123c 100%)", border: "rgba(244,63,94,0.5)",  text: "#fda4af", glow: "rgba(244,63,94,0.3)" },
   dc:          { bg: "linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)", border: "rgba(59,130,246,0.5)", text: "#93c5fd", glow: "rgba(59,130,246,0.3)" },
   icon:        { bg: "linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)", border: "rgba(6,182,212,0.6)", text: "#67e8f9", glow: "rgba(6,182,212,0.4)" },
-  starwars:    { bg: "linear-gradient(135deg, #eab308 0%, #ca8a04 100%)", border: "rgba(234,179,8,0.5)",  text: "#fde047", glow: "rgba(234,179,8,0.3)" },
-  gaminglegends: { bg: "linear-gradient(135deg, #84cc16 0%, #65a30d 100%)", border: "rgba(132,204,22,0.5)", text: "#bef264", glow: "rgba(132,204,22,0.3)" },
+  starwars:    { bg: "linear-gradient(135deg, #171717 0%, #3f3a16 58%, #ca8a04 100%)", border: "rgba(234,179,8,0.65)",  text: "#fde047", glow: "rgba(234,179,8,0.3)" },
+  gaminglegends: { bg: "linear-gradient(135deg, #8078ff 0%, #5328d6 45%, #0d0027 100%)", border: "rgba(128,120,255,0.65)", text: "#c4b5fd", glow: "rgba(83,40,214,0.4)" },
   transcendent:{ bg: "linear-gradient(135deg, #ec4899 0%, #db2777 100%)", border: "rgba(236,72,153,0.5)", text: "#f9a8d4", glow: "rgba(236,72,153,0.3)" },
   slurp:       { bg: "linear-gradient(135deg, #06b6d4 0%, #0e7490 100%)", border: "rgba(6,182,212,0.5)", text: "#67e8f9", glow: "rgba(6,182,212,0.3)" },
   dark:        { bg: "linear-gradient(135deg, #1f2937 0%, #111827 100%)", border: "rgba(75,85,99,0.5)",  text: "#9ca3af", glow: "rgba(75,85,99,0.3)" },
   default:     { bg: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)", border: "rgba(100,116,139,0.4)", text: "#94a3b8", glow: "rgba(100,116,139,0.2)" },
 };
 
+const SERIES_KEYS = {
+  "iconseries": "icon",
+  "marvelseries": "marvel",
+  "dcseries": "dc",
+  "starwarsseries": "starwars",
+  "gaminglegendsseries": "gaminglegends",
+  "slurpseries": "slurp",
+  "darkseries": "dark",
+};
+
+function paletteKey(value) {
+  return String(value || "").toLowerCase().replace(/[^a-z]/g, "");
+}
+
+function apiColors(item) {
+  const offer = item.shop_colors
+    ? [item.shop_colors.color1, item.shop_colors.color2, item.shop_colors.color3, item.shop_colors.textBackgroundColor]
+    : [];
+  const series = Array.isArray(item.series_colors) ? item.series_colors : [];
+  return [...offer, ...series]
+    .filter(value => typeof value === "string" && /^[a-f\d]{6}([a-f\d]{2})?$/i.test(value))
+    .map(value => value.slice(0, 6));
+}
+
 export function getFortniteItemStyle(item) {
-  const fallback = getRarityStyle(item.rarity);
-  const valid = value => typeof value === 'string' && /^[a-f\d]{6}([a-f\d]{2})?$/i.test(value);
-  const colors = item.shop_colors
-    ? [item.shop_colors.color1, item.shop_colors.color2, item.shop_colors.color3].filter(valid)
-    : (item.series_colors || []).filter(valid);
+  const seriesKey = SERIES_KEYS[paletteKey(item.series)];
+  const fallback = getRarityStyle(seriesKey || item.rarity);
+  const colors = apiColors(item);
   if (colors.length < 2) return fallback;
-  return { ...fallback, bg: `linear-gradient(135deg, ${colors.map((color, index) => `#${color} ${Math.round(index * 100 / (colors.length - 1))}%`).join(', ')})`, border: `#${colors[0]}` };
+  const [red, green, blue] = colors[0].match(/.{2}/g).map(value => parseInt(value, 16));
+  return {
+    ...fallback,
+    bg: `linear-gradient(135deg, ${colors.map((color, index) => `#${color} ${Math.round(index * 100 / (colors.length - 1))}%`).join(", ")})`,
+    border: `#${colors[0]}`,
+    glow: `rgba(${red},${green},${blue},0.35)`,
+  };
 }
 
 export function getRarityStyle(rarity) {
-  const key = (rarity || "common").toLowerCase().replace(/\s/g, "");
+  const rawKey = paletteKey(rarity);
+  const key = SERIES_KEYS[rawKey] || rawKey;
   return RARITY_COLORS[key] || RARITY_COLORS.common;
 }
 
