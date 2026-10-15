@@ -63,8 +63,18 @@ la modale avant de quitter le catalogue.
 - Le catalogue est une sélection des premières pages des filtres publics ModHub,
   pas un miroir exhaustif. Une catégorie ou un téléchargement refusé/absent chez
   GIANTS est signalé comme indisponible; l'application ne contourne pas ces limites.
+
 Tests ciblés : `npm run test:fs25`.
-Tests ciblés : `npm run test:fs25`.
+
+### Univers Dofus
+
+La route `/dofus` propose trois modules alimentés par DofusDB :
+
+- un catalogue avec filtres combinables par thème, catégories d'équipement, niveaux et recherche instantanée ;
+- un builder de stuff à 16 emplacements, avec règles de type, statistiques en temps réel et presets stockés localement dans le navigateur ;
+- les 19 classes, leurs visuels et leurs sorts/rangs/effets disponibles dans la source.
+
+Les classes et sorts n'utilisent pas de données de remplacement : une indisponibilité de DofusDB est signalée explicitement. Le catalogue conserve uniquement son instantané de référence existant pour assurer un affichage dégradé. Les contrôles ciblés du builder s'exécutent avec `npm test`.
 
 ### Desktop OAuth & OTA updates (Tauri)
 
