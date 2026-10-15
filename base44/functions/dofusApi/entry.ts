@@ -1,6 +1,6 @@
 import { createApiCache, dataResponse } from "../../shared/apiCache.ts";
 import { dofusFallback, fallbackDofusPage } from "../../shared/dofusFallback.ts";
-import { normalizeDofusAlmanax, normalizeDofusBreed, normalizeDofusItem, normalizeDofusMapArea, normalizeDofusSet, normalizeDofusSpell, loadDofusRecipes } from "../../shared/dofusData.ts";
+import { normalizeDofusAchievement, normalizeDofusAlmanax, normalizeDofusBreed, normalizeDofusItem, normalizeDofusMapArea, normalizeDofusQuest, normalizeDofusSet, normalizeDofusSpell, loadDofusRecipes } from "../../shared/dofusData.ts";
 
 const CACHE_TTL = 60 * 60 * 1000;
 const CACHE_TTL_TYPES = 24 * 60 * 60 * 1000;
@@ -89,6 +89,99 @@ async function fetchDofusByIds(path,ids,timeout=12000) {
     rows.push(...(response.data||[]));
   }
   return rows;
+}
+async function fetchAllDofus(path,params={},timeout=12000) {
+  const first=await fetchDofusCollection(path,{...params,'$limit':'100','$skip':'0'},timeout);
+  const rows=[...(first.data||[])];
+  const pageSize=Math.max(1,Number(first.limit)||rows.length||100);
+  for(let skip=pageSize;skip<Number(first.total||0);skip+=pageSize){
+    const page=await fetchDofusCollection(path,{...params,'$limit':String(pageSize),'$skip':String(skip)},timeout);
+    rows.push(...(page.data||[]));
+  }
+  return rows;
+}
+async function getProgressionCategories(lang) {
+  const cacheKey=`progression-categories:v1:${lang}`;
+  const cached=rawGetCached(cacheKey,CACHE_TTL_TYPES);
+  if(cached)return cached;
+  const [achievementRows,questRows]=await Promise.all([
+    fetchAllDofus('achievement-categories',{},15000),
+    fetchAllDofus('quest-categories',{},15000),
+  ]);
+  const localize=value=>value?.[lang]||value?.fr||'';
+  const achievements=achievementRows.map(category=>({
+    id:Number(category.id),
+    parentId:Number(category.parentId)||0,
+    name:localize(category.name)||`Catégorie ${category.id}`,
+    order:Number(category.order)||0,
+  }));
+  const quests=questRows.map(category=>({
+    id:Number(category.id),
+    name:localize(category.name)||`Catégorie ${category.id}`,
+    order:Number(category.order)||0,
+  })).sort((a,b)=>a.order-b.order||a.name.localeCompare(b.name,lang));
+  const result={
+    achievements:achievements.filter(category=>category.parentId===0).sort((a,b)=>a.order-b.order||a.name.localeCompare(b.name,lang)),
+    achievementTree:achievements,
+    quests,
+  };
+  setCached(cacheKey,result);
+  return result;
+}
+function descendantCategoryIds(rootId,categories) {
+  if(!rootId)return [];
+  const ids=new Set([rootId]);
+  let changed=true;
+  while(changed){
+    changed=false;
+    for(const category of categories){
+      if(ids.has(category.parentId)&&!ids.has(category.id)){ids.add(category.id);changed=true;}
+    }
+  }
+  return [...ids];
+}
+function progressionListParams(body,lang,levelField='level') {
+  const limit=Math.min(30,Math.max(12,Number(body.limit)||24));
+  const page=Math.max(1,Number(body.page)||1);
+  const search=String(body.search||'').trim().slice(0,80);
+  const minLevel=Math.max(0,Number(body.minLevel)||0);
+  const maxLevel=Math.min(200,Math.max(0,Number(body.maxLevel)||0));
+  const params={'$limit':String(limit),'$skip':String((page-1)*limit),[`$sort[${levelField}]`]:'1'};
+  if(search){
+    params[`name.${lang}[$regex]`]=search.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    params[`name.${lang}[$options]`]='i';
+  }
+  if(minLevel)params[`${levelField}[$gte]`]=String(minLevel);
+  if(maxLevel)params[`${levelField}[$lte]`]=String(maxLevel);
+  return {limit,page,params,search,minLevel,maxLevel};
+}
+function objectiveReferenceIds(quest) {
+  const npcIds=new Set();
+  const itemIds=new Set();
+  const monsterIds=new Set();
+  for(const objective of (quest.steps||[]).flatMap(step=>step.objectives||[])){
+    const type=Number(objective.typeId);
+    const parameters=objective.parameters||{};
+    if([1,2,3,9,10,12].includes(type)&&Number(parameters.parameter0)>0)npcIds.add(Number(parameters.parameter0));
+    if([2,3].includes(type)&&Number(parameters.parameter1)>0)itemIds.add(Number(parameters.parameter1));
+    if([8,17].includes(type)&&Number(parameters.parameter0)>0)itemIds.add(Number(parameters.parameter0));
+    if([6,7,14,16].includes(type)&&Number(parameters.parameter0)>0)monsterIds.add(Number(parameters.parameter0));
+  }
+  return {npcIds:[...npcIds],itemIds:[...itemIds],monsterIds:[...monsterIds]};
+}
+async function resolveQuestReferences(quest,lang) {
+  const ids=objectiveReferenceIds(quest);
+  const [npcs,items,monsters]=await Promise.all([
+    ids.npcIds.length?fetchDofusByIds('npcs',ids.npcIds):[],
+    ids.itemIds.length?fetchDofusByIds('items',ids.itemIds):[],
+    ids.monsterIds.length?fetchDofusByIds('monsters',ids.monsterIds):[],
+  ]);
+  const result={};
+  const localize=value=>value?.[lang]||value?.fr||'';
+  for(const npc of npcs)result[`npc:${npc.id}`]=localize(npc.name)||`PNJ ${npc.id}`;
+  for(const item of items)result[`item:${item.id}`]=localize(item.name)||`Objet ${item.id}`;
+  for(const monster of monsters)result[`monster:${monster.id}`]=localize(monster.name)||`Monstre ${monster.id}`;
+  return result;
 }
 
 export default async function(req) {
@@ -219,6 +312,141 @@ export default async function(req) {
         },
         source:'DofusDB',
       };
+      setCached(cacheKey,result);
+      return dataResponse(result);
+    }
+
+    if(action==='getProgressionFilters'){
+      const categories=await getProgressionCategories(lang);
+      return dataResponse({
+        achievements:categories.achievements,
+        quests:categories.quests,
+        levelRanges:[[1,50],[51,100],[101,150],[151,190],[191,200]],
+        source:'DofusDB',
+      });
+    }
+
+    if(action==='getAchievements'){
+      const {limit,page,params,search,minLevel,maxLevel}=progressionListParams(body,lang,'level');
+      const categoryId=Math.max(0,Number(body.categoryId)||0);
+      const categories=await getProgressionCategories(lang);
+      const categoryIds=descendantCategoryIds(categoryId,categories.achievementTree);
+      if(categoryIds.length)params['categoryId[$in]']=categoryIds.map(String);
+      const cacheKey=`achievements:v1:${lang}:${page}:${limit}:${search}:${minLevel}:${maxLevel}:${categoryId}`;
+      const cached=getCached(cacheKey);
+      if(cached)return dataResponse(cached);
+      const response=await fetchDofusCollection('achievements',params,12000);
+      const achievements=(response.data||[]).map(value=>normalizeDofusAchievement(value,lang));
+      const result={
+        achievements,
+        total:Number(response.total)||0,
+        page,
+        hasMore:(page-1)*limit+achievements.length<Number(response.total||0),
+        source:'DofusDB',
+      };
+      setCached(cacheKey,result);
+      return dataResponse(result);
+    }
+
+    if(action==='getAchievementDetails'){
+      const id=Number(body.id);
+      if(!Number.isInteger(id)||id<=0)return Response.json({error:'Succès invalide'},{status:400});
+      const cacheKey=`achievement-detail:v1:${lang}:${id}`;
+      const cached=getCached(cacheKey);
+      if(cached)return dataResponse(cached);
+      const response=await fetch(`https://api.dofusdb.fr/achievements/${id}`,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(12000)});
+      if(!response.ok)throw new Error(`DofusDB achievements (${response.status})`);
+      const result={achievement:normalizeDofusAchievement(await response.json(),lang,true),source:'DofusDB'};
+      setCached(cacheKey,result);
+      return dataResponse(result);
+    }
+
+    if(action==='getQuests'){
+      const {limit,page,params,search,minLevel,maxLevel}=progressionListParams(body,lang,'levelMin');
+      const categoryId=Math.max(0,Number(body.categoryId)||0);
+      if(categoryId)params.categoryId=String(categoryId);
+      const cacheKey=`quests:v1:${lang}:${page}:${limit}:${search}:${minLevel}:${maxLevel}:${categoryId}`;
+      const cached=getCached(cacheKey);
+      if(cached)return dataResponse(cached);
+      const [response,categories]=await Promise.all([
+        fetchDofusCollection('quests',params,15000),
+        getProgressionCategories(lang),
+      ]);
+      const categoriesById=new Map(categories.quests.map(category=>[category.id,category]));
+      const quests=(response.data||[]).map(value=>normalizeDofusQuest(value,lang,categoriesById.get(Number(value.categoryId))));
+      const result={
+        quests,
+        total:Number(response.total)||0,
+        page,
+        hasMore:(page-1)*limit+quests.length<Number(response.total||0),
+        source:'DofusDB',
+      };
+      setCached(cacheKey,result);
+      return dataResponse(result);
+    }
+
+    if(action==='getQuestDetails'){
+      const id=Number(body.id);
+      if(!Number.isInteger(id)||id<=0)return Response.json({error:'Quête invalide'},{status:400});
+      const cacheKey=`quest-detail:v1:${lang}:${id}`;
+      const cached=getCached(cacheKey);
+      if(cached)return dataResponse(cached);
+      const [response,categories]=await Promise.all([
+        fetch(`https://api.dofusdb.fr/quests/${id}`,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(15000)}),
+        getProgressionCategories(lang),
+      ]);
+      if(!response.ok)throw new Error(`DofusDB quests (${response.status})`);
+      const quest=await response.json();
+      const category=categories.quests.find(value=>value.id===Number(quest.categoryId))||null;
+      const references=await resolveQuestReferences(quest,lang);
+      const result={quest:normalizeDofusQuest(quest,lang,category,true,references),source:'DofusDB'};
+      setCached(cacheKey,result);
+      return dataResponse(result);
+    }
+
+    if(action==='getQuestPrerequisites'){
+      const id=Number(body.id);
+      if(!Number.isInteger(id)||id<=0)return Response.json({error:'Quête invalide'},{status:400});
+      const cacheKey=`quest-prerequisites:v1:${lang}:${id}`;
+      const cached=getCached(cacheKey);
+      if(cached)return dataResponse(cached);
+      const questsById=new Map();
+      const missing=[];
+      let pending=[id];
+      while(pending.length&&questsById.size<500){
+        const batch=[...new Set(pending.filter(value=>!questsById.has(value)))].slice(0,100);
+        pending=[];
+        if(!batch.length)break;
+        const rows=await fetchDofusByIds('quests',batch,15000);
+        const foundIds=new Set(rows.map(row=>Number(row.id)));
+        for(const requestedId of batch)if(!foundIds.has(requestedId))missing.push({type:'quest',id:requestedId});
+        for(const row of rows){
+          questsById.set(Number(row.id),row);
+          for(const dependency of row.need?.quests||[])if(!questsById.has(Number(dependency)))pending.push(Number(dependency));
+        }
+      }
+      const achievementIds=[...new Set([...questsById.values()].flatMap(quest=>quest.need?.achievements||[]).map(Number).filter(Number.isInteger))];
+      const achievements=achievementIds.length?await fetchDofusByIds('achievements',achievementIds,15000):[];
+      const achievementById=new Map(achievements.map(value=>[Number(value.id),value]));
+      const localize=value=>value?.[lang]||value?.fr||'';
+      for(const achievementId of achievementIds)if(!achievementById.has(achievementId))missing.push({type:'achievement',id:achievementId});
+      const nodes=[...questsById.values()].map(quest=>({
+        id:Number(quest.id),
+        type:'quest',
+        name:localize(quest.name)||`Quête ${quest.id}`,
+        level:Math.max(1,Number(quest.levelMin)||1),
+        questIds:(quest.need?.quests||[]).map(Number),
+        achievementIds:(quest.need?.achievements||[]).map(Number),
+      }));
+      const achievementNodes=achievements.map(value=>({
+        id:Number(value.id),
+        type:'achievement',
+        name:localize(value.name)||`Succès ${value.id}`,
+        level:Math.max(1,Number(value.level)||1),
+        questIds:[],
+        achievementIds:[],
+      }));
+      const result={rootId:id,nodes:[...nodes,...achievementNodes],missing,truncated:pending.length>0,source:'DofusDB'};
       setCached(cacheKey,result);
       return dataResponse(result);
     }

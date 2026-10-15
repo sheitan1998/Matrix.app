@@ -34,3 +34,25 @@ test('map helpers position layers and load only visible real tiles',()=>{
   assert.equal(visibleDofusTiles(areas,{west:0,east:4,south:0,north:4}).length,1);
   assert.equal(visibleDofusTiles(areas,{west:20,east:24,south:20,north:24}).length,0);
 });
+
+test('Dofus navigation exposes keyboard tabs for achievements and quests',async()=>{
+  const source=await readFile(new URL('../src/pages/tuto-gaming/Dofus.jsx',import.meta.url),'utf8');
+  assert.match(source,/\['map','Carte'\],\['achievements','Succès'\],\['quests','Quêtes'\]/);
+  assert.match(source,/role="tablist"/);
+  assert.match(source,/ArrowLeft','ArrowRight','Home','End/);
+  assert.match(source,/DofusAchievements/);
+  assert.match(source,/DofusQuests/);
+});
+
+test('progression catalogues paginate and expose loading, error and empty states',async()=>{
+  const achievements=await readFile(new URL('../src/components/tuto-gaming/DofusAchievements.jsx',import.meta.url),'utf8');
+  const quests=await readFile(new URL('../src/components/tuto-gaming/DofusQuests.jsx',import.meta.url),'utf8');
+  assert.match(achievements,/const PAGE_SIZE=24/);
+  assert.match(achievements,/query\.isFetching/);
+  assert.match(achievements,/query\.isError/);
+  assert.match(achievements,/Aucun succès/);
+  assert.match(quests,/const PAGE_SIZE=24/);
+  assert.match(quests,/DofusPrerequisiteTree/);
+  assert.match(quests,/DofusXpCalculator/);
+  assert.match(quests,/aucun champ de série distinct/);
+});

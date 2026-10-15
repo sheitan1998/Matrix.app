@@ -1,0 +1,22 @@
+import React,{useMemo,useState} from 'react';
+import {Calculator,Trash2} from 'lucide-react';
+import {calculateXpRemaining,estimateDofusRewardXp} from '@/components/tuto-gaming/dofusProgression';
+
+const format=value=>Number(value).toLocaleString('fr-FR');
+
+export default function DofusXpCalculator({sources,onRemoveSource}){
+  const [values,setValues]=useState({currentLevel:1,currentXp:0,targetLevel:2,mode:'level'});
+  const result=useMemo(()=>calculateXpRemaining(values),[values]);
+  const estimates=useMemo(()=>sources.map(source=>({
+    ...source,
+    estimatedXp:source.rewards.reduce((sum,reward)=>sum+estimateDofusRewardXp({playerLevel:values.currentLevel,...reward}),0),
+  })),[sources,values.currentLevel]);
+  const totalEstimate=estimates.reduce((sum,source)=>sum+source.estimatedXp,0);
+  const update=(key,value)=>setValues(current=>({...current,[key]:value}));
+  return <section className="space-y-4 rounded-xl border bg-muted/20 p-4" aria-labelledby="dofus-xp-title"><header><h3 id="dofus-xp-title" className="flex items-center gap-2 font-bold"><Calculator className="h-4 w-4 text-primary"/>Calculateur XP</h3><p className="text-sm text-muted-foreground">La cible utilise la courbe cumulative exacte <code>CharacterXPMappings</code> du client DOFUS.</p></header>
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><label className="text-sm">Niveau actuel<input type="number" min="1" max="200" step="1" value={values.currentLevel} onChange={event=>update('currentLevel',Number(event.target.value))} className="mt-1 w-full rounded-lg border bg-background px-3 py-2"/></label><label className="text-sm">Niveau cible<input type="number" min="1" max="200" step="1" value={values.targetLevel} onChange={event=>update('targetLevel',Number(event.target.value))} className="mt-1 w-full rounded-lg border bg-background px-3 py-2"/></label><label className="text-sm lg:col-span-2">Sémantique de l’XP<select value={values.mode} onChange={event=>update('mode',event.target.value)} className="mt-1 w-full rounded-lg border bg-background px-3 py-2"><option value="level">Progression depuis le début du niveau actuel</option><option value="total">XP totale cumulative du personnage</option></select></label><label className="text-sm sm:col-span-2 lg:col-span-4">{values.mode==='level'?'XP gagnée dans le niveau actuel':'XP totale actuelle'}<input type="number" min="0" step="1" value={values.currentXp} onChange={event=>update('currentXp',Number(event.target.value))} className="mt-1 w-full rounded-lg border bg-background px-3 py-2"/></label></div>
+    <div aria-live="polite">{result.valid?<div className="grid gap-3 sm:grid-cols-2"><p className="rounded-lg bg-card p-4"><strong className="text-xl text-primary">{format(result.remaining)} XP</strong><span className="block text-xs text-muted-foreground">reste exacte jusqu’au niveau {values.targetLevel}</span></p><p className="rounded-lg bg-card p-4"><strong className="text-xl">{format(totalEstimate)} XP</strong><span className="block text-xs text-muted-foreground">gain estimé des sélections au niveau {values.currentLevel}</span></p></div>:<ul role="alert" className="space-y-1 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{result.errors.map(error=><li key={error}>{error}</li>)}</ul>}</div>
+    <section aria-labelledby="xp-selections"><h4 id="xp-selections" className="text-sm font-bold">Quêtes et succès sélectionnés</h4>{!estimates.length?<p className="mt-2 text-sm text-muted-foreground">Ajoutez une récompense depuis une fiche de quête ou de succès.</p>:<ul className="mt-2 space-y-2">{estimates.map(source=><li key={source.id} className="flex items-center justify-between gap-3 rounded-lg bg-card p-3 text-sm"><span><strong>{source.name}</strong><span className="block text-xs text-muted-foreground">{format(source.estimatedXp)} XP estimée</span></span><button type="button" onClick={()=>onRemoveSource(source.id)} aria-label={`Retirer ${source.name}`} className="rounded-lg p-2 hover:bg-muted"><Trash2 className="h-4 w-4"/></button></li>)}</ul>}</section>
+    <p className="text-xs text-muted-foreground">Valeur exacte : différence entre seuils cumulatifs officiels. Valeurs de récompense estimées : formule de récompense du client appliquée aux ratios <code>experienceRatio</code>, au niveau optimal et à la durée DofusDB; bonus de compte, conditions et modificateurs serveur non inclus.</p>
+  </section>;
+}
