@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { resolveRocketImageSources, rocketFallbackColors } from './rocketLeagueImages';
+import RocketLeagueFallbackArt from './RocketLeagueFallbackArt';
 
 const IMAGE_TIMEOUT_MS = 3_000;
 const PROXY_TIMEOUT_MS = 6_000;
 
 export default function RocketLeagueImage({
-  src,
-  sources,
+  src = '',
+  sources = [],
   alt,
   className = '',
   contain = true,
@@ -15,6 +16,8 @@ export default function RocketLeagueImage({
   accent = '',
   captureRemote = true,
   showFallback = true,
+  bodyName = '',
+  wheelName = '',
 }) {
   const candidates = useMemo(
     () => resolveRocketImageSources({ src, sources }),
@@ -29,7 +32,6 @@ export default function RocketLeagueImage({
   const imageSource = phase === 'direct' ? current : phase === 'proxy-image' ? proxyUrl : '';
   const label = fallbackLabel || alt || 'Visuel indisponible';
   const colors = rocketFallbackColors(label, accent);
-  const initials = String(label).trim().slice(0, 2).toUpperCase() || 'RL';
 
   useEffect(() => {
     setIndex(0);
@@ -56,7 +58,7 @@ export default function RocketLeagueImage({
     let active = true;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS);
-    base44.functions.fetch('/rocketLeagueImage', {
+    base44.functions.fetch('/api/rocket-league-proxy', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url: current }),
@@ -120,12 +122,12 @@ export default function RocketLeagueImage({
       }}
     >
       {showFallback && (
-        <span className="flex max-w-full flex-col items-center gap-2 px-3 text-center text-white">
-          <span className="flex h-9 min-w-9 items-center justify-center rounded-lg border border-white/25 bg-black/35 px-2 text-sm font-black shadow-lg">
-            {initials}
-          </span>
-          <span className="line-clamp-2 text-xs font-semibold drop-shadow">{label}</span>
-        </span>
+        <RocketLeagueFallbackArt
+          label={label}
+          bodyName={bodyName}
+          wheelName={wheelName}
+          accent={accent}
+        />
       )}
       {imageSource && (
         <img

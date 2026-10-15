@@ -42,11 +42,13 @@ These variables belong to the Base44 function environment and must never use the
 `VITE_` prefix.
 
 Allowed item images are attempted directly, then through the internal
-`rocketLeagueImage` Base44 function. That proxy is not public-purpose: it accepts
-POST only, revalidates the exact host allowlist on every redirect, resolves DNS
+`/api/rocket-league-proxy` Base44 route. That proxy is not public-purpose: it accepts
+POST only, revalidates the exact host allowlist on every redirect, propagates
+intentional upstream access denials, resolves DNS
 and rejects private/reserved addresses, applies rate limiting and timeouts, and
 accepts only PNG/JPEG/WebP/AVIF responses up to 8 MiB. Successful responses are
-cached for one day. Configure only image hosts for which the project has an
+cached for one day and expose `X-Proxy-Cache: HIT` or `MISS`; only a cache hit
+avoids upstream latency. Configure only image hosts for which the project has an
 explicit redistribution or hotlinking right.
 
 When that feed is absent or unavailable, the server uses the pinned LGPL metadata
@@ -56,7 +58,9 @@ API. TRN only supplies player statistics; BakkesMod exposes local game data rath
 than a hosted API; RL Garage has no documented public catalogue API or image reuse
 grant. No public official Rocket League item-image CDN is available, so MATRIX
 does not hotlink RL Garage or fabricate official HD URLs. Sources without an
-explicitly allowlisted image host use an explicitly textual MATRIX fallback.
+explicitly allowlisted image host use an original local MATRIX SVG scene. Its
+body family, wheel geometry, and selected paint vary without presenting that
+stylized fallback as an official item image.
 The pinned community snapshot contains item metadata but no image URLs; BakkesMod
 thumbnail fields are local Unreal asset identifiers rather than public web URLs.
 
@@ -66,7 +70,10 @@ and the current draft are stored locally under the versioned key
 unavailable browser storage safely falls back to an empty usable garage, and up
 to 50 named presets are retained. Share links contain a validated, size-limited,
 base64url configuration at `/rocket-league?preset=...` and require no server
-record. PNG export captures only the **APERÇU DU PRESET** block, whose local CSS
+record. Missing provider prices are deterministic catalog estimates, clearly
+labelled in the UI and derived from normalized rarity bands rather than presented
+as live market prices. PNG export captures only the **APERÇU DU PRESET** block
+identified by `#preset-preview-box`, whose local SVG
 fallback remains capture-safe even when a remote image is absent, broken, too
 slow, or blocked by CORS.
 

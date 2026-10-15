@@ -14,6 +14,7 @@ export type RocketLeagueCatalogItem = {
   image: string | null;
   images: string[];
   price: number;
+  priceEstimated: boolean;
   paint: string | null;
   accent: string;
   compatibleBodies: string[];
@@ -80,6 +81,13 @@ const PAINTS = [
 
 const CATEGORIES = new Set(Object.keys(ROCKET_LEAGUE_CATEGORY_LABELS));
 const MAX_ITEMS = 20_000;
+const PRICE_RANGES = {
+  standard: [100, 200],
+  rare: [400, 700],
+  import: [800, 1100],
+  exotic: [1200, 1600],
+  blackMarket: [2000, 2500],
+} as const;
 
 function text(value: unknown, fallback = '', maxLength = 200) {
   return typeof value === 'string' ? value.trim().slice(0, maxLength) : fallback;
@@ -87,6 +95,29 @@ function text(value: unknown, fallback = '', maxLength = 200) {
 
 function safeId(value: unknown, fallback: string) {
   return text(value, fallback, 120).replace(/[^a-zA-Z0-9_-]/g, '-');
+}
+
+function normalizedPriceTier(rarity: unknown): keyof typeof PRICE_RANGES {
+  const value = String(rarity || '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  if (value.includes('marche noir') || value.includes('black market')) return 'blackMarket';
+  if (value.includes('exotique') || value.includes('exotic')) return 'exotic';
+  if (value.includes('importe') || value.includes('import')) return 'import';
+  if (value.includes('rare')) return 'rare';
+  return 'standard';
+}
+
+export function estimateRocketLeaguePrice(id: unknown, rarity: unknown) {
+  const [minimum, maximum] = PRICE_RANGES[normalizedPriceTier(rarity)];
+  let hash = 2166136261;
+  for (const character of String(id || 'rocket-league')) {
+    hash ^= character.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  const steps = Math.floor((maximum - minimum) / 100) + 1;
+  return minimum + ((hash >>> 0) % steps) * 100;
 }
 
 function imageUrls(value: any, allowedImageHosts: ReadonlySet<string>): string[] {
@@ -133,15 +164,19 @@ export function normalizeRocketLeagueCatalogItem(
   if (!category || !name) return null;
   const images = imageUrls(value, options.allowedImageHosts || new Set());
   const id = safeId(value.id ?? value.productId ?? value.slug, `${category}-${index}`);
+  const rarity = text(value.rarity || value.qualityName, QUALITY_LABELS[Number(value.quality)] || 'Non précisée');
+  const providedPrice = Number(value.price);
+  const hasProvidedPrice = Number.isFinite(providedPrice) && providedPrice > 0;
   return {
     id,
     name,
     type: text(value.type || value.typeName, TYPE_BY_CATEGORY[category]),
     category,
-    rarity: text(value.rarity || value.qualityName, QUALITY_LABELS[Number(value.quality)] || 'Non précisée'),
+    rarity,
     image: images[0] || null,
     images,
-    price: Number.isFinite(Number(value.price)) ? Math.max(0, Number(value.price)) : 0,
+    price: hasProvidedPrice ? providedPrice : estimateRocketLeaguePrice(id, rarity),
+    priceEstimated: !hasProvidedPrice,
     paint: text(value.paint || value.paintName) || null,
     accent: /^#[0-9a-f]{6}$/i.test(value.accent) ? value.accent : '#334155',
     compatibleBodies: compatibleBodies(value),
@@ -150,20 +185,24 @@ export function normalizeRocketLeagueCatalogItem(
 }
 
 function paintItems(source: RocketLeagueCatalogItem['source']): RocketLeagueCatalogItem[] {
-  return PAINTS.map(([id, name, accent]) => ({
-    id: `paint-${id}`,
-    name,
-    type: TYPE_BY_CATEGORY.paint,
-    category: 'paint',
-    rarity: 'Couleur standard',
-    image: null,
-    images: [],
-    price: 0,
-    paint: name,
-    accent,
-    compatibleBodies: [],
-    source,
-  }));
+  return PAINTS.map(([id, name, accent]) => {
+    const itemId = `paint-${id}`;
+    return {
+      id: itemId,
+      name,
+      type: TYPE_BY_CATEGORY.paint,
+      category: 'paint',
+      rarity: 'Standard',
+      image: null,
+      images: [],
+      price: estimateRocketLeaguePrice(itemId, 'Standard'),
+      priceEstimated: true,
+      paint: name,
+      accent,
+      compatibleBodies: [],
+      source,
+    };
+  });
 }
 
 export function normalizeRocketLeagueCatalogPayload(

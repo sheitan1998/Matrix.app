@@ -16,6 +16,8 @@ export default function RocketItemModal({ item, onClose }) {
           alt={item.name}
           fallbackLabel={item.name}
           accent={item.accent}
+          bodyName={item.category === 'body' ? item.name : 'Octane'}
+          wheelName={item.category === 'wheels' ? item.name : 'OEM'}
           className="aspect-video w-full rounded-xl p-4"
         />
         <dl className="grid gap-3 rounded-xl bg-muted p-4 text-sm sm:grid-cols-2">
@@ -26,7 +28,9 @@ export default function RocketItemModal({ item, onClose }) {
             </dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">Prix</dt>
+            <dt className="text-muted-foreground">
+              {item.priceEstimated ? 'Prix catalogue estimé' : 'Prix fourni par la source'}
+            </dt>
             <dd className="font-semibold">{item.price != null ? `${item.price} crédits` : 'Non fourni'}</dd>
           </div>
         </dl>

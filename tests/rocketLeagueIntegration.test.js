@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import {
   COMMUNITY_CATALOG_URL,
+  estimateRocketLeaguePrice,
   normalizeRocketLeagueCatalogItem,
   normalizeRocketLeagueCatalogPayload,
   paginateRocketLeagueCatalog,
@@ -19,6 +20,7 @@ import {
   MAX_ROCKET_IMAGE_BYTES,
   parseRocketImageHosts,
   readRocketImageBytes,
+  resolveRocketImageCache,
   validateRocketImageBytes,
   validateRocketImageMetadata,
 } from '../base44/shared/rocketLeagueMedia.ts';
@@ -26,6 +28,7 @@ import {
   resolveRocketImageSources,
   rocketFallbackColors,
 } from '../src/components/tuto-gaming/rocketLeagueImages.js';
+import { rocketVehicleProfile } from '../src/components/tuto-gaming/rocketLeagueVisualProfile.js';
 
 test('normalizes a BakkesMod-compatible product dump and adds the versioned paint set', () => {
   const items = normalizeRocketLeagueCatalogPayload({
@@ -38,6 +41,25 @@ test('normalizes a BakkesMod-compatible product dump and adds the versioned pain
   assert.equal(items.some(item => item.id === '100' && item.category === 'wheels'), true);
   assert.equal(items.some(item => item.name === 'Ignored topper'), false);
   assert.ok(items.filter(item => item.category === 'paint').length >= 15);
+  assert.equal(items.every(item => item.price > 0), true);
+});
+
+test('assigns deterministic non-zero catalog estimates inside normalized rarity ranges', () => {
+  const cases = [
+    ['Commun', 100, 200],
+    ['Standard', 100, 200],
+    ['Rare', 400, 700],
+    ['Très rare', 400, 700],
+    ['Importé', 800, 1100],
+    ['Exotique', 1200, 1600],
+    ['Marché noir', 2000, 2500],
+  ];
+  for (const [rarity, minimum, maximum] of cases) {
+    const first = estimateRocketLeaguePrice('stable-item', rarity);
+    assert.equal(first, estimateRocketLeaguePrice('stable-item', rarity));
+    assert.ok(first >= minimum && first <= maximum);
+    assert.equal(first % 100, 0);
+  }
 });
 
 test('maps every supported platform and sends the API key server-side', async () => {
@@ -266,6 +288,27 @@ test('Rocket League image proxy stops streaming above its byte limit', async () 
   );
 });
 
+test('Rocket League proxy cache reports a network-free hit after one miss', async () => {
+  let cached;
+  let loaderCalls = 0;
+  const options = {
+    getCached: () => cached,
+    setCached: (_key, value) => {
+      cached = value;
+    },
+    loader: async () => {
+      loaderCalls += 1;
+      return { bytes: Uint8Array.from([1, 2, 3]) };
+    },
+  };
+  const miss = await resolveRocketImageCache('https://media.example.test/octane.webp', options);
+  const hit = await resolveRocketImageCache('https://media.example.test/octane.webp', options);
+  assert.equal(miss.cacheStatus, 'MISS');
+  assert.equal(hit.cacheStatus, 'HIT');
+  assert.equal(hit.value, miss.value);
+  assert.equal(loaderCalls, 1);
+});
+
 test('normalizes Tracker timeouts to the friendly player message', async () => {
   const result = await requestRocketLeaguePlayerStats({
     platform: 'steam',
@@ -327,17 +370,29 @@ test('local MATRIX image fallbacks are deterministic and honor paint colors', ()
     secondary: '#7c3aed',
   });
   assert.notDeepEqual(rocketFallbackColors('Octane'), rocketFallbackColors('Fennec'));
+  assert.equal(rocketVehicleProfile('Fennec', 'Zomba').family, 'boxy');
+  assert.equal(rocketVehicleProfile('Dominus', 'Draco').family, 'sport');
+  assert.notEqual(
+    rocketVehicleProfile('Octane', 'Zomba').wheelSpokes,
+    rocketVehicleProfile('Octane', 'Draco').wheelSpokes,
+  );
 });
 
 test('Rocket League media UI contains no generic car icon, spinner, or JSON export', async () => {
-  const [imageComponent, garage, page] = await Promise.all([
+  const [imageComponent, fallbackArt, garage, page, proxy] = await Promise.all([
     readFile(new URL('../src/components/tuto-gaming/RocketLeagueImage.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/tuto-gaming/RocketLeagueFallbackArt.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../src/components/tuto-gaming/RocketLeagueGarage.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../src/pages/tuto-gaming/RocketLeague.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../base44/functions/api/entry.ts', import.meta.url), 'utf8'),
   ]);
-  assert.doesNotMatch(`${imageComponent}\n${garage}\n${page}`, /CarFront|Loader2|animate-spin/);
+  assert.doesNotMatch(`${imageComponent}\n${fallbackArt}\n${garage}\n${page}`, /CarFront|Loader2|animate-spin|initials/);
   assert.doesNotMatch(garage, /exportJson|serializeRocketPreset|>\s*JSON\s*</);
-  assert.match(imageComponent, /functions\.fetch\('\/rocketLeagueImage'/);
+  assert.match(imageComponent, /functions\.fetch\('\/api\/rocket-league-proxy'/);
+  assert.match(fallbackArt, /<svg/);
+  assert.match(garage, /id="preset-preview-box"/);
+  assert.match(proxy, /ROUTE_SUFFIX = '\/api\/rocket-league-proxy'/);
+  assert.match(proxy, /'X-Proxy-Cache': cacheStatus/);
 });
 
 test('maps reliable overview values and only derives W/L when both values exist', () => {

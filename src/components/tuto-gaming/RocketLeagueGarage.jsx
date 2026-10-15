@@ -239,6 +239,8 @@ export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlEr
                     alt=""
                     fallbackLabel={resolved[key]?.name || `${label} non sélectionné`}
                     accent={resolved[key]?.accent}
+                    bodyName={key === 'body' ? resolved[key]?.name : resolved.body?.name || 'Octane'}
+                    wheelName={key === 'wheels' ? resolved[key]?.name : resolved.wheels?.name || 'OEM'}
                     className="aspect-video w-full rounded-lg sm:aspect-square"
                   />
                 </div>
@@ -251,7 +253,7 @@ export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlEr
         </div>
 
         <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
-          <div ref={previewRef} className="overflow-hidden rounded-2xl border bg-card">
+          <div id="preset-preview-box" ref={previewRef} className="overflow-hidden rounded-2xl border bg-card">
             <div
               className="relative isolate overflow-hidden border-b p-4"
               style={{ borderColor: paint.accent, backgroundColor: `${paint.accent}22` }}
@@ -273,6 +275,8 @@ export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlEr
                   alt={`Carrosserie ${previewBody?.name || 'Octane'}`}
                   fallbackLabel={previewBody?.name || 'Octane'}
                   accent={paint.accent}
+                  bodyName={previewBody?.name || 'Octane'}
+                  wheelName={resolved.wheels?.name || 'OEM'}
                   captureRemote={false}
                   className="absolute inset-0 h-full w-full"
                 />
@@ -323,13 +327,23 @@ export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlEr
                           alt=""
                           fallbackLabel={item.name}
                           accent={item.accent}
+                          bodyName={resolved.body?.name || 'Octane'}
+                          wheelName={label === 'Roues' ? item.name : resolved.wheels?.name || 'OEM'}
                           captureRemote={false}
                           className="aspect-square w-full rounded-md"
                         />
                         <span className="mt-1 block truncate text-xs font-semibold">{item.name}</span>
                       </>
                     ) : (
-                      <span className="block py-5 text-center text-xs text-muted-foreground">Non choisi</span>
+                      <RocketLeagueImage
+                        alt=""
+                        fallbackLabel={`${label} non choisi`}
+                        accent={paint.accent}
+                        bodyName={resolved.body?.name || 'Octane'}
+                        wheelName={resolved.wheels?.name || 'OEM'}
+                        captureRemote={false}
+                        className="aspect-square w-full rounded-md"
+                      />
                     )}
                   </dd>
                 </div>

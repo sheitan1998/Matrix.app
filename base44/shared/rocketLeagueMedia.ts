@@ -1,5 +1,6 @@
 export const MAX_ROCKET_IMAGE_BYTES = 8 * 1024 * 1024;
 export const ROCKET_IMAGE_TYPES = /^image\/(avif|jpeg|png|webp)(?:;|$)/i;
+export const ROCKET_IMAGE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 export class RocketMediaError extends Error {
   code: string;
@@ -11,6 +12,27 @@ export class RocketMediaError extends Error {
     this.code = code;
     this.status = status;
   }
+}
+
+export async function resolveRocketImageCache(
+  source: string,
+  {
+    getCached,
+    setCached,
+    loader,
+    ttlMs = ROCKET_IMAGE_CACHE_TTL_MS,
+  }: {
+    getCached: (key: string, ttlMs: number) => any;
+    setCached: (key: string, value: any) => void;
+    loader: () => Promise<any>;
+    ttlMs?: number;
+  },
+) {
+  const cached = getCached(source, ttlMs);
+  if (cached) return { cacheStatus: 'HIT' as const, value: cached };
+  const value = await loader();
+  setCached(source, value);
+  return { cacheStatus: 'MISS' as const, value };
 }
 
 export function parseRocketImageHosts(value: unknown) {

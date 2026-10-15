@@ -1,5 +1,12 @@
+export const PRESET_PREVIEW_ID = 'preset-preview-box';
+export const PRESET_PREVIEW_SELECTOR = `#${PRESET_PREVIEW_ID}`;
+
+export function findRocketLeaguePreviewElement(root = document) {
+  return root.querySelector(PRESET_PREVIEW_SELECTOR);
+}
+
 export async function captureRocketLeaguePreview(element, html2canvas) {
-  if (!element || typeof html2canvas !== 'function') {
+  if (!element || element.id !== PRESET_PREVIEW_ID || typeof html2canvas !== 'function') {
     throw new TypeError('Aperçu Rocket League indisponible.');
   }
   const canvas = await new Promise((resolve, reject) => {
