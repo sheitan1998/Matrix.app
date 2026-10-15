@@ -1,6 +1,20 @@
 import { normalizeRocketRanks } from './rocketLeagueData.ts';
 
 export const ROCKET_PLAYER_NOT_FOUND_MESSAGE = 'Joueur introuvable ou profil privé';
+export const ROCKET_TRACKER_ERROR_MESSAGES = Object.freeze({
+  missing_api_key: 'Le tracker Rocket League n’est pas configuré.',
+  rate_limited: 'Le service de statistiques limite les requêtes. Réessayez dans quelques minutes.',
+  not_found: ROCKET_PLAYER_NOT_FOUND_MESSAGE,
+  private_or_forbidden: ROCKET_PLAYER_NOT_FOUND_MESSAGE,
+  malformed_or_private_profile: ROCKET_PLAYER_NOT_FOUND_MESSAGE,
+  invalid_request: 'Plateforme ou identifiant invalide.',
+  timeout: 'Le service de statistiques ne répond pas pour le moment.',
+  network_error: 'Le service de statistiques est temporairement indisponible.',
+  upstream_error: 'Le service de statistiques est temporairement indisponible.',
+  upstream_rejected: 'Le service de statistiques a refusé la requête.',
+  malformed_response: 'Le service de statistiques a renvoyé une réponse inutilisable.',
+  internal_error: 'Le service de statistiques est temporairement indisponible.',
+});
 
 export const ROCKET_PLATFORM_MAP = Object.freeze({
   epic: 'epic',
@@ -27,8 +41,49 @@ function failure(code, upstreamStatus = null) {
     error: {
       code,
       upstreamStatus,
-      message: ROCKET_PLAYER_NOT_FOUND_MESSAGE,
+      message: ROCKET_TRACKER_ERROR_MESSAGES[code] || ROCKET_TRACKER_ERROR_MESSAGES.upstream_error,
     },
+  };
+}
+
+function statNumber(stats, candidates) {
+  for (const key of candidates) {
+    const stat = stats?.[key];
+    const value = Number(stat?.value ?? stat);
+    if (Number.isFinite(value)) return value;
+  }
+  return null;
+}
+
+export function normalizeRocketOverview(stats) {
+  const source = stats && typeof stats === 'object' ? stats : {};
+  const details = Object.entries(source).flatMap(([key, stat]) => {
+    if (!stat || typeof stat !== 'object') return [];
+    const value = Number.isFinite(Number(stat.value)) ? Number(stat.value) : null;
+    const displayValue = typeof stat.displayValue === 'string' ? stat.displayValue : value;
+    if (displayValue === null || displayValue === undefined) return [];
+    return [{
+      key,
+      displayName: typeof stat.displayName === 'string' ? stat.displayName : key.replace(/([A-Z])/g, ' $1').trim(),
+      displayValue,
+      value,
+    }];
+  });
+  const wins = statNumber(source, ['wins']);
+  const losses = statNumber(source, ['losses']);
+  return {
+    wins,
+    losses,
+    winLossRatio: wins !== null && losses !== null
+      ? (losses === 0 ? wins : Number((wins / losses).toFixed(2)))
+      : null,
+    goals: statNumber(source, ['goals']),
+    saves: statNumber(source, ['saves']),
+    assists: statNumber(source, ['assists']),
+    shots: statNumber(source, ['shots']),
+    matchesPlayed: statNumber(source, ['matchesPlayed', 'matches']),
+    mvp: statNumber(source, ['mVPs', 'mvps', 'mvp']),
+    details,
   };
 }
 
@@ -99,7 +154,9 @@ export async function requestRocketLeaguePlayerStats({
         ? trackerProfile.platformInfo.avatarUrl
         : null,
       ranks: normalizeRocketRanks(trackerProfile.segments),
-      overview: trackerProfile.segments.find(segment => segment.type === 'overview')?.stats || {},
+      overview: normalizeRocketOverview(
+        trackerProfile.segments.find(segment => segment.type === 'overview')?.stats || {},
+      ),
     },
   };
 }

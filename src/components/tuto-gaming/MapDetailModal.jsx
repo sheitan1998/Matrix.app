@@ -11,6 +11,8 @@ import { getCategoryMeta } from "@/components/tuto-gaming/fortniteMapsData";
 import { useViewTracker } from "@/hooks/useViewTracker";
 import LivePlayersBadge from "@/components/fortnite/LivePlayersBadge";
 import FortniteMapImage from "@/components/fortnite/FortniteMapImage";
+import { fortniteMapPath } from "@/lib/fortniteRoutes";
+import { canonicalUrl, copyText as copyToClipboard, shareOrCopy } from "@/lib/share";
 
 export default function MapDetailModal({ map, onClose, user, onEdit }) {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -36,7 +38,7 @@ export default function MapDetailModal({ map, onClose, user, onEdit }) {
 
   const copyText = async (value, kind) => {
     try {
-      await navigator.clipboard.writeText(value);
+      await copyToClipboard(value);
       setActionError("");
       setCopied(kind);
       window.setTimeout(() => setCopied(""), 2000);
@@ -46,10 +48,13 @@ export default function MapDetailModal({ map, onClose, user, onEdit }) {
   };
 
   const share = async () => {
-    const shareData = { title: map.title, text: `Carte Fortnite ${map.title}`, url: window.location.href };
+    const url = canonicalUrl(fortniteMapPath(map));
+    const shareData = { title: map.title, text: `Carte Fortnite ${map.title}`, url };
     try {
-      if (navigator.share) await navigator.share(shareData);
-      else await copyText(window.location.href, "link");
+      const outcome = await shareOrCopy(shareData);
+      setActionError("");
+      setCopied(outcome === "copied" ? "link" : "shared");
+      window.setTimeout(() => setCopied(""), 2000);
     } catch (error) {
       if (error?.name !== "AbortError") setActionError("Le partage de ce lien a échoué.");
     }
@@ -130,8 +135,8 @@ export default function MapDetailModal({ map, onClose, user, onEdit }) {
                   {copied === "code" ? "Code copié" : "Copier le code"}
                 </button>
                 <button type="button" onClick={share} className="flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-xs font-bold">
-                  {copied === "link" ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
-                  {copied === "link" ? "Lien copié" : "Partager"}
+                  {copied === "link" || copied === "shared" ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+                  {copied === "link" ? "Lien copié" : copied === "shared" ? "Partagé" : "Partager"}
                 </button>
               </div>
             </section>

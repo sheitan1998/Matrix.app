@@ -1,21 +1,24 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronLeft, ChevronRight, Languages, Loader2 } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Languages, Loader2, Share2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import GamingRemoteImage from '@/components/tuto-gaming/GamingRemoteImage';
 import DownloadModButton from '@/components/tuto-gaming/DownloadModButton';
 import ModHubSpecs from '@/components/tuto-gaming/ModHubSpecs';
 import { FARMING_FALLBACK } from '@/components/tuto-gaming/farmingFallback';
+import { farmingModShareUrl } from '@/components/tuto-gaming/farmingModCatalog';
 
 export default function ModHubDetailModal({ modId, initialMod, onClose }) {
   const [imageIndex, setImageIndex] = useState(0);
   const [translation, setTranslation] = useState('');
   const [translationError, setTranslationError] = useState('');
   const [translating, setTranslating] = useState(false);
+  const [shareStatus, setShareStatus] = useState('');
   const { data: mod, isFetching, isError, error } = useQuery({
     queryKey: ['farming-mod-detail', modId],
     initialData: initialMod || FARMING_FALLBACK.find(item => item.id === String(modId)),
+    initialDataUpdatedAt: 0,
     staleTime: 60 * 60 * 1000,
     retry: 1,
     queryFn: async () => {
@@ -34,6 +37,7 @@ export default function ModHubDetailModal({ modId, initialMod, onClose }) {
     setImageIndex(0);
     setTranslation('');
     setTranslationError('');
+    setShareStatus('');
   }, [modId]);
 
   const moveImage = direction => {
@@ -58,10 +62,36 @@ export default function ModHubDetailModal({ modId, initialMod, onClose }) {
     }
   };
 
+  const copyShareLink = async () => {
+    const url = farmingModShareUrl(modId);
+    if (!url) {
+      setShareStatus('Impossible de créer le lien de partage.');
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareStatus('Lien copié');
+    } catch {
+      setShareStatus('Copie impossible. Autorisez l’accès au presse-papiers puis réessayez.');
+    }
+  };
+
   return (
     <Dialog open onOpenChange={open => !open && onClose()}>
       <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto p-4 sm:p-6">
-        <DialogTitle>{mod?.title || 'Détails du mod'}</DialogTitle>
+        <div className="flex items-start justify-between gap-3 pr-8">
+          <DialogTitle>{mod?.title || 'Détails du mod'}</DialogTitle>
+          <button
+            type="button"
+            onClick={copyShareLink}
+            className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg border border-border px-3 text-xs font-semibold"
+            aria-label={`Copier le lien de partage${mod?.title ? ` de ${mod.title}` : ''}`}
+          >
+            {shareStatus === 'Lien copié' ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+            {shareStatus === 'Lien copié' ? 'Lien copié' : 'Partager'}
+          </button>
+        </div>
+        {shareStatus && shareStatus !== 'Lien copié' && <p role="alert" className="text-xs text-destructive">{shareStatus}</p>}
         <DialogDescription>
           {mod
             ? `Par ${mod.author || 'Auteur non renseigné'} · ${mod.category || 'Mod Farming Simulator 25'}`

@@ -6,6 +6,13 @@ import { base44 } from '@/api/base44Client';
 import ModHubDetailModal from '@/components/tuto-gaming/ModHubDetailModal';
 import ModHubCard from '@/components/tuto-gaming/ModHubCard';
 import { FARMING_FALLBACK } from '@/components/tuto-gaming/farmingFallback';
+import {
+  cacheFarmingCatalog,
+  farmingSearchWithMod,
+  farmingSearchWithoutMod,
+  isValidFarmingModId,
+  readCachedFarmingCatalog,
+} from '@/components/tuto-gaming/farmingModCatalog';
 
 const CATEGORY_LABELS = {
   tractors: 'Tracteurs',
@@ -23,6 +30,11 @@ const REFERENCE_CATEGORIES = Object.entries(CATEGORY_LABELS).map(([id, label]) =
   label,
   items: FARMING_FALLBACK.filter(mod => mod.categoryId === id),
 }));
+const LOCAL_CATALOG = {
+  categories: REFERENCE_CATEGORIES,
+  source: 'référence locale',
+  partial: true,
+};
 
 function normalize(value) {
   return String(value || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLocaleLowerCase('fr');
@@ -35,22 +47,30 @@ export default function ModHubGrid() {
   const [activeCategory, setActiveCategory] = useState('all');
   const deferredQuery = useDeferredValue(query);
   const modId = new URLSearchParams(location.search).get('mod');
+  const validModId = !modId || isValidFarmingModId(modId);
 
   const { data, isFetching, isError, error, refetch } = useQuery({
     queryKey: ['farming-modhub-catalog'],
-    initialData: {
-      categories: REFERENCE_CATEGORIES,
-      source: 'référence locale',
-      partial: true,
-    },
+    initialData: () => readCachedFarmingCatalog() || LOCAL_CATALOG,
+    initialDataUpdatedAt: 0,
     staleTime: 60 * 60 * 1000,
     retry: 1,
     queryFn: async () => {
-      const { data: response } = await base44.functions.invoke('farmingModApi', { action: 'getCatalog' });
-      if (response.error || !response.categories?.some(category => category.items?.length)) {
-        throw new Error(response.error || 'Le catalogue ModHub ne contient aucun mod.');
+      try {
+        const { data: response } = await base44.functions.invoke('farmingModApi', { action: 'getCatalog' });
+        if (response.error || !response.categories?.some(category => category.items?.length)) {
+          throw new Error(response.error || 'Le catalogue ModHub ne contient aucun mod.');
+        }
+        cacheFarmingCatalog(response);
+        return response;
+      } catch (catalogError) {
+        const fallback = readCachedFarmingCatalog() || LOCAL_CATALOG;
+        return {
+          ...fallback,
+          partial: true,
+          apiError: catalogError instanceof Error ? catalogError.message : 'Erreur inconnue.',
+        };
       }
-      return response;
     },
   });
 
@@ -71,21 +91,16 @@ export default function ModHubGrid() {
   const resultCount = visibleCategories.reduce((count, category) => count + category.items.length, 0);
 
   const openMod = mod => {
-    const params = new URLSearchParams(location.search);
-    params.set('mod', String(mod.id));
-    navigate({ pathname: location.pathname, search: `?${params}` }, {
+    navigate({ pathname: location.pathname, search: farmingSearchWithMod(location.search, mod.id), hash: location.hash }, {
       state: { ...location.state, farmingModModal: true },
     });
   };
 
   const closeMod = () => {
-    if (location.state?.farmingModModal) {
-      navigate(-1);
-      return;
-    }
-    const params = new URLSearchParams(location.search);
-    params.delete('mod');
-    navigate({ pathname: location.pathname, search: params.toString() ? `?${params}` : '' }, { replace: true });
+    navigate(
+      { pathname: location.pathname, search: farmingSearchWithoutMod(location.search), hash: location.hash },
+      { replace: true, state: location.state },
+    );
   };
 
   return (
@@ -159,12 +174,17 @@ export default function ModHubGrid() {
         </div>
       </div>
 
-      {(data.partial || isError) && (
+      {(data.partial || data.apiError || isError) && (
         <p role="status" className="mt-4 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-100">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-          {isError
-            ? `ModHub indisponible : ${error?.message || 'erreur inconnue'}. Une référence locale limitée reste affichée.`
+          {data.apiError || isError
+            ? `ModHub indisponible : ${data.apiError || error?.message || 'erreur inconnue'}. ${data.source === 'référence locale' ? 'Une référence locale limitée' : 'Le dernier catalogue enregistré'} reste affiché${data.source === 'référence locale' ? 'e' : ''}.`
             : 'Certaines catégories sont temporairement indisponibles et peuvent être vides.'}
+        </p>
+      )}
+      {!validModId && (
+        <p role="alert" className="mt-4 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+          Le lien partagé contient un identifiant de mod invalide. Choisissez un mod dans le catalogue pour obtenir un nouveau lien.
         </p>
       )}
       {isFetching && (
@@ -200,7 +220,7 @@ export default function ModHubGrid() {
         )}
       </div>
 
-      {modId && <ModHubDetailModal modId={modId} initialMod={selectedMod} onClose={closeMod} />}
+      {modId && validModId && <ModHubDetailModal modId={modId} initialMod={selectedMod} onClose={closeMod} />}
     </section>
   );
 }

@@ -1,47 +1,46 @@
 import React, { useEffect, useState } from 'react';
-import { ImageOff, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { resolveRocketImageSources } from './rocketLeagueImages';
 
 export default function RocketLeagueImage({
   src,
+  sources,
   alt,
   className = '',
   contain = true,
   fallbackLabel = '',
   accent = '#334155',
 }) {
-  const [status, setStatus] = useState(src ? 'loading' : 'missing');
+  const candidates = resolveRocketImageSources({ src, sources, fallbackLabel: fallbackLabel || alt, accent });
+  const [index, setIndex] = useState(0);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    setStatus(src ? 'loading' : 'missing');
-  }, [src]);
+    setIndex(0);
+    setLoaded(false);
+  }, [src, sources, fallbackLabel, accent]);
+
+  const current = candidates[Math.min(index, candidates.length - 1)];
 
   return (
     <div className={`relative flex items-center justify-center overflow-hidden bg-muted ${className}`}>
-      {src && status !== 'error' && (
-        <img
-          src={src}
-          alt={alt}
-          loading="lazy"
-          referrerPolicy="no-referrer"
-          onLoad={() => setStatus('loaded')}
-          onError={() => setStatus('error')}
-          className={`h-full w-full ${contain ? 'object-contain' : 'object-cover'} ${status === 'loaded' ? 'opacity-100' : 'opacity-0'}`}
-        />
-      )}
-      {status === 'loading' && (
+      <img
+        key={current}
+        src={current}
+        alt={alt}
+        loading="lazy"
+        referrerPolicy="no-referrer"
+        onLoad={() => setLoaded(true)}
+        onError={() => {
+          setLoaded(false);
+          setIndex(value => Math.min(value + 1, candidates.length - 1));
+        }}
+        className={`h-full w-full ${contain ? 'object-contain' : 'object-cover'} ${loaded ? 'opacity-100' : 'opacity-0'}`}
+      />
+      {!loaded && (
         <span className="absolute inset-0 flex items-center justify-center" role="status">
           <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin" />
           <span className="sr-only">Chargement du visuel</span>
-        </span>
-      )}
-      {(status === 'error' || status === 'missing') && (
-        <span
-          className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-3 text-center text-xs font-semibold text-white"
-          style={{ background: `radial-gradient(circle at 30% 20%, ${accent}, #0f172a 75%)` }}
-          role={status === 'error' ? 'status' : undefined}
-        >
-          <ImageOff aria-hidden="true" className="h-7 w-7 opacity-80" />
-          <span>{fallbackLabel || alt || 'Visuel local'}</span>
         </span>
       )}
     </div>

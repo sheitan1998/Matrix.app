@@ -1,11 +1,11 @@
 export function normalizeDofusItem(item,lang='fr') {
   const superType=item.type?.superTypeId;
   const category=superType===2?'weapons':[6,70].includes(superType)?'consumables':superType===9?'resources':'equipment';
-  return {id:item.id,name:item.name?.[lang]||item.name?.fr||'Inconnu',level:item.level||0,img:item.img||(item.iconId?`https://api.dofusdb.fr/img/items/${item.iconId}.png`:null),type:item.type?.name?.[lang]||item.type?.name?.fr||'',typeId:item.typeId,itemSetId:item.itemSetId||0,category,description:item.description?.[lang]||item.description?.fr||'',effects:(item.effects||[]).map(e=>({from:e.from??0,to:e.to??0,effectId:e.effectId,category:e.category,characteristic:e.characteristic})),hasRecipe:!!item.hasRecipe,source:'live'};
+  return {id:item.id,name:item.name?.[lang]||item.name?.fr||'Inconnu',level:item.level||0,img:item.img||(item.iconId?`https://api.dofusdb.fr/img/items/${item.iconId}.png`:null),type:item.type?.name?.[lang]||item.type?.name?.fr||'',typeId:item.typeId,itemSetId:item.itemSetId||0,category,description:item.description?.[lang]||item.description?.fr||'',effects:(item.effects||item.possibleEffects||[]).map(e=>({from:e.from??e.diceNum??e.value??0,to:e.to??e.diceSide??0,value:e.value,effectId:e.effectId,category:e.category,characteristic:e.characteristic})),hasRecipe:!!item.hasRecipe,source:'live'};
 }
 export function normalizeDofusSet(set,lang='fr') {
   const members=(set.items||[]).filter(i=>typeof i==='object').map(i=>normalizeDofusItem(i,lang));
-  return {id:set.id,name:set.name?.[lang]||set.name?.fr||'Panoplie',level:set.level||0,category:'sets',type:'Panoplie',img:members[0]?.img||null,members,bonuses:(set.effects||[]).map(effects=>effects.map(e=>({from:e.from??0,to:e.to??0,effectId:e.effectId,category:e.category}))),source:'live'};
+  return {id:set.id,name:set.name?.[lang]||set.name?.fr||'Panoplie',level:set.level||0,category:'sets',type:'Panoplie',img:members[0]?.img||null,members,bonuses:(set.effects||[]).map(effects=>effects.map(e=>({from:e.from??e.diceNum??e.value??0,to:e.to??e.diceSide??0,value:e.value,effectId:e.effectId,category:e.category}))),source:'live'};
 }
 function localized(value,lang) {
   return value?.[lang]||value?.fr||'';
@@ -69,6 +69,27 @@ export function normalizeDofusSpell(spell,levels,effectDefinitions,lang='fr') {
         };
       }),
     })),
+  };
+}
+function plainText(value) {
+  return String(value||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
+}
+export function normalizeDofusAlmanax(entry,lang='fr',date='') {
+  const description=plainText(localized(entry?.meriaDescription,lang));
+  const meryde=entry?.npc?.name?.[lang]||entry?.npc?.name?.fr||
+    description.match(/^(.+?) est le Méryde/i)?.[1]||'Méryde du jour';
+  const item=entry?.items?.[0];
+  return {
+    date,
+    meryde,
+    merydeDescription:description,
+    offering:{
+      quantity:Number(entry?.quantities?.[0]||1),
+      name:item?.name?.[lang]||item?.name?.fr||'Offrande du jour',
+      img:item?.img||(item?.iconId?`https://api.dofusdb.fr/img/items/${item.iconId}.png`:null),
+    },
+    bonus:{name:localized(entry?.name,lang)||'Bonus du jour',description:plainText(localized(entry?.desc,lang))},
+    source:'DofusDB',
   };
 }
 export async function loadDofusRecipes(ids,lang='fr') {

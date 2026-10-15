@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, CarFront, ShoppingBag, Trophy } from 'lucide-react';
 import RocketLeagueGarage from '@/components/tuto-gaming/RocketLeagueGarage';
@@ -12,7 +12,13 @@ const TABS = [
 ];
 
 export default function RocketLeague() {
-  const [tab, setTab] = useState('shop');
+  const [requestedPresetId] = useState(() => new URLSearchParams(window.location.search).get('preset') || '');
+  const [tab, setTab] = useState(requestedPresetId ? 'garage' : 'shop');
+  const clearPresetUrl = useCallback(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('preset');
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+  }, []);
   return (
     <main className="min-h-screen bg-background px-4 py-6 text-foreground">
       <div className="mx-auto max-w-7xl">
@@ -45,7 +51,7 @@ export default function RocketLeague() {
           <RocketLeagueShop />
         </div>
         <div role="tabpanel" id="rocket-panel-garage" aria-labelledby="rocket-tab-garage" hidden={tab !== 'garage'}>
-          <RocketLeagueGarage />
+          <RocketLeagueGarage requestedPresetId={requestedPresetId} onPresetUrlError={clearPresetUrl} />
         </div>
         <div role="tabpanel" id="rocket-panel-stats" aria-labelledby="rocket-tab-stats" hidden={tab !== 'stats'}>
           <RocketStatsTracker />

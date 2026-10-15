@@ -5,6 +5,8 @@ import {
   ROCKET_PRESET_STORAGE_KEY,
   loadRocketGarage,
   normalizeRocketSelection,
+  safeRocketFilename,
+  serializeRocketPreset,
   saveRocketGarage,
 } from '../src/components/tuto-gaming/rocketLeaguePresetStorage.js';
 
@@ -26,6 +28,17 @@ test('returns an empty garage when persisted JSON is malformed', () => {
     draft: { ...EMPTY_ROCKET_SELECTION },
     presets: [],
   });
+});
+
+test('exports valid JSON with a filesystem-safe deterministic filename', () => {
+  const preset = {
+    id: '12345678',
+    name: 'Preset été / "bleu"',
+    selection: { ...EMPTY_ROCKET_SELECTION, body: 'body-octane' },
+    savedAt: '2026-10-15T12:00:00.000Z',
+  };
+  assert.deepEqual(JSON.parse(serializeRocketPreset(preset)), { version: 1, ...preset });
+  assert.equal(safeRocketFilename(preset.name, 'JSON'), 'Preset-ete-bleu.json');
 });
 
 test('normalizes unsupported values and preserves valid selections', () => {

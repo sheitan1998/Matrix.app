@@ -1,10 +1,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeDofusBreed, normalizeDofusSpell } from '../base44/shared/dofusData.ts';
+import { normalizeDofusAlmanax, normalizeDofusBreed, normalizeDofusItem, normalizeDofusSpell } from '../base44/shared/dofusData.ts';
 
 test('normalizes source-backed class metadata',()=>{
   const breed=normalizeDofusBreed({id:1,shortName:{fr:'Féca'},description:{fr:'Protecteur'},gameplayDescription:{fr:'Défense'},img:'symbol.png',imgTransparent:'hd.png',breedSpellsId:[1,2]},'fr');
   assert.deepEqual(breed,{id:1,name:'Féca',description:'Protecteur',gameplay:'Défense',img:'hd.png',symbol:'symbol.png',spellCount:2});
+});
+
+test('normalizes Almanax Meryde, offering and sanitized bonus',()=>{
+  const value=normalizeDofusAlmanax({npc:{name:{fr:'Dnegeleht'}},name:{fr:'Récolte abondante'},desc:{fr:'<b>125 %</b> de Chanvre'},meriaDescription:{fr:'Description'},quantities:[50],items:[{name:{fr:'Chanvre'},iconId:34121}]},'fr','2026-10-15');
+  assert.equal(value.meryde,'Dnegeleht');
+  assert.deepEqual(value.offering,{quantity:50,name:'Chanvre',img:'https://api.dofusdb.fr/img/items/34121.png'});
+  assert.equal(value.bonus.description,'125 % de Chanvre');
+});
+
+test('retains alternate effect values when an item has sparse effects',()=>{
+  const value=normalizeDofusItem({id:1,type:{superTypeId:1},possibleEffects:[{effectId:115,diceNum:3,diceSide:5}]});
+  assert.deepEqual(value.effects[0],{from:3,to:5,value:undefined,effectId:115,category:undefined,characteristic:undefined});
 });
 
 test('formats spell effects and retains every supplied rank',()=>{

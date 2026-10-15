@@ -12,6 +12,7 @@ export default function RocketItemModal({ item, onClose }) {
         </DialogDescription>
         <RocketLeagueImage
           src={item.image}
+          sources={item.images}
           alt={item.name}
           fallbackLabel={item.name}
           accent={item.accent}
@@ -20,7 +21,7 @@ export default function RocketItemModal({ item, onClose }) {
         <dl className="grid gap-3 rounded-xl bg-muted p-4 text-sm sm:grid-cols-2">
           <div>
             <dt className="text-muted-foreground">Source</dt>
-            <dd className="font-semibold">Catalogue local MATRIX</dd>
+            <dd className="font-semibold">{item.source === 'api' ? 'Catalogue en ligne' : 'Catalogue intégré MATRIX'}</dd>
           </div>
           <div>
             <dt className="text-muted-foreground">Prix</dt>

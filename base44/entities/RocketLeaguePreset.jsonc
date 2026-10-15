@@ -1,0 +1,16 @@
+{
+  "name": "RocketLeaguePreset",
+  "type": "object",
+  "properties": {
+    "share_id": { "type": "string", "maxLength": 80 },
+    "name": { "type": "string", "maxLength": 80 },
+    "selection": { "type": "object" }
+  },
+  "required": ["share_id", "name", "selection"],
+  "rls": {
+    "create": {},
+    "read": {},
+    "update": false,
+    "delete": false
+  }
+}

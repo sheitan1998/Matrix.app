@@ -32,12 +32,20 @@ Run the app: `npm run dev`
 
 ### Rocket League
 
-The `/rocket-league` item shop and **Custom Preset / Garage** use the checked-in
-MATRIX catalogue and remain available offline. The garage covers bodies, paints,
-finishes, wheels, decals, and goal explosions. Presets and the current draft are
-stored locally under the versioned key `matrix:rocket-league:garage:v1`; corrupt or
-unavailable browser storage safely falls back to an empty usable garage, and up to
-50 named presets are retained.
+The `/rocket-league` item shop and **Custom Preset / Garage** load a paginated
+server-side catalogue when `ROCKET_LEAGUE_CATALOG_URL` is configured. Set
+`ROCKET_LEAGUE_CATALOG_API_KEY` only when that provider requires a bearer token.
+Both variables belong to the Base44 function environment and must never use the
+`VITE_` prefix. The checked-in MATRIX catalogue remains the explicit offline
+fallback when the provider is absent or unavailable.
+
+The garage covers bodies, paints, finishes, wheels, decals, and goal explosions.
+Presets and the current draft are stored locally under the versioned key
+`matrix:rocket-league:garage:v1`; corrupt or unavailable browser storage safely
+falls back to an empty usable garage, and up to 50 named presets are retained.
+Shared presets are persisted by the server entity and open at
+`/rocket-league?preset=ID`. JSON and PNG exports are generated in the browser with
+sanitized filenames.
 
 Player lookup is the only Tracker Network integration. Configure the server-side
 `TRN_API_KEY` environment variable; it is sent only by `rocketLeagueApi` using the
@@ -74,6 +82,8 @@ La route `/dofus` propose trois modules alimentés par DofusDB :
 - un catalogue avec filtres combinables par thème, catégories d'équipement, niveaux et recherche instantanée ;
 - un builder de stuff à 16 emplacements, avec règles de type, statistiques en temps réel et presets stockés localement dans le navigateur ;
 - les 19 classes, leurs visuels et leurs sorts/rangs/effets disponibles dans la source.
+- l’Almanax du jour (Méryde, offrande et bonus), avec un instantané daté explicite
+  lorsque la source publique est indisponible.
 
 Les classes et sorts n'utilisent pas de données de remplacement : une indisponibilité de DofusDB est signalée explicitement. Le catalogue conserve uniquement son instantané de référence existant pour assurer un affichage dégradé. Les contrôles ciblés du builder s'exécutent avec `npm run test:dofus`.
 
@@ -83,6 +93,11 @@ Les classes et sorts n'utilisent pas de données de remplacement : une indisponi
 - Cosmetic details have canonical shareable URLs at `/fortnite-cosmetics/:cosmeticId`.
 - Opening one of these URLs resolves and opens the matching detail dialog. Opening, closing, and selecting related cosmetics keeps browser history synchronized.
 - Map discovery uses the existing 15-minute Fortnite API cache and serves lightweight thumbnails in grids, while detail dialogs retain the source image. Cosmetic media is loaded from the existing Fortnite-API sources; no media or descriptive content is republished outside those source fields.
+- Player statistics use `fortnite-api.com` from the `fortniteApi` server function.
+  Configure `fortnite_api_key` in the server-only `FortniteConfig` entity through
+  the existing admin configuration. Missing, invalid, rate-limited, private and
+  unavailable states are returned explicitly; no key or invented statistic is sent
+  to the client.
 - Run the focused route contract tests with `npm run test:fortnite`.
 
 ### Desktop OAuth & OTA updates (Tauri)
