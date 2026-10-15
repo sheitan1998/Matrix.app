@@ -1,10 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pause, Play, Volume2, VolumeX } from "lucide-react";
-import { getFortniteImageCandidates, getFortniteMediaBadge, getFortniteVideoUrl } from "@/lib/fortniteMedia";
+import { Pause, Play } from "lucide-react";
+import {
+  FORTNITE_MEDIA_BACKGROUND_CLASS,
+  getFortniteImageCandidates,
+  getFortniteMediaBadge,
+  getFortniteVideoUrl,
+} from "@/lib/fortniteMedia";
 
 export default function FortniteMedia({ item, detail = false, active = false, thumbnail = false }) {
   const videoRef = useRef(null);
-  const [muted, setMuted] = useState(true);
   const [failed, setFailed] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -28,7 +32,7 @@ export default function FortniteMedia({ item, detail = false, active = false, th
     const player = videoRef.current;
     if (!player) return;
     try {
-      if (player.autoplay) player.muted = true;
+      player.muted = true;
       await player.play();
       setPaused(false);
     } catch {
@@ -40,7 +44,6 @@ export default function FortniteMedia({ item, detail = false, active = false, th
     setFailed(false);
     setVideoReady(false);
     setPaused(false);
-    setMuted(true);
     setImageIndex(0);
   }, [item.id, video]);
 
@@ -71,7 +74,7 @@ export default function FortniteMedia({ item, detail = false, active = false, th
   };
 
   return (
-    <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
+    <div className={`relative flex h-full w-full items-center justify-center overflow-hidden ${FORTNITE_MEDIA_BACKGROUND_CLASS}`}>
       {image ? (
         <img
           src={image}
@@ -93,9 +96,9 @@ export default function FortniteMedia({ item, detail = false, active = false, th
           key={video}
           src={video}
           poster={image}
-          autoPlay={muted}
+          autoPlay
           loop
-          muted={muted}
+          muted
           playsInline
           preload={detail ? "metadata" : "none"}
           onLoadedData={requestPlay}
@@ -137,15 +140,6 @@ export default function FortniteMedia({ item, detail = false, active = false, th
               <Pause className="h-4 w-4" />
             </button>
           )}
-          <button
-            type="button"
-            onClick={() => setMuted((value) => !value)}
-            className="flex items-center gap-2 rounded-lg bg-background/90 px-3 py-2 text-xs text-foreground"
-            aria-label={muted ? "Activer le son de la vidéo" : "Couper le son de la vidéo"}
-          >
-            {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-            {muted ? "Activer le son" : "Couper le son"}
-          </button>
         </div>
       )}
 
