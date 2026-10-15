@@ -1,212 +1,174 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { X, ChevronLeft, ChevronRight, Copy, Check, User, Map as MapIcon, Pencil, Eye } from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
+import { Check, ChevronLeft, ChevronRight, Copy, Eye, Pencil, Share2, User, X } from "lucide-react";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { getCategoryMeta } from "@/components/tuto-gaming/fortniteMapsData";
 import { useViewTracker } from "@/hooks/useViewTracker";
-import LivePlayersBadge from '@/components/fortnite/LivePlayersBadge';
+import LivePlayersBadge from "@/components/fortnite/LivePlayersBadge";
+import FortniteMapImage from "@/components/fortnite/FortniteMapImage";
 
 export default function MapDetailModal({ map, onClose, user, onEdit }) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState("");
+  const [actionError, setActionError] = useState("");
   const cat = getCategoryMeta(map?.category);
-
   const images = map?.gallery?.length ? map.gallery : (map?.image_url ? [map.image_url] : []);
-
-  const goNext = useCallback((e) => {
-    e.stopPropagation();
-    setActiveIndex((i) => (i + 1) % images.length);
-  }, [images.length]);
-
-  const goPrev = useCallback((e) => {
-    e.stopPropagation();
-    setActiveIndex((i) => (i - 1 + images.length) % images.length);
-  }, [images.length]);
-
-  // Keyboard navigation
-  useEffect(() => {
-    if (!map) return;
-    const handler = (e) => {
-      if (e.key === "Escape") onClose();
-      else if (e.key === "ArrowRight" && images.length > 1) setActiveIndex((i) => (i + 1) % images.length);
-      else if (e.key === "ArrowLeft" && images.length > 1) setActiveIndex((i) => (i - 1 + images.length) % images.length);
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [map, images.length, onClose]);
+  const { trackView } = useViewTracker();
 
   useEffect(() => {
-    if (map) {
-      setActiveIndex(0);
-      setCopied(false);
-    }
+    setActiveIndex(0);
+    setCopied("");
+    setActionError("");
   }, [map]);
 
-  // Count a view when the modal opens with a map
-  const { trackView } = useViewTracker();
   useEffect(() => {
-    if (map?.id && !map.is_api) {
-      trackView("fortnite_map", map.id, "FortniteMap");
-    }
-  }, [map?.id, trackView]);
+    if (map?.id && !map.is_api) trackView("fortnite_map", map.id, "FortniteMap");
+  }, [map?.id, map?.is_api, trackView]);
 
-  const canEdit = user && map && map.user_email === user.email;
+  const goTo = useCallback((offset) => {
+    if (images.length > 1) setActiveIndex((index) => (index + offset + images.length) % images.length);
+  }, [images.length]);
 
-  const handleCopy = async () => {
+  const copyText = async (value, kind) => {
     try {
-      await navigator.clipboard.writeText(map.map_code);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      await navigator.clipboard.writeText(value);
+      setActionError("");
+      setCopied(kind);
+      window.setTimeout(() => setCopied(""), 2000);
     } catch {
-      /* silent */
+      setActionError("La copie a échoué. Vérifiez les autorisations du navigateur.");
+    }
+  };
+
+  const share = async () => {
+    const shareData = { title: map.title, text: `Carte Fortnite ${map.title}`, url: window.location.href };
+    try {
+      if (navigator.share) await navigator.share(shareData);
+      else await copyText(window.location.href, "link");
+    } catch (error) {
+      if (error?.name !== "AbortError") setActionError("Le partage de ce lien a échoué.");
     }
   };
 
   if (!map) return null;
+  const canEdit = user && map.user_email === user.email;
+  const currentImageMap = { ...map, image_url: images[activeIndex] || map.image_url };
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.8)", backdropFilter: "blur(6px)" }}
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl"
-        style={{ background: "#0D0518", border: "1.5px solid rgba(191,90,242,0.3)" }}
-        onClick={(e) => e.stopPropagation()}
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent
+        className="z-[101] max-h-[94dvh] max-w-5xl gap-0 overflow-y-auto border-purple-500/30 bg-[#0D0518] p-0 text-white [&>button]:hidden md:grid md:grid-cols-[minmax(0,3fr)_minmax(20rem,2fr)] md:overflow-hidden"
+        onKeyDown={(event) => {
+          if (event.key === "ArrowRight") goTo(1);
+          if (event.key === "ArrowLeft") goTo(-1);
+        }}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b sticky top-0 z-10" style={{ background: "#0D0518", borderColor: "rgba(191,90,242,0.15)" }}>
-          <div className="flex items-center gap-2 min-w-0">
-            <span
-              className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider shrink-0"
-              style={{ background: `${cat.color}25`, color: cat.color, border: `1px solid ${cat.color}40` }}
-            >
-              {cat.label}
-            </span>
-            <h2 className="text-lg font-black text-white truncate">{map.title}</h2>
-          </div>
-          {canEdit && onEdit && (
-            <button
-              onClick={() => onEdit(map)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition tap-sm shrink-0"
-              style={{ background: "rgba(191,90,242,0.15)", border: "1px solid rgba(191,90,242,0.3)", color: "#BF5AF2" }}
-              title="Modifier ma map"
-            >
-              <Pencil className="w-3.5 h-3.5" /> Modifier
-            </button>
-          )}
-          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 tap-sm" style={{ background: "rgba(255,255,255,0.05)" }}>
-            <X className="w-4 h-4 text-white/50" />
-          </button>
-        </div>
-
-        {/* Gallery */}
-        {images.length > 0 ? (
-          <div className="relative" style={{ background: "#1a0a2e" }}>
-            <div className="relative h-64 sm:h-80 lg:h-96 overflow-hidden">
-              <img
-                src={images[activeIndex]}
-                alt={`${map.title} — image ${activeIndex + 1}`}
-                className="w-full h-full object-contain"
-              />
-              {/* Arrows */}
-              {images.length > 1 && (
-                <>
-                  <button
-                    onClick={goPrev}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition tap-sm"
-                    style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.1)" }}
-                  >
-                    <ChevronLeft className="w-5 h-5 text-white" />
-                  </button>
-                  <button
-                    onClick={goNext}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition tap-sm"
-                    style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.1)" }}
-                  >
-                    <ChevronRight className="w-5 h-5 text-white" />
-                  </button>
-                  {/* Counter */}
-                  <span className="absolute bottom-3 right-3 px-2 py-0.5 rounded-md text-[10px] font-bold text-white/80" style={{ background: "rgba(0,0,0,0.6)" }}>
-                    {activeIndex + 1} / {images.length}
-                  </span>
-                </>
-              )}
-            </div>
-            {/* Thumbnails strip */}
+        <section className="min-w-0 bg-[#1a0a2e]" aria-label="Galerie de la carte">
+          <div className="relative aspect-video md:h-full md:min-h-[34rem] md:aspect-auto">
+            <FortniteMapImage map={currentImageMap} detail className="h-full w-full object-contain" />
             {images.length > 1 && (
-              <div className="flex gap-2 p-3 overflow-x-auto no-scrollbar">
-                {images.map((url, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setActiveIndex(i)}
-                    className="shrink-0 w-16 h-12 rounded-md overflow-hidden transition tap-sm"
-                    style={{
-                      border: activeIndex === i ? "2px solid #BF5AF2" : "1px solid rgba(255,255,255,0.1)",
-                      opacity: activeIndex === i ? 1 : 0.5,
-                    }}
-                  >
-                    <img src={url} alt="" className="w-full h-full object-cover" />
-                  </button>
-                ))}
-              </div>
+              <>
+                <button type="button" onClick={() => goTo(-1)} aria-label="Image précédente" className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-black/60">
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button type="button" onClick={() => goTo(1)} aria-label="Image suivante" className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-black/60">
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+                <span className="absolute bottom-3 right-3 rounded-md bg-black/70 px-2 py-1 text-[10px] font-bold">
+                  {activeIndex + 1} / {images.length}
+                </span>
+              </>
             )}
           </div>
-        ) : (
-          <div className="h-48 flex items-center justify-center" style={{ background: "#1a0a2e" }}>
-            <MapIcon className="w-12 h-12 text-white/10" />
-          </div>
-        )}
-
-        {/* Details */}
-        <div className="p-5 space-y-4">
-          {/* Creator */}
-          <div className="flex items-center gap-2">
-            <User className="w-4 h-4 text-white/30" />
-            <span className="text-sm text-white/60">Créé par</span>
-            <span className="text-sm font-bold text-white">{map.creator_name}</span>
-          </div>
-
-          <LivePlayersBadge map={map} />
-          {/* Views + Description */}
-          {!map.is_api && <div className="flex items-center gap-1.5 text-xs text-white/40">
-            <Eye className="w-3.5 h-3.5" />
-            <span>{map.views || 0} vue{(map.views || 0) > 1 ? "s" : ""}</span>
-          </div>}
-          {(map.description || map.api_description) && (
-            <div>
-              <h3 className="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-1.5">Description</h3>
-              <p className="text-sm text-white/70 leading-relaxed whitespace-pre-wrap">{map.description || map.api_description}</p>
+          {images.length > 1 && (
+            <div className="flex gap-2 overflow-x-auto p-3">
+              {images.map((url, index) => (
+                <button
+                  type="button"
+                  key={url}
+                  onClick={() => setActiveIndex(index)}
+                  aria-label={`Afficher l’image ${index + 1}`}
+                  aria-current={activeIndex === index}
+                  className="h-12 w-20 shrink-0 overflow-hidden rounded-md"
+                  style={{ border: activeIndex === index ? "2px solid #BF5AF2" : "1px solid rgba(255,255,255,.1)" }}
+                >
+                  <img src={url} alt="" width="80" height="48" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                </button>
+              ))}
             </div>
           )}
+        </section>
 
-          {/* Map code + copy */}
-          <div>
-            <h3 className="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-1.5">Code de la map</h3>
-            <div className="flex items-center gap-2">
-              <code
-                className="flex-1 px-3 py-2.5 rounded-lg text-sm font-mono font-bold tracking-wider text-center"
-                style={{ background: "rgba(191,90,242,0.08)", border: "1px solid rgba(191,90,242,0.15)", color: "#BF5AF2" }}
-              >
-                {map.map_code}
-              </code>
-              <button
-                onClick={handleCopy}
-                className="shrink-0 px-4 py-2.5 rounded-lg flex items-center gap-2 transition tap-sm"
-                style={{
-                  background: copied ? "rgba(34,197,94,0.15)" : "rgba(191,90,242,0.1)",
-                  border: `1px solid ${copied ? "rgba(34,197,94,0.3)" : "rgba(191,90,242,0.2)"}`,
-                }}
-              >
-                {copied ? (
-                  <><Check className="w-4 h-4 text-green-400" /><span className="text-xs font-bold text-green-400">Copié !</span></>
-                ) : (
-                  <><Copy className="w-4 h-4" style={{ color: "#BF5AF2" }} /><span className="text-xs font-bold" style={{ color: "#BF5AF2" }}>Copier</span></>
-                )}
-              </button>
+        <section className="min-w-0 overflow-y-auto">
+          <header className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-purple-500/15 bg-[#0D0518] p-5">
+            <div className="min-w-0">
+              <span className="mb-2 inline-flex rounded-md px-2 py-1 text-[9px] font-black uppercase tracking-wider" style={{ background: `${cat.color}25`, color: cat.color, border: `1px solid ${cat.color}40` }}>
+                {cat.label}
+              </span>
+              <DialogTitle className="text-xl font-black leading-tight">{map.title}</DialogTitle>
+              <DialogDescription className="mt-2 flex items-center gap-2 text-white/55">
+                <User className="h-4 w-4" /> Créé par <strong className="text-white">{map.creator_name}</strong>
+              </DialogDescription>
             </div>
+            <DialogClose aria-label="Fermer" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/5">
+              <X className="h-4 w-4" />
+            </DialogClose>
+          </header>
+
+          <div className="space-y-5 p-5">
+            <section aria-labelledby="map-code-title" className="rounded-xl border border-purple-500/20 bg-purple-500/10 p-4">
+              <h3 id="map-code-title" className="mb-2 text-[10px] font-bold uppercase tracking-wider text-white/50">Code de la map</h3>
+              <code className="block break-all text-center font-mono text-xl font-black tracking-widest text-[#BF5AF2]">{map.map_code}</code>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => copyText(map.map_code, "code")} className="flex items-center justify-center gap-2 rounded-lg border border-purple-500/25 bg-purple-500/10 px-3 py-2.5 text-xs font-bold text-[#BF5AF2]">
+                  {copied === "code" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {copied === "code" ? "Code copié" : "Copier le code"}
+                </button>
+                <button type="button" onClick={share} className="flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-xs font-bold">
+                  {copied === "link" ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+                  {copied === "link" ? "Lien copié" : "Partager"}
+                </button>
+              </div>
+            </section>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <LivePlayersBadge map={map} />
+              {!map.is_api && (
+                <span className="flex items-center gap-1.5 text-xs text-white/40">
+                  <Eye className="h-3.5 w-3.5" /> {map.views || 0} vue{(map.views || 0) > 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+
+            <section aria-labelledby="map-rules-title">
+              <h3 id="map-rules-title" className="mb-2 text-xs font-black uppercase tracking-wider text-white/50">Règles</h3>
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-white/70">
+                {map.rules || "Aucune règle distincte n’a été communiquée par la source."}
+              </p>
+            </section>
+
+            <section aria-labelledby="map-description-title">
+              <h3 id="map-description-title" className="mb-2 text-xs font-black uppercase tracking-wider text-white/50">Description</h3>
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-white/70">
+                {map.description || map.api_description || "Aucune description communiquée par la source."}
+              </p>
+            </section>
+
+            {actionError && <p role="alert" className="text-xs text-red-400">{actionError}</p>}
+
+            {canEdit && onEdit && (
+              <button type="button" onClick={() => onEdit(map)} className="flex w-full items-center justify-center gap-2 rounded-lg border border-purple-500/30 bg-purple-500/15 px-4 py-2.5 text-xs font-bold text-[#BF5AF2]">
+                <Pencil className="h-4 w-4" /> Modifier ma map
+              </button>
+            )}
           </div>
-        </div>
-      </div>
-    </div>
+        </section>
+      </DialogContent>
+    </Dialog>
   );
 }

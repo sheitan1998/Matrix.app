@@ -1,12 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Loader2 } from 'lucide-react';
 import FortniteMapCard from '@/components/tuto-gaming/FortniteMapCard';
-import MapDetailModal from '@/components/tuto-gaming/MapDetailModal';
 import useCreativeMaps from '@/components/fortnite/useCreativeMaps';
 
-export default function ApiFeaturedMaps({ search = '', category = 'all', user }) {
+export default function ApiFeaturedMaps({ search = '', category = 'all', user, onSelect }) {
   const mode = 'popular';
-  const [selected, setSelected] = useState(null);
   const { maps, loading, error, cachedAt, hasMore, loadingMore, loadMore, retry } = useCreativeMaps(search, category, mode);
   return <section className="mb-8">
     <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
@@ -16,8 +14,7 @@ export default function ApiFeaturedMaps({ search = '', category = 'all', user })
     {loading ? <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
       : error ? <p role="alert" className="py-5 text-sm text-destructive">La découverte Créatif est indisponible. <button onClick={retry} className="underline">Réessayer</button></p>
       : maps.length === 0 ? <p className="py-5 text-sm text-muted-foreground">Aucune île disponible pour cette recherche.</p>
-      : <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">{maps.map((map, index) => <FortniteMapCard key={map.map_code} map={map} index={index} onClick={setSelected} user={user} />)}</div>}
+      : <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">{maps.map((map, index) => <FortniteMapCard key={map.map_code} map={map} index={index} onClick={onSelect} user={user} />)}</div>}
     {hasMore && <div className="mt-4 text-center"><button onClick={loadMore} disabled={loadingMore} className="rounded-lg bg-primary px-5 py-2 text-xs font-bold text-primary-foreground disabled:opacity-50">{loadingMore ? 'Chargement…' : 'Voir plus d’îles'}</button></div>}
-    <MapDetailModal map={selected} onClose={() => setSelected(null)} user={user} />
   </section>;
 }

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Search, Shirt, Loader2, ArrowLeft, Trophy } from "lucide-react";
 import { motion } from "framer-motion";
@@ -9,6 +9,7 @@ import FortniteCosmeticCard from "@/components/fortnite/FortniteCosmeticCard";
 import usePageSEO from "@/hooks/usePageSEO";
 import useFortniteCatalog from "@/components/fortnite/useFortniteCatalog";
 import useVoteCounts from "@/components/fortnite/useVoteCounts";
+import { fortniteCosmeticPath } from "@/lib/fortniteRoutes";
 
 const TYPE_LABELS = {
   all: "Tous", outfit: "Skins", backbling: "Sacs", pickaxe: "Pioches",
@@ -18,10 +19,12 @@ const TYPE_LABELS = {
 };
 
 export default function FortniteCosmetics() {
+  const navigate = useNavigate();
+  const { cosmeticId = "" } = useParams();
   usePageSEO({
     title: "Cosmétiques Fortnite | MATRIX",
     description: "Recherchez et votez pour vos cosmétiques Fortnite préférés. Skins, pioches, sacs, emotes et plus encore.",
-    path: "/fortnite-cosmetics",
+    path: cosmeticId ? fortniteCosmeticPath({ id: cosmeticId }) : "/fortnite-cosmetics",
   });
 
   const [tab, setTab] = useState("search");
@@ -29,7 +32,10 @@ export default function FortniteCosmetics() {
   const [type, setType] = useState("all");
   const [appliedSearch, setAppliedSearch] = useState({ query: '', type: 'all' });
   const { items: results, total, loading, loadingMore, hasMore: hasMoreResults, loadMore, error } = useFortniteCatalog('searchCosmetics', appliedSearch);
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedCandidate, setSelectedCandidate] = useState(null);
+  const selectedItem = cosmeticId
+    ? (selectedCandidate?.id === cosmeticId ? selectedCandidate : { id: cosmeticId, name: "Cosmétique Fortnite" })
+    : null;
   const [user, setUser] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
@@ -52,6 +58,20 @@ export default function FortniteCosmetics() {
     fetchLeaderboard();
     base44.auth.me().then(setUser).catch(() => {});
   }, [fetchLeaderboard]);
+
+  useEffect(() => {
+    if (!cosmeticId) setSelectedCandidate(null);
+  }, [cosmeticId]);
+
+  const selectItem = useCallback((item) => {
+    setSelectedCandidate(item);
+    navigate(fortniteCosmeticPath(item));
+  }, [navigate]);
+
+  const closeItem = useCallback(() => {
+    setSelectedCandidate(null);
+    navigate("/fortnite-cosmetics", { replace: true });
+  }, [navigate]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -138,7 +158,7 @@ export default function FortniteCosmetics() {
               <p className="text-[10px] text-white/30 mb-3">{total} résultat{total > 1 ? "s" : ""}</p>
               <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
                 {results.map((item, i) => (
-                  <FortniteCosmeticCard key={item.id || i} item={item} onClick={() => setSelectedItem(item)} user={user} voteCounts={voteCounts?.[item.id]} />
+                  <FortniteCosmeticCard key={item.id || i} item={item} onClick={() => selectItem(item)} user={user} voteCounts={voteCounts?.[item.id]} />
                 ))}
               </div>
 
@@ -183,7 +203,7 @@ export default function FortniteCosmetics() {
                   className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition hover:scale-[1.01]"
                   style={{ background: style.bg, border: `1px solid ${style.border}` }}
                   onClick={() =>
-                    setSelectedItem({
+                    selectItem({
                       id: item.cosmetic_id, name: item.cosmetic_name, type: item.cosmetic_type,
                       image: item.cosmetic_image, rarity: item.cosmetic_rarity,
                     })
@@ -205,7 +225,7 @@ export default function FortniteCosmetics() {
         )
       )}
 
-      <CosmeticDetailModal cosmetic={selectedItem} onClose={() => setSelectedItem(null)} user={user} />
+      <CosmeticDetailModal cosmetic={selectedItem} onClose={closeItem} onSelect={selectItem} user={user} />
     </div>
   );
 }

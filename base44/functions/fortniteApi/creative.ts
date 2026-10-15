@@ -36,10 +36,11 @@ export async function islandSnapshot(code) {
     const live = fyi.status === 'fulfilled' ? fyi.value : null;
     if (!meta && !live?.title) return null;
     const known = Number.isFinite(live?.ccu) && live?.updatedAt && Date.now() - Date.parse(live.updatedAt) < 3600000;
-    const image = await thumbnailHD(live?.thumbnailUrl);
-    return { id: `api_${code}`, map_code: code, title: meta?.title || live.title,
+    const thumbnail = live?.thumbnailUrl || null;
+    const image = await thumbnailHD(thumbnail);
+    return { id: `api_${code}`, map_code: code, title: meta?.title || live?.title || code,
       creator_name: meta?.creatorCode || live?.creatorName || 'Créateur non fourni',
-      image_url: image, live_players: known ? live.ccu : null,
+      image_url: image, thumbnail_url: thumbnail, live_players: known ? live.ccu : null,
       last_synced_at: known ? live.updatedAt : null, category: category(meta?.tags), tags: meta?.tags || [],
       created_in: meta?.createdIn || null, description: meta?.description || meta?.longDescription || live?.description || '', is_api: true, players_kind: 'peak_ccu_10_minutes',
       source: 'Epic Games + fortnite.fyi', cached_at: new Date().toISOString() };
@@ -82,7 +83,8 @@ async function download(options) {
   candidates = [...new Map(candidates.map(item => [item.code, item])).values()];
   const results = await batches(candidates, async candidate => {
     const map = await islandSnapshot(candidate.code);
-    return map ? { ...map, image_url: map.image_url || await thumbnailHD(candidate.thumbnail), rank: candidate.rank ?? null, genre: candidate.genre ?? null } : null;
+    return map ? { ...map, thumbnail_url: map.thumbnail_url || candidate.thumbnail || null,
+      image_url: map.image_url || await thumbnailHD(candidate.thumbnail), rank: candidate.rank ?? null, genre: candidate.genre ?? null } : null;
   });
   const items = results.filter(Boolean).filter(map => !search || selected === 'all' || map.category === selected);
   return { items, total, has_more: !!next, next_cursor: next, mode, cached_at: new Date().toISOString(),
@@ -95,7 +97,8 @@ export async function enrichMaps(maps) {
   return await batches(maps, async map => {
     const snapshot = await islandSnapshot(map.map_code);
     return { ...map, api_title: snapshot?.title || null, api_creator: snapshot?.creator_name || null,
-      api_thumbnail: snapshot?.image_url || null, live_players: snapshot?.live_players ?? null,
+      api_thumbnail: snapshot?.image_url || null, api_thumbnail_url: snapshot?.thumbnail_url || null,
+      live_players: snapshot?.live_players ?? null,
       last_synced_at: snapshot?.last_synced_at || null, api_description: snapshot?.description || null,
       players_kind: 'peak_ccu_10_minutes' };
   });
