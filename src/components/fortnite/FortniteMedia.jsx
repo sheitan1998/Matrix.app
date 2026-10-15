@@ -4,21 +4,25 @@ import {
   FORTNITE_MEDIA_BACKGROUND_CLASS,
   getFortniteImageCandidates,
   getFortniteMediaBadge,
-  getFortniteVideoUrl,
+  getFortniteVideoCandidates,
 } from "@/lib/fortniteMedia";
 
 export default function FortniteMedia({ item, detail = false, active = false, thumbnail = false }) {
   const videoRef = useRef(null);
-  const [failed, setFailed] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
   const [paused, setPaused] = useState(false);
   const [hoverCapable, setHoverCapable] = useState(false);
   const [imageIndex, setImageIndex] = useState(0);
   const images = useMemo(() => getFortniteImageCandidates(item, thumbnail), [item, thumbnail]);
   const image = images[imageIndex] || "";
-  const video = getFortniteVideoUrl(item);
-  const shouldMountVideo = !!video && !failed && (detail || (active && hoverCapable));
-  const badge = getFortniteMediaBadge(item, !video || failed);
+  const videos = useMemo(
+    () => thumbnail ? [] : getFortniteVideoCandidates(item, detail),
+    [detail, item, thumbnail],
+  );
+  const [videoIndex, setVideoIndex] = useState(0);
+  const video = videos[videoIndex] || "";
+  const shouldMountVideo = !!video && (detail || (active && hoverCapable));
+  const badge = getFortniteMediaBadge(item, !video);
 
   useEffect(() => {
     const query = window.matchMedia("(hover: hover) and (pointer: fine)");
@@ -36,16 +40,22 @@ export default function FortniteMedia({ item, detail = false, active = false, th
       await player.play();
       setPaused(false);
     } catch {
-      if (videoRef.current === player) setFailed(true);
+      if (videoRef.current === player) setVideoIndex(index => index + 1);
     }
   }, []);
 
   useEffect(() => {
-    setFailed(false);
+    setVideoIndex(0);
     setVideoReady(false);
     setPaused(false);
     setImageIndex(0);
-  }, [item.id, video]);
+  }, [item.id, videos.join("|")]);
+
+  const advanceVideoCandidate = useCallback(() => {
+    setVideoReady(false);
+    setPaused(false);
+    setVideoIndex(index => index + 1);
+  }, []);
 
   useEffect(() => {
     const player = videoRef.current;
@@ -59,9 +69,9 @@ export default function FortniteMedia({ item, detail = false, active = false, th
 
   useEffect(() => {
     if (!shouldMountVideo || videoReady) return undefined;
-    const timer = window.setTimeout(() => setFailed(true), 10000);
+    const timer = window.setTimeout(advanceVideoCandidate, 10000);
     return () => window.clearTimeout(timer);
-  }, [shouldMountVideo, videoReady]);
+  }, [advanceVideoCandidate, shouldMountVideo, videoReady]);
 
   const togglePlayback = async () => {
     const player = videoRef.current;
@@ -107,7 +117,7 @@ export default function FortniteMedia({ item, detail = false, active = false, th
             setPaused(false);
           }}
           onPause={() => setPaused(true)}
-          onError={() => setFailed(true)}
+          onError={advanceVideoCandidate}
           className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-300 ${videoReady ? "opacity-100" : "pointer-events-none opacity-0"}`}
           aria-label={`Aperçu de ${item.name}`}
         >
@@ -115,7 +125,7 @@ export default function FortniteMedia({ item, detail = false, active = false, th
         </video>
       )}
 
-      {!detail && video && !failed && (
+      {!detail && video && (
         <span className="absolute right-2 top-2 rounded-full bg-background/80 p-1.5 text-foreground" aria-label="Aperçu vidéo disponible">
           <Play className="h-3 w-3" />
         </span>
@@ -143,11 +153,6 @@ export default function FortniteMedia({ item, detail = false, active = false, th
         </div>
       )}
 
-      {detail && failed && (
-        <p role="status" className="absolute bottom-3 rounded bg-background/90 p-2 text-xs text-muted-foreground">
-          Vidéo indisponible. L’image fixe est affichée.
-        </p>
-      )}
     </div>
   );
 }
