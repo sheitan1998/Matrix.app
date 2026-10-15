@@ -12,6 +12,7 @@
     "tauri:generate-latest-json": "node scripts/generate-latest-json.mjs",
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
+    "test": "node --test tests/dofusBuilderMath.test.js tests/dofusData.test.js",
     "typecheck": "tsc -p ./jsconfig.json",
     "preview": "vite preview"
   },

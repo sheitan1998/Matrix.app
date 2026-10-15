@@ -30,6 +30,16 @@ VITE_BASE44_FUNCTIONS_VERSION=prod
 
 Run the app: `npm run dev`
 
+### Univers Dofus
+
+La route `/dofus` propose trois modules alimentés par DofusDB :
+
+- un catalogue avec filtres combinables par thème, catégories d'équipement, niveaux et recherche instantanée ;
+- un builder de stuff à 16 emplacements, avec règles de type, statistiques en temps réel et presets stockés localement dans le navigateur ;
+- les 19 classes, leurs visuels et leurs sorts/rangs/effets disponibles dans la source.
+
+Les classes et sorts n'utilisent pas de données de remplacement : une indisponibilité de DofusDB est signalée explicitement. Le catalogue conserve uniquement son instantané de référence existant pour assurer un affichage dégradé. Les contrôles ciblés du builder s'exécutent avec `npm test`.
+
 ### Desktop OAuth & OTA updates (Tauri)
 
 - OAuth desktop flow now uses the canonical callback `https://matrix-hub.app/oauth/callback`, then forwards desktop returns via deep link `matrix://oauth/callback`.
