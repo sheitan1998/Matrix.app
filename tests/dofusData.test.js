@@ -1,10 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeDofusAlmanax, normalizeDofusBreed, normalizeDofusItem, normalizeDofusSpell } from '../base44/shared/dofusData.ts';
+import { normalizeDofusAlmanax, normalizeDofusBreed, normalizeDofusItem, normalizeDofusMapArea, normalizeDofusSpell } from '../base44/shared/dofusData.ts';
 
 test('normalizes source-backed class metadata',()=>{
   const breed=normalizeDofusBreed({id:1,shortName:{fr:'Féca'},description:{fr:'Protecteur'},gameplayDescription:{fr:'Défense'},img:'symbol.png',imgTransparent:'hd.png',breedSpellsId:[1,2]},'fr');
-  assert.deepEqual(breed,{id:1,name:'Féca',description:'Protecteur',gameplay:'Défense',img:'hd.png',symbol:'symbol.png',spellCount:2});
+  assert.deepEqual(breed,{id:1,name:'Féca',description:'Protecteur',gameplay:'Défense',img:'hd.png',symbol:'symbol.png',variants:[],spellCount:2});
+});
+
+test('normalizes map coverage without inventing point details',()=>{
+  const area=normalizeDofusMapArea({id:3,name:{fr:'Forêt'},level:40,shape:[-2,4,2,8,12000,12000],dungeonId:9,harvestables:[1,2],npcsIds:[4]},'fr');
+  assert.deepEqual(area,{id:3,name:'Forêt',level:40,center:{x:0,y:6},dungeonId:9,harvestableCount:2,npcCount:1});
 });
 
 test('normalizes Almanax Meryde, offering and sanitized bonus',()=>{
