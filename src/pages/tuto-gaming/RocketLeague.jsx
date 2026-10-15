@@ -12,8 +12,8 @@ const TABS = [
 ];
 
 export default function RocketLeague() {
-  const [requestedPresetId] = useState(() => new URLSearchParams(window.location.search).get('preset') || '');
-  const [tab, setTab] = useState(requestedPresetId ? 'garage' : 'shop');
+  const [requestedPreset] = useState(() => new URLSearchParams(window.location.search).get('preset') || '');
+  const [tab, setTab] = useState(requestedPreset ? 'garage' : 'shop');
   const clearPresetUrl = useCallback(() => {
     const url = new URL(window.location.href);
     url.searchParams.delete('preset');
@@ -51,7 +51,7 @@ export default function RocketLeague() {
           <RocketLeagueShop />
         </div>
         <div role="tabpanel" id="rocket-panel-garage" aria-labelledby="rocket-tab-garage" hidden={tab !== 'garage'}>
-          <RocketLeagueGarage requestedPresetId={requestedPresetId} onPresetUrlError={clearPresetUrl} />
+          <RocketLeagueGarage requestedPreset={requestedPreset} onPresetUrlError={clearPresetUrl} />
         </div>
         <div role="tabpanel" id="rocket-panel-stats" aria-labelledby="rocket-tab-stats" hidden={tab !== 'stats'}>
           <RocketStatsTracker />

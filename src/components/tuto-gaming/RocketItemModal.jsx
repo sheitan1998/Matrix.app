@@ -15,13 +15,14 @@ export default function RocketItemModal({ item, onClose }) {
           sources={item.images}
           alt={item.name}
           fallbackLabel={item.name}
-          accent={item.accent}
           className="aspect-video w-full rounded-xl p-4"
         />
         <dl className="grid gap-3 rounded-xl bg-muted p-4 text-sm sm:grid-cols-2">
           <div>
             <dt className="text-muted-foreground">Source</dt>
-            <dd className="font-semibold">{item.source === 'api' ? 'Catalogue en ligne' : 'Catalogue intégré MATRIX'}</dd>
+            <dd className="font-semibold">
+              {item.source === 'bakkesmod' ? 'Export BakkesMod configuré' : 'Snapshot communautaire versionné'}
+            </dd>
           </div>
           <div>
             <dt className="text-muted-foreground">Prix</dt>
