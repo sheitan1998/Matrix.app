@@ -88,13 +88,17 @@ export default function RocketLeagueShop() {
               alt={item.name}
               fallbackLabel={item.name}
               accent={item.accent}
+              bodyName={item.category === 'body' ? item.name : 'Octane'}
+              wheelName={item.category === 'wheels' ? item.name : 'OEM'}
               className="aspect-square w-full p-2"
             />
             <span className="block space-y-1 p-3">
               <span className="block text-sm font-bold">{item.name}</span>
               <span className="block text-xs text-muted-foreground">{item.type}</span>
               <span className="block text-xs text-primary">{item.rarity}</span>
-              <span className="block text-xs text-muted-foreground">{item.price} crédits</span>
+              <span className="block text-xs text-muted-foreground">
+                {item.priceEstimated ? 'Prix catalogue estimé' : 'Prix fourni'} : {item.price} crédits
+              </span>
               <span className="mt-2 block text-xs">Voir dans MATRIX</span>
             </span>
           </button>

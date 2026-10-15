@@ -13,7 +13,12 @@ import {
   safeRocketFilename,
   saveRocketGarage,
 } from '../src/components/tuto-gaming/rocketLeaguePresetStorage.js';
-import { captureRocketLeaguePreview } from '../src/components/tuto-gaming/rocketLeaguePreviewCapture.js';
+import {
+  captureRocketLeaguePreview,
+  findRocketLeaguePreviewElement,
+  PRESET_PREVIEW_ID,
+  PRESET_PREVIEW_SELECTOR,
+} from '../src/components/tuto-gaming/rocketLeaguePreviewCapture.js';
 
 function memoryStorage(initial = {}) {
   const values = new Map(Object.entries(initial));
@@ -40,7 +45,7 @@ test('creates a filesystem-safe deterministic image filename', () => {
 });
 
 test('captures only the supplied preset preview container', async () => {
-  const preview = { id: 'preset-preview' };
+  const preview = { id: PRESET_PREVIEW_ID };
   const outsidePage = { id: 'page-root' };
   let capturedElement;
   const blob = new Blob(['png'], { type: 'image/png' });
@@ -54,6 +59,18 @@ test('captures only the supplied preset preview container', async () => {
   });
   assert.equal(capturedElement, preview);
   assert.equal(result, blob);
+  await assert.rejects(
+    captureRocketLeaguePreview(outsidePage, async () => assert.fail('capture should not run')),
+    /indisponible/,
+  );
+  let selector;
+  assert.equal(findRocketLeaguePreviewElement({
+    querySelector(value) {
+      selector = value;
+      return preview;
+    },
+  }), preview);
+  assert.equal(selector, PRESET_PREVIEW_SELECTOR);
 });
 
 test('round-trips an exact, bounded URL-safe shared configuration', () => {
