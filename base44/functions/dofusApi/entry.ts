@@ -1,6 +1,6 @@
 import { createApiCache, dataResponse } from "../../shared/apiCache.ts";
 import { dofusFallback, fallbackDofusPage } from "../../shared/dofusFallback.ts";
-import { normalizeDofusAlmanax, normalizeDofusBreed, normalizeDofusItem, normalizeDofusSet, normalizeDofusSpell, loadDofusRecipes } from "../../shared/dofusData.ts";
+import { normalizeDofusAlmanax, normalizeDofusBreed, normalizeDofusItem, normalizeDofusMapArea, normalizeDofusSet, normalizeDofusSpell, loadDofusRecipes } from "../../shared/dofusData.ts";
 
 const CACHE_TTL = 60 * 60 * 1000;
 const CACHE_TTL_TYPES = 24 * 60 * 60 * 1000;
@@ -140,6 +140,32 @@ export default async function(req) {
           .map(spell=>normalizeDofusSpell(spell,levels.filter(level=>level.spellId===spell.id),effectDefinitions,lang))
           .sort((a,b)=>a.levels[0]?.minPlayerLevel-b.levels[0]?.minPlayerLevel||a.name.localeCompare(b.name,lang)),
         source:'live',
+      };
+      setCached(cacheKey,result);
+      return dataResponse(result);
+    }
+
+    if (action === 'getMapLayers') {
+      const cacheKey=`map-layers:v1:${lang}`;
+      const cached=rawGetCached(cacheKey,CACHE_TTL_TYPES);
+      if(cached)return dataResponse(cached);
+      const first=await fetchDofusCollection('subareas',{'$limit':'100','$skip':'0'},15000);
+      const rows=[...(first.data||[])];
+      const pageSize=Math.max(1,Number(first.limit)||rows.length||100);
+      for(let skip=pageSize;skip<Number(first.total||0);skip+=pageSize){
+        const page=await fetchDofusCollection('subareas',{'$limit':String(pageSize),'$skip':String(skip)},15000);
+        rows.push(...(page.data||[]));
+      }
+      const areas=rows.map(area=>normalizeDofusMapArea(area,lang)).filter(area=>area.center);
+      const result={
+        areas,
+        total:Number(first.total)||areas.length,
+        coverage:{
+          dungeons:areas.filter(area=>area.dungeonId!==null).length,
+          harvestableZones:areas.filter(area=>area.harvestableCount>0).length,
+          npcZones:areas.filter(area=>area.npcCount>0).length,
+        },
+        source:'DofusDB',
       };
       setCached(cacheKey,result);
       return dataResponse(result);

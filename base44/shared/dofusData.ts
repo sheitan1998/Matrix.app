@@ -31,7 +31,31 @@ export function normalizeDofusBreed(breed,lang='fr') {
     gameplay:localized(breed.gameplayDescription,lang),
     img:breed.imgTransparent||breed.img||null,
     symbol:breed.img||null,
+    variants:[
+      breed.heads?.male&&{id:'male',name:'Mâle',img:breed.heads.male},
+      breed.heads?.female&&{id:'female',name:'Femelle',img:breed.heads.female},
+    ].filter(Boolean),
     spellCount:Array.isArray(breed.breedSpellsId)?breed.breedSpellsId.length:0,
+  };
+}
+export function normalizeDofusMapArea(area,lang='fr') {
+  const coordinates=[];
+  for(let index=0;index<(area.shape||[]).length-1;index+=2){
+    const x=Number(area.shape[index]);
+    const y=Number(area.shape[index+1]);
+    if(Number.isFinite(x)&&Number.isFinite(y)&&Math.abs(x)<=200&&Math.abs(y)<=200)coordinates.push([x,y]);
+  }
+  const center=coordinates.length
+    ?{x:Math.round(coordinates.reduce((sum,value)=>sum+value[0],0)/coordinates.length),y:Math.round(coordinates.reduce((sum,value)=>sum+value[1],0)/coordinates.length)}
+    :null;
+  return {
+    id:area.id,
+    name:localized(area.name,lang)||`Zone ${area.id}`,
+    level:Number(area.level)||0,
+    center,
+    dungeonId:Number(area.dungeonId)>=0?Number(area.dungeonId):null,
+    harvestableCount:Array.isArray(area.harvestables)?area.harvestables.length:0,
+    npcCount:Array.isArray(area.npcsIds)?area.npcsIds.length:0,
   };
 }
 export function normalizeDofusSpell(spell,levels,effectDefinitions,lang='fr') {

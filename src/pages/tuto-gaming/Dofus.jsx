@@ -10,6 +10,7 @@ import DofusSetCard from '@/components/tuto-gaming/DofusSetCard';
 import DofusSetModal from '@/components/tuto-gaming/DofusSetModal';
 import DofusClasses from '@/components/tuto-gaming/DofusClasses';
 import DofusAlmanax from '@/components/tuto-gaming/DofusAlmanax';
+import DofusMap from '@/components/tuto-gaming/DofusMap';
 export default function Dofus() {
   const [query,setQuery]=useState({category:'all',typeIds:[],search:'',minLevel:0,maxLevel:0,page:1,limit:50});
   const [selectedItem,setSelectedItem]=useState(null);
@@ -18,10 +19,11 @@ export default function Dofus() {
   return <main className="min-h-screen bg-background text-foreground px-4 py-6"><div className="max-w-7xl mx-auto">
     <Link to="/tuto-gaming" className="inline-flex items-center gap-2 text-sm text-muted-foreground mb-5"><ArrowLeft className="w-4 h-4"/>Retour au Hub</Link>
     <h1 className="text-3xl font-bold mb-2">Univers Dofus</h1><p className="text-sm text-muted-foreground mb-6">Catalogue, builder de stuff, classes et sorts : données sourcées depuis DofusDB.</p>
-    <nav aria-label="Modules Dofus" className="flex flex-wrap gap-2 mb-6">{[['catalogue','Encyclopédie'],['builder','Créateur de Stuff / Preset'],['classes','Classes et sorts'],['almanax','Almanax']].map(([id,label])=><button type="button" key={id} aria-current={tab===id?'page':undefined} onClick={()=>setTab(id)} className={`px-4 py-2 rounded-lg text-sm font-semibold ${tab===id?'bg-primary text-primary-foreground':'bg-secondary text-secondary-foreground'}`}>{label}</button>)}</nav>
+    <nav aria-label="Modules Dofus" className="flex flex-wrap gap-2 mb-6">{[['catalogue','Encyclopédie'],['builder','Créateur de Stuff / Preset'],['classes','Classes et sorts'],['almanax','Almanax'],['map','Carte']].map(([id,label])=><button type="button" key={id} aria-current={tab===id?'page':undefined} onClick={()=>setTab(id)} className={`px-4 py-2 rounded-lg text-sm font-semibold ${tab===id?'bg-primary text-primary-foreground':'bg-secondary text-secondary-foreground'}`}>{label}</button>)}</nav>
     {tab==='builder'&&<DofusStuffBuilder/>}
     {tab==='classes'&&<DofusClasses/>}
     {tab==='almanax'&&<DofusAlmanax/>}
+    {tab==='map'&&<DofusMap/>}
     <section hidden={tab!=='catalogue'}>
     <DofusFilters query={query} onChange={setQuery}/>
     {data.source==='reference'&&<p role="status" className="mb-4 text-sm text-muted-foreground">Catalogue de référence sauvegardé : statistiques et recettes consultables immédiatement.{data.message?' DofusDB est temporairement indisponible.':''}</p>}
