@@ -28,8 +28,12 @@ export async function copyText(value, documentRef = globalThis.document, navigat
 
 export async function shareOrCopy({ title, text, url }, navigatorRef = globalThis.navigator, documentRef = globalThis.document) {
   if (navigatorRef?.share) {
-    await navigatorRef.share({ title, text, url });
-    return "shared";
+    try {
+      await navigatorRef.share({ title, text, url });
+      return "shared";
+    } catch (error) {
+      if (error?.name === "AbortError") throw error;
+    }
   }
   await copyText(url, documentRef, navigatorRef);
   return "copied";

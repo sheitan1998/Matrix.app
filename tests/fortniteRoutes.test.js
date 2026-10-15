@@ -5,7 +5,11 @@ import {
   fortniteMapPath,
   normalizeFortniteMapCode,
 } from "../src/lib/fortniteRoutes.js";
-import { getFortniteVideoUrl } from "../src/lib/fortniteMedia.js";
+import {
+  getFortniteImageCandidates,
+  getFortniteMediaBadge,
+  getFortniteVideoUrl,
+} from "../src/lib/fortniteMedia.js";
 import { canonicalUrl, copyText, shareOrCopy } from "../src/lib/share.js";
 
 test("normalizes valid Fortnite island codes", () => {
@@ -29,6 +33,28 @@ test("accepts only secure MP4 or WebM Fortnite previews", () => {
   assert.equal(getFortniteVideoUrl({ images: { animated: "https://cdn.example/skin.webm?v=2" } }), "https://cdn.example/skin.webm?v=2");
   assert.equal(getFortniteVideoUrl({ video: "http://cdn.example/emote.mp4" }), "");
   assert.equal(getFortniteVideoUrl({ video: "https://cdn.example/file.svg" }), "");
+  assert.equal(getFortniteVideoUrl({ video: "   " }), "");
+});
+
+test("prefers official HD images and exposes contextual media badges", () => {
+  const item = {
+    type: "outfit",
+    image: "https://cdn.example/default.png",
+    images: {
+      featured: "https://cdn.example/featured.png",
+      large: "https://cdn.example/large.png",
+      icon: "https://cdn.example/render?id=icon",
+    },
+  };
+  assert.deepEqual(getFortniteImageCandidates(item), [
+    "https://cdn.example/featured.png",
+    "https://cdn.example/large.png",
+    "https://cdn.example/default.png",
+    "https://cdn.example/render?id=icon",
+  ]);
+  assert.equal(getFortniteMediaBadge(item, true), "Skin");
+  assert.equal(getFortniteMediaBadge({ type: "emote" }, true), "Emote");
+  assert.equal(getFortniteMediaBadge({}, true), "Statique");
 });
 
 test("builds canonical absolute Fortnite share URLs", () => {
@@ -55,12 +81,19 @@ test("copies with the legacy clipboard fallback and reports failures", async () 
   assert.equal(copied, true);
 });
 
-test("only resolves sharing after the native share succeeds", async () => {
+test("uses native sharing when available and falls back to the clipboard on failure", async () => {
   const result = await shareOrCopy(
     { title: "Map", text: "Fortnite", url: "https://matrix.example/fortnite-maps/1234-5678-9012" },
     { share: async () => {} },
     {},
   );
   assert.equal(result, "shared");
-  await assert.rejects(() => shareOrCopy({ title: "Map", url: "https://matrix.example" }, { share: async () => { throw new Error("denied"); } }, {}));
+  let copied = "";
+  const fallback = await shareOrCopy(
+    { title: "Map", url: "https://matrix.example" },
+    { share: async () => { throw new Error("denied"); }, clipboard: { writeText: async value => { copied = value; } } },
+    {},
+  );
+  assert.equal(fallback, "copied");
+  assert.equal(copied, "https://matrix.example");
 });

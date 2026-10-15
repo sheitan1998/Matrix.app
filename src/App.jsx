@@ -174,6 +174,7 @@ const AuthenticatedApp = () => {
         <Route path="/prospecteurs/category/:slug" element={<ParamRedirect to="/best-serveurs/category" param="slug" />} />
         <Route path="/community" element={<Navigate to="/nexus" replace />} />
         <Route path="/tuto-gaming/fortnite" element={<Navigate to="/fortnite-maps" replace />} />
+        <Route path="/fortnite" element={<Navigate to="/fortnite-maps" replace />} />
         {/* New routes */}
         <Route path="/best-serveurs" element={<Prospecteurs />} />
         <Route path="/best-serveurs/category/:slug" element={<CategoryServers />} />

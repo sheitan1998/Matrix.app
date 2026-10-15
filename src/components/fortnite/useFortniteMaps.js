@@ -15,12 +15,12 @@ export default function useFortniteMaps(search, category) {
     staleTime: 900000,
     refetchInterval: 900000,
     retry: false,
-    queryFn: async ({ pageParam, signal }) => {
+    queryFn: async ({ pageParam }) => {
       const { data } = await base44.functions.invoke('fortniteApi', {
         action: 'getMaps', search: term, category, cursor: pageParam, limit: 24,
       });
-      if (signal.aborted) throw new DOMException('Requête remplacée', 'AbortError');
-      if (data.error) throw new Error(data.error);
+      if (data?.error) throw new Error(data.error);
+      if (!data) throw new Error('Réponse de cartes invalide');
       return data;
     },
     getNextPageParam: page => page.has_more ? page.next_cursor : undefined,
@@ -35,7 +35,7 @@ export default function useFortniteMaps(search, category) {
     error: result.error,
     hasMore: !!result.hasNextPage,
     loadingMore: result.isFetchingNextPage,
-    loadMore: () => !result.isFetchingNextPage && result.fetchNextPage(),
+    loadMore: () => !result.isFetchingNextPage && result.fetchNextPage({ cancelRefetch: false }),
     refresh: () => client.invalidateQueries({ queryKey: ['fortniteMaps'] }),
   };
 }

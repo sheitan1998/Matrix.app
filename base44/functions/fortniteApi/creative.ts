@@ -25,8 +25,9 @@ export async function thumbnailHD(url) {
   });
 }
 function category(tags = []) {
+  tags = tags.map(tag => String(tag).trim().toLocaleLowerCase());
   const rules = [['tycoon', 'tycoon'], ['horror', 'horreur'], ['deathrun', 'deathrun'], ['parkour', 'parkour'], ['battle royale', 'battle_royale'], ['pve', 'pve'], ['roleplay', 'rp'], ['music', 'music'], ['puzzle', 'puzzle']];
-  return rules.find(([tag]) => tags.includes(tag))?.[1] || 'autre';
+  return rules.find(([tag]) => tags.some(value => value === tag || value.includes(tag)))?.[1] || 'autre';
 }
 export async function islandSnapshot(code) {
   if (!/^\d{4}-\d{4}-\d{4}$/.test(code)) return null;
@@ -50,7 +51,14 @@ async function download(options) {
   const search = String(options.search || '').trim().slice(0, 100);
   const selected = String(options.category || 'all');
   const mode = options.mode === 'recent' ? 'recent' : 'popular';
-  const cursor = options.cursor ? JSON.parse(String(options.cursor)) : {};
+  let cursor = {};
+  if (options.cursor) {
+    try {
+      cursor = JSON.parse(String(options.cursor));
+    } catch {
+      cursor = {};
+    }
+  }
   let candidates = [], next = null, total = null;
   if (search) {
     if (/^\d{4}-\d{4}-\d{4}$/.test(search)) candidates = [{ code: search }];
@@ -64,13 +72,17 @@ async function download(options) {
     if (result.meta?.page?.nextCursor) next = JSON.stringify({ after: result.meta.page.nextCursor });
   } else {
     const genres = GENRES[selected] ? [GENRES[selected]] : POPULAR;
-    const pages = await Promise.all(genres.map(async genre => {
+    const settledPages = await Promise.allSettled(genres.map(async genre => {
       if (cursor.done?.includes(genre)) return { genre, data: [], meta: {} };
       const params = new URLSearchParams({ size: String(Math.floor(24 / genres.length)) });
       if (cursor[genre]) params.set('after', cursor[genre]);
       if (cursor.at) params.set('at', cursor.at);
       return { genre, ...await json(`${EPIC}/genres/${genre}/rankings?${params}`) };
     }));
+    const pages = settledPages
+      .filter(result => result.status === 'fulfilled')
+      .map(result => result.value);
+    if (!pages.length) throw new Error('Classements Créatif temporairement indisponibles');
     const nextState = { at: pages.find(p => p.meta?.snapshot)?.meta.snapshot || cursor.at, done: [...(cursor.done || [])] };
     for (const page of pages) {
       candidates.push(...(page.data || []).map(i => ({ code: i.islandCode, rank: i.rank, genre: page.genre })));

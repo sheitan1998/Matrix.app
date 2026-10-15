@@ -11,7 +11,7 @@ export default function useFortniteDetail(item) {
     },
   });
   const full = item ? { ...item, ...details.data, name: details.data?.name || item.name,
-    image: item.image || details.data?.image, images: item.images || details.data?.images } : null;
+    image: details.data?.image || item.image, images: { ...(item.images || {}), ...(details.data?.images || {}) } } : null;
   const setName = full?.set_name || full?.series;
   const set = useQuery({
     queryKey: ['fortniteSet', setName], enabled: !!setName, staleTime: 3600000, retry: false,

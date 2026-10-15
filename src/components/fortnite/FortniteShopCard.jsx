@@ -10,7 +10,7 @@ export default function FortniteShopCard({ item, onClick, user, voteCounts }) {
   const style = getFortniteItemStyle(item);
   return <article className={`relative flex flex-col overflow-hidden rounded-xl border ${WIDTHS[item.tile_size] || ''}`} style={{ background: style.bg, borderColor: style.border }} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
     <button onClick={onClick} className="block w-full flex-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" aria-label={`Voir l’offre ${item.name}`}>
-      <div className="relative h-44 sm:h-64"><FortniteMedia item={item} active={hovered} thumbnail />
+      <div className="group/media relative h-44 sm:h-64"><FortniteMedia item={item} active={hovered} thumbnail />
         {item.banner && <span className="absolute bottom-2 left-2 rounded bg-background/80 px-2 py-1 text-[10px] font-bold text-foreground">{item.banner}</span>}
       </div>
       <div className="bg-background/80 p-3 text-foreground"><h3 className="truncate text-sm font-black">{item.name}</h3>
