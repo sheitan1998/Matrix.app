@@ -58,9 +58,9 @@ API. TRN only supplies player statistics; BakkesMod exposes local game data rath
 than a hosted API; RL Garage has no documented public catalogue API or image reuse
 grant. No public official Rocket League item-image CDN is available, so MATRIX
 does not hotlink RL Garage or fabricate official HD URLs. Sources without an
-explicitly allowlisted image host use an original local MATRIX SVG scene. Its
-body family, wheel geometry, and selected paint vary without presenting that
-stylized fallback as an official item image.
+explicitly allowlisted image host use a stable typographic MATRIX card showing
+the item name, localized category, rarity, and catalog price. No generated
+vehicle, silhouette, monogram, or placeholder is presented as an official image.
 The pinned community snapshot contains item metadata but no image URLs; BakkesMod
 thumbnail fields are local Unreal asset identifiers rather than public web URLs.
 
@@ -73,7 +73,7 @@ base64url configuration at `/rocket-league?preset=...` and require no server
 record. Missing provider prices are deterministic catalog estimates, clearly
 labelled in the UI and derived from normalized rarity bands rather than presented
 as live market prices. PNG export captures only the **APERÇU DU PRESET** block
-identified by `#preset-preview-box`, whose local SVG
+identified by `#preset-preview-box`, whose local typographic fallback
 fallback remains capture-safe even when a remote image is absent, broken, too
 slow, or blocked by CORS.
 

@@ -238,9 +238,10 @@ export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlEr
                     sources={resolved[key]?.images}
                     alt=""
                     fallbackLabel={resolved[key]?.name || `${label} non sélectionné`}
-                    accent={resolved[key]?.accent}
-                    bodyName={key === 'body' ? resolved[key]?.name : resolved.body?.name || 'Octane'}
-                    wheelName={key === 'wheels' ? resolved[key]?.name : resolved.wheels?.name || 'OEM'}
+                    fallbackCategory={key}
+                    fallbackRarity={resolved[key]?.rarity || 'Aucun objet sélectionné'}
+                    fallbackPrice={resolved[key]?.price}
+                    fallbackPriceEstimated={resolved[key]?.priceEstimated}
                     className="aspect-video w-full rounded-lg sm:aspect-square"
                   />
                 </div>
@@ -274,9 +275,16 @@ export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlEr
                   sources={previewBody?.images}
                   alt={`Carrosserie ${previewBody?.name || 'Octane'}`}
                   fallbackLabel={previewBody?.name || 'Octane'}
-                  accent={paint.accent}
-                  bodyName={previewBody?.name || 'Octane'}
-                  wheelName={resolved.wheels?.name || 'OEM'}
+                  fallbackCategory="body"
+                  fallbackRarity={previewBody?.rarity}
+                  fallbackPrice={previewBody?.price}
+                  fallbackPriceEstimated={previewBody?.priceEstimated}
+                  fallbackSummary={[
+                    `Peinture : ${paint.name}`,
+                    `Roues : ${resolved.wheels?.name || 'non sélectionnées'}`,
+                    `Sticker : ${resolved.decal?.name || 'non sélectionné'}`,
+                    `Explosion : ${resolved.goalExplosion?.name || 'non sélectionnée'}`,
+                  ].join(' · ')}
                   captureRemote={false}
                   className="absolute inset-0 h-full w-full"
                 />
@@ -312,10 +320,10 @@ export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlEr
             </div>
             <dl className="grid grid-cols-3 gap-2 p-4">
               {[
-                ['Sticker', resolved.decal],
-                ['Roues', resolved.wheels],
-                ['Explosion', resolved.goalExplosion],
-              ].map(([label, item]) => (
+                ['Sticker', resolved.decal, 'decal'],
+                ['Roues', resolved.wheels, 'wheels'],
+                ['Explosion', resolved.goalExplosion, 'goalExplosion'],
+              ].map(([label, item, category]) => (
                 <div key={label} className="min-w-0 rounded-lg bg-muted p-2">
                   <dt className="truncate text-[11px] text-muted-foreground">{label}</dt>
                   <dd className="mt-1">
@@ -326,9 +334,10 @@ export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlEr
                           sources={item.images}
                           alt=""
                           fallbackLabel={item.name}
-                          accent={item.accent}
-                          bodyName={resolved.body?.name || 'Octane'}
-                          wheelName={label === 'Roues' ? item.name : resolved.wheels?.name || 'OEM'}
+                          fallbackCategory={item.category}
+                          fallbackRarity={item.rarity}
+                          fallbackPrice={item.price}
+                          fallbackPriceEstimated={item.priceEstimated}
                           captureRemote={false}
                           className="aspect-square w-full rounded-md"
                         />
@@ -338,9 +347,8 @@ export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlEr
                       <RocketLeagueImage
                         alt=""
                         fallbackLabel={`${label} non choisi`}
-                        accent={paint.accent}
-                        bodyName={resolved.body?.name || 'Octane'}
-                        wheelName={resolved.wheels?.name || 'OEM'}
+                        fallbackCategory={category}
+                        fallbackRarity="Aucun objet sélectionné"
                         captureRemote={false}
                         className="aspect-square w-full rounded-md"
                       />

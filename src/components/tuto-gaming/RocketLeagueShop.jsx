@@ -87,9 +87,10 @@ export default function RocketLeagueShop() {
               sources={item.images}
               alt={item.name}
               fallbackLabel={item.name}
-              accent={item.accent}
-              bodyName={item.category === 'body' ? item.name : 'Octane'}
-              wheelName={item.category === 'wheels' ? item.name : 'OEM'}
+              fallbackCategory={item.category}
+              fallbackRarity={item.rarity}
+              fallbackPrice={item.price}
+              fallbackPriceEstimated={item.priceEstimated}
               className="aspect-square w-full p-2"
             />
             <span className="block space-y-1 p-3">
