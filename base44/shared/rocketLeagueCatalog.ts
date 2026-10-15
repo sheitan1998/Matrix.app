@@ -13,10 +13,11 @@ export type RocketLeagueCatalogItem = {
   category: RocketLeagueCategory;
   rarity: string;
   image: string | null;
+  images?: string[];
   price: number;
   paint: string | null;
   accent: string;
-  source: 'local';
+  source: 'local' | 'api';
 };
 
 const item = (
@@ -99,5 +100,67 @@ export function getLocalRocketLeagueCatalog() {
     garage,
     source: 'local' as const,
     fetchedAt: null,
+  };
+}
+
+const CATEGORIES = new Set(Object.keys(ROCKET_LEAGUE_CATEGORY_LABELS));
+
+function text(value: unknown, fallback = '') {
+  return typeof value === 'string' ? value.trim().slice(0, 200) : fallback;
+}
+
+function imageUrls(value: any): string[] {
+  const values = [
+    value?.imageHd,
+    value?.image_hd,
+    value?.imageUrl,
+    value?.image,
+    value?.thumbnail,
+    ...(Array.isArray(value?.images) ? value.images : []),
+  ];
+  return [...new Set(values.filter((candidate): candidate is string => {
+    if (typeof candidate !== 'string') return false;
+    try {
+      return new URL(candidate).protocol === 'https:';
+    } catch {
+      return false;
+    }
+  }))];
+}
+
+export function normalizeRocketLeagueCatalogItem(value: any, index = 0): RocketLeagueCatalogItem | null {
+  if (!value || typeof value !== 'object') return null;
+  const rawCategory = text(value.category || value.slot || value.typeSlug);
+  const category = CATEGORIES.has(rawCategory) ? rawCategory as RocketLeagueCategory : null;
+  const name = text(value.name || value.displayName);
+  if (!category || !name) return null;
+  const images = imageUrls(value);
+  const rawId = text(value.id || value.slug, `${category}-${index}`);
+  const id = rawId.replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 120);
+  return {
+    id,
+    name,
+    type: text(value.type || value.typeName, ROCKET_LEAGUE_CATEGORY_LABELS[category]),
+    category,
+    rarity: text(value.rarity || value.quality, 'Non précisée'),
+    image: images[0] || null,
+    images,
+    price: Number.isFinite(Number(value.price)) ? Math.max(0, Number(value.price)) : 0,
+    paint: text(value.paint || value.paintName) || null,
+    accent: /^#[0-9a-f]{6}$/i.test(value.accent) ? value.accent : '#334155',
+    source: 'api',
+  };
+}
+
+export function paginateRocketLeagueCatalog(items: readonly RocketLeagueCatalogItem[], pageValue: unknown, limitValue: unknown) {
+  const page = Math.max(1, Math.min(1000, Number(pageValue) || 1));
+  const limit = Math.max(1, Math.min(100, Number(limitValue) || 60));
+  const offset = (page - 1) * limit;
+  return {
+    items: items.slice(offset, offset + limit),
+    page,
+    limit,
+    total: items.length,
+    hasMore: offset + limit < items.length,
   };
 }

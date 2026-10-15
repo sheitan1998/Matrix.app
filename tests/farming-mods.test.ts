@@ -3,6 +3,14 @@ import assert from 'node:assert/strict';
 import { parseCatalogPage } from '../base44/shared/farmingCatalog.ts';
 import { parseModDetails } from '../base44/shared/farmingModDetails.ts';
 import { allowedGiantsUrl } from '../base44/shared/giantsMedia.ts';
+import {
+  cacheFarmingCatalog,
+  farmingModShareUrl,
+  farmingSearchWithMod,
+  farmingSearchWithoutMod,
+  isValidFarmingModId,
+  readCachedFarmingCatalog,
+} from '../src/components/tuto-gaming/farmingModCatalog.js';
 
 test('catalog parser assigns the requested category and sanitizes text', () => {
   const html = `
@@ -51,4 +59,28 @@ test('GIANTS media validation rejects SSRF and path escapes', () => {
   for (const value of rejected) {
     assert.throws(() => allowedGiantsUrl(value), /non autorisée/);
   }
+});
+
+test('shared farming links are canonical and reject invalid mod IDs', () => {
+  assert.equal(isValidFarmingModId('371730'), true);
+  assert.equal(isValidFarmingModId('../371730'), false);
+  assert.equal(farmingModShareUrl('371730', 'https://matrix.example/path'), 'https://matrix.example/farming?mod=371730');
+  assert.equal(farmingModShareUrl('not-a-mod', 'https://matrix.example'), null);
+  assert.equal(farmingSearchWithMod('?source=hub', '371730'), '?source=hub&mod=371730');
+  assert.equal(farmingSearchWithoutMod('?source=hub&mod=371730'), '?source=hub');
+  assert.equal(farmingSearchWithoutMod('?mod=371730'), '');
+});
+
+test('catalog cache restores recent data and ignores corrupt or expired entries', () => {
+  const values = new Map();
+  const storage = {
+    getItem: key => values.get(key) || null,
+    setItem: (key, value) => values.set(key, value),
+  };
+  const catalog = { categories: [{ id: 'tractors', items: [{ id: '371730' }] }] };
+  assert.equal(cacheFarmingCatalog(catalog, storage, 1_000), true);
+  assert.deepEqual(readCachedFarmingCatalog(storage, 2_000), catalog);
+  assert.equal(readCachedFarmingCatalog(storage, 8 * 24 * 60 * 60 * 1000), null);
+  values.set('matrix.fs25.modhub.catalog.v1', '{broken');
+  assert.equal(readCachedFarmingCatalog(storage, 2_000), null);
 });

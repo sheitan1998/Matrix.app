@@ -10,7 +10,7 @@ async function json(url) {
   if (!response.ok) throw new Error(`Source Créatif indisponible (${response.status})`);
   return await response.json();
 }
-async function batches(items, callback, size = 3) {
+async function batches(items, callback, size = 8) {
   const results = [];
   for (let i = 0; i < items.length; i += size) results.push(...await Promise.all(items.slice(i, i + size).map(callback)));
   return results;

@@ -30,8 +30,7 @@ export default function FortniteCosmetics() {
   const [tab, setTab] = useState("search");
   const [query, setQuery] = useState("");
   const [type, setType] = useState("all");
-  const [appliedSearch, setAppliedSearch] = useState({ query: '', type: 'all' });
-  const { items: results, total, loading, loadingMore, hasMore: hasMoreResults, loadMore, error } = useFortniteCatalog('searchCosmetics', appliedSearch);
+  const { items: results, total, loading, loadingMore, hasMore: hasMoreResults, loadMore, error } = useFortniteCatalog('searchCosmetics', { query, type });
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const selectedItem = cosmeticId
     ? (selectedCandidate?.id === cosmeticId ? selectedCandidate : { id: cosmeticId, name: "Cosmétique Fortnite" })
@@ -39,7 +38,6 @@ export default function FortniteCosmetics() {
   const [user, setUser] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
-  const handleSearch = (searchQuery, searchType) => setAppliedSearch({ query: searchQuery.trim(), type: searchType });
 
   // Batch fetch vote counts for visible items
   const itemIds = useMemo(() => results.map(i => i.id).filter(Boolean), [results]);
@@ -75,7 +73,6 @@ export default function FortniteCosmetics() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    handleSearch(query, type);
   };
 
   return (

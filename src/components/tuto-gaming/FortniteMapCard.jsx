@@ -5,6 +5,7 @@ import { getCategoryMeta } from "@/components/tuto-gaming/fortniteMapsData";
 import VoteButtons from "@/components/tuto-gaming/VoteButtons";
 import LivePlayersBadge from '@/components/fortnite/LivePlayersBadge';
 import FortniteMapImage from "@/components/fortnite/FortniteMapImage";
+import { copyText } from "@/lib/share";
 
 export default function FortniteMapCard({ map, index = 0, onClick, user, featured = false }) {
   const [copied, setCopied] = useState(false);
@@ -16,7 +17,7 @@ export default function FortniteMapCard({ map, index = 0, onClick, user, feature
     e.preventDefault();
     e.stopPropagation();
     try {
-      await navigator.clipboard.writeText(map.map_code);
+      await copyText(map.map_code);
       setCopyError("");
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);

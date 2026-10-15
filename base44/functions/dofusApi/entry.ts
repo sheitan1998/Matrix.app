@@ -1,6 +1,6 @@
 import { createApiCache, dataResponse } from "../../shared/apiCache.ts";
 import { dofusFallback, fallbackDofusPage } from "../../shared/dofusFallback.ts";
-import { normalizeDofusBreed, normalizeDofusItem, normalizeDofusSet, normalizeDofusSpell, loadDofusRecipes } from "../../shared/dofusData.ts";
+import { normalizeDofusAlmanax, normalizeDofusBreed, normalizeDofusItem, normalizeDofusSet, normalizeDofusSpell, loadDofusRecipes } from "../../shared/dofusData.ts";
 
 const CACHE_TTL = 60 * 60 * 1000;
 const CACHE_TTL_TYPES = 24 * 60 * 60 * 1000;
@@ -74,6 +74,26 @@ export default async function(req) {
     const body = await req.json().catch(() => ({}));
     const action = body.action;
     const lang = body.lang || 'fr';
+
+    if (action === 'getAlmanax') {
+      const date=/^\d{4}-\d{2}-\d{2}$/.test(String(body.date||''))?String(body.date):new Date().toISOString().slice(0,10);
+      const cacheKey=`almanax:v1:${date}:${lang}`;
+      const cached=rawGetCached(cacheKey,CACHE_TTL_TYPES);
+      if(cached)return dataResponse(cached);
+      try {
+        const response=await fetch(`https://api.dofusdb.fr/almanax?date=${date}`,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(6000)});
+        if(!response.ok)throw new Error(`DofusDB almanax (${response.status})`);
+        const entry=await response.json();
+        const result={almanax:normalizeDofusAlmanax(entry,lang,date),fallback:false};
+        setCached(cacheKey,result);
+        return dataResponse(result);
+      } catch {
+        const response=await fetch(`https://api.dofusdu.de/dofus2/${lang}/almanax/${date}`,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(6000)});
+        if(!response.ok)throw new Error(`Almanax de secours (${response.status})`);
+        const entry=await response.json();
+        return dataResponse({fallback:true,almanax:{date,meryde:'Méryde du jour',merydeDescription:'Le nom du Méryde n’est pas fourni par la source de secours.',offering:{quantity:Number(entry.tribute?.quantity||1),name:entry.tribute?.item?.name||'Offrande du jour',img:entry.tribute?.item?.image_urls?.icon||null},bonus:{name:entry.bonus?.type?.name||'Bonus du jour',description:entry.bonus?.description||'Description temporairement indisponible.'},source:'Dofusdu.de'}},300);
+      }
+    }
 
     if (action === 'getItemTypes') {
       const types=await getItemTypes();

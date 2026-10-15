@@ -1,4 +1,5 @@
 export const ROCKET_PRESET_STORAGE_KEY = 'matrix:rocket-league:garage:v1';
+export const ROCKET_PRESET_ID_PATTERN = /^[a-zA-Z0-9_-]{8,80}$/;
 
 export const EMPTY_ROCKET_SELECTION = Object.freeze({
   body: null,
@@ -37,17 +38,38 @@ export function normalizeRocketSelection(value) {
   };
 }
 
-function normalizePreset(value) {
+export function isValidRocketPresetId(value) {
+  return typeof value === 'string' && ROCKET_PRESET_ID_PATTERN.test(value);
+}
+
+export function normalizePreset(value) {
   if (!value || typeof value !== 'object') return null;
   const id = stringOrNull(value.id);
   const name = typeof value.name === 'string' ? value.name.trim().slice(0, 80) : '';
-  if (!id || !name) return null;
+  if (!id || !isValidRocketPresetId(id) || !name) return null;
   return {
     id,
     name,
     selection: normalizeRocketSelection(value.selection),
     savedAt: typeof value.savedAt === 'string' ? value.savedAt : '',
   };
+}
+
+export function safeRocketFilename(value, extension = 'json') {
+  const base = String(value || 'preset-rocket-league')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80) || 'preset-rocket-league';
+  const safeExtension = String(extension).replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'json';
+  return `${base}.${safeExtension}`;
+}
+
+export function serializeRocketPreset(preset) {
+  const normalized = normalizePreset(preset);
+  if (!normalized) throw new TypeError('Preset Rocket League invalide.');
+  return JSON.stringify({ version: 1, ...normalized }, null, 2);
 }
 
 export function loadRocketGarage(storage) {

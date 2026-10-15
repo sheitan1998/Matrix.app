@@ -8,8 +8,9 @@ export default function useCreativeMaps(search, category, mode) {
   const result = useInfiniteQuery({
     queryKey: ['fortniteCreative', term, category, mode], initialPageParam: null,
     staleTime: 900000, refetchInterval: 900000, retry: false,
-    queryFn: async ({ pageParam }) => {
+    queryFn: async ({ pageParam, signal }) => {
       const { data } = await base44.functions.invoke('fortniteApi', { action: 'getCreativeMaps', search: term, category, mode, cursor: pageParam });
+      if (signal.aborted) throw new DOMException('Requête remplacée', 'AbortError');
       if (data.error) throw new Error(data.error);
       return data;
     },
@@ -18,5 +19,6 @@ export default function useCreativeMaps(search, category, mode) {
   const pages = result.data?.pages || [];
   const maps = [...new Map(pages.flatMap(page => page.items || []).map(map => [map.map_code, map])).values()];
   return { maps, loading: result.isPending, error: result.error, cachedAt: pages[0]?.cached_at,
-    hasMore: result.hasNextPage, loadingMore: result.isFetchingNextPage, loadMore: () => result.fetchNextPage(), retry: () => result.refetch() };
+    hasMore: !!result.hasNextPage, loadingMore: result.isFetchingNextPage,
+    loadMore: () => !result.isFetchingNextPage && result.fetchNextPage(), retry: () => result.refetch() };
 }

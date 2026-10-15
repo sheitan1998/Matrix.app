@@ -54,17 +54,22 @@ async function getEosToken(config) {
 
 // ─── Player stats (fortnite-api.com, needs API key) ───
 async function getPlayerStats(pseudo, apiKey) {
+  if (!apiKey) {
+    return { error: 'Les statistiques joueur ne sont pas configurées.', code: 'KEY_NOT_CONFIGURED' };
+  }
   const headers = { 'Accept': 'application/json' };
-  if (apiKey) headers['Authorization'] = apiKey;
+  headers['Authorization'] = apiKey;
   const res = await fetch(`https://fortnite-api.com/v2/stats/br/v2?name=${encodeURIComponent(pseudo)}`, {
     headers,
     signal: AbortSignal.timeout(15000),
   });
-  if (res.status === 401) return { error: 'Clé API fortnite-api.com requise. Ajoutez-la dans le Panel Admin > Fortnite > Clés API.' };
-  if (res.status === 403) return { error: 'Joueur introuvable ou statistiques privées' };
-  if (res.status === 429) return { error: 'Trop de requêtes, réessayez dans quelques minutes' };
-  if (!res.ok) return { error: `Erreur API (${res.status})` };
-  return await res.json();
+  if (res.status === 401) return { error: 'La clé du service de statistiques est invalide.', code: 'KEY_NOT_CONFIGURED' };
+  if (res.status === 403 || res.status === 404) return { error: 'Joueur introuvable ou statistiques privées.', code: 'NOT_FOUND' };
+  if (res.status === 429) return { error: 'Trop de requêtes. Réessayez dans quelques minutes.', code: 'RATE_LIMITED' };
+  if (!res.ok) return { error: 'Le service de statistiques est temporairement indisponible.', code: 'UPSTREAM_ERROR' };
+  const payload = await res.json();
+  if (!payload?.data) return { error: 'Aucune statistique publique disponible pour ce joueur.', code: 'EMPTY' };
+  return payload.data;
 }
 
 // Public catalogues and Creative discovery use shared stale-while-revalidate caches.
@@ -147,17 +152,17 @@ export default async function(req) {
     // ── Public: Player stats ──
     if (action === 'getPlayerStats') {
       if (config?.show_player_stats === false) return Response.json({ error: 'Section désactivée' });
-      const pseudo = body.pseudo;
-      if (!pseudo || pseudo.trim().length < 2) {
-        return Response.json({ error: 'Pseudo requis (min 2 caractères)' }, { status: 400 });
+      const pseudo = typeof body.pseudo === 'string' ? body.pseudo.trim() : '';
+      if (pseudo.length < 2 || pseudo.length > 32 || !/^[\p{L}\p{N}_.\-\s]+$/u.test(pseudo)) {
+        return Response.json({ error: 'Le pseudo doit contenir 2 à 32 caractères valides.', code: 'INVALID_USERNAME' });
       }
 
-      const cacheKey = `player:${pseudo.toLowerCase().trim()}`;
+      const cacheKey = `player:${pseudo.toLocaleLowerCase()}`;
       const cached = getCached(cacheKey, cacheTtl);
       if (cached) return Response.json(cached);
 
-      const stats = await getPlayerStats(pseudo.trim(), config?.fortnite_api_key);
-      setCached(cacheKey, stats);
+      const stats = await getPlayerStats(pseudo, config?.fortnite_api_key);
+      if (!stats?.error) setCached(cacheKey, stats);
       return Response.json(stats);
     }
 
