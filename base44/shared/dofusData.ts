@@ -117,6 +117,7 @@ export function normalizeDofusQuest(quest,lang='fr',category=null,detailed=false
   };
 }
 const ANKAMA_UNITY_BREED_ASSETS='https://static.ankama.com/dofus/ng/modules/mmorpg/encyclopedia/unity/breeds/assets/breeds';
+export const DOFUS_UNITY_GENDER_CROPS={male:'right',female:'left'};
 function formatSpellEffect(template,effect) {
   const first=Number(effect.diceNum||effect.value||0);
   const second=Number(effect.diceSide||0);
@@ -140,14 +141,93 @@ export function normalizeDofusBreed(breed,lang='fr') {
     img:breed.imgTransparent||breed.img||null,
     symbol:breed.img||null,
     variants:[
-      {id:'male',name:'Mâle',img:fullBody,head:breed.heads?.male||null,crop:'left'},
-      {id:'female',name:'Femelle',img:fullBody,head:breed.heads?.female||null,crop:'right'},
+      {id:'male',name:'Mâle',img:fullBody,head:breed.heads?.male||null,look:breed.maleLook||null,crop:DOFUS_UNITY_GENDER_CROPS.male},
+      {id:'female',name:'Femelle',img:fullBody,head:breed.heads?.female||null,look:breed.femaleLook||null,crop:DOFUS_UNITY_GENDER_CROPS.female},
     ],
     artworkSource:'Ankama - Encyclopédie DOFUS Unity',
     spellCount:Array.isArray(breed.breedSpellsId)?breed.breedSpellsId.length:0,
   };
 }
-export function normalizeDofusMapArea(area,positions=new Map(),lang='fr') {
+export function normalizeDofusWorld(world,lang='fr') {
+  const minScale=Math.round(Number(world.minScale)*10)/10;
+  const maxScale=Number(world.maxScale)||1;
+  const tileSize=250;
+  const scales=[];
+  for(let scale=minScale;scale<=maxScale;scale*=2){
+    const normalized=Math.round(scale*10)/10;
+    if(normalized>maxScale)break;
+    scales.push(normalized);
+  }
+  return {
+    id:Number(world.id),
+    name:localized(world.name,lang)||`Monde ${world.id}`,
+    originX:Number(world.origineX),
+    originY:Number(world.origineY),
+    mapWidth:Number(world.mapWidth),
+    mapHeight:Number(world.mapHeight),
+    totalWidth:Number(world.totalWidth),
+    totalHeight:Number(world.totalHeight),
+    minScale,
+    maxScale,
+    tileSize,
+    tileUrlBase:`https://api.dofusdb.fr/img/worlds/${Number(world.id)}`,
+    tileBanks:scales.map((scale,zoom)=>({
+      zoom,
+      scale,
+      columns:Math.ceil(Number(world.totalWidth)*scale/tileSize),
+      rows:Math.ceil(Number(world.totalHeight)*scale/tileSize),
+    })),
+  };
+}
+export function normalizeDofusHarvestCoverage(skills,jobs,lang='fr') {
+  const jobsById=new Map((jobs||[]).map(job=>[Number(job.id),job]));
+  const resourcesBySubarea=new Map();
+  const jobCatalog=new Map();
+  const mappedResources=new Set();
+  for(const skill of skills||[]){
+    const resourceId=Number(skill.gatheredRessourceItem);
+    const jobId=Number(skill.parentJobId);
+    const item=skill.item;
+    const job=jobsById.get(jobId);
+    if(!resourceId||!item||!job)continue;
+    const relations=(item.resourcesBySubarea||[]).filter(relation=>Number(relation?.[0])>0&&Number(relation?.[1])>0);
+    const mappingKey=`${jobId}:${resourceId}`;
+    if(!relations.length||mappedResources.has(mappingKey))continue;
+    mappedResources.add(mappingKey);
+    const resource={
+      id:resourceId,
+      name:localized(item.name,lang)||`Ressource ${resourceId}`,
+      img:item.img||null,
+      level:Number(item.level)||0,
+      jobId,
+      jobName:localized(job.name,lang)||`Métier ${jobId}`,
+    };
+    if(!jobCatalog.has(jobId))jobCatalog.set(jobId,{id:jobId,name:resource.jobName,img:job.img||null,resources:new Map(),zoneIds:new Set(),count:0});
+    const jobEntry=jobCatalog.get(jobId);
+    if(!jobEntry.resources.has(resourceId))jobEntry.resources.set(resourceId,{...resource,zoneIds:new Set(),count:0});
+    const catalogResource=jobEntry.resources.get(resourceId);
+    for(const relation of relations){
+      const subareaId=Number(relation[0]);
+      const count=Number(relation[1]);
+      if(!resourcesBySubarea.has(subareaId))resourcesBySubarea.set(subareaId,[]);
+      resourcesBySubarea.get(subareaId).push({...resource,count});
+      jobEntry.zoneIds.add(subareaId);
+      jobEntry.count+=count;
+      catalogResource.zoneIds.add(subareaId);
+      catalogResource.count+=count;
+    }
+  }
+  const normalizedJobs=[...jobCatalog.values()].map(job=>({
+    id:job.id,
+    name:job.name,
+    img:job.img,
+    zoneCount:job.zoneIds.size,
+    count:job.count,
+    resources:[...job.resources.values()].map(({zoneIds,...resource})=>({...resource,zoneCount:zoneIds.size})).sort((a,b)=>a.level-b.level||a.name.localeCompare(b.name,lang)),
+  })).sort((a,b)=>a.name.localeCompare(b.name,lang));
+  return {jobs:normalizedJobs,resourcesBySubarea};
+}
+export function normalizeDofusMapArea(area,positions=new Map(),lang='fr',resources=[],npcs=[]) {
   const coordinates=[];
   for(let index=0;index<(area.shape||[]).length-1;index+=2){
     const x=Number(area.shape[index]);
@@ -163,7 +243,11 @@ export function normalizeDofusMapArea(area,positions=new Map(),lang='fr') {
   const dungeonMapId=entranceMapId>0?entranceMapId:representativeId;
   const representative=positions.get(representativeId);
   const dungeonPosition=positions.get(dungeonMapId);
-  const center=representative?{x:representative.posX,y:representative.posY}:shapeCenter;
+  const bounds=area.bounds;
+  const boundsCenter=Number(bounds?.width)>0&&Number(bounds?.height)>0
+    ?{x:Number(bounds.x)+Number(bounds.width)/2,y:Number(bounds.y)+Number(bounds.height)/2}
+    :null;
+  const center=representative?{x:representative.posX,y:representative.posY}:shapeCenter||boundsCenter;
   return {
     id:area.id,
     name:localized(area.name,lang)||`Zone ${area.id}`,
@@ -171,12 +255,32 @@ export function normalizeDofusMapArea(area,positions=new Map(),lang='fr') {
     center,
     dungeonId:Number(area.dungeonId)>=0?Number(area.dungeonId):null,
     dungeonPosition:dungeonPosition?{x:dungeonPosition.posX,y:dungeonPosition.posY}:center,
-    harvestableCount:Array.isArray(area.harvestables)?area.harvestables.length:0,
-    npcCount:Array.isArray(area.npcsIds)?area.npcsIds.length:0,
-    tile:representative?{id:representative.id,x:representative.posX,y:representative.posY,img:representative.img?.['0.25']||null}:null,
+    resources,
+    resourceCount:resources.reduce((sum,resource)=>sum+(Number(resource.count)||0),0),
+    harvestableCount:resources.length,
+    npcs,
+    npcCount:npcs.length,
   };
 }
 export function normalizeDofusSpell(spell,levels,effectDefinitions,lang='fr',variant=null) {
+  const normalizeEffect=(effect,critical=false)=>{
+    const definition=effectDefinitions.get(effect.effectId);
+    return {
+      actionId:effect.actionId,
+      effectId:effect.effectId,
+      baseEffectId:effect.baseEffectId,
+      description:formatSpellEffect(localized(definition?.description,lang),effect)||`${critical?'Effet critique':'Effet'} ${effect.effectId}`,
+      diceNum:effect.diceNum,
+      diceSide:effect.diceSide,
+      value:effect.value,
+      duration:effect.duration||0,
+      delay:effect.delay||0,
+      triggers:effect.triggers||'',
+      targetMask:effect.targetMask||'',
+      zoneDescr:effect.zoneDescr||null,
+      effectElement:effect.effectElement??null,
+    };
+  };
   return {
     id:spell.id,
     name:localized(spell.name,lang)||`Sort ${spell.id}`,
@@ -196,25 +300,23 @@ export function normalizeDofusSpell(spell,levels,effectDefinitions,lang='fr',var
       range:level.range,
       maxCastPerTurn:level.maxCastPerTurn,
       maxCastPerTarget:level.maxCastPerTarget,
+      maxGlobalCastPerTurn:level.maxGlobalCastPerTurn,
+      maxGlobalCastPerTarget:level.maxGlobalCastPerTarget,
+      minCastInterval:level.minCastInterval,
+      initialCooldown:level.initialCooldown,
+      globalCooldown:level.globalCooldown,
       criticalHitProbability:level.criticalHitProbability,
       castInLine:!!level.castInLine,
+      castInDiagonal:!!level.castInDiagonal,
+      castTestLos:!!level.castTestLos,
       rangeCanBeBoosted:!!level.rangeCanBeBoosted,
-      effects:(level.effects||[]).filter(effect=>effect.visibleInTooltip!==false).map(effect=>{
-        const definition=effectDefinitions.get(effect.effectId);
-        return {
-          effectId:effect.effectId,
-          description:formatSpellEffect(localized(definition?.description,lang),effect)||`Effet ${effect.effectId}`,
-          duration:effect.duration||0,
-        };
-      }),
-      criticalEffects:(level.criticalEffect||[]).filter(effect=>effect.visibleInTooltip!==false).map(effect=>{
-        const definition=effectDefinitions.get(effect.effectId);
-        return {
-          effectId:effect.effectId,
-          description:formatSpellEffect(localized(definition?.description,lang),effect)||`Effet critique ${effect.effectId}`,
-          duration:effect.duration||0,
-        };
-      }),
+      needFreeCell:!!level.needFreeCell,
+      needTakenCell:!!level.needTakenCell,
+      needVisibleEntity:!!level.needVisibleEntity,
+      needCellWithoutPortal:!!level.needCellWithoutPortal,
+      portalProjectionForbidden:!!level.portalProjectionForbidden,
+      effects:(level.effects||[]).filter(effect=>effect.visibleInTooltip!==false).map(effect=>normalizeEffect(effect)),
+      criticalEffects:(level.criticalEffect||[]).filter(effect=>effect.visibleInTooltip!==false).map(effect=>normalizeEffect(effect,true)),
     })),
   };
 }
