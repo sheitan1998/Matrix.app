@@ -17,6 +17,7 @@
     "test": "node --test tests/dofusBuilderMath.test.js tests/dofusData.test.js tests/dofusCalendar.test.js tests/dofusProgression.test.js tests/dofusUiIntegration.test.js",
     "test:dofus": "node --test tests/dofusBuilderMath.test.js tests/dofusData.test.js tests/dofusCalendar.test.js tests/dofusProgression.test.js tests/dofusUiIntegration.test.js",
     "test:fortnite": "node --test tests/fortniteRoutes.test.js",
+    "test:minecraft": "node --test tests/minecraftHub.test.js",
     "typecheck": "tsc -p ./jsconfig.json",
     "preview": "vite preview"
   },
@@ -72,6 +73,7 @@
     "leaflet": "^1.9.4",
     "lodash": "^4.17.21",
     "lucide-react": "^0.475.0",
+    "minecraft-data": "^3.117.0",
     "moment": "^2.30.1",
     "next-themes": "^0.4.4",
     "react": "^18.2.0",

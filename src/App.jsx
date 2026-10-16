@@ -89,6 +89,7 @@ const WikiEntryDetailPage = lazy(() => import('@/pages/tuto-gaming/WikiEntryDeta
 const FarmingSimulator25 = lazy(() => import('@/pages/tuto-gaming/FarmingSimulator25'));
 const FarmingSimCategory = lazy(() => import('@/pages/tuto-gaming/FarmingSimCategory'));
 const FarmingMods = lazy(() => import('@/pages/tuto-gaming/FarmingMods'));
+const Minecraft = lazy(() => import('@/pages/tuto-gaming/Minecraft'));
 const FortniteMaps = lazy(() => import('@/pages/tuto-gaming/FortniteMaps'));
 const FortniteShop = lazy(() => import('@/pages/fortnite/FortniteShop'));
 const FortniteCosmetics = lazy(() => import('@/pages/fortnite/FortniteCosmetics'));
@@ -195,6 +196,7 @@ const AuthenticatedApp = () => {
           <Route path="/tuto-gaming/dofus" element={<Navigate to="/dofus" replace />} />
           <Route path="/tuto-gaming/rocket-league" element={<Navigate to="/rocket-league" replace />} />
           <Route path="/tuto-gaming" element={<TutoGamingHub />} />
+          <Route path="/minecraft" element={<Minecraft />} />
           <Route path="/tuto-gaming/:gameSlug" element={<GameDetailPage />} />
           <Route path="/tuto-gaming/:gameSlug/quest/:questId" element={<QuestDetailPage />} />
           <Route path="/tuto-gaming/:gameSlug/wiki/:entryId" element={<WikiEntryDetailPage />} />

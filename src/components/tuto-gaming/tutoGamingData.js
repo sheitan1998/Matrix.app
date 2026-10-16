@@ -53,6 +53,12 @@ export const SECTION_GROUPS = [
 
 export const FEATURED_GAMES = [
   {
+    name: "Minecraft",
+    slug: "minecraft",
+    card_gradient: "linear-gradient(135deg, #071E12 0%, #15803D 52%, #0A2E19 100%)",
+    is_active: true,
+  },
+  {
     name: "Farming Simulator 25",
     slug: "farming-simulator-25",
     image_url: "/media/tuto-gaming/5a7d6231a_Farming-Simulator-25.jpg",
@@ -67,7 +73,6 @@ export const FEATURED_GAMES = [
 ];
 
 export const COMING_SOON_GAMES = [
-  { name: "Minecraft", slug: "minecraft", card_gradient: "linear-gradient(135deg, #0D2818 0%, #1A5C3A 50%, #0D2818 100%)" },
   { name: "World of Warcraft", slug: "wow", card_gradient: "linear-gradient(135deg, #1A0A0A 0%, #4A1A0A 50%, #1A0A0A 100%)" },
   { name: "League of Legends", slug: "lol", card_gradient: "linear-gradient(135deg, #0A1525 0%, #1A3555 50%, #0A1525 100%)" },
   { name: "Genshin Impact", slug: "genshin", card_gradient: "linear-gradient(135deg, #0D1A2A 0%, #1A3555 50%, #0D1A2A 100%)" },
