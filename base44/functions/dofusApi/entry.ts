@@ -1,6 +1,6 @@
 import { createApiCache, dataResponse } from "../../shared/apiCache.ts";
 import { dofusFallback, fallbackDofusPage } from "../../shared/dofusFallback.ts";
-import { normalizeDofusAchievement, normalizeDofusAlmanax, normalizeDofusBreed, normalizeDofusItem, normalizeDofusMapArea, normalizeDofusQuest, normalizeDofusSet, normalizeDofusSpell, loadDofusRecipes } from "../../shared/dofusData.ts";
+import { normalizeDofusAchievement, normalizeDofusAlmanax, normalizeDofusBreed, normalizeDofusHarvestCoverage, normalizeDofusItem, normalizeDofusMapArea, normalizeDofusQuest, normalizeDofusSet, normalizeDofusSpell, normalizeDofusWorld, loadDofusRecipes } from "../../shared/dofusData.ts";
 
 const CACHE_TTL = 60 * 60 * 1000;
 const CACHE_TTL_TYPES = 24 * 60 * 60 * 1000;
@@ -271,12 +271,22 @@ export default async function(req) {
       const effectIds=[...new Set(levels.flatMap(level=>[...(level.effects||[]),...(level.criticalEffect||[])]).map(effect=>Number(effect.effectId)).filter(Number.isInteger))];
       const effects=effectIds.length?await fetchDofusByIds('effects',effectIds):[];
       const effectDefinitions=new Map(effects.map(effect=>[effect.id,effect]));
+      if(levelIds.length&&!levels.length)throw new Error('DofusDB Unity: aucun spell-level live retourné');
       const result={
         breed:normalizeDofusBreed(breed,lang),
         spells:spells
           .map(spell=>normalizeDofusSpell(spell,levels.filter(level=>level.spellId===spell.id),effectDefinitions,lang,variantBySpell.get(spell.id)||null))
           .sort((a,b)=>a.levels[0]?.minPlayerLevel-b.levels[0]?.minPlayerLevel||a.name.localeCompare(b.name,lang)),
-        source:'live',
+        source:'DofusDB Unity live',
+        endpoints:['/breeds/:id','/spells','/spell-variants','/spell-levels','/effects'],
+        schemaCoverage:{
+          requestedSpells:spellIds.length,
+          resolvedSpells:spells.length,
+          requestedLevels:levelIds.length,
+          resolvedLevels:levels.length,
+          requestedEffects:effectIds.length,
+          resolvedEffects:effects.length,
+        },
         updatedAt:spells.map(spell=>spell.updatedAt).filter(Boolean).sort().at(-1)||null,
       };
       setCached(cacheKey,result);
@@ -284,33 +294,60 @@ export default async function(req) {
     }
 
     if (action === 'getMapLayers') {
-      const cacheKey=`map-layers:v2:${lang}`;
+      const cacheKey=`map-layers:v3:${lang}`;
       const cached=rawGetCached(cacheKey,CACHE_TTL_TYPES);
       if(cached)return dataResponse(cached);
-      const first=await fetchDofusCollection('subareas',{'$limit':'100','$skip':'0'},15000);
-      const rows=[...(first.data||[])];
-      const pageSize=Math.max(1,Number(first.limit)||rows.length||100);
-      for(let skip=pageSize;skip<Number(first.total||0);skip+=pageSize){
-        const page=await fetchDofusCollection('subareas',{'$limit':String(pageSize),'$skip':String(skip)},15000);
-        rows.push(...(page.data||[]));
-      }
-      const representativeIds=[...new Set(rows.flatMap(area=>{
-        const zaapMapId=Number(area.associatedZaapMapId);
-        const entranceMapId=Number(area.entranceMapIds?.[0]);
-        return [zaapMapId>0?zaapMapId:Number(area.mapIds?.[0]),entranceMapId>0?entranceMapId:null];
-      }).filter(id=>Number.isInteger(id)&&id>0))];
-      const positions=representativeIds.length?await fetchDofusByIds('map-positions',representativeIds,15000):[];
+      const worldResponse=fetch('https://api.dofusdb.fr/worlds/1',{headers:{Accept:'application/json'},signal:AbortSignal.timeout(12000)});
+      const [worldRaw,rows,jobs,skills,npcSummary,poiSummary]=await Promise.all([
+        worldResponse.then(async response=>{
+          if(!response.ok)throw new Error(`DofusDB worlds (${response.status})`);
+          return response.json();
+        }),
+        fetchAllDofus('subareas',{},15000),
+        fetchAllDofus('jobs',{},12000),
+        fetchAllDofus('skills',{'gatheredRessourceItem[$gt]':'0'},15000),
+        fetchDofusCollection('npcs',{'$limit':'1'},12000),
+        fetchDofusCollection('point-of-interest',{'$limit':'1'},12000),
+      ]);
+      const entranceIds=[...new Set(rows.flatMap(area=>area.entranceMapIds||[]).map(Number).filter(id=>Number.isInteger(id)&&id>0))];
+      const npcIds=[...new Set(rows.flatMap(area=>area.npcsIds||[]).map(Number).filter(id=>Number.isInteger(id)&&id>0))];
+      const [positions,npcDefinitions]=await Promise.all([
+        entranceIds.length?fetchDofusByIds('map-positions',entranceIds,15000):[],
+        npcIds.length?fetchDofusByIds('npcs',npcIds,15000):[],
+      ]);
       const positionsById=new Map(positions.map(position=>[Number(position.id),position]));
-      const areas=rows.map(area=>normalizeDofusMapArea(area,positionsById,lang)).filter(area=>area.center);
+      const localize=value=>value?.[lang]||value?.fr||'';
+      const npcById=new Map(npcDefinitions.map(npc=>[Number(npc.id),npc]));
+      const harvestCoverage=normalizeDofusHarvestCoverage(skills,jobs,lang);
+      const areas=rows.map(area=>normalizeDofusMapArea(
+        area,
+        positionsById,
+        lang,
+        harvestCoverage.resourcesBySubarea.get(Number(area.id))||[],
+        (area.npcsIds||[]).map(id=>npcById.get(Number(id))).filter(Boolean).map(npc=>({id:Number(npc.id),name:localize(npc.name)||`PNJ ${npc.id}`})),
+      )).filter(area=>area.center);
+      const resourceJobs=harvestCoverage.jobs;
+      const positionedNpcCount=areas.reduce((sum,area)=>sum+area.npcCount,0);
       const result={
+        world:normalizeDofusWorld(worldRaw,lang),
         areas,
-        total:Number(first.total)||areas.length,
+        resourceJobs,
+        total:areas.length,
         coverage:{
           dungeons:areas.filter(area=>area.dungeonId!==null).length,
-          harvestableZones:areas.filter(area=>area.harvestableCount>0).length,
-          npcZones:areas.filter(area=>area.npcCount>0).length,
+          resourceZones:areas.filter(area=>area.harvestableCount>0).length,
+          resourceTypes:resourceJobs.reduce((sum,job)=>sum+job.resources.length,0),
+          resourceInstances:areas.reduce((sum,area)=>sum+area.resourceCount,0),
+          positionedNpcs:positionedNpcCount,
+          unplacedNpcDefinitions:Math.max(0,Number(npcSummary.total||0)-positionedNpcCount),
+          unplacedPointsOfInterest:Number(poiSummary.total)||0,
         },
         source:'DofusDB',
+        endpoints:['/worlds/1','/img/worlds/{worldId}/{scale}/{index}.jpg','/subareas','/map-positions','/jobs','/skills','/npcs','/point-of-interest'],
+        limits:{
+          resources:'Les quantités sont reliées aux sous-zones par items.resourcesBySubarea ; l’API publique ne fournit pas la position exacte de chaque récolte.',
+          npcs:'Les définitions /npcs et /point-of-interest ne publient pas de coordonnées ; seuls les IDs présents dans subareas.npcsIds peuvent être placés.',
+        },
       };
       setCached(cacheKey,result);
       return dataResponse(result);
