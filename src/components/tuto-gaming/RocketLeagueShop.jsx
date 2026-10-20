@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { RefreshCw } from 'lucide-react';
-import RocketLeagueImage from '@/components/tuto-gaming/RocketLeagueImage';
 import RocketItemModal from '@/components/tuto-gaming/RocketItemModal';
+import RocketLeagueCatalogCard from '@/components/tuto-gaming/RocketLeagueCatalogCard';
 import { ROCKET_LEAGUE_CATEGORY_LABELS } from '@/components/tuto-gaming/rocketLeagueCatalog';
 import useRocketLeagueCatalog from './useRocketLeagueCatalog';
 
@@ -31,9 +31,14 @@ export default function RocketLeagueShop() {
       )}
       {catalog.items.length > 0 && (
         <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground" role="status">
-          {catalog.source === 'bakkesmod'
-            ? `Catalogue BakkesMod configuré chargé (${catalog.items.length} objets).`
+          {catalog.source === 'epic'
+            ? `Catalogue Epic partenaire chargé (${catalog.items.length} modèles).`
             : `Snapshot communautaire v${catalog.version || 'inconnue'} chargé (${catalog.items.length} objets).`}
+        </p>
+      )}
+      {catalog.fallbackReason?.startsWith('epic_') && (
+        <p className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-200" role="status">
+          Catalogue Epic partenaire indisponible ({catalog.fallbackReason}). Le snapshot communautaire sans médias officiels est utilisé.
         </p>
       )}
       {error && (
@@ -76,33 +81,11 @@ export default function RocketLeagueShop() {
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {items.map(item => (
-          <button
-            type="button"
+          <RocketLeagueCatalogCard
             key={item.id}
-            onClick={() => setSelectedItem(item)}
-            className="overflow-hidden rounded-xl border bg-card text-left transition hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <RocketLeagueImage
-              src={item.image}
-              sources={item.images}
-              alt={item.name}
-              fallbackLabel={item.name}
-              fallbackCategory={item.category}
-              fallbackRarity={item.rarity}
-              fallbackPrice={item.price}
-              fallbackPriceEstimated={item.priceEstimated}
-              className="aspect-square w-full p-2"
-            />
-            <span className="block space-y-1 p-3">
-              <span className="block text-sm font-bold">{item.name}</span>
-              <span className="block text-xs text-muted-foreground">{item.type}</span>
-              <span className="block text-xs text-primary">{item.rarity}</span>
-              <span className="block text-xs text-muted-foreground">
-                {item.priceEstimated ? 'Prix catalogue estimé' : 'Prix fourni'} : {item.price} crédits
-              </span>
-              <span className="mt-2 block text-xs">Voir dans MATRIX</span>
-            </span>
-          </button>
+            item={item}
+            onOpen={setSelectedItem}
+          />
         ))}
       </div>
       {visibleCount < filteredItems.length && (

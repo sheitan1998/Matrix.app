@@ -33,13 +33,17 @@ Run the app: `npm run dev`
 ### Rocket League
 
 The `/rocket-league` item shop and **Custom Preset / Garage** use a paginated,
-cached server-side catalogue. `ROCKET_LEAGUE_CATALOG_URL` may point to an HTTPS
-structured export produced from BakkesMod's local product database, either as an
-item array or a product-ID object. `ROCKET_LEAGUE_CATALOG_API_KEY` is an optional
-server-side bearer token. `ROCKET_LEAGUE_IMAGE_HOSTS` is a comma-separated
-allowlist of HTTPS image hosts: image URLs from every other host are discarded.
-These variables belong to the Base44 function environment and must never use the
-`VITE_` prefix.
+cached server-side catalogue. Epic Games and Epic Online Services do not publish
+a generally available Rocket League cosmetics, shop, garage, price, or media API.
+For an explicitly approved Epic/Psyonix partner integration,
+`ROCKET_LEAGUE_EPIC_CATALOG_URL` must contain the granted HTTPS endpoint and
+`ROCKET_LEAGUE_EPIC_ACCESS_TOKEN` its server-side bearer credential.
+`ROCKET_LEAGUE_IMAGE_HOSTS` is the exact comma-separated allowlist of official
+media hosts authorized by that agreement. The credential needs permission to
+read Rocket League item definitions and painted variants; shop or player-garage
+scopes are additionally required only if the granted endpoint returns those
+resources. These variables belong to the Base44 function environment and must
+never use the `VITE_` prefix or be returned to the browser.
 
 Allowed item images are attempted directly, then through the internal
 `/api/rocket-league-proxy` Base44 route. That proxy is not public-purpose: it accepts
@@ -51,7 +55,8 @@ cached for one day and expose `X-Proxy-Cache: HIT` or `MISS`; only a cache hit
 avoids upstream latency. Configure only image hosts for which the project has an
 explicit redistribution or hotlinking right.
 
-When that feed is absent or unavailable, the server uses the pinned LGPL metadata
+When that partner feed is absent, unauthorized, rate-limited, or unavailable,
+the response exposes an `epic_*` fallback reason and the server uses the pinned LGPL metadata
 snapshot `@rocketleagueapi/items` v3.2.16 from its versioned GitHub URL. It was
 extracted from game data in October 2024 and is not an official or live Psyonix
 API. TRN only supplies player statistics; BakkesMod exposes local game data rather
@@ -64,7 +69,10 @@ vehicle, silhouette, monogram, or placeholder is presented as an official image.
 The pinned community snapshot contains item metadata but no image URLs; BakkesMod
 thumbnail fields are local Unreal asset identifiers rather than public web URLs.
 
-The garage covers bodies, colors, wheels, decals, and goal explosions. Presets
+The catalog groups painted definitions under their primary model; paint variants
+provide `paint_id`, `color_name`, `color_hex`, nullable `image_url`, and
+`estimated_credits`. Paints are selectors, not standalone catalog cards. The
+garage covers bodies, wheels, decals, and goal explosions. Presets
 and the current draft are stored locally under the versioned key
 `matrix:rocket-league:garage:v2`; v1 data is migrated on read, corrupt or
 unavailable browser storage safely falls back to an empty usable garage, and up

@@ -13,6 +13,7 @@ import {
   safeRocketFilename,
   saveRocketGarage,
 } from '../src/components/tuto-gaming/rocketLeaguePresetStorage.js';
+import { migrateRocketPaintSelection } from '../src/components/tuto-gaming/rocketLeagueVariants.js';
 import {
   captureRocketLeaguePreview,
   findRocketLeaguePreviewElement,
@@ -131,6 +132,18 @@ test('normalizes unsupported values and preserves valid selections', () => {
     paint: 'paint-crimson',
     goalExplosion: null,
   });
+});
+
+test('migrates legacy standalone paint ids to grouped model variants', () => {
+  const body = {
+    variants: [
+      { paint_id: 'paint-original' },
+      { paint_id: 'paint-cobalt' },
+    ],
+  };
+  assert.equal(migrateRocketPaintSelection(body, 'paint-cobalt'), 'paint-cobalt');
+  assert.equal(migrateRocketPaintSelection(body, 'paint-unknown'), 'paint-original');
+  assert.equal(normalizeRocketSelection({ paint: 'cobalt' }).paint, 'paint-cobalt');
 });
 
 test('round-trips a versioned draft and named preset', () => {
