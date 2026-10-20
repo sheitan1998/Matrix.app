@@ -1,6 +1,5 @@
 export const ROCKET_LEAGUE_CATEGORY_LABELS = {
   body: 'Carrosseries',
-  paint: 'Couleurs',
   wheels: 'Roues',
   decal: 'Stickers',
   goalExplosion: 'Explosions de but',

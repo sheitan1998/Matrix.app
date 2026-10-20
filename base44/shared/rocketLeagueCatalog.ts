@@ -1,9 +1,18 @@
 export type RocketLeagueCategory =
   | 'body'
-  | 'paint'
   | 'wheels'
   | 'decal'
   | 'goalExplosion';
+
+export type RocketLeaguePaintVariant = {
+  id: string;
+  paint_id: string;
+  color_name: string;
+  color_hex: string;
+  image_url: string | null;
+  estimated_credits: number;
+  priceEstimated: boolean;
+};
 
 export type RocketLeagueCatalogItem = {
   id: string;
@@ -18,12 +27,12 @@ export type RocketLeagueCatalogItem = {
   paint: string | null;
   accent: string;
   compatibleBodies: string[];
-  source: 'bakkesmod' | 'community-snapshot' | 'remote';
+  variants: RocketLeaguePaintVariant[];
+  source: 'epic' | 'community-snapshot' | 'remote';
 };
 
 export const ROCKET_LEAGUE_CATEGORY_LABELS: Record<RocketLeagueCategory, string> = {
   body: 'Carrosseries',
-  paint: 'Couleurs',
   wheels: 'Roues',
   decal: 'Stickers',
   goalExplosion: 'Explosions de but',
@@ -42,7 +51,6 @@ const CATEGORY_BY_SLOT: Record<number, RocketLeagueCategory | undefined> = {
 
 const TYPE_BY_CATEGORY: Record<RocketLeagueCategory, string> = {
   body: 'Carrosserie',
-  paint: 'Couleur',
   wheels: 'Roues',
   decal: 'Sticker',
   goalExplosion: 'Explosion de but',
@@ -61,7 +69,7 @@ const QUALITY_LABELS: Record<number, string> = {
   9: 'Héritage',
 };
 
-const PAINTS = [
+export const ROCKET_LEAGUE_PAINTS = [
   ['original', 'Original', '#64748b'],
   ['crimson', 'Cramoisi', '#dc2626'],
   ['lime', 'Citron vert', '#84cc16'],
@@ -78,6 +86,7 @@ const PAINTS = [
   ['saffron', 'Safran', '#eab308'],
   ['gold', 'Or', '#d4a017'],
 ] as const;
+const PAINT_BY_ID = new Map(ROCKET_LEAGUE_PAINTS.map(([id, name, color]) => [id, { name, color }]));
 
 const CATEGORIES = new Set(Object.keys(ROCKET_LEAGUE_CATEGORY_LABELS));
 const MAX_ITEMS = 20_000;
@@ -95,6 +104,23 @@ function text(value: unknown, fallback = '', maxLength = 200) {
 
 function safeId(value: unknown, fallback: string) {
   return text(value, fallback, 120).replace(/[^a-zA-Z0-9_-]/g, '-');
+}
+
+export function normalizeRocketPaintId(value: unknown) {
+  const id = safeId(value, 'original').replace(/^paint-/, '').toLowerCase();
+  return `paint-${id || 'original'}`;
+}
+
+export function rocketPaintMetadata(value: unknown, name?: unknown, color?: unknown) {
+  const paintId = normalizeRocketPaintId(value);
+  const known = PAINT_BY_ID.get(paintId.replace(/^paint-/, ''));
+  return {
+    paintId,
+    colorName: text(name, known?.name || 'Original'),
+    colorHex: /^#[0-9a-f]{6}$/i.test(String(color || ''))
+      ? String(color)
+      : known?.color || '#64748b',
+  };
 }
 
 function normalizedPriceTier(rarity: unknown): keyof typeof PRICE_RANGES {
@@ -167,6 +193,21 @@ export function normalizeRocketLeagueCatalogItem(
   const rarity = text(value.rarity || value.qualityName, QUALITY_LABELS[Number(value.quality)] || 'Non précisée');
   const providedPrice = Number(value.price);
   const hasProvidedPrice = Number.isFinite(providedPrice) && providedPrice > 0;
+  const paintMetadata = rocketPaintMetadata(
+    value.paintId || value.paint_id || value.paint || 'original',
+    value.paintName || value.color_name || value.paint,
+    value.colorHex || value.color_hex || value.accent,
+  );
+  const price = hasProvidedPrice ? providedPrice : estimateRocketLeaguePrice(id, rarity);
+  const variant: RocketLeaguePaintVariant = {
+    id: `${id}:${paintMetadata.paintId}`,
+    paint_id: paintMetadata.paintId,
+    color_name: paintMetadata.colorName,
+    color_hex: paintMetadata.colorHex,
+    image_url: images[0] || null,
+    estimated_credits: price,
+    priceEstimated: !hasProvidedPrice,
+  };
   return {
     id,
     name,
@@ -175,34 +216,37 @@ export function normalizeRocketLeagueCatalogItem(
     rarity,
     image: images[0] || null,
     images,
-    price: hasProvidedPrice ? providedPrice : estimateRocketLeaguePrice(id, rarity),
+    price,
     priceEstimated: !hasProvidedPrice,
-    paint: text(value.paint || value.paintName) || null,
-    accent: /^#[0-9a-f]{6}$/i.test(value.accent) ? value.accent : '#334155',
+    paint: paintMetadata.colorName,
+    accent: paintMetadata.colorHex,
     compatibleBodies: compatibleBodies(value),
+    variants: [variant],
     source: options.source || 'remote',
   };
 }
 
-function paintItems(source: RocketLeagueCatalogItem['source']): RocketLeagueCatalogItem[] {
-  return PAINTS.map(([id, name, accent]) => {
-    const itemId = `paint-${id}`;
-    return {
-      id: itemId,
-      name,
-      type: TYPE_BY_CATEGORY.paint,
-      category: 'paint',
-      rarity: 'Standard',
-      image: null,
-      images: [],
-      price: estimateRocketLeaguePrice(itemId, 'Standard'),
-      priceEstimated: true,
-      paint: name,
-      accent,
-      compatibleBodies: [],
-      source,
-    };
-  });
+function groupCatalogVariants(items: RocketLeagueCatalogItem[]) {
+  const groups = new Map<string, RocketLeagueCatalogItem>();
+  for (const item of items) {
+    const groupKey = `${item.category}:${safeId((item as any).modelId || item.name, item.id).toLowerCase()}`;
+    const existing = groups.get(groupKey);
+    if (!existing) {
+      groups.set(groupKey, item);
+      continue;
+    }
+    const variants = new Map(existing.variants.map(variant => [variant.paint_id, variant]));
+    for (const variant of item.variants) {
+      const previous = variants.get(variant.paint_id);
+      if (!previous || (!previous.image_url && variant.image_url)) variants.set(variant.paint_id, variant);
+    }
+    existing.variants = [...variants.values()];
+    const original = existing.variants.find(variant => variant.paint_id === 'paint-original')
+      || existing.variants[0];
+    existing.image = original?.image_url || existing.image;
+    existing.images = [...new Set(existing.variants.map(variant => variant.image_url).filter(Boolean))] as string[];
+  }
+  return [...groups.values()];
 }
 
 export function normalizeRocketLeagueCatalogPayload(
@@ -231,7 +275,7 @@ export function normalizeRocketLeagueCatalogPayload(
       { ...options, source },
     ))
     .filter((value): value is RocketLeagueCatalogItem => Boolean(value));
-  return [...paintItems(source), ...items];
+  return groupCatalogVariants(items);
 }
 
 export function paginateRocketLeagueCatalog(

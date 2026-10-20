@@ -25,7 +25,7 @@ export default function RocketItemModal({ item, onClose }) {
           <div>
             <dt className="text-muted-foreground">Source</dt>
             <dd className="font-semibold">
-              {item.source === 'bakkesmod' ? 'Export BakkesMod configuré' : 'Snapshot communautaire versionné'}
+              {item.source === 'epic' ? 'Catalogue Epic partenaire' : 'Snapshot communautaire versionné'}
             </dd>
           </div>
           <div>

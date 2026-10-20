@@ -1,7 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ImageDown, RefreshCw, RotateCcw, Save, Share2, Trash2 } from 'lucide-react';
 import RocketLeagueImage from '@/components/tuto-gaming/RocketLeagueImage';
+import RocketLeagueVariantSelector from '@/components/tuto-gaming/RocketLeagueVariantSelector';
 import { captureRocketLeaguePreview } from '@/components/tuto-gaming/rocketLeaguePreviewCapture';
+import {
+  migrateRocketPaintSelection,
+  rocketLeagueVariantView,
+} from '@/components/tuto-gaming/rocketLeagueVariants';
 import useRocketLeagueCatalog from './useRocketLeagueCatalog';
 import {
   createRocketPresetConfig,
@@ -16,7 +21,6 @@ import {
 
 const CATEGORY_DETAILS = [
   { key: 'body', label: 'Carrosserie' },
-  { key: 'paint', label: 'Couleur' },
   { key: 'decal', label: 'Sticker' },
   { key: 'wheels', label: 'Roues' },
   { key: 'goalExplosion', label: 'Explosion de but' },
@@ -110,10 +114,23 @@ export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlEr
   const resolved = Object.fromEntries(
     CATEGORY_DETAILS.map(({ key }) => [key, selectedItem(garage[key] || [], selection[key])]),
   );
-  const paint = resolved.paint || garage.paint?.[0] || { name: 'Original', accent: '#334155' };
   const previewBody = resolved.body
     || (garage.body || []).find(item => item.name.toLowerCase() === 'octane')
     || null;
+  const paintedBody = rocketLeagueVariantView(previewBody, selection.paint);
+  const paint = {
+    id: paintedBody?.activePaintId || 'paint-original',
+    name: paintedBody?.paint || 'Original',
+    accent: paintedBody?.accent || '#64748b',
+  };
+
+  useEffect(() => {
+    if (!hydrated || catalogLoading || !previewBody) return;
+    const migratedPaint = migrateRocketPaintSelection(previewBody, selection.paint);
+    if (migratedPaint !== selection.paint) {
+      setSelection(current => ({ ...current, paint: migratedPaint }));
+    }
+  }, [catalogLoading, hydrated, previewBody, selection.paint]);
 
   function invalidateSharedPreset() {
     setConfigId('');
@@ -126,6 +143,7 @@ export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlEr
       if (key === 'body') {
         const decal = selectedItem(garage.decal || [], current.decal);
         if (!compatibleWithBody(decal, id)) next.decal = null;
+        next.paint = migrateRocketPaintSelection(selectedItem(garage.body || [], id), current.paint);
       }
       return next;
     });
@@ -209,6 +227,11 @@ export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlEr
             </button>
           </div>
         )}
+        {catalog?.fallbackReason?.startsWith('epic_') && (
+          <p className="mt-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-200" role="status">
+            Catalogue Epic partenaire indisponible ({catalog.fallbackReason}) ; garage limité au snapshot communautaire.
+          </p>
+        )}
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]">
@@ -217,6 +240,7 @@ export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlEr
             const items = (garage[key] || []).filter(item => (
               key !== 'decal' || compatibleWithBody(item, selection.body)
             ));
+            const displayedItem = key === 'body' ? paintedBody : resolved[key];
             return (
               <fieldset key={key} className="rounded-2xl border bg-card p-4">
                 <legend className="px-1 font-bold">{label}</legend>
@@ -234,16 +258,26 @@ export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlEr
                     ))}
                   </select>
                   <RocketLeagueImage
-                    src={resolved[key]?.image}
-                    sources={resolved[key]?.images}
+                    src={displayedItem?.image}
+                    sources={displayedItem?.images}
                     alt=""
-                    fallbackLabel={resolved[key]?.name || `${label} non sélectionné`}
+                    fallbackLabel={displayedItem?.name || `${label} non sélectionné`}
                     fallbackCategory={key}
-                    fallbackRarity={resolved[key]?.rarity || 'Aucun objet sélectionné'}
-                    fallbackPrice={resolved[key]?.price}
-                    fallbackPriceEstimated={resolved[key]?.priceEstimated}
+                    fallbackRarity={displayedItem?.rarity || 'Aucun objet sélectionné'}
+                    fallbackPrice={displayedItem?.price}
+                    fallbackPriceEstimated={displayedItem?.priceEstimated}
                     className="aspect-video w-full rounded-lg sm:aspect-square"
                   />
+                  {key === 'body' && resolved.body && (
+                    <div className="sm:col-span-2">
+                      <RocketLeagueVariantSelector
+                        variants={resolved.body.variants}
+                        value={paint.id}
+                        onChange={paintId => choose('paint', paintId)}
+                        label="Couleur de carrosserie"
+                      />
+                    </div>
+                  )}
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground">
                   {items.length ? `${items.length} choix disponibles` : 'Aucun choix disponible pour cette source.'}
@@ -271,14 +305,14 @@ export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlEr
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">APERÇU DU PRESET</p>
               <div className="relative mt-3 aspect-video overflow-hidden rounded-xl bg-background/70">
                 <RocketLeagueImage
-                  src={previewBody?.image}
-                  sources={previewBody?.images}
-                  alt={`Carrosserie ${previewBody?.name || 'Octane'}`}
-                  fallbackLabel={previewBody?.name || 'Octane'}
+                  src={paintedBody?.image}
+                  sources={paintedBody?.images}
+                  alt={`Carrosserie ${paintedBody?.name || 'Octane'}`}
+                  fallbackLabel={paintedBody?.name || 'Octane'}
                   fallbackCategory="body"
-                  fallbackRarity={previewBody?.rarity}
-                  fallbackPrice={previewBody?.price}
-                  fallbackPriceEstimated={previewBody?.priceEstimated}
+                  fallbackRarity={paintedBody?.rarity}
+                  fallbackPrice={paintedBody?.price}
+                  fallbackPriceEstimated={paintedBody?.priceEstimated}
                   fallbackSummary={[
                     `Peinture : ${paint.name}`,
                     `Roues : ${resolved.wheels?.name || 'non sélectionnées'}`,
@@ -313,7 +347,7 @@ export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlEr
                   className="absolute bottom-0 right-[8%] h-1/3 w-1/3 drop-shadow-xl"
                 />
               </div>
-              <p className="mt-2 text-sm font-bold">{resolved.body?.name || 'Octane (aperçu par défaut)'}</p>
+              <p className="mt-2 text-sm font-bold">{paintedBody?.name || 'Octane (aperçu par défaut)'}</p>
               <p className="text-xs text-muted-foreground">
                 Couleur : {paint.name}
               </p>

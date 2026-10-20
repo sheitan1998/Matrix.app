@@ -9,6 +9,11 @@ import {
   paginateRocketLeagueCatalog,
 } from '../base44/shared/rocketLeagueCatalog.ts';
 import {
+  EpicCatalogError,
+  mapEpicRocketLeagueCatalog,
+  requestEpicRocketLeagueCatalog,
+} from '../base44/shared/rocketLeagueEpicCatalog.ts';
+import {
   normalizeRocketPlatform,
   normalizeRocketOverview,
   requestRocketLeaguePlayerStats,
@@ -27,8 +32,11 @@ import {
 import {
   resolveRocketImageSources,
 } from '../src/components/tuto-gaming/rocketLeagueImages.js';
+import {
+  rocketLeagueVariantView,
+} from '../src/components/tuto-gaming/rocketLeagueVariants.js';
 
-test('normalizes a BakkesMod-compatible product dump and adds the versioned paint set', () => {
+test('normalizes the community product dump without standalone paint cards', () => {
   const items = normalizeRocketLeagueCatalogPayload({
     23: { name: 'Octane', slot: 0, quality: 0 },
     100: { name: 'Cristiano', slot: 2, quality: 3 },
@@ -38,8 +46,143 @@ test('normalizes a BakkesMod-compatible product dump and adds the versioned pain
   assert.equal(items.some(item => item.id === '23' && item.category === 'body'), true);
   assert.equal(items.some(item => item.id === '100' && item.category === 'wheels'), true);
   assert.equal(items.some(item => item.name === 'Ignored topper'), false);
-  assert.ok(items.filter(item => item.category === 'paint').length >= 15);
+  assert.equal(items.some(item => item.category === 'paint'), false);
+  assert.equal(items.every(item => item.variants.length >= 1), true);
   assert.equal(items.every(item => item.price > 0), true);
+});
+
+test('groups Epic definitions and deduplicates painted variants without fabricating media', () => {
+  const items = mapEpicRocketLeagueCatalog({
+    definitions: [
+      {
+        id: 'octane-default',
+        model_id: 'octane',
+        model_name: 'Octane',
+        name: 'Octane',
+        category: 'body',
+        rarity: 'Importé',
+        variants: [
+          {
+            id: 'octane-original',
+            paint_id: 'original',
+            color_name: 'Original',
+            color_hex: '#64748b',
+            image_url: 'https://cdn.epic.test/octane.png',
+            credits: 900,
+          },
+          {
+            id: 'octane-cobalt',
+            paint_id: 'cobalt',
+            color_name: 'Cobalt',
+            color_hex: '#2563eb',
+            render_url: 'https://cdn.epic.test/octane-cobalt.png',
+          },
+        ],
+      },
+      {
+        id: 'octane-duplicate',
+        model_id: 'octane',
+        model_name: 'Octane',
+        name: 'Octane Cobalt',
+        category: 'body',
+        rarity: 'Importé',
+        paint_id: 'cobalt',
+        color_name: 'Cobalt',
+        color_hex: '#2563eb',
+      },
+      {
+        id: 'fennec',
+        model_id: 'fennec',
+        model_name: 'Fennec',
+        name: 'Fennec',
+        category: 'body',
+        rarity: 'Importé',
+      },
+    ],
+  }, new Set(['cdn.epic.test']));
+  assert.equal(items.length, 2);
+  const octane = items.find(item => item.id === 'octane');
+  assert.equal(octane.source, 'epic');
+  assert.equal(octane.variants.length, 2);
+  assert.deepEqual(octane.variants.map(variant => variant.paint_id), [
+    'paint-original',
+    'paint-cobalt',
+  ]);
+  assert.equal(octane.variants[0].image_url, 'https://cdn.epic.test/octane.png');
+  assert.equal(octane.variants[0].estimated_credits, 900);
+  assert.equal(octane.variants[0].priceEstimated, false);
+  assert.equal(octane.variants[1].image_url, 'https://cdn.epic.test/octane-cobalt.png');
+  assert.equal(octane.variants[1].priceEstimated, true);
+  const fennec = items.find(item => item.id === 'fennec');
+  assert.equal(fennec.variants[0].image_url, null);
+  assert.ok(fennec.variants[0].estimated_credits > 0);
+});
+
+test('Epic catalog adapter keeps credentials server-side and types auth and rate-limit errors', async () => {
+  await assert.rejects(
+    requestEpicRocketLeagueCatalog({
+      allowedImageHosts: new Set(),
+      fetchImpl: async () => assert.fail('fetch must not run without partner configuration'),
+    }),
+    error => error instanceof EpicCatalogError && error.code === 'epic_not_configured',
+  );
+  let captured;
+  const items = await requestEpicRocketLeagueCatalog({
+    endpoint: 'https://partner.epic.test/rocket-league/catalog',
+    accessToken: 'partner-secret',
+    allowedImageHosts: new Set(),
+    fetchImpl: async (url, options) => {
+      captured = { url: String(url), options };
+      return Response.json({
+        definitions: [{
+          id: 'octane',
+          model_name: 'Octane',
+          name: 'Octane',
+          category: 'body',
+        }],
+      });
+    },
+  });
+  assert.equal(items[0].name, 'Octane');
+  assert.equal(captured.options.headers.Authorization, 'Bearer partner-secret');
+  assert.doesNotMatch(JSON.stringify(items), /partner-secret/);
+
+  for (const [status, code] of [[401, 'epic_auth_failed'], [403, 'epic_auth_failed'], [429, 'epic_rate_limited']]) {
+    await assert.rejects(
+      requestEpicRocketLeagueCatalog({
+        endpoint: 'https://partner.epic.test/rocket-league/catalog',
+        accessToken: 'secret',
+        allowedImageHosts: new Set(),
+        fetchImpl: async () => new Response(null, { status }),
+      }),
+      error => error instanceof EpicCatalogError && error.code === code,
+    );
+  }
+});
+
+test('variant view changes image, title, and price while preserving the grouped model', () => {
+  const [item] = mapEpicRocketLeagueCatalog([{
+    id: 'octane',
+    model_name: 'Octane',
+    name: 'Octane',
+    category: 'body',
+    rarity: 'Importé',
+    variants: [
+      { paint_id: 'original', color_name: 'Original', color_hex: '#64748b', credits: 800 },
+      {
+        paint_id: 'crimson',
+        color_name: 'Cramoisi',
+        color_hex: '#dc2626',
+        image_url: 'https://cdn.epic.test/octane-crimson.png',
+        credits: 1000,
+      },
+    ],
+  }], new Set(['cdn.epic.test']));
+  const crimson = rocketLeagueVariantView(item, 'paint-crimson');
+  assert.equal(crimson.name, 'Octane - Cramoisi');
+  assert.equal(crimson.image, 'https://cdn.epic.test/octane-crimson.png');
+  assert.equal(crimson.price, 1000);
+  assert.equal(crimson.activePaintId, 'paint-crimson');
 });
 
 test('assigns deterministic non-zero catalog estimates inside normalized rarity ranges', () => {
@@ -362,12 +505,15 @@ test('image sources accept distinct HTTPS URLs without schematic generated fallb
 });
 
 test('Rocket League media UI contains no generic car icon, spinner, or JSON export', async () => {
-  const [imageComponent, fallbackCard, garage, page, proxy] = await Promise.all([
+  const [imageComponent, fallbackCard, garage, page, proxy, catalogCard, variantSelector, apiRoute] = await Promise.all([
     readFile(new URL('../src/components/tuto-gaming/RocketLeagueImage.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../src/components/tuto-gaming/RocketLeagueFallbackCard.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../src/components/tuto-gaming/RocketLeagueGarage.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../src/pages/tuto-gaming/RocketLeague.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../base44/functions/api/entry.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/tuto-gaming/RocketLeagueCatalogCard.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/tuto-gaming/RocketLeagueVariantSelector.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../base44/functions/rocketLeagueApi/entry.ts', import.meta.url), 'utf8'),
   ]);
   assert.doesNotMatch(
     `${imageComponent}\n${fallbackCard}\n${garage}\n${page}`,
@@ -383,6 +529,13 @@ test('Rocket League media UI contains no generic car icon, spinner, or JSON expo
   assert.match(garage, /id="preset-preview-box"/);
   assert.match(proxy, /ROUTE_SUFFIX = '\/api\/rocket-league-proxy'/);
   assert.match(proxy, /'X-Proxy-Cache': cacheStatus/);
+  assert.match(catalogCard, /rocketLeagueVariantView/);
+  assert.match(variantSelector, /aria-label/);
+  assert.match(variantSelector, /aria-pressed/);
+  assert.match(variantSelector, /backgroundColor: variant\.color_hex/);
+  assert.match(apiRoute, /ROCKET_LEAGUE_EPIC_CATALOG_URL/);
+  assert.match(apiRoute, /ROCKET_LEAGUE_EPIC_ACCESS_TOKEN/);
+  assert.doesNotMatch(apiRoute, /TRN_API_KEY[\s\S]{0,200}requestEpicRocketLeagueCatalog/);
 });
 
 test('maps reliable overview values and only derives W/L when both values exist', () => {

@@ -6,6 +6,10 @@ import {
   paginateRocketLeagueCatalog,
 } from "../../shared/rocketLeagueCatalog.ts";
 import {
+  EpicCatalogError,
+  requestEpicRocketLeagueCatalog,
+} from "../../shared/rocketLeagueEpicCatalog.ts";
+import {
   requestRocketLeaguePlayerStats,
 } from "../../shared/rocketLeagueTracker.ts";
 
@@ -78,14 +82,31 @@ async function fetchCatalog(endpoint, source) {
 }
 
 async function catalogResponse(body) {
-  const configuredEndpoint = process.env.ROCKET_LEAGUE_CATALOG_URL;
-  let fallbackReason = configuredEndpoint ? null : 'catalog_not_configured';
+  const epicEndpoint = process.env.ROCKET_LEAGUE_EPIC_CATALOG_URL;
+  const epicToken = process.env.ROCKET_LEAGUE_EPIC_ACCESS_TOKEN;
+  let fallbackReason = epicEndpoint && epicToken ? null : 'epic_not_configured';
   let result;
   try {
-    if (!configuredEndpoint) throw new Error('catalog_not_configured');
-    result = await fetchCatalog(configuredEndpoint, 'bakkesmod');
+    const cacheKey = `catalog:epic:${epicEndpoint || 'unconfigured'}`;
+    const cached = getCached(cacheKey, CACHE_TTL_CATALOG);
+    if (cached) {
+      result = cached;
+    } else {
+      const items = await requestEpicRocketLeagueCatalog({
+        endpoint: epicEndpoint,
+        accessToken: epicToken,
+        allowedImageHosts: configuredImageHosts(),
+      });
+      result = {
+        items,
+        fetchedAt: new Date().toISOString(),
+        source: 'epic',
+        version: null,
+      };
+      setCached(cacheKey, result);
+    }
   } catch (error) {
-    fallbackReason = error instanceof Error ? error.message : 'catalog_unavailable';
+    fallbackReason = error instanceof EpicCatalogError ? error.code : 'epic_unavailable';
     result = await fetchCatalog(COMMUNITY_CATALOG_URL, 'community-snapshot');
   }
   const query = String(body.query || '').trim().toLowerCase();
