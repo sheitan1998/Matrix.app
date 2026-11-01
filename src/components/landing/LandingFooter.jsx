@@ -7,7 +7,7 @@ const FOOTER_POINTS = [
 { icon: Users, text: "Rejoins une communauté active" },
 { icon: Sparkles, text: "Découvre de nouveaux contenus" },
 { icon: Heart, text: "Partage ta passion" },
-{ icon: Gift, text: "Profite d'avantages exclusifs" }];
+{ icon: Gift, text: "" }];
 
 
 export default function LandingFooter() {
