@@ -37,9 +37,13 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen relative overflow-y-auto overflow-x-hidden flex" style={{ backgroundColor: "#0a050f" }}>
-      {/* Space background */}
-      <div className="fixed inset-0 pointer-events-none" style={{ backgroundImage: "url(/media/tuto-gaming/891f5968b_Gemini_Generated_Image_vsevw4vsevw4vsev.png)", backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed" }} />
-      <div className="fixed inset-0 pointer-events-none" style={{ background: "rgba(10,5,15,0.55)" }} />
+      {/* Space background — only visible in Original theme */}
+      {prefs.mode === "original" && (
+        <>
+          <div className="fixed inset-0 pointer-events-none" style={{ backgroundImage: "url(/media/tuto-gaming/891f5968b_Gemini_Generated_Image_vsevw4vsevw4vsev.png)", backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed" }} />
+          <div className="fixed inset-0 pointer-events-none" style={{ background: "rgba(10,5,15,0.55)" }} />
+        </>
+      )}
 
       {/* Sidebar */}
       <LandingSidebar onFaq={() => setShowFaq(true)} onOpenTheme={() => setShowTheme(true)} />

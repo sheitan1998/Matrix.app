@@ -130,6 +130,30 @@
         }
       }
     },
+    "has_custom_bg": {
+      "type": "boolean",
+      "default": false,
+      "description": "Custom Background subscription active (custom wallpaper upload)",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "custom_bg_until": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Custom Background subscription expiration date",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
     "stripe_customer_id": {
       "type": "string",
       "description": "Stripe customer ID for billing portal",

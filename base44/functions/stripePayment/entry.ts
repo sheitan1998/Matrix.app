@@ -30,6 +30,10 @@ const VOTE_AUTO_PLANS: Record<string, { priceCents: number; label: string }> = {
   vote_auto: { priceCents: 499, label: 'Vote Auto (4,99€/mois) - Vote automatisé' },
 };
 
+const CUSTOM_BG_PLANS: Record<string, { priceCents: number; label: string }> = {
+  custom_bg: { priceCents: 300, label: 'Fond d\'écran personnalisé (3€/mois)' },
+};
+
 const AI_PLANS: Record<string, { priceCents: number; label: string }> = {
   explorer: { priceCents: 499, label: 'AI Explorer' },
   creator: { priceCents: 999, label: 'AI Creator' },
@@ -237,6 +241,27 @@ export default async function(req: Request): Promise<Response> {
             });
           }
 
+          if (type === 'custom_bg_subscription') {
+            const customBgUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+            if (userId) {
+              const target = await base44.asServiceRole.entities.User.get(userId);
+              if (target) {
+                await base44.asServiceRole.entities.User.update(userId, {
+                  has_custom_bg: true,
+                  custom_bg_until: customBgUntil,
+                  stripe_customer_id: data.customer || undefined,
+                });
+              }
+            }
+            await base44.asServiceRole.entities.TrixTransaction.create({
+              user_email: userEmail,
+              type: 'subscription_payment',
+              amount: 0,
+              stripe_event_id: data.id,
+              description: `Abonnement Fond d'écran personnalisé - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
+            });
+          }
+
           if (type === 'nitro_subscription') {
             const nitroPlan = data.metadata?.nitro_plan || 'monthly';
             if (userId) {
@@ -359,6 +384,23 @@ export default async function(req: Request): Promise<Response> {
           return Response.json({ received: true });
         }
 
+        // ---- Custom Background subscription handling ----
+        if (subType === 'custom_bg_subscription') {
+          if (userId) {
+            const customBgUntil = data.current_period_end
+              ? new Date(data.current_period_end * 1000).toISOString()
+              : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+            const isActive = data.status === 'active' || data.status === 'trialing';
+            await base44.asServiceRole.entities.User.update(userId, {
+              has_custom_bg: isActive,
+              custom_bg_until: isActive ? customBgUntil : new Date().toISOString(),
+              stripe_customer_id: data.customer || undefined,
+            });
+            console.log('[stripePayment] Custom BG status updated:', userId, 'status:', data.status);
+          }
+          return Response.json({ received: true });
+        }
+
         // ---- VIP subscription handling ----
         const plan = VIP_PLANS[planId] || VIP_PLANS.monthly;
         if (userId) {
@@ -391,6 +433,12 @@ export default async function(req: Request): Promise<Response> {
               vote_auto_until: new Date().toISOString(),
             });
             console.log('[stripePayment] Vote Auto revoked:', userId);
+          } else if (subType === 'custom_bg_subscription') {
+            await base44.asServiceRole.entities.User.update(userId, {
+              has_custom_bg: false,
+              custom_bg_until: new Date().toISOString(),
+            });
+            console.log('[stripePayment] Custom BG revoked:', userId);
           } else {
             await base44.asServiceRole.entities.User.update(userId, {
               is_vip: false,
@@ -410,7 +458,35 @@ export default async function(req: Request): Promise<Response> {
           const subMetadata = data.subscription_details?.metadata || data.lines?.data?.[0]?.metadata || {};
           const userId = subMetadata.user_id;
           const userEmail = subMetadata.user_email || data.customer_email || '';
+          const subType = subMetadata.type || 'vip_subscription';
           const planId = subMetadata.plan || 'monthly';
+
+          // ---- Custom Background renewal ----
+          if (subType === 'custom_bg_subscription') {
+            if (userId) {
+              const existing = await base44.asServiceRole.entities.TrixTransaction.filter({
+                stripe_event_id: data.id,
+              });
+              if (existing.length === 0) {
+                const customBgUntil = data.subscription_details?.period?.end
+                  ? new Date(data.subscription_details.period.end * 1000).toISOString()
+                  : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+                await base44.asServiceRole.entities.User.update(userId, {
+                  has_custom_bg: true,
+                  custom_bg_until: customBgUntil,
+                });
+                await base44.asServiceRole.entities.TrixTransaction.create({
+                  user_email: userEmail,
+                  type: 'subscription_payment',
+                  amount: 0,
+                  stripe_event_id: data.id,
+                  description: `Renouvellement Fond d'écran personnalisé (invoice ${data.id})`,
+                });
+              }
+            }
+            return Response.json({ received: true });
+          }
+
           const plan = VIP_PLANS[planId] || VIP_PLANS.monthly;
 
           if (userId) {
@@ -949,6 +1025,41 @@ export default async function(req: Request): Promise<Response> {
       params.append('subscription_data[metadata][user_email]', user.email);
       params.append('subscription_data[metadata][user_id]', user.id);
       params.append('subscription_data[metadata][plan]', plan || 'vote_auto');
+
+      const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${stripeKey}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params,
+      });
+      const session = await res.json();
+      if (session.error) return Response.json({ error: session.error.message }, { status: 400 });
+      return Response.json({ clientSecret: session.client_secret, sessionId: session.id, publishableKey: STRIPE_PUBLISHABLE_KEY });
+    }
+
+    // ---- createCustomBgSubscription ----
+    if (action === 'createCustomBgSubscription') {
+      const { plan } = body;
+      const selected = CUSTOM_BG_PLANS[plan || 'custom_bg'] || CUSTOM_BG_PLANS.custom_bg;
+
+      const params = new URLSearchParams();
+      params.append('payment_method_types[]', 'card');
+      params.append('mode', 'subscription');
+      params.append('ui_mode', 'embedded');
+      params.append('return_url', `${origin}`);
+      params.append('customer_email', user.email);
+      params.append('line_items[0][price_data][currency]', 'eur');
+      params.append('line_items[0][price_data][product_data][name]', selected.label);
+      params.append('line_items[0][price_data][unit_amount]', String(selected.priceCents));
+      params.append('line_items[0][price_data][recurring][interval]', 'month');
+      params.append('line_items[0][quantity]', '1');
+      params.append('metadata[type]', 'custom_bg_subscription');
+      params.append('metadata[user_email]', user.email);
+      params.append('metadata[user_id]', user.id);
+      params.append('metadata[plan]', plan || 'custom_bg');
+      params.append('subscription_data[metadata][type]', 'custom_bg_subscription');
+      params.append('subscription_data[metadata][user_email]', user.email);
+      params.append('subscription_data[metadata][user_id]', user.id);
+      params.append('subscription_data[metadata][plan]', plan || 'custom_bg');
 
       const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
         method: 'POST',

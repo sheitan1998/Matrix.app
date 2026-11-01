@@ -47,10 +47,16 @@ const LIGHT_VARS = {
   "--ring": "135 80% 38%",
 };
 
+const SOLID_DARK_VARS = {
+  ...DARK_VARS,
+  "--background": "0 0% 0%",
+  "--card": "0 0% 5%",
+  "--popover": "0 0% 4%",
+};
+
 const DEFAULT_PREFS = {
   mode: "original",
-  customAccent: "#a855f7",
-  customBg: "#0a050f",
+  customColor: "#1a0a2e",
   bgImageUrl: "",
   bgOpacity: 0.5,
 };
@@ -59,7 +65,12 @@ function loadPrefs() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_PREFS;
-    return { ...DEFAULT_PREFS, ...JSON.parse(raw) };
+    const parsed = JSON.parse(raw);
+    // Migration: map old customAccent to customColor
+    if (parsed.customAccent && !parsed.customColor) {
+      parsed.customColor = parsed.customAccent;
+    }
+    return { ...DEFAULT_PREFS, ...parsed };
   } catch {
     return DEFAULT_PREFS;
   }
@@ -72,37 +83,11 @@ function applyVars(vars) {
   });
 }
 
-function applyThemeBackground(prefs) {
-  const bgLayer = document.getElementById("matrix-theme-bg");
-  if (!bgLayer) return;
-
-  if (prefs.mode === "custom" && prefs.bgImageUrl) {
-    bgLayer.style.display = "block";
-    bgLayer.style.backgroundImage = `url(${prefs.bgImageUrl})`;
-    bgLayer.style.backgroundSize = "cover";
-    bgLayer.style.backgroundPosition = "center";
-    bgLayer.style.backgroundAttachment = "fixed";
-    bgLayer.style.opacity = String(prefs.bgOpacity || 0.5);
-  } else {
-    bgLayer.style.display = "none";
-  }
-}
-
-export function applyTheme(prefs) {
-  if (prefs.mode === "light") {
-    applyVars(LIGHT_VARS);
-  } else if (prefs.mode === "custom") {
-    applyVars(DARK_VARS);
-    const accentHex = prefs.customAccent || "#a855f7";
-    const { h, s, l } = hexToHsl(accentHex);
-    document.documentElement.style.setProperty("--primary", `${h} ${s}% ${l}%`);
-    document.documentElement.style.setProperty("--accent", `${h} ${s}% ${l}%`);
-    document.documentElement.style.setProperty("--ring", `${h} ${s}% ${l}%`);
-  } else {
-    // "original" and "dark" both use the default dark neon space theme
-    applyVars(DARK_VARS);
-  }
-  applyThemeBackground(prefs);
+function clearVars(vars) {
+  const root = document.documentElement;
+  Object.keys(vars).forEach((key) => {
+    root.style.removeProperty(key);
+  });
 }
 
 function hexToHsl(hex) {
@@ -125,10 +110,66 @@ function hexToHsl(hex) {
   return { h: Math.round(h), s: Math.round(s * 100), l: Math.round(l * 100) };
 }
 
+export function applyTheme(prefs) {
+  const body = document.body;
+  const bgLayer = document.getElementById("matrix-theme-bg");
+
+  // Reset body background and bg layer
+  body.style.backgroundColor = "";
+  body.style.backgroundImage = "";
+
+  if (prefs.mode === "original") {
+    // Original: default dark neon space theme, no body bg override
+    // (Landing page shows its own space background)
+    applyVars(DARK_VARS);
+    if (bgLayer) bgLayer.style.display = "none";
+    body.setAttribute("data-matrix-theme", "original");
+  } else if (prefs.mode === "dark") {
+    // Solid black background covering entire screen
+    applyVars(SOLID_DARK_VARS);
+    body.style.backgroundColor = "#000000";
+    if (bgLayer) bgLayer.style.display = "none";
+    body.setAttribute("data-matrix-theme", "dark");
+  } else if (prefs.mode === "light") {
+    // Solid white background covering entire screen
+    applyVars(LIGHT_VARS);
+    body.style.backgroundColor = "#F4F4F5";
+    if (bgLayer) bgLayer.style.display = "none";
+    body.setAttribute("data-matrix-theme", "light");
+  } else if (prefs.mode === "custom") {
+    // Custom color as global background
+    applyVars(DARK_VARS);
+    const color = prefs.customColor || "#1a0a2e";
+    const { h, s, l } = hexToHsl(color);
+    // Override accent/border with the custom color
+    document.documentElement.style.setProperty("--primary", `${h} ${s}% ${l}%`);
+    document.documentElement.style.setProperty("--accent", `${h} ${s}% ${l}%`);
+    document.documentElement.style.setProperty("--ring", `${h} ${s}% ${l}%`);
+
+    if (prefs.bgImageUrl) {
+      // Custom background image uploaded by subscriber
+      body.style.backgroundColor = "#0a050f";
+      if (bgLayer) {
+        bgLayer.style.display = "block";
+        bgLayer.style.backgroundImage = `url(${prefs.bgImageUrl})`;
+        bgLayer.style.backgroundSize = "cover";
+        bgLayer.style.backgroundPosition = "center";
+        bgLayer.style.backgroundAttachment = "fixed";
+        bgLayer.style.opacity = String(prefs.bgOpacity || 0.5);
+      }
+    } else {
+      // Solid custom color as background
+      body.style.backgroundColor = color;
+      if (bgLayer) bgLayer.style.display = "none";
+    }
+    body.setAttribute("data-matrix-theme", "custom");
+  }
+}
+
 export function useTheme() {
   const [prefs, setPrefs] = useState(loadPrefs);
-  const [isVip, setIsVip] = useState(false);
-  const [vipChecked, setVipChecked] = useState(false);
+  const [hasCustomBg, setHasCustomBg] = useState(false);
+  const [customBgChecked, setCustomBgChecked] = useState(false);
 
   useEffect(() => {
     applyTheme(prefs);
@@ -137,29 +178,29 @@ export function useTheme() {
     } catch {}
   }, [prefs]);
 
-  const checkVip = useCallback(async () => {
+  const checkCustomBg = useCallback(async () => {
     try {
       const u = await base44.auth.me();
-      const vip = u?.is_vip || false;
-      const vipUntil = u?.vip_until;
-      if (vip && vipUntil) {
-        setIsVip(new Date(vipUntil) > new Date());
+      const sub = u?.has_custom_bg || false;
+      const until = u?.custom_bg_until;
+      if (sub && until) {
+        setHasCustomBg(new Date(until) > new Date());
       } else {
-        setIsVip(vip);
+        setHasCustomBg(sub);
       }
     } catch {}
-    setVipChecked(true);
+    setCustomBgChecked(true);
   }, []);
 
   useEffect(() => {
-    checkVip();
-  }, [checkVip]);
+    checkCustomBg();
+  }, [checkCustomBg]);
 
   const updatePrefs = useCallback((partial) => {
     setPrefs((prev) => ({ ...prev, ...partial }));
   }, []);
 
-  return { prefs, updatePrefs, isVip, vipChecked, refreshVip: checkVip };
+  return { prefs, updatePrefs, hasCustomBg, customBgChecked, refreshCustomBg: checkCustomBg };
 }
 
 export function initThemeBackgroundLayer() {
@@ -173,5 +214,5 @@ export function initThemeBackgroundLayer() {
   layer.style.display = "none";
   document.body.prepend(layer);
   const prefs = loadPrefs();
-  applyThemeBackground(prefs);
+  applyTheme(prefs);
 }

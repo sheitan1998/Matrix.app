@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Moon, Sun, Palette, Crown, Lock, X, Upload, Image as ImageIcon,
-  Check, Sparkles, Loader2
+  Moon, Sun, Palette, Crown, Lock, X, Upload,
+  Check, Sparkles, Loader2, Image as ImageIcon
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { base44 } from "@/api/base44Client";
@@ -10,15 +10,15 @@ import CheckoutModal from "@/components/CheckoutModal";
 
 const MODES = [
   { id: "original", label: "Thème Original", desc: "Le fond spatial néon par défaut de MATRIX", icon: Sparkles, preview: "linear-gradient(135deg, #0a050f, #1a0a2e)" },
-  { id: "dark", label: "Thème Sombre", desc: "Variante sombre épurée sans fond spatial", icon: Moon, preview: "linear-gradient(135deg, #0a0a0a, #1a1a1a)" },
-  { id: "light", label: "Thème Clair", desc: "Variante lumineuse pour le jour", icon: Sun, preview: "linear-gradient(135deg, #f8f8ff, #e8e0ff)" },
-  { id: "custom", label: "Personnalisé", desc: "Choisis tes couleurs et ton fond", icon: Palette, preview: "linear-gradient(135deg, #0a050f, #6200ea)" },
+  { id: "dark", label: "Thème Sombre", desc: "Fond uni noir sur tout l'écran", icon: Moon, preview: "#000000" },
+  { id: "light", label: "Thème Clair", desc: "Fond uni blanc avec textes sombres", icon: Sun, preview: "#F4F4F5" },
+  { id: "custom", label: "Personnalisé", desc: "Choisis ta couleur de fond globale", icon: Palette, preview: "linear-gradient(135deg, #1a0a2e, #6200ea)" },
 ];
 
-const ACCENT_PRESETS = ["#a855f7", "#8a2be2", "#ff00ff", "#ff4500", "#00ced1", "#00ff7f", "#ffd700", "#3b82f6"];
+const COLOR_PRESETS = ["#1a0a2e", "#0d1b2a", "#1b3a1b", "#3a0d0d", "#3a2d0d", "#0d2d3a", "#2d0d3a", "#000000"];
 
 export default function ThemeModal({ open, onClose }) {
-  const { prefs, updatePrefs, isVip, vipChecked, refreshVip } = useTheme();
+  const { prefs, updatePrefs, hasCustomBg, customBgChecked, refreshCustomBg } = useTheme();
   const [uploading, setUploading] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
 
@@ -31,7 +31,7 @@ export default function ThemeModal({ open, onClose }) {
 
   const handleFileUpload = async (file) => {
     if (!file) return;
-    if (!isVip) return;
+    if (!hasCustomBg) return;
     setUploading(true);
     try {
       const { file_url } = await base44.integrations.Core.UploadPrivateFile({ file });
@@ -43,9 +43,8 @@ export default function ThemeModal({ open, onClose }) {
     }
   };
 
-  const handleVipSuccess = async () => {
-    // Refresh VIP status after successful payment
-    await refreshVip();
+  const handleSubSuccess = async () => {
+    await refreshCustomBg();
     setShowCheckout(false);
   };
 
@@ -128,19 +127,20 @@ export default function ThemeModal({ open, onClose }) {
                     className="overflow-hidden"
                   >
                     <div className="space-y-5 pt-2">
-                      {/* Accent color */}
+                      {/* Color picker */}
                       <div>
-                        <label className="text-sm font-bold text-white mb-2 block">Couleur d'accentuation néon</label>
+                        <label className="text-sm font-bold text-white mb-2 block">Couleur de fond globale</label>
+                        <p className="text-[11px] text-white/40 mb-3">Cette couleur deviendra le fond de toute l'application.</p>
                         <div className="flex items-center gap-3 flex-wrap">
-                          {ACCENT_PRESETS.map((color) => (
+                          {COLOR_PRESETS.map((color) => (
                             <button
                               key={color}
-                              onClick={() => updatePrefs({ customAccent: color })}
+                              onClick={() => updatePrefs({ customColor: color })}
                               className="w-9 h-9 rounded-full transition-all hover:scale-110"
                               style={{
                                 background: color,
-                                border: prefs.customAccent === color ? "2px solid #fff" : "2px solid transparent",
-                                boxShadow: prefs.customAccent === color ? `0 0 15px ${color}` : "none",
+                                border: prefs.customColor === color ? "2px solid #fff" : "2px solid transparent",
+                                boxShadow: prefs.customColor === color ? `0 0 15px ${color}` : "none",
                               }}
                             />
                           ))}
@@ -148,8 +148,8 @@ export default function ThemeModal({ open, onClose }) {
                             style={{ background: "conic-gradient(red, orange, yellow, green, cyan, blue, purple, red)", border: "2px solid rgba(255,255,255,0.2)" }}>
                             <input
                               type="color"
-                              value={prefs.customAccent}
-                              onChange={(e) => updatePrefs({ customAccent: e.target.value })}
+                              value={prefs.customColor}
+                              onChange={(e) => updatePrefs({ customColor: e.target.value })}
                               className="absolute inset-0 opacity-0 cursor-pointer"
                             />
                             <Palette className="w-4 h-4 text-white" style={{ filter: "drop-shadow(0 0 2px rgba(0,0,0,0.8))" }} />
@@ -157,19 +157,19 @@ export default function ThemeModal({ open, onClose }) {
                         </div>
                       </div>
 
-                      {/* Background image (VIP) */}
+                      {/* Background image (Custom BG subscription) */}
                       <div className="rounded-2xl p-4" style={{ background: "rgba(168,85,247,0.05)", border: "1px solid rgba(168,85,247,0.15)" }}>
                         <div className="flex items-center gap-2 mb-3">
-                          {isVip ? (
+                          {hasCustomBg ? (
                             <Crown className="w-4 h-4" style={{ color: "#ffd700" }} />
                           ) : (
                             <Lock className="w-4 h-4" style={{ color: "#b0b0b0" }} />
                           )}
                           <h3 className="text-sm font-bold text-white">Image de fond personnalisée</h3>
-                          {isVip && <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(255,215,0,0.15)", color: "#ffd700", border: "1px solid rgba(255,215,0,0.3)" }}>VIP</span>}
+                          {hasCustomBg && <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(255,215,0,0.15)", color: "#ffd700", border: "1px solid rgba(255,215,0,0.3)" }}>ACTIF</span>}
                         </div>
 
-                        {isVip ? (
+                        {hasCustomBg ? (
                           <div className="space-y-3">
                             {prefs.bgImageUrl && (
                               <div className="relative w-full h-24 rounded-xl overflow-hidden" style={{ background: "#0a050f" }}>
@@ -222,19 +222,19 @@ export default function ThemeModal({ open, onClose }) {
                         ) : (
                           <div className="text-center py-4">
                             <p className="text-xs text-white/50 mb-3">
-                              L'image de fond personnalisée est réservée aux membres VIP (2,99 €/mois).
-                              Soutiens MATRIX et profite de cette fonctionnalité exclusive !
+                              L'image de fond personnalisée est réservée aux abonnés "Fond d'écran personnalisé" (3 €/mois).
+                              Il s'agit d'un abonnement distinct, sans engagement.
                             </p>
                             <button
                               onClick={() => setShowCheckout(true)}
                               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition hover:scale-105 tap-sm"
                               style={{
-                                background: "linear-gradient(135deg, #ffd700, #ff8c00)",
-                                boxShadow: "0 0 20px rgba(255,215,0,0.3)",
+                                background: "linear-gradient(135deg, #6200ea, #aa00ff)",
+                                boxShadow: "0 0 20px rgba(168,85,247,0.3)",
                               }}
                             >
                               <Crown className="w-4 h-4" />
-                              Devenir VIP - 2,99 €/mois
+                              S'abonner - 3 €/mois
                             </button>
                           </div>
                         )}
@@ -259,9 +259,9 @@ export default function ThemeModal({ open, onClose }) {
       {showCheckout && (
         <CheckoutModal
           functionName="stripePayment"
-          params={{ action: "createVIPSubscription", plan: "vip_vote" }}
+          params={{ action: "createCustomBgSubscription", plan: "custom_bg" }}
           onClose={() => setShowCheckout(false)}
-          onSuccess={handleVipSuccess}
+          onSuccess={handleSubSuccess}
         />
       )}
     </AnimatePresence>
