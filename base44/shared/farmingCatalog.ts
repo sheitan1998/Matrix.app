@@ -1,31 +1,16 @@
 import { modText } from './farmingModDetails.ts';
 
-export const FARMING_CATALOG_CATEGORIES = [
-  { id: 'tractors', label: 'Tracteurs', filter: 'tractors' },
-  { id: 'trailers', label: 'Remorques', filter: 'trailers' },
-  { id: 'harvesters', label: 'Moissonneuses', filter: 'harvesters' },
-  { id: 'tillage', label: 'Outils du sol', filter: 'plows' },
-  { id: 'maps', label: 'Cartes', filter: 'mapEurope' },
-  { id: 'seeding', label: 'Semis et plantation', filter: 'seeders' },
-  { id: 'grassland', label: 'Fenaison', filter: 'mowers' },
-  { id: 'buildings', label: 'Bâtiments', filter: 'farmBuildings' },
-  { id: 'vehicles', label: 'Véhicules utilitaires', filter: 'vehicles' },
-  { id: 'scripts', label: 'Scripts / Gameplay', filter: 'gameplay' },
-] as const;
-
-export const ALLOWED_MODHUB_FILTERS = new Set([
-  'latest',
-  'mostDownloaded',
-  ...FARMING_CATALOG_CATEGORIES.map(category => category.filter),
-]);
+export { FARMING_CATALOG_CATEGORIES, ALLOWED_MODHUB_FILTERS } from './farmingCategories.ts';
 
 export function parseCatalogPage(html: string, categoryId = 'all') {
   const mods = [];
-  const blocks = html.split('class="mod-item"');
+  const seen = new Set();
+  const blocks = html.split(/class=["'][^"']*\bmod-item\b(?!__)[^"']*["']/i);
   for (let index = 1; index < blocks.length; index += 1) {
     const block = blocks[index].slice(0, 2500);
     const id = block.match(/mod_id=(\d+)/)?.[1];
-    if (!id) continue;
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
     const img = block.match(/src="(https:\/\/cdn\d+\.giants-software\.com\/modHub\/storage\/[^"]*iconBig\.(?:jpg|png))"/i)?.[1] || null;
     const rating = block.match(/([\d.]+)&nbsp;\((\d+)\)/);
     mods.push({

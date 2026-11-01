@@ -1,4 +1,4 @@
-const CATALOG_CACHE_KEY = 'matrix.fs25.modhub.catalog.v1';
+const CATALOG_CACHE_KEY = 'matrix.fs25.modhub.catalog.v2';
 const CATALOG_CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
 
 export function isValidFarmingModId(value) {

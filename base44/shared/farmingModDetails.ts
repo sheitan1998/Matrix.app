@@ -10,6 +10,6 @@ export function parseModDetails(html,id) {
     .filter((value,index,items)=>items.indexOf(value)===index)
     .slice(0,12);
   const img=images[0]||html.match(/src="(https:\/\/cdn\d+\.giants-software\.com\/modHub\/storage\/[^"\s]*iconBig\.(?:jpg|png))"/i)?.[1]||null;
-  const downloadUrl=html.match(/href="(https:\/\/cdn\d+\.giants-software\.com\/modHub\/storage\/[^"\s]*\.zip(?:\?[^"\s]*)?)"[^>]*>\s*DOWNLOAD/i)?.[1]||null;
+  const downloadUrl=[...html.matchAll(/href=["'](https:\/\/cdn\d+\.giants-software\.com\/modHub\/storage\/[^"'\s]*\.zip(?:\?[^"'\s]*)?)["']/gi)].map(match=>modText(match[1])).find(value=>new URL(value).pathname.includes(`/storage/${String(id).padStart(8,'0')}/FS25_`))||null;
   return {id,title:modText(html.match(/<h2[^>]*class="[^"]*title-label[^"]*"[^>]*>([\s\S]*?)<\/h2>/)?.[1]||'Mod FS25'),author:val('Author')||'Inconnu',brand:val('Manufacturer'),category:val('Category'),description,img,hdImg:images[0]||img,images:images.length?images:(img?[img]:[]),rating:Number(rating?.[1])||0,votes:Number(rating?.[2])||0,size:val('Size'),version:val('Version'),price:val('Price|Prix')||description.match(/(?:price|prix)\s*[:\-]\s*([^\n]+)/i)?.[1]?.trim()||'',power:numericPower?`${numericPower} CV`:'',speed:val('Speed|Vitesse')||description.match(/(?:speed|vitesse)\s*[:\-]\s*([^\n]+)/i)?.[1]?.trim()||'',downloadUrl,detailUrl:`https://www.farming-simulator.com/mod.php?mod_id=${id}&title=fs2025`,source:'live'};
 }

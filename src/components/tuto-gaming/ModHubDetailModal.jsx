@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Check, ChevronLeft, ChevronRight, Languages, Loader2, Share2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
-import GamingRemoteImage from '@/components/tuto-gaming/GamingRemoteImage';
+import FarmingModImage from '@/components/tuto-gaming/FarmingModImage';
 import DownloadModButton from '@/components/tuto-gaming/DownloadModButton';
 import ModHubSpecs from '@/components/tuto-gaming/ModHubSpecs';
 import { FARMING_FALLBACK } from '@/components/tuto-gaming/farmingFallback';
@@ -115,12 +115,7 @@ export default function ModHubDetailModal({ modId, initialMod, onClose }) {
             {images.length > 0 ? (
               <section aria-label={`Galerie de ${mod.title}`}>
                 <div className="relative">
-                  <GamingRemoteImage
-                    src={images[imageIndex]}
-                    alt={`${mod.title} — capture ${imageIndex + 1} sur ${images.length}`}
-                    className="aspect-video w-full rounded-xl"
-                    contain={false}
-                  />
+                  <FarmingModImage key={images[imageIndex]} src={images[imageIndex]} alt={`${mod.title} — capture ${imageIndex + 1} sur ${images.length}`} modTitle={mod.title} brand={mod.brand} className="aspect-video w-full rounded-xl object-contain bg-muted" />
                   {images.length > 1 && (
                     <>
                       <button

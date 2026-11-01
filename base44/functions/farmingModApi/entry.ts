@@ -1,82 +1,18 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { createApiCache, dataResponse } from '../../shared/apiCache.ts';
-import {
-  ALLOWED_MODHUB_FILTERS,
-  FARMING_CATALOG_CATEGORIES,
-  hasNextCatalogPage,
-  parseCatalogPage,
-} from '../../shared/farmingCatalog.ts';
+import { FARMING_CATALOG_CATEGORIES } from '../../shared/farmingCategories.ts';
+import { getFarmingCatalogPage } from '../../shared/farmingCatalogSource.ts';
 import { getGiantsMod, probeGiantsDownload } from '../../shared/giantsMedia.ts';
 import { rateLimitByIp, sanitizeText } from '../../shared/security.ts';
-import { FARMING_FALLBACK_CATEGORIES } from '../../shared/farmingFallback.ts';
+
 
 const CACHE_TTL = 60 * 60 * 1000;
 const { getCached: rawGetCached, setCached } = createApiCache(100);
 const getCached = (key: string) => rawGetCached(key, CACHE_TTL);
 
-async function fetchCatalogPage(filter: string, page: number, categoryId = 'all') {
-  if (!ALLOWED_MODHUB_FILTERS.has(filter)) throw new Error('Filtre ModHub non autorisé.');
-  const url = new URL('https://www.farming-simulator.com/mods.php');
-  url.search = new URLSearchParams({ title: 'fs2025', filter, page: String(page - 1) }).toString();
-  const response = await fetch(url, {
-    headers: { Accept: 'text/html', 'User-Agent': 'Matrix.app FS25 catalog/1.0' },
-    redirect: 'error',
-    signal: AbortSignal.timeout(15_000),
-  });
-  if (!response.ok) throw new Error(`GIANTS ModHub (${response.status})`);
-  const html = await response.text();
-  return {
-    items: parseCatalogPage(html, categoryId),
-    hasMore: hasNextCatalogPage(html, page),
-  };
-}
-
-const CATALOG_PAGES_PER_CATEGORY = 4;
-
 async function getCatalog() {
-  const cached = getCached('catalog:v5');
-  if (cached) return cached;
-  const settled = await Promise.allSettled(
-    FARMING_CATALOG_CATEGORIES.map(async category => {
-      const allItems = [];
-      for (let pageNum = 1; pageNum <= CATALOG_PAGES_PER_CATEGORY; pageNum += 1) {
-        try {
-          const page = await fetchCatalogPage(category.filter, pageNum, category.id);
-          allItems.push(...page.items);
-          if (!page.hasMore || page.items.length === 0) break;
-        } catch {
-          break;
-        }
-      }
-      // Deduplicate by mod id
-      const seen = new Set();
-      const items = allItems.filter(item => {
-        if (seen.has(item.id)) return false;
-        seen.add(item.id);
-        return true;
-      });
-      return { ...category, items: items.slice(0, 96) };
-    }),
-  );
-  const categories = settled.flatMap((result, index) => result.status === 'fulfilled'
-    ? [result.value]
-    : [{ ...FARMING_CATALOG_CATEGORIES[index], items: [], error: 'Catégorie temporairement indisponible.' }]);
-  if (categories.every(category => category.items.length === 0)) {
-    return {
-      categories: FARMING_FALLBACK_CATEGORIES,
-      partial: false,
-      source: 'référence locale',
-      cachedAt: new Date().toISOString(),
-    };
-  }
-  const result = {
-    categories,
-    partial: settled.some(result => result.status === 'rejected'),
-    source: 'GIANTS ModHub',
-    cachedAt: new Date().toISOString(),
-  };
-  setCached('catalog:v5', result);
-  return result;
+  const firstPage = await getFarmingCatalogPage();
+  return { categories: FARMING_CATALOG_CATEGORIES, firstPage, source: 'GIANTS ModHub', cachedAt: new Date().toISOString() };
 }
 
 async function translationCacheKey(text: string) {
@@ -141,26 +77,8 @@ export default async function(req: Request) {
     switch (body.action) {
       case 'getCatalog':
         return dataResponse(await getCatalog());
-      case 'getMods': {
-        const page = Math.max(1, Math.min(100, Number(body.page) || 1));
-        const limit = Math.min(24, Math.max(1, Number(body.limit) || 24));
-        const filter = String(body.filter || 'latest');
-        const categoryId = String(body.category || 'all');
-        const cacheKey = `mods:v4:${page}:${limit}:${filter}:${categoryId}`;
-        const cached = getCached(cacheKey);
-        if (cached) return dataResponse(cached);
-        const catalogPage = await fetchCatalogPage(filter, page, categoryId);
-        const result = {
-          items: catalogPage.items.slice(0, limit),
-          total: catalogPage.items.length,
-          page,
-          has_more: catalogPage.hasMore,
-          source: 'live',
-          cached_at: new Date().toISOString(),
-        };
-        setCached(cacheKey, result);
-        return dataResponse(result);
-      }
+      case 'getMods':
+        return dataResponse(await getFarmingCatalogPage({ category: body.category || 'all', search: body.search || '', cursor: body.cursor, page: body.page || 1, filter: body.filter }));
       case 'getModDetails':
         return dataResponse(await getGiantsMod(body.modId));
       case 'translateDescription':
@@ -168,13 +86,7 @@ export default async function(req: Request) {
       case 'prepareDownload': {
         const modId = String(body.modId || '');
         const file = await probeGiantsDownload(modId);
-        const appUrl = req.headers.get('X-Base44-App-Url');
-        if (!appUrl) {
-          return Response.json({ error: 'Adresse de téléchargement interne indisponible.' }, { status: 503 });
-        }
-        const appOrigin = new URL(appUrl).origin;
-        const endpoint = new URL('/functions/fs25Download', appOrigin).href;
-        return Response.json({ filename: file.filename, size: file.size, endpoint, modId, source: 'GIANTS ModHub' });
+        return Response.json({ filename: file.filename, size: file.size, modId, source: 'GIANTS ModHub' });
       }
       default:
         return Response.json({ error: 'Action inconnue.' }, { status: 400 });

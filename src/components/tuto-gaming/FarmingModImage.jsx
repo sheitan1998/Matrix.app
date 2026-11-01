@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 const FS25_ACCENT = "#7DA627";
 
@@ -15,6 +15,7 @@ const GIANTS_CDN_HOSTS = ["cdn40", "cdn25", "cdn26", "cdn27", "cdn45"];
 export default function FarmingModImage({ src, alt, modTitle, brand, className }) {
   const [hostIndex, setHostIndex] = useState(0);
   const [exhausted, setExhausted] = useState(false);
+  useEffect(() => { setHostIndex(0); setExhausted(false); }, [src]);
 
   // If src is a GIANTS CDN URL, try rotating through CDN hosts on error
   const currentSrc = (() => {
