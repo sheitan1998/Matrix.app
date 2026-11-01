@@ -25,7 +25,15 @@ import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import CheckoutModal from "@/components/CheckoutModal";
 
-const NEON_TEXT_SHADOW = "0 0 10px rgba(168, 85, 247, 0.6), 0 0 20px rgba(168, 85, 247, 0.4)";
+const NEON_TEXT_SHADOW = "0 0 8px rgba(168, 85, 247, 1), 0 0 16px rgba(168, 85, 247, 0.8), 0 0 32px rgba(168, 85, 247, 0.6)";
+const NEON_SUBTITLE_SHADOW = "0 0 6px rgba(168, 85, 247, 1), 0 0 12px rgba(168, 85, 247, 0.7)";
+const NEON_ICON_GLOW = "drop-shadow(0 0 4px rgba(168, 85, 247, 1)) drop-shadow(0 0 8px rgba(168, 85, 247, 0.6))";
+const NEON_ACTIVE_BG = "linear-gradient(90deg, rgba(147, 51, 234, 0.35) 0%, rgba(88, 28, 135, 0.12) 100%)";
+const NEON_ACTIVE_BORDER = "2px solid rgba(168, 85, 247, 1)";
+const NEON_ACTIVE_SHADOW = "0 0 16px rgba(168, 85, 247, 0.4), inset 0 0 12px rgba(168, 85, 247, 0.08)";
+const NEON_ACTIVE_TEXT = "0 0 6px rgba(168, 85, 247, 0.9), 0 0 12px rgba(168, 85, 247, 0.5)";
+const NEON_SEPARATOR = "linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.4), transparent)";
+const NEON_SECTION_COLOR = "rgba(168, 85, 247, 0.85)";
 
 const SECTIONS = [
   {
@@ -67,16 +75,16 @@ function NavItem({ to, label, icon: Icon, active }) {
       )}
       style={active
         ? {
-            background: "linear-gradient(90deg, rgba(147, 51, 234, 0.3) 0%, rgba(88, 28, 135, 0.1) 100%)",
-            borderLeft: "2px solid rgba(168, 85, 247, 0.8)",
-            boxShadow: "0 0 12px rgba(168, 85, 247, 0.15), inset 0 0 8px rgba(168, 85, 247, 0.05)",
-            textShadow: "0 0 8px rgba(168, 85, 247, 0.5)",
+            background: NEON_ACTIVE_BG,
+            borderLeft: NEON_ACTIVE_BORDER,
+            boxShadow: NEON_ACTIVE_SHADOW,
+            textShadow: NEON_ACTIVE_TEXT,
           }
         : undefined}
     >
       <Icon
         className={cn("w-[18px] h-[18px] shrink-0 transition-colors", active ? "text-purple-400" : "text-muted-foreground group-hover:text-purple-300")}
-        style={active ? { filter: "drop-shadow(0 0 6px rgba(168, 85, 247, 0.6))" } : undefined}
+        style={active ? { filter: NEON_ICON_GLOW } : undefined}
       />
       <span className="truncate">{label}</span>
     </Link>
@@ -94,12 +102,12 @@ function ThemeToggleItem() {
     >
       <Moon
         className="w-[18px] h-[18px] shrink-0"
-        style={isDark ? { color: "#a855f7", filter: "drop-shadow(0 0 6px rgba(168, 85, 247, 0.6))" } : undefined}
+        style={isDark ? { color: "#a855f7", filter: NEON_ICON_GLOW } : undefined}
       />
       <span className="truncate">Thème sombre</span>
       <span
         className={cn("ml-auto h-4 w-7 rounded-full transition-all relative", isDark ? "bg-purple-500/60" : "bg-muted")}
-        style={isDark ? { boxShadow: "0 0 8px rgba(168, 85, 247, 0.4)" } : undefined}
+        style={isDark ? { boxShadow: "0 0 10px rgba(168, 85, 247, 0.7)" } : undefined}
       >
         <span className={cn("absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all", isDark ? "left-3.5" : "left-0.5")} />
       </span>
@@ -169,10 +177,10 @@ function LanguageToggleItem() {
 function SectionSeparator({ title }) {
   return (
     <>
-      <div className="h-px my-3" style={{ background: "linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.15), transparent)" }} />
+      <div className="h-px my-3" style={{ background: NEON_SEPARATOR }} />
       <p
         className="px-3 text-[10px] font-bold uppercase tracking-wider mb-1"
-        style={{ color: "rgba(168, 85, 247, 0.5)" }}
+        style={{ color: NEON_SECTION_COLOR, textShadow: NEON_SUBTITLE_SHADOW }}
       >
         {title}
       </p>
@@ -199,7 +207,7 @@ export default function Sidebar() {
         </h1>
         <p
           className="text-[10px] font-semibold uppercase tracking-widest mt-0.5"
-          style={{ color: "rgba(168, 85, 247, 0.6)", textShadow: "0 0 8px rgba(168, 85, 247, 0.3)" }}
+          style={{ color: "#c084fc", textShadow: NEON_SUBTITLE_SHADOW }}
         >
           Explorez la plateforme
         </p>
@@ -211,7 +219,7 @@ export default function Sidebar() {
           {sIndex === 0 ? (
             <p
               className="px-3 text-[10px] font-bold uppercase tracking-wider mb-1"
-              style={{ color: "rgba(168, 85, 247, 0.5)" }}
+              style={{ color: NEON_SECTION_COLOR, textShadow: NEON_SUBTITLE_SHADOW }}
             >
               {section.title}
             </p>
