@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { User } from "lucide-react";
 import AuthModal from "@/components/landing/AuthModal";
 import TrixWalletBar from "@/components/TrixWalletBar";
+import Sidebar from "@/components/layout/Sidebar";
 
 export default function TutoGamingLayout() {
   const [user, setUser] = useState(null);
@@ -71,8 +72,11 @@ export default function TutoGamingLayout() {
       </header>
 
       {/* Page content */}
-      <div className="relative z-10">
-        <Outlet />
+      <div className="relative z-10 flex">
+        <Sidebar />
+        <main className="flex-1 min-w-0">
+          <Outlet />
+        </main>
       </div>
     </div>
   );

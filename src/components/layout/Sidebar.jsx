@@ -11,12 +11,13 @@ import {
   Heart,
   Wrench,
   Moon,
+  Sun,
+  Palette,
   HelpCircle,
   Globe,
-  Crown,
-  Zap,
   Tv2,
   Check,
+  Lock,
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react";
@@ -25,7 +26,6 @@ import { useTheme } from "@/hooks/useTheme";
 import { LANGUAGES, getPreferredLanguage, changeLanguage } from "@/lib/languagePreference";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
-import CheckoutModal from "@/components/CheckoutModal";
 
 const NEON_TEXT_SHADOW = "0 0 8px rgba(168, 85, 247, 1), 0 0 16px rgba(168, 85, 247, 0.8), 0 0 32px rgba(168, 85, 247, 0.6)";
 const NEON_SUBTITLE_SHADOW = "0 0 6px rgba(168, 85, 247, 1), 0 0 12px rgba(168, 85, 247, 0.7)";
@@ -138,22 +138,69 @@ function NavItem({ to, label, icon: Icon, active, collapsed, soutenir }) {
   );
 }
 
-function ThemeToggleItem({ collapsed }) {
-  const { prefs, updatePrefs } = useTheme();
-  const isDark = prefs.mode === "dark";
+const THEME_OPTIONS = [
+  { mode: "dark", label: "Sombre", icon: Moon },
+  { mode: "light", label: "Clair", icon: Sun },
+  { mode: "custom", label: "Personnalisé", icon: Palette, vip: true },
+];
+
+function ThemeSelectorItem({ collapsed }) {
+  const { prefs, updatePrefs, hasCustomBg } = useTheme();
+  const [open, setOpen] = useState(false);
+  const current = THEME_OPTIONS.find((opt) => opt.mode === prefs.mode);
+  const CurrentIcon = current?.icon || Moon;
+
+  const selectTheme = (mode) => {
+    if (mode === "custom" && !hasCustomBg) {
+      toast.error("Le thème personnalisé est réservé aux abonnés VIP.");
+      setOpen(false);
+      return;
+    }
+    updatePrefs({ mode });
+    setOpen(false);
+  };
+
   return (
-    <button
-      type="button"
-      onClick={() => updatePrefs({ mode: isDark ? "original" : "dark" })}
-      className={cn("flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 border border-transparent text-muted-foreground hover:text-white hover:bg-white/5", collapsed && "justify-center px-0")}
-      title={collapsed ? "Thème sombre" : undefined}
-    >
-      <Moon className="w-[18px] h-[18px] shrink-0 text-purple-300/70" style={{ filter: isDark ? NEON_ICON_GLOW : NEON_ICON_IDLE }} />
-      <span className={cn("truncate transition-all duration-200 overflow-hidden", collapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>Thème sombre</span>
-      <span className={cn("ml-auto h-4 w-7 rounded-full transition-all relative", isDark ? "bg-purple-500/60" : "bg-muted", collapsed && "hidden")} style={isDark ? { boxShadow: "0 0 10px rgba(168, 85, 247, 0.7)" } : undefined}>
-        <span className={cn("absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all", isDark ? "left-3.5" : "left-0.5")} />
-      </span>
-    </button>
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={cn("flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 border border-transparent text-muted-foreground hover:text-white hover:bg-white/5", collapsed && "justify-center px-0")}
+        title={collapsed ? "Thème" : undefined}
+      >
+        <CurrentIcon className="w-[18px] h-[18px] shrink-0 text-purple-300/70" style={{ filter: NEON_ICON_IDLE }} />
+        <span className={cn("truncate transition-all duration-200 overflow-hidden", collapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>Thème</span>
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div
+            className="absolute left-0 bottom-full mb-2 w-48 rounded-xl overflow-hidden shadow-2xl z-50"
+            style={{ background: "hsl(var(--popover))", border: "1px solid rgba(168, 85, 247, 0.2)" }}
+          >
+            <p className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-purple-300/60 border-b border-white/5">Thème</p>
+            <div className="py-1">
+              {THEME_OPTIONS.map((opt) => {
+                const locked = opt.vip && !hasCustomBg;
+                return (
+                  <button
+                    key={opt.mode}
+                    onClick={() => selectTheme(opt.mode)}
+                    className="flex w-full items-center gap-2 px-3 py-2 hover:bg-white/5 transition text-left disabled:opacity-50"
+                    disabled={locked}
+                  >
+                    <opt.icon className="w-4 h-4 text-purple-300/70" />
+                    <span className="flex-1 text-xs font-semibold text-foreground">{opt.label}</span>
+                    {locked && <Lock className="w-3 h-3 text-muted-foreground" />}
+                    {prefs.mode === opt.mode && <Check className="w-3.5 h-3.5 text-purple-400" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -224,7 +271,6 @@ function SectionSeparator({ title, collapsed }) {
 export default function Sidebar({ noTopbar = false }) {
   const { pathname } = useLocation();
   const isActive = (to) => pathname === to || (to === "/stream" && pathname === "/");
-  const [showVipCheckout, setShowVipCheckout] = useState(false);
   const { collapsed, toggle } = useCollapsed();
 
   const positionClass = noTopbar ? "top-0 h-screen" : "top-16 h-[calc(100vh-64px)]";
@@ -281,45 +327,17 @@ export default function Sidebar({ noTopbar = false }) {
       {/* Toggles section */}
       <SectionSeparator title="Réglages" collapsed={collapsed} />
       <div className="flex flex-col gap-0.5">
-        <ThemeToggleItem collapsed={collapsed} />
+        <ThemeSelectorItem collapsed={collapsed} />
         <LanguageToggleItem collapsed={collapsed} />
       </div>
 
-      {/* VIP Subscription + Live */}
+      {/* Live */}
       <div className="mt-auto pt-4 space-y-3">
-        {collapsed ? (
-          <button onClick={() => setShowVipCheckout(true)} className="w-full flex justify-center p-2 rounded-xl transition hover:opacity-90" style={{ background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.25)" }} title="VIP Prospecteur">
-            <Crown className="w-5 h-5" style={{ color: "#a855f7", filter: NEON_ICON_GLOW }} />
-          </button>
-        ) : (
-          <button onClick={() => setShowVipCheckout(true)} className="w-full rounded-xl p-3 transition hover:opacity-90 text-left" style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.15), rgba(109,40,217,0.1))", border: "1px solid rgba(168,85,247,0.25)" }}>
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: "rgba(168,85,247,0.2)" }}>
-                <Crown className="w-3.5 h-3.5" style={{ color: "#a855f7", filter: NEON_ICON_GLOW }} />
-              </div>
-              <span className="text-xs font-black text-white">VIP Prospecteur</span>
-            </div>
-            <p className="text-[10px] text-white/50 leading-tight mb-1.5">
-              Cooldown de vote réduit à <span className="font-bold text-purple-400">1h</span> au lieu de 2h
-            </p>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-black text-white">2,99€<span className="text-[10px] font-normal text-white/40">/mois</span></span>
-              <span className="text-[9px] font-bold px-2 py-1 rounded-lg flex items-center gap-1" style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)", color: "#fff" }}>
-                <Zap className="w-2.5 h-2.5" /> S'abonner
-              </span>
-            </div>
-          </button>
-        )}
-
         <Link to="/studio" className={cn("flex items-center justify-center gap-2 rounded-xl text-sm font-bold transition hover:opacity-80", collapsed ? "p-2" : "px-4 py-3")} style={{ background: "linear-gradient(135deg, #ff4d4d, #cc3838)", color: "#fff" }} title={collapsed ? "Lancer un direct" : undefined}>
           <Tv2 className="w-4 h-4" style={{ filter: "drop-shadow(0 0 4px rgba(255,77,77,0.8))" }} />
           {!collapsed && "Lancer un direct"}
         </Link>
       </div>
-
-      {showVipCheckout && (
-        <CheckoutModal functionName="stripePayment" params={{ action: "createVIPSubscription", plan: "vip_vote" }} onClose={() => setShowVipCheckout(false)} onSuccess={() => { setShowVipCheckout(false); window.location.reload(); }} />
-      )}
     </aside>
   );
 }
