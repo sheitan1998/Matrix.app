@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Gamepad2, BookOpen, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Gamepad2, BookOpen, ShieldCheck, Images } from "lucide-react";
 import GTA6DetailModal from "@/components/tuto-gaming/GTA6DetailModal";
 import GTA6Image from "@/components/tuto-gaming/GTA6Image";
 import {
@@ -28,12 +28,23 @@ function GalleryCard({ item, onClick }) {
       />
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.9) 100%)" }} />
       <div className="absolute bottom-0 left-0 right-0 p-3">
-        <span
-          className="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider mb-1"
-          style={{ background: `${color}33`, color }}
-        >
-          {item.tag}
-        </span>
+        <div className="flex items-center gap-1.5 mb-1">
+          <span
+            className="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider"
+            style={{ background: `${color}33`, color }}
+          >
+            {item.tag}
+          </span>
+          {item.gallery?.length > 1 && (
+            <span
+              className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-bold"
+              style={{ background: "rgba(0,0,0,0.5)", color: "#fff" }}
+            >
+              <Images className="w-2.5 h-2.5" />
+              {item.gallery.length}
+            </span>
+          )}
+        </div>
         <h3 className="text-sm font-black text-white leading-tight">{item.name}</h3>
       </div>
     </button>

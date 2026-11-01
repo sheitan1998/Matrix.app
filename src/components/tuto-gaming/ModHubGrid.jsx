@@ -16,13 +16,15 @@ import {
 
 const CATEGORY_LABELS = {
   tractors: 'Tracteurs',
-  trailers: 'Remorques',
   harvesters: 'Moissonneuses',
   tillage: 'Outils du sol',
-  maps: 'Cartes',
-  seeding: 'Semis et plantation',
+  trailers: 'Remorques',
+  vehicles: 'Véhicules utilitaires',
+  maps: 'Cartes / Maps',
+  buildings: 'Bâtiments / Usines',
+  seeding: 'Semis',
   grassland: 'Fenaison',
-  buildings: 'Bâtiments',
+  scripts: 'Scripts / Gameplay',
 };
 
 const REFERENCE_CATEGORIES = Object.entries(CATEGORY_LABELS).map(([id, label]) => ({
