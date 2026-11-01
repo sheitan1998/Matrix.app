@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import AuthModal from "@/components/landing/AuthModal";
 import AffiliatePartners from "@/components/landing/AffiliatePartners";
-import LandingSidebar from "@/components/landing/LandingSidebar";
+import Sidebar from "@/components/layout/Sidebar";
 import LandingFooter from "@/components/landing/LandingFooter";
 import FaqPanel from "@/components/landing/FaqPanel";
 import ThemeModal from "@/components/landing/ThemeModal";
@@ -34,7 +34,7 @@ export default function Landing() {
     <div className="min-h-screen relative overflow-y-auto overflow-x-hidden flex bg-transparent">
       {/* The global body background is the only wallpaper layer. */}
       {/* Sidebar */}
-      <LandingSidebar onFaq={() => setShowFaq(true)} onOpenTheme={() => setShowTheme(true)} />
+      <Sidebar noTopbar />
 
       {/* Main content */}
       <div className="relative z-10 flex-1 flex flex-col min-w-0 px-4 sm:px-6 lg:px-8 py-4">
