@@ -141,14 +141,17 @@ export default function GTA6DetailModal({ item, onClose }) {
             <p className="text-xs font-bold mb-2" style={{ color: accent }}>{item.subtitle}</p>
           )}
 
-          {/* Faction / Class */}
-          {(item.faction || item.vehicleClass || item.ammoType) && (
+          {/* Faction / Class / Brand */}
+          {(item.faction || item.vehicleClass || item.ammoType || item.brand) && (
             <div className="flex flex-wrap gap-3 mb-3 text-xs text-muted-foreground">
               {item.faction && (
                 <span><span className="font-bold text-foreground">Faction :</span> {item.faction}</span>
               )}
               {item.vehicleClass && (
                 <span><span className="font-bold text-foreground">Classe :</span> {item.vehicleClass}</span>
+              )}
+              {item.brand && (
+                <span><span className="font-bold text-foreground">Marque :</span> {item.brand}</span>
               )}
               {item.ammoType && (
                 <span><span className="font-bold text-foreground">Munitions :</span> {item.ammoType}</span>
@@ -190,6 +193,29 @@ export default function GTA6DetailModal({ item, onClose }) {
               style={{ borderLeft: `3px solid ${accent}`, color: "hsl(var(--foreground))" }}
             >
               "{item.quote}"
+            </div>
+          )}
+
+          {/* Mission steps */}
+          {item.steps && Array.isArray(item.steps) && item.steps.length > 0 && (
+            <div className="mt-4 p-3 rounded-lg" style={{ background: `${accent}08`, border: `1px solid ${accent}22` }}>
+              <p className="text-[10px] uppercase tracking-wider font-bold mb-2" style={{ color: accent }}>Déroulement</p>
+              <ol className="space-y-1.5">
+                {item.steps.map((step, idx) => (
+                  <li key={idx} className="flex gap-2 text-xs text-muted-foreground">
+                    <span className="font-black shrink-0" style={{ color: accent }}>{idx + 1}.</span>
+                    <span className="leading-relaxed">{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+
+          {/* Mission rewards */}
+          {item.rewards && (
+            <div className="mt-4 p-3 rounded-lg" style={{ background: "rgba(251,191,36,0.05)", border: "1px solid rgba(251,191,36,0.2)" }}>
+              <p className="text-[10px] uppercase tracking-wider font-bold mb-1" style={{ color: "#FBBF24" }}>Récompenses</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">{item.rewards}</p>
             </div>
           )}
 

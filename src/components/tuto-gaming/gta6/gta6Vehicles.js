@@ -1,6 +1,6 @@
 // GTA VI - Véhicules identifiés dans les trailers et screenshots officiels
 // Sources : GTA Wiki (Fandom) + trailers officiels Rockstar Games
-// Les visuels utilisent les captures officielles montrant le monde de Leonida
+// Chaque fiche véhicule est unique : nom, marque, catégorie, performances, galerie dédiée.
 
 import { WIKI_CDN } from "./gta6Core";
 
@@ -19,6 +19,7 @@ const JASON_SHOT = SS("c/c9/OfficialScreenshots-GTAVI-PromotionalWebsite-JasonDu
 export const GTA6_VEHICLES = [
   {
     name: "Supercar de Vice City",
+    brand: "Truffade",
     tag: "Véhicule",
     category: "Sport / Supercar",
     status: "Aperçu dans les trailers",
@@ -29,7 +30,7 @@ export const GTA6_VEHICLES = [
     desc: "Bolides ultra-rapides pour les courses-poursuites dans les rues néonées de Vice City. Inspirés des supercars les plus performantes, personnalisables dans les garages de l'État de Leonida. Visibles dans les captures officielles de Vice City avec les gratte-ciels en arrière-plan.",
     specs: {
       Classe: "Sport / Supercar",
-      Inspiration: "Supercars modernes (hypercar)",
+      Marque: "Truffade (inspiration Bugatti)",
       Vitesse: "Très élevée",
       Accélération: "Exceptionnelle",
       Personnalisation: "Complète (carrosserie, moteur, transmission)",
@@ -38,6 +39,7 @@ export const GTA6_VEHICLES = [
   },
   {
     name: "Muscle Car",
+    brand: "Vapid",
     tag: "Véhicule",
     category: "Muscle / Classic",
     status: "Aperçu dans les trailers",
@@ -48,7 +50,7 @@ export const GTA6_VEHICLES = [
     desc: "Muscle cars américains puissants et bruyants, parfaits pour les démonstrations de force dans les quartiers de Vice City. Inspirés des classiques américains des années 60-70, ces véhicules combinent style rétro et performances brutes.",
     specs: {
       Classe: "Muscle Car",
-      Inspiration: "Ford Mustang, Dodge Charger",
+      Marque: "Vapid (inspiration Ford)",
       Vitesse: "Élevée",
       Accélération: "Très élevée (ligne droite)",
       "Tenue de route": "Moyenne",
@@ -57,6 +59,7 @@ export const GTA6_VEHICLES = [
   },
   {
     name: "Berline de luxe",
+    brand: "Übermacht",
     tag: "Véhicule",
     category: "Berline",
     status: "Aperçu dans les trailers",
@@ -67,7 +70,7 @@ export const GTA6_VEHICLES = [
     desc: "Berlines modifiées combinant élégance et performances. Idéales pour les déplacements discrets à travers les quartiers de Vice City et les zones rurales de Leonida. Choix privilégié des criminels voulant passer inaperçus.",
     specs: {
       Classe: "Berline premium",
-      Inspiration: "Berlines de luxe allemandes et américaines",
+      Marque: "Übermacht (inspiration BMW)",
       Vitesse: "Moyenne-élevée",
       Confort: "Élevé",
       Discrétion: "Bonne",
@@ -76,6 +79,7 @@ export const GTA6_VEHICLES = [
   },
   {
     name: "SUV tout-terrain",
+    brand: "Declasse",
     tag: "Véhicule",
     category: "SUV / Off-road",
     status: "Aperçu dans les trailers",
@@ -86,7 +90,7 @@ export const GTA6_VEHICLES = [
     desc: "Véhicules tout-terrain conçus pour les marécages, les Everglades de Leonida et les zones rurales. Robustesse et capacité de franchissement pour les escapades hors des sentiers battus. Essentiels pour naviguer dans Grassrivers et Ambrosia.",
     specs: {
       Classe: "SUV 4x4",
-      Inspiration: "Jeep, Hummer, 4x4 robustes",
+      Marque: "Declasse (inspiration Chevrolet)",
       Vitesse: "Moyenne",
       "4x4": "Oui (intégré)",
       Franchissement: "Excellent",
@@ -95,6 +99,7 @@ export const GTA6_VEHICLES = [
   },
   {
     name: "Pickup utilitaire",
+    brand: "Vapid",
     tag: "Véhicule",
     category: "Pickup / Utility",
     status: "Aperçu dans les trailers",
@@ -105,7 +110,7 @@ export const GTA6_VEHICLES = [
     desc: "Pickups robustes pour le transport de matériel et de personnes à travers les zones rurales de Leonida. Pratiques pour les missions de contrebande, de livraison et de transport de matériel entre Vice City et les zones rurales.",
     specs: {
       Classe: "Pickup",
-      Inspiration: "Ford F-150, Chevrolet Silverado",
+      Marque: "Vapid (inspiration Ford F-150)",
       Vitesse: "Moyenne",
       "4x4": "Oui",
       Chargement: "Élevé",
@@ -114,6 +119,7 @@ export const GTA6_VEHICLES = [
   },
   {
     name: "Moto sportive",
+    brand: "Pegassi",
     tag: "Véhicule",
     category: "Moto",
     status: "Aperçu dans les trailers",
@@ -124,7 +130,7 @@ export const GTA6_VEHICLES = [
     desc: "Motos de sport ultra-maniables pour se faufiler dans le trafic de Vice City. Vitesse et agilité pour les missions de livraison rapides et les courses urbaines. Idéales pour échapper à la police dans les rues étroites.",
     specs: {
       Classe: "Moto sportive",
-      Inspiration: "Sportbike japonais et européen",
+      Marque: "Pegassi (inspiration Ducati)",
       Vitesse: "Très élevée",
       Agilité: "Excellente",
       Protection: "Faible",
@@ -133,6 +139,7 @@ export const GTA6_VEHICLES = [
   },
   {
     name: "Bateau rapide (Speedboat)",
+    brand: "Shitzu",
     tag: "Véhicule",
     category: "Maritime",
     status: "Aperçu dans les trailers",
@@ -143,7 +150,7 @@ export const GTA6_VEHICLES = [
     desc: "Bateaux motorisés pour les courses sur l'océan et les voies navigables de Leonida. Essentiels pour les missions maritimes et l'exploration côtière des Leonida Keys. Le Trailer 1 montre de nombreux bateaux traversant la baie sud de Leonida, référence directe au film Miami Vice (2006).",
     specs: {
       Classe: "Bateau motorisé",
-      Inspiration: "Speedboat, go-fast boat",
+      Marque: "Shitzu (inspiration go-fast boat)",
       Vitesse: "Élevée",
       Capacité: "2-4 personnes",
       Environnement: "Océan, rivières, marécages",
@@ -152,6 +159,7 @@ export const GTA6_VEHICLES = [
   },
   {
     name: "Hélicoptère",
+    brand: "Buckingham",
     tag: "Véhicule",
     category: "Aérien",
     status: "Confirmé (trailers + screenshots)",
@@ -162,7 +170,7 @@ export const GTA6_VEHICLES = [
     desc: "Hélicoptères confirmés dans l'État de Leonida pour les déplacements aériens rapides à travers la carte. Utilisés par les forces de l'ordre et les criminels. Visibles dans les captures du Mount Kalaga National Park et des Leonida Keys.",
     specs: {
       Classe: "Hélicoptère",
-      Inspiration: "Hélico civil et militaire",
+      Marque: "Buckingham (inspiration civilian/military)",
       Vitesse: "Élevée",
       Capacité: "4-6 personnes",
       Utilité: "Transport, fuite, reconnaissance",
@@ -171,6 +179,7 @@ export const GTA6_VEHICLES = [
   },
   {
     name: "Voiture de police (VCPD)",
+    brand: "Vapid",
     tag: "Véhicule",
     category: "Law Enforcement",
     status: "Confirmé (série GTA)",
@@ -181,7 +190,7 @@ export const GTA6_VEHICLES = [
     desc: "Véhicules des forces de l'ordre du Vice City Police Department (VCPD) et de l'État de Leonida. Poursuites et interventions rapides dans Vice City et ses environs. GTA VI introduit un système de profil criminel qui influence le comportement de la police.",
     specs: {
       Classe: "Cruiser de police",
-      Inspiration: "Ford Police Interceptor, Dodge Charger Pursuit",
+      Marque: "Vapid Police Interceptor",
       Vitesse: "Élevée",
       Armement: "Sirène, rampe, gyrophare",
       IA: "Profil criminel adaptatif",
@@ -190,6 +199,7 @@ export const GTA6_VEHICLES = [
   },
   {
     name: "Bateau des Everglades (Airboat)",
+    brand: "Utility",
     tag: "Véhicule",
     category: "Maritime / Swamp",
     status: "Aperçu dans les trailers",
@@ -200,7 +210,7 @@ export const GTA6_VEHICLES = [
     desc: "Bateaux à fond plat (airboats / hydroglisseurs) pour naviguer dans les marécages des Everglades de Leonida. Essentiels pour explorer Grassrivers et ses voies navigables peu profondes. Le Trailer 1 confirme la présence d'alligators dans ces zones marécageuses.",
     specs: {
       Classe: "Airboat / Hydroglisseur",
-      Inspiration: "Everglades airboat",
+      Marque: "Utility (Everglades airboat)",
       Vitesse: "Moyenne",
       Environnement: "Marécages, eaux peu profondes",
       Bruit: "Élevé (hélice extérieure)",

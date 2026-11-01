@@ -1,6 +1,6 @@
 // GTA VI - Guides de Missions & Activités
 // Sources : GTA Wiki (Fandom) + site officiel Rockstar Games
-// Structure prête à l'emploi pour les guides post-sortie
+// Chaque fiche mission est unique : nom, type, résumé, étapes, récompenses.
 
 export const GTA6_MISSIONS = [
   {
@@ -16,6 +16,14 @@ export const GTA6_MISSIONS = [
       "Approches": "Furtive (Stealth) / Frontale (Loud)",
       "Personnages": "Lucia (moteur) + Jason (frein)",
     },
+    steps: [
+      "Repérage : identifiez la cible, les entrées/sorties et les caméras de sécurité.",
+      "Planification : choisissez l'approche (furtive ou frontale) et recrutez l'équipe.",
+      "Préparation : acquirez armes, véhicules de fuite et matériel (hack, explosifs).",
+      "Exécution : infiltration ou assaut, neutralisation des gardes, ouverture du coffre.",
+      "Évasion : fuyez en véhicule, semez la police et atteignez le point de largage.",
+    ],
+    rewards: "Argent liquide (variable selon la cible), réputation criminelle, débloque de nouveaux contacts et braquages plus lucratifs.",
     tips: "Préparez vos armes et véhicules de fuite avant le braquage. Le système de profil criminel de GTA VI signifie que la police vous reconnaîtra plus vite si vous avez un historique. Utilisez le changement de personnage pour couvrir plusieurs angles.",
   },
   {
@@ -31,6 +39,14 @@ export const GTA6_MISSIONS = [
       "Véhicules": "Bateaux, pickups, berlines",
       "Récompense": "Argent + réputation criminelle",
     },
+    steps: [
+      "Récupération : allez chercher la marchandise au point de stockage (Port Gellhorn ou Keys).",
+      "Transport maritime : traversez la baie en bateau rapide en évitant les patrouilles côtières.",
+      "Livraison terrestre : conduisez le pickup jusqu'au client final dans Vice City.",
+      "Gestion de territoire : défendez vos routes de trafic contre les gangs rivaux.",
+      "Expansion : achetez de nouvelles planques et recrutez des lieutenants.",
+    ],
+    rewards: "Revenus récurrents, accès à de nouveaux produits, territoire étendu, relations avec les cartels des Keys.",
     tips: "Utilisez les bateaux rapides pour les livraisons maritimes entre les Keys. Évitez les routes principales de Vice City avec de la contrebande. Le Port Gellhorn est idéal pour les importations discrètes.",
   },
   {
@@ -46,6 +62,14 @@ export const GTA6_MISSIONS = [
       "Nouvelle mécanique": "Profil criminel adaptatif",
       "Zones de fuite": "Urbain, maritime, aérien, marécageux",
     },
+    steps: [
+      "Déclenchement : un crime est commis, la police est alertée (niveau 1-2 étoiles).",
+      "Escalade : les forces augmentent (VCPD → State Patrol → FIB) selon la gravité.",
+      "Poursuite : evadez-vous en véhicule, changez de zone pour perdre la trace.",
+      "Dissimulation : garez-vous hors de vue, changez de véhicule, effacez le profil.",
+      "Réinitialisation : attendez que le niveau de recherche retombe à zéro.",
+    ],
+    rewards: "Aucune récompense directe, mais survivre augmente votre réputation de criminel et débloque des perks d'évasion.",
     tips: "Le profil criminel influence la vitesse de reconnaissance par la police. Changez de véhicule et de zone (urbain → rural → maritime) pour semer vos poursuivants. Les Everglades (Grassrivers) sont une zone de fuite idéale en airboat.",
   },
   {
@@ -61,6 +85,14 @@ export const GTA6_MISSIONS = [
       "Faune": "Alligators, oiseaux, serpents",
       "Vie nocturne": "Boîtes, plages, divertissement",
     },
+    steps: [
+      "Exploration : découvrez les lieux d'activité (plages, boîtes, marécages).",
+      "Participation : interagissez avec les PNJ et les mini-jeux (danse, sport, chasse).",
+      "Réseaux sociaux : filmez vos exploits et publiez-les pour gagner des abonnés.",
+      "Récompenses : recevez de l'argent et de l'influence sociale selon la viralité.",
+      "Événements aléatoires : rencontrez des scènes floridiennes (alligators, folies locales).",
+    ],
+    rewards: "Argent, influence sociale (abonnés), accessoires cosmétiques, accès à des lieux exclusifs.",
     tips: "Les activités annexes rapportent de l'argent et de l'influence sociale. Explorez les plages d'Ocean Beach et les rues de Little Cuba pour des rencontres aléatoires inspirées de la culture floridienne.",
   },
   {
@@ -76,6 +108,14 @@ export const GTA6_MISSIONS = [
       "Options": "Platonique ou romantique",
       "Influence": "Choix de dialogue + actions",
     },
+    steps: [
+      "Dialogue : faites des choix de conversation qui rapprochent ou éloignent les personnages.",
+      "Actions : vos décisions en mission affectent la confiance mutuelle.",
+      "Évolution : la relation évolue au fil des chapitres selon vos choix cumulés.",
+      "Conséquences : la dynamique influence les scènes cinématiques et les fins possibles.",
+      "Changement de personnage : alternez entre Lucia et Jason pour voir leur perspective.",
+    ],
+    rewards: "Scènes cinématiques uniques, fins alternatives selon la dynamique, dialogues exclusifs.",
     tips: "Vos choix de dialogue et d'action pendant les missions influencent la dynamique entre les deux protagonistes. Le changement de personnage à la volée permet d'aborder les situations différemment selon qui vous contrôlez.",
   },
   {
@@ -91,6 +131,14 @@ export const GTA6_MISSIONS = [
       "Zones": "Urbain, rural, maritime, marécageux, montagneux",
       "Secrets": "Références à la culture floridienne",
     },
+    steps: [
+      "Repérage aérien : utilisez un hélicoptère pour cartographier les zones inaccessibles.",
+      "Exploration maritime : explorez les côtes et îles en bateau (Leonida Keys).",
+      "Marécages : naviguez en airboat dans Grassrivers pour trouver les secrets cachés.",
+      "Montagnes : randonnée et chasse dans le Mount Kalaga National Park.",
+      "Urbain : fouillez les ruelles et toits de Vice City pour des Easter eggs.",
+    ],
+    rewards: "Collectibles, armes rares, véhicules uniques, argent caché, accès à des zones secrètes.",
     tips: "Utilisez les hélicoptères pour repérer les points d'intérêt depuis le ciel. Les marécages de Grassrivers cachent des secrets liés à la faune sauvage. Les Leonida Keys recèlent des trésors immergés.",
   },
 ];
