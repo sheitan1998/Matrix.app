@@ -19,6 +19,7 @@ import OAuthCallback from '@/pages/OAuthCallback';
 import OAuthConsent from '@/pages/OAuthConsent';
 // Layout & app shell — eager (rendered immediately after auth)
 import MainLayout from '@/components/layout/MainLayout';
+import AppSidebarLayout from '@/components/layout/AppSidebarLayout';
 import BottomTabs from '@/components/layout/BottomTabs';
 import AnimatedRoutes from '@/components/layout/AnimatedRoutes';
 import GlobalProfileButton from '@/components/profile/GlobalProfileButton';
@@ -215,35 +216,38 @@ const AuthenticatedApp = () => {
         </Route>
         <Route element={<ProtectedRoute unauthenticatedElement={<AuthGate />} />}>
           <Route path="/nexus" element={<Community />} />
-        <Route path="/shorts" element={<Shorts />} />
-        <Route path="/market" element={<MarketHome />} />
-        <Route path="/market/browse" element={<Marketplace />} />
-        <Route path="/market/subscription" element={<MarketSubscription />} />
-        <Route path="/market/:id" element={<ListingDetail />} />
-
-        <Route path="/casino" element={<Casino />} />
-        <Route path="/nexus-games" element={<NexusGames />} />
-        <Route path="/community/subscription" element={<CommunitySubscription />} />
-          <Route path="/wallet" element={<Wallet />} />
-          <Route path="/trix-store" element={<TrixStore />} />
-          <Route path="/ai" element={<AIStudio />} />
-          <Route path="/ai/subscription" element={<AISubscription />} />
-          <Route path="/video-studio" element={<VideoStudio />} />
-          <Route path="/playlists" element={<Playlists />} />
-          <Route path="/progression" element={<Progression />} />
-          <Route path="/notifications" element={<Notifications />} />
-          <Route path="/outils" element={<Outils />} />
-          <Route path="/sondages" element={<Sondages />} />
-          <Route path="/profile" element={<Navigate to="/mon-profil" replace />} />
-          <Route path="/mon-profil" element={<MonProfil />} />
-          <Route path="/boutique-matrix" element={<BoutiqueMatrix />} />
-          <Route path="/boutique-nexus" element={<BoutiqueNexus />} />
-          <Route path="/affiliate" element={<AffiliateDashboard />} />
-          <Route path="/recherche-joueur" element={<RechercheJoueur />} />
-          <Route path="/recherche-createur" element={<CreatorSearch />} />
-          <Route path="/profil-createur/:id" element={<CreatorDetail />} />
-          <Route path="/admin" element={<AdminPanel />} />
           <Route path="/auth/twitch/callback" element={<TwitchCallback />} />
+          <Route path="/profile" element={<Navigate to="/mon-profil" replace />} />
+          {/* App pages with Sidebar */}
+          <Route element={<AppSidebarLayout />}>
+            <Route path="/shorts" element={<Shorts />} />
+            <Route path="/market" element={<MarketHome />} />
+            <Route path="/market/browse" element={<Marketplace />} />
+            <Route path="/market/subscription" element={<MarketSubscription />} />
+            <Route path="/market/:id" element={<ListingDetail />} />
+            <Route path="/casino" element={<Casino />} />
+            <Route path="/nexus-games" element={<NexusGames />} />
+            <Route path="/community/subscription" element={<CommunitySubscription />} />
+            <Route path="/wallet" element={<Wallet />} />
+            <Route path="/trix-store" element={<TrixStore />} />
+            <Route path="/ai" element={<AIStudio />} />
+            <Route path="/ai/subscription" element={<AISubscription />} />
+            <Route path="/video-studio" element={<VideoStudio />} />
+            <Route path="/playlists" element={<Playlists />} />
+            <Route path="/progression" element={<Progression />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/outils" element={<Outils />} />
+            <Route path="/sondages" element={<Sondages />} />
+            <Route path="/mon-profil" element={<MonProfil />} />
+            <Route path="/boutique-matrix" element={<BoutiqueMatrix />} />
+            <Route path="/boutique-nexus" element={<BoutiqueNexus />} />
+            <Route path="/affiliate" element={<AffiliateDashboard />} />
+            <Route path="/recherche-joueur" element={<RechercheJoueur />} />
+            <Route path="/recherche-createur" element={<CreatorSearch />} />
+            <Route path="/profil-createur/:id" element={<CreatorDetail />} />
+            <Route path="/admin" element={<AdminPanel />} />
+          </Route>
+          {/* Twitch — sidebar hidden on watch pages (fullscreen) */}
           <Route element={<TwitchLayout />}>
             <Route path="/twitch" element={<TwitchHome />} />
             <Route path="/twitch/search" element={<TwitchSearch />} />
@@ -251,19 +255,20 @@ const AuthenticatedApp = () => {
             <Route path="/twitch/watch/:channelLogin" element={<TwitchWatch />} />
             <Route path="/twitch/channel/:login" element={<TwitchChannelPage />} />
           </Route>
+          {/* Streaming — sidebar hidden on watch pages (fullscreen) */}
           <Route element={<MainLayout />}>
             <Route path="/stream" element={<Home />} />
-          <Route path="/trending" element={<Trending />} />
-          <Route path="/live" element={<LiveHub />} />
-          <Route path="/subscriptions" element={<Subscriptions />} />
-          <Route path="/category/:slug" element={<Category />} />
-          <Route path="/search" element={<Search />} />
-          <Route path="/watch/:id" element={<Watch />} />
-          <Route path="/live/:id" element={<Live />} />
-          <Route path="/channel/:id" element={<Channel />} />
-          <Route path="/premium" element={<Premium />} />
-          <Route path="/upload" element={<Upload />} />
-          <Route path="/studio" element={<StudioSetup />} />
+            <Route path="/trending" element={<Trending />} />
+            <Route path="/live" element={<LiveHub />} />
+            <Route path="/subscriptions" element={<Subscriptions />} />
+            <Route path="/category/:slug" element={<Category />} />
+            <Route path="/search" element={<Search />} />
+            <Route path="/watch/:id" element={<Watch />} />
+            <Route path="/live/:id" element={<Live />} />
+            <Route path="/channel/:id" element={<Channel />} />
+            <Route path="/premium" element={<Premium />} />
+            <Route path="/upload" element={<Upload />} />
+            <Route path="/studio" element={<StudioSetup />} />
             <Route path="/dashboard" element={<Dashboard />} />
           </Route>
         </Route>

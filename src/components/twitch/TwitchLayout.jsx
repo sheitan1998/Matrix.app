@@ -9,6 +9,7 @@ export default function TwitchLayout() {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const activeTab = searchParams.get("tab") || "suivis";
+  const isFullscreen = location.pathname.startsWith("/twitch/watch/");
 
   const handleTabChange = (tab) => {
     navigate(`/twitch?tab=${tab}`);
@@ -20,7 +21,7 @@ export default function TwitchLayout() {
         <div className="min-h-screen bg-transparent text-white flex flex-col">
           <TwitchTopbar activeTab={activeTab} onTabChange={handleTabChange} />
           <div className="flex flex-1">
-            <Sidebar />
+            {!isFullscreen && <Sidebar />}
             <main className="flex-1 min-w-0">
               <Outlet />
             </main>
