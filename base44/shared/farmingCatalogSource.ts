@@ -11,6 +11,8 @@ export async function getFarmingCatalogPage({ category = 'all', search = '', cur
   let pageNumber = Number(cursor?.page ?? page);
   if (!Number.isInteger(filterIndex) || filterIndex < 0 || filterIndex >= filters.length || !Number.isInteger(pageNumber) || pageNumber < 1 || pageNumber > 10000) throw new Error('Pagination ModHub invalide.');
   const query = String(search).trim().slice(0, 120);
+  const normalize = value => String(value).normalize('NFD').replace(/\p{Diacritic}/gu, '').toLocaleLowerCase('fr');
+  let scanned = 0;
   while (filterIndex < filters.length) {
     const selectedFilter = filters[filterIndex];
     if (!ALLOWED_MODHUB_FILTERS.has(selectedFilter)) throw new Error('Filtre ModHub non autorisé.');
@@ -18,7 +20,7 @@ export async function getFarmingCatalogPage({ category = 'all', search = '', cur
     let parsed = getCached(key, 3600000);
     if (!parsed) {
       const url = new URL('https://www.farming-simulator.com/mods.php');
-      url.search = new URLSearchParams({ title: 'fs2025', lang: 'en', filter: selectedFilter, page: String(pageNumber - 1), ...(query ? { searchMod: query } : {}) }).toString();
+      url.search = new URLSearchParams({ title: 'fs2025', lang: 'en', filter: selectedFilter, page: String(pageNumber - 1), ...(query && category === 'all' ? { searchMod: query } : {}) }).toString();
       const response = await fetch(url, { headers: { Accept: 'text/html', 'User-Agent': 'Mozilla/5.0' }, redirect: 'follow', signal: AbortSignal.timeout(20000) });
       if (!response.ok) throw new Error(`ModHub temporairement indisponible (${response.status}).`);
       const html = await response.text();
@@ -27,7 +29,10 @@ export async function getFarmingCatalogPage({ category = 'all', search = '', cur
       setCached(key, parsed);
     }
     const nextCursor = parsed.hasMore ? { filterIndex, page: pageNumber + 1 } : filterIndex + 1 < filters.length ? { filterIndex: filterIndex + 1, page: 1 } : null;
-    if (parsed.items.length || !nextCursor || query) return { items: parsed.items.map(item => ({ ...item, category: definition?.label || '', officialFilter: selectedFilter })), page: pageNumber, nextCursor, has_more: Boolean(nextCursor), source: 'live' };
+    // ModHub's searchMod overrides its category filter: scope category searches here instead.
+    const items = query && category !== 'all' ? parsed.items.filter(item => normalize(`${item.title} ${item.author}`).includes(normalize(query))) : parsed.items;
+    scanned += 1;
+    if (items.length || !nextCursor || scanned >= 6) return { items: items.map(item => ({ ...item, category: definition?.label || '', officialFilter: selectedFilter })), page: pageNumber, nextCursor, has_more: Boolean(nextCursor), source: 'live' };
     filterIndex = nextCursor.filterIndex;
     pageNumber = nextCursor.page;
   }

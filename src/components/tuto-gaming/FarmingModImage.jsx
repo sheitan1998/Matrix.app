@@ -5,8 +5,8 @@ const FS25_ACCENT = "#7DA627";
 const FS25_LOGO = "data:image/svg+xml," + encodeURIComponent(
   `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
     <rect width="120" height="120" fill="#0a050f"/>
-    <text x="60" y="50" font-size="14" font-weight="900" fill="${FS25_ACCENT}" text-anchor="middle" font-family="sans-serif">FS25</text>
-    <text x="60" y="75" font-size="22" font-weight="900" fill="${FS25_ACCENT}" text-anchor="middle" font-family="sans-serif">MOD</text>
+    <text x="60" y="50" font-size="14" font-weight="900" fill="${FS25_ACCENT}" text-anchor="middle" font-family="sans-serif">MATRIX</text>
+    <text x="60" y="75" font-size="22" font-weight="900" fill="${FS25_ACCENT}" text-anchor="middle" font-family="sans-serif">FS25</text>
   </svg>`
 );
 

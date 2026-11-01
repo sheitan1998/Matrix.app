@@ -25,6 +25,7 @@ export default function useFarmingCatalog(category, search) {
       if (data.error) throw new Error(data.error);
       return data;
     },
+    placeholderData: isAll && catalog.data?.firstPage ? { pages: [catalog.data.firstPage], pageParams: [null] } : undefined,
     getNextPageParam: page => page.nextCursor || undefined,
   });
   const pages = query.data?.pages || (isAll && catalog.data ? [catalog.data.firstPage] : []);
