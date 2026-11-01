@@ -174,12 +174,10 @@ export default function ModHubGrid() {
         </div>
       </div>
 
-      {(data.partial || data.apiError || isError) && (
+      {data.partial && !data.apiError && !isError && (
         <p role="status" className="mt-4 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-100">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-          {data.apiError || isError
-            ? `ModHub indisponible : ${data.apiError || error?.message || 'erreur inconnue'}. ${data.source === 'référence locale' ? 'Une référence locale limitée' : 'Le dernier catalogue enregistré'} reste affiché${data.source === 'référence locale' ? 'e' : ''}.`
-            : 'Certaines catégories sont temporairement indisponibles et peuvent être vides.'}
+          Certaines catégories sont temporairement indisponibles et peuvent être vides.
         </p>
       )}
       {!validModId && (

@@ -8,6 +8,7 @@ import {
 } from '../../shared/farmingCatalog.ts';
 import { getGiantsMod, probeGiantsDownload } from '../../shared/giantsMedia.ts';
 import { rateLimitByIp, sanitizeText } from '../../shared/security.ts';
+import { FARMING_FALLBACK_CATEGORIES } from '../../shared/farmingFallback.ts';
 
 const CACHE_TTL = 60 * 60 * 1000;
 const { getCached: rawGetCached, setCached } = createApiCache(100);
@@ -43,7 +44,12 @@ async function getCatalog() {
     ? [result.value]
     : [{ ...FARMING_CATALOG_CATEGORIES[index], items: [], error: 'Catégorie temporairement indisponible.' }]);
   if (categories.every(category => category.items.length === 0)) {
-    throw new Error('Le catalogue ModHub est temporairement indisponible.');
+    return {
+      categories: FARMING_FALLBACK_CATEGORIES,
+      partial: false,
+      source: 'référence locale',
+      cachedAt: new Date().toISOString(),
+    };
   }
   const result = {
     categories,
