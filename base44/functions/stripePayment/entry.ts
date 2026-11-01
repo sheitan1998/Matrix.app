@@ -835,7 +835,7 @@ export default async function(req: Request): Promise<Response> {
     // ---- createDonation ----
     if (action === 'createDonation') {
       const { amount } = body;
-      if (!amount || amount < 100) return Response.json({ error: 'Montant minimum: 1€' }, { status: 400 });
+      if (!amount || amount < 1) return Response.json({ error: 'Montant minimum: 0,01€' }, { status: 400 });
 
       const params = new URLSearchParams();
       params.append('payment_method_types[]', 'card');

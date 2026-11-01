@@ -86,7 +86,8 @@ const SECTIONS = [
 
 },
 {
-  title: "Compte",
+  title: "Mon compte",
+  quickActions: true,
   items: [
   { to: "/mon-profil", label: "Mon profil", icon: User },
   { to: "/progression", label: "Classement", icon: Trophy }]
@@ -312,15 +313,10 @@ export default function Sidebar({ noTopbar = false }) {
                 <NavItem {...item} active={item.to ? isActive(item.to) : false} collapsed={collapsed} faq={item.faq} onFaq={() => setFaqOpen(true)} isLight={isLight} />
               </div>
           )}
+            {section.quickActions && <SidebarQuickActions collapsed={collapsed} isLight={isLight} />}
           </div>
         </React.Fragment>
       )}
-
-      {/* Messagerie & notifications */}
-      <SectionSeparator title="Communauté" collapsed={collapsed} isLight={isLight} />
-      <div className="flex flex-col gap-0.5">
-        <SidebarQuickActions collapsed={collapsed} isLight={isLight} />
-      </div>
 
       {/* Toggles section */}
       <SectionSeparator title="Réglages" collapsed={collapsed} isLight={isLight} />

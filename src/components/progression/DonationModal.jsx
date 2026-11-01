@@ -26,8 +26,8 @@ export default function DonationModal({ open, onClose }) {
   if (!open) return null;
 
   const handleDonate = async () => {
-    if (amount < 1) {
-      toast.error("Montant minimum: 1€");
+    if (!Number.isFinite(amount) || amount < 0.01) {
+      toast.error("Montant minimum : 0,01 €");
       return;
     }
     setLoading(true);
@@ -125,7 +125,7 @@ export default function DonationModal({ open, onClose }) {
 
         <button
           onClick={handleDonate}
-          disabled={loading || amount < 1}
+          disabled={loading || !(amount >= 0.01)}
           className="w-full py-3 rounded-xl text-sm font-black text-white transition hover:scale-[1.02] disabled:opacity-50"
           style={{
             background: "linear-gradient(135deg, #a855f7, #6d28d9)",
