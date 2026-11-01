@@ -20,6 +20,9 @@ export default function ModHubCard({ mod, onSelect, priority = false }) {
       queryFn: async () => {
         const { data } = await base44.functions.invoke('farmingModApi', { action: 'getModDetails', modId: mod.id });
         if (data.error) throw new Error(data.error);
+        // Warm the browser cache for every gallery image so the modal opens instantly.
+        const urls = [...(data.images || []), data.hdImg, data.img].filter(Boolean);
+        urls.forEach((url) => { const img = new Image(); img.src = url; });
         return data;
       },
     });

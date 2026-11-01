@@ -10,6 +10,13 @@ export default function FarmingSimPopupModal({ popupKey, title, onClose }) {
   const [lightbox, setLightbox] = useState(null);
   const [collapsedCats, setCollapsedCats] = useState(new Set());
 
+  const preloadItem = (item) => {
+    [item?.img, ...(item?.gallery || [])].filter(Boolean).forEach((url) => {
+      const img = new Image();
+      img.src = normalizeAppAssetUrl(url);
+    });
+  };
+
   const toggleCat = (slug) => {
     setCollapsedCats(prev => {
       const next = new Set(prev);
@@ -109,6 +116,8 @@ export default function FarmingSimPopupModal({ popupKey, title, onClose }) {
                         <button
                           key={img.id}
                           onClick={() => setLightbox(img)}
+                          onMouseEnter={() => preloadItem(img)}
+                          onFocus={() => preloadItem(img)}
                           className="group rounded-lg overflow-hidden border border-white/10 hover:border-[#7DA627]/40 transition"
                           style={{ background: "#262626" }}
                         >
@@ -159,6 +168,8 @@ export default function FarmingSimPopupModal({ popupKey, title, onClose }) {
                       {cat.img && (
                         <button
                           onClick={() => setLightbox(cat)}
+                          onMouseEnter={() => preloadItem(cat)}
+                          onFocus={() => preloadItem(cat)}
                           className="block w-full mb-3 rounded-lg overflow-hidden border border-white/10 hover:border-[#7DA627]/40 transition"
                         >
                           <img
@@ -177,6 +188,8 @@ export default function FarmingSimPopupModal({ popupKey, title, onClose }) {
                             <button
                               key={sub.id}
                               onClick={() => setLightbox(sub)}
+                              onMouseEnter={() => preloadItem(sub)}
+                              onFocus={() => preloadItem(sub)}
                               className="group rounded-lg overflow-hidden border border-white/10 hover:border-[#7DA627]/40 transition text-left"
                               style={{ background: "#262626" }}
                             >

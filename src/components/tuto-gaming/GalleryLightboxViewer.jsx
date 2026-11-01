@@ -19,6 +19,14 @@ export default function GalleryLightboxViewer({ item, onClose }) {
   const dragRef = React.useRef(false);
   const dragStart = React.useRef(null);
 
+  // Preload every gallery image so switching is instant.
+  useEffect(() => {
+    allImages.forEach((url) => {
+      const img = new Image();
+      img.src = normalizeAppAssetUrl(url);
+    });
+  }, [allImages.join("|")]);
+
   const clampOffset = useCallback((x, y, z) => {
     const container = containerRef.current;
     if (!container || z <= 1) return { x: 0, y: 0 };

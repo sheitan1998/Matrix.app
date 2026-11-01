@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
-import ModHubDetailModal from '@/components/tuto-gaming/ModHubDetailModal';
+import ModGalleryModal from '@/components/tuto-gaming/ModGalleryModal';
 import ModHubFilters from '@/components/tuto-gaming/ModHubFilters';
 import ModHubResults from '@/components/tuto-gaming/ModHubResults';
 import useFarmingCatalog from '@/components/tuto-gaming/useFarmingCatalog';
@@ -29,7 +29,7 @@ export default function ModHubGrid() {
       <ModHubFilters query={query} setQuery={setQuery} category={category} setCategory={setCategory} categories={catalog.categories} />
       <ModHubResults catalog={catalog} onSelect={setSelectedMod} />
       {selectedMod && (
-        <ModHubDetailModal key={selectedMod.id} modId={selectedMod.id} initialMod={selectedMod} onClose={() => setSelectedMod(null)} />
+        <ModGalleryModal key={selectedMod.id} modId={selectedMod.id} initialMod={selectedMod} onClose={() => setSelectedMod(null)} />
       )}
     </section>
   );
