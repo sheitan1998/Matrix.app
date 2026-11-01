@@ -22,6 +22,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import BottomTabs from '@/components/layout/BottomTabs';
 import AnimatedRoutes from '@/components/layout/AnimatedRoutes';
 import GlobalProfileButton from '@/components/profile/GlobalProfileButton';
+import GlobalNotificationButton from '@/components/profile/GlobalNotificationButton';
 import GlobalMessageButton from '@/components/messaging/GlobalMessageButton';
 import TwitchLayout from '@/components/twitch/TwitchLayout';
 import TutoGamingLayout from '@/components/tuto-gaming/TutoGamingLayout';
@@ -263,6 +264,7 @@ const AuthenticatedApp = () => {
       </Suspense>
       </AnimatedRoutes>
       <GlobalProfileButton />
+      <GlobalNotificationButton />
       <GlobalMessageButton />
       <BottomTabs />
       <PersistentVoicePanel />

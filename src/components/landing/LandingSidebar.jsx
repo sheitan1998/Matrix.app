@@ -44,11 +44,11 @@ export default function LandingSidebar({ onFaq, onOpenTheme }) {
       style={{
         width: 260,
         background: "linear-gradient(180deg, hsl(var(--popover)) 0%, hsl(var(--card)) 100%)",
-        borderRight: "1px solid rgba(168,85,247,0.12)",
+        borderRight: "1px solid hsl(var(--border))",
       }}
     >
       {/* Logo header */}
-      <div className="px-5 pt-6 pb-5" style={{ borderBottom: "1px solid rgba(168,85,247,0.1)" }}>
+      <div className="px-5 pt-6 pb-5" style={{ borderBottom: "1px solid hsl(var(--border))" }}>
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <h1 className="text-3xl font-black tracking-tight text-foreground">MATRIX</h1>
           <div className="flex items-center gap-2 mt-1.5">
@@ -112,7 +112,7 @@ export default function LandingSidebar({ onFaq, onOpenTheme }) {
       </nav>
 
       {/* Utility footer */}
-      <div className="px-3 py-4 space-y-1" style={{ borderTop: "1px solid rgba(168,85,247,0.1)" }}>
+      <div className="px-3 py-4 space-y-1" style={{ borderTop: "1px solid hsl(var(--border))" }}>
         <button
           onClick={onOpenTheme}
           className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-all tap-sm hover:bg-foreground/5"

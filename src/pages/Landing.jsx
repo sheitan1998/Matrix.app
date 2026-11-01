@@ -6,7 +6,6 @@ import AuthModal from "@/components/landing/AuthModal";
 import AffiliatePartners from "@/components/landing/AffiliatePartners";
 import LandingSidebar from "@/components/landing/LandingSidebar";
 import LandingFooter from "@/components/landing/LandingFooter";
-import TopRightIcons from "@/components/landing/TopRightIcons";
 import FaqPanel from "@/components/landing/FaqPanel";
 import ThemeModal from "@/components/landing/ThemeModal";
 import LandingSEO from "@/components/landing/LandingSEO";
@@ -55,15 +54,14 @@ export default function Landing() {
                 transition={{ duration: 0.4 }}
                 onClick={() => setShowAuth(true)}
                 className="flex items-center gap-2 px-4 py-2 rounded-full tap-sm shrink-0"
-                style={{ border: "1.5px solid rgba(168,85,247,0.4)", background: "rgba(168,85,247,0.05)" }}
+                style={{ border: "1.5px solid hsl(var(--border))", background: "hsl(var(--card))" }}
               >
-                <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(168,85,247,0.2)" }}>
-                  <User className="w-3.5 h-3.5" style={{ color: "#a855f7" }} />
+                <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "hsl(var(--muted))" }}>
+                  <User className="w-3.5 h-3.5" style={{ color: "hsl(var(--muted-foreground))" }} />
                 </div>
                 <span className="text-xs font-bold text-foreground">Se connecter</span>
               </motion.button>
             )}
-            <TopRightIcons />
           </div>
         </header>
 

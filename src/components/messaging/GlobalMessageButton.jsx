@@ -71,16 +71,16 @@ export default function GlobalMessageButton() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="fixed top-2.5 right-[52px] z-[55] w-9 h-9 rounded-full flex items-center justify-center transition hover:scale-105 active:scale-95"
+        className="fixed top-2.5 right-[94px] z-[55] w-9 h-9 rounded-full flex items-center justify-center transition hover:scale-105 active:scale-95"
         style={{
-          background: "rgba(18,9,28,0.85)",
-          border: "1.5px solid rgba(168,85,247,0.4)",
-          boxShadow: "0 4px 16px rgba(168,85,247,0.2)",
+          background: "hsl(var(--popover) / 0.85)",
+          border: "1.5px solid hsl(var(--border))",
+          boxShadow: "0 4px 16px hsl(var(--primary) / 0.2)",
           backdropFilter: "blur(12px)",
         }}
         title="Messagerie"
       >
-        <Mail className="w-4 h-4 text-white/70" />
+        <Mail className="w-4 h-4" style={{ color: "hsl(var(--muted-foreground))" }} />
         {unreadCount > 0 && (
           <span
             className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
