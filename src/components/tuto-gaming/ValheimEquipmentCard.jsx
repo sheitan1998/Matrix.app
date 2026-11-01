@@ -1,7 +1,7 @@
 import React from "react";
 import GameImageFallback from "@/components/tuto-gaming/GameImageFallback";
 
-const VALHEIM_LOGO = "data:image/svg+xml;base64," + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect width="120" height="120" fill="#0a050f"/><text x="60" y="75" font-size="20" font-weight="900" fill="#4ADE80" text-anchor="middle" font-family="serif" style="filter:drop-shadow(0 0 8px #4ADE8088)">VALHEIM</text></svg>`);
+const VALHEIM_LOGO = "data:image/svg+xml," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect width="120" height="120" fill="#0a050f"/><text x="60" y="75" font-size="20" font-weight="900" fill="#4ADE80" text-anchor="middle" font-family="serif" style="filter:drop-shadow(0 0 8px #4ADE8088)">VALHEIM</text></svg>`);
 
 export default function ValheimEquipmentCard({ item, onClick }) {
   return (

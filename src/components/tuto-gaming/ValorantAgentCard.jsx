@@ -1,7 +1,7 @@
 import React from "react";
 import GameImageFallback from "@/components/tuto-gaming/GameImageFallback";
 
-const VALORANT_LOGO = "data:image/svg+xml;base64," + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect width="120" height="120" fill="#0f1923"/><text x="60" y="75" font-size="14" font-weight="900" fill="#FF4655" text-anchor="middle" font-family="sans-serif" style="filter:drop-shadow(0 0 8px #FF465588)">VALORANT</text></svg>`);
+const VALORANT_LOGO = "data:image/svg+xml," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect width="120" height="120" fill="#0f1923"/><text x="60" y="75" font-size="14" font-weight="900" fill="#FF4655" text-anchor="middle" font-family="sans-serif" style="filter:drop-shadow(0 0 8px #FF465588)">VALORANT</text></svg>`);
 
 const ROLE_COLORS = {
   Controller: "#9333EA",

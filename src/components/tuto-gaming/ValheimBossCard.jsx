@@ -1,7 +1,7 @@
 import React from "react";
 import GameImageFallback from "@/components/tuto-gaming/GameImageFallback";
 
-const VALHEIM_LOGO = "data:image/svg+xml;base64," + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect width="120" height="120" fill="#0a050f"/><text x="60" y="55" font-size="14" font-weight="900" fill="#8B7355" text-anchor="middle" font-family="serif" style="filter:drop-shadow(0 0 6px #8B735588)">VALHEIM</text><text x="60" y="80" font-size="22" font-weight="900" fill="#4ADE80" text-anchor="middle" font-family="serif" style="filter:drop-shadow(0 0 8px #4ADE8088)">⚔</text></svg>`);
+const VALHEIM_LOGO = "data:image/svg+xml," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect width="120" height="120" fill="#0a050f"/><text x="60" y="55" font-size="14" font-weight="900" fill="#8B7355" text-anchor="middle" font-family="serif" style="filter:drop-shadow(0 0 6px #8B735588)">VALHEIM</text><text x="60" y="80" font-size="22" font-weight="900" fill="#4ADE80" text-anchor="middle" font-family="serif" style="filter:drop-shadow(0 0 8px #4ADE8088)">&#9876;</text></svg>`);
 
 export default function ValheimBossCard({ boss, onClick }) {
   return (

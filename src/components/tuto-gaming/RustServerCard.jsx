@@ -1,7 +1,7 @@
 import React from "react";
 import GameImageFallback from "@/components/tuto-gaming/GameImageFallback";
 
-const RUST_LOGO = "data:image/svg+xml;base64," + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect width="120" height="120" fill="#0a050f"/><text x="60" y="75" font-size="48" font-weight="900" fill="#CE422B" text-anchor="middle" font-family="sans-serif" style="filter:drop-shadow(0 0 8px #CE422B88)">RUST</text></svg>`);
+const RUST_LOGO = "data:image/svg+xml," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect width="120" height="120" fill="#0a050f"/><text x="60" y="75" font-size="48" font-weight="900" fill="#CE422B" text-anchor="middle" font-family="sans-serif" style="filter:drop-shadow(0 0 8px #CE422B88)">RUST</text></svg>`);
 
 export default function RustServerCard({ server }) {
   const playerPct = server.maxPlayers > 0 ? (server.players / server.maxPlayers) * 100 : 0;
