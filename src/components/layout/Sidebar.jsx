@@ -34,6 +34,7 @@ const NEON_ACTIVE_SHADOW = "0 0 16px rgba(168, 85, 247, 0.4), inset 0 0 12px rgb
 const NEON_ACTIVE_TEXT = "0 0 6px rgba(168, 85, 247, 0.9), 0 0 12px rgba(168, 85, 247, 0.5)";
 const NEON_SEPARATOR = "linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.4), transparent)";
 const NEON_SECTION_COLOR = "rgba(168, 85, 247, 0.85)";
+const NEON_ICON_IDLE = "drop-shadow(0 0 3px rgba(168, 85, 247, 0.8)) drop-shadow(0 0 6px rgba(168, 85, 247, 0.4))";
 
 const SECTIONS = [
   {
@@ -64,16 +65,18 @@ const SECTIONS = [
 ];
 
 function NavItem({ to, label, icon: Icon, active }) {
+  const [hovered, setHovered] = useState(false);
+  const glow = active || hovered;
   return (
     <Link
       to={to}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       className={cn(
         "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 border border-transparent",
-        active
-          ? "text-white"
-          : "text-muted-foreground hover:text-white"
+        glow ? "text-white" : "text-muted-foreground"
       )}
-      style={active
+      style={glow
         ? {
             background: NEON_ACTIVE_BG,
             borderLeft: NEON_ACTIVE_BORDER,
@@ -83,8 +86,8 @@ function NavItem({ to, label, icon: Icon, active }) {
         : undefined}
     >
       <Icon
-        className={cn("w-[18px] h-[18px] shrink-0 transition-colors", active ? "text-purple-400" : "text-muted-foreground group-hover:text-purple-300")}
-        style={active ? { filter: NEON_ICON_GLOW } : undefined}
+        className={cn("w-[18px] h-[18px] shrink-0 transition-colors", glow ? "text-purple-400" : "text-purple-300/70")}
+        style={{ filter: glow ? NEON_ICON_GLOW : NEON_ICON_IDLE }}
       />
       <span className="truncate">{label}</span>
     </Link>
@@ -101,8 +104,8 @@ function ThemeToggleItem() {
       className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 border border-transparent text-muted-foreground hover:text-white hover:bg-white/5"
     >
       <Moon
-        className="w-[18px] h-[18px] shrink-0"
-        style={isDark ? { color: "#a855f7", filter: NEON_ICON_GLOW } : undefined}
+        className="w-[18px] h-[18px] shrink-0 text-purple-300/70"
+        style={{ filter: isDark ? NEON_ICON_GLOW : NEON_ICON_IDLE }}
       />
       <span className="truncate">Thème sombre</span>
       <span
@@ -142,7 +145,7 @@ function LanguageToggleItem() {
         onClick={() => setOpen(!open)}
         className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 border border-transparent text-muted-foreground hover:text-white hover:bg-white/5"
       >
-        <Globe className="w-[18px] h-[18px] shrink-0" />
+        <Globe className="w-[18px] h-[18px] shrink-0 text-purple-300/70" style={{ filter: NEON_ICON_IDLE }} />
         <span className="truncate">Langue</span>
       </button>
       {open && (
@@ -255,7 +258,7 @@ export default function Sidebar() {
         >
           <div className="flex items-center gap-2 mb-1">
             <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: "rgba(168,85,247,0.2)" }}>
-              <Crown className="w-3.5 h-3.5" style={{ color: "#a855f7" }} />
+              <Crown className="w-3.5 h-3.5" style={{ color: "#a855f7", filter: NEON_ICON_GLOW }} />
             </div>
             <span className="text-xs font-black text-white">VIP Prospecteur</span>
           </div>
@@ -275,7 +278,7 @@ export default function Sidebar() {
           className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition hover:opacity-80"
           style={{ background: "linear-gradient(135deg, #ff4d4d, #cc3838)", color: "#fff" }}
         >
-          <Tv2 className="w-4 h-4" />
+          <Tv2 className="w-4 h-4" style={{ filter: "drop-shadow(0 0 4px rgba(255,77,77,0.8))" }} />
           Lancer un direct
         </Link>
       </div>
