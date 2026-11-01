@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Crown, Users, Sparkles, Heart, Gift } from "lucide-react";
+import { Users, Sparkles, Heart, Gift } from "lucide-react";
 import ProjectSupportBlock from "@/components/progression/ProjectSupportBlock";
 
 const FOOTER_POINTS = [
@@ -17,9 +17,9 @@ export default function LandingFooter() {
       <div
         className="rounded-3xl p-6 lg:p-8"
         style={{
-          background: "hsl(var(--card) / 0.9)",
-          border: "1px solid hsl(var(--border))",
-          boxShadow: "0 0 40px hsl(var(--primary) / 0.08)",
+          background: "#1a0a2e",
+          border: "1px solid rgba(168,85,247,0.15)",
+          boxShadow: "0 0 40px rgba(168,85,247,0.1)",
         }}
       >
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_auto] gap-6 lg:gap-8 items-center">
@@ -35,10 +35,10 @@ export default function LandingFooter() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <h3 className="text-xl lg:text-2xl font-black text-foreground mb-2">
+              <h3 className="text-xl lg:text-2xl font-black text-white mb-2">
                 Soutenir la communauté, c'est faire vivre MATRIX !
               </h3>
-              <p className="text-sm text-foreground/50 mb-4 max-w-md">
+              <p className="text-sm text-white/60 mb-4 max-w-md">
                 Ton soutien nous permet de maintenir les serveurs, développer de nouvelles fonctionnalités
                 et offrir une expérience unique à toute la communauté.
               </p>
@@ -61,48 +61,16 @@ export default function LandingFooter() {
             </motion.div>
           </div>
 
-          {/* Crown M badge (right) */}
+          {/* Logo (right) */}
           <div className="flex justify-center">
-            <motion.div
+            <motion.img
+              src="https://media.base44.com/images/public/69e14a987a927963a9924d5a/d0e3a7124_Emblmenoncosmiqueaveccouronne.png"
+              alt="MATRIX - Ensemble, on est plus forts !"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.3, duration: 0.6 }}
-              className="relative w-28 h-28 lg:w-32 lg:h-32 flex items-center justify-center"
-            >
-              {/* Orbital ring */}
-              <div
-                className="absolute inset-0 rounded-full"
-                style={{
-                  border: "2px solid rgba(168,85,247,0.3)",
-                  boxShadow: "0 0 30px rgba(168,85,247,0.3), inset 0 0 20px rgba(168,85,247,0.1)",
-                  animation: "spin 8s linear infinite",
-                }}
-              />
-              <div
-                className="absolute inset-2 rounded-full"
-                style={{
-                  border: "1px solid rgba(255,0,255,0.2)",
-                  animation: "spin 12s linear infinite reverse",
-                }}
-              />
-              {/* M badge */}
-              <div
-                className="relative w-20 h-20 lg:w-24 lg:h-24 rounded-full flex items-center justify-center"
-                style={{
-                  background: "radial-gradient(circle, rgba(74,20,140,0.6) 0%, rgba(156,39,176,0.3) 100%)",
-                  border: "2px solid rgba(168,85,247,0.5)",
-                  boxShadow: "0 0 25px rgba(168,85,247,0.4)",
-                }}
-              >
-                <span className="text-4xl lg:text-5xl font-black text-foreground" style={{ textShadow: "0 0 15px hsl(var(--primary) / 0.8)" }}>
-                  M
-                </span>
-                <Crown
-                  className="absolute -top-3 w-6 h-6"
-                  style={{ color: "#ffd700", filter: "drop-shadow(0 0 8px rgba(255,215,0,0.6))" }}
-                />
-              </div>
-            </motion.div>
+              className="w-40 h-auto lg:w-48 object-contain"
+            />
           </div>
         </div>
       </div>
@@ -119,12 +87,12 @@ export default function LandingFooter() {
               className="flex items-center gap-2"
             >
               <point.icon className="w-4 h-4" style={{ color: "#a855f7" }} />
-              <span className="text-xs lg:text-sm text-foreground/60 font-medium">{point.text}</span>
+              <span className="text-xs lg:text-sm text-white/70 font-medium">{point.text}</span>
             </motion.div>
           ))}
         </div>
         <div className="text-center">
-          <p className="text-lg lg:text-xl text-foreground/80" style={{ fontFamily: "cursive, 'Brush Script MT', sans-serif" }}>
+          <p className="text-lg lg:text-xl text-white/90" style={{ fontFamily: "cursive, 'Brush Script MT', sans-serif" }}>
             Ensemble, on est plus forts !
           </p>
         </div>

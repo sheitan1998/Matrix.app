@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   Home,
   Clapperboard,
@@ -8,7 +8,6 @@ import {
   ShoppingBag,
   User,
   Trophy,
-  Heart,
   Wrench,
   Moon,
   Sun,
@@ -65,14 +64,6 @@ function useCollapsed() {
   return { collapsed, toggle };
 }
 
-function navigateToSoutenir(navigate) {
-  navigate("/");
-  setTimeout(() => {
-    const el = document.getElementById("landing-footer");
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, 400);
-}
-
 const SECTIONS = [
 {
   title: "Navigation",
@@ -95,23 +86,14 @@ const SECTIONS = [
   title: "Compte",
   items: [
   { to: "/mon-profil", label: "Mon profil", icon: User },
-  { to: "/progression", label: "Classement", icon: Trophy },
-  { soutenir: true, label: "Soutenir", icon: Heart }]
+  { to: "/progression", label: "Classement", icon: Trophy }]
 
 }];
 
 
-function NavItem({ to, label, icon: Icon, active, collapsed, soutenir, isLight }) {
+function NavItem({ to, label, icon: Icon, active, collapsed, isLight }) {
   const [hovered, setHovered] = useState(false);
-  const navigate = useNavigate();
   const glow = active || hovered;
-
-  const handleClick = (e) => {
-    if (soutenir) {
-      e.preventDefault();
-      navigateToSoutenir(navigate);
-    }
-  };
 
   const iconColor = isLight
     ? (glow ? "#6d28d9" : "#7c3aed")
@@ -144,16 +126,8 @@ function NavItem({ to, label, icon: Icon, active, collapsed, soutenir, isLight }
       ? { background: hovered ? "rgba(0,0,0,0.04)" : undefined }
       : undefined;
 
-  if (soutenir) {
-    return (
-      <button type="button" onClick={handleClick} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} className={className} style={style} title={collapsed ? label : undefined}>
-        {link}
-      </button>);
-
-  }
-
   return (
-    <Link to={to} onClick={handleClick} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} className={className} style={style} title={collapsed ? label : undefined}>
+    <Link to={to} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} className={className} style={style} title={collapsed ? label : undefined}>
       {link}
     </Link>);
 
