@@ -9,10 +9,10 @@ import BlockRenderer from "@/components/tuto-gaming/BlockRenderer";
 import FarmingSimPopupModal from "@/components/tuto-gaming/FarmingSimPopupModal";
 
 const POPUP_BUTTONS = [
-  { key: "enclos", label: "Enclos", icon: Fence },
-  { key: "rendement", label: "Rendement", icon: TrendingUp },
-  { key: "usines", label: "Usines", icon: Factory },
-];
+{ key: "enclos", label: "Enclos", icon: Fence },
+{ key: "rendement", label: "Rendement", icon: TrendingUp },
+{ key: "usines", label: "Usines", icon: Factory }];
+
 
 export default function FarmingSimulator25() {
   const [categories, setCategories] = useState([]);
@@ -47,25 +47,25 @@ export default function FarmingSimulator25() {
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white/70 hover:text-white transition tap-sm"
                 style={{
                   background: "rgba(125,166,39,0.08)",
-                  border: "1px solid rgba(125,166,39,0.2)",
-                }}
-              >
+                  border: "1px solid rgba(125,166,39,0.2)"
+                }}>
+                
                 <Icon className="w-3.5 h-3.5" />
                 <span>{btn.label}</span>
-              </button>
-            );
+              </button>);
+
           })}
 
         </div>
       </div>
 
-      {activePopup && (
-        <FarmingSimPopupModal
-          popupKey={activePopup.key}
-          title={activePopup.label}
-          onClose={() => setActivePopup(null)}
-        />
-      )}
+      {activePopup &&
+      <FarmingSimPopupModal
+        popupKey={activePopup.key}
+        title={activePopup.label}
+        onClose={() => setActivePopup(null)} />
+
+      }
 
       
 
@@ -93,7 +93,7 @@ export default function FarmingSimulator25() {
 
         categories.map((category) =>
         <div key={category.id}>
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-3 hidden">
                 <span className="block w-1 h-5 rounded-full" style={{ background: "#7DA627" }} />
                 <h2 className="text-sm sm:text-base font-black uppercase tracking-wider text-white">
                   {category.title}
@@ -105,14 +105,14 @@ export default function FarmingSimulator25() {
             }
               </div>
               {category.cards.length > 0 ?
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 hidden">
                   {category.cards.map((card) =>
             <CategoryCard key={card.id} card={card} />
             )}
                 </div> :
 
           <div
-            className="rounded-lg border border-dashed border-white/10 py-6 text-center"
+            className="rounded-lg border border-dashed border-white/10 py-6 text-center hidden"
             style={{ background: "rgba(38,38,38,0.4)" }}>
             
                   <span className="text-xs text-white/30 uppercase tracking-wider">Bientôt disponible</span>
