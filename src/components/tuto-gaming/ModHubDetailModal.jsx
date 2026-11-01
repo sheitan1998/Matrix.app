@@ -115,7 +115,7 @@ export default function ModHubDetailModal({ modId, initialMod, onClose }) {
             {images.length > 0 ? (
               <section aria-label={`Galerie de ${mod.title}`}>
                 <div className="relative">
-                  <FarmingModImage key={images[imageIndex]} src={images[imageIndex]} alt={`${mod.title} — capture ${imageIndex + 1} sur ${images.length}`} modTitle={mod.title} brand={mod.brand} className="aspect-video w-full rounded-xl object-contain bg-muted" />
+                  <FarmingModImage priority key={images[imageIndex]} src={images[imageIndex]} alt={`${mod.title} — capture ${imageIndex + 1} sur ${images.length}`} modTitle={mod.title} brand={mod.brand} className="aspect-video w-full rounded-xl object-contain bg-muted" />
                   {images.length > 1 && (
                     <>
                       <button

@@ -2,7 +2,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { createApiCache, dataResponse } from '../../shared/apiCache.ts';
 import { FARMING_CATALOG_CATEGORIES } from '../../shared/farmingCategories.ts';
 import { getFarmingCatalogPage } from '../../shared/farmingCatalogSource.ts';
-import { getGiantsMod, probeGiantsDownload } from '../../shared/giantsMedia.ts';
+import { getGiantsMod, resolveGiantsDownload } from '../../shared/giantsMedia.ts';
+import { farmingDownloadEndpoint, farmingPublicMod } from '../../shared/farmingDelivery.ts';
 import { rateLimitByIp, sanitizeText } from '../../shared/security.ts';
 
 
@@ -10,8 +11,9 @@ const CACHE_TTL = 60 * 60 * 1000;
 const { getCached: rawGetCached, setCached } = createApiCache(100);
 const getCached = (key: string) => rawGetCached(key, CACHE_TTL);
 
-async function getCatalog() {
-  const firstPage = await getFarmingCatalogPage();
+async function getCatalog(req) {
+  const page = await getFarmingCatalogPage();
+  const firstPage = { ...page, items: page.items.map(mod => farmingPublicMod(req, mod)) };
   return { categories: FARMING_CATALOG_CATEGORIES, firstPage, source: 'GIANTS ModHub', cachedAt: new Date().toISOString() };
 }
 
@@ -76,17 +78,20 @@ export default async function(req: Request) {
     const body = await req.json().catch(() => ({}));
     switch (body.action) {
       case 'getCatalog':
-        return dataResponse(await getCatalog());
-      case 'getMods':
-        return dataResponse(await getFarmingCatalogPage({ category: body.category || 'all', search: body.search || '', cursor: body.cursor, page: body.page || 1, filter: body.filter }));
+        return dataResponse(await getCatalog(req));
+      case 'getMods': {
+        const page = await getFarmingCatalogPage({ category: body.category || 'all', search: body.search || '', cursor: body.cursor, page: body.page || 1, filter: body.filter });
+        return dataResponse({ ...page, items: page.items.map(mod => farmingPublicMod(req, mod)) });
+      }
       case 'getModDetails':
-        return dataResponse(await getGiantsMod(body.modId));
+        return dataResponse(farmingPublicMod(req, await getGiantsMod(body.modId)));
       case 'translateDescription':
         return translateDescription(req, body.description);
       case 'prepareDownload': {
         const modId = String(body.modId || '');
-        const file = await probeGiantsDownload(modId);
-        return Response.json({ filename: file.filename, size: file.size, modId, source: 'GIANTS ModHub' });
+        if (!/^\d{1,10}$/.test(modId)) return Response.json({ error: 'Identifiant du mod invalide.' }, { status: 400 });
+        const file = await resolveGiantsDownload(modId);
+        return dataResponse({ ...file, downloadUrl: file.url, downloadEndpoint: farmingDownloadEndpoint(req), modId, source: 'GIANTS ModHub' }, 300);
       }
       default:
         return Response.json({ error: 'Action inconnue.' }, { status: 400 });

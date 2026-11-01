@@ -2,8 +2,9 @@ import React from 'react';
 import { Star, Tag, User, Cog } from 'lucide-react';
 import FarmingModImage from '@/components/tuto-gaming/FarmingModImage';
 import DownloadModButton from '@/components/tuto-gaming/DownloadModButton';
+import { FARMING_LOCAL_IMAGES } from '@/components/tuto-gaming/farmingLocalImages';
 
-export default function ModHubCard({ mod, onSelect }) {
+export default function ModHubCard({ mod, onSelect, priority = false }) {
   const specs = mod.specs || {};
   const specEntries = Object.entries(specs).slice(0, 3);
 
@@ -18,6 +19,8 @@ export default function ModHubCard({ mod, onSelect }) {
         <div className="relative w-full aspect-square">
           <FarmingModImage
             src={mod.img}
+            fallbackSrc={FARMING_LOCAL_IMAGES[mod.id]}
+            priority={priority}
             alt={mod.title}
             modTitle={mod.title}
             brand={mod.brand}

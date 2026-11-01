@@ -5,7 +5,7 @@ export function extractGiantsImages(html, modId, kind = 'all') {
   const images = new Set();
   for (const match of html.matchAll(/(?:\bsrc|\bdata-src|\bhref)\s*=\s*["']([^"']+)["']/gi)) {
     const value = match[1].replace(/&amp;/g, '&');
-    if (!/^(?:https:)?\/\//i.test(value)) continue;
+    if (!/^(?:https:)?\/\/cdn\d{1,3}\.giants-software\.com\//i.test(value)) continue;
     const url = new URL(value, 'https://www.farming-simulator.com/');
     if (url.protocol === 'https:' && /^cdn\d{1,3}\.giants-software\.com$/i.test(url.hostname) && !url.username && !url.password && !url.port && path.test(url.pathname)) images.add(url.href);
   }

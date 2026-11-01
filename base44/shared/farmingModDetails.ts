@@ -1,3 +1,5 @@
+import { extractGiantsImages } from './farmingDelivery.ts';
+
 export function modText(value=''){return value.replace(/<br\s*\/?\s*>/gi,'\n').replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').replace(/&quot;/g,'"').replace(/&#0*39;|&apos;/g,"'").replace(/&#(\d+);/g,(_,n)=>String.fromCodePoint(Number(n))).trim();}
 export function parseModDetails(html,id) {
   const val=label=>modText(html.match(new RegExp(`<b>\\s*(?:${label})\\s*</b>\\s*</div>\\s*<div class="table-cell">([\\s\\S]*?)</div>`,'i'))?.[1]||'');
@@ -5,11 +7,8 @@ export function parseModDetails(html,id) {
   const power=val('Power|Puissance')||description.match(/(?:power|puissance|puissance requise)\s*[:\-]\s*([\d.,]+(?:\s*[-–]\s*[\d.,]+)?)\s*(hp|cv|ps)?/i)?.[1]||description.match(/([\d.,]+(?:\s*[-–]\s*[\d.,]+)?)\s*(?:hp|cv|ps)\b/i)?.[1]||'';
   const numericPower=power.match(/[\d.,]+(?:\s*[-–]\s*[\d.,]+)?/)?.[0];
   const rating=html.match(/([\d.]+)&nbsp;\((\d+)\)/);
-  const images=[...html.matchAll(/(?:src|href)="(https:\/\/cdn\d+\.giants-software\.com\/modHub\/storage\/[^"\s]*screenshot\d+\.(?:jpg|jpeg|png|webp)(?:\?[^"\s]*)?)"/gi)]
-    .map(match=>match[1])
-    .filter((value,index,items)=>items.indexOf(value)===index)
-    .slice(0,12);
-  const img=images[0]||html.match(/src="(https:\/\/cdn\d+\.giants-software\.com\/modHub\/storage\/[^"\s]*iconBig\.(?:jpg|png))"/i)?.[1]||null;
+  const images=extractGiantsImages(html,id,'screenshots').slice(0,12);
+  const img=extractGiantsImages(html,id,'icon')[0]||images[0]||null;
   const downloadUrl=[...html.matchAll(/href=["'](https:\/\/cdn\d+\.giants-software\.com\/modHub\/storage\/[^"'\s]*\.zip(?:\?[^"'\s]*)?)["']/gi)].map(match=>modText(match[1])).find(value=>new URL(value).pathname.includes(`/storage/${String(id).padStart(8,'0')}/FS25_`))||null;
   return {id,title:modText(html.match(/<h2[^>]*class="[^"]*title-label[^"]*"[^>]*>([\s\S]*?)<\/h2>/)?.[1]||'Mod FS25'),author:val('Author')||'Inconnu',brand:val('Manufacturer'),category:val('Category'),description,img,hdImg:images[0]||img,images:images.length?images:(img?[img]:[]),rating:Number(rating?.[1])||0,votes:Number(rating?.[2])||0,size:val('Size'),version:val('Version'),price:val('Price|Prix')||description.match(/(?:price|prix)\s*[:\-]\s*([^\n]+)/i)?.[1]?.trim()||'',power:numericPower?`${numericPower} CV`:'',speed:val('Speed|Vitesse')||description.match(/(?:speed|vitesse)\s*[:\-]\s*([^\n]+)/i)?.[1]?.trim()||'',downloadUrl,detailUrl:`https://www.farming-simulator.com/mod.php?mod_id=${id}&title=fs2025`,source:'live'};
 }

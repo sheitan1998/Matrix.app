@@ -1,4 +1,5 @@
 import { modText } from './farmingModDetails.ts';
+import { extractGiantsImages } from './farmingDelivery.ts';
 
 export { FARMING_CATALOG_CATEGORIES, ALLOWED_MODHUB_FILTERS } from './farmingCategories.ts';
 
@@ -7,11 +8,11 @@ export function parseCatalogPage(html: string, categoryId = 'all') {
   const seen = new Set();
   const blocks = html.split(/class=["'][^"']*\bmod-item\b(?!__)[^"']*["']/i);
   for (let index = 1; index < blocks.length; index += 1) {
-    const block = blocks[index].slice(0, 2500);
+    const block = blocks[index];
     const id = block.match(/mod_id=(\d+)/)?.[1];
     if (!id || seen.has(id)) continue;
     seen.add(id);
-    const img = block.match(/src="(https:\/\/cdn\d+\.giants-software\.com\/modHub\/storage\/[^"]*iconBig\.(?:jpg|png))"/i)?.[1] || null;
+    const img = extractGiantsImages(block, id, 'icon')[0] || null;
     const rating = block.match(/([\d.]+)&nbsp;\((\d+)\)/);
     mods.push({
       id,

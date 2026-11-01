@@ -6,7 +6,8 @@ import { cacheFarmingCatalog, readCachedFarmingCatalog } from '@/components/tuto
 
 const OFFLINE = { categories: FARMING_MOD_GROUPS, firstPage: { items: FARMING_FALLBACK, nextCursor: null, source: 'reference' }, partial: true };
 export default function useFarmingCatalog(category, search) {
-  const catalog = useQuery({ queryKey: ['farming-catalog-v6'], staleTime: 3600000, retry: false,
+  const catalog = useQuery({ queryKey: ['farming-catalog-v7'], staleTime: 3600000, retry: false,
+    initialData: () => readCachedFarmingCatalog() || OFFLINE, initialDataUpdatedAt: 0,
     queryFn: async () => {
       try {
         const { data } = await base44.functions.invoke('farmingModApi', { action: 'getCatalog' });
@@ -17,8 +18,8 @@ export default function useFarmingCatalog(category, search) {
     },
   });
   const isAll = category === 'all' && !search;
-  const query = useInfiniteQuery({ queryKey: ['farming-mods-v6', category, search], enabled: Boolean(catalog.data),
-    initialPageParam: null, staleTime: 3600000, retry: false,
+  const query = useInfiniteQuery({ queryKey: ['farming-mods-v7', category, search], enabled: Boolean(catalog.data),
+    initialPageParam: null, staleTime: 3600000, retry: false, initialDataUpdatedAt: 0,
     initialData: () => isAll && catalog.data?.firstPage ? { pages: [catalog.data.firstPage], pageParams: [null] } : undefined,
     queryFn: async ({ pageParam }) => {
       const { data } = await base44.functions.invoke('farmingModApi', { action: 'getMods', category, search, cursor: pageParam });

@@ -1,25 +1,32 @@
 import { base44 } from '@/api/base44Client';
-import { appParams } from '@/lib/app-params';
 
-export async function downloadModArchive(modId) {
-  const response = await base44.functions.fetch('/fs25Download', {
-    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-App-Id': appParams.appId, ...(appParams.functionsVersion ? { 'Base44-Functions-Version': appParams.functionsVersion } : {}) }, body: JSON.stringify({ modId: String(modId) }),
-  });
-  if (!response.ok || !/application\/(?:zip|octet-stream)/i.test(response.headers.get('content-type') || '')) {
-    const problem = await response.json().catch(() => null);
-    throw new Error(problem?.error || `Téléchargement indisponible (${response.status}). Réessayez ici dans un instant.`);
+export async function downloadModArchive(mod, onError = () => {}) {
+  let delivery = mod;
+  if (!delivery.downloadEndpoint) {
+    const { data } = await base44.functions.invoke('farmingModApi', { action: 'prepareDownload', modId: String(mod.id) });
+    if (data.error) throw new Error(data.error);
+    delivery = { ...mod, ...data };
   }
-  const blob = await response.blob();
-  const signature = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
-  if (signature[0] !== 80 || signature[1] !== 75) throw new Error('Le fichier reçu n’est pas une archive ZIP.');
-  const filename = response.headers.get('content-disposition')?.match(/filename="([^"]+)"/)?.[1] || `FS25_${modId}.zip`;
-  const objectUrl = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = objectUrl;
-  anchor.download = filename.replace(/[^a-zA-Z0-9_.-]/g, '_');
-  anchor.hidden = true;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+  const endpoint = new URL(delivery.downloadEndpoint);
+  if (endpoint.protocol !== 'https:' || endpoint.pathname !== '/functions/fs25Download') throw new Error('Adresse de téléchargement invalide.');
+  // Keep a stable GET URL so browser caching and byte-range resumption work.
+  endpoint.searchParams.set('modId', String(mod.id));
+  endpoint.searchParams.set('native', '1');
+  if (delivery.downloadUrl) endpoint.searchParams.set('downloadUrl', delivery.downloadUrl);
+  const frame = document.createElement('iframe');
+  frame.hidden = true;
+  frame.setAttribute('aria-hidden', 'true');
+  frame.title = 'Téléchargement du mod FS25';
+  let timeout;
+  const cleanup = () => { clearTimeout(timeout); window.removeEventListener('message', receiveError); frame.remove(); };
+  const receiveError = event => {
+    if (event.origin !== endpoint.origin || event.source !== frame.contentWindow || event.data?.type !== 'matrix-fs25-download-error') return;
+    onError(new Error(event.data.message));
+    cleanup();
+  };
+  window.addEventListener('message', receiveError);
+  // Native attachments save incoming bytes directly, without a whole-file Blob.
+  frame.src = endpoint.href;
+  document.body.appendChild(frame);
+  timeout = setTimeout(cleanup, 10 * 60 * 1000);
 }
