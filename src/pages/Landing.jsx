@@ -9,6 +9,7 @@ import LandingFooter from "@/components/landing/LandingFooter";
 import TopRightIcons from "@/components/landing/TopRightIcons";
 import FaqPanel from "@/components/landing/FaqPanel";
 import LandingSEO from "@/components/landing/LandingSEO";
+import { useTheme, initThemeBackgroundLayer } from "@/hooks/useTheme";
 import { User, ArrowRight } from "lucide-react";
 
 const PLATFORM_CARDS = [
@@ -25,9 +26,11 @@ export default function Landing() {
   const [user, setUser] = useState(null);
   const [showAuth, setShowAuth] = useState(false);
   const [showFaq, setShowFaq] = useState(false);
+  const { prefs } = useTheme();
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
+    initThemeBackgroundLayer();
   }, []);
 
   return (

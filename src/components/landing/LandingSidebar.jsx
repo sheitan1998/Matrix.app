@@ -4,9 +4,10 @@ import { motion } from "framer-motion";
 import {
   Home, Clapperboard, BarChart3, TrendingUp, ShoppingBag,
   User, Trophy, Heart, Wrench, Moon, HelpCircle, Globe,
-  Gem, Shield, Star, ChevronDown
+  Gem, Shield, Star, ChevronDown, Palette
 } from "lucide-react";
 import TranslationButton from "@/components/landing/TranslationButton";
+import ThemeModal from "@/components/landing/ThemeModal";
 
 const NAV_ITEMS = [
   { label: "Accueil", path: "/", icon: Home },
@@ -22,7 +23,7 @@ const NAV_ITEMS = [
 export default function LandingSidebar({ onFaq }) {
   const nav = useNavigate();
   const location = useLocation();
-  const [darkMode, setDarkMode] = useState(true);
+  const [showTheme, setShowTheme] = useState(false);
 
   const handleNav = (item) => {
     if (item.scrollFooter) {
@@ -114,11 +115,11 @@ export default function LandingSidebar({ onFaq }) {
       {/* Utility footer */}
       <div className="px-3 py-4 space-y-1" style={{ borderTop: "1px solid rgba(168,85,247,0.1)" }}>
         <button
-          onClick={() => setDarkMode(!darkMode)}
+          onClick={() => setShowTheme(true)}
           className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-all tap-sm hover:bg-white/5"
         >
-          <Moon className="w-4 h-4 shrink-0" style={{ color: "#b0b0b0" }} />
-          <span className="text-xs font-semibold text-white/70">Thème sombre</span>
+          <Palette className="w-4 h-4 shrink-0" style={{ color: "#b0b0b0" }} />
+          <span className="text-xs font-semibold text-white/70">Thème</span>
         </button>
         <button
           onClick={onFaq}
@@ -131,6 +132,8 @@ export default function LandingSidebar({ onFaq }) {
           <TranslationButton />
         </div>
       </div>
+
+      <ThemeModal open={showTheme} onClose={() => setShowTheme(false)} />
     </aside>
   );
 }
