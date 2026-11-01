@@ -176,6 +176,7 @@ export default async function(req) {
             sourceUrl: raw.sourceUrl || '',
             availableUntil: raw.availability?.until || section.endsAt || null,
             soldOut: Boolean(raw.soldOut),
+            videoUrl: raw.videoUrl || raw.animatedPreview || null,
           });
         }
       }
