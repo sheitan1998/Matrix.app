@@ -92,9 +92,9 @@ export default function LandingFooter() {
           )}
         </div>
         <div className="text-center">
-          <p className="text-lg lg:text-xl text-white/90 hidden" style={{ fontFamily: "cursive, 'Brush Script MT', sans-serif" }}>
-            Ensemble, on est plus forts !
-          </p>
+          
+
+          
         </div>
       </div>
     </div>);

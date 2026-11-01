@@ -75,20 +75,20 @@ export default function ProjectSupportBlock() {
     }}>
       {/* Support button */}
       <div className="flex flex-col items-center mb-4">
-        <p className="text-xs text-white/50 text-center mb-3 hidden">
-          Soutenez le développement de MATRIX et débloquez des récompenses exclusives
-        </p>
-        <button
-          onClick={handleSupport}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-black text-white transition hover:scale-105 hidden"
-          style={{
-            background: 'linear-gradient(135deg, #a855f7, #6d28d9)',
-            boxShadow: '0 0 25px rgba(168,85,247,0.5), 0 0 10px rgba(168,85,247,0.3)'
-          }}>
-          
-          <Heart className="w-4 h-4" fill="white" />
-          Soutenir
-        </button>
+        
+
+        
+        
+
+
+
+
+
+
+
+
+
+        
       </div>
 
       <DonationModal open={showDonation} onClose={() => setShowDonation(false)} />
