@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Gamepad2, BookOpen, ShieldCheck, Images, Target, Map as MapIcon, Users, Zap } from "lucide-react";
 import GTA6DetailModal from "@/components/tuto-gaming/GTA6DetailModal";
-import GTA6Image from "@/components/tuto-gaming/GTA6Image";
+import GTA6GalleryCard from '@/components/tuto-gaming/GTA6GalleryCard';
+import { getGta6TabItems, resolveGta6Selection } from '@/components/tuto-gaming/gta6/gta6Registry';
 import {
   GTA6_LOGO, GTA6_PLATFORMS, GTA6_TABS, GTA6_INFO, GTA6_HIGHLIGHTS, GTA6_SYNOPSIS,
   GTA6_CHARACTERS, GTA6_VEHICLES, GTA6_WEAPONS, GTA6_LOCATIONS, GTA6_MISSIONS, GTA6_WIKI_SECTIONS,
@@ -10,58 +11,15 @@ import {
 
 const HIGHLIGHT_ICONS = { "👥": Users, "🗺️": MapIcon, "🚗": Zap, "🎯": Target };
 
-function GalleryCard({ item, onClick }) {
-  if (!item) return null;
-  const color = item.color || "#BF5AF2";
-  return (
-    <button
-      onClick={() => onClick(item)}
-      className="group relative aspect-[4/3] overflow-hidden rounded-xl text-left transition-all"
-      style={{
-        border: `1px solid ${color}44`,
-        boxShadow: `0 0 12px ${color}15`,
-      }}
-    >
-      <GTA6Image
-        src={item.image}
-        alt={item.name}
-        fallbackColor={color}
-        className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-      />
-      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.9) 100%)" }} />
-      <div className="absolute bottom-0 left-0 right-0 p-3">
-        <div className="flex items-center gap-1.5 mb-1">
-          <span
-            className="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider"
-            style={{ background: `${color}33`, color }}
-          >
-            {item.tag}
-          </span>
-          {item.gallery?.length > 1 && (
-            <span
-              className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-bold"
-              style={{ background: "rgba(0,0,0,0.5)", color: "#fff" }}
-            >
-              <Images className="w-2.5 h-2.5" />
-              {item.gallery.length}
-            </span>
-          )}
-        </div>
-        <h3 className="text-sm font-black text-white leading-tight">{item.name}</h3>
-      </div>
-    </button>
-  );
-}
-
 export default function GTA6() {
   const [tab, setTab] = useState("presentation");
-  const [selected, setSelected] = useState(null);
-
-  const renderGallery = (items) => (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-      {items.map((item) => (
-        <GalleryCard key={item.name} item={item} onClick={setSelected} />
-      ))}
+  const [selectedId, setSelectedId] = useState(null);
+  const items = getGta6TabItems(tab);
+  const selected = resolveGta6Selection(tab, selectedId);
+  const setSelected = item => setSelectedId(item?.id || null);
+  const renderGallery = () => (
+    <div key={tab} data-gta-category={tab} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+      {items.map(item => <GTA6GalleryCard key={`${item.type}:${item.id}`} item={item} onClick={setSelected} />)}
     </div>
   );
 
@@ -135,7 +93,7 @@ export default function GTA6() {
             return (
               <button
                 key={t.id}
-                onClick={() => setTab(t.id)}
+                onClick={() => { setSelectedId(null); setTab(t.id); }}
                 aria-pressed={active}
                 className="shrink-0 rounded-full px-4 py-2 text-xs font-bold transition tap-sm"
                 style={
@@ -190,7 +148,7 @@ export default function GTA6() {
         {tab === "personnages" && (
           <div className="space-y-4">
             <h2 className="text-lg font-black text-foreground">Personnages Officiels</h2>
-            {renderGallery(GTA6_CHARACTERS)}
+            {renderGallery()}
           </div>
         )}
 
@@ -198,7 +156,7 @@ export default function GTA6() {
         {tab === "vehicules" && (
           <div className="space-y-4">
             <h2 className="text-lg font-black text-foreground">Véhicules & Voitures</h2>
-            {renderGallery(GTA6_VEHICLES)}
+            {renderGallery()}
           </div>
         )}
 
@@ -206,7 +164,7 @@ export default function GTA6() {
         {tab === "armes" && (
           <div className="space-y-4">
             <h2 className="text-lg font-black text-foreground">Armes & Équipements</h2>
-            {renderGallery(GTA6_WEAPONS)}
+            {renderGallery()}
           </div>
         )}
 
@@ -214,7 +172,7 @@ export default function GTA6() {
         {tab === "lieux" && (
           <div className="space-y-4">
             <h2 className="text-lg font-black text-foreground">Lieux & Monde Ouvert</h2>
-            {renderGallery(GTA6_LOCATIONS)}
+            {renderGallery()}
           </div>
         )}
 
@@ -222,9 +180,9 @@ export default function GTA6() {
         {tab === "missions" && (
           <div className="space-y-4">
             <h2 className="text-lg font-black text-foreground">Guides de Missions & Activités</h2>
-            <p className="text-sm text-muted-foreground mb-2">Structure complète prête à l'emploi. Les guides détaillés seront enrichis dès la sortie du jeu.</p>
+            <p className="text-sm text-muted-foreground mb-2">Les missions, leurs étapes exactes et leurs récompenses ne sont pas publiées dans les sources officielles référencées. Les fiches ci-dessous sont uniquement des méthodes générales de préparation, pas des solutions GTA VI confirmées.</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {GTA6_MISSIONS.map(m => (
+              {items.map(m => (
                 <button key={m.name} onClick={() => setSelected(m)} className="text-left p-4 rounded-xl transition tap-sm" style={{ background: "hsl(var(--card))", border: `1px solid ${m.color}44`, boxShadow: `0 0 12px ${m.color}10` }}>
                   <div className="flex items-center gap-2 mb-2">
                     <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider" style={{ background: `${m.color}22`, color: m.color }}>{m.category}</span>
@@ -289,7 +247,7 @@ export default function GTA6() {
         )}
       </div>
 
-      <GTA6DetailModal item={selected} onClose={() => setSelected(null)} />
+      <GTA6DetailModal key={`${tab}:${selectedId || ''}`} item={selected} onClose={() => setSelectedId(null)} />
     </div>
   );
 }

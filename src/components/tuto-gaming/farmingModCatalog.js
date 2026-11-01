@@ -30,7 +30,7 @@ export function readCachedFarmingCatalog(storage = globalThis.localStorage, now 
   try {
     const cached = JSON.parse(storage?.getItem(CATALOG_CACHE_KEY) || 'null');
     if (!cached?.savedAt || now - cached.savedAt > CATALOG_CACHE_MAX_AGE) return null;
-    if (!cached.data?.categories?.some(category => category.items?.length)) return null;
+    if (!cached.data?.firstPage?.items?.length && !cached.data?.categories?.some(category => category.items?.length)) return null;
     return cached.data;
   } catch {
     return null;
@@ -38,7 +38,7 @@ export function readCachedFarmingCatalog(storage = globalThis.localStorage, now 
 }
 
 export function cacheFarmingCatalog(data, storage = globalThis.localStorage, now = Date.now()) {
-  if (!data?.categories?.some(category => category.items?.length)) return false;
+  if (!data?.firstPage?.items?.length && !data?.categories?.some(category => category.items?.length)) return false;
   try {
     storage?.setItem(CATALOG_CACHE_KEY, JSON.stringify({ savedAt: now, data }));
     return true;

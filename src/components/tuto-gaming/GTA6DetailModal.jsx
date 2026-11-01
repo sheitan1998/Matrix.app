@@ -55,6 +55,7 @@ export default function GTA6DetailModal({ item, onClose }) {
         {/* Main image with carousel */}
         <div className="relative aspect-video overflow-hidden shrink-0" style={{ background: "#0a050f" }}>
           <GTA6Image
+            key={currentImg}
             src={currentImg}
             alt={item.name}
             fallbackColor={accent}
@@ -135,6 +136,8 @@ export default function GTA6DetailModal({ item, onClose }) {
             )}
           </div>
 
+          {!gallery.length && <p role="status" className="mb-3 text-xs text-muted-foreground">Aucun visuel officiel dédié vérifié. Aucun média d’une autre catégorie n’est substitué.</p>}
+
           {/* Title */}
           <h3 className="text-xl font-black text-foreground mb-1">{item.name}</h3>
           {item.subtitle && (
@@ -178,6 +181,8 @@ export default function GTA6DetailModal({ item, onClose }) {
             </div>
           )}
 
+          {item.type === 'location' && item.districts?.length > 0 && <section className="mt-4"><h4 className="mb-2 text-sm font-bold">Quartiers et points d’intérêt</h4><ul className="space-y-2">{item.districts.map(district => <li key={district.name} className="rounded-lg border border-border p-3 text-xs"><strong>{district.name}</strong><p className="mt-1 text-muted-foreground">{district.desc}</p></li>)}</ul></section>}
+
           {/* Customizations */}
           {item.customizations && (
             <div className="mt-4 p-3 rounded-lg" style={{ background: `${accent}08`, border: `1px solid ${accent}22` }}>
@@ -197,7 +202,7 @@ export default function GTA6DetailModal({ item, onClose }) {
           )}
 
           {/* Mission steps */}
-          {item.steps && Array.isArray(item.steps) && item.steps.length > 0 && (
+          {item.type === 'activity' && item.steps && Array.isArray(item.steps) && item.steps.length > 0 && (
             <div className="mt-4 p-3 rounded-lg" style={{ background: `${accent}08`, border: `1px solid ${accent}22` }}>
               <p className="text-[10px] uppercase tracking-wider font-bold mb-2" style={{ color: accent }}>Déroulement</p>
               <ol className="space-y-1.5">
