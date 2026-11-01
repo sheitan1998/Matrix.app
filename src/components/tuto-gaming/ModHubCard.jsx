@@ -1,18 +1,37 @@
 import React from 'react';
 import { Star, Tag, User, Cog } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 import FarmingModImage from '@/components/tuto-gaming/FarmingModImage';
 import DownloadModButton from '@/components/tuto-gaming/DownloadModButton';
 import { FARMING_LOCAL_IMAGES } from '@/components/tuto-gaming/farmingLocalImages';
 
 export default function ModHubCard({ mod, onSelect, priority = false }) {
+  const queryClient = useQueryClient();
   const specs = mod.specs || {};
   const specEntries = Object.entries(specs).slice(0, 3);
+
+  // Prefetch full mod details on hover/focus so the modal opens instantly with
+  // description + gallery — no intermediate loading state.
+  const prefetchDetails = () => {
+    queryClient.prefetchQuery({
+      queryKey: ['farming-mod-detail', mod.id],
+      staleTime: 60 * 60 * 1000,
+      queryFn: async () => {
+        const { data } = await base44.functions.invoke('farmingModApi', { action: 'getModDetails', modId: mod.id });
+        if (data.error) throw new Error(data.error);
+        return data;
+      },
+    });
+  };
 
   return (
     <article className="flex flex-col rounded-xl border bg-card text-card-foreground overflow-hidden hover:border-primary transition-all">
       <button
         type="button"
         onClick={() => onSelect(mod)}
+        onMouseEnter={prefetchDetails}
+        onFocus={prefetchDetails}
         aria-label={`Voir les détails de ${mod.title}`}
         className="flex flex-col text-left flex-1"
       >

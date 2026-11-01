@@ -18,7 +18,10 @@ export default function ModHubDetailModal({ modId, initialMod, onClose }) {
   const { data: mod, isFetching, isError, error } = useQuery({
     queryKey: ['farming-mod-detail', modId],
     initialData: initialMod || FARMING_FALLBACK.find(item => item.id === String(modId)),
-    initialDataUpdatedAt: 0,
+    // If initialMod came from a hover-prefetch (has description), treat it as fresh
+    // so the modal opens with full content and no refetch. Catalog items (no
+    // description) still trigger a background enrichment.
+    initialDataUpdatedAt: initialMod?.description ? Date.now() : 0,
     staleTime: 60 * 60 * 1000,
     retry: 1,
     queryFn: async () => {
@@ -154,6 +157,8 @@ export default function ModHubDetailModal({ modId, initialMod, onClose }) {
                 )}
                 <p className="sr-only" aria-live="polite">Capture {imageIndex + 1} sur {images.length}</p>
               </section>
+            ) : isFetching ? (
+              <div className="aspect-video w-full animate-pulse rounded-xl bg-muted" aria-label="Chargement de la galerie" />
             ) : (
               <p className="rounded-xl bg-muted p-8 text-center text-sm text-muted-foreground">Aucune capture fournie par GIANTS.</p>
             )}
@@ -173,9 +178,17 @@ export default function ModHubDetailModal({ modId, initialMod, onClose }) {
                   </button>
                 )}
               </div>
-              <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
-                {translation || mod.description || (isFetching ? 'Chargement de la description…' : 'Description non renseignée.')}
-              </p>
+              {isFetching && !mod.description && !translation ? (
+                <div className="space-y-2" aria-label="Chargement de la description">
+                  <div className="h-3 w-full animate-pulse rounded bg-muted" />
+                  <div className="h-3 w-4/5 animate-pulse rounded bg-muted" />
+                  <div className="h-3 w-3/5 animate-pulse rounded bg-muted" />
+                </div>
+              ) : (
+                <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                  {translation || mod.description || 'Description non renseignée.'}
+                </p>
+              )}
               {translation && <p className="mt-2 text-xs text-muted-foreground">Traduction automatique — vérifiez les termes techniques.</p>}
               {translationError && <p role="alert" className="mt-2 text-xs text-destructive">{translationError}</p>}
             </section>

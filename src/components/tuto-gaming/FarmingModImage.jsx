@@ -15,7 +15,7 @@ export default function FarmingModImage({ src, alt, modTitle, brand, className =
       {src && failedSrc !== src && (
         <img key={src} src={src} alt="" aria-hidden="true" loading={priority ? 'eager' : 'lazy'} decoding="async"
           fetchPriority={priority ? 'high' : 'auto'}
-          className={`absolute inset-0 h-full w-full ${fit} ${loadedSrc === src ? 'opacity-100' : 'opacity-0'}`}
+          className={`absolute inset-0 h-full w-full ${fit} transition-opacity duration-300 ${loadedSrc === src ? 'opacity-100' : 'opacity-0'}`}
           onLoad={() => setLoadedSrc(src)} onError={() => setFailedSrc(src)} />
       )}
     </div>
