@@ -21,8 +21,13 @@ export function useNotifications(user) {
 
     fetchNotifs();
 
-    // Poll every 5 seconds for real-time feel
-    const interval = setInterval(fetchNotifs, 5000);
+    // Real-time updates come from the subscription below; polling is only a
+    // safety net, so keep it light and pause it while the tab is hidden.
+    const interval = setInterval(() => {
+      if (!document.hidden) fetchNotifs();
+    }, 60000);
+    const onVisible = () => { if (!document.hidden) fetchNotifs(); };
+    document.addEventListener("visibilitychange", onVisible);
 
     // Real-time subscription
     const unsub = base44.entities.Notification.subscribe((event) => {
@@ -36,7 +41,11 @@ export function useNotifications(user) {
       }
     });
 
-    return () => { clearInterval(interval); unsub(); };
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+      unsub();
+    };
   }, [user?.email]);
 
   const markAllRead = useCallback(async () => {
