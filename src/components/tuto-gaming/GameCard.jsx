@@ -86,10 +86,10 @@ export default function GameCard({ game, guideCount = 0, index = 0 }) {
         
           {isActive ? "Disponible" : "Bientôt"}
         </span>
-        <span className="flex items-center gap-1 text-[10px] text-white/40 hidden">
-          <BookOpen className="w-3 h-3" />
-          {guideCount} guide{guideCount > 1 ? "s" : ""}
-        </span>
+        
+
+
+      
       </div>
     </motion.div>;
 
