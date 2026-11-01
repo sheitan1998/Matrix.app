@@ -1,13 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ImageDown, RefreshCw, RotateCcw, Save, Share2, Trash2 } from 'lucide-react';
-import RocketLeagueImage from '@/components/tuto-gaming/RocketLeagueImage';
-import RocketLeagueVariantSelector from '@/components/tuto-gaming/RocketLeagueVariantSelector';
-import { captureRocketLeaguePreview } from '@/components/tuto-gaming/rocketLeaguePreviewCapture';
-import {
-  migrateRocketPaintSelection,
-  rocketLeagueVariantView,
-} from '@/components/tuto-gaming/rocketLeagueVariants';
+import RocketLeagueShopCard from '@/components/tuto-gaming/RocketLeagueShopCard';
+import RocketLeagueShopItemModal from '@/components/tuto-gaming/RocketLeagueShopItemModal';
+import RocketLeaguePaintSwatches, { ROCKET_PAINTS } from '@/components/tuto-gaming/RocketLeaguePaintSwatches';
 import useRocketLeagueCatalog from './useRocketLeagueCatalog';
+import { captureRocketLeaguePreview } from '@/components/tuto-gaming/rocketLeaguePreviewCapture';
 import {
   createRocketPresetConfig,
   decodeRocketPresetConfig,
@@ -52,18 +49,6 @@ function newPresetId() {
   return globalThis.crypto?.randomUUID?.() || `local-${Date.now()}`;
 }
 
-function compatibleWithBody(item, bodyId) {
-  return !item?.compatibleBodies?.length || !bodyId || item.compatibleBodies.includes(bodyId);
-}
-
-function selectionExistsInGarage(selection, garage) {
-  return CATEGORY_DETAILS.every(({ key }) => {
-    const id = selection[key];
-    const items = garage[key] || [];
-    return !id || !items.length || items.some(item => item.id === id);
-  });
-}
-
 export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlError }) {
   const storageRef = useRef(null);
   const previewRef = useRef(null);
@@ -75,12 +60,9 @@ export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlEr
   const [storageError, setStorageError] = useState(false);
   const [configId, setConfigId] = useState('');
   const [downloadingImage, setDownloadingImage] = useState(false);
-  const {
-    data: catalog,
-    loading: catalogLoading,
-    error: catalogError,
-    retry: retryCatalog,
-  } = useRocketLeagueCatalog();
+  const [detailItem, setDetailItem] = useState(null);
+  const [paintId, setPaintId] = useState('default');
+  const { data: catalog, loading, error, retry } = useRocketLeagueCatalog();
 
   useEffect(() => {
     storageRef.current = browserStorage();
@@ -97,56 +79,26 @@ export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlEr
   }, [hydrated, presets, selection]);
 
   useEffect(() => {
-    if (!hydrated || catalogLoading || !requestedPreset) return;
+    if (!hydrated || loading || !requestedPreset) return;
     const parsed = decodeRocketPresetConfig(requestedPreset);
-    if (!parsed || !selectionExistsInGarage(parsed.selection, catalog?.garage || {})) {
-      setMessage('Le lien de preset est invalide.');
-      onPresetUrlError?.();
-      return;
-    }
+    if (!parsed) { setMessage('Le lien de preset est invalide.'); onPresetUrlError?.(); return; }
     setSelection(parsed.selection);
     setConfigId(parsed.config.id);
     setPresetName('Preset partagé');
     setMessage('Preset partagé chargé depuis le lien.');
-  }, [catalog, catalogLoading, hydrated, onPresetUrlError, requestedPreset]);
+  }, [catalog, loading, hydrated, onPresetUrlError, requestedPreset]);
 
   const garage = catalog?.garage || {};
   const resolved = Object.fromEntries(
     CATEGORY_DETAILS.map(({ key }) => [key, selectedItem(garage[key] || [], selection[key])]),
   );
-  const previewBody = resolved.body
-    || (garage.body || []).find(item => item.name.toLowerCase() === 'octane')
-    || null;
-  const paintedBody = rocketLeagueVariantView(previewBody, selection.paint);
-  const paint = {
-    id: paintedBody?.activePaintId || 'paint-original',
-    name: paintedBody?.paint || 'Original',
-    accent: paintedBody?.accent || '#64748b',
-  };
+  const selectedPaint = ROCKET_PAINTS.find(p => p.id === paintId);
+  const overlayColor = selectedPaint?.color;
 
-  useEffect(() => {
-    if (!hydrated || catalogLoading || !previewBody) return;
-    const migratedPaint = migrateRocketPaintSelection(previewBody, selection.paint);
-    if (migratedPaint !== selection.paint) {
-      setSelection(current => ({ ...current, paint: migratedPaint }));
-    }
-  }, [catalogLoading, hydrated, previewBody, selection.paint]);
-
-  function invalidateSharedPreset() {
-    setConfigId('');
-    onPresetUrlError?.();
-  }
+  function invalidateSharedPreset() { setConfigId(''); onPresetUrlError?.(); }
 
   function choose(key, id) {
-    setSelection(current => {
-      const next = { ...current, [key]: id };
-      if (key === 'body') {
-        const decal = selectedItem(garage.decal || [], current.decal);
-        if (!compatibleWithBody(decal, id)) next.decal = null;
-        next.paint = migrateRocketPaintSelection(selectedItem(garage.body || [], id), current.paint);
-      }
-      return next;
-    });
+    setSelection(current => ({ ...current, [key]: id }));
     invalidateSharedPreset();
     setMessage('');
   }
@@ -154,16 +106,8 @@ export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlEr
   function savePreset(event) {
     event.preventDefault();
     const name = presetName.trim();
-    if (!name) {
-      setMessage('Donnez un nom au preset.');
-      return;
-    }
-    const preset = {
-      id: newPresetId(),
-      name: name.slice(0, 80),
-      selection: normalizeRocketSelection(selection),
-      savedAt: new Date().toISOString(),
-    };
+    if (!name) { setMessage('Donnez un nom au preset.'); return; }
+    const preset = { id: newPresetId(), name: name.slice(0, 80), selection: normalizeRocketSelection(selection), savedAt: new Date().toISOString() };
     setPresets(current => [...current.filter(item => item.name !== preset.name), preset].slice(-50));
     setConfigId(preset.id);
     setMessage('Preset enregistré sur cet appareil.');
@@ -185,7 +129,7 @@ export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlEr
       downloadBlob(blob, 'image/png', safeRocketFilename(presetName || 'preset-rocket-league', 'png'));
       setMessage('Image du preset téléchargée.');
     } catch {
-      setMessage('Le rendu image n’a pas pu être téléchargé.');
+      setMessage("Le rendu image n'a pas pu être téléchargé.");
     } finally {
       setDownloadingImage(false);
     }
@@ -210,78 +154,46 @@ export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlEr
     <section aria-labelledby="rocket-garage-title" className="space-y-6">
       <div>
         <h2 id="rocket-garage-title" className="text-xl font-bold">Custom Preset / Garage</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Assemblez un preset depuis les métadonnées disponibles. L’aperçu 2D superpose les visuels autorisés quand la source en fournit.
-        </p>
-        {catalogLoading && (
+        <p className="text-xs text-muted-foreground">Données en temps réel via itemshop.gg</p>
+        {loading && (
           <p className="mt-2 inline-flex rounded-full border bg-muted px-3 py-1 text-xs text-muted-foreground" role="status">
-            Catalogue en cours de chargement, aperçu local disponible.
+            Chargement du catalogue…
           </p>
         )}
-        {catalogError && (
+        {error && (
           <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-destructive" role="alert">
-            <p>{catalogError}</p>
-            <button type="button" onClick={retryCatalog} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2">
-              <RefreshCw aria-hidden="true" className="h-4 w-4" />
-              Réessayer
+            <p>{error}</p>
+            <button type="button" onClick={retry} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2">
+              <RefreshCw className="h-4 w-4" /> Réessayer
             </button>
           </div>
-        )}
-        {catalog?.fallbackReason?.startsWith('epic_') && (
-          <p className="mt-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-200" role="status">
-            Catalogue Epic partenaire indisponible ({catalog.fallbackReason}) ; garage limité au snapshot communautaire.
-          </p>
         )}
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]">
         <div className="space-y-6">
           {CATEGORY_DETAILS.map(({ key, label }) => {
-            const items = (garage[key] || []).filter(item => (
-              key !== 'decal' || compatibleWithBody(item, selection.body)
-            ));
-            const displayedItem = key === 'body' ? paintedBody : resolved[key];
+            const items = garage[key] || [];
             return (
               <fieldset key={key} className="rounded-2xl border bg-card p-4">
                 <legend className="px-1 font-bold">{label}</legend>
-                <div className="mt-2 grid gap-3 sm:grid-cols-[minmax(0,1fr)_8rem] sm:items-center">
-                  <select
-                    name={key}
-                    value={selection[key] || ''}
-                    onChange={event => choose(key, event.target.value || null)}
-                    disabled={!items.length}
-                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm disabled:opacity-60"
-                  >
-                    <option value="">Non sélectionné</option>
+                <p className="mb-2 text-xs text-muted-foreground">{items.length} choix disponibles</p>
+                {items.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Aucun objet disponible.</p>
+                ) : (
+                  <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'thin' }}>
                     {items.map(item => (
-                      <option key={item.id} value={item.id}>{item.name}</option>
+                      <div key={item.id} className="shrink-0 w-32">
+                        <RocketLeagueShopCard
+                          item={item}
+                          onSelect={id => choose(key, id)}
+                          selected={selection[key] === item.id}
+                          onOpen={setDetailItem}
+                        />
+                      </div>
                     ))}
-                  </select>
-                  <RocketLeagueImage
-                    src={displayedItem?.image}
-                    sources={displayedItem?.images}
-                    alt=""
-                    fallbackLabel={displayedItem?.name || `${label} non sélectionné`}
-                    fallbackCategory={key}
-                    fallbackRarity={displayedItem?.rarity || 'Aucun objet sélectionné'}
-                    fallbackPrice={displayedItem?.price}
-                    fallbackPriceEstimated={displayedItem?.priceEstimated}
-                    className="aspect-video w-full rounded-lg sm:aspect-square"
-                  />
-                  {key === 'body' && resolved.body && (
-                    <div className="sm:col-span-2">
-                      <RocketLeagueVariantSelector
-                        variants={resolved.body.variants}
-                        value={paint.id}
-                        onChange={paintId => choose('paint', paintId)}
-                        label="Couleur de carrosserie"
-                      />
-                    </div>
-                  )}
-                </div>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {items.length ? `${items.length} choix disponibles` : 'Aucun choix disponible pour cette source.'}
-                </p>
+                  </div>
+                )}
               </fieldset>
             );
           })}
@@ -289,112 +201,40 @@ export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlEr
 
         <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
           <div id="preset-preview-box" ref={previewRef} className="overflow-hidden rounded-2xl border bg-card">
-            <div
-              className="relative isolate overflow-hidden border-b p-4"
-              style={{ borderColor: paint.accent, backgroundColor: `${paint.accent}22` }}
-            >
-              <RocketLeagueImage
-                src={resolved.goalExplosion?.image}
-                sources={resolved.goalExplosion?.images}
-                alt=""
-                showFallback={false}
-                captureRemote={false}
-                contain={false}
-                className="absolute inset-0 -z-10 h-full w-full opacity-30"
-              />
+            <div className="relative isolate overflow-hidden border-b p-4" style={{ borderColor: '#3b82f6', backgroundColor: '#3b82f622' }}>
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">APERÇU DU PRESET</p>
               <div className="relative mt-3 aspect-video overflow-hidden rounded-xl bg-background/70">
-                <RocketLeagueImage
-                  src={paintedBody?.image}
-                  sources={paintedBody?.images}
-                  alt={`Carrosserie ${paintedBody?.name || 'Octane'}`}
-                  fallbackLabel={paintedBody?.name || 'Octane'}
-                  fallbackCategory="body"
-                  fallbackRarity={paintedBody?.rarity}
-                  fallbackPrice={paintedBody?.price}
-                  fallbackPriceEstimated={paintedBody?.priceEstimated}
-                  fallbackSummary={[
-                    `Peinture : ${paint.name}`,
-                    `Roues : ${resolved.wheels?.name || 'non sélectionnées'}`,
-                    `Sticker : ${resolved.decal?.name || 'non sélectionné'}`,
-                    `Explosion : ${resolved.goalExplosion?.name || 'non sélectionnée'}`,
-                  ].join(' · ')}
-                  captureRemote={false}
-                  className="absolute inset-0 h-full w-full"
-                />
-                <RocketLeagueImage
-                  src={resolved.decal?.image}
-                  sources={resolved.decal?.images}
-                  alt=""
-                  showFallback={false}
-                  captureRemote={false}
-                  className="absolute inset-0 h-full w-full opacity-70 mix-blend-screen"
-                />
-                <RocketLeagueImage
-                  src={resolved.wheels?.image}
-                  sources={resolved.wheels?.images}
-                  alt=""
-                  showFallback={false}
-                  captureRemote={false}
-                  className="absolute bottom-0 left-[8%] h-1/3 w-1/3 drop-shadow-xl"
-                />
-                <RocketLeagueImage
-                  src={resolved.wheels?.image}
-                  sources={resolved.wheels?.images}
-                  alt=""
-                  showFallback={false}
-                  captureRemote={false}
-                  className="absolute bottom-0 right-[8%] h-1/3 w-1/3 drop-shadow-xl"
-                />
+                {resolved.body?.image ? (
+                  <img src={resolved.body.image} alt={resolved.body.name} referrerPolicy="no-referrer" className="absolute inset-0 h-full w-full object-contain" />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">Aucune carrosserie sélectionnée</div>
+                )}
+                {overlayColor && (
+                  <div className="absolute inset-0 pointer-events-none" style={{ background: overlayColor, mixBlendMode: 'multiply', opacity: 0.45 }} />
+                )}
+                {resolved.decal?.image && (
+                  <img src={resolved.decal.image} alt="" referrerPolicy="no-referrer" className="absolute inset-0 h-full w-full object-contain opacity-70 mix-blend-screen" />
+                )}
+                {resolved.wheels?.image && (
+                  <>
+                    <img src={resolved.wheels.image} alt="" referrerPolicy="no-referrer" className="absolute bottom-0 left-[8%] h-1/3 w-1/3 object-contain drop-shadow-xl" />
+                    <img src={resolved.wheels.image} alt="" referrerPolicy="no-referrer" className="absolute bottom-0 right-[8%] h-1/3 w-1/3 object-contain drop-shadow-xl" />
+                  </>
+                )}
               </div>
-              <p className="mt-2 text-sm font-bold">{paintedBody?.name || 'Octane (aperçu par défaut)'}</p>
-              <p className="text-xs text-muted-foreground">
-                Couleur : {paint.name}
-              </p>
+              <p className="mt-2 text-sm font-bold">{resolved.body?.name || 'Aucune carrosserie'}</p>
+              <p className="text-xs text-muted-foreground">Peinture: {selectedPaint?.name || 'Par défaut'}</p>
             </div>
-            <dl className="grid grid-cols-3 gap-2 p-4">
-              {[
-                ['Sticker', resolved.decal, 'decal'],
-                ['Roues', resolved.wheels, 'wheels'],
-                ['Explosion', resolved.goalExplosion, 'goalExplosion'],
-              ].map(([label, item, category]) => (
-                <div key={label} className="min-w-0 rounded-lg bg-muted p-2">
-                  <dt className="truncate text-[11px] text-muted-foreground">{label}</dt>
-                  <dd className="mt-1">
-                    {item ? (
-                      <>
-                        <RocketLeagueImage
-                          src={item.image}
-                          sources={item.images}
-                          alt=""
-                          fallbackLabel={item.name}
-                          fallbackCategory={item.category}
-                          fallbackRarity={item.rarity}
-                          fallbackPrice={item.price}
-                          fallbackPriceEstimated={item.priceEstimated}
-                          captureRemote={false}
-                          className="aspect-square w-full rounded-md"
-                        />
-                        <span className="mt-1 block truncate text-xs font-semibold">{item.name}</span>
-                      </>
-                    ) : (
-                      <RocketLeagueImage
-                        alt=""
-                        fallbackLabel={`${label} non choisi`}
-                        fallbackCategory={category}
-                        fallbackRarity="Aucun objet sélectionné"
-                        captureRemote={false}
-                        className="aspect-square w-full rounded-md"
-                      />
-                    )}
-                  </dd>
-                </div>
-              ))}
-            </dl>
+
+            <div className="p-4">
+              <p className="mb-2 text-xs font-bold text-muted-foreground">Peinture / Variante</p>
+              <RocketLeaguePaintSwatches selected={paintId} onSelect={setPaintId} />
+            </div>
+
             <dl className="grid gap-x-4 gap-y-2 border-t p-4 text-xs sm:grid-cols-2">
               {[
                 ['Carrosserie', resolved.body?.name || 'Non choisie'],
-                ['Couleur', paint.name],
+                ['Peinture', selectedPaint?.name || 'Par défaut'],
                 ['Roues', resolved.wheels?.name || 'Non choisies'],
                 ['Sticker', resolved.decal?.name || 'Non choisi'],
                 ['Explosion', resolved.goalExplosion?.name || 'Non choisie'],
@@ -415,56 +255,32 @@ export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlEr
                 id="rocket-preset-name"
                 maxLength={80}
                 value={presetName}
-                onChange={event => {
-                  setPresetName(event.target.value);
-                  invalidateSharedPreset();
-                }}
+                onChange={event => { setPresetName(event.target.value); invalidateSharedPreset(); }}
                 placeholder="Nom du preset"
                 className="min-w-0 flex-1 rounded-lg border bg-background px-3 py-2 text-sm"
               />
               <button type="submit" className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">
-                <Save aria-hidden="true" className="h-4 w-4" />
-                Enregistrer
+                <Save className="h-4 w-4" /> Enregistrer
               </button>
             </form>
             <div className="mt-2 flex flex-wrap gap-2">
-              <button type="button" onClick={copyShareLink} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm"><Share2 aria-hidden="true" className="h-4 w-4" />Partager</button>
-              <button type="button" disabled={downloadingImage} onClick={exportImage} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm disabled:opacity-50"><ImageDown aria-hidden="true" className="h-4 w-4" />Image</button>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelection({ ...EMPTY_ROCKET_SELECTION });
-                  invalidateSharedPreset();
-                  setMessage('Garage réinitialisé.');
-                }}
-                className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm"
-              >
-                <RotateCcw aria-hidden="true" className="h-4 w-4" />
-                Réinitialiser
+              <button type="button" onClick={copyShareLink} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm"><Share2 className="h-4 w-4" />Partager</button>
+              <button type="button" disabled={downloadingImage} onClick={exportImage} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm disabled:opacity-50"><ImageDown className="h-4 w-4" />Image</button>
+              <button type="button" onClick={() => { setSelection({ ...EMPTY_ROCKET_SELECTION }); invalidateSharedPreset(); setMessage('Garage réinitialisé.'); }} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm">
+                <RotateCcw className="h-4 w-4" />Réinitialiser
               </button>
             </div>
             {message && <p className="mt-3 text-xs text-muted-foreground" role="status">{message}</p>}
-            {storageError && (
-              <p className="mt-3 text-xs text-destructive" role="alert">
-                La sauvegarde locale a échoué. Vérifiez que le stockage du navigateur est autorisé.
-              </p>
-            )}
+            {storageError && <p className="mt-3 text-xs text-destructive" role="alert">La sauvegarde locale a échoué.</p>}
             {presets.length === 0 ? (
               <p className="mt-3 text-xs text-muted-foreground">Aucun preset enregistré sur cet appareil.</p>
             ) : (
               <ul className="mt-3 space-y-2">
                 {presets.map(preset => (
                   <li key={preset.id} className="flex items-center gap-2 rounded-lg bg-muted p-2">
-                    <button type="button" onClick={() => loadPreset(preset)} className="min-w-0 flex-1 truncate text-left text-sm font-semibold">
-                      {preset.name}
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`Supprimer ${preset.name}`}
-                      onClick={() => setPresets(current => current.filter(item => item.id !== preset.id))}
-                      className="rounded p-2 hover:bg-background"
-                    >
-                      <Trash2 aria-hidden="true" className="h-4 w-4" />
+                    <button type="button" onClick={() => loadPreset(preset)} className="min-w-0 flex-1 truncate text-left text-sm font-semibold">{preset.name}</button>
+                    <button type="button" aria-label={`Supprimer ${preset.name}`} onClick={() => setPresets(current => current.filter(item => item.id !== preset.id))} className="rounded p-2 hover:bg-background">
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   </li>
                 ))}
@@ -474,6 +290,7 @@ export default function RocketLeagueGarage({ requestedPreset = '', onPresetUrlEr
         </aside>
       </div>
 
+      {detailItem && <RocketLeagueShopItemModal item={detailItem} onClose={() => setDetailItem(null)} />}
     </section>
   );
 }

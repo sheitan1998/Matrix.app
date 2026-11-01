@@ -1,28 +1,30 @@
 import React, { useState } from 'react';
+import { Info } from 'lucide-react';
 import { rarityNeon } from './rocketLeagueShopData';
 import RocketLeaguePaintSwatches from './RocketLeaguePaintSwatches';
 import { ROCKET_PAINTS } from './RocketLeaguePaintSwatches';
 
-export default function RocketLeagueShopCard({ item, onOpen }) {
+export default function RocketLeagueShopCard({ item, onOpen, onSelect, selected }) {
   const [imgError, setImgError] = useState(false);
   const [paintId, setPaintId] = useState('default');
   const neon = rarityNeon(item.rarity, item.rarityColor);
   const selectedPaint = ROCKET_PAINTS.find(p => p.id === paintId);
   const overlayColor = selectedPaint?.color;
+  const selectable = typeof onSelect === 'function';
 
   return (
     <article
       className="group relative overflow-hidden rounded-xl bg-card transition-all duration-300 hover:scale-[1.03]"
       style={{
-        border: `2px solid ${neon.color}`,
-        boxShadow: `0 0 12px ${neon.glow}, inset 0 0 8px ${neon.glow}`,
+        border: `2px solid ${selected ? '#fff' : neon.color}`,
+        boxShadow: `0 0 ${selected ? '20px' : '12px'} ${neon.glow}, inset 0 0 8px ${neon.glow}`,
       }}
     >
       <button
         type="button"
-        onClick={() => onOpen({ ...item, selectedPaintId: paintId })}
+        onClick={() => selectable ? onSelect(item.id) : onOpen({ ...item, selectedPaintId: paintId })}
         className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-        aria-label={`Détails de ${item.name}`}
+        aria-label={selectable ? `Sélectionner ${item.name}` : `Détails de ${item.name}`}
       >
         <div className="relative aspect-square w-full overflow-hidden" style={{ background: '#0a0a0f' }}>
           {!imgError && item.image ? (
@@ -71,8 +73,18 @@ export default function RocketLeagueShopCard({ item, onOpen }) {
           </p>
         </div>
       </button>
-      <div className="px-3 pb-2">
+      <div className="px-3 pb-2 flex items-center justify-between gap-2">
         <RocketLeaguePaintSwatches selected={paintId} onSelect={setPaintId} compact />
+        {selectable && (
+          <button
+            type="button"
+            onClick={() => onOpen({ ...item, selectedPaintId: paintId })}
+            className="shrink-0 rounded-full p-1.5 hover:bg-foreground/10 transition tap-sm"
+            aria-label={`Détails de ${item.name}`}
+          >
+            <Info className="h-3.5 w-3.5" style={{ color: neon.color }} />
+          </button>
+        )}
       </div>
     </article>
   );
