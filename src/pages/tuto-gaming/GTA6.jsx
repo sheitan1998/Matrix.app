@@ -75,15 +75,15 @@ export default function GTA6() {
         </div>
 
         {/* Source badge */}
-        <div
-          className="flex items-center gap-2 mb-6 px-4 py-2 rounded-xl hidden"
-          style={{ background: "rgba(34,211,238,0.05)", border: "1px solid rgba(34,211,238,0.2)" }}>
-          
-          <ShieldCheck className="w-4 h-4 shrink-0" style={{ color: "#22D3EE" }} />
-          <p className="text-xs text-muted-foreground">
-            Données et visuels vérifiés depuis le <span className="font-bold text-foreground">GTA Wiki (Fandom)</span> et les sources officielles Rockstar Games.
-          </p>
-        </div>
+        
+
+
+
+
+
+
+
+        
 
         {/* Tabs */}
         <div className="flex gap-2 overflow-x-auto pb-2 mb-6 no-scrollbar">
