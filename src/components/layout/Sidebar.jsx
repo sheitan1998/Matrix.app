@@ -18,6 +18,7 @@ import {
   Tv2,
   Check,
   Lock,
+  Crown,
   PanelLeftClose,
   PanelLeftOpen } from
 "lucide-react";
@@ -26,6 +27,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { LANGUAGES, getPreferredLanguage, changeLanguage } from "@/lib/languagePreference";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
+import ThemeModal from "@/components/landing/ThemeModal";
 
 const NEON_TEXT_SHADOW = "0 0 8px rgba(168, 85, 247, 1), 0 0 16px rgba(168, 85, 247, 0.8), 0 0 32px rgba(168, 85, 247, 0.6)";
 const NEON_SUBTITLE_SHADOW = "0 0 6px rgba(168, 85, 247, 1), 0 0 12px rgba(168, 85, 247, 0.7)";
