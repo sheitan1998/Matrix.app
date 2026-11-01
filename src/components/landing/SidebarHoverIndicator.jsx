@@ -5,6 +5,7 @@ export default function SidebarHoverIndicator({ containerRef, activeKey }) {
   useLayoutEffect(() => {
     const root = containerRef.current;
     const indicator = indicatorRef.current;
+    if (!root || !indicator) return;
     const selector = "[data-sidebar-link], [data-sidebar-translation] > div > button";
     let hovered = null;
     let focused = null;
