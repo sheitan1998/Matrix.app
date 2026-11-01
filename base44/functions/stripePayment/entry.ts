@@ -31,7 +31,7 @@ const VOTE_AUTO_PLANS: Record<string, { priceCents: number; label: string }> = {
 };
 
 const CUSTOM_BG_PLANS: Record<string, { priceCents: number; label: string }> = {
-  custom_bg: { priceCents: 300, label: 'Fond d\'écran personnalisé (3€/mois)' },
+  custom_bg: { priceCents: 299, label: 'Fond d\'écran personnalisé (2,99€/mois)' },
 };
 
 const AI_PLANS: Record<string, { priceCents: number; label: string }> = {
