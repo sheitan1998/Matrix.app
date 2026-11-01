@@ -37,6 +37,60 @@ const FALLBACK_PARTNERS = [
   }
 ];
 
+function CompactPartnerCard({ p, index }) {
+  const href = normalizeExternalUrl(p.href);
+  const imageUrl = normalizeAppAssetUrl(p.image);
+  const inner = (
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.3 + index * 0.08, duration: 0.4 }}
+      className="rounded-xl overflow-hidden flex flex-col p-3"
+      style={{ background: "#101015", border: "1px solid rgba(168,85,247,0.15)" }}
+    >
+      <div className="w-full h-16 rounded-lg overflow-hidden mb-2" style={{ background: "#0a050f" }}>
+        <img src={imageUrl || p.image} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
+      </div>
+      <h3 className="text-xs font-black text-white truncate">{p.name}</h3>
+      <div className="flex items-center gap-0.5 mt-1">
+        {[1, 2, 3, 4, 5].map((s) => (
+          <Star key={s} className="w-2.5 h-2.5" style={{ color: "#ffd700", fill: "#ffd700" }} />
+        ))}
+      </div>
+      <span
+        className="inline-flex items-center justify-center gap-1 mt-2 px-2 py-1.5 rounded-lg text-[10px] font-bold text-white text-center"
+        style={{ background: "linear-gradient(135deg, #6200ea, #aa00ff)" }}
+      >
+        {p.btn}
+      </span>
+    </motion.div>
+  );
+  if (href) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={async (e) => {
+          const isTauri = typeof window !== "undefined" && !!(window.__TAURI_INTERNALS__ || window.__TAURI__?.core);
+          if (!isTauri) return;
+          e.preventDefault();
+          try {
+            const invoke = await getTauriInvoke();
+            if (invoke) await invoke("open_auth_window", { url: href });
+          } catch (err) {
+            console.error("[AffiliatePartners] Failed to open URL:", err);
+          }
+        }}
+        className="block hover:scale-[1.03] transition-transform"
+      >
+        {inner}
+      </a>
+    );
+  }
+  return inner;
+}
+
 function PartnerCard({ p, index }) {
   const href = normalizeExternalUrl(p.href);
   const imageUrl = normalizeAppAssetUrl(p.image);
@@ -107,7 +161,7 @@ function PartnerCard({ p, index }) {
   return inner;
 }
 
-export default function AffiliatePartners() {
+export default function AffiliatePartners({ compact = false }) {
   const [partners, setPartners] = useState(FALLBACK_PARTNERS);
 
   useEffect(() => {
@@ -119,6 +173,16 @@ export default function AffiliatePartners() {
       })
       .catch(() => {});
   }, []);
+
+  if (compact) {
+    return (
+      <div className="grid grid-cols-2 gap-3 w-full">
+        {partners.map((p, i) => (
+          <CompactPartnerCard key={p.id || p.name} p={p} index={i} />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="mt-6 lg:mt-8">
