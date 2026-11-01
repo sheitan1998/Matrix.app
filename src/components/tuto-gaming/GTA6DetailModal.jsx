@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
-import { X } from "lucide-react";
+import { X, ShieldCheck } from "lucide-react";
+import GTA6Image from "@/components/tuto-gaming/GTA6Image";
 
 export default function GTA6DetailModal({ item, onClose }) {
   useEffect(() => {
@@ -23,7 +24,7 @@ export default function GTA6DetailModal({ item, onClose }) {
       onClick={onClose}
     >
       <div
-        className="relative max-w-3xl w-full rounded-2xl overflow-hidden"
+        className="relative max-w-3xl w-full rounded-2xl overflow-hidden max-h-[90vh] flex flex-col"
         style={{
           background: "hsl(var(--card))",
           border: `1px solid ${accent}66`,
@@ -41,30 +42,53 @@ export default function GTA6DetailModal({ item, onClose }) {
         </button>
 
         {/* Image */}
-        <div className="relative aspect-video overflow-hidden" style={{ background: "#0a050f" }}>
-          <img
+        <div className="relative aspect-video overflow-hidden shrink-0" style={{ background: "#0a050f" }}>
+          <GTA6Image
             src={item.image}
             alt={item.name}
+            fallbackColor={accent}
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, transparent 50%, ${accent}11 100%)` }} />
         </div>
 
         {/* Content */}
-        <div className="p-6">
-          <div className="flex items-center gap-2 mb-1">
+        <div className="p-6 overflow-y-auto">
+          <div className="flex flex-wrap items-center gap-2 mb-2">
             <span
               className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider"
               style={{ background: `${accent}22`, color: accent, border: `1px solid ${accent}44` }}
             >
               {item.tag || item.category}
             </span>
+            {item.status && (
+              <span
+                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold"
+                style={{ background: "rgba(34,211,238,0.1)", color: "#22D3EE", border: "1px solid rgba(34,211,238,0.3)" }}
+              >
+                <ShieldCheck className="w-3 h-3" />
+                {item.status}
+              </span>
+            )}
           </div>
-          <h3 className="text-xl font-black text-foreground mb-2">{item.name}</h3>
+          <h3 className="text-xl font-black text-foreground mb-1">{item.name}</h3>
           {item.subtitle && (
-            <p className="text-xs font-bold mb-3" style={{ color: accent }}>{item.subtitle}</p>
+            <p className="text-xs font-bold mb-2" style={{ color: accent }}>{item.subtitle}</p>
+          )}
+          {item.faction && (
+            <p className="text-xs text-muted-foreground mb-3">
+              <span className="font-bold">Faction :</span> {item.faction}
+            </p>
           )}
           <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+          {item.quote && (
+            <div
+              className="mt-4 pl-3 py-2 text-sm italic font-medium"
+              style={{ borderLeft: `3px solid ${accent}`, color: "hsl(var(--foreground))" }}
+            >
+              "{item.quote}"
+            </div>
+          )}
         </div>
       </div>
     </div>

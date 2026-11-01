@@ -1,81 +1,12 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Gamepad2, Users, Car, Crosshair, Globe, BookOpen } from "lucide-react";
+import { ArrowLeft, Gamepad2, BookOpen, ShieldCheck } from "lucide-react";
 import GTA6DetailModal from "@/components/tuto-gaming/GTA6DetailModal";
-
-const PLATFORMS = [
-  { name: "PlayStation 5", icon: "🎮", color: "#0070D1" },
-  { name: "Xbox Series X/S", icon: "🎯", color: "#107C10" },
-];
-
-const TABS = [
-  { id: "presentation", label: "Présentation", icon: BookOpen },
-  { id: "personnages", label: "Personnages", icon: Users },
-  { id: "vehicules", label: "Véhicules", icon: Car },
-  { id: "armes", label: "Armes", icon: Crosshair },
-  { id: "monde", label: "Monde Ouvert", icon: Globe },
-  { id: "wiki", label: "Wiki & Guide", icon: BookOpen },
-];
-
-const CHARACTERS = [
-  {
-    name: "Lucia",
-    subtitle: "Protagoniste",
-    tag: "Personnage principal",
-    color: "#FF69B4",
-    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&q=80",
-    desc: "Première protagoniste féminine de la série GTA, Lucia est une criminelle ambitieuse prête à tout pour s'échapper de sa vie en prison. Issue d'un milieu difficile de Vice City, elle combine charisme, détermination et instinct de survie. Son histoire avec Jason forme le cœur émotionnel de GTA VI.",
-  },
-  {
-    name: "Jason",
-    subtitle: "Protagoniste",
-    tag: "Personnage principal",
-    color: "#4FC3F7",
-    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&q=80",
-    desc: "Le compagnon de Lucia, Jason navigue entre petites affaires et grands desseins dans le monde criminel de Leonida. Ancien militaire reconverti dans les activités illégales, il apporte une approche tactique et méthodique au duo. Sa loyauté envers Lucia est mise à l'épreuve tout au long de l'aventure.",
-  },
-  {
-    name: "Personnages secondaires",
-    subtitle: "Alliés & Antagonistes",
-    tag: "Cast étendu",
-    color: "#FBBF24",
-    image: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&q=80",
-    desc: "Rockstar Games a confirmé un cast étoffé de personnages secondaires : allies, rivaux criminels, figures du milieu de Vice City et de l'État de Leonida. Chacun apportera sa propre narration, ses missions et ses dynamiques relationnelles avec Lucia et Jason.",
-  },
-];
-
-const VEHICLES = [
-  { name: "Voiture de sport", tag: "Véhicule", color: "#FF4444", image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80", desc: "Bolides ultra-rapides pour les courses-poursuites dans les rues de Vice City. Des modèles inspirés des supercars les plus performantes, personnalisables dans les garages." },
-  { name: "Berline custom", tag: "Véhicule", color: "#9333EA", image: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&q=80", desc: "Berlines modifiées combinant élégance et performances. Idéales pour les déplacements discrets à travers les quartiers de Vice City et les zones rurales de Leonida." },
-  { name: "4x4 tout-terrain", tag: "Véhicule", color: "#22D3EE", image: "https://images.unsplash.com/photo-1533473369114-754575531b52?w=800&q=80", desc: "Véhicules tout-terrain conçus pour les marécages, les Everglades de Leonida et les zones rurales. Robustesse et capacité de franchissement pour les escapades hors des sentiers battus." },
-  { name: "Moto sportive", tag: "Véhicule", color: "#FBBF24", image: "https://images.unsplash.com/photo-1558981806-ec527faa5243?w=800&q=80", desc: "Motos de sport ultra-maniables pour se faufiler dans le trafic de Vice City. Vitesse et agilité pour les missions de livraison rapides et les courses urbaines." },
-  { name: "Bateau rapide", tag: "Véhicule", color: "#10B981", image: "https://images.unsplash.com/photo-1543946207-39bd91e70ca7?w=800&q=80", desc: "Bateaux motorisés pour les courses sur l'océan et les voies navigables de Leonida. Essentiels pour les missions maritimes et les explorations côtières." },
-  { name: "Voiture de police", tag: "Véhicule", color: "#3B82F6", image: "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=800&q=80", desc: "Véhicules des forces de l'ordre de Vice City, aperçus dans les trailers. Le système de wanted et les poursuites policières seront au cœur de l'expérience GTA VI." },
-];
-
-const WEAPONS = [
-  { name: "Pistolet semi-automatique", tag: "Arme à feu", color: "#F87171", image: "https://images.unsplash.com/photo-1583143457540-7636778453a1?w=800&q=80", desc: "Arme de poing polyvalente, indispensable pour les combats rapprochés. Modèle standard utilisé par les criminels et les forces de l'ordre de Leonida." },
-  { name: "Fusil d'assaut", tag: "Arme à feu", color: "#BF5AF2", image: "https://images.unsplash.com/photo-1595590424283-b8f17842773f?w=800&q=80", desc: "Fusil d'assaut tactique pour les affrontements à moyenne et longue portée. Polyvalent et puissant, il sera l'arme de choix pour les missions de braquage." },
-  { name: "Fusil de précision", tag: "Arme à feu", color: "#22D3EE", image: "https://images.unsplash.com/photo-1612875895099-3d8b9b1e1e1e?w=800&q=80", desc: "Fusil de sniper pour les éliminations silencieuses à longue distance. Essentiel pour les missions de reconnaissance et les assassinats ciblés." },
-  { name: "Batte de baseball", tag: "Arme de mêlée", color: "#FBBF24", image: "https://images.unsplash.com/photo-1530549387789-4c1017266635?w=800&q=80", desc: "Arme de mêlée contondante pour les combats au corps à corps. Discrète et efficace, elle reste un classique de la série GTA." },
-  { name: "Couteau tactique", tag: "Arme de mêlée", color: "#10B981", image: "https://images.unsplash.com/photo-1593618998310-3e9f1b1e8e1e?w=800&q=80", desc: "Couteau de combat pour les éliminations discrètes et les approches furtives. Silencieux et mortel, idéal pour les missions d'infiltration." },
-  { name: "Explosifs", tag: "Arme lourde", color: "#EF4444", image: "https://images.unsplash.com/photo-1607124473241-3d1b1e1e1e1e?w=800&q=80", desc: "Grenades et charges explosives pour les destructions de véhicules et les assauts de bâtiments. Polyvalents pour créer le chaos lors des missions." },
-];
-
-const WORLD = [
-  { name: "Vice City", tag: "Métropole", color: "#BF5AF2", image: "https://images.unsplash.com/photo-1535498730771-e73599b6f8c3?w=800&q=80", desc: "Vice City, la métropole néonée inspirée de Miami, est le décor principal de GTA VI. Plages de sable blanc, gratte-ciels scintillants, quartiers chauds et vie nocturne trépidante composent cette ville vibrante et dangereuse." },
-  { name: "État de Leonida", tag: "Région", color: "#22D3EE", image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80", desc: "L'État de Leonida est la reconstitution de la Floride par Rockstar Games. Zones rurales, marécages des Everglades, petites villes côtières et métropoles forment un monde ouvert vaste et diversifié." },
-  { name: "Système policier", tag: "Gameplay", color: "#3B82F6", image: "https://images.unsplash.com/photo-1568992687947-868a62a9f521?w=800&q=80", desc: "Les forces de l'ordre de GTA VI bénéficient d'une IA améliorée avec tactiques coordonnées, hélicoptères, unités spéciales et poursuites dynamiques. Le système de wanted évolue selon la gravité des infractions." },
-  { name: "Physique de l'eau", tag: "Moteur", color: "#10B981", image: "https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=800&q=80", desc: "Rockstar Games a développé une physique de l'eau ultra-réaliste pour GTA VI : vagues dynamiques, reflèts,écume, interaction avec les embarcations et nage des personnages. Les environnements marins sont un axe majeur." },
-  { name: "Vie nocturne", tag: "Activité", color: "#FBBF24", image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&q=80", desc: "Boîtes de nuit, bars, plages et événements en plein air composent la vie nocturne trépidante de Vice City. Les activités de loisir et de divertissement sont au cœur de l'immersion." },
-  { name: "Activités & loisirs", tag: "Activité", color: "#FF69B4", image: "https://images.unsplash.com/photo-1530541930197-ff16ac917b0e?w=800&q=80", desc: "Plongée sous-marine, parachute, sports nautiques, tuning de véhicules et bien plus. GTA VI propose une large gamme d'activités optionnelles pour explorer le monde de Leonida." },
-];
-
-const WIKI_SECTIONS = [
-  { id: "maps", label: "Cartes & Lieux", desc: "Vice City, zones rurales, secrets cachés", color: "#22D3EE" },
-  { id: "vehicles", label: "Véhicules & Armes", desc: "Collection complète des véhicules et armes", color: "#FBBF24" },
-  { id: "missions", label: "Guides de Missions", desc: "Astuces, missions principales et secondaires", color: "#BF5AF2" },
-];
+import GTA6Image from "@/components/tuto-gaming/GTA6Image";
+import {
+  GTA6_LOGO, GTA6_PLATFORMS, GTA6_TABS, GTA6_INFO,
+  GTA6_CHARACTERS, GTA6_VEHICLES, GTA6_WEAPONS, GTA6_LOCATIONS, GTA6_WIKI_SECTIONS,
+} from "@/components/tuto-gaming/gta6Data";
 
 function GalleryCard({ item, onClick }) {
   return (
@@ -87,10 +18,10 @@ function GalleryCard({ item, onClick }) {
         boxShadow: `0 0 12px ${item.color}15`,
       }}
     >
-      <img
+      <GTA6Image
         src={item.image}
         alt={item.name}
-        loading="lazy"
+        fallbackColor={item.color}
         className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
       />
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.9) 100%)" }} />
@@ -112,7 +43,7 @@ export default function GTA6() {
   const [selected, setSelected] = useState(null);
 
   const renderGallery = (items) => (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
       {items.map((item) => (
         <GalleryCard key={item.name} item={item} onClick={setSelected} />
       ))}
@@ -147,7 +78,7 @@ export default function GTA6() {
               Grand Theft Auto VI — L'aventure la plus ambitieuse de Rockstar Games.
             </p>
             <div className="flex flex-wrap gap-2">
-              {PLATFORMS.map(p => (
+              {GTA6_PLATFORMS.map(p => (
                 <span
                   key={p.name}
                   className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold"
@@ -171,24 +102,33 @@ export default function GTA6() {
           />
         </div>
 
+        {/* Source badge */}
+        <div
+          className="flex items-center gap-2 mb-6 px-4 py-2 rounded-xl"
+          style={{ background: "rgba(34,211,238,0.05)", border: "1px solid rgba(34,211,238,0.2)" }}
+        >
+          <ShieldCheck className="w-4 h-4 shrink-0" style={{ color: "#22D3EE" }} />
+          <p className="text-xs text-muted-foreground">
+            Données et visuels vérifiés depuis le <span className="font-bold text-foreground">GTA Wiki (Fandom)</span> et les sources officielles Rockstar Games.
+          </p>
+        </div>
+
         {/* Tabs */}
         <div className="flex gap-2 overflow-x-auto pb-2 mb-6 no-scrollbar">
-          {TABS.map(t => {
-            const Icon = t.icon;
+          {GTA6_TABS.map(t => {
             const active = tab === t.id;
             return (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
                 aria-pressed={active}
-                className="shrink-0 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition tap-sm"
+                className="shrink-0 rounded-full px-4 py-2 text-xs font-bold transition tap-sm"
                 style={
                   active
                     ? { background: "linear-gradient(135deg, #BF5AF2, #9333EA)", color: "#fff", boxShadow: "0 0 15px rgba(191,90,242,0.4)" }
                     : { background: "hsl(var(--card))", color: "hsl(var(--muted-foreground))", border: "1px solid hsl(var(--border))" }
                 }
               >
-                <Icon className="w-3.5 h-3.5" />
                 {t.label}
               </button>
             );
@@ -201,22 +141,16 @@ export default function GTA6() {
             <div className="rounded-2xl p-6" style={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}>
               <h2 className="text-lg font-black text-foreground mb-3">Synopsis</h2>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Grand Theft Auto VI plonge les joueurs dans l'État de Leonida, une reconstitution vibrante de la Floride,
-                avec pour décor principal Vice City, sa métropole néonée inspirée de Miami. Lucia et Jason forment un couple
-                criminel en quête de liberté, naviguant entre braquages, trahisons et survie dans un monde impitoyable.
-                Rockstar Games promet la carte ouverte la plus immersive et détaillée de son histoire, avec des environnements
-                urbains, ruraux et maritimes interconnectés.
+                Grand Theft Auto VI se déroule dans l'État de Leonida, une reconstitution vibrante de la Floride,
+                avec pour décor principal Vice City, sa métropole néonée inspirée de Miami. Lucia Caminos et Jason Duval
+                forment un couple criminel en quête de liberté, inspiré de Bonnie & Clyde. Naviguant entre braquages,
+                trahisons et survie, leur partenariat est décrit par Rockstar comme un duo où Lucia est le 'moteur'
+                et Jason le 'frein'. Le jeu promet la carte ouverte la plus immersive de l'histoire de la série,
+                avec des environnements urbains, ruraux et maritimes interconnectés.
               </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {[
-                { label: "Développeur", value: "Rockstar Games" },
-                { label: "Éditeur", value: "Rockstar Games" },
-                { label: "Genre", value: "Action-Aventure / Open World" },
-                { label: "Moteur", value: "RAGE 9" },
-                { label: "Plateformes", value: "PS5, Xbox Series X/S" },
-                { label: "Date de sortie", value: "2026 (à confirmer)" },
-              ].map(info => (
+              {GTA6_INFO.map(info => (
                 <div key={info.label} className="rounded-xl p-4" style={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}>
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{info.label}</p>
                   <p className="text-sm font-bold text-foreground">{info.value}</p>
@@ -230,7 +164,7 @@ export default function GTA6() {
         {tab === "personnages" && (
           <div className="space-y-4">
             <h2 className="text-lg font-black text-foreground">Personnages Officiels</h2>
-            {renderGallery(CHARACTERS)}
+            {renderGallery(GTA6_CHARACTERS)}
           </div>
         )}
 
@@ -238,7 +172,7 @@ export default function GTA6() {
         {tab === "vehicules" && (
           <div className="space-y-4">
             <h2 className="text-lg font-black text-foreground">Véhicules & Voitures</h2>
-            {renderGallery(VEHICLES)}
+            {renderGallery(GTA6_VEHICLES)}
           </div>
         )}
 
@@ -246,15 +180,15 @@ export default function GTA6() {
         {tab === "armes" && (
           <div className="space-y-4">
             <h2 className="text-lg font-black text-foreground">Armes & Équipements</h2>
-            {renderGallery(WEAPONS)}
+            {renderGallery(GTA6_WEAPONS)}
           </div>
         )}
 
-        {/* Monde Ouvert */}
-        {tab === "monde" && (
+        {/* Lieux & Monde */}
+        {tab === "lieux" && (
           <div className="space-y-4">
-            <h2 className="text-lg font-black text-foreground">Fonctionnalités & Monde Ouvert</h2>
-            {renderGallery(WORLD)}
+            <h2 className="text-lg font-black text-foreground">Lieux & Monde Ouvert</h2>
+            {renderGallery(GTA6_LOCATIONS)}
           </div>
         )}
 
@@ -268,7 +202,7 @@ export default function GTA6() {
               </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {WIKI_SECTIONS.map(section => (
+              {GTA6_WIKI_SECTIONS.map(section => (
                 <div
                   key={section.id}
                   className="rounded-2xl p-6 text-center transition-all"
