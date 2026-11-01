@@ -80,7 +80,7 @@ export default function ProjectSupportBlock() {
         </p>
         <button
           onClick={handleSupport}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-black text-white transition hover:scale-105"
+          className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-black text-white transition hover:scale-105 hidden"
           style={{
             background: 'linear-gradient(135deg, #a855f7, #6d28d9)',
             boxShadow: '0 0 25px rgba(168,85,247,0.5), 0 0 10px rgba(168,85,247,0.3)'
