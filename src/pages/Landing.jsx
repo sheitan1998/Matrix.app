@@ -8,6 +8,7 @@ import LandingSidebar from "@/components/landing/LandingSidebar";
 import LandingFooter from "@/components/landing/LandingFooter";
 import TopRightIcons from "@/components/landing/TopRightIcons";
 import FaqPanel from "@/components/landing/FaqPanel";
+import ThemeModal from "@/components/landing/ThemeModal";
 import LandingSEO from "@/components/landing/LandingSEO";
 import { useTheme, initThemeBackgroundLayer } from "@/hooks/useTheme";
 import { User, ArrowRight } from "lucide-react";
@@ -26,6 +27,7 @@ export default function Landing() {
   const [user, setUser] = useState(null);
   const [showAuth, setShowAuth] = useState(false);
   const [showFaq, setShowFaq] = useState(false);
+  const [showTheme, setShowTheme] = useState(false);
   const { prefs } = useTheme();
 
   useEffect(() => {
@@ -40,7 +42,7 @@ export default function Landing() {
       <div className="fixed inset-0 pointer-events-none" style={{ background: "rgba(10,5,15,0.55)" }} />
 
       {/* Sidebar */}
-      <LandingSidebar onFaq={() => setShowFaq(true)} />
+      <LandingSidebar onFaq={() => setShowFaq(true)} onOpenTheme={() => setShowTheme(true)} />
 
       {/* Main content */}
       <div className="relative z-10 flex-1 flex flex-col min-w-0 px-4 sm:px-6 lg:px-8 py-4">
@@ -147,6 +149,7 @@ export default function Landing() {
 
       <AuthModal open={showAuth} onClose={() => setShowAuth(false)} />
       <FaqPanel open={showFaq} onClose={() => setShowFaq(false)} />
+      <ThemeModal open={showTheme} onClose={() => setShowTheme(false)} />
     </div>
   );
 }
