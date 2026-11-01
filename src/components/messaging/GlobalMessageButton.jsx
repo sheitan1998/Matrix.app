@@ -1,35 +1,19 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
-import { base44 } from "@/api/base44Client";
 import { Mail } from "lucide-react";
-import MessageOverlay from "@/components/messaging/MessageOverlay";
-import { playMessageSound } from "@/lib/messageSound";
-import { messageAlertsEnabled } from '@/lib/notificationPreferences';
+import { useSidebarPresence } from "@/hooks/useSidebarPresence";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
+import MessagingPanel from "@/components/messaging/MessagingPanel";
 
 const EXCLUDED_PREFIXES = [
   "/twitch", "/nexus", "/mon-profil", "/login", "/register",
   "/forgot-password", "/reset-password", "/oauth",
 ];
 
-export default function GlobalMessageButton() {
+function FloatingMessageButton() {
   const location = useLocation();
   const { user, isAuthenticated } = useAuth();
-  const [open, setOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [preselectedEmail, setPreselectedEmail] = useState(null);
-
-  // Listen for "open chat with friend" events (e.g. from FriendsPanel)
-  useEffect(() => {
-    const handler = (e) => {
-      if (e.detail?.friendEmail) {
-        setPreselectedEmail(e.detail.friendEmail);
-        setOpen(true);
-      }
-    };
-    window.addEventListener("matrix-open-chat", handler);
-    return () => window.removeEventListener("matrix-open-chat", handler);
-  }, []);
 
   const isExcluded = useMemo(() => {
     const p = location.pathname;
@@ -37,40 +21,15 @@ export default function GlobalMessageButton() {
     return EXCLUDED_PREFIXES.some(prefix => p === prefix || p.startsWith(prefix + "/"));
   }, [location.pathname]);
 
-  // Fetch initial unread count
-  useEffect(() => {
-    if (!isAuthenticated || !user || isExcluded) return;
-    base44.entities.DirectMessage.filter({ recipient_email: user.email })
-      .then(msgs => {
-        const unread = (msgs || []).filter(m => !m.is_read);
-        setUnreadCount(unread.length);
-      })
-      .catch(() => {});
-  }, [isAuthenticated, user, isExcluded]);
-
-  // Real-time subscription for new messages
-  useEffect(() => {
-    if (!isAuthenticated || !user || isExcluded) return;
-    const unsubscribe = base44.entities.DirectMessage.subscribe((event) => {
-      if (event.type === "create") {
-        const msg = event.data;
-        if (msg.recipient_email === user.email) {
-          if (messageAlertsEnabled(user)) playMessageSound();
-          if (!msg.is_read) {
-            setUnreadCount(prev => prev + 1);
-          }
-        }
-      }
-    });
-    return unsubscribe;
-  }, [isAuthenticated, user, isExcluded]);
+  const { unreadCount, open, preselectedEmail, openInbox, closeInbox, markMessagesRead } =
+    useUnreadMessages(user, isAuthenticated && !isExcluded);
 
   if (!isAuthenticated || !user || isExcluded) return null;
 
   return (
     <>
       <button
-        onClick={() => setOpen(true)}
+        onClick={openInbox}
         className="fixed top-2.5 right-[94px] z-[55] w-9 h-9 rounded-full flex items-center justify-center transition hover:scale-105 active:scale-95"
         style={{
           background: "hsl(var(--popover) / 0.85)",
@@ -91,16 +50,19 @@ export default function GlobalMessageButton() {
         )}
       </button>
 
-      {open && (
-        <div className="fixed inset-0 z-[80]" style={{ background: "#0a050f" }}>
-          <MessageOverlay
-            user={user}
-            preselectedEmail={preselectedEmail}
-            onClose={() => { setOpen(false); setPreselectedEmail(null); }}
-            onMessagesRead={(count) => setUnreadCount(prev => Math.max(0, prev - count))}
-          />
-        </div>
-      )}
+      <MessagingPanel
+        user={user}
+        open={open}
+        preselectedEmail={preselectedEmail}
+        onClose={closeInbox}
+        onMessagesRead={markMessagesRead}
+      />
     </>
   );
+}
+
+export default function GlobalMessageButton() {
+  const hasSidebar = useSidebarPresence();
+  if (hasSidebar) return null;
+  return <FloatingMessageButton />;
 }

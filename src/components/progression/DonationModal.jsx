@@ -8,7 +8,20 @@ const PRESETS = [2, 5, 10, 20, 50];
 
 export default function DonationModal({ open, onClose }) {
   const [amount, setAmount] = useState(5);
+  const [amountInput, setAmountInput] = useState("5");
   const [loading, setLoading] = useState(false);
+
+  const selectPreset = (value) => {
+    setAmount(value);
+    setAmountInput(String(value));
+  };
+
+  const handleAmountInput = (value) => {
+    const cleaned = value.replace(",", ".").replace(/[^\d.]/g, "");
+    setAmountInput(cleaned);
+    const parsed = parseFloat(cleaned);
+    setAmount(Number.isFinite(parsed) ? parsed : 0);
+  };
 
   if (!open) return null;
 
@@ -77,7 +90,7 @@ export default function DonationModal({ open, onClose }) {
             {PRESETS.map((a) => (
               <button
                 key={a}
-                onClick={() => setAmount(a)}
+                onClick={() => selectPreset(a)}
                 className="px-4 h-10 rounded-xl text-sm font-mono font-bold border transition tap-sm"
                 style={{
                   background: amount === a ? "linear-gradient(135deg, #a855f7, #6d28d9)" : "rgba(255,255,255,0.04)",
@@ -91,11 +104,12 @@ export default function DonationModal({ open, onClose }) {
           </div>
           <div className="relative">
             <input
-              type="number"
-              min="1"
-              value={amount}
-              onChange={(e) => setAmount(Math.max(1, parseFloat(e.target.value) || 0))}
-              className="w-full px-4 py-2.5 rounded-xl text-sm text-white font-mono font-bold outline-none"
+              type="text"
+              inputMode="decimal"
+              placeholder="Montant libre"
+              value={amountInput}
+              onChange={(e) => handleAmountInput(e.target.value)}
+              className="w-full px-4 py-2.5 pr-8 rounded-xl text-sm text-white font-mono font-bold outline-none placeholder:font-normal placeholder:text-white/30"
               style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 text-sm font-bold">€</span>

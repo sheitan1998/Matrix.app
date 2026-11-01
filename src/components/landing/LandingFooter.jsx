@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Users, Sparkles, Heart, Gift } from "lucide-react";
 import ProjectSupportBlock from "@/components/progression/ProjectSupportBlock";
+import DonationModal from "@/components/progression/DonationModal";
 
 const FOOTER_POINTS = [
 { icon: Users, text: "Rejoins une communauté active" },
@@ -11,6 +12,17 @@ const FOOTER_POINTS = [
 
 
 export default function LandingFooter() {
+  const [showDonation, setShowDonation] = useState(false);
+
+  useEffect(() => {
+    const openDonation = () => {
+      document.getElementById("landing-footer")?.scrollIntoView({ behavior: "smooth" });
+      setShowDonation(true);
+    };
+    window.addEventListener("matrix-open-donation", openDonation);
+    return () => window.removeEventListener("matrix-open-donation", openDonation);
+  }, []);
+
   return (
     <div id="landing-footer" className="mt-8 lg:mt-10">
       {/* Main horizontal container */}
@@ -42,13 +54,9 @@ export default function LandingFooter() {
                 Ton soutien nous permet de maintenir les serveurs, développer de nouvelles fonctionnalités
                 et offrir une expérience unique à toute la communauté.
               </p>
-              <a
-                href="#landing-footer"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const btn = document.querySelector("#landing-footer button");
-                  if (btn) btn.click();
-                }}
+              <button
+                type="button"
+                onClick={() => setShowDonation(true)}
                 className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl text-base font-black text-white transition hover:scale-105"
                 style={{
                   background: "linear-gradient(135deg, #6200ea 0%, #aa00ff 100%)",
@@ -57,7 +65,7 @@ export default function LandingFooter() {
                 
                 <Heart className="w-5 h-5" fill="white" />
                 Soutenir
-              </a>
+              </button>
             </motion.div>
           </div>
 
@@ -97,6 +105,8 @@ export default function LandingFooter() {
           
         </div>
       </div>
+
+      <DonationModal open={showDonation} onClose={() => setShowDonation(false)} />
     </div>);
 
 }

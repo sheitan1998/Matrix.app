@@ -28,6 +28,8 @@ import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import ThemeModal from "@/components/landing/ThemeModal";
 import FaqPanel from "@/components/landing/FaqPanel";
+import SidebarQuickActions from "@/components/layout/SidebarQuickActions";
+import { useRegisterSidebar } from "@/hooks/useSidebarPresence";
 
 const NEON_TEXT_SHADOW = "0 0 8px rgba(168, 85, 247, 1), 0 0 16px rgba(168, 85, 247, 0.8), 0 0 32px rgba(168, 85, 247, 0.6)";
 const NEON_SUBTITLE_SHADOW = "0 0 6px rgba(168, 85, 247, 1), 0 0 12px rgba(168, 85, 247, 0.7)";
@@ -242,6 +244,7 @@ export default function Sidebar({ noTopbar = false }) {
   const isActive = (to) => pathname === to;
   const { collapsed, toggle } = useCollapsed();
   const [faqOpen, setFaqOpen] = useState(false);
+  useRegisterSidebar();
   const { prefs } = useTheme();
   const isLight = prefs.mode === "light" || (prefs.mode === "custom" && (() => {
     const color = prefs.customColor || "#1a0a2e";
@@ -312,6 +315,12 @@ export default function Sidebar({ noTopbar = false }) {
           </div>
         </React.Fragment>
       )}
+
+      {/* Messagerie & notifications */}
+      <SectionSeparator title="Communauté" collapsed={collapsed} isLight={isLight} />
+      <div className="flex flex-col gap-0.5">
+        <SidebarQuickActions collapsed={collapsed} isLight={isLight} />
+      </div>
 
       {/* Toggles section */}
       <SectionSeparator title="Réglages" collapsed={collapsed} isLight={isLight} />

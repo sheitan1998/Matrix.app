@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { Heart, Trophy } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 import { toast } from 'sonner';
-import DonationModal from './DonationModal';
 
 const RANK_COLORS = ['#a855f7', '#c084fc', '#9ca3af'];
 
@@ -17,7 +16,6 @@ export default function ProjectSupportBlock() {
   const nav = useNavigate();
   const [searchParams] = useSearchParams();
   const [topDonors, setTopDonors] = useState([]);
-  const [showDonation, setShowDonation] = useState(false);
   const [verifying, setVerifying] = useState(false);
 
   // Fetch real donation transactions from the database
@@ -63,10 +61,6 @@ export default function ProjectSupportBlock() {
     }
   }, [searchParams]);
 
-  const handleSupport = () => {
-    setShowDonation(true);
-  };
-
   return (
     <div className="mt-4 rounded-2xl p-5"
     style={{
@@ -90,8 +84,6 @@ export default function ProjectSupportBlock() {
 
         
       </div>
-
-      <DonationModal open={showDonation} onClose={() => setShowDonation(false)} />
 
       {/* Top 3 Donors */}
       <div className="pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
