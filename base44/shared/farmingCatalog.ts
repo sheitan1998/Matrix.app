@@ -9,6 +9,8 @@ export const FARMING_CATALOG_CATEGORIES = [
   { id: 'seeding', label: 'Semis et plantation', filter: 'seeders' },
   { id: 'grassland', label: 'Fenaison', filter: 'mowers' },
   { id: 'buildings', label: 'Bâtiments', filter: 'farmBuildings' },
+  { id: 'vehicles', label: 'Véhicules utilitaires', filter: 'vehicles' },
+  { id: 'scripts', label: 'Scripts / Gameplay', filter: 'gameplay' },
 ] as const;
 
 export const ALLOWED_MODHUB_FILTERS = new Set([

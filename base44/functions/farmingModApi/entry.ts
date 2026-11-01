@@ -31,13 +31,31 @@ async function fetchCatalogPage(filter: string, page: number, categoryId = 'all'
   };
 }
 
+const CATALOG_PAGES_PER_CATEGORY = 4;
+
 async function getCatalog() {
-  const cached = getCached('catalog:v4');
+  const cached = getCached('catalog:v5');
   if (cached) return cached;
   const settled = await Promise.allSettled(
     FARMING_CATALOG_CATEGORIES.map(async category => {
-      const page = await fetchCatalogPage(category.filter, 1, category.id);
-      return { ...category, items: page.items.slice(0, 24) };
+      const allItems = [];
+      for (let pageNum = 1; pageNum <= CATALOG_PAGES_PER_CATEGORY; pageNum += 1) {
+        try {
+          const page = await fetchCatalogPage(category.filter, pageNum, category.id);
+          allItems.push(...page.items);
+          if (!page.hasMore || page.items.length === 0) break;
+        } catch {
+          break;
+        }
+      }
+      // Deduplicate by mod id
+      const seen = new Set();
+      const items = allItems.filter(item => {
+        if (seen.has(item.id)) return false;
+        seen.add(item.id);
+        return true;
+      });
+      return { ...category, items: items.slice(0, 96) };
     }),
   );
   const categories = settled.flatMap((result, index) => result.status === 'fulfilled'
@@ -57,7 +75,7 @@ async function getCatalog() {
     source: 'GIANTS ModHub',
     cachedAt: new Date().toISOString(),
   };
-  setCached('catalog:v4', result);
+  setCached('catalog:v5', result);
   return result;
 }
 

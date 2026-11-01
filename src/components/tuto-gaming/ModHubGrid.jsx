@@ -1,6 +1,6 @@
 import React, { useDeferredValue, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, Loader2, RefreshCw, Search, X } from 'lucide-react';
+import { AlertTriangle, Loader2, RefreshCw, Search, X, ChevronDown } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import ModHubDetailModal from '@/components/tuto-gaming/ModHubDetailModal';
@@ -47,6 +47,8 @@ export default function ModHubGrid() {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
+  const [extraMods, setExtraMods] = useState({});
+  const [loadingMore, setLoadingMore] = useState({});
   const deferredQuery = useDeferredValue(query);
   const modId = new URLSearchParams(location.search).get('mod');
   const validModId = !modId || isValidFarmingModId(modId);
@@ -88,9 +90,35 @@ export default function ModHubGrid() {
     .filter(category => category.items.length > 0 || (!normalizedQuery && activeCategory === category.id)),
   [activeCategory, data.categories, normalizedQuery]);
 
-  const allMods = data.categories.flatMap(category => category.items);
+  const allMods = data.categories.flatMap(category => [...category.items, ...(extraMods[category.id] || [])]);
   const selectedMod = modId ? allMods.find(mod => String(mod.id) === modId) : null;
   const resultCount = visibleCategories.reduce((count, category) => count + category.items.length, 0);
+
+  const loadMore = async (categoryId) => {
+    const currentExtra = extraMods[categoryId] || [];
+    const nextPage = Math.floor(currentExtra.length / 24) + 2; // page 1 is already loaded in catalog
+    setLoadingMore(prev => ({ ...prev, [categoryId]: true }));
+    try {
+      const cat = data.categories.find(c => c.id === categoryId);
+      const { data: response } = await base44.functions.invoke('farmingModApi', {
+        action: 'getMods',
+        page: nextPage,
+        limit: 24,
+        filter: cat?.filter || 'latest',
+        category: categoryId,
+      });
+      if (response?.items?.length) {
+        setExtraMods(prev => ({
+          ...prev,
+          [categoryId]: [...(prev[categoryId] || []), ...response.items],
+        }));
+      }
+    } catch {
+      // ignore pagination errors
+    } finally {
+      setLoadingMore(prev => ({ ...prev, [categoryId]: false }));
+    }
+  };
 
   const openMod = mod => {
     navigate({ pathname: location.pathname, search: farmingSearchWithMod(location.search, mod.id), hash: location.hash }, {
@@ -194,25 +222,42 @@ export default function ModHubGrid() {
       )}
 
       <div className="mt-5 space-y-7">
-        {visibleCategories.map(category => (
-          <section key={category.id} aria-labelledby={`farming-category-${category.id}`}>
-            <div className="mb-3 flex items-end justify-between gap-3">
-              <h2 id={`farming-category-${category.id}`} className="text-base font-black uppercase tracking-wide sm:text-lg">
-                {category.label}
-              </h2>
-              <span className="text-xs text-muted-foreground">{category.items.length}</span>
-            </div>
-            {category.items.length ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-                {category.items.map(mod => <ModHubCard key={`${category.id}-${mod.id}`} mod={mod} onSelect={openMod} />)}
+        {visibleCategories.map(category => {
+          const extras = extraMods[category.id] || [];
+          const allItems = [...category.items, ...extras];
+          return (
+            <section key={category.id} aria-labelledby={`farming-category-${category.id}`}>
+              <div className="mb-3 flex items-end justify-between gap-3">
+                <h2 id={`farming-category-${category.id}`} className="text-base font-black uppercase tracking-wide sm:text-lg">
+                  {category.label}
+                </h2>
+                <span className="text-xs text-muted-foreground">{allItems.length}</span>
               </div>
-            ) : (
-              <p className="rounded-lg border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
-                Aucun mod disponible dans cette catégorie.
-              </p>
-            )}
-          </section>
-        ))}
+              {allItems.length ? (
+                <>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+                    {allItems.map(mod => <ModHubCard key={`${category.id}-${mod.id}`} mod={mod} onSelect={openMod} />)}
+                  </div>
+                  {!normalizedQuery && (
+                    <button
+                      type="button"
+                      onClick={() => loadMore(category.id)}
+                      disabled={loadingMore[category.id]}
+                      className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-border py-3 text-xs font-semibold text-muted-foreground hover:bg-muted transition disabled:opacity-50"
+                    >
+                      {loadingMore[category.id] ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronDown className="w-4 h-4" />}
+                      Charger plus de mods
+                    </button>
+                  )}
+                </>
+              ) : (
+                <p className="rounded-lg border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
+                  Aucun mod disponible dans cette catégorie.
+                </p>
+              )}
+            </section>
+          );
+        })}
         {!visibleCategories.length && (
           <p className="rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground" role="status">
             Aucun mod ne correspond à « {deferredQuery} ».
