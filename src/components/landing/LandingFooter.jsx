@@ -119,12 +119,12 @@ export default function LandingFooter() {
               className="flex items-center gap-2"
             >
               <point.icon className="w-4 h-4" style={{ color: "#a855f7" }} />
-              <span className="text-xs lg:text-sm text-white/60 font-medium">{point.text}</span>
+              <span className="text-xs lg:text-sm text-foreground/60 font-medium">{point.text}</span>
             </motion.div>
           ))}
         </div>
         <div className="text-center">
-          <p className="text-lg lg:text-xl text-white/80" style={{ fontFamily: "cursive, 'Brush Script MT', sans-serif" }}>
+          <p className="text-lg lg:text-xl text-foreground/80" style={{ fontFamily: "cursive, 'Brush Script MT', sans-serif" }}>
             Ensemble, on est plus forts !
           </p>
         </div>

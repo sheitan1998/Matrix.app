@@ -182,6 +182,19 @@
   }
 }
 
+/* The body owns the wallpaper; route wrappers must not paint over it. */
+html[data-matrix-theme],
+body[data-matrix-theme] {
+  min-height: 100%;
+  background-color: var(--matrix-page-background);
+}
+
+#root[data-matrix-theme] {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: transparent !important;
+}
+
 /* Mobile scroll fix — ensure page content scrolls freely between fixed header and bottom nav */
 @media (max-width: 640px) {
   body {

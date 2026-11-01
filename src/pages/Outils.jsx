@@ -20,8 +20,6 @@ const TOOLS = [
 { id: "paint", label: "Paint Matrix", desc: "Outil de dessin avec pinceau, gomme, couleurs et export PNG.", icon: Palette, color: "#ec4899" }];
 
 
-const BG_URL = "/media/tuto-gaming/891f5968b_Gemini_Generated_Image_vsevw4vsevw4vsev.png";
-
 export default function Outils() {
   const nav = useNavigate();
   const { trackActivity } = useProgression();
@@ -33,27 +31,24 @@ export default function Outils() {
   }, []);
 
   return (
-    <div className="min-h-screen relative overflow-y-auto overflow-x-hidden" style={{ backgroundColor: "#0a050f" }}>
-      {/* Space background */}
-      <div className="fixed inset-0 pointer-events-none" style={{ backgroundImage: `url(${BG_URL})`, backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed" }} />
-      <div className="fixed inset-0 pointer-events-none" style={{ background: "rgba(10,5,15,0.55)" }} />
+    <div className="min-h-screen relative overflow-y-auto overflow-x-hidden bg-transparent">
 
       <div className="relative z-10 min-h-screen flex flex-col px-4 sm:px-6 lg:px-10 py-4">
         {/* Header */}
         <header className="flex items-center justify-between mb-6">
           <button onClick={() => nav("/")} className="flex items-center gap-1">
-            <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white">MATRIX</h1>
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight text-foreground">MATRIX</h1>
           </button>
           <HeaderActions />
         </header>
 
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 mb-8 text-sm">
-          <Link to="/" className="flex items-center gap-1 text-white/50 hover:text-white transition">
+          <Link to="/" className="flex items-center gap-1 text-foreground/50 hover:text-foreground transition">
             <Home className="w-3.5 h-3.5" /> Accueil
           </Link>
-          <span className="text-white/30">›</span>
-          <span className="text-white font-semibold">Outils de Bureau</span>
+          <span className="text-foreground/30">›</span>
+          <span className="text-foreground font-semibold">Outils de Bureau</span>
         </div>
 
         {/* Tool cards */}

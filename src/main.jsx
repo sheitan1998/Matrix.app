@@ -5,6 +5,7 @@ import '@/index.css'
 import 'leaflet/dist/leaflet.css'
 import '@/lib/pwa'
 import { initRuntimeAssetUrlPatch } from '@/lib/runtimeAssetUrlPatch'
+import { initTheme } from '@/hooks/useTheme'
 
 const isTauriWebview = () => {
   const { protocol, hostname } = window.location
@@ -12,6 +13,7 @@ const isTauriWebview = () => {
 }
 
 initRuntimeAssetUrlPatch()
+initTheme()
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <App />

@@ -43,14 +43,14 @@ export default function LandingSidebar({ onFaq, onOpenTheme }) {
       className="hidden lg:flex flex-col shrink-0 sticky top-0 h-screen"
       style={{
         width: 260,
-        background: "linear-gradient(180deg, #0e0a15 0%, #0b0811 100%)",
+        background: "linear-gradient(180deg, hsl(var(--popover)) 0%, hsl(var(--card)) 100%)",
         borderRight: "1px solid rgba(168,85,247,0.12)",
       }}
     >
       {/* Logo header */}
       <div className="px-5 pt-6 pb-5" style={{ borderBottom: "1px solid rgba(168,85,247,0.1)" }}>
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <h1 className="text-3xl font-black tracking-tight text-white">MATRIX</h1>
+          <h1 className="text-3xl font-black tracking-tight text-foreground">MATRIX</h1>
           <div className="flex items-center gap-2 mt-1.5">
             <div className="h-px w-6" style={{ background: "linear-gradient(to right, transparent, #a855f7)" }} />
             <div className="flex items-center gap-1">
@@ -60,7 +60,7 @@ export default function LandingSidebar({ onFaq, onOpenTheme }) {
             </div>
             <div className="h-px w-6" style={{ background: "linear-gradient(to left, transparent, #a855f7)" }} />
           </div>
-          <p className="text-[9px] tracking-[0.25em] uppercase text-white/40 mt-1.5 font-mono">Explorez la plateforme</p>
+          <p className="text-[9px] tracking-[0.25em] uppercase text-foreground/40 mt-1.5 font-mono">Explorez la plateforme</p>
         </motion.div>
       </div>
 
@@ -83,11 +83,11 @@ export default function LandingSidebar({ onFaq, onOpenTheme }) {
             >
               <item.icon
                 className="w-4 h-4 shrink-0"
-                style={{ color: active ? "#fff" : "#b0b0b0" }}
+                style={{ color: active ? "#fff" : "hsl(var(--muted-foreground))" }}
               />
               <span
                 className="text-sm font-semibold"
-                style={{ color: active ? "#fff" : "#b0b0b0" }}
+                style={{ color: active ? "#fff" : "hsl(var(--muted-foreground))" }}
               >
                 {item.label}
               </span>
@@ -97,17 +97,17 @@ export default function LandingSidebar({ onFaq, onOpenTheme }) {
 
         {/* Mes outils */}
         <div className="pt-4 pb-1">
-          <p className="text-[10px] tracking-[0.2em] uppercase text-white/30 font-mono px-3 mb-1">Mes Outils</p>
+          <p className="text-[10px] tracking-[0.2em] uppercase text-foreground/30 font-mono px-3 mb-1">Mes Outils</p>
         </div>
         <motion.button
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.5, duration: 0.4 }}
           onClick={() => nav("/outils")}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all tap-sm hover:bg-white/5"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all tap-sm hover:bg-foreground/5"
         >
-          <Wrench className="w-4 h-4 shrink-0" style={{ color: "#b0b0b0" }} />
-          <span className="text-sm font-semibold text-white/70">Outils</span>
+          <Wrench className="w-4 h-4 shrink-0" style={{ color: "hsl(var(--muted-foreground))" }} />
+          <span className="text-sm font-semibold text-foreground/70">Outils</span>
         </motion.button>
       </nav>
 
@@ -115,17 +115,17 @@ export default function LandingSidebar({ onFaq, onOpenTheme }) {
       <div className="px-3 py-4 space-y-1" style={{ borderTop: "1px solid rgba(168,85,247,0.1)" }}>
         <button
           onClick={onOpenTheme}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-all tap-sm hover:bg-white/5"
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-all tap-sm hover:bg-foreground/5"
         >
-          <Palette className="w-4 h-4 shrink-0" style={{ color: "#b0b0b0" }} />
-          <span className="text-xs font-semibold text-white/70">Thème</span>
+          <Palette className="w-4 h-4 shrink-0" style={{ color: "hsl(var(--muted-foreground))" }} />
+          <span className="text-xs font-semibold text-foreground/70">Thème</span>
         </button>
         <button
           onClick={onFaq}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-all tap-sm hover:bg-white/5"
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-all tap-sm hover:bg-foreground/5"
         >
-          <HelpCircle className="w-4 h-4 shrink-0" style={{ color: "#b0b0b0" }} />
-          <span className="text-xs font-semibold text-white/70">FAQ</span>
+          <HelpCircle className="w-4 h-4 shrink-0" style={{ color: "hsl(var(--muted-foreground))" }} />
+          <span className="text-xs font-semibold text-foreground/70">FAQ</span>
         </button>
         <div className="relative">
           <TranslationButton />

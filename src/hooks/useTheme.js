@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useSyncExternalStore } from "react";
 import { base44 } from "@/api/base44Client";
 
 const STORAGE_KEY = "matrix_theme_prefs";
@@ -83,13 +83,6 @@ function applyVars(vars) {
   });
 }
 
-function clearVars(vars) {
-  const root = document.documentElement;
-  Object.keys(vars).forEach((key) => {
-    root.style.removeProperty(key);
-  });
-}
-
 function hexToHsl(hex) {
   const r = parseInt(hex.slice(1, 3), 16) / 255;
   const g = parseInt(hex.slice(3, 5), 16) / 255;
@@ -111,72 +104,81 @@ function hexToHsl(hex) {
 }
 
 export function applyTheme(prefs) {
-  const body = document.body;
-  const bgLayer = document.getElementById("matrix-theme-bg");
+  const mode = prefs.mode;
+  const color = prefs.customColor || DEFAULT_PREFS.customColor;
+  const { h, s, l } = hexToHsl(color);
+  const channels = color.slice(1).match(/.{2}/g).map((channel) => {
+    const value = parseInt(channel, 16) / 255;
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  });
+  const lightCustom = 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2] > 0.179;
+  const vars = mode === "light" ? LIGHT_VARS : mode === "dark" ? SOLID_DARK_VARS : mode === "custom" && lightCustom ? LIGHT_VARS : DARK_VARS;
+  applyVars(vars);
 
-  // Reset body background and bg layer
-  body.style.backgroundColor = "";
-  body.style.backgroundImage = "";
-
-  if (prefs.mode === "original") {
-    // Original: default dark neon space theme, no body bg override
-    // (Landing page shows its own space background)
-    applyVars(DARK_VARS);
-    if (bgLayer) bgLayer.style.display = "none";
-    body.setAttribute("data-matrix-theme", "original");
-  } else if (prefs.mode === "dark") {
-    // Solid black background covering entire screen
-    applyVars(SOLID_DARK_VARS);
-    body.style.backgroundColor = "#000000";
-    if (bgLayer) bgLayer.style.display = "none";
-    body.setAttribute("data-matrix-theme", "dark");
-  } else if (prefs.mode === "light") {
-    // Solid white background covering entire screen
-    applyVars(LIGHT_VARS);
-    body.style.backgroundColor = "#F4F4F5";
-    if (bgLayer) bgLayer.style.display = "none";
-    body.setAttribute("data-matrix-theme", "light");
-  } else if (prefs.mode === "custom") {
-    // Custom color as global background
-    applyVars(DARK_VARS);
-    const color = prefs.customColor || "#1a0a2e";
-    const { h, s, l } = hexToHsl(color);
-    // Override accent/border with the custom color
-    document.documentElement.style.setProperty("--primary", `${h} ${s}% ${l}%`);
-    document.documentElement.style.setProperty("--accent", `${h} ${s}% ${l}%`);
-    document.documentElement.style.setProperty("--ring", `${h} ${s}% ${l}%`);
-
-    if (prefs.bgImageUrl) {
-      // Custom background image uploaded by subscriber
-      body.style.backgroundColor = "#0a050f";
-      if (bgLayer) {
-        bgLayer.style.display = "block";
-        bgLayer.style.backgroundImage = `url(${prefs.bgImageUrl})`;
-        bgLayer.style.backgroundSize = "cover";
-        bgLayer.style.backgroundPosition = "center";
-        bgLayer.style.backgroundAttachment = "fixed";
-        bgLayer.style.opacity = String(prefs.bgOpacity || 0.5);
-      }
-    } else {
-      // Solid custom color as background
-      body.style.backgroundColor = color;
-      if (bgLayer) bgLayer.style.display = "none";
-    }
-    body.setAttribute("data-matrix-theme", "custom");
+  if (mode === "custom") {
+    const customHsl = `${h} ${s}% ${l}%`;
+    applyVars({
+      "--background": customHsl,
+      "--primary": customHsl,
+      "--accent": customHsl,
+      "--ring": customHsl,
+      "--primary-foreground": lightCustom ? DARK_VARS["--primary-foreground"] : DARK_VARS["--foreground"],
+      "--accent-foreground": lightCustom ? DARK_VARS["--accent-foreground"] : DARK_VARS["--foreground"],
+    });
   }
+
+  const pageColor = mode === "dark" ? "#000000" : mode === "light" ? "#F4F4F5" : mode === "custom" ? color : "#0a050f";
+  let image = "none";
+  if (mode === "original") {
+    image = 'linear-gradient(rgba(10,5,15,0.55), rgba(10,5,15,0.55)), url("/media/tuto-gaming/891f5968b_Gemini_Generated_Image_vsevw4vsevw4vsev.png")';
+  } else if (mode === "custom" && prefs.bgImageUrl) {
+    const shade = 1 - (prefs.bgOpacity ?? 0.5);
+    image = `linear-gradient(rgba(0,0,0,${shade}), rgba(0,0,0,${shade})), url(${JSON.stringify(prefs.bgImageUrl)})`;
+  }
+
+  // One background owner: remove the old, independent image layer entirely.
+  document.getElementById("matrix-theme-bg")?.remove();
+  const root = document.documentElement;
+  const body = document.body;
+  const app = document.getElementById("root");
+  root.style.setProperty("--matrix-page-background", pageColor);
+  root.style.setProperty("background-color", pageColor, "important");
+  root.style.setProperty("background-image", "none", "important");
+  root.style.colorScheme = mode === "light" || (mode === "custom" && lightCustom) ? "light" : "dark";
+  body.style.setProperty("background-color", pageColor, "important");
+  body.style.setProperty("background-image", image, "important");
+  body.style.backgroundSize = "cover";
+  body.style.backgroundPosition = "center";
+  body.style.backgroundRepeat = "no-repeat";
+  body.style.backgroundAttachment = "fixed";
+  [root, body, app].filter(Boolean).forEach((element) => {
+    element.setAttribute("data-matrix-theme", mode);
+  });
+  if (app) app.style.setProperty("background", "transparent", "important");
+}
+
+// Every consumer reads the same snapshot; a modal cannot leave the page stale.
+let currentPrefs = loadPrefs();
+const themeListeners = new Set();
+const getThemeSnapshot = () => currentPrefs;
+const subscribeTheme = (listener) => {
+  themeListeners.add(listener);
+  return () => themeListeners.delete(listener);
+};
+
+function updateThemePrefs(partial) {
+  currentPrefs = { ...currentPrefs, ...partial };
+  applyTheme(currentPrefs);
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(currentPrefs));
+  } catch {}
+  themeListeners.forEach((listener) => listener());
 }
 
 export function useTheme() {
-  const [prefs, setPrefs] = useState(loadPrefs);
+  const prefs = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getThemeSnapshot);
   const [hasCustomBg, setHasCustomBg] = useState(false);
   const [customBgChecked, setCustomBgChecked] = useState(false);
-
-  useEffect(() => {
-    applyTheme(prefs);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
-    } catch {}
-  }, [prefs]);
 
   const checkCustomBg = useCallback(async () => {
     try {
@@ -196,23 +198,20 @@ export function useTheme() {
     checkCustomBg();
   }, [checkCustomBg]);
 
-  const updatePrefs = useCallback((partial) => {
-    setPrefs((prev) => ({ ...prev, ...partial }));
-  }, []);
+  const updatePrefs = updateThemePrefs;
 
   return { prefs, updatePrefs, hasCustomBg, customBgChecked, refreshCustomBg: checkCustomBg };
 }
 
-export function initThemeBackgroundLayer() {
-  if (document.getElementById("matrix-theme-bg")) return;
-  const layer = document.createElement("div");
-  layer.id = "matrix-theme-bg";
-  layer.style.position = "fixed";
-  layer.style.inset = "0";
-  layer.style.pointerEvents = "none";
-  layer.style.zIndex = "0";
-  layer.style.display = "none";
-  document.body.prepend(layer);
-  const prefs = loadPrefs();
-  applyTheme(prefs);
+let themeInitialized = false;
+export function initTheme() {
+  applyTheme(currentPrefs);
+  if (themeInitialized) return;
+  themeInitialized = true;
+  window.addEventListener("storage", (event) => {
+    if (event.key !== STORAGE_KEY && event.key !== null) return;
+    currentPrefs = loadPrefs();
+    applyTheme(currentPrefs);
+    themeListeners.forEach((listener) => listener());
+  });
 }
