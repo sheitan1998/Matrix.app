@@ -3,17 +3,19 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, ShoppingBag, Trophy } from 'lucide-react';
 import RocketLeagueGarage from '@/components/tuto-gaming/RocketLeagueGarage';
 import RocketLeagueShop from '@/components/tuto-gaming/RocketLeagueShop';
+import RocketLeagueDailyShop from '@/components/tuto-gaming/RocketLeagueDailyShop';
 import RocketStatsTracker from '@/components/tuto-gaming/RocketStatsTracker';
 
 const TABS = [
-  { id: 'shop', label: 'Item Shop', icon: ShoppingBag },
+  { id: 'daily', label: 'Boutique du Jour', icon: ShoppingBag },
+  { id: 'shop', label: 'Catalogue', icon: ShoppingBag },
   { id: 'garage', label: 'Custom Preset / Garage', icon: null },
   { id: 'stats', label: 'Stats Joueurs', icon: Trophy },
 ];
 
 export default function RocketLeague() {
   const [requestedPreset] = useState(() => new URLSearchParams(window.location.search).get('preset') || '');
-  const [tab, setTab] = useState(requestedPreset ? 'garage' : 'shop');
+  const [tab, setTab] = useState(requestedPreset ? 'garage' : 'daily');
   const clearPresetUrl = useCallback(() => {
     const url = new URL(window.location.href);
     url.searchParams.delete('preset');
@@ -46,6 +48,9 @@ export default function RocketLeague() {
               {label}
             </button>
           ))}
+        </div>
+        <div role="tabpanel" id="rocket-panel-daily" aria-labelledby="rocket-tab-daily" hidden={tab !== 'daily'}>
+          <RocketLeagueDailyShop />
         </div>
         <div role="tabpanel" id="rocket-panel-shop" aria-labelledby="rocket-tab-shop" hidden={tab !== 'shop'}>
           <RocketLeagueShop />

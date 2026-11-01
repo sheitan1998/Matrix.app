@@ -133,6 +133,64 @@ export default async function(req) {
       return dataResponse(await catalogResponse(body), 3600);
     }
 
+    if (action === 'getDailyShop') {
+      const cacheKey = 'dailyshop:rocket-league';
+      const cached = getCached(cacheKey, CACHE_TTL_STATS);
+      if (cached) return dataResponse(cached, 300);
+      const shopResponse = await fetch('https://itemshop.gg/api/v1/shop/rocket-league', {
+        headers: { Accept: 'application/json' },
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!shopResponse.ok) throw new Error(`dailyshop_http_${shopResponse.status}`);
+      const shopData = await shopResponse.json();
+      const shop = shopData?.data;
+      if (!shop || !Array.isArray(shop.sections)) throw new Error('dailyshop_malformed');
+      const items = [];
+      for (const section of shop.sections) {
+        for (const raw of section.items || []) {
+          const typeStr = String(raw.type || '');
+          let category = 'other';
+          const t = typeStr.toLowerCase();
+          if (t.includes('body') || t.includes('car')) category = 'body';
+          else if (t.includes('wheel')) category = 'wheels';
+          else if (t.includes('decal')) category = 'decal';
+          else if (t.includes('goal') || t.includes('explosion')) category = 'goalExplosion';
+          else if (t.includes('boost')) category = 'boost';
+          else if (t.includes('topper') || t.includes('hat')) category = 'topper';
+          else if (t.includes('antenna')) category = 'antenna';
+          else if (t.includes('banner')) category = 'banner';
+          items.push({
+            id: raw.id || raw.itemKey || '',
+            name: raw.name || 'Objet',
+            type: typeStr,
+            category,
+            rarity: raw.rarity?.name || 'Common',
+            rarityColor: raw.rarity?.color || '#94a3b8',
+            price: raw.price?.amount ?? null,
+            currency: raw.price?.currency || 'Credits',
+            image: raw.images?.render || raw.images?.card || '',
+            cardImage: raw.images?.card || raw.images?.render || '',
+            paint: raw.paint?.name || null,
+            paintColor: raw.paint?.color || null,
+            section: section.title || '',
+            sourceUrl: raw.sourceUrl || '',
+            availableUntil: raw.availability?.until || section.endsAt || null,
+            soldOut: Boolean(raw.soldOut),
+          });
+        }
+      }
+      const result = {
+        items,
+        shopDate: shop.shopDate || null,
+        updatedAt: shop.updatedAt || null,
+        expiresAt: shop.expiresAt || null,
+        source: 'itemshop.gg',
+        itemCount: items.length,
+      };
+      setCached(cacheKey, result);
+      return dataResponse(result, 300);
+    }
+
     if (action === 'getPlayerStats') {
       const platform = String(body.platform || '');
       const gamertag = String(body.gamertag || '').trim();
