@@ -27,6 +27,7 @@ import { LANGUAGES, getPreferredLanguage, changeLanguage } from "@/lib/languageP
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import ThemeModal from "@/components/landing/ThemeModal";
+import FaqPanel from "@/components/landing/FaqPanel";
 
 const NEON_TEXT_SHADOW = "0 0 8px rgba(168, 85, 247, 1), 0 0 16px rgba(168, 85, 247, 0.8), 0 0 32px rgba(168, 85, 247, 0.6)";
 const NEON_SUBTITLE_SHADOW = "0 0 6px rgba(168, 85, 247, 1), 0 0 12px rgba(168, 85, 247, 0.7)";
@@ -68,7 +69,7 @@ const SECTIONS = [
 {
   title: "Navigation",
   items: [
-  { to: "/stream", label: "Accueil", icon: Home },
+  { to: "/", label: "Accueil", icon: Home },
   { to: "/video-studio", label: "Montage Vidéo", icon: Clapperboard },
   { to: "/sondages", label: "Sondage", icon: BarChart3 },
   { to: "/progression", label: "Niveaux/Progressions", icon: TrendingUp }]
@@ -79,7 +80,7 @@ const SECTIONS = [
   items: [
   { to: "/boutique-matrix", label: "Boutique", icon: ShoppingBag },
   { to: "/outils", label: "Outils", icon: Wrench },
-  { to: "/about", label: "FAQ", icon: HelpCircle }]
+  { faq: true, label: "FAQ", icon: HelpCircle }]
 
 },
 {
@@ -91,9 +92,16 @@ const SECTIONS = [
 }];
 
 
-function NavItem({ to, label, icon: Icon, active, collapsed, isLight }) {
+function NavItem({ to, label, icon: Icon, active, collapsed, faq, onFaq, isLight }) {
   const [hovered, setHovered] = useState(false);
   const glow = active || hovered;
+
+  const handleClick = (e) => {
+    if (faq) {
+      e.preventDefault();
+      onFaq?.();
+    }
+  };
 
   const iconColor = isLight
     ? (glow ? "#6d28d9" : "#7c3aed")
@@ -125,6 +133,13 @@ function NavItem({ to, label, icon: Icon, active, collapsed, isLight }) {
     : isLight
       ? { background: hovered ? "rgba(0,0,0,0.04)" : undefined }
       : undefined;
+
+  if (faq) {
+    return (
+      <button type="button" onClick={handleClick} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} className={className} style={style} title={collapsed ? label : undefined}>
+        {link}
+      </button>);
+  }
 
   return (
     <Link to={to} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} className={className} style={style} title={collapsed ? label : undefined}>
@@ -224,8 +239,9 @@ function SectionSeparator({ title, collapsed, isLight }) {
 
 export default function Sidebar({ noTopbar = false }) {
   const { pathname } = useLocation();
-  const isActive = (to) => pathname === to || to === "/stream" && pathname === "/";
+  const isActive = (to) => pathname === to;
   const { collapsed, toggle } = useCollapsed();
+  const [faqOpen, setFaqOpen] = useState(false);
   const { prefs } = useTheme();
   const isLight = prefs.mode === "light" || (prefs.mode === "custom" && (() => {
     const color = prefs.customColor || "#1a0a2e";
@@ -289,8 +305,8 @@ export default function Sidebar({ noTopbar = false }) {
         }
           <div className="flex flex-col gap-0.5">
             {section.items.map((item) =>
-          <div key={(item.to || "soutenir") + item.label} className="group">
-                <NavItem {...item} active={item.to ? isActive(item.to) : false} collapsed={collapsed} isLight={isLight} />
+          <div key={(item.to || item.label) + (item.faq ? "_faq" : "")} className="group">
+                <NavItem {...item} active={item.to ? isActive(item.to) : false} collapsed={collapsed} faq={item.faq} onFaq={() => setFaqOpen(true)} isLight={isLight} />
               </div>
           )}
           </div>
@@ -311,6 +327,8 @@ export default function Sidebar({ noTopbar = false }) {
 
 
       </div>
+
+      <FaqPanel open={faqOpen} onClose={() => setFaqOpen(false)} />
     </aside>);
 
 }

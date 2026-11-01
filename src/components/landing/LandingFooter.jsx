@@ -69,7 +69,7 @@ export default function LandingFooter() {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.3, duration: 0.6 }}
-              className="w-64 h-auto lg:w-80 object-contain"
+              className="w-80 h-auto lg:w-[28rem] object-contain"
             />
           </div>
         </div>

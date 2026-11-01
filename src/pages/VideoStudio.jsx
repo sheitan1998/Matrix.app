@@ -5,7 +5,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Film, Play, Clock, ArrowLeft, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { useProgression } from "@/context/ProgressionContext";
-import SpaceBackground from "@/components/SpaceBackground";
 import TrixWalletBar from "@/components/TrixWalletBar";
 import ProjectEditor from "@/components/video/ProjectEditor";
 
@@ -61,8 +60,7 @@ export default function VideoStudio() {
   }
 
   return (
-    <SpaceBackground overlay={0.6}>
-      <div className="min-h-screen">
+    <div className="min-h-screen">
         {/* Header */}
         <div className="sticky top-0 z-40 flex items-center gap-3 px-4 py-3 backdrop-blur-xl" style={{ background: "rgba(10,10,12,0.85)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
           <button onClick={() => nav(-1)} className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/5 transition"><ArrowLeft className="w-5 h-5 text-white" /></button>
@@ -132,8 +130,7 @@ export default function VideoStudio() {
         {showCreate && (
           <CreateProjectModal onClose={() => setShowCreate(false)} onCreate={createProject} />
         )}
-      </div>
-    </SpaceBackground>
+    </div>
   );
 }
 
