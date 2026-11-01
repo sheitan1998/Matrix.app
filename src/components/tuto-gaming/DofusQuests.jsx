@@ -19,7 +19,7 @@ export default function DofusQuests({ xpSources, onAddXpSource, onRemoveXpSource
   return <section className="space-y-6" aria-labelledby="dofus-quests-title">
     <header><h2 id="dofus-quests-title" className="flex items-center gap-2 text-xl font-bold"><ScrollText className="h-5 w-5 text-primary" />Quêtes</h2><p className="text-sm text-muted-foreground"> détails d’étapes, prérequis récursifs et calcul XP.</p></header>
     <DofusProgressionFilters filters={filters} categories={filtersQuery.data?.quests || []} onChange={setFilters} categoryLabel="Catégorie / zone" />
-    <p className="text-xs text-muted-foreground">DofusDB expose une catégorie thématique ou géographique par quête, mais aucun champ de série distinct ni filtre de zone normalisé. Aucun regroupement artificiel n’est ajouté.</p>
+    
     {query.isFetching && <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Chargement de la page et de ses références…</p>}
     {query.isError && <p role="alert" className="flex items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-destructive"><AlertTriangle className="h-4 w-4" />Les quêtes sont temporairement indisponibles. Aucun contenu de remplacement n’est inventé.</p>}
     {!query.isError && !query.isLoading && !quests.length && <p className="rounded-xl border p-8 text-center text-muted-foreground">Aucune quête ne correspond à ces filtres.</p>}
