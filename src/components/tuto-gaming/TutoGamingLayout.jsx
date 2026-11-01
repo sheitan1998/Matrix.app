@@ -3,7 +3,6 @@ import { Outlet, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { User } from "lucide-react";
 import AuthModal from "@/components/landing/AuthModal";
-import CosmicBackground from "./CosmicBackground";
 import TrixWalletBar from "@/components/TrixWalletBar";
 
 export default function TutoGamingLayout() {
@@ -15,21 +14,19 @@ export default function TutoGamingLayout() {
   }, []);
 
   return (
-    <div className="min-h-screen relative">
-      <CosmicBackground />
-
+    <div className="min-h-screen relative bg-transparent text-foreground">
       {/* Header */}
       <header
         className="sticky top-0 z-40 flex items-center justify-between px-4 sm:px-6 py-3"
         style={{
-          background: "rgba(13,5,24,0.85)",
+          background: "hsl(var(--popover) / 0.85)",
           backdropFilter: "blur(16px)",
-          borderBottom: "1px solid rgba(191,90,242,0.2)",
+          borderBottom: "1px solid hsl(var(--border))",
         }}
       >
         {/* Left: MATRIX logo */}
         <Link to="/" className="flex items-center gap-2 tap-sm">
-          <h1 className="text-xl font-black text-white tracking-tight">
+          <h1 className="text-xl font-black text-foreground tracking-tight">
             MATRI<span style={{ color: "#BF5AF2" }}>X</span>
           </h1>
         </Link>
@@ -42,7 +39,7 @@ export default function TutoGamingLayout() {
             border: "1px solid rgba(191,90,242,0.3)",
           }}
         >
-          <span className="text-[11px] font-black tracking-[0.2em] uppercase text-white">
+          <span className="text-[11px] font-black tracking-[0.2em] uppercase text-foreground">
             Tuto Gaming Entraide
           </span>
         </div>
@@ -66,7 +63,7 @@ export default function TutoGamingLayout() {
             >
               <User className="w-3.5 h-3.5" style={{ color: "#BF5AF2" }} />
             </div>
-            <span className="text-xs font-bold text-white hidden sm:inline">Se connecter</span>
+            <span className="text-xs font-bold text-foreground hidden sm:inline">Se connecter</span>
           </button>
         )}
 

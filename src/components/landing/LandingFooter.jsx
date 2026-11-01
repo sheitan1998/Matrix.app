@@ -17,9 +17,9 @@ export default function LandingFooter() {
       <div
         className="rounded-3xl p-6 lg:p-8"
         style={{
-          background: "linear-gradient(135deg, rgba(15,10,25,0.8) 0%, rgba(20,12,35,0.6) 100%)",
-          border: "1px solid rgba(168,85,247,0.2)",
-          boxShadow: "0 0 40px rgba(168,85,247,0.08)",
+          background: "hsl(var(--card) / 0.9)",
+          border: "1px solid hsl(var(--border))",
+          boxShadow: "0 0 40px hsl(var(--primary) / 0.08)",
         }}
       >
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_auto] gap-6 lg:gap-8 items-center">
@@ -35,10 +35,10 @@ export default function LandingFooter() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <h3 className="text-xl lg:text-2xl font-black text-white mb-2">
+              <h3 className="text-xl lg:text-2xl font-black text-foreground mb-2">
                 Soutenir la communauté, c'est faire vivre MATRIX !
               </h3>
-              <p className="text-sm text-white/50 mb-4 max-w-md">
+              <p className="text-sm text-foreground/50 mb-4 max-w-md">
                 Ton soutien nous permet de maintenir les serveurs, développer de nouvelles fonctionnalités
                 et offrir une expérience unique à toute la communauté.
               </p>
@@ -94,7 +94,7 @@ export default function LandingFooter() {
                   boxShadow: "0 0 25px rgba(168,85,247,0.4)",
                 }}
               >
-                <span className="text-4xl lg:text-5xl font-black text-white" style={{ textShadow: "0 0 15px rgba(168,85,247,0.8)" }}>
+                <span className="text-4xl lg:text-5xl font-black text-foreground" style={{ textShadow: "0 0 15px hsl(var(--primary) / 0.8)" }}>
                   M
                 </span>
                 <Crown

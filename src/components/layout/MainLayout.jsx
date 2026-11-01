@@ -6,7 +6,7 @@ import BottomTabs from "./BottomTabs";
 
 export default function MainLayout() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-transparent text-foreground">
       <Topbar />
       <div className="flex">
         <Sidebar />

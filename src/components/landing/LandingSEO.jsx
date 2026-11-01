@@ -117,18 +117,18 @@ export default function LandingSEO() {
         viewport={{ once: true }}
         transition={{ duration: 0.5, delay: i * 0.05 }}
         className="rounded-2xl p-5 md:p-6 hidden"
-        style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(168,85,247,0.12)" }}>
+        style={{ background: "hsl(var(--card) / 0.9)", border: "1px solid hsl(var(--border))" }}>
         
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(168,85,247,0.12)" }}>
               <f.icon className="w-5 h-5" style={{ color: "#a855f7" }} />
             </div>
-            <h2 className="text-base md:text-lg font-black text-white">{f.title}</h2>
+            <h2 className="text-base md:text-lg font-black text-foreground">{f.title}</h2>
           </div>
-          <p className="text-xs md:text-sm text-white/55 leading-relaxed mb-4">{f.desc}</p>
+          <p className="text-xs md:text-sm text-foreground/55 leading-relaxed mb-4">{f.desc}</p>
           <ul className="space-y-2">
             {f.points.map((p, j) =>
-          <li key={j} className="flex items-start gap-2 text-xs md:text-sm text-white/50">
+          <li key={j} className="flex items-start gap-2 text-xs md:text-sm text-foreground/50">
                 <Zap className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: "#a855f7" }} />
                 <span>{p}</span>
               </li>

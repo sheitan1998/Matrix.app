@@ -5,7 +5,7 @@ import '@/index.css'
 import 'leaflet/dist/leaflet.css'
 import '@/lib/pwa'
 import { initRuntimeAssetUrlPatch } from '@/lib/runtimeAssetUrlPatch'
-import { initTheme } from '@/hooks/useTheme'
+import { initTheme, ThemeProvider } from '@/hooks/useTheme'
 
 const isTauriWebview = () => {
   const { protocol, hostname } = window.location
@@ -16,7 +16,9 @@ initRuntimeAssetUrlPatch()
 initTheme()
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <App />
+  <ThemeProvider>
+    <App />
+  </ThemeProvider>
 )
 
 if ('serviceWorker' in navigator && !isTauriWebview()) {

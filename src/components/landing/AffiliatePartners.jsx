@@ -103,23 +103,23 @@ function PartnerCard({ p, index }) {
       transition={{ delay: 0.3 + index * 0.08, duration: 0.5 }}
       className="rounded-2xl overflow-hidden flex items-center gap-4 pt-4 pr-4 pb-4 pl-4"
       style={{
-        background: "#101015",
-        border: "1px solid rgba(168,85,247,0.15)"
+        background: "hsl(var(--card))",
+        border: "1px solid hsl(var(--border))"
       }}
     >
       {/* Image */}
-      <div className="w-20 h-20 shrink-0 rounded-xl overflow-hidden flex items-center justify-center" style={{ background: "#0a050f" }}>
+      <div className="w-20 h-20 shrink-0 rounded-xl overflow-hidden flex items-center justify-center" style={{ background: "hsl(var(--muted))" }}>
         <img src={imageUrl || p.image} alt={p.name} className="w-full h-full object-cover" />
       </div>
 
       {/* Text */}
       <div className="flex-1 min-w-0">
-        <h3 className="text-base font-black text-white leading-tight">{p.title}</h3>
+        <h3 className="text-base font-black text-foreground leading-tight">{p.title}</h3>
         <div className="flex items-center gap-1 mt-1">
           {[1, 2, 3, 4, 5].map((s) => (
             <Star key={s} className="w-3.5 h-3.5" style={{ color: "#ffd700", fill: "#ffd700" }} />
           ))}
-          <span className="text-xs text-white/60 ml-1">4.5</span>
+          <span className="text-xs text-foreground/60 ml-1">4.5</span>
         </div>
         <div className="flex items-center gap-2 mt-2">
           <span
@@ -129,7 +129,7 @@ function PartnerCard({ p, index }) {
             {p.btn}
             <ArrowRight className="w-3.5 h-3.5" />
           </span>
-          {extraSearch && <Search className="w-4 h-4 text-white/40" />}
+          {extraSearch && <Search className="w-4 h-4 text-foreground/40" />}
         </div>
       </div>
     </motion.div>
@@ -186,7 +186,7 @@ export default function AffiliatePartners({ compact = false }) {
 
   return (
     <div className="mt-6 lg:mt-8">
-      <h2 className="text-2xl md:text-3xl font-black text-white text-center">
+      <h2 className="text-2xl md:text-3xl font-black text-foreground text-center">
         Nos offres chez nos partenaires affiliés
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
