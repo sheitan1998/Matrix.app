@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
 
-const GTA6_LOGO = "https://static.wikia.nocookie.net/gtawiki/images/2/23/Logo-GTAVI.png/revision/latest?cb=20260630195129";
-
 export default function GTA6Image({ src, alt, className, fallbackColor = "#BF5AF2" }) {
   const [errored, setErrored] = useState(false);
   useEffect(() => setErrored(false), [src]);

@@ -1,12 +1,11 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Gamepad2, BookOpen, ShieldCheck, Images, Target, Map as MapIcon, Users, Zap } from "lucide-react";
+import { ArrowLeft, Gamepad2, BookOpen, ShieldCheck, Target, Map as MapIcon, Users, Zap } from "lucide-react";
 import GTA6DetailModal from "@/components/tuto-gaming/GTA6DetailModal";
 import GTA6GalleryCard from '@/components/tuto-gaming/GTA6GalleryCard';
 import { getGta6TabItems, resolveGta6Selection } from '@/components/tuto-gaming/gta6/gta6Registry';
 import {
-  GTA6_LOGO, GTA6_PLATFORMS, GTA6_TABS, GTA6_INFO, GTA6_HIGHLIGHTS, GTA6_SYNOPSIS,
-  GTA6_CHARACTERS, GTA6_VEHICLES, GTA6_WEAPONS, GTA6_LOCATIONS, GTA6_MISSIONS, GTA6_WIKI_SECTIONS,
+  GTA6_PLATFORMS, GTA6_TABS, GTA6_INFO, GTA6_HIGHLIGHTS, GTA6_SYNOPSIS, GTA6_WIKI_SECTIONS,
 } from "@/components/tuto-gaming/gta6Data";
 
 const HIGHLIGHT_ICONS = { "👥": Users, "🗺️": MapIcon, "🚗": Zap, "🎯": Target };

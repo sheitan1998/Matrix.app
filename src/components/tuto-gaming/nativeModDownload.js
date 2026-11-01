@@ -1,8 +1,9 @@
 import { base44 } from '@/api/base44Client';
+import { appParams } from '@/lib/app-params';
 
 export async function downloadModArchive(modId) {
   const response = await base44.functions.fetch('/fs25Download', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ modId: String(modId) }),
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-App-Id': appParams.appId, ...(appParams.functionsVersion ? { 'Base44-Functions-Version': appParams.functionsVersion } : {}) }, body: JSON.stringify({ modId: String(modId) }),
   });
   if (!response.ok || !/application\/(?:zip|octet-stream)/i.test(response.headers.get('content-type') || '')) {
     const problem = await response.json().catch(() => null);

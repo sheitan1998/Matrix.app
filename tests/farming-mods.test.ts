@@ -81,6 +81,6 @@ test('catalog cache restores recent data and ignores corrupt or expired entries'
   assert.equal(cacheFarmingCatalog(catalog, storage, 1_000), true);
   assert.deepEqual(readCachedFarmingCatalog(storage, 2_000), catalog);
   assert.equal(readCachedFarmingCatalog(storage, 8 * 24 * 60 * 60 * 1000), null);
-  values.set('matrix.fs25.modhub.catalog.v1', '{broken');
+  values.set('matrix.fs25.modhub.catalog.v2', '{broken');
   assert.equal(readCachedFarmingCatalog(storage, 2_000), null);
 });

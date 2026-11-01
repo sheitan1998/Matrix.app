@@ -1,3 +1,4 @@
+import { GTA6_EXTRA_MEDIA } from '@/components/tuto-gaming/gta6/gta6ExtraMedia';
 // Fail closed: neither a misplaced record nor another subject's media can enter a tab.
 export function isolateGta6Items(items, type) {
   const ids = new Set();
@@ -13,5 +14,6 @@ export function isolateGta6Items(items, type) {
 }
 export function officialGta6Media(subjectId, type, files, source = 'rockstar') {
   const base = source === 'wiki' ? 'https://static.wikia.nocookie.net/gtawiki/images/' : 'https://www.rockstargames.com/VI/_next/static/media/';
-  return files.map(file => Object.freeze({ subjectId, type, url: `${base}${file}`, source }));
+  const extra = source === 'rockstar' && GTA6_EXTRA_MEDIA[subjectId]?.type === type ? GTA6_EXTRA_MEDIA[subjectId].files : [];
+  return [...new Set([...files, ...extra])].map(file => Object.freeze({ subjectId, type, url: `${base}${file}`, source }));
 }
