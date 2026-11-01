@@ -7,7 +7,7 @@ import RustServerCard from "@/components/tuto-gaming/RustServerCard";
 import RustRaidCalculator from "@/components/tuto-gaming/RustRaidCalculator";
 import GameItemModal from "@/components/tuto-gaming/GameItemModal";
 
-const RUST_LOGO = "data:image/svg+xml;base64," + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect width="120" height="120" fill="#0a050f"/><text x="60" y="75" font-size="48" font-weight="900" fill="#CE422B" text-anchor="middle" font-family="sans-serif" style="filter:drop-shadow(0 0 8px #CE422B88)">RUST</text></svg>`);
+const RUST_LOGO = "data:image/svg+xml," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect width="120" height="120" fill="#0a050f"/><text x="60" y="75" font-size="48" font-weight="900" fill="#CE422B" text-anchor="middle" font-family="sans-serif" style="filter:drop-shadow(0 0 8px #CE422B88)">RUST</text></svg>`);
 
 export default function Rust() {
   const [tab, setTab] = useState("servers");
@@ -121,8 +121,8 @@ export default function Rust() {
         {tab === "building" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {RUST_BUILDING_GUIDES.map(g => (
-              <button key={g.name} onClick={() => setSelected(g)} className="text-left p-4 rounded-xl transition tap-sm" style={{ background: "hsl(var(--card))", border: `1px solid ${g.color}44` }}>
-                <span className="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase mb-2" style={{ background: `${g.color}22`, color: g.color }}>{g.category}</span>
+              <button key={g.name} onClick={() => setSelected(g)} className="text-left p-4 rounded-xl transition tap-sm" style={{ background: "hsl(var(--card))", border: `1px solid ${(g?.color || "#CE422B")}44` }}>
+                <span className="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase mb-2" style={{ background: `${(g?.color || "#CE422B")}22`, color: g?.color || "#CE422B" }}>{g?.category}</span>
                 <h3 className="text-sm font-bold text-foreground mb-1">{g.name}</h3>
                 <p className="text-xs text-muted-foreground line-clamp-2">{g.desc}</p>
               </button>

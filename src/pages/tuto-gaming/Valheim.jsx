@@ -60,12 +60,15 @@ export default function Valheim() {
             <div>
               <h2 className="text-lg font-black text-foreground mb-3">Biomes</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {VALHEIM_BIOMES.map(b => (
-                  <button key={b.name} onClick={() => setSelected(b)} className="text-left p-4 rounded-xl transition tap-sm" style={{ background: "hsl(var(--card))", border: `1px solid ${b.color}44` }}>
-                    <span className="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase mb-2" style={{ background: `${b.color}22`, color: b.color }}>{b.category}</span>
+                {VALHEIM_BIOMES.map(b => {
+                  const color = b?.color || "#4ADE80";
+                  return (
+                  <button key={b.name} onClick={() => setSelected(b)} className="text-left p-4 rounded-xl transition tap-sm" style={{ background: "hsl(var(--card))", border: `1px solid ${color}44` }}>
+                    <span className="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase mb-2" style={{ background: `${color}22`, color }}>{b?.category}</span>
                     <h3 className="text-sm font-bold text-foreground">{b.name}</h3>
                   </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -84,13 +87,16 @@ export default function Valheim() {
             <div>
               <h2 className="text-lg font-black text-foreground mb-3">Nourriture</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {VALHEIM_FOOD.map(f => (
-                  <button key={f.name} onClick={() => setSelected(f)} className="text-left p-4 rounded-xl transition tap-sm" style={{ background: "hsl(var(--card))", border: `1px solid ${f.color}44` }}>
-                    <span className="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase mb-2" style={{ background: `${f.color}22`, color: f.color }}>T{f.tier}</span>
+                {VALHEIM_FOOD.map(f => {
+                  const color = f?.color || "#4ADE80";
+                  return (
+                  <button key={f.name} onClick={() => setSelected(f)} className="text-left p-4 rounded-xl transition tap-sm" style={{ background: "hsl(var(--card))", border: `1px solid ${color}44` }}>
+                    <span className="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase mb-2" style={{ background: `${color}22`, color }}>T{f?.tier}</span>
                     <h3 className="text-sm font-bold text-foreground">{f.name}</h3>
-                    <p className="text-[10px] text-muted-foreground">+{f.health} HP / +{f.stamina} STA</p>
+                    <p className="text-[10px] text-muted-foreground">+{f?.health} HP / +{f?.stamina} STA</p>
                   </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

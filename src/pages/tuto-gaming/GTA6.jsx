@@ -9,26 +9,28 @@ import {
 } from "@/components/tuto-gaming/gta6Data";
 
 function GalleryCard({ item, onClick }) {
+  if (!item) return null;
+  const color = item.color || "#BF5AF2";
   return (
     <button
       onClick={() => onClick(item)}
       className="group relative aspect-[4/3] overflow-hidden rounded-xl text-left transition-all"
       style={{
-        border: `1px solid ${item.color}44`,
-        boxShadow: `0 0 12px ${item.color}15`,
+        border: `1px solid ${color}44`,
+        boxShadow: `0 0 12px ${color}15`,
       }}
     >
       <GTA6Image
         src={item.image}
         alt={item.name}
-        fallbackColor={item.color}
+        fallbackColor={color}
         className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
       />
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.9) 100%)" }} />
       <div className="absolute bottom-0 left-0 right-0 p-3">
         <span
           className="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider mb-1"
-          style={{ background: `${item.color}33`, color: item.color }}
+          style={{ background: `${color}33`, color }}
         >
           {item.tag}
         </span>
