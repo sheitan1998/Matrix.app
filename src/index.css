@@ -314,3 +314,61 @@ body {
 @media (prefers-reduced-motion: reduce) {
   [class*="msg-fx-"], [class*="msg-fx-"]::after { animation: none !important; }
 }
+
+/* Landing uses its own sidebar, not the streaming sidebar. */
+:root, .dark {
+  --sidebar-neon-foreground: 270 100% 87%;
+  --sidebar-neon-text-foreground: 270 100% 94%;
+  --sidebar-neon-text-shadow: 0 0 10px rgba(168, 85, 247, 0.8), 0 0 20px rgba(168, 85, 247, 0.5);
+  --sidebar-neon-icon-filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.7));
+  --sidebar-neon-indicator-background: linear-gradient(90deg, rgba(147, 51, 234, 0.35) 0%, rgba(88, 28, 135, 0.15) 100%);
+  --sidebar-neon-indicator-border: rgba(168, 85, 247, 0.85);
+  --sidebar-neon-indicator-shadow: 0 0 15px rgba(147, 51, 234, 0.4);
+}
+
+.landing-sidebar-neon [data-sidebar-brand],
+.landing-sidebar-neon svg.lucide {
+  color: hsl(var(--sidebar-neon-foreground)) !important;
+  text-shadow: var(--sidebar-neon-text-shadow) !important;
+  filter: var(--sidebar-neon-icon-filter) !important;
+}
+
+.landing-sidebar-neon svg.lucide {
+  overflow: visible;
+}
+
+.landing-sidebar-neon [data-sidebar-subtitle] {
+  color: hsl(var(--sidebar-neon-foreground));
+  text-shadow: var(--sidebar-neon-text-shadow);
+}
+
+.landing-sidebar-neon [data-sidebar-link],
+.landing-sidebar-neon [data-sidebar-translation] > div > button {
+  position: relative;
+  background: transparent !important;
+  color: hsl(var(--sidebar-neon-text-foreground));
+  text-shadow: var(--sidebar-neon-text-shadow);
+  cursor: pointer;
+}
+
+.landing-sidebar-neon [data-sidebar-link] > span {
+  color: inherit;
+}
+
+.landing-sidebar-neon__indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+  background: var(--sidebar-neon-indicator-background);
+  border: 1px solid var(--sidebar-neon-indicator-border);
+  box-shadow: var(--sidebar-neon-indicator-shadow);
+  transition: transform 150ms cubic-bezier(0.2, 0.8, 0.2, 1), width 150ms ease-out, height 150ms ease-out, opacity 100ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-sidebar-neon__indicator { transition: none; }
+}
