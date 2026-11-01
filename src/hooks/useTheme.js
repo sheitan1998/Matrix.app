@@ -48,7 +48,7 @@ const LIGHT_VARS = {
 };
 
 const DEFAULT_PREFS = {
-  mode: "dark",
+  mode: "original",
   customAccent: "#a855f7",
   customBg: "#0a050f",
   bgImageUrl: "",
@@ -93,13 +93,13 @@ export function applyTheme(prefs) {
     applyVars(LIGHT_VARS);
   } else if (prefs.mode === "custom") {
     applyVars(DARK_VARS);
-    // Override accent with custom color
     const accentHex = prefs.customAccent || "#a855f7";
     const { h, s, l } = hexToHsl(accentHex);
     document.documentElement.style.setProperty("--primary", `${h} ${s}% ${l}%`);
     document.documentElement.style.setProperty("--accent", `${h} ${s}% ${l}%`);
     document.documentElement.style.setProperty("--ring", `${h} ${s}% ${l}%`);
   } else {
+    // "original" and "dark" both use the default dark neon space theme
     applyVars(DARK_VARS);
   }
   applyThemeBackground(prefs);
@@ -130,7 +130,6 @@ export function useTheme() {
   const [isVip, setIsVip] = useState(false);
   const [vipChecked, setVipChecked] = useState(false);
 
-  // Apply theme on prefs change + persist
   useEffect(() => {
     applyTheme(prefs);
     try {
@@ -138,27 +137,29 @@ export function useTheme() {
     } catch {}
   }, [prefs]);
 
-  // Check VIP status
-  useEffect(() => {
-    base44.auth.me()
-      .then((u) => {
-        const vip = u?.is_vip || false;
-        const vipUntil = u?.vip_until;
-        if (vip && vipUntil) {
-          setIsVip(new Date(vipUntil) > new Date());
-        } else {
-          setIsVip(vip);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setVipChecked(true));
+  const checkVip = useCallback(async () => {
+    try {
+      const u = await base44.auth.me();
+      const vip = u?.is_vip || false;
+      const vipUntil = u?.vip_until;
+      if (vip && vipUntil) {
+        setIsVip(new Date(vipUntil) > new Date());
+      } else {
+        setIsVip(vip);
+      }
+    } catch {}
+    setVipChecked(true);
   }, []);
+
+  useEffect(() => {
+    checkVip();
+  }, [checkVip]);
 
   const updatePrefs = useCallback((partial) => {
     setPrefs((prev) => ({ ...prev, ...partial }));
   }, []);
 
-  return { prefs, updatePrefs, isVip, vipChecked };
+  return { prefs, updatePrefs, isVip, vipChecked, refreshVip: checkVip };
 }
 
 export function initThemeBackgroundLayer() {

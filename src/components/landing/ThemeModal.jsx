@@ -2,13 +2,15 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Moon, Sun, Palette, Crown, Lock, X, Upload, Image as ImageIcon,
-  Check, Sparkles
+  Check, Sparkles, Loader2
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { base44 } from "@/api/base44Client";
+import CheckoutModal from "@/components/CheckoutModal";
 
 const MODES = [
-  { id: "dark", label: "Thème Sombre", desc: "Le design spatial néon par défaut", icon: Moon, preview: "linear-gradient(135deg, #0a050f, #1a0a2e)" },
+  { id: "original", label: "Thème Original", desc: "Le fond spatial néon par défaut de MATRIX", icon: Sparkles, preview: "linear-gradient(135deg, #0a050f, #1a0a2e)" },
+  { id: "dark", label: "Thème Sombre", desc: "Variante sombre épurée sans fond spatial", icon: Moon, preview: "linear-gradient(135deg, #0a0a0a, #1a1a1a)" },
   { id: "light", label: "Thème Clair", desc: "Variante lumineuse pour le jour", icon: Sun, preview: "linear-gradient(135deg, #f8f8ff, #e8e0ff)" },
   { id: "custom", label: "Personnalisé", desc: "Choisis tes couleurs et ton fond", icon: Palette, preview: "linear-gradient(135deg, #0a050f, #6200ea)" },
 ];
@@ -16,8 +18,9 @@ const MODES = [
 const ACCENT_PRESETS = ["#a855f7", "#8a2be2", "#ff00ff", "#ff4500", "#00ced1", "#00ff7f", "#ffd700", "#3b82f6"];
 
 export default function ThemeModal({ open, onClose }) {
-  const { prefs, updatePrefs, isVip, vipChecked } = useTheme();
+  const { prefs, updatePrefs, isVip, vipChecked, refreshVip } = useTheme();
   const [uploading, setUploading] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -38,6 +41,12 @@ export default function ThemeModal({ open, onClose }) {
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleVipSuccess = async () => {
+    // Refresh VIP status after successful payment
+    await refreshVip();
+    setShowCheckout(false);
   };
 
   return (
@@ -82,7 +91,7 @@ export default function ThemeModal({ open, onClose }) {
 
             <div className="p-6 space-y-6">
               {/* Mode selection */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {MODES.map((mode) => (
                   <button
                     key={mode.id}
@@ -178,7 +187,7 @@ export default function ThemeModal({ open, onClose }) {
                               style={{ background: "linear-gradient(135deg, #6200ea, #aa00ff)", opacity: uploading ? 0.6 : 1 }}>
                               {uploading ? (
                                 <>
-                                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                  <Loader2 className="w-4 h-4 text-white animate-spin" />
                                   <span className="text-sm font-bold text-white">Import en cours...</span>
                                 </>
                               ) : (
@@ -213,12 +222,11 @@ export default function ThemeModal({ open, onClose }) {
                         ) : (
                           <div className="text-center py-4">
                             <p className="text-xs text-white/50 mb-3">
-                              L'image de fond personnalisée est réservée aux membres VIP (3 €/mois).
+                              L'image de fond personnalisée est réservée aux membres VIP (2,99 €/mois).
                               Soutiens MATRIX et profite de cette fonctionnalité exclusive !
                             </p>
-                            <a
-                              href="/premium"
-                              onClick={(e) => { e.preventDefault(); window.location.href = "/premium"; }}
+                            <button
+                              onClick={() => setShowCheckout(true)}
                               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition hover:scale-105 tap-sm"
                               style={{
                                 background: "linear-gradient(135deg, #ffd700, #ff8c00)",
@@ -226,8 +234,8 @@ export default function ThemeModal({ open, onClose }) {
                               }}
                             >
                               <Crown className="w-4 h-4" />
-                              Devenir VIP
-                            </a>
+                              Devenir VIP - 2,99 €/mois
+                            </button>
                           </div>
                         )}
                       </div>
@@ -246,6 +254,15 @@ export default function ThemeModal({ open, onClose }) {
             </div>
           </motion.div>
         </motion.div>
+      )}
+
+      {showCheckout && (
+        <CheckoutModal
+          functionName="stripePayment"
+          params={{ action: "createVIPSubscription", plan: "vip_vote" }}
+          onClose={() => setShowCheckout(false)}
+          onSuccess={handleVipSuccess}
+        />
       )}
     </AnimatePresence>
   );
