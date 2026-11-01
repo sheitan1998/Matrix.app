@@ -96,6 +96,7 @@ const FortniteShop = lazy(() => import('@/pages/fortnite/FortniteShop'));
 const FortniteCosmetics = lazy(() => import('@/pages/fortnite/FortniteCosmetics'));
 const FortniteStats = lazy(() => import('@/pages/fortnite/FortniteStats'));
 const Dofus = lazy(() => import('@/pages/tuto-gaming/Dofus'));
+const GTA6 = lazy(() => import('@/pages/tuto-gaming/GTA6'));
 const RocketLeague = lazy(() => import('@/pages/tuto-gaming/RocketLeague'));
 const DynamicPage = lazy(() => import('@/pages/DynamicPage'));
 const TwitchHome = lazy(() => import('@/pages/twitch/TwitchHome'));
@@ -204,6 +205,7 @@ const AuthenticatedApp = () => {
           <Route path="/tuto-gaming/farming-simulator-25" element={<CanonicalFarmingRedirect />} />
           <Route path="/tuto-gaming/farming-simulator-25/mods" element={<FarmingMods />} />
           <Route path="/tuto-gaming/farming-simulator-25/:categoryId" element={<FarmingSimCategory />} />
+          <Route path="/gta-6" element={<GTA6 />} />
         </Route>
         <Route element={<ProtectedRoute unauthenticatedElement={<AuthGate />} />}>
           <Route path="/nexus" element={<Community />} />

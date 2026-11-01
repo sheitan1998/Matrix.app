@@ -70,6 +70,12 @@ export const FEATURED_GAMES = [
     image_url: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/719de61e0_Gemini_Generated_Image_q2fpd6q2fpd6q2fp.jpg",
     is_active: true,
   },
+  {
+    name: "GTA VI",
+    slug: "gta-6",
+    card_gradient: "linear-gradient(135deg, #0a050f 0%, #2d0d3a 50%, #0a050f 100%)",
+    is_active: true,
+  },
 ];
 
 export const COMING_SOON_GAMES = [
