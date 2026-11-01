@@ -95,7 +95,7 @@ export default function GameCard({ game, guideCount = 0, index = 0 }) {
   );
 
   if (isActive) {
-    const dedicatedRoutes = { dofus: '/dofus', minecraft: '/minecraft', 'rocket-league': '/rocket-league', 'farming-simulator-25': '/farming', 'gta-6': '/gta-6' };
+    const dedicatedRoutes = { dofus: '/dofus', minecraft: '/minecraft', 'rocket-league': '/rocket-league', 'farming-simulator-25': '/farming', 'gta-6': '/gta-6', rust: '/rust', valheim: '/valheim', valorant: '/valorant' };
     return <Link to={dedicatedRoutes[game.slug] || `/tuto-gaming/${game.slug}`}>{cardContent}</Link>;
   }
   return <div className="opacity-70 cursor-not-allowed">{cardContent}</div>;

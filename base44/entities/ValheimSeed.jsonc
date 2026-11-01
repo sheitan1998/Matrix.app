@@ -1,0 +1,90 @@
+{
+  "name": "ValheimSeed",
+  "type": "object",
+  "properties": {
+    "seed_code": {
+      "type": "string",
+      "description": "Code de la seed (carte) partagee"
+    },
+    "title": {
+      "type": "string",
+      "description": "Titre donne par l'auteur a cette seed"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Description de la seed (points forts, ressources proximite, boss, etc.)"
+    },
+    "biome_tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Tags des biomes proches du spawn (ex: Prairies, For\u00eat Noire, Marais)"
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": [
+        "facile",
+        "moyen",
+        "difficile",
+        "expert"
+      ],
+      "default": "moyen",
+      "description": "Difficulte estimee de la seed"
+    },
+    "spawn_location": {
+      "type": "string",
+      "description": "Description du point de spawn (ex: pres d'une riviere, sur une colline)"
+    },
+    "author_email": {
+      "type": "string",
+      "description": "Email de l'utilisateur MATRIX"
+    },
+    "author_name": {
+      "type": "string",
+      "description": "Pseudo de l'auteur"
+    },
+    "likes": {
+      "type": "number",
+      "default": 0,
+      "description": "Nombre de likes de la communaute"
+    }
+  },
+  "required": [
+    "seed_code",
+    "title",
+    "author_email"
+  ],
+  "rls": {
+    "create": {
+      "data.author_email": "{{user.email}}"
+    },
+    "read": {},
+    "update": {
+      "$or": [
+        {
+          "data.author_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.author_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

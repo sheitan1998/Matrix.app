@@ -76,6 +76,24 @@ export const FEATURED_GAMES = [
     card_gradient: "linear-gradient(135deg, #0a050f 0%, #2d0d3a 50%, #0a050f 100%)",
     is_active: true,
   },
+  {
+    name: "Rust",
+    slug: "rust",
+    card_gradient: "linear-gradient(135deg, #1a0a0a 0%, #3a1a0a 50%, #1a0a0a 100%)",
+    is_active: true,
+  },
+  {
+    name: "Valheim",
+    slug: "valheim",
+    card_gradient: "linear-gradient(135deg, #0a150f 0%, #1a3a1a 50%, #0a150f 100%)",
+    is_active: true,
+  },
+  {
+    name: "Valorant",
+    slug: "valorant",
+    card_gradient: "linear-gradient(135deg, #0f1923 0%, #2a1a1f 50%, #0f1923 100%)",
+    is_active: true,
+  },
 ];
 
 export const COMING_SOON_GAMES = [
