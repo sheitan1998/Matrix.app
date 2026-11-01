@@ -326,6 +326,16 @@ body {
   --sidebar-neon-indicator-shadow: 0 0 15px rgba(147, 51, 234, 0.4);
 }
 
+[data-matrix-theme="light"] {
+  --sidebar-neon-foreground: 270 45% 28%;
+  --sidebar-neon-text-foreground: 270 40% 20%;
+  --sidebar-neon-text-shadow: none;
+  --sidebar-neon-icon-filter: none;
+  --sidebar-neon-indicator-background: rgba(147, 51, 234, 0.08);
+  --sidebar-neon-indicator-border: rgba(147, 51, 234, 0.25);
+  --sidebar-neon-indicator-shadow: none;
+}
+
 .landing-sidebar-neon [data-sidebar-brand],
 .landing-sidebar-neon svg.lucide {
   color: hsl(var(--sidebar-neon-foreground)) !important;
