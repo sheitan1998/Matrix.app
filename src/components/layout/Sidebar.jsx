@@ -333,10 +333,10 @@ export default function Sidebar({ noTopbar = false }) {
 
       {/* Live */}
       <div className="mt-auto pt-4 space-y-3">
-        <Link to="/studio" className={cn("flex items-center justify-center gap-2 rounded-xl text-sm font-bold transition hover:opacity-80 hidden", collapsed ? "p-2" : "px-4 py-3")} style={{ background: "linear-gradient(135deg, #ff4d4d, #cc3838)", color: "#fff" }} title={collapsed ? "Lancer un direct" : undefined}>
-          <Tv2 className="w-4 h-4" style={{ filter: "drop-shadow(0 0 4px rgba(255,77,77,0.8))" }} />
-          {!collapsed && "Lancer un direct"}
-        </Link>
+        
+
+
+        
       </div>
     </aside>);
 
