@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Gamepad2, BookOpen, ShieldCheck, Images } from "lucide-react";
+import { ArrowLeft, Gamepad2, BookOpen, ShieldCheck, Images, Target, Map as MapIcon, Users, Zap } from "lucide-react";
 import GTA6DetailModal from "@/components/tuto-gaming/GTA6DetailModal";
 import GTA6Image from "@/components/tuto-gaming/GTA6Image";
 import {
-  GTA6_LOGO, GTA6_PLATFORMS, GTA6_TABS, GTA6_INFO,
-  GTA6_CHARACTERS, GTA6_VEHICLES, GTA6_WEAPONS, GTA6_LOCATIONS, GTA6_WIKI_SECTIONS,
+  GTA6_LOGO, GTA6_PLATFORMS, GTA6_TABS, GTA6_INFO, GTA6_HIGHLIGHTS, GTA6_SYNOPSIS,
+  GTA6_CHARACTERS, GTA6_VEHICLES, GTA6_WEAPONS, GTA6_LOCATIONS, GTA6_MISSIONS, GTA6_WIKI_SECTIONS,
 } from "@/components/tuto-gaming/gta6Data";
+
+const HIGHLIGHT_ICONS = { "👥": Users, "🗺️": MapIcon, "🚗": Zap, "🎯": Target };
 
 function GalleryCard({ item, onClick }) {
   if (!item) return null;
@@ -153,16 +155,27 @@ export default function GTA6() {
           <div className="space-y-6">
             <div className="rounded-2xl p-6" style={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}>
               <h2 className="text-lg font-black text-foreground mb-3">Synopsis</h2>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Grand Theft Auto VI se déroule dans l'État de Leonida, une reconstitution vibrante de la Floride,
-                avec pour décor principal Vice City, sa métropole néonée inspirée de Miami. Lucia Caminos et Jason Duval
-                forment un couple criminel en quête de liberté, inspiré de Bonnie & Clyde. Naviguant entre braquages,
-                trahisons et survie, leur partenariat est décrit par Rockstar comme un duo où Lucia est le 'moteur'
-                et Jason le 'frein'. Le jeu promet la carte ouverte la plus immersive de l'histoire de la série,
-                avec des environnements urbains, ruraux et maritimes interconnectés.
-              </p>
+              <p className="text-sm text-muted-foreground leading-relaxed">{GTA6_SYNOPSIS}</p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {GTA6_HIGHLIGHTS.map(h => {
+                const Icon = HIGHLIGHT_ICONS[h.icon] || Target;
+                return (
+                  <div key={h.title} className="rounded-xl p-5" style={{ background: "hsl(var(--card))", border: `1px solid ${h.color}33`, boxShadow: `0 0 12px ${h.color}10` }}>
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${h.color}22`, border: `1px solid ${h.color}44` }}>
+                        <Icon className="w-5 h-5" style={{ color: h.color }} />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-black text-foreground mb-1">{h.title}</h3>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{h.desc}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {GTA6_INFO.map(info => (
                 <div key={info.label} className="rounded-xl p-4" style={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}>
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{info.label}</p>
@@ -202,6 +215,26 @@ export default function GTA6() {
           <div className="space-y-4">
             <h2 className="text-lg font-black text-foreground">Lieux & Monde Ouvert</h2>
             {renderGallery(GTA6_LOCATIONS)}
+          </div>
+        )}
+
+        {/* Missions & Guides */}
+        {tab === "missions" && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-black text-foreground">Guides de Missions & Activités</h2>
+            <p className="text-sm text-muted-foreground mb-2">Structure complète prête à l'emploi. Les guides détaillés seront enrichis dès la sortie du jeu.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {GTA6_MISSIONS.map(m => (
+                <button key={m.name} onClick={() => setSelected(m)} className="text-left p-4 rounded-xl transition tap-sm" style={{ background: "hsl(var(--card))", border: `1px solid ${m.color}44`, boxShadow: `0 0 12px ${m.color}10` }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider" style={{ background: `${m.color}22`, color: m.color }}>{m.category}</span>
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: "rgba(34,211,238,0.1)", color: "#22D3EE" }}>{m.status}</span>
+                  </div>
+                  <h3 className="text-sm font-black text-foreground mb-1">{m.name}</h3>
+                  <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">{m.desc}</p>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
