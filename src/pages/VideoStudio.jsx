@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Film, Play, Clock, ArrowLeft, Trash2, X } from "lucide-react";
+import { Plus, Film, Play, Clock, ArrowLeft, Trash2, X, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useProgression } from "@/context/ProgressionContext";
 import TrixWalletBar from "@/components/TrixWalletBar";
@@ -20,6 +20,7 @@ export default function VideoStudio() {
   const [showCreate, setShowCreate] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
+  const [showPhoto, setShowPhoto] = useState(false);
 
   useEffect(() => { base44.auth.me().then(setUser).catch(() => {}); }, []);
 
@@ -105,13 +106,14 @@ export default function VideoStudio() {
                 <p className="text-sm text-purple-300 mt-1">Crée. Monte. Exporte.</p>
                 <p className="text-xs text-white/50 mt-2 max-w-md">Studio de montage intégré. Timeline, import média, texte, audio. Sauvegarde automatique.</p>
               </div>
+              <button
+                onClick={() => setShowPhoto(true)}
+                className="ml-auto shrink-0 flex items-center gap-2 h-11 px-5 rounded-xl text-sm font-bold text-white transition hover:scale-[1.02]"
+                style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)", boxShadow: "0 0 24px rgba(168,85,247,0.35)" }}>
+                <ImageIcon className="w-4 h-4" /> Éditeur Photo
+              </button>
             </div>
           </div>
-
-          {/* Photo editor */}
-          <section>
-            <PhotoEditor isPro={isPro} onNeedPro={() => setShowUpgrade(true)} />
-          </section>
 
           {/* Projects */}
           <section>
@@ -151,6 +153,25 @@ export default function VideoStudio() {
 
         {showCreate && (
           <CreateProjectModal onClose={() => setShowCreate(false)} onCreate={createProject} />
+        )}
+
+        {showPhoto && (
+          <div
+            className="fixed inset-0 z-40 overflow-y-auto p-3 lg:p-8"
+            style={{ background: "rgba(4,4,8,0.9)", backdropFilter: "blur(10px)" }}
+            onClick={() => setShowPhoto(false)}>
+            <div className="max-w-6xl mx-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-black text-white flex items-center gap-2">
+                  <ImageIcon className="w-4 h-4 text-purple-300" /> Éditeur Photo
+                </p>
+                <button onClick={() => setShowPhoto(false)} className="w-9 h-9 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 transition">
+                  <X className="w-4 h-4 text-white/70" />
+                </button>
+              </div>
+              <PhotoEditor isPro={isPro} onNeedPro={() => setShowUpgrade(true)} />
+            </div>
+          </div>
         )}
 
         <PhotoUpgradeModal

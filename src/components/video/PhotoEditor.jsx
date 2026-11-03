@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   Upload, Download, Wand2, RotateCw, FlipHorizontal2, Crop as CropIcon,
@@ -38,6 +38,40 @@ export default function PhotoEditor({ isPro, onNeedPro }) {
 
   const filter = useMemo(() => cssFilter(adj), [adj]);
   const activeAspect = PHOTO_ASPECTS.find((a) => a.value === aspect);
+  const previewRef = useRef(null);
+
+  // Aperçu rendu sur canvas : le détourage (transparence) reste visible sur le damier
+  useEffect(() => {
+    const canvas = previewRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!image) {
+      canvas.width = 1;
+      canvas.height = 1;
+      return;
+    }
+    const ratio = activeAspect?.ratio || null;
+    let cw = image.width, ch = image.height;
+    if (ratio) {
+      if (cw / ch > ratio) cw = ch * ratio;
+      else ch = cw / ratio;
+    }
+    const scale = Math.min(1, 900 / Math.max(cw, ch));
+    const w = Math.max(1, Math.round(cw * scale));
+    const h = Math.max(1, Math.round(ch * scale));
+    canvas.width = w;
+    canvas.height = h;
+    ctx.clearRect(0, 0, w, h);
+    ctx.filter = filter;
+    ctx.translate(w / 2, h / 2);
+    if (rotation) ctx.rotate((rotation * Math.PI) / 180);
+    if (flipped) ctx.scale(-1, 1);
+    ctx.drawImage(
+      image,
+      (image.width - cw) / 2, (image.height - ch) / 2, cw, ch,
+      -w / 2, -h / 2, w, h
+    );
+  }, [image, filter, rotation, flipped, activeAspect]);
 
   const handleFile = (file) => {
     if (!file) return;
@@ -69,7 +103,6 @@ export default function PhotoEditor({ isPro, onNeedPro }) {
   };
 
   const removeBackground = async () => {
-    if (!isPro) { onNeedPro?.(); return; }
     if (!image) { toast.error("Importe une image d'abord."); return; }
     setRemoving(true);
     try {
@@ -105,7 +138,7 @@ export default function PhotoEditor({ isPro, onNeedPro }) {
       ctx.putImageData(frame, 0, 0);
       setSource(canvas.toDataURL("image/png"));
       setHasCutout(true);
-      toast.success("Arrière-plan supprimé.");
+      toast.success(isPro ? "Arrière-plan supprimé." : "Arrière-plan supprimé. L'export du détourage est réservé au Pro.");
     } catch {
       toast.error("Détourage impossible sur cette image.");
     } finally {
@@ -115,6 +148,7 @@ export default function PhotoEditor({ isPro, onNeedPro }) {
 
   const exportImage = () => {
     if (!image) return;
+    if (hasCutout && !isPro) { onNeedPro?.(); return; }
     const ratio = activeAspect?.ratio || null;
     let cw = image.width, ch = image.height;
     if (ratio) {
@@ -189,12 +223,15 @@ export default function PhotoEditor({ isPro, onNeedPro }) {
                 <span className="text-[11px] text-white/40">PNG, JPG, WEBP · traitement dans ton navigateur</span>
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
               </label>
-            ) : activeAspect?.ratio ? (
-              <div className="w-full max-w-[520px] overflow-hidden rounded-xl" style={{ aspectRatio: activeAspect.ratio }}>
-                <img src={source} alt="Aperçu" className="w-full h-full object-cover" style={{ filter, transform: `rotate(${rotation}deg) scaleX(${flipped ? -1 : 1})` }} />
-              </div>
             ) : (
-              <img src={source} alt="Aperçu" className="max-h-[420px] max-w-full object-contain" style={{ filter, transform: `rotate(${rotation}deg) scaleX(${flipped ? -1 : 1})` }} />
+              <div className="w-full flex items-center justify-center p-3">
+                <canvas
+                  ref={previewRef}
+                  aria-label="Aperçu de la photo"
+                  className="rounded-xl"
+                  style={{ maxWidth: "100%", maxHeight: 420, width: "auto", height: "auto" }}
+                />
+              </div>
             )}
           </div>
 
@@ -212,8 +249,9 @@ export default function PhotoEditor({ isPro, onNeedPro }) {
             <button onClick={reset} disabled={!source} className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold text-white/60 disabled:opacity-30" style={{ background: "rgba(255,255,255,0.04)" }}>
               <Undo2 className="w-3.5 h-3.5" /> Réinitialiser
             </button>
-            <button onClick={exportImage} disabled={!source} className="ml-auto flex items-center gap-1.5 h-9 px-4 rounded-xl text-xs font-bold text-white disabled:opacity-30" style={{ background: "linear-gradient(135deg, #8b5cf6, #6d28d9)" }}>
-              <Download className="w-3.5 h-3.5" /> Exporter PNG
+            <button onClick={exportImage} disabled={!source} className="ml-auto flex items-center gap-1.5 h-9 px-4 rounded-xl text-xs font-bold text-white disabled:opacity-30" style={{ background: hasCutout && !isPro ? "linear-gradient(135deg, #f59e0b, #b45309)" : "linear-gradient(135deg, #8b5cf6, #6d28d9)" }}>
+              {hasCutout && !isPro ? <Lock className="w-3.5 h-3.5" /> : <Download className="w-3.5 h-3.5" />}
+              {hasCutout && !isPro ? "Exporter (Pro)" : "Exporter PNG"}
             </button>
           </div>
         </div>
@@ -271,25 +309,23 @@ export default function PhotoEditor({ isPro, onNeedPro }) {
             <div className="flex items-center justify-between">
               <p className="text-[11px] font-bold text-white flex items-center gap-1.5">
                 <Wand2 className="w-3.5 h-3.5 text-purple-300" /> Détourage auto
-                {!isPro && <Lock className="w-3 h-3 text-amber-400" />}
+                {hasCutout && !isPro && <Lock className="w-3 h-3 text-amber-400" />}
               </p>
               {hasCutout && <span className="text-[9px] text-purple-300">Actif</span>}
             </div>
-            <p className="text-[10px] text-white/40">Supprime l'arrière-plan uni ou clair de la photo.</p>
-            {isPro && (
-              <div>
-                <div className="flex items-center justify-between mb-0.5">
-                  <span className="text-[10px] text-white/50">Tolérance</span>
-                  <span className="text-[10px] font-mono text-white/40">{tolerance}</span>
-                </div>
-                <input type="range" min={5} max={90} value={tolerance} onChange={(e) => setTolerance(Number(e.target.value))} className="w-full accent-purple-500" />
+            <p className="text-[10px] text-white/40">Supprime l'arrière-plan uni ou clair. Aperçu libre, export réservé au Pro.</p>
+            <div>
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-[10px] text-white/50">Tolérance</span>
+                <span className="text-[10px] font-mono text-white/40">{tolerance}</span>
               </div>
-            )}
+              <input type="range" min={5} max={90} value={tolerance} onChange={(e) => setTolerance(Number(e.target.value))} className="w-full accent-purple-500" />
+            </div>
             <button onClick={removeBackground} disabled={removing || !source}
               className="w-full h-9 rounded-xl text-[11px] font-bold text-white flex items-center justify-center gap-1.5 disabled:opacity-40"
-              style={{ background: isPro ? "linear-gradient(135deg, #a855f7, #7c3aed)" : "rgba(251,191,36,0.15)", border: isPro ? "none" : "1px solid rgba(251,191,36,0.4)", color: isPro ? "#fff" : "#fcd34d" }}>
-              {removing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : !isPro ? <Lock className="w-3.5 h-3.5" /> : <Wand2 className="w-3.5 h-3.5" />}
-              {removing ? "Détourage..." : isPro ? "Supprimer l'arrière-plan" : "Débloquer avec Pro — 4,99 €/mois"}
+              style={{ background: "linear-gradient(135deg, #a855f7, #7c3aed)" }}>
+              {removing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+              {removing ? "Détourage..." : "Supprimer l'arrière-plan"}
             </button>
           </div>
         </div>

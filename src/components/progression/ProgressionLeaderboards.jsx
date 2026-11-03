@@ -29,7 +29,17 @@ export default function ProgressionLeaderboards() {
           return now - d < ms;
         });
       }
-      filtered = [...filtered].sort((a, b) => getNestedValue(b, lbType.field) - getNestedValue(a, lbType.field));
+      // Déduplication : un seul enregistrement par utilisateur (le meilleur score)
+      const byUser = new Map();
+      filtered.forEach((record) => {
+        const key = record.user_email || record.created_by_id || record.id;
+        if (!key) return;
+        const current = byUser.get(key);
+        if (!current || getNestedValue(record, lbType.field) > getNestedValue(current, lbType.field)) {
+          byUser.set(key, record);
+        }
+      });
+      filtered = [...byUser.values()].sort((a, b) => getNestedValue(b, lbType.field) - getNestedValue(a, lbType.field));
       setEntries(filtered.slice(0, 50));
     } catch (e) { console.error(e); }
     setLoading(false);
@@ -91,7 +101,7 @@ export default function ProgressionLeaderboards() {
           const displayName = rawPseudo.split('#')[0];
 
           return (
-            <motion.div key={entry.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }}
+            <motion.div key={entry.user_email || entry.created_by_id || entry.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }}
               className="flex items-center gap-3 p-2.5 rounded-xl"
               style={{
                 background: isMe ? 'rgba(168,85,247,0.08)' : 'rgba(255,255,255,0.02)',
