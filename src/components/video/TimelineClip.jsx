@@ -19,6 +19,7 @@ export default function TimelineClip({
   onSelect,
   onRemove,
   onResize,
+  onContextMenu,
   provided,
 }) {
   const [resizing, setResizing] = useState(null); // "left" | "right" | null
@@ -64,6 +65,7 @@ export default function TimelineClip({
       {...provided?.draggableProps}
       {...provided?.dragHandleProps}
       onClick={() => onSelect(clip)}
+      onContextMenu={onContextMenu}
       className={`relative rounded-lg overflow-hidden shrink-0 cursor-grab active:cursor-grabbing transition ${isSelected ? "ring-2 ring-purple-500" : ""}`}
       style={{ width, height: 44, background: "rgba(124,58,237,0.2)", border: "1px solid rgba(124,58,237,0.4)", ...(provided?.draggableProps?.style || {}) }}
     >

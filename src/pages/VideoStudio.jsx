@@ -7,6 +7,9 @@ import { toast } from "sonner";
 import { useProgression } from "@/context/ProgressionContext";
 import TrixWalletBar from "@/components/TrixWalletBar";
 import ProjectEditor from "@/components/video/ProjectEditor";
+import PhotoEditor from "@/components/video/PhotoEditor";
+import PhotoUpgradeModal from "@/components/video/PhotoUpgradeModal";
+import CheckoutModal from "@/components/CheckoutModal";
 
 export default function VideoStudio() {
   const nav = useNavigate();
@@ -15,13 +18,26 @@ export default function VideoStudio() {
   const [user, setUser] = useState(null);
   const [editingProject, setEditingProject] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
 
   useEffect(() => { base44.auth.me().then(setUser).catch(() => {}); }, []);
 
   const { data: projects = [], isLoading } = useQuery({
-    queryKey: ["video-projects"],
-    queryFn: () => base44.entities.VideoProject.filter({}, "-updated_date", 50),
+    queryKey: ["video-projects", user?.email],
+    enabled: !!user,
+    queryFn: () => base44.entities.VideoProject.filter({ owner_email: user.email }, "-updated_date", 50),
   });
+
+  const { data: proSubscription } = useQuery({
+    queryKey: ["photo-pro", user?.email],
+    enabled: !!user,
+    queryFn: async () => {
+      const subs = await base44.entities.PhotoProSubscription.filter({ user_email: user.email, active: true });
+      return subs.find(s => !s.expires_at || new Date(s.expires_at) > new Date()) || null;
+    },
+  });
+  const isPro = !!proSubscription;
 
   const myProjects = projects.filter(p => p.owner_email === user?.email);
 
@@ -29,6 +45,7 @@ export default function VideoStudio() {
     const proj = await base44.entities.VideoProject.create({
       name, resolution,
       owner_email: user.email,
+      owner_id: user.id,
       owner_name: user.full_name,
       timeline_data: { clips: [], textOverlays: [], audioTracks: [], duration: 0 },
       status: "draft",
@@ -91,6 +108,11 @@ export default function VideoStudio() {
             </div>
           </div>
 
+          {/* Photo editor */}
+          <section>
+            <PhotoEditor isPro={isPro} onNeedPro={() => setShowUpgrade(true)} />
+          </section>
+
           {/* Projects */}
           <section>
             <h3 className="text-lg font-black text-white mb-4">Mes projets</h3>
@@ -129,6 +151,26 @@ export default function VideoStudio() {
 
         {showCreate && (
           <CreateProjectModal onClose={() => setShowCreate(false)} onCreate={createProject} />
+        )}
+
+        <PhotoUpgradeModal
+          open={showUpgrade}
+          onClose={() => setShowUpgrade(false)}
+          onSubscribe={() => { setShowUpgrade(false); setShowCheckout(true); }}
+        />
+
+        {showCheckout && (
+          <CheckoutModal
+            functionName="stripePayment"
+            params={{ action: "createPhotoProSubscription", planId: "photo_pro" }}
+            onClose={() => setShowCheckout(false)}
+            onSuccess={() => {
+              setShowCheckout(false);
+              qc.invalidateQueries({ queryKey: ["photo-pro"] });
+              toast.success("MATRIX Pro activé : détourage débloqué !");
+              base44.auth.me().then(setUser).catch(() => {});
+            }}
+          />
         )}
     </div>
   );

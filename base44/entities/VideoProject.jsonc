@@ -11,6 +11,10 @@
     "owner_name": {
       "type": "string"
     },
+    "owner_id": {
+      "type": "string",
+      "description": "Identifiant de l'utilisateur propri\u00e9taire du projet (isolation stricte)"
+    },
     "timeline_data": {
       "type": "object",
       "properties": {},
@@ -46,25 +50,16 @@
   ],
   "rls": {
     "create": {
-      "data.owner_email": "{{user.email}}"
+      "created_by_id": "{{user.id}}"
     },
     "read": {
-      "$or": [
-        {
-          "data.owner_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     },
     "update": {
-      "data.owner_email": "{{user.email}}"
+      "created_by_id": "{{user.id}}"
     },
     "delete": {
-      "data.owner_email": "{{user.email}}"
+      "created_by_id": "{{user.id}}"
     }
   }
 }

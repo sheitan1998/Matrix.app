@@ -7,12 +7,14 @@ import {
   Plus, Film, Upload, ArrowLeft, X, Type, Music,
   Save, Undo2, Redo2,
   Scissors, Link2, Magnet, ZoomIn, Wand2, ArrowLeftRight, Star,
-  Sparkles, ChevronDown,
+  Sparkles, ChevronDown, Trash2,
 } from "lucide-react";
 import ClipProperties from "@/components/video/ClipProperties";
 import VideoExporter from "@/components/video/VideoExporter";
 import PreviewStage from "@/components/video/PreviewStage";
 import TimelineClip from "@/components/video/TimelineClip";
+import TimelineRuler from "@/components/video/TimelineRuler";
+import TimelineContextMenu from "@/components/video/TimelineContextMenu";
 
 const NAV_ITEMS = [
   { key: "media", label: "Media Library", icon: Film },
@@ -52,6 +54,7 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [playhead, setPlayhead] = useState(0);
   const [mixerVolumes, setMixerVolumes] = useState({ v1: 80, v2: 70, a1: 60, a2: 50 });
+  const [ctxMenu, setCtxMenu] = useState(null);
   const autoSaveRef = useRef(null);
 
   useEffect(() => {
@@ -168,6 +171,94 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
     const newTimeline = { ...timeline, clips };
     setTimeline(newTimeline); pushHistory(newTimeline); setSelectedClip(merged);
     toast.success("Clips fusionnés");
+  };
+
+  const openClipMenu = (e, payload) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCtxMenu({ x: e.clientX, y: e.clientY, ...payload });
+  };
+
+  const splitAtPlayhead = (id) => {
+    const clips = timeline.clips || [];
+    const idx = clips.findIndex(c => c.id === id);
+    if (idx < 0) return;
+    let offset = 0;
+    for (let i = 0; i < idx; i++) offset += clips[i].duration || 5;
+    const clip = clips[idx];
+    const dur = clip.duration || 5;
+    const cut = playhead - offset;
+    if (cut <= 0.1 || cut >= dur - 0.1) {
+      toast.error("Place la tête de lecture à l'intérieur du clip.");
+      return;
+    }
+    const first = { ...clip, id: `${clip.id}_a`, duration: cut };
+    const second = { ...clip, id: `${clip.id}_b`, duration: dur - cut, trimStart: (clip.trimStart || 0) + cut };
+    const next = [...clips];
+    next.splice(idx, 1, first, second);
+    const newTimeline = { ...timeline, clips: next };
+    setTimeline(newTimeline); pushHistory(newTimeline); setSelectedClip(first);
+    toast.success("Clip coupé à la tête de lecture");
+  };
+
+  const splitText = (id) => {
+    const overlays = timeline.textOverlays || [];
+    const idx = overlays.findIndex(t => t.id === id);
+    if (idx < 0) return;
+    const t = overlays[idx];
+    const half = (t.duration || 3) / 2;
+    const first = { ...t, id: `${t.id}_a`, duration: half };
+    const second = { ...t, id: `${t.id}_b`, duration: half, start: (t.start || 0) + half };
+    const next = [...overlays];
+    next.splice(idx, 1, first, second);
+    const newTimeline = { ...timeline, textOverlays: next };
+    setTimeline(newTimeline); pushHistory(newTimeline);
+    toast.success("Texte coupé");
+  };
+
+  const mergeText = (id) => {
+    const overlays = timeline.textOverlays || [];
+    const idx = overlays.findIndex(t => t.id === id);
+    if (idx < 0 || idx >= overlays.length - 1) { toast.error("Aucun texte suivant à fusionner."); return; }
+    const merged = {
+      ...overlays[idx],
+      id: `${overlays[idx].id}_m`,
+      text: `${overlays[idx].text} ${overlays[idx + 1].text}`.trim(),
+      duration: (overlays[idx].duration || 3) + (overlays[idx + 1].duration || 3),
+    };
+    const next = [...overlays];
+    next.splice(idx, 2, merged);
+    const newTimeline = { ...timeline, textOverlays: next };
+    setTimeline(newTimeline); pushHistory(newTimeline);
+    toast.success("Textes fusionnés");
+  };
+
+  const splitAudio = (id) => {
+    const list = timeline.audioTracks || [];
+    const idx = list.findIndex(a => a.id === id);
+    if (idx < 0) return;
+    const a = list[idx];
+    const dur = a.duration || 30;
+    const half = dur / 2;
+    const first = { ...a, id: `${a.id}_a`, duration: half };
+    const second = { ...a, id: `${a.id}_b`, duration: dur - half, offset: (a.offset || 0) + half };
+    const next = [...list];
+    next.splice(idx, 1, first, second);
+    const newTimeline = { ...timeline, audioTracks: next };
+    setTimeline(newTimeline); pushHistory(newTimeline);
+    toast.success("Audio coupé");
+  };
+
+  const mergeAudio = (id) => {
+    const list = timeline.audioTracks || [];
+    const idx = list.findIndex(a => a.id === id);
+    if (idx < 0 || idx >= list.length - 1) { toast.error("Aucun audio suivant à fusionner."); return; }
+    const merged = { ...list[idx], id: `${list[idx].id}_m`, duration: (list[idx].duration || 30) + (list[idx + 1].duration || 30) };
+    const next = [...list];
+    next.splice(idx, 2, merged);
+    const newTimeline = { ...timeline, audioTracks: next };
+    setTimeline(newTimeline); pushHistory(newTimeline);
+    toast.success("Audios fusionnés");
   };
 
   const removeText = (id) => {
@@ -451,20 +542,8 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
               <span className="text-[10px] text-white/30 font-mono">{formatDuration(calcDuration(timeline))}</span>
             </div>
 
-            {/* Time ruler */}
-            <div className="flex items-center px-1 py-0.5" style={{ borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
-              <div className="w-16 shrink-0" />
-              <div className="flex-1 relative h-5">
-                {Array.from({ length: Math.max(4, Math.ceil(totalDuration / 5)) }).map((_, i) => (
-                  <div key={i} className="absolute top-0 flex flex-col items-center" style={{ left: `${(i / Math.ceil(totalDuration / 5)) * 100}%` }}>
-                    <div className="w-px h-2" style={{ background: "rgba(255,255,255,0.1)" }} />
-                    <span className="text-[8px] text-white/30 font-mono">00:{String(i * 5).padStart(2, "0")}</span>
-                  </div>
-                ))}
-                {/* Playhead line */}
-                <div className="absolute top-0 bottom-0 w-px pointer-events-none" style={{ left: `${(playhead / totalDuration) * 100}%`, background: "#ec4899", zIndex: 5 }} />
-              </div>
-            </div>
+            {/* Time ruler — clic/glisser pour déplacer la tête de lecture */}
+            <TimelineRuler duration={totalDuration} playhead={playhead} onSeek={handleSeek} />
 
             {/* Tracks */}
             <div className="flex-1 overflow-y-auto scrollbar-thin relative">
@@ -503,6 +582,7 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
                                     onSelect={setSelectedClip}
                                     onRemove={removeClip}
                                     onResize={updateClip}
+                                    onContextMenu={(e) => openClipMenu(e, { kind: "clip", id: clip.id })}
                                     provided={dragProvided}
                                   />
                                 )}
@@ -522,7 +602,7 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
                 {(timeline.textOverlays || []).length === 0 ? (
                   <EmptyTrack label="Textes" />
                 ) : (timeline.textOverlays || []).map(t => (
-                  <div key={t.id} className="rounded-lg flex items-center px-2 h-10 shrink-0" style={{ width: 100 * zoom, background: "rgba(59,130,246,0.15)", border: "1px solid rgba(59,130,246,0.3)" }}>
+                  <div key={t.id} onContextMenu={(e) => openClipMenu(e, { kind: "text", id: t.id })} className="rounded-lg flex items-center px-2 h-10 shrink-0" style={{ width: 100 * zoom, background: "rgba(59,130,246,0.15)", border: "1px solid rgba(59,130,246,0.3)" }}>
                     <Type className="w-3 h-3 text-blue-300 mr-1.5 shrink-0" />
                     <span className="text-[10px] text-white truncate">{t.text}</span>
                     <button onClick={() => removeText(t.id)} className="ml-auto text-white/30 hover:text-red-400 shrink-0"><X className="w-2.5 h-2.5" /></button>
@@ -535,7 +615,7 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
                 {sfxTracks.length === 0 ? (
                   <EmptyTrack label="SFX" />
                 ) : sfxTracks.map(a => (
-                  <div key={a.id} className="rounded-lg flex items-center px-2 h-10 shrink-0" style={{ width: 180 * zoom, background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)" }}>
+                  <div key={a.id} onContextMenu={(e) => openClipMenu(e, { kind: "audio", id: a.id })} className="rounded-lg flex items-center px-2 h-10 shrink-0" style={{ width: 180 * zoom, background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)" }}>
                     <div className="flex items-end gap-0.5 h-5 flex-1">
                       {Array.from({ length: 28 }).map((_, i) => (
                         <div key={i} className="flex-1 rounded-sm" style={{ background: "rgba(34,197,94,0.5)", height: `${25 + Math.abs(Math.sin(i * 0.8)) * 50 + (i % 4) * 12}%` }} />
@@ -551,7 +631,7 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
                 {bgmTracks.length === 0 ? (
                   <EmptyTrack label="BGM" />
                 ) : bgmTracks.map(a => (
-                  <div key={a.id} className="rounded-lg flex items-center px-2 h-10 shrink-0" style={{ width: 180 * zoom, background: "rgba(20,184,166,0.15)", border: "1px solid rgba(20,184,166,0.3)" }}>
+                  <div key={a.id} onContextMenu={(e) => openClipMenu(e, { kind: "audio", id: a.id })} className="rounded-lg flex items-center px-2 h-10 shrink-0" style={{ width: 180 * zoom, background: "rgba(20,184,166,0.15)", border: "1px solid rgba(20,184,166,0.3)" }}>
                     <div className="flex items-end gap-0.5 h-5 flex-1">
                       {Array.from({ length: 28 }).map((_, i) => (
                         <div key={i} className="flex-1 rounded-sm" style={{ background: "rgba(20,184,166,0.5)", height: `${25 + Math.abs(Math.sin(i * 0.6)) * 50 + (i % 3) * 12}%` }} />
@@ -662,6 +742,41 @@ export default function ProjectEditor({ project, user, onClose, onUpdate }) {
           </div>
         </div>
       </div>
+      {ctxMenu && (
+        <TimelineContextMenu
+          x={ctxMenu.x}
+          y={ctxMenu.y}
+          onClose={() => setCtxMenu(null)}
+          title={ctxMenu.kind === "clip" ? "Clip vidéo" : ctxMenu.kind === "text" ? "Texte" : "Audio"}
+          items={[
+            {
+              label: "Couper",
+              icon: Scissors,
+              onClick: () =>
+                ctxMenu.kind === "clip" ? splitAtPlayhead(ctxMenu.id)
+                  : ctxMenu.kind === "text" ? splitText(ctxMenu.id)
+                  : splitAudio(ctxMenu.id),
+            },
+            {
+              label: "Fusionner",
+              icon: Link2,
+              onClick: () =>
+                ctxMenu.kind === "clip" ? mergeClip(ctxMenu.id)
+                  : ctxMenu.kind === "text" ? mergeText(ctxMenu.id)
+                  : mergeAudio(ctxMenu.id),
+            },
+            {
+              label: "Supprimer",
+              icon: Trash2,
+              danger: true,
+              onClick: () =>
+                ctxMenu.kind === "clip" ? removeClip(ctxMenu.id)
+                  : ctxMenu.kind === "text" ? removeText(ctxMenu.id)
+                  : removeAudio(ctxMenu.id),
+            },
+          ]}
+        />
+      )}
     </div>
   );
 }

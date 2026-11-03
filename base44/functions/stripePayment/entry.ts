@@ -49,6 +49,10 @@ const PREMIUM_PLANS: Record<string, { priceCents: number; label: string; trixBon
   monthly: { priceCents: 999, label: 'MATRIX Premium Mensuel', trixBonus: 500 },
 };
 
+const PHOTO_PRO_PLANS: Record<string, { priceCents: number; label: string; days: number }> = {
+  photo_pro: { priceCents: 499, label: 'MATRIX Pro - Editeur Photo (mensuel)', days: 30 },
+};
+
 const CASINO_COIN_PACKS: Record<string, { priceCents: number; coinTotal: number; label: string }> = {
   pack_500:   { priceCents: 199,  coinTotal: 500,   label: 'Pack 500 Jetons M' },
   pack_2000:  { priceCents: 499,  coinTotal: 2000,  label: 'Pack 2 000 Jetons M' },
@@ -326,6 +330,26 @@ export default async function(req: Request): Promise<Response> {
               stripe_event_id: data.id,
               description: `Abonnement MATRIX Premium - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
             });
+          }
+
+          if (type === 'photo_pro_subscription') {
+            const plan = PHOTO_PRO_PLANS[data.metadata?.plan_id || 'photo_pro'] || PHOTO_PRO_PLANS.photo_pro;
+            if (userEmail) {
+              const existing = await base44.asServiceRole.entities.PhotoProSubscription.filter({ user_email: userEmail });
+              const payload = {
+                user_email: userEmail,
+                user_id: userId || '',
+                active: true,
+                expires_at: new Date(Date.now() + plan.days * 24 * 60 * 60 * 1000).toISOString(),
+                stripe_event_id: data.id,
+                description: `MATRIX Pro Éditeur Photo - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
+              };
+              if (existing.length > 0) {
+                await base44.asServiceRole.entities.PhotoProSubscription.update(existing[0].id, payload);
+              } else {
+                await base44.asServiceRole.entities.PhotoProSubscription.create(payload);
+              }
+            }
           }
 
           if (type === 'casino_coin_purchase') {
@@ -767,6 +791,31 @@ export default async function(req: Request): Promise<Response> {
           user_email: userEmail, type: 'premium', amount: premiumPlan.trixBonus,
           stripe_event_id: stripeSessionId,
           description: `Abonnement MATRIX Premium - ${(session.amount_total / 100).toFixed(2)}€ (session ${session.id})`,
+        });
+        return Response.json({ success: true, type });
+      }
+
+      if (type === 'photo_pro_subscription') {
+        const plan = PHOTO_PRO_PLANS[session.metadata?.plan_id || 'photo_pro'] || PHOTO_PRO_PLANS.photo_pro;
+        if (!userEmail) return Response.json({ error: 'Missing user email' }, { status: 400 });
+        const existingSub = await base44.asServiceRole.entities.PhotoProSubscription.filter({ user_email: userEmail });
+        const subscriptionPayload = {
+          user_email: userEmail,
+          user_id: userId || '',
+          active: true,
+          expires_at: new Date(Date.now() + plan.days * 24 * 60 * 60 * 1000).toISOString(),
+          stripe_event_id: stripeSessionId,
+          description: `MATRIX Pro Éditeur Photo - ${(session.amount_total / 100).toFixed(2)}€ (session ${session.id})`,
+        };
+        if (existingSub.length > 0) {
+          await base44.asServiceRole.entities.PhotoProSubscription.update(existingSub[0].id, subscriptionPayload);
+        } else {
+          await base44.asServiceRole.entities.PhotoProSubscription.create(subscriptionPayload);
+        }
+        await base44.asServiceRole.entities.TrixTransaction.create({
+          user_email: userEmail, type: 'premium', amount: 0,
+          stripe_event_id: stripeSessionId,
+          description: `MATRIX Pro Éditeur Photo - ${(session.amount_total / 100).toFixed(2)}€ (session ${session.id})`,
         });
         return Response.json({ success: true, type });
       }
@@ -1228,6 +1277,34 @@ export default async function(req: Request): Promise<Response> {
       params.append('metadata[user_email]', user.email);
       params.append('metadata[user_id]', user.id);
       params.append('metadata[plan_id]', planId || 'monthly');
+
+      const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${stripeKey}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params,
+      });
+      const session = await res.json();
+      if (session.error) return Response.json({ error: session.error.message }, { status: 400 });
+      return Response.json({ clientSecret: session.client_secret, sessionId: session.id, publishableKey: STRIPE_PUBLISHABLE_KEY });
+    }
+
+    // ---- createPhotoProSubscription ----
+    if (action === 'createPhotoProSubscription') {
+      const plan = PHOTO_PRO_PLANS[body.planId || 'photo_pro'] || PHOTO_PRO_PLANS.photo_pro;
+
+      const params = new URLSearchParams();
+      params.append('payment_method_types[]', 'card');
+      params.append('mode', 'payment');
+      params.append('ui_mode', 'embedded');
+      params.append('return_url', `${origin}`);
+      params.append('customer_email', user.email);
+      params.append('line_items[0][price_data][currency]', 'eur');
+      params.append('line_items[0][price_data][product_data][name]', plan.label);
+      params.append('line_items[0][price_data][unit_amount]', String(plan.priceCents));
+      params.append('line_items[0][quantity]', '1');
+      params.append('metadata[type]', 'photo_pro_subscription');
+      params.append('metadata[user_email]', user.email);
+      params.append('metadata[user_id]', user.id);
 
       const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
         method: 'POST',
