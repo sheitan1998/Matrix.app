@@ -4,6 +4,7 @@ import { appParams, resolveAssetUrl } from "@/lib/app-params";
 import { Loader2, Upload, X, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { normalizeCosmeticAssetUrl, normalizeCosmeticIcon } from "@/lib/cosmeticAssetUrl";
+import { uploadToR2 } from "@/lib/r2Upload";
 
 const CATEGORIES = [
   { value: "badge", label: "Badge" },
@@ -42,11 +43,11 @@ export default function CosmeticItemForm({ onSaved }) {
     if (!file) return;
     setUploading(field);
     try {
-      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
-      setForm(prev => ({ ...prev, [field]: normalizeCosmeticAssetUrl(file_url) }));
-      toast.success("Fichier uploadé.");
-    } catch {
-      toast.error("Erreur lors de l'upload.");
+      const publicUrl = await uploadToR2(file, "cosmetics");
+      setForm(prev => ({ ...prev, [field]: normalizeCosmeticAssetUrl(publicUrl) }));
+      toast.success("Fichier uploadé sur Cloudflare R2.");
+    } catch (err) {
+      toast.error(err?.message || "Erreur lors de l'upload R2.");
     } finally {
       setUploading(null);
     }
