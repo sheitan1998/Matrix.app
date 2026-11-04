@@ -19,6 +19,23 @@ function clip(value, max) {
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;
 }
 
+// Le CDN de GIANTS répond 403 aux crawlers (Discord, Facebook…) : l'aperçu doit
+// pointer vers notre proxy public, qui renvoie l'image avec un type image/*.
+function proxiedImageUrl(raw, origin) {
+  try {
+    const url = new URL(String(raw || ''));
+    if (url.protocol !== 'https:' || url.username || url.password || url.port) return null;
+    if (!/^cdn\d{1,3}\.giants-software\.com$/i.test(url.hostname)) return null;
+    if (!url.pathname.startsWith('/modHub/storage/')) return null;
+    if (!/\.(png|jpe?g|webp)$/i.test(url.pathname)) return null;
+    const proxy = new URL('/functions/proxyImage', origin);
+    proxy.searchParams.set('url', url.href);
+    return proxy.href;
+  } catch {
+    return null;
+  }
+}
+
 function resolveOrigin(raw) {
   try {
     const parsed = new URL(String(raw || ''));
@@ -53,8 +70,7 @@ export default async function (req: Request): Promise<Response> {
   const description =
     clip(mod?.description, 200) ||
     (mod?.title ? `${mod.title} sur MATRIX — mods Farming Simulator 25.` : DEFAULT_DESCRIPTION);
-  const rawImage = mod?.hdImg || mod?.img || '';
-  const image = /^https:\/\//i.test(rawImage) ? rawImage : DEFAULT_IMAGE;
+  const image = proxiedImageUrl(mod?.hdImg || mod?.img || '', origin) || DEFAULT_IMAGE;
 
   const html = `<!doctype html>
 <html lang="fr">
