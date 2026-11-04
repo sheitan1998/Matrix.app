@@ -8,6 +8,8 @@ import DownloadModButton from '@/components/tuto-gaming/DownloadModButton';
 import ModHubSpecs from '@/components/tuto-gaming/ModHubSpecs';
 import { FARMING_FALLBACK } from '@/components/tuto-gaming/farmingFallback';
 import { farmingModShareUrl } from '@/components/tuto-gaming/farmingModCatalog';
+import useShareMeta from '@/hooks/useShareMeta';
+import { copyText, shareOrCopy } from '@/lib/share';
 
 export default function ModHubDetailModal({ modId, initialMod, onClose }) {
   const [imageIndex, setImageIndex] = useState(0);
@@ -76,19 +78,40 @@ export default function ModHubDetailModal({ modId, initialMod, onClose }) {
     }
   };
 
-  const copyShareLink = async () => {
-    const url = farmingModShareUrl(modId);
-    if (!url) {
+  const shareUrl = farmingModShareUrl(modId);
+  const shareTitle = mod?.title ? `${mod.title} — Mod Farming Simulator 25` : '';
+
+  useShareMeta({
+    title: shareTitle,
+    description: mod?.description,
+    image: mod?.hdImg || mod?.img || images[0],
+    path: shareUrl ? `/farming?mod=${modId}` : undefined,
+  });
+
+  const shareMod = async () => {
+    if (!shareUrl) {
       setShareStatus('Impossible de créer le lien de partage.');
       return;
     }
     try {
-      await navigator.clipboard.writeText(url);
-      setShareStatus('Lien copié');
-    } catch {
-      setShareStatus('Copie impossible. Autorisez l’accès au presse-papiers puis réessayez.');
+      const result = await shareOrCopy({
+        title: shareTitle || 'Mod Farming Simulator 25',
+        text: mod?.title ? `Découvre ${mod.title} sur MATRIX` : 'Découvre ce mod sur MATRIX',
+        url: shareUrl,
+      });
+      setShareStatus(result === 'shared' ? 'Partagé' : 'Lien copié');
+    } catch (shareError) {
+      if (shareError?.name === 'AbortError') return;
+      try {
+        await copyText(shareUrl);
+        setShareStatus('Lien copié');
+      } catch {
+        setShareStatus('Copie impossible. Autorisez l’accès au presse-papiers puis réessayez.');
+      }
     }
   };
+
+  const shared = shareStatus === 'Lien copié' || shareStatus === 'Partagé';
 
   return (
     <Dialog open onOpenChange={open => !open && onClose()}>
@@ -97,15 +120,15 @@ export default function ModHubDetailModal({ modId, initialMod, onClose }) {
           <DialogTitle>{mod?.title || 'Détails du mod'}</DialogTitle>
           <button
             type="button"
-            onClick={copyShareLink}
+            onClick={shareMod}
             className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg border border-border px-3 text-xs font-semibold"
-            aria-label={`Copier le lien de partage${mod?.title ? ` de ${mod.title}` : ''}`}
+            aria-label={`Partager${mod?.title ? ` ${mod.title}` : ' ce mod'}`}
           >
-            {shareStatus === 'Lien copié' ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
-            {shareStatus === 'Lien copié' ? 'Lien copié' : 'Partager'}
+            {shared ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+            {shared ? shareStatus : 'Partager'}
           </button>
         </div>
-        {shareStatus && shareStatus !== 'Lien copié' && <p role="alert" className="text-xs text-destructive">{shareStatus}</p>}
+        {shareStatus && !shared && <p role="alert" className="text-xs text-destructive">{shareStatus}</p>}
         <DialogDescription>
           {mod
             ? `Par ${mod.author || 'Auteur non renseigné'} · ${mod.category || 'Mod Farming Simulator 25'}`
