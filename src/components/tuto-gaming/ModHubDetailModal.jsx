@@ -85,7 +85,7 @@ export default function ModHubDetailModal({ modId, initialMod, onClose }) {
     title: shareTitle,
     description: mod?.description,
     image: mod?.hdImg || mod?.img || images[0],
-    path: shareUrl ? `/farming?mod=${modId}` : undefined,
+    path: shareUrl || undefined,
   });
 
   const shareMod = async () => {

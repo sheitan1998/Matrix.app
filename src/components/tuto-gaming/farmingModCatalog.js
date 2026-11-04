@@ -7,8 +7,10 @@ export function isValidFarmingModId(value) {
 
 export function farmingModShareUrl(modId, origin = globalThis.location?.origin) {
   if (!isValidFarmingModId(modId) || !origin) return null;
-  const url = new URL('/farming', origin);
-  url.searchParams.set('mod', String(modId));
+  // URL servie par la fonction de partage : elle renvoie les balises Open Graph
+  // propres au mod (image, titre, description) avant de rediriger vers la fiche.
+  const url = new URL('/functions/farmingModShare', origin);
+  url.searchParams.set('id', String(modId));
   return url.href;
 }
 
