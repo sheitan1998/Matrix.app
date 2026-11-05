@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { ROULETTE_BACKGROUND_IMAGE } from '@/lib/rouletteAssets';
 import { SPEECH_LOCALES, buildDealerMessage, resolveRouletteLang, rouletteStrings } from '@/lib/rouletteI18n';
 import useSpeechAnnounce from '@/hooks/useSpeechAnnounce';
-import RouletteImageWheel from '@/components/roulette/RouletteImageWheel';
+import Roulette3DWheel from '@/components/roulette/Roulette3DWheel';
 import RouletteBetGrid from '@/components/roulette/RouletteBetGrid';
 import RouletteControls from '@/components/roulette/RouletteControls';
 import RouletteHistory from '@/components/roulette/RouletteHistory';
@@ -186,7 +186,7 @@ export default function Roulette() {
               }}
             >
               <div className="relative">
-                <RouletteImageWheel
+                <Roulette3DWheel
                   spinToken={spinToken}
                   targetNumber={targetNumber}
                   onDone={finishSpin}
