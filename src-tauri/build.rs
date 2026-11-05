@@ -7,6 +7,9 @@ fn main() {
                 "check_for_updates",
                 "install_update",
                 "get_current_version",
+                "detect_running_games",
+                "list_capture_sources",
+                "capture_source_frame",
             ]),
         ),
     )

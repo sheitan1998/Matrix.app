@@ -212,11 +212,13 @@ fn get_current_version(app: tauri::AppHandle) -> Result<String, String> {
 /// Retourne les noms de processus correspondants trouvés parmi ceux en cours.
 #[tauri::command]
 fn detect_running_games(process_names: Vec<String>) -> Result<Vec<String>, String> {
-    use sysinfo::{ProcessRefreshKind, RefreshKind, System};
+    use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
 
     let mut system = System::new();
     system.refresh_processes_specifics(
-        RefreshKind::everything().with_processes(ProcessRefreshKind::everything()),
+        ProcessesToUpdate::All,
+        true,
+        ProcessRefreshKind::everything(),
     );
 
     // Build a lowercase set of target process names (without .exe extension)
