@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Coins, Trophy, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
-import { formatCoins, rouletteColor } from '@/lib/rouletteTable';
+import { formatCoins } from '@/lib/rouletteTable';
 import { SPEECH_LOCALES, buildDealerMessage, resolveRouletteLang, rouletteStrings } from '@/lib/rouletteI18n';
 import useSpeechAnnounce from '@/hooks/useSpeechAnnounce';
 import RouletteWheel from '@/components/roulette/RouletteWheel';
@@ -10,12 +10,6 @@ import RouletteBetGrid from '@/components/roulette/RouletteBetGrid';
 import RouletteControls from '@/components/roulette/RouletteControls';
 import RouletteHistory from '@/components/roulette/RouletteHistory';
 import RouletteDealer from '@/components/roulette/RouletteDealer';
-
-const CHIP_STACKS = [
-  { color: '#f43f5e', count: 6 },
-  { color: '#facc15', count: 4 },
-  { color: '#22c55e', count: 3 },
-];
 
 export default function Roulette() {
   const [user, setUser] = useState(null);
@@ -123,12 +117,6 @@ export default function Roulette() {
     }
   };
 
-  const resultTone = bubble.number === null ? '#a855f7' : rouletteColor(bubble.number) === 'red'
-    ? '#ef4444'
-    : rouletteColor(bubble.number) === 'green'
-      ? '#22c55e'
-      : '#d4d4d8';
-
   return (
     <div className="relative min-h-screen overflow-hidden" style={{ background: '#07040b' }}>
       {/* Ambience */}
@@ -184,6 +172,14 @@ export default function Roulette() {
                 {user?.full_name || 'MatrixUser'}
               </span>
             </div>
+            {lastGain > 0 && (
+              <div className="hidden items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/[0.08] px-3.5 py-2 md:flex">
+                <Trophy className="h-3.5 w-3.5 text-emerald-300" />
+                <span className="font-mono text-xs font-black text-emerald-300">
+                  + {formatCoins(lastGain, language)}
+                </span>
+              </div>
+            )}
             <div
               className="flex items-center gap-2 rounded-full border px-4 py-2"
               style={{ borderColor: 'rgba(230,192,105,0.45)', background: 'rgba(230,192,105,0.08)' }}
@@ -207,93 +203,18 @@ export default function Roulette() {
                 boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 24px 60px rgba(0,0,0,0.55)',
               }}
             >
-              <div className="relative mx-auto w-full max-w-[430px]" style={{ perspective: '1400px' }}>
-                <div
-                  className="relative"
-                  style={{ transform: 'rotateX(36deg) rotateZ(-6deg)', transformStyle: 'preserve-3d' }}
-                >
+              <div className="relative mx-auto w-full max-w-[440px] pb-1" style={{ perspective: '1500px' }}>
+                <div style={{ transform: 'rotateX(46deg) rotateZ(-7deg)', transformStyle: 'preserve-3d' }}>
                   <RouletteWheel targetNumber={targetNumber} spinToken={spinToken} onDone={finishSpin} />
                 </div>
-
-                {/* Table depth */}
-                <div
-                  className="pointer-events-none absolute inset-x-3 bottom-2 h-16 rounded-[50%] blur-2xl"
-                  style={{ background: 'rgba(0,0,0,0.75)' }}
-                />
-
-                {/* Chip piles */}
-                <div className="absolute bottom-4 left-2 flex items-end gap-2 sm:left-4">
-                  {CHIP_STACKS.map((stack) => (
-                    <div key={stack.color} className="flex flex-col-reverse items-center">
-                      {Array.from({ length: stack.count }).map((_, index) => (
-                        <span
-                          key={index}
-                          className="-mb-1 block h-2 w-6 rounded-full border border-black/40"
-                          style={{
-                            background: `linear-gradient(180deg, ${stack.color}, ${stack.color}99)`,
-                            boxShadow: '0 1px 0 rgba(255,255,255,0.25) inset',
-                            marginBottom: index === stack.count - 1 ? 0 : -5,
-                          }}
-                        />
-                      ))}
-                    </div>
-                  ))}
-                  <div className="ml-1 flex h-7 w-7 items-center justify-center rounded-full border border-amber-200/60 bg-gradient-to-b from-amber-300 to-amber-600 text-[9px] font-black text-black/80 shadow-lg">
-                    1k
-                  </div>
-                </div>
               </div>
 
-              <div className="mt-5 flex justify-center">
-                <RouletteDealer message={bubble.message} number={bubble.number} visible={bubble.visible} />
-              </div>
-
-              {!bubble.visible && (
-                <p className="mt-3 text-center text-[11px] text-white/30">
-                  {formatCoins(totalStake, language)} TRIX · {Object.keys(bets).length} {labels.bet.toLowerCase()}
-                </p>
-              )}
+              <RouletteDealer message={bubble.message} number={bubble.number} visible={bubble.visible} />
             </div>
           </div>
 
           {/* Table */}
           <div className="space-y-3 xl:col-span-7">
-            <div className="grid grid-cols-2 gap-3">
-              <div
-                className="flex items-center gap-3 rounded-2xl border border-white/10 px-4 py-3"
-                style={{ background: 'linear-gradient(150deg, rgba(20,12,28,0.9), rgba(9,5,14,0.9))' }}
-              >
-                <span
-                  className="flex h-9 w-9 items-center justify-center rounded-xl"
-                  style={{ background: 'rgba(230,192,105,0.12)', border: '1px solid rgba(230,192,105,0.3)' }}
-                >
-                  <Coins className="h-4 w-4 text-amber-300" />
-                </span>
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/40">{labels.balance}</p>
-                  <p className="font-mono text-lg font-black text-white">{formatCoins(balance, language)}</p>
-                </div>
-              </div>
-
-              <div
-                className="flex items-center gap-3 rounded-2xl border border-white/10 px-4 py-3"
-                style={{ background: 'linear-gradient(150deg, rgba(20,12,28,0.9), rgba(9,5,14,0.9))' }}
-              >
-                <span
-                  className="flex h-9 w-9 items-center justify-center rounded-xl"
-                  style={{ background: 'rgba(168,85,247,0.14)', border: '1px solid rgba(168,85,247,0.35)' }}
-                >
-                  <Trophy className="h-4 w-4 text-purple-300" />
-                </span>
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/40">{labels.lastWin}</p>
-                  <p className="font-mono text-lg font-black" style={{ color: lastGain > 0 ? '#4ade80' : '#ffffff' }}>
-                    {lastGain > 0 ? `+ ${formatCoins(lastGain, language)}` : '+ 0'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
             <RouletteBetGrid
               bets={bets}
               onBet={placeBet}
@@ -303,13 +224,6 @@ export default function Roulette() {
               language={language}
             />
 
-            <div className="flex items-center gap-2 text-[11px] text-white/35">
-              <span
-                className="h-2 w-2 rounded-full"
-                style={{ background: resultTone, boxShadow: `0 0 10px ${resultTone}` }}
-              />
-              {labels.subtitle}
-            </div>
           </div>
         </div>
 

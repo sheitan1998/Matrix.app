@@ -273,7 +273,13 @@ export const rouletteStrings = (lang) => TRANSLATIONS[lang] || TRANSLATIONS.en;
 
 export function buildDealerMessage(lang, { number, gain, win }) {
   const strings = rouletteStrings(lang);
-  if (number === 0) return strings.zeroMsg;
+  if (number === 0) {
+    if (!win) return strings.zeroMsg;
+    return strings.winMsg
+      .replace('{n}', '0')
+      .replace('{details}', strings.green)
+      .replace('{gain}', formatCoins(gain, lang));
+  }
   const parts = [
     strings[number === 0 ? 'green' : rouletteWord(lang, number)],
     number % 2 === 0 ? strings.even : strings.odd,
