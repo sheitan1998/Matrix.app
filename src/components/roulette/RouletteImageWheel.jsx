@@ -1,113 +1,110 @@
-import React, { useEffect, useMemo, useRef } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { ROULETTE_WHEEL_IMAGE } from '@/lib/rouletteAssets';
 
-export const SPIN_DURATION = 4000;
-
+const SPIN_DURATION = 4000;
 const TAU = Math.PI * 2;
 const easeOutQuart = (t) => 1 - Math.pow(1 - t, 4);
 
-// Voile radial : rend transparents les coins du rectangle de la texture,
-// sans découper la roue. Aucun calque n'est ajouté par-dessus le disque.
-function buildAlphaMap() {
-  const size = 512;
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext('2d');
-
-  ctx.fillStyle = '#000000';
-  ctx.fillRect(0, 0, size, size);
-
-  const gradient = ctx.createRadialGradient(
-    size / 2,
-    size / 2,
-    size * 0.42,
-    size / 2,
-    size / 2,
-    size * 0.55,
-  );
-  gradient.addColorStop(0, '#ffffff');
-  gradient.addColorStop(1, '#000000');
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, size, size);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.needsUpdate = true;
-  return texture;
-}
-
-function Plate({ spinToken = 0, targetNumber = 0, onDone }) {
-  const animation = useRef({ startedAt: 0, from: 0, to: 0, active: false });
+/**
+ * Roue de la fortune 3D (plateau incliné) — scène Three.js pilotée
+ * directement, sans réconciliateur React : un seul rendu continu, aucune
+ * ré-application de propriétés, donc aucun risque de crash au montage.
+ */
+export default function RouletteImageWheel({ spinToken = 0, targetNumber = 0, onDone }) {
+  const mountRef = useRef(null);
+  const wheelRef = useRef(null);
+  const animRef = useRef({ active: false, start: 0, from: 0, to: 0 });
   const doneRef = useRef(onDone);
   doneRef.current = onDone;
 
-  // Objets Three.js construits une seule fois : rien n'est ré-appliqué au
-  // rendu, donc aucune désynchronisation possible entre React et la scène.
-  const scene = useMemo(() => {
+  useEffect(() => {
+    const mount = mountRef.current;
+    if (!mount) return undefined;
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setClearAlpha(0);
+    renderer.domElement.style.display = 'block';
+    renderer.domElement.style.width = '100%';
+    renderer.domElement.style.height = '100%';
+    mount.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+    camera.position.z = 2.65;
+
     const texture = new THREE.TextureLoader().load(ROULETTE_WHEEL_IMAGE);
     texture.colorSpace = THREE.SRGBColorSpace;
-    texture.anisotropy = 8;
+    texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
-    const alphaMap = buildAlphaMap();
+    const geometry = new THREE.PlaneGeometry(2, 4 / 3);
     const material = new THREE.MeshBasicMaterial({
       map: texture,
-      alphaMap,
       transparent: true,
-      toneMapped: false,
       depthWrite: false,
+      toneMapped: false,
     });
 
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 4 / 3), material);
-    const group = new THREE.Group();
-    group.rotation.x = -0.26; // inclinaison du plateau
-    group.add(mesh);
+    const wheel = new THREE.Mesh(geometry, material);
+    scene.add(wheel);
+    wheelRef.current = wheel;
 
-    return { group, mesh, material, texture, alphaMap, geometry: mesh.geometry };
+    const resize = () => {
+      const width = mount.clientWidth || 1;
+      const height = mount.clientHeight || 1;
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+    };
+    resize();
+
+    const observer = new ResizeObserver(resize);
+    observer.observe(mount);
+
+    let frameId = 0;
+    const render = () => {
+      frameId = requestAnimationFrame(render);
+      const anim = animRef.current;
+      if (anim.active) {
+        const progress = Math.min(1, (performance.now() - anim.start) / SPIN_DURATION);
+        wheel.rotation.z = anim.from + (anim.to - anim.from) * easeOutQuart(progress);
+      }
+      renderer.render(scene, camera);
+    };
+    render();
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      observer.disconnect();
+      wheelRef.current = null;
+      geometry.dispose();
+      material.dispose();
+      texture.dispose();
+      renderer.dispose();
+      if (renderer.domElement.parentNode === mount) mount.removeChild(renderer.domElement);
+    };
   }, []);
-
-  useEffect(
-    () => () => {
-      scene.geometry.dispose();
-      scene.material.dispose();
-      scene.texture.dispose();
-      scene.alphaMap.dispose();
-    },
-    [scene],
-  );
 
   useEffect(() => {
     if (!spinToken) return undefined;
+    const wheel = wheelRef.current;
+    if (!wheel) return undefined;
 
-    const number = Number(targetNumber) || 0;
-    const from = scene.mesh.rotation.z;
-    // Cinq tours complets, puis un arrêt propre lié au numéro tiré.
-    const to = from - TAU * 5 - (number / 37) * TAU;
-
-    animation.current = { startedAt: performance.now(), from, to, active: true };
+    const from = wheel.rotation.z;
+    // Cinq tours complets, puis l'arrêt tombe sur le numéro tiré.
+    const to = from - TAU * 5 - ((Number(targetNumber) || 0) / 37) * TAU;
+    animRef.current = { active: true, start: performance.now(), from, to };
 
     const timer = setTimeout(() => {
-      animation.current.active = false;
-      scene.mesh.rotation.z = to;
+      animRef.current.active = false;
+      wheel.rotation.z = to;
       doneRef.current?.();
     }, SPIN_DURATION);
 
     return () => clearTimeout(timer);
-  }, [spinToken, targetNumber, scene]);
+  }, [spinToken, targetNumber]);
 
-  useFrame(() => {
-    const state = animation.current;
-    if (!state.active) return;
-
-    const progress = Math.min(1, (performance.now() - state.startedAt) / SPIN_DURATION);
-    scene.mesh.rotation.z = state.from + (state.to - state.from) * easeOutQuart(progress);
-  });
-
-  return <primitive object={scene.group} />;
-}
-
-export default function RouletteImageWheel({ spinToken = 0, targetNumber = 0, onDone }) {
   return (
     <div className="relative mx-auto aspect-square w-full max-w-[520px] select-none">
       <div
@@ -117,16 +114,7 @@ export default function RouletteImageWheel({ spinToken = 0, targetNumber = 0, on
           filter: 'blur(28px)',
         }}
       />
-
-      <Canvas
-        dpr={[1, 2]}
-        flat
-        gl={{ antialias: true, alpha: true }}
-        camera={{ position: [0, 0, 2.65], fov: 45 }}
-        style={{ background: 'transparent' }}
-      >
-        <Plate spinToken={spinToken} targetNumber={targetNumber} onDone={onDone} />
-      </Canvas>
+      <div ref={mountRef} className="relative h-full w-full" />
     </div>
   );
 }
