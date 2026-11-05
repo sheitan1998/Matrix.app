@@ -61,6 +61,7 @@ const MarketSubscription = lazy(() => import('@/pages/marketplace/MarketSubscrip
 const ListingDetail = lazy(() => import('@/pages/marketplace/ListingDetail'));
 const Casino = lazy(() => import('@/pages/Casino'));
 const NexusGames = lazy(() => import('@/pages/NexusGames'));
+const RoulettePage = lazy(() => import('@/pages/nexus/Roulette'));
 const Prospecteurs = lazy(() => import('@/pages/prospecteurs/Prospecteurs'));
 const CategoryServers = lazy(() => import('@/pages/prospecteurs/CategoryServers'));
 const ServerProfile = lazy(() => import('@/pages/prospecteurs/ServerProfile'));
@@ -227,6 +228,7 @@ const AuthenticatedApp = () => {
             <Route path="/market/:id" element={<ListingDetail />} />
             <Route path="/casino" element={<Casino />} />
             <Route path="/nexus-games" element={<NexusGames />} />
+            <Route path="/roulette" element={<RoulettePage />} />
             <Route path="/community/subscription" element={<CommunitySubscription />} />
             <Route path="/wallet" element={<Wallet />} />
             <Route path="/trix-store" element={<TrixStore />} />
