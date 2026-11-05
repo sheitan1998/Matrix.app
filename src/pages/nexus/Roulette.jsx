@@ -213,8 +213,11 @@ export default function Roulette() {
         {isDesktop ?
         <div className="relative h-[820px]">
             {/* Croupière à gauche */}
-            <div style={panelStyle(13, 45, 22)}>
-              <RouletteDealer message={dealerMessage} number={bubble.number} />
+            <div style={panelStyle(13, 45, 22, config.dealer_scale)}>
+              <RouletteDealer
+                message={dealerMessage}
+                number={bubble.number}
+                scale={config.dealer_scale} />
             </div>
 
             {/* Roue */}
@@ -252,7 +255,10 @@ export default function Roulette() {
           </div> :
 
         <div className="mt-4 space-y-4">
-            <RouletteDealer message={dealerMessage} number={bubble.number} />
+            <RouletteDealer
+            message={dealerMessage}
+            number={bubble.number}
+            scale={config.dealer_scale} />
             {wheelCard}
             <RouletteBetGrid
             bets={bets}

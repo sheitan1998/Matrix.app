@@ -12,6 +12,11 @@
       "default": 100,
       "description": "Taille de l'accoudoir (rebord en bois et or) autour de la roue en pourcentage (60-200)"
     },
+    "dealer_scale": {
+      "type": "number",
+      "default": 100,
+      "description": "Taille de l'affichage de la croupi\u00e8re en pourcentage (60-200)"
+    },
     "bet_panel_pos_x": {
       "type": "number",
       "default": 82,

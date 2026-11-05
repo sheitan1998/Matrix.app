@@ -8,13 +8,18 @@ const DEALER_IMAGE =
 
 const ease = [0.22, 0.9, 0.24, 1];
 
-export default function RouletteDealer({ message, number }) {
+export default function RouletteDealer({ message, number, scale = 100 }) {
   const color = number === null || number === undefined ? null : rouletteColor(number);
   const tone =
     color === 'red' ? '#ef4444' : color === 'black' ? '#d4d4d8' : color === 'green' ? '#22c55e' : '#a855f7';
 
+  const safeScale = Math.min(200, Math.max(50, Number(scale) || 100));
+
   return (
-    <div className="flex w-full flex-col items-center">
+    <div
+      className="mx-auto flex w-full flex-col items-center"
+      style={{ maxWidth: `${Math.round(320 * (safeScale / 100))}px` }}
+    >
       {/* Bulle de dialogue */}
       <AnimatePresence mode="wait">
         <motion.div
@@ -58,7 +63,7 @@ export default function RouletteDealer({ message, number }) {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease }}
-        className="relative mt-4 w-full max-w-[320px]"
+        className="relative mt-4 w-full"
       >
         <div
           className="absolute inset-x-4 bottom-6 top-10 -z-10 rounded-full blur-3xl"

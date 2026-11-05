@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { ArrowLeft, Ticket, Coins, Gift, RefreshCw, ShoppingCart, Sparkles, Clock } from "lucide-react";
 import { toast } from "sonner";
 import ScratchCard from "@/components/nexus/ScratchCard";
+import RouletteBanner from "@/components/nexus/RouletteBanner";
 
 const TICKET_PRICE = 10000;
 
@@ -126,6 +127,9 @@ export default function NexusGames() {
             🎡 Roulette
           </Link>
         </div>
+
+        {/* Affiche Roulette — accès direct à la table */}
+        <RouletteBanner />
 
         {/* Balance + Tickets summary */}
         <div className="grid grid-cols-3 gap-3 mb-6">

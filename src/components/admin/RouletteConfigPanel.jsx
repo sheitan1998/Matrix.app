@@ -54,6 +54,11 @@ const SECTIONS = [
     fields: [{ key: 'accoudoir_scale', label: 'Taille de l’accoudoir', min: 60, max: 200 }],
   },
   {
+    title: 'Croupière',
+    hint: 'La bulle de dialogue reste automatiquement positionnée au-dessus d’elle.',
+    fields: [{ key: 'dealer_scale', label: 'Taille de la croupière', min: 60, max: 200 }],
+  },
+  {
     title: 'Panneau de mises',
     hint: 'Positions en % de l’écran (vue desktop).',
     fields: [
