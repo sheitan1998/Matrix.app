@@ -8,8 +8,8 @@ import {
   buildDealerMessage,
   dealerDetails,
   resolveRouletteLang,
-  rouletteStrings,
-} from '@/lib/rouletteI18n';
+  rouletteStrings } from
+'@/lib/rouletteI18n';
 import { formatCoins } from '@/lib/rouletteTable';
 import useSpeechAnnounce from '@/hooks/useSpeechAnnounce';
 import useRouletteConfig from '@/hooks/useRouletteConfig';
@@ -25,8 +25,8 @@ const panelStyle = (x, y, width, scale = 100) => ({
   position: 'absolute',
   left: `${Number(x) || 0}%`,
   top: `${Number(y) || 0}%`,
-  width: `${(width * (Number(scale) || 100)) / 100}%`,
-  transform: 'translate(-50%, -50%)',
+  width: `${width * (Number(scale) || 100) / 100}%`,
+  transform: 'translate(-50%, -50%)'
 });
 
 export default function Roulette() {
@@ -51,15 +51,15 @@ export default function Roulette() {
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
-    base44.functions
-      .invoke('casinoEngine', { action: 'getBalance' })
-      .then((res) => setBalance(res?.data?.balance ?? 0))
-      .catch(() => {});
+    base44.functions.
+    invoke('casinoEngine', { action: 'getBalance' }).
+    then((res) => setBalance(res?.data?.balance ?? 0)).
+    catch(() => {});
   }, []);
 
   const totalStake = useMemo(
     () => Object.values(bets).reduce((sum, value) => sum + value, 0),
-    [bets],
+    [bets]
   );
 
   const placeBet = (key) => {
@@ -76,20 +76,20 @@ export default function Roulette() {
   const composeDealerMessage = (result) => {
     const gain = Math.max(0, result.net);
     const template =
-      result.number === 0
-        ? config.dealer_message_zero
-        : result.net > 0
-          ? config.dealer_message_win
-          : config.dealer_message_lose;
+    result.number === 0 ?
+    config.dealer_message_zero :
+    result.net > 0 ?
+    config.dealer_message_win :
+    config.dealer_message_lose;
 
     if (!template) {
       return buildDealerMessage(language, { number: result.number, gain, win: result.net > 0 });
     }
 
-    return template
-      .replaceAll('{n}', String(result.number))
-      .replaceAll('{details}', dealerDetails(language, result.number))
-      .replaceAll('{gain}', formatCoins(gain, language));
+    return template.
+    replaceAll('{n}', String(result.number)).
+    replaceAll('{details}', dealerDetails(language, result.number)).
+    replaceAll('{gain}', formatCoins(gain, language));
   };
 
   const finishSpin = useCallback(() => {
@@ -102,7 +102,7 @@ export default function Roulette() {
     setBets({});
     setLastGain(result.net > 0 ? result.net : 0);
     setHistory((current) =>
-      [{ number: result.number, gain: Math.max(0, result.net), at: Date.now() }, ...current].slice(0, 12),
+    [{ number: result.number, gain: Math.max(0, result.net), at: Date.now() }, ...current].slice(0, 12)
     );
 
     const message = composeDealerMessage(result);
@@ -125,7 +125,7 @@ export default function Roulette() {
 
     try {
       const res = await base44.functions.invoke('rouletteSpin', {
-        bets: Object.entries(bets).map(([key, amount]) => ({ key, amount })),
+        bets: Object.entries(bets).map(([key, amount]) => ({ key, amount }))
       });
       const data = res?.data || res;
       if (data?.error) {
@@ -144,20 +144,20 @@ export default function Roulette() {
 
   const dealerMessage = bubble.message || config.dealer_message_greeting || labels.subtitle;
 
-  const wheelCard = (
-    <div
-      className="rounded-3xl border p-3 sm:p-4"
-      style={{
-        borderColor: 'rgba(230,192,105,0.24)',
-        background: 'linear-gradient(160deg, rgba(24,12,32,0.80), rgba(8,5,12,0.90))',
-        backdropFilter: 'blur(6px)',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 24px 60px rgba(0,0,0,0.6)',
-      }}
-    >
+  const wheelCard =
+  <div
+    className="rounded-3xl border p-3 sm:p-4 hidden"
+    style={{
+      borderColor: 'rgba(230,192,105,0.24)',
+      background: 'linear-gradient(160deg, rgba(24,12,32,0.80), rgba(8,5,12,0.90))',
+      backdropFilter: 'blur(6px)',
+      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 24px 60px rgba(0,0,0,0.6)'
+    }}>
+    
       <RouletteLuxuryWheel spinToken={spinToken} targetNumber={targetNumber} onDone={finishSpin} />
       <RouletteWallet balance={balance} lastGain={lastGain} labels={labels} language={language} />
-    </div>
-  );
+    </div>;
+
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#07040b]">
@@ -166,16 +166,16 @@ export default function Roulette() {
         src={ROULETTE_BACKGROUND_IMAGE}
         alt=""
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center"
-      />
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center" />
+      
       <div className="pointer-events-none absolute inset-0 bg-[#06030a]/70" />
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            'radial-gradient(circle at 12% 4%, rgba(139,92,246,0.26), transparent 46%), radial-gradient(circle at 88% 0%, rgba(230,192,105,0.16), transparent 44%), radial-gradient(circle at 50% 108%, rgba(76,29,149,0.32), transparent 58%)',
-        }}
-      />
+          'radial-gradient(circle at 12% 4%, rgba(139,92,246,0.26), transparent 46%), radial-gradient(circle at 88% 0%, rgba(230,192,105,0.16), transparent 44%), radial-gradient(circle at 50% 108%, rgba(76,29,149,0.32), transparent 58%)'
+        }} />
+      
 
       <div className="relative mx-auto w-full max-w-[1440px] px-4 pb-8 pt-5 lg:px-6">
         {/* Header */}
@@ -186,9 +186,9 @@ export default function Roulette() {
               style={{
                 borderColor: 'rgba(230,192,105,0.5)',
                 background: 'radial-gradient(circle at 35% 30%, #3b2410, #0c0710)',
-                boxShadow: '0 0 20px rgba(230,192,105,0.25)',
-              }}
-            >
+                boxShadow: '0 0 20px rgba(230,192,105,0.25)'
+              }}>
+              
               <Sparkles className="h-5 w-5 text-amber-300" />
             </div>
             <div>
@@ -200,13 +200,13 @@ export default function Roulette() {
           <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-1.5 pl-1.5 pr-4">
             <span
               className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full text-[11px] font-black text-white"
-              style={{ background: 'linear-gradient(135deg, #8B5CF6, #4c1d95)' }}
-            >
-              {user?.avatar_url ? (
-                <img src={user.avatar_url} alt="" className="h-full w-full object-cover" />
-              ) : (
-                (user?.full_name || 'M').charAt(0).toUpperCase()
-              )}
+              style={{ background: 'linear-gradient(135deg, #8B5CF6, #4c1d95)' }}>
+              
+              {user?.avatar_url ?
+              <img src={user.avatar_url} alt="" className="h-full w-full object-cover" /> :
+
+              (user?.full_name || 'M').charAt(0).toUpperCase()
+              }
             </span>
             <span className="max-w-[140px] truncate text-xs font-bold text-white/85">
               {user?.full_name || 'MatrixUser'}
@@ -214,8 +214,8 @@ export default function Roulette() {
           </div>
         </header>
 
-        {isDesktop ? (
-          <div className="relative h-[820px]">
+        {isDesktop ?
+        <div className="relative h-[820px]">
             {/* Croupière à gauche */}
             <div style={panelStyle(13, 45, 22)}>
               <RouletteDealer message={dealerMessage} number={bubble.number} />
@@ -226,48 +226,23 @@ export default function Roulette() {
 
             {/* Panneau de mises + historique */}
             <div
-              style={panelStyle(config.bet_panel_pos_x, config.bet_panel_pos_y, 36, config.bet_panel_scale)}
-              className="space-y-3"
-            >
+            style={panelStyle(config.bet_panel_pos_x, config.bet_panel_pos_y, 36, config.bet_panel_scale)}
+            className="space-y-3">
+            
               <RouletteBetGrid
-                bets={bets}
-                onBet={placeBet}
-                onClear={() => !spinning && setBets({})}
-                disabled={spinning}
-                labels={labels}
-                language={language}
-              />
+              bets={bets}
+              onBet={placeBet}
+              onClear={() => !spinning && setBets({})}
+              disabled={spinning}
+              labels={labels}
+              language={language} />
+            
               <RouletteHistory history={history} labels={labels} />
             </div>
 
             {/* Boutons de l'interface */}
             <div style={panelStyle(config.controls_pos_x, config.controls_pos_y, 36, config.controls_scale)}>
               <RouletteControls
-                chip={chip}
-                onChangeChip={setChip}
-                onSpin={spin}
-                spinning={spinning}
-                canSpin={totalStake > 0}
-                totalStake={totalStake}
-                labels={labels}
-                language={language}
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="mt-4 space-y-4">
-            <RouletteDealer message={dealerMessage} number={bubble.number} />
-            {wheelCard}
-            <RouletteBetGrid
-              bets={bets}
-              onBet={placeBet}
-              onClear={() => !spinning && setBets({})}
-              disabled={spinning}
-              labels={labels}
-              language={language}
-            />
-            <RouletteHistory history={history} labels={labels} />
-            <RouletteControls
               chip={chip}
               onChangeChip={setChip}
               onSpin={spin}
@@ -275,11 +250,36 @@ export default function Roulette() {
               canSpin={totalStake > 0}
               totalStake={totalStake}
               labels={labels}
-              language={language}
-            />
+              language={language} />
+            
+            </div>
+          </div> :
+
+        <div className="mt-4 space-y-4">
+            <RouletteDealer message={dealerMessage} number={bubble.number} />
+            {wheelCard}
+            <RouletteBetGrid
+            bets={bets}
+            onBet={placeBet}
+            onClear={() => !spinning && setBets({})}
+            disabled={spinning}
+            labels={labels}
+            language={language} />
+          
+            <RouletteHistory history={history} labels={labels} />
+            <RouletteControls
+            chip={chip}
+            onChangeChip={setChip}
+            onSpin={spin}
+            spinning={spinning}
+            canSpin={totalStake > 0}
+            totalStake={totalStake}
+            labels={labels}
+            language={language} />
+          
           </div>
-        )}
+        }
       </div>
-    </div>
-  );
+    </div>);
+
 }
