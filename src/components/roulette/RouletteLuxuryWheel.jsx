@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { WHEEL_ORDER, rouletteColor } from '@/lib/rouletteTable';
 
 const SIZE = 400;
@@ -9,7 +9,8 @@ const POCKET_INNER = 74;
 const POCKET_OUTER = 150;
 const NUMBER_RADIUS = 122;
 const TRACK_RADIUS = 169;
-const BALL_ANGLE = -52;
+const SETTLE_RADIUS = 138;
+const START_ANGLE = 128;
 const BALL_RADIUS = 8.6;
 
 const polar = (radius, angle) => {
@@ -43,54 +44,62 @@ const SLICES = WHEEL_ORDER.map((number, index) => {
   };
 });
 
-const [BALL_X, BALL_Y] = polar(TRACK_RADIUS, BALL_ANGLE);
+const ballTransform = (angle, radius) => {
+  const [x, y] = polar(radius, angle);
+  return `translate(${x.toFixed(2)} ${y.toFixed(2)})`;
+};
+
+const INITIAL_BALL_TRANSFORM = ballTransform(START_ANGLE, TRACK_RADIUS);
 
 export default function RouletteLuxuryWheel({ spinToken, targetNumber, onDone }) {
-  const [rotation, setRotation] = useState(0);
-  const [spinning, setSpinning] = useState(false);
-  const rotationRef = useRef(0);
-  const timer = useRef(null);
+  const ballRef = useRef(null);
+  const frameRef = useRef(null);
+  const angleRef = useRef(START_ANGLE);
   const doneRef = useRef(onDone);
   doneRef.current = onDone;
 
-  useEffect(() => () => clearTimeout(timer.current), []);
+  useEffect(() => () => cancelAnimationFrame(frameRef.current), []);
 
   useEffect(() => {
     if (!spinToken) return;
     const index = WHEEL_ORDER.indexOf(Number(targetNumber));
     if (index < 0) return;
 
-    // The marker sits at -90° (top). Rotating the rotor by θ moves the pocket
-    // centre (start + step/2) to θ + centre, so θ = -90 - centre.
-    const desired = -90 - SLICES[index].mid;
-    const base = rotationRef.current + 5 * 360;
-    const delta = (((desired % 360) + 360) % 360 - (((base % 360) + 360) % 360) + 360) % 360;
-    const next = base + delta;
+    // Le cylindre reste immobile : seule la bille parcourt la piste et
+    // s'immobilise au centre de la case gagnante.
+    const target = SLICES[index].mid;
+    const from = angleRef.current;
+    const base = from + 6 * 360;
+    const delta = (((target - base) % 360) + 360) % 360;
+    const to = base + delta;
+    const start = performance.now();
+    let finished = false;
 
-    rotationRef.current = next;
-    setSpinning(true);
-    setRotation(next);
+    cancelAnimationFrame(frameRef.current);
 
-    clearTimeout(timer.current);
-    timer.current = setTimeout(() => {
-      setSpinning(false);
-      doneRef.current?.();
-    }, SPIN_DURATION);
+    const tick = (now) => {
+      const t = Math.min(1, (now - start) / SPIN_DURATION);
+      const eased = 1 - Math.pow(1 - t, 4);
+      const angle = from + (to - from) * eased;
+      const drop = Math.max(0, (t - 0.7) / 0.3);
+      const radius = TRACK_RADIUS - drop * (TRACK_RADIUS - SETTLE_RADIUS);
+
+      angleRef.current = angle;
+      ballRef.current?.setAttribute('transform', ballTransform(angle, radius));
+
+      if (t < 1) {
+        frameRef.current = requestAnimationFrame(tick);
+      } else if (!finished) {
+        finished = true;
+        doneRef.current?.();
+      }
+    };
+
+    frameRef.current = requestAnimationFrame(tick);
   }, [spinToken, targetNumber]);
 
-  const rotorStyle = useMemo(
-    () => ({
-      transform: `rotate(${rotation}deg)`,
-      transformOrigin: `${C}px ${C}px`,
-      transformBox: 'view-box',
-      transition: spinning ? `transform ${SPIN_DURATION}ms cubic-bezier(0.12, 0.7, 0.12, 1)` : 'none',
-      willChange: 'transform',
-    }),
-    [rotation, spinning],
-  );
-
   return (
-    <div className="relative mx-auto aspect-square w-full max-w-[520px] select-none">
+    <div className="relative mx-auto aspect-square w-full select-none">
       <div
         className="pointer-events-none absolute inset-6 rounded-full"
         style={{
@@ -182,8 +191,8 @@ export default function RouletteLuxuryWheel({ spinToken, targetNumber, onDone })
         {/* Filet d'or entre la piste et le cylindre */}
         <circle cx={C} cy={C} r="153" fill="none" stroke="url(#rouletteGold)" strokeWidth="3" />
 
-        {/* Cylindre rotatif : cases, séparateurs et numéros */}
-        <g style={rotorStyle}>
+        {/* Cylindre fixe : cases, séparateurs et numéros */}
+        <g>
           {SLICES.map((slice) => (
             <path
               key={slice.number}
@@ -254,25 +263,19 @@ export default function RouletteLuxuryWheel({ spinToken, targetNumber, onDone })
           <circle cx={C} cy={C} r="2.6" fill="#f3e3ff" />
         </g>
 
-        {/* Bille fixe sur la piste */}
-        <g>
-          <ellipse
-            cx={BALL_X + 1.6}
-            cy={BALL_Y + 3}
-            rx={BALL_RADIUS + 1.6}
-            ry={BALL_RADIUS * 0.85}
-            fill="rgba(0,0,0,0.55)"
-          />
+        {/* Bille animée : elle tourne puis se loge dans la case gagnante */}
+        <g ref={ballRef} transform={INITIAL_BALL_TRANSFORM}>
+          <ellipse cx="1.6" cy="3" rx={BALL_RADIUS + 1.6} ry={BALL_RADIUS * 0.85} fill="rgba(0,0,0,0.55)" />
           <circle
-            cx={BALL_X}
-            cy={BALL_Y}
+            cx="0"
+            cy="0"
             r={BALL_RADIUS}
             fill="url(#roulettePearl)"
             stroke="rgba(255,255,255,0.65)"
             strokeWidth="0.4"
           />
-          <circle cx={BALL_X - 2.7} cy={BALL_Y - 2.9} r="2.1" fill="#ffffff" opacity="0.95" />
-          <circle cx={BALL_X + 2.5} cy={BALL_Y + 2.7} r="1.6" fill="#f0c977" opacity="0.5" />
+          <circle cx="-2.7" cy="-2.9" r="2.1" fill="#ffffff" opacity="0.95" />
+          <circle cx="2.5" cy="2.7" r="1.6" fill="#f0c977" opacity="0.5" />
         </g>
 
         {/* Repère doré du numéro gagnant */}

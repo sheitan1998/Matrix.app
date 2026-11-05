@@ -27,7 +27,7 @@ const FR = {
   and: 'et',
   win: 'Gagné',
   lose: 'Perdu',
-  winMsg: 'Le {n}, {details} ! Gain : +{gain} TRIX',
+  winMsg: 'Le {n}, {details} ! Gain : +{gain} jetons',
   loseMsg: 'Le {n}, {details} ! Pas de gain cette fois.',
   zeroMsg: 'Le 0, Vert ! La maison gagne.',
 };
@@ -59,7 +59,7 @@ const EN = {
   and: 'and',
   win: 'Win',
   lose: 'Lost',
-  winMsg: 'The {n}, {details}! Win: +{gain} TRIX',
+  winMsg: 'The {n}, {details}! Win: +{gain} jetons',
   loseMsg: 'The {n}, {details}! No win this time.',
   zeroMsg: 'Zero, Green! The house wins.',
 };
@@ -91,7 +91,7 @@ const ES = {
   and: 'y',
   win: 'Ganado',
   lose: 'Perdido',
-  winMsg: 'El {n}, {details}! Ganancia: +{gain} TRIX',
+  winMsg: 'El {n}, {details}! Ganancia: +{gain} jetons',
   loseMsg: 'El {n}, {details}! Sin ganancia esta vez.',
   zeroMsg: '¡El 0, Verde! Gana la casa.',
 };
@@ -123,7 +123,7 @@ const DE = {
   and: 'und',
   win: 'Gewinn',
   lose: 'Verloren',
-  winMsg: 'Die {n}, {details}! Gewinn: +{gain} TRIX',
+  winMsg: 'Die {n}, {details}! Gewinn: +{gain} jetons',
   loseMsg: 'Die {n}, {details}! Diesmal kein Gewinn.',
   zeroMsg: 'Die 0, Grün! Die Bank gewinnt.',
 };
@@ -155,7 +155,7 @@ const IT = {
   and: 'e',
   win: 'Vinto',
   lose: 'Perso',
-  winMsg: 'Il {n}, {details}! Vincita: +{gain} TRIX',
+  winMsg: 'Il {n}, {details}! Vincita: +{gain} jetons',
   loseMsg: 'Il {n}, {details}! Nessuna vincita stavolta.',
   zeroMsg: 'Lo 0, Verde! Vince il banco.',
 };
@@ -187,7 +187,7 @@ const PT = {
   and: 'e',
   win: 'Ganho',
   lose: 'Perdido',
-  winMsg: 'O {n}, {details}! Ganho: +{gain} TRIX',
+  winMsg: 'O {n}, {details}! Ganho: +{gain} jetons',
   loseMsg: 'O {n}, {details}! Sem ganho desta vez.',
   zeroMsg: 'O 0, Verde! A casa ganha.',
 };
@@ -219,7 +219,7 @@ const NL = {
   and: 'en',
   win: 'Winst',
   lose: 'Verloren',
-  winMsg: 'De {n}, {details}! Winst: +{gain} TRIX',
+  winMsg: 'De {n}, {details}! Winst: +{gain} jetons',
   loseMsg: 'De {n}, {details}! Deze keer geen winst.',
   zeroMsg: 'De 0, Groen! Het huis wint.',
 };
@@ -251,7 +251,7 @@ const RU = {
   and: 'и',
   win: 'Выигрыш',
   lose: 'Проигрыш',
-  winMsg: '{n}, {details}! Выигрыш: +{gain} TRIX',
+  winMsg: '{n}, {details}! Выигрыш: +{gain} jetons',
   loseMsg: '{n}, {details}! На этот раз без выигрыша.',
   zeroMsg: '0, Зелёное! Выигрывает казино.',
 };
@@ -271,6 +271,17 @@ export function resolveRouletteLang(user) {
 
 export const rouletteStrings = (lang) => TRANSLATIONS[lang] || TRANSLATIONS.en;
 
+export function dealerDetails(lang, number) {
+  const strings = rouletteStrings(lang);
+  if (!number) return strings.green;
+  const parts = [
+    rouletteWord(lang, number),
+    number % 2 === 0 ? strings.even : strings.odd,
+    number <= 18 ? strings.low : strings.high,
+  ];
+  return `${parts[0]}, ${parts[1]} ${strings.and} ${parts[2]}`;
+}
+
 export function buildDealerMessage(lang, { number, gain, win }) {
   const strings = rouletteStrings(lang);
   if (number === 0) {
@@ -280,16 +291,10 @@ export function buildDealerMessage(lang, { number, gain, win }) {
       .replace('{details}', strings.green)
       .replace('{gain}', formatCoins(gain, lang));
   }
-  const parts = [
-    strings[number === 0 ? 'green' : rouletteWord(lang, number)],
-    number % 2 === 0 ? strings.even : strings.odd,
-    number <= 18 ? strings.low : strings.high,
-  ];
-  const details = `${parts[0]}, ${parts[1]} ${strings.and} ${parts[2]}`;
   const template = win ? strings.winMsg : strings.loseMsg;
   return template
     .replace('{n}', String(number))
-    .replace('{details}', details)
+    .replace('{details}', dealerDetails(lang, number))
     .replace('{gain}', formatCoins(gain, lang));
 }
 

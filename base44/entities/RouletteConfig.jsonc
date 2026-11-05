@@ -1,0 +1,79 @@
+{
+  "name": "RouletteConfig",
+  "type": "object",
+  "properties": {
+    "wheel_scale": {
+      "type": "number",
+      "default": 100,
+      "description": "\u00c9chelle globale de l'affichage de la roue en pourcentage (60-160)"
+    },
+    "bet_panel_pos_x": {
+      "type": "number",
+      "default": 82,
+      "description": "Position horizontale du panneau de mises en pourcentage de l'\u00e9cran (0-100)"
+    },
+    "bet_panel_pos_y": {
+      "type": "number",
+      "default": 30,
+      "description": "Position verticale du panneau de mises en pourcentage de l'\u00e9cran (0-100)"
+    },
+    "bet_panel_scale": {
+      "type": "number",
+      "default": 100,
+      "description": "\u00c9chelle du panneau de mises en pourcentage (60-160)"
+    },
+    "controls_pos_x": {
+      "type": "number",
+      "default": 82,
+      "description": "Position horizontale des boutons de l'interface en pourcentage (0-100)"
+    },
+    "controls_pos_y": {
+      "type": "number",
+      "default": 82,
+      "description": "Position verticale des boutons de l'interface en pourcentage (0-100)"
+    },
+    "controls_scale": {
+      "type": "number",
+      "default": 100,
+      "description": "\u00c9chelle des boutons de l'interface en pourcentage (60-160)"
+    },
+    "dealer_message_greeting": {
+      "type": "string",
+      "default": "Bienvenue \u00e0 la table Nexus ! Placez vos jetons et lancez la bille.",
+      "description": "R\u00e9plique de la croupi\u00e8re hors lancer"
+    },
+    "dealer_message_win": {
+      "type": "string",
+      "default": "Le {n}, {details} ! Gain : +{gain} jetons.",
+      "description": "R\u00e9plique de la croupi\u00e8re en cas de gain ({n}, {details}, {gain})"
+    },
+    "dealer_message_lose": {
+      "type": "string",
+      "default": "Le {n}, {details}. Pas de gain cette fois.",
+      "description": "R\u00e9plique de la croupi\u00e8re en cas de perte ({n}, {details})"
+    },
+    "dealer_message_zero": {
+      "type": "string",
+      "default": "Le 0, Vert ! La maison gagne.",
+      "description": "R\u00e9plique de la croupi\u00e8re quand la bille tombe sur le z\u00e9ro ({n})"
+    }
+  },
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

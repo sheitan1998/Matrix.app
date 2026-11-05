@@ -1,5 +1,6 @@
 import React from 'react';
 import { Minus, Plus, RotateCw } from 'lucide-react';
+import CasinoToken, { TOKEN_URL } from '@/components/casino/CasinoToken';
 import { formatCoins } from '@/lib/rouletteTable';
 
 const QUICK_CHIPS = [50, 100, 250, 500];
@@ -11,19 +12,31 @@ function ChipButton({ value, active, disabled, onClick, language }) {
       onClick={onClick}
       disabled={disabled}
       aria-pressed={active}
-      className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 font-mono text-[11px] font-black transition disabled:opacity-40 ${
-        active ? 'scale-105 ring-2 ring-amber-200 ring-offset-2 ring-offset-[#0d0813]' : 'hover:scale-105'
+      className={`relative h-14 w-14 shrink-0 rounded-full transition disabled:opacity-40 ${
+        active ? 'scale-105' : 'hover:scale-105'
       }`}
+      title={`${formatCoins(value, language)} jetons`}
       style={{
-        background: 'radial-gradient(circle at 32% 26%, #ffe9a8, #d9a63c 58%, #8a5b12)',
-        borderColor: '#f7dfa0',
-        color: '#2a1607',
-        boxShadow: active ? '0 0 18px rgba(245,196,81,0.55)' : '0 6px 14px rgba(0,0,0,0.45)',
+        boxShadow: active
+          ? '0 0 0 2px #fde9b5, 0 0 20px rgba(245,196,81,0.65)'
+          : '0 8px 16px rgba(0,0,0,0.45)',
       }}
-      title={`${formatCoins(value, language)} TRIX`}
     >
-      <span className="pointer-events-none absolute inset-1 rounded-full border border-dashed border-[#7a4d0c]/50" />
-      {formatCoins(value, language)}
+      <img
+        src={TOKEN_URL}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 h-full w-full object-contain"
+      />
+      <span
+        className={`absolute inset-x-0 bottom-0.5 mx-auto w-fit rounded-full border px-1.5 py-[1px] font-mono text-[9px] font-black ${
+          active
+            ? 'border-amber-100 bg-amber-300 text-black'
+            : 'border-amber-300/40 bg-black/80 text-amber-100'
+        }`}
+      >
+        {formatCoins(value, language)}
+      </span>
     </button>
   );
 }
@@ -100,8 +113,10 @@ export default function RouletteControls({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center lg:ml-auto">
         <div className="rounded-xl border border-amber-300/25 bg-amber-400/[0.07] px-4 py-2">
           <p className="text-[9px] font-black uppercase tracking-[0.18em] text-amber-200/60">{labels.total}</p>
-          <p className="font-mono text-sm font-black text-amber-100">
-            {formatCoins(totalStake, language)} <span className="text-[9px] tracking-widest text-amber-300/60">TRIX</span>
+          <p className="flex items-center gap-1.5 font-mono text-sm font-black text-amber-100">
+            <CasinoToken size={14} />
+            {formatCoins(totalStake, language)}
+            <span className="text-[9px] tracking-widest text-amber-300/60">jetons</span>
           </p>
         </div>
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { NUMBER_COLUMNS, cellTone, formatCoins, rouletteColor } from '@/lib/rouletteTable';
+import { NUMBER_COLUMNS, cellTone, formatCoins } from '@/lib/rouletteTable';
+import CasinoToken from '@/components/casino/CasinoToken';
 
 function BetCell({ betKey, label, bets, onBet, disabled, className, style, amountLabel }) {
   const amount = bets[betKey] || 0;
@@ -131,8 +132,10 @@ export default function RouletteBetGrid({ bets, onBet, onClear, disabled, labels
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/5 pt-3">
         <p className="text-[11px] text-white/45">
           {labels.total} :{' '}
-          <span className="font-bold text-amber-300">
-            {formatCoins(Object.values(bets).reduce((sum, value) => sum + value, 0), language)} TRIX
+          <span className="inline-flex items-center gap-1 font-bold text-amber-300">
+            <CasinoToken size={13} />
+            {formatCoins(Object.values(bets).reduce((sum, value) => sum + value, 0), language)}
+            <span className="text-[10px] tracking-widest text-amber-300/70">jetons</span>
           </span>
         </p>
         <button
