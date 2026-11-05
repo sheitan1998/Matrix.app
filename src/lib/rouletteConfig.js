@@ -1,5 +1,6 @@
 export const DEFAULT_ROULETTE_CONFIG = {
   wheel_scale: 100,
+  accoudoir_scale: 100,
   bet_panel_pos_x: 82,
   bet_panel_pos_y: 30,
   bet_panel_scale: 100,
@@ -14,6 +15,7 @@ export const DEFAULT_ROULETTE_CONFIG = {
 
 export const ROULETTE_CONFIG_FIELDS = [
   'wheel_scale',
+  'accoudoir_scale',
   'bet_panel_pos_x',
   'bet_panel_pos_y',
   'bet_panel_scale',

@@ -1,17 +1,16 @@
 import React, { useEffect, useRef } from 'react';
 import { WHEEL_ORDER, rouletteColor } from '@/lib/rouletteTable';
 
-const SIZE = 400;
-const C = SIZE / 2;
+const C = 200;
 const STEP = 360 / WHEEL_ORDER.length;
 const SPIN_DURATION = 4200;
 const POCKET_INNER = 74;
 const POCKET_OUTER = 150;
 const NUMBER_RADIUS = 122;
-const TRACK_RADIUS = 169;
 const SETTLE_RADIUS = 138;
 const START_ANGLE = 128;
 const BALL_RADIUS = 8.6;
+const RAIL_BASE = 47;
 
 const polar = (radius, angle) => {
   const rad = (angle * Math.PI) / 180;
@@ -34,12 +33,11 @@ const POCKET_FILL = {
 
 const SLICES = WHEEL_ORDER.map((number, index) => {
   const start = -90 + index * STEP;
-  const mid = start + STEP / 2;
   return {
     number,
     start,
     end: start + STEP,
-    mid,
+    mid: start + STEP / 2,
     fill: POCKET_FILL[rouletteColor(number)],
   };
 });
@@ -49,14 +47,19 @@ const ballTransform = (angle, radius) => {
   return `translate(${x.toFixed(2)} ${y.toFixed(2)})`;
 };
 
-const INITIAL_BALL_TRANSFORM = ballTransform(START_ANGLE, TRACK_RADIUS);
-
-export default function RouletteLuxuryWheel({ spinToken, targetNumber, onDone }) {
+export default function RouletteLuxuryWheel({ spinToken, targetNumber, onDone, railScale = 100 }) {
   const ballRef = useRef(null);
   const frameRef = useRef(null);
   const angleRef = useRef(START_ANGLE);
   const doneRef = useRef(onDone);
   doneRef.current = onDone;
+
+  // Accoudoir : épaisseur du rebord bois/or autour de la roue (contrôle admin).
+  const rail = RAIL_BASE * (Math.min(200, Math.max(60, Number(railScale) || 100)) / 100);
+  const outer = POCKET_OUTER + rail;
+  const track = POCKET_OUTER + rail * 0.42;
+  const bandWidth = Math.max(18, rail * 0.57);
+  const viewBox = outer + 3;
 
   useEffect(() => () => cancelAnimationFrame(frameRef.current), []);
 
@@ -82,7 +85,7 @@ export default function RouletteLuxuryWheel({ spinToken, targetNumber, onDone })
       const eased = 1 - Math.pow(1 - t, 4);
       const angle = from + (to - from) * eased;
       const drop = Math.max(0, (t - 0.7) / 0.3);
-      const radius = TRACK_RADIUS - drop * (TRACK_RADIUS - SETTLE_RADIUS);
+      const radius = track - drop * (track - SETTLE_RADIUS);
 
       angleRef.current = angle;
       ballRef.current?.setAttribute('transform', ballTransform(angle, radius));
@@ -96,7 +99,7 @@ export default function RouletteLuxuryWheel({ spinToken, targetNumber, onDone })
     };
 
     frameRef.current = requestAnimationFrame(tick);
-  }, [spinToken, targetNumber]);
+  }, [spinToken, targetNumber, track]);
 
   return (
     <div className="relative mx-auto aspect-square w-full select-none">
@@ -110,7 +113,7 @@ export default function RouletteLuxuryWheel({ spinToken, targetNumber, onDone })
       />
 
       <svg
-        viewBox={`0 0 ${SIZE} ${SIZE}`}
+        viewBox={`${C - viewBox} ${C - viewBox} ${viewBox * 2} ${viewBox * 2}`}
         className="relative h-full w-full"
         role="img"
         aria-label="Roue de roulette en acajou et or"
@@ -174,22 +177,36 @@ export default function RouletteLuxuryWheel({ spinToken, targetNumber, onDone })
           </filter>
         </defs>
 
-        {/* Bezel extérieur doré + structure en bois noble */}
-        <circle cx={C} cy={C} r="197" fill="url(#rouletteGold)" />
-        <circle cx={C} cy={C} r="193.5" fill="#160a04" />
-        <circle cx={C} cy={C} r="192" fill="url(#rouletteWood)" filter="url(#rouletteWoodGrain)" />
-        <circle cx={C} cy={C} r="190" fill="none" stroke="url(#rouletteGold)" strokeWidth="1.6" opacity="0.85" />
-        <circle cx={C} cy={C} r="187.5" fill="none" stroke="rgba(0,0,0,0.5)" strokeWidth="2" />
+        {/* Accoudoir : rebord extérieur doré et bois noble */}
+        <circle cx={C} cy={C} r={outer} fill="url(#rouletteGold)" />
+        <circle cx={C} cy={C} r={outer - 3.5} fill="#160a04" />
+        <circle cx={C} cy={C} r={outer - 5} fill="url(#rouletteWood)" filter="url(#rouletteWoodGrain)" />
+        <circle cx={C} cy={C} r={outer - 7} fill="none" stroke="url(#rouletteGold)" strokeWidth="1.6" opacity="0.85" />
+        <circle cx={C} cy={C} r={outer - 9.5} fill="none" stroke="rgba(0,0,0,0.5)" strokeWidth="2" />
 
         {/* Piste creusée accueillant la bille */}
-        <circle cx={C} cy={C} r="170" fill="none" stroke="#170b03" strokeWidth="27" />
-        <circle cx={C} cy={C} r="170" fill="none" stroke="url(#rouletteWood)" strokeWidth="24" opacity="0.9" />
-        <circle cx={C} cy={C} r="183.5" fill="none" stroke="rgba(0,0,0,0.55)" strokeWidth="4" />
-        <circle cx={C} cy={C} r="156.5" fill="none" stroke="rgba(0,0,0,0.55)" strokeWidth="4" />
-        <circle cx={C} cy={C} r="170" fill="none" stroke="rgba(255,232,180,0.16)" strokeWidth="1.2" />
+        <circle cx={C} cy={C} r={track} fill="none" stroke="#170b03" strokeWidth={bandWidth + 3} />
+        <circle cx={C} cy={C} r={track} fill="none" stroke="url(#rouletteWood)" strokeWidth={bandWidth} opacity="0.9" />
+        <circle
+          cx={C}
+          cy={C}
+          r={track + bandWidth / 2}
+          fill="none"
+          stroke="rgba(0,0,0,0.55)"
+          strokeWidth="4"
+        />
+        <circle
+          cx={C}
+          cy={C}
+          r={track - bandWidth / 2}
+          fill="none"
+          stroke="rgba(0,0,0,0.55)"
+          strokeWidth="4"
+        />
+        <circle cx={C} cy={C} r={track} fill="none" stroke="rgba(255,232,180,0.16)" strokeWidth="1.2" />
 
         {/* Filet d'or entre la piste et le cylindre */}
-        <circle cx={C} cy={C} r="153" fill="none" stroke="url(#rouletteGold)" strokeWidth="3" />
+        <circle cx={C} cy={C} r={POCKET_OUTER + 3} fill="none" stroke="url(#rouletteGold)" strokeWidth="3" />
 
         {/* Cylindre fixe : cases, séparateurs et numéros */}
         <g>
@@ -264,7 +281,7 @@ export default function RouletteLuxuryWheel({ spinToken, targetNumber, onDone })
         </g>
 
         {/* Bille animée : elle tourne puis se loge dans la case gagnante */}
-        <g ref={ballRef} transform={INITIAL_BALL_TRANSFORM}>
+        <g ref={ballRef} transform={ballTransform(START_ANGLE, track)}>
           <ellipse cx="1.6" cy="3" rx={BALL_RADIUS + 1.6} ry={BALL_RADIUS * 0.85} fill="rgba(0,0,0,0.55)" />
           <circle
             cx="0"

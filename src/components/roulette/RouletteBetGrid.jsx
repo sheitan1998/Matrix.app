@@ -40,7 +40,7 @@ export default function RouletteBetGrid({ bets, onBet, onClear, disabled, labels
   ];
 
   return (
-    <section className="rounded-2xl border border-white/10 bg-[#0d0813]/80 p-3 shadow-[0_18px_50px_rgba(0,0,0,0.55)] sm:p-4">
+    <section className="px-0.5">
       <div className="flex flex-col gap-2">
         <div className="flex gap-2">
           {/* Zero column */}
@@ -129,7 +129,7 @@ export default function RouletteBetGrid({ bets, onBet, onClear, disabled, labels
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/5 pt-3">
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
         <p className="text-[11px] text-white/45">
           {labels.total} :{' '}
           <span className="inline-flex items-center gap-1 font-bold text-amber-300">

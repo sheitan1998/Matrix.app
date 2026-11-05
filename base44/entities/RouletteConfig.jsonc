@@ -7,6 +7,11 @@
       "default": 100,
       "description": "\u00c9chelle globale de l'affichage de la roue en pourcentage (60-160)"
     },
+    "accoudoir_scale": {
+      "type": "number",
+      "default": 100,
+      "description": "Taille de l'accoudoir (rebord en bois et or) autour de la roue en pourcentage (60-200)"
+    },
     "bet_panel_pos_x": {
       "type": "number",
       "default": 82,
@@ -75,5 +80,6 @@
         "role": "admin"
       }
     }
-  }
+  },
+  "required": []
 }

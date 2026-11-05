@@ -54,14 +54,7 @@ export default function RouletteControls({
   const adjust = (delta) => onChangeChip(Math.max(10, (Number(chip) || 0) + delta));
 
   return (
-    <section
-      className="flex flex-col gap-4 rounded-3xl border p-4 lg:flex-row lg:items-center"
-      style={{
-        borderColor: 'rgba(139,92,246,0.32)',
-        background: 'linear-gradient(150deg, rgba(24,12,32,0.94), rgba(10,5,16,0.97))',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 20px 50px rgba(0,0,0,0.55)',
-      }}
-    >
+    <section className="flex flex-col gap-4 lg:flex-row lg:items-center">
       <div>
         <p className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">{labels.bet}</p>
 
@@ -111,7 +104,7 @@ export default function RouletteControls({
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center lg:ml-auto">
-        <div className="rounded-xl border border-amber-300/25 bg-amber-400/[0.07] px-4 py-2">
+        <div className="px-1">
           <p className="text-[9px] font-black uppercase tracking-[0.18em] text-amber-200/60">{labels.total}</p>
           <p className="flex items-center gap-1.5 font-mono text-sm font-black text-amber-100">
             <CasinoToken size={14} />

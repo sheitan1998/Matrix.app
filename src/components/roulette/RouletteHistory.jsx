@@ -10,7 +10,7 @@ const TONES = {
 
 export default function RouletteHistory({ history, labels }) {
   return (
-    <section className="rounded-2xl border border-white/10 bg-[#0d0813]/85 p-4">
+    <section className="px-0.5">
       <div className="mb-3 flex items-center gap-2 text-white/60">
         <BarChart3 className="h-3.5 w-3.5" />
         <p className="text-[10px] font-bold uppercase tracking-[0.18em]">{labels.history}</p>

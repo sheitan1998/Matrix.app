@@ -145,16 +145,12 @@ export default function Roulette() {
   const dealerMessage = bubble.message || config.dealer_message_greeting || labels.subtitle;
 
   const wheelCard =
-  <div
-    className="rounded-3xl border p-3 sm:p-4"
-    style={{
-      borderColor: 'rgba(230,192,105,0.24)',
-      background: 'linear-gradient(160deg, rgba(24,12,32,0.80), rgba(8,5,12,0.90))',
-      backdropFilter: 'blur(6px)',
-      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 24px 60px rgba(0,0,0,0.6)'
-    }}>
-    
-      <RouletteLuxuryWheel spinToken={spinToken} targetNumber={targetNumber} onDone={finishSpin} />
+  <div>
+      <RouletteLuxuryWheel
+        spinToken={spinToken}
+        targetNumber={targetNumber}
+        onDone={finishSpin}
+        railScale={config.accoudoir_scale} />
       <RouletteWallet balance={balance} lastGain={lastGain} labels={labels} language={language} />
     </div>;
 

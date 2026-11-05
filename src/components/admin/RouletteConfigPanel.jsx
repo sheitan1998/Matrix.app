@@ -49,6 +49,11 @@ const SECTIONS = [
     fields: [{ key: 'wheel_scale', label: 'Échelle globale de la roue', min: 60, max: 160 }],
   },
   {
+    title: 'Accoudoir de la roue',
+    hint: 'Taille du rebord en bois et or qui entoure la roue.',
+    fields: [{ key: 'accoudoir_scale', label: 'Taille de l’accoudoir', min: 60, max: 200 }],
+  },
+  {
     title: 'Panneau de mises',
     hint: 'Positions en % de l’écran (vue desktop).',
     fields: [
