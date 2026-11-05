@@ -10,6 +10,7 @@ import CasinoShop from "@/pages/casino/CasinoShop";
 import CasinoProfile from "@/pages/casino/CasinoProfile";
 import ScratchGameScreen from "@/components/casino/ScratchGameScreen";
 import WheelOfFortuneScreen from "@/components/casino/WheelOfFortuneScreen";
+import CasinoRoulettePoster from "@/components/casino/CasinoRoulettePoster";
 import { formatBet } from "@/components/casino/slotThemes";
 import { toast } from "sonner";
 import { useProgression } from "@/context/ProgressionContext";
@@ -279,7 +280,7 @@ const CasinoHome = memo(function CasinoHome({ balance, onPlay, onScratch, onWhee
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-100px)] px-4 py-8">
       {/* Game cards grid */}
-      <div className="flex flex-col sm:flex-row gap-5 items-center justify-center w-full max-w-3xl">
+      <div className="flex flex-col sm:flex-row gap-5 items-center justify-center w-full max-w-6xl">
       {/* Clickable Slots card with user's image */}
       <motion.button
           initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
@@ -344,6 +345,7 @@ const CasinoHome = memo(function CasinoHome({ balance, onPlay, onScratch, onWhee
           <span className="text-sm font-black" style={{ color: "#00ffff" }}>LANCEZ</span>
         </div>
       </motion.button>
+      <CasinoRoulettePoster />
       </div>
 
       {/* Balance + RTP info row */}
