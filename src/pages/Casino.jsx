@@ -288,7 +288,7 @@ const CasinoHome = memo(function CasinoHome({ balance, onPlay, onScratch, onWhee
           whileHover={{ scale: 1.02, y: -4 }}
           whileTap={{ scale: 0.98 }}
           onClick={onPlay}
-          className="relative overflow-hidden rounded-2xl text-left w-full max-w-sm group"
+          className="relative overflow-hidden rounded-2xl text-left w-full max-w-sm aspect-[3/4] group"
           style={{
             border: "2px solid rgba(197,160,89,0.35)",
             boxShadow: "0 0 30px rgba(197,160,89,0.15), 0 8px 30px rgba(0,0,0,0.5)"
@@ -298,8 +298,8 @@ const CasinoHome = memo(function CasinoHome({ balance, onPlay, onScratch, onWhee
         <img
             src={SLOTS_CARD_IMG}
             alt="Machines à Sous"
-            className="w-full h-auto block"
-            style={{ objectFit: "contain" }} />
+            className="w-full h-full block object-cover"
+            style={{ objectFit: "cover" }} />
         
 
         {/* Subtle hover glow overlay */}
@@ -321,7 +321,7 @@ const CasinoHome = memo(function CasinoHome({ balance, onPlay, onScratch, onWhee
           whileHover={{ scale: 1.02, y: -4 }}
           whileTap={{ scale: 0.98 }}
           onClick={onWheel}
-          className="relative overflow-hidden rounded-2xl text-left w-full max-w-sm group"
+          className="relative overflow-hidden rounded-2xl text-left w-full max-w-sm aspect-[3/4] group"
           style={{
             border: "2px solid rgba(0,242,255,0.35)",
             boxShadow: "0 0 30px rgba(0,242,255,0.15), 0 8px 30px rgba(0,0,0,0.5)"
@@ -331,8 +331,8 @@ const CasinoHome = memo(function CasinoHome({ balance, onPlay, onScratch, onWhee
         <img
             src={WHEEL_CARD_IMG}
             alt="Roue de la Fortune"
-            className="w-full h-auto block"
-            style={{ objectFit: "contain" }} />
+            className="w-full h-full block object-cover"
+            style={{ objectFit: "cover" }} />
 
         {/* Subtle hover glow overlay */}
         <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
