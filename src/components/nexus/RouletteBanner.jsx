@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 
 const BANNER_IMAGE =
-  'https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/c1647e5c0_croupiere-banner.png';
+  'https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/9dcfd6d04_croupiere-banner.png';
 
 export default function RouletteBanner() {
   return (
@@ -18,7 +18,7 @@ export default function RouletteBanner() {
       <img
         src={BANNER_IMAGE}
         alt="Roulette Nexus — la croupière vous attend à la table"
-        className="h-auto w-full transition duration-500 group-hover:scale-[1.02]"
+        className="h-[340px] w-full object-cover object-[center_42%] transition duration-500 group-hover:scale-[1.02] sm:h-[460px]"
       />
 
       <div
