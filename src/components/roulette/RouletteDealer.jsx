@@ -53,7 +53,7 @@ export default function RouletteDealer({ message, number }) {
         </motion.div>
       </AnimatePresence>
 
-      {/* Portrait en grand */}
+      {/* Portrait flottant — aucun cadre ni fond de conteneur */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -61,28 +61,21 @@ export default function RouletteDealer({ message, number }) {
         className="relative mt-4 w-full max-w-[320px]"
       >
         <div
-          className="absolute inset-x-2 top-6 bottom-0 -z-10 rounded-[999px] blur-2xl"
-          style={{ background: 'radial-gradient(circle at 50% 60%, rgba(168,85,247,0.55), transparent 70%)' }}
+          className="absolute inset-x-4 bottom-6 top-10 -z-10 rounded-full blur-3xl"
+          style={{ background: 'radial-gradient(circle at 50% 58%, rgba(168,85,247,0.42), transparent 72%)' }}
         />
 
-        <div
-          className="relative aspect-[3/4] overflow-hidden rounded-t-[999px] rounded-b-3xl border-2"
+        <img
+          src={DEALER_IMAGE}
+          alt="Croupière Nexus"
+          className="relative h-auto w-full object-contain"
           style={{
-            borderColor: 'rgba(230,192,105,0.55)',
-            boxShadow: '0 0 0 1px rgba(168,85,247,0.35), 0 24px 44px rgba(0,0,0,0.65)',
-            background: 'radial-gradient(circle at 50% 12%, #2a1330, #08050b)',
+            filter: 'drop-shadow(0 22px 38px rgba(0,0,0,0.5))',
+            WebkitMaskImage:
+              'radial-gradient(ellipse 82% 88% at 50% 40%, #000 68%, transparent 100%)',
+            maskImage: 'radial-gradient(ellipse 82% 88% at 50% 40%, #000 68%, transparent 100%)',
           }}
-        >
-          <img
-            src={DEALER_IMAGE}
-            alt="Croupière Nexus"
-            className="h-full w-full scale-105 object-cover object-top"
-          />
-          <div
-            className="pointer-events-none absolute inset-0"
-            style={{ background: 'linear-gradient(180deg, transparent 62%, rgba(6,3,9,0.75) 100%)' }}
-          />
-        </div>
+        />
       </motion.div>
     </div>
   );
