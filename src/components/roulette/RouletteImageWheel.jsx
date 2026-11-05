@@ -1,68 +1,94 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { WHEEL_ORDER } from '@/lib/rouletteTable';
 import { ROULETTE_WHEEL_IMAGE } from '@/lib/rouletteAssets';
 
 export const SPIN_DURATION = 4600;
 
-const POCKET_ANGLE = 360 / WHEEL_ORDER.length;
 const SPIN_EASE = [0.12, 0.72, 0.08, 1];
+const HUB_SIZE = 36; // % du plateau : le disque doré central qui tourne
 
 /**
- * Roue dorée fournie en visuel : l'image pivote avec une inertie (ease-out)
- * jusqu'à amener le numéro gagnant sous le repère doré, où la bille se pose.
+ * Le visuel de la roue reste un plateau parfaitement statique (forme et
+ * perspective figées). Seul le mécanisme intérieur tourne : le disque doré
+ * central, balayé par un halo lumineux, pendant que la bille orbite puis
+ * se pose sous le repère.
  */
-export default function RouletteImageWheel({ targetNumber = null, spinToken = 0, onDone }) {
-  const [rotation, setRotation] = useState(0);
-  const [ballSpinning, setBallSpinning] = useState(false);
-  const rotationRef = useRef(0);
+export default function RouletteImageWheel({ spinToken = 0, onDone }) {
+  const [spinning, setSpinning] = useState(false);
+  const [hubRotation, setHubRotation] = useState(0);
+  const [sweepRotation, setSweepRotation] = useState(0);
   const timerRef = useRef(null);
 
   useEffect(() => () => clearTimeout(timerRef.current), []);
 
   useEffect(() => {
-    if (!spinToken || targetNumber === null || targetNumber === undefined) return undefined;
-    const index = WHEEL_ORDER.indexOf(Number(targetNumber));
-    if (index < 0) return undefined;
+    if (!spinToken) return undefined;
 
-    const current = rotationRef.current;
-    const startAngle = ((current % 360) + 360) % 360;
-    const winAngle = (360 - index * POCKET_ANGLE) % 360;
-    const delta = ((winAngle - startAngle + 360) % 360) + 360 * 5;
-
-    rotationRef.current = current + delta;
-    setRotation(rotationRef.current);
-    setBallSpinning(true);
+    setSpinning(true);
+    setHubRotation((current) => current + 360 * 4);
+    setSweepRotation((current) => current + 360 * 3);
 
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
-      setBallSpinning(false);
+      setSpinning(false);
       onDone?.();
     }, SPIN_DURATION);
 
     return () => clearTimeout(timerRef.current);
-  }, [spinToken, targetNumber, onDone]);
+  }, [spinToken, onDone]);
 
   return (
     <div className="relative mx-auto aspect-square w-full max-w-[520px] select-none">
       <div
-        className="pointer-events-none absolute inset-6 rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.30), transparent 68%)', filter: 'blur(26px)' }}
+        className="pointer-events-none absolute inset-8 rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.28), transparent 68%)', filter: 'blur(26px)' }}
       />
 
+      {/* Plateau fixe : aucune transformation, perspective intacte. */}
+      <img
+        src={ROULETTE_WHEEL_IMAGE}
+        alt="Roue de roulette européenne dorée"
+        draggable={false}
+        className="absolute inset-0 h-full w-full object-contain"
+      />
+
+      {/* Mécanisme intérieur : disque doré en rotation douce. */}
       <motion.div
-        className="absolute inset-0 overflow-hidden rounded-full"
-        animate={{ rotate: rotation }}
+        className="pointer-events-none absolute left-1/2 top-1/2 rounded-full"
+        style={{
+          width: `${HUB_SIZE}%`,
+          height: `${HUB_SIZE}%`,
+          marginLeft: `-${HUB_SIZE / 2}%`,
+          marginTop: `-${HUB_SIZE / 2}%`,
+          backgroundImage: `url(${ROULETTE_WHEEL_IMAGE})`,
+          backgroundSize: `${(100 / HUB_SIZE) * 100}% auto`,
+          backgroundPosition: 'center',
+          WebkitMaskImage: 'radial-gradient(circle, #000 44%, transparent 70%)',
+          maskImage: 'radial-gradient(circle, #000 44%, transparent 70%)',
+          willChange: 'transform',
+        }}
+        animate={{ rotate: hubRotation }}
         transition={{ duration: SPIN_DURATION / 1000, ease: SPIN_EASE }}
-        style={{ willChange: 'transform' }}
+      />
+
+      {/* Balayage lumineux du tirage, masqué sur l'ellipse du plateau. */}
+      <div
+        className="pointer-events-none absolute inset-0 z-[5]"
+        style={{ clipPath: 'ellipse(50% 33% at 50% 50%)' }}
       >
-        <img
-          src={ROULETTE_WHEEL_IMAGE}
-          alt="Roue de roulette européenne dorée"
-          draggable={false}
-          className="h-full w-full scale-[0.96] object-contain"
+        <motion.div
+          className="absolute inset-0"
+          style={{
+            background:
+              'conic-gradient(from 0deg, transparent 0deg, rgba(255,255,255,0.14) 18deg, transparent 58deg, transparent 300deg, rgba(168,85,247,0.16) 338deg, transparent 360deg)',
+          }}
+          animate={{ rotate: sweepRotation, opacity: spinning ? 1 : 0 }}
+          transition={{
+            rotate: { duration: SPIN_DURATION / 1000, ease: SPIN_EASE },
+            opacity: { duration: 0.45 },
+          }}
         />
-      </motion.div>
+      </div>
 
       {/* Repère doré : la bille s'y arrête. */}
       <div className="pointer-events-none absolute left-1/2 top-[16%] z-20 -translate-x-1/2">
@@ -77,10 +103,10 @@ export default function RouletteImageWheel({ targetNumber = null, spinToken = 0,
         />
       </div>
 
-      {/* Bille : elle orbite pendant le lancer puis se pose sous le repère. */}
+      {/* Bille : elle orbite pendant le tirage puis se pose sous le repère. */}
       <motion.div
         className="pointer-events-none absolute inset-0 z-10"
-        animate={{ rotate: ballSpinning ? -1440 : 0 }}
+        animate={{ rotate: spinning ? -1440 : 0 }}
         transition={{ duration: SPIN_DURATION / 1000, ease: SPIN_EASE }}
       >
         <span

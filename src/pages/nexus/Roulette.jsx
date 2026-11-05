@@ -19,7 +19,6 @@ export default function Roulette() {
   const [bets, setBets] = useState({});
   const [spinning, setSpinning] = useState(false);
   const [spinToken, setSpinToken] = useState(0);
-  const [targetNumber, setTargetNumber] = useState(null);
   const [lastGain, setLastGain] = useState(0);
   const [history, setHistory] = useState([]);
   const [bubble, setBubble] = useState({ visible: false, message: '', number: null });
@@ -110,7 +109,6 @@ export default function Roulette() {
         return;
       }
       pendingRef.current = data;
-      setTargetNumber(data.number);
       setSpinToken((token) => token + 1);
     } catch (error) {
       setSpinning(false);
@@ -186,7 +184,7 @@ export default function Roulette() {
               }}
             >
               <div className="relative">
-                <RouletteImageWheel targetNumber={targetNumber} spinToken={spinToken} onDone={finishSpin} />
+                <RouletteImageWheel spinToken={spinToken} onDone={finishSpin} />
                 <RouletteDealer message={bubble.message} number={bubble.number} visible={bubble.visible} />
               </div>
 
