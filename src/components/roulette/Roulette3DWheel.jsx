@@ -4,6 +4,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Html, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import RouletteSceneElement from '@/components/roulette/RouletteSceneElement';
 
 const MODEL_URL = '/models/roulette.glb';
 const SPIN_DURATION = 4200;
@@ -106,42 +107,44 @@ function Scene({ spinToken, targetNumber, onDone }) {
   });
 
   return (
-    <group>
+    <RouletteSceneElement as="group">
       {fit && (
-        <group
+        <RouletteSceneElement
+          as="group"
           scale={fit.scale}
           position={[-fit.center.x * fit.scale, -fit.center.y * fit.scale, -fit.center.z * fit.scale]}
         >
-          <group ref={spinRef}>
-            <primitive object={model} />
-          </group>
+          <RouletteSceneElement as="group" ref={spinRef}>
+            <RouletteSceneElement as="primitive" object={model} />
+          </RouletteSceneElement>
 
-          <mesh ref={ballRef}>
-            <sphereGeometry args={[BALL_SIZE, 24, 24]} />
-            <meshStandardMaterial
+          <RouletteSceneElement as="mesh" ref={ballRef}>
+            <RouletteSceneElement as="sphereGeometry" args={[BALL_SIZE, 24, 24]} />
+            <RouletteSceneElement
+              as="meshStandardMaterial"
               color="#fff6e2"
               metalness={0.45}
               roughness={0.18}
               emissive="#ffdda0"
               emissiveIntensity={0.35}
             />
-          </mesh>
-        </group>
+          </RouletteSceneElement>
+        </RouletteSceneElement>
       )}
-    </group>
+    </RouletteSceneElement>
   );
 }
 
 function LoadingTable() {
   return (
-    <Html center>
+    <RouletteSceneElement as={Html} center>
       <div className="flex flex-col items-center gap-2">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-purple-400/30 border-t-amber-300" />
         <p className="whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.2em] text-amber-200/70">
           Chargement de la table
         </p>
       </div>
-    </Html>
+    </RouletteSceneElement>
   );
 }
 
@@ -161,11 +164,11 @@ export default function Roulette3DWheel(props) {
         camera={{ position: [0, 10, 11], fov: 45, near: 0.1, far: 200 }}
         style={{ background: 'transparent' }}
       >
-        <ambientLight intensity={1.15} />
-        <directionalLight position={[6, 12, 7]} intensity={2.6} />
-        <directionalLight position={[-8, 7, -6]} intensity={1.3} color="#b06bff" />
-        <pointLight position={[0, 7, -8]} intensity={45} color="#c084fc" />
-        <pointLight position={[7, 4, 8]} intensity={22} color="#f5c451" />
+        <RouletteSceneElement as="ambientLight" intensity={1.15} />
+        <RouletteSceneElement as="directionalLight" position={[6, 12, 7]} intensity={2.6} />
+        <RouletteSceneElement as="directionalLight" position={[-8, 7, -6]} intensity={1.3} color="#b06bff" />
+        <RouletteSceneElement as="pointLight" position={[0, 7, -8]} intensity={45} color="#c084fc" />
+        <RouletteSceneElement as="pointLight" position={[7, 4, 8]} intensity={22} color="#f5c451" />
         <Suspense fallback={<LoadingTable />}>
           <Scene {...props} />
         </Suspense>
