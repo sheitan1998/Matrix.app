@@ -146,7 +146,7 @@ export default function Roulette() {
 
   const wheelCard =
   <div
-    className="rounded-3xl border p-3 sm:p-4 hidden"
+    className="rounded-3xl border p-3 sm:p-4"
     style={{
       borderColor: 'rgba(230,192,105,0.24)',
       background: 'linear-gradient(160deg, rgba(24,12,32,0.80), rgba(8,5,12,0.90))',
