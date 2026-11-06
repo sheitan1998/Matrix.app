@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Loader2, Package, Search, ArrowLeftRight, Users } from "lucide-react";
 import CosmeticOwnerRow from "@/components/admin/CosmeticOwnerRow";
+import CosmeticOwnerThumb from "@/components/admin/CosmeticOwnerThumb";
 import CosmeticRectifyModal from "@/components/admin/CosmeticRectifyModal";
 
 export default function CosmeticOwnershipManager({ refreshKey }) {
@@ -91,41 +92,51 @@ export default function CosmeticOwnershipManager({ refreshKey }) {
           <Package className="w-4 h-4 text-[#a855f7]" />
         </div>
         <div>
-          <h3 className="text-sm font-black text-white uppercase tracking-tight">Attributions & compensation</h3>
+          <h3 className="text-sm font-black text-white uppercase tracking-tight">Gestion des attributions</h3>
           <p className="text-[11px] text-white/40">
-            Vois qui possède un article, remplace-le, retire-le ou crédite un dédommagement en Trix.
+            Inventaire des articles possédés : remplacement, retrait et dédommagement en Trix.
           </p>
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <select
-          value={selectedId}
-          onChange={(e) => setSelectedId(e.target.value)}
-          className="flex-1 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white outline-none focus:border-[#a855f7]"
-        >
-          {items.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.name} · {item.category}
-            </option>
-          ))}
-        </select>
-        <button
-          onClick={() => setModal({ mode: "replace", owners })}
-          disabled={owners.length === 0}
-          className="rounded-lg border border-[#a855f7]/40 px-3 py-2 text-[11px] font-bold text-[#c084fc] hover:bg-[#a855f7]/10 disabled:opacity-30 flex items-center justify-center gap-1.5"
-        >
-          <ArrowLeftRight className="w-3.5 h-3.5" /> Remplacer pour tous
-        </button>
+      <div className="rounded-xl border border-white/10 p-3 space-y-3" style={{ background: "#12101a" }}>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="flex flex-1 items-center gap-3 min-w-0">
+            <CosmeticOwnerThumb item={currentItem} size={44} />
+            <div className="min-w-0 flex-1">
+              <label className="text-[9px] font-bold uppercase tracking-wider text-white/35">Article</label>
+              <select
+                value={selectedId}
+                onChange={(e) => setSelectedId(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white outline-none focus:border-[#a855f7]"
+              >
+                {items.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name} · {item.category}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <button
+            onClick={() => setModal({ mode: "replace", owners })}
+            disabled={owners.length === 0}
+            className="rounded-lg border border-[#a855f7]/40 px-3 py-2 text-[11px] font-bold text-[#c084fc] hover:bg-[#a855f7]/10 disabled:opacity-30 flex items-center justify-center gap-1.5 sm:self-end"
+          >
+            <ArrowLeftRight className="w-3.5 h-3.5" /> Remplacer pour tous
+          </button>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 text-[10px] text-white/40">
+          <span className="flex items-center gap-1 rounded-md px-2 py-1" style={{ background: "rgba(255,255,255,0.04)" }}>
+            <Users className="w-3 h-3" /> {owners.length} propriétaire(s)
+          </span>
+          <span className="rounded-md px-2 py-1" style={{ background: "rgba(255,255,255,0.04)" }}>{totalQuantity} exemplaire(s)</span>
+          <span className="rounded-md px-2 py-1" style={{ background: "rgba(255,255,255,0.04)" }}>{equipped} équipé(s)</span>
+        </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 text-[10px] text-white/40">
-        <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {owners.length} propriétaire(s)</span>
-        <span>· {totalQuantity} exemplaire(s)</span>
-        <span>· {equipped} équipé(s)</span>
-      </div>
-
-      {owners.length > 1 && (
+      {owners.length > 0 && (
         <div className="relative">
           <Search className="w-3.5 h-3.5 text-white/30 absolute left-3 top-1/2 -translate-y-1/2" />
           <input

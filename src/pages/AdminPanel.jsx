@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Shield, Users, Ticket, AlertTriangle, FileCode, ShoppingBag, Store, BarChart3, Download, Megaphone, Dices, Gamepad2, Flag, Sticker, Star, Server, CreditCard } from "lucide-react";
+import { ArrowLeft, Shield, Users, Ticket, AlertTriangle, FileCode, ShoppingBag, Store, BarChart3, Download, Megaphone, Dices, Gamepad2, Flag, Sticker, Star, Server, CreditCard, Boxes } from "lucide-react";
 import HeaderActions from "@/components/layout/HeaderActions";
 import AdminUserList from "@/components/admin/AdminUserList";
 import AdminTicketList from "@/components/admin/AdminTicketList";
@@ -97,6 +97,7 @@ export default function AdminPanel() {
     { id: "casino", label: "Gestion du Casino", icon: Dices, section: "Casino & Mini-jeux" },
     { id: "tuto", label: "Tuto & Entraide Gaming", icon: Gamepad2, section: "Guides & Tutoriels" },
     { id: "shop", label: "Boutique", icon: ShoppingBag, section: "Système" },
+    { id: "ownership", label: "Attributions", icon: Boxes },
     { id: "matrix-shop", label: "Boutique Matrix", icon: Store },
     { id: "subscriptions", label: "Abonnements", icon: CreditCard },
     { id: "downloads", label: "Téléchargements", icon: Download },
@@ -205,9 +206,11 @@ export default function AdminPanel() {
               <h3 className="text-sm font-black text-white uppercase tracking-tight mb-3">Cosmétiques existants</h3>
               <CosmeticItemList refreshKey={shopRefresh} />
             </div>
-            <div className="rounded-2xl border border-white/10 p-5" style={{ background: "rgba(15,10,25,0.6)" }}>
-              <CosmeticOwnershipManager refreshKey={shopRefresh} />
-            </div>
+          </div>
+        )}
+        {tab === "ownership" && (
+          <div className="rounded-2xl border border-white/10 p-5" style={{ background: "rgba(15,10,25,0.6)" }}>
+            <CosmeticOwnershipManager refreshKey={shopRefresh} />
           </div>
         )}
         {tab === "matrix-shop" && <MatrixShopManager />}
