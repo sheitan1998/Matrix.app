@@ -15,7 +15,7 @@ import ShopFooter from "@/components/shop/ShopFooter";
 import CheckoutModal from "@/components/CheckoutModal";
 
 const SHOP_BACKGROUND =
-  "https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/ee04ab000_boutique-matrix-bg.png";
+"https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/ee04ab000_boutique-matrix-bg.png";
 
 export default function BoutiqueMatrix() {
   const qc = useQueryClient();
@@ -30,7 +30,7 @@ export default function BoutiqueMatrix() {
 
   const { data: items = [] } = useQuery({
     queryKey: ["matrix-shop-items"],
-    queryFn: () => base44.entities.MatrixShopItem.filter({ is_active: true }, "sort_order", 200),
+    queryFn: () => base44.entities.MatrixShopItem.filter({ is_active: true }, "sort_order", 200)
   });
 
   const { data: config = {} } = useQuery({
@@ -38,18 +38,18 @@ export default function BoutiqueMatrix() {
     queryFn: async () => {
       const rows = await base44.entities.MatrixShopConfig.list("-created_date", 1);
       return rows[0] || {};
-    },
+    }
   });
 
   const { data: dbCategories = [] } = useQuery({
     queryKey: ["matrix-shop-categories"],
-    queryFn: () => base44.entities.MatrixShopCategory.filter({ is_active: true }, "sort_order", 50),
+    queryFn: () => base44.entities.MatrixShopCategory.filter({ is_active: true }, "sort_order", 50)
   });
 
   const { data: owned = [] } = useQuery({
     queryKey: ["user-cosmetics", user?.email],
     queryFn: () => base44.entities.UserCosmetic.filter({ user_email: user.email }, "-created_date", 200),
-    enabled: !!user?.email,
+    enabled: !!user?.email
   });
 
   const categories = dbCategories.length > 0 ? dbCategories : DEFAULT_CATEGORIES;
@@ -76,17 +76,17 @@ export default function BoutiqueMatrix() {
       window.history.replaceState({}, "", "/boutique-matrix");
     }
     if (payment === "success" && sessionId) {
-      base44.functions
-        .invoke("stripePayment", { action: "verifySession", sessionId })
-        .then((res) => {
-          if (res?.data?.success) {
-            toast.success("Achat confirmé ! 🎉");
-            qc.invalidateQueries({ queryKey: ["user-cosmetics"] });
-            checkUserAuth();
-          }
-          window.history.replaceState({}, "", "/boutique-matrix");
-        })
-        .catch(() => window.history.replaceState({}, "", "/boutique-matrix"));
+      base44.functions.
+      invoke("stripePayment", { action: "verifySession", sessionId }).
+      then((res) => {
+        if (res?.data?.success) {
+          toast.success("Achat confirmé ! 🎉");
+          qc.invalidateQueries({ queryKey: ["user-cosmetics"] });
+          checkUserAuth();
+        }
+        window.history.replaceState({}, "", "/boutique-matrix");
+      }).
+      catch(() => window.history.replaceState({}, "", "/boutique-matrix"));
     }
   }, [searchParams]);
 
@@ -122,87 +122,87 @@ export default function BoutiqueMatrix() {
   };
 
   const handleOfferClick = () => {
-    if (offer?.product) setSelectedItem(offer.product);
-    else setActiveTab("tickets");
+    if (offer?.product) setSelectedItem(offer.product);else
+    setActiveTab("tickets");
   };
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden select-none" style={{ backgroundColor: "#05030a" }}>
+    <div className="relative min-h-screen overflow-x-hidden select-none rounded-md" style={{ backgroundColor: "#05030a" }}>
       <div
         className="pointer-events-none absolute inset-x-0 top-0 h-[100svh] overflow-hidden"
         aria-hidden="true"
-        style={{ paddingLeft: "clamp(0px, 3vw, 64px)" }}
-      >
+        style={{ paddingLeft: "clamp(0px, 3vw, 64px)" }}>
+        
         <img
           src={SHOP_BACKGROUND}
           alt=""
           className="h-full w-full object-cover"
-          style={{ objectPosition: "left top" }}
-        />
+          style={{ objectPosition: "left top" }} />
+        
         <div
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(180deg, rgba(5,3,10,0.12) 0%, rgba(5,3,10,0.30) 42%, rgba(5,3,10,0.68) 74%, #05030a 100%)",
-          }}
-        />
+            "linear-gradient(180deg, rgba(5,3,10,0.12) 0%, rgba(5,3,10,0.30) 42%, rgba(5,3,10,0.68) 74%, #05030a 100%)"
+          }} />
+        
       </div>
 
       <h1 className="sr-only">Boutique Matrix</h1>
 
       <div
         className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 pb-6 sm:px-6"
-        style={{ paddingTop: "clamp(130px, 23vh, 250px)" }}
-      >
+        style={{ paddingTop: "clamp(130px, 23vh, 250px)" }}>
+        
         <ShopHeader />
         <ShopTabs categories={categories} active={activeTab} onChange={setActiveTab} />
 
-        {activeTab === "overview" ? (
-          <ShopOverview
-            categories={categories}
-            offer={offer}
-            onOpenCategory={setActiveTab}
-            onOpenOffer={handleOfferClick}
-          />
-        ) : (
-          <ShopProductsSection
-            category={activeCategory}
-            items={sectionItems}
-            config={config}
-            onOpen={setSelectedItem}
-          />
-        )}
+        {activeTab === "overview" ?
+        <ShopOverview
+          categories={categories}
+          offer={offer}
+          onOpenCategory={setActiveTab}
+          onOpenOffer={handleOfferClick} /> :
+
+
+        <ShopProductsSection
+          category={activeCategory}
+          items={sectionItems}
+          config={config}
+          onOpen={setSelectedItem} />
+
+        }
 
         <ShopFooter />
       </div>
 
-      {selectedItem && (
-        <ShopItemModal
-          item={selectedItem}
-          prices={effectivePrices(selectedItem, config)}
-          user={user}
-          owned={!!ownedEntry(selectedItem.id)}
-          quantity={ownedEntry(selectedItem.id)?.quantity || 1}
-          buying={buying}
-          onClose={() => setSelectedItem(null)}
-          onBuyTrix={buyWithTrix}
-          onBuyEuro={buyWithEuro}
-        />
-      )}
+      {selectedItem &&
+      <ShopItemModal
+        item={selectedItem}
+        prices={effectivePrices(selectedItem, config)}
+        user={user}
+        owned={!!ownedEntry(selectedItem.id)}
+        quantity={ownedEntry(selectedItem.id)?.quantity || 1}
+        buying={buying}
+        onClose={() => setSelectedItem(null)}
+        onBuyTrix={buyWithTrix}
+        onBuyEuro={buyWithEuro} />
 
-      {checkout && (
-        <CheckoutModal
-          functionName={checkout.functionName}
-          params={checkout.params}
-          onClose={() => setCheckout(null)}
-          onSuccess={() => {
-            qc.invalidateQueries({ queryKey: ["user-cosmetics"] });
-            checkUserAuth();
-            setSelectedItem(null);
-            toast.success("Achat confirmé ! 🎉");
-          }}
-        />
-      )}
-    </div>
-  );
+      }
+
+      {checkout &&
+      <CheckoutModal
+        functionName={checkout.functionName}
+        params={checkout.params}
+        onClose={() => setCheckout(null)}
+        onSuccess={() => {
+          qc.invalidateQueries({ queryKey: ["user-cosmetics"] });
+          checkUserAuth();
+          setSelectedItem(null);
+          toast.success("Achat confirmé ! 🎉");
+        }} />
+
+      }
+    </div>);
+
 }
