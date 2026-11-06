@@ -57,30 +57,30 @@ export default function SpecialOfferCard({ offer, onClick }) {
           </p>
         </div>
 
-        <h3
-          className={`mt-1.5 pr-10 text-sm font-black leading-snug hidden ${hasImage ? "text-white" : "text-[#2b1206]"}`}
-          style={hasImage ? { textShadow: "0 1px 8px rgba(0,0,0,0.85)" } : undefined}>
+        
 
-          {offer.title}
-        </h3>
-        {offer.description &&
-        <p
-          className={`mt-1 line-clamp-2 text-[11px] font-semibold leading-relaxed hidden ${hasImage ? "text-white/75" : "text-[#4a2205]/80"}`}
-          style={hasImage ? { textShadow: "0 1px 6px rgba(0,0,0,0.9)" } : undefined}>
 
-            {offer.description}
-          </p>
-        }
+
+
+        
+        
+
+
+
+
+
+
+        
 
         <div className="mt-auto flex items-end gap-2 pt-3">
-          {offer.oldPrice > offer.price &&
-          <span className={`text-xs font-bold line-through hidden ${hasImage ? "text-white/50" : "text-[#4a2205]/60"}`}>
-              {formatEuro(offer.oldPrice)}
-            </span>
-          }
-          <span className={`text-2xl font-black hidden ${hasImage ? "text-white" : "text-[#2b1206]"}`}>
-            {formatEuro(offer.price)}
-          </span>
+          
+
+
+
+          
+          
+
+          
         </div>
 
         <button
