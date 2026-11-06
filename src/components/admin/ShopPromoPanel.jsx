@@ -30,6 +30,17 @@ function Toggle({ label, checked, onChange }) {
   );
 }
 
+// Conversion entre la valeur ISO stockée et le champ datetime-local.
+const toInputValue = (iso) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+const fromInputValue = (value) => (value ? new Date(value).toISOString() : "");
+
 export default function ShopPromoPanel() {
   const [config, setConfig] = useState(null);
   const [items, setItems] = useState([]);
@@ -51,7 +62,9 @@ export default function ShopPromoPanel() {
     const payload = {
       global_promo_enabled: !!config.global_promo_enabled,
       global_discount_percent: Number(config.global_discount_percent) || 0,
+      global_promo_ends_at: config.global_promo_ends_at || "",
       special_offer_enabled: !!config.special_offer_enabled,
+      special_offer_ends_at: config.special_offer_ends_at || "",
       special_offer_product_id: config.special_offer_product_id || "",
       special_offer_title: config.special_offer_title || "",
       special_offer_description: config.special_offer_description || "",
@@ -95,6 +108,14 @@ export default function ShopPromoPanel() {
               className={inputCls}
             />
           </Field>
+          <Field label="Fin de la promotion" hint="Passé cette date, la réduction s'arrête et les prix standards reviennent automatiquement.">
+            <input
+              type="datetime-local"
+              value={toInputValue(config.global_promo_ends_at)}
+              onChange={(e) => set({ global_promo_ends_at: fromInputValue(e.target.value) })}
+              className={inputCls}
+            />
+          </Field>
         </div>
 
         <div className="space-y-3 rounded-xl border border-amber-400/15 p-4" style={{ background: "rgba(245,158,11,0.05)" }}>
@@ -125,6 +146,14 @@ export default function ShopPromoPanel() {
               max={90}
               value={config.special_offer_discount_percent ?? 50}
               onChange={(e) => set({ special_offer_discount_percent: e.target.value })}
+              className={inputCls}
+            />
+          </Field>
+          <Field label="Fin de l'offre spéciale" hint="Passé cette date, l'offre n'est plus affichée et les prix standards reviennent.">
+            <input
+              type="datetime-local"
+              value={toInputValue(config.special_offer_ends_at)}
+              onChange={(e) => set({ special_offer_ends_at: fromInputValue(e.target.value) })}
               className={inputCls}
             />
           </Field>

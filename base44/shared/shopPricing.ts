@@ -1,7 +1,17 @@
 export type ShopDiscountConfig = {
   global_promo_enabled?: boolean;
   global_discount_percent?: number;
+  global_promo_ends_at?: string;
+  special_offer_enabled?: boolean;
+  special_offer_ends_at?: string;
 };
+
+// Une promotion sans date de fin reste active ; une date dépassée la désactive.
+export function isPromoActive(endsAt?: string, now = Date.now()): boolean {
+  if (!endsAt) return true;
+  const ts = new Date(endsAt).getTime();
+  return Number.isNaN(ts) ? true : ts > now;
+}
 
 export type ShopPricedItem = {
   price_trix?: number;
@@ -13,7 +23,9 @@ export function effectiveDiscountPercent(item: ShopPricedItem, config: ShopDisco
   const own = Number(item?.discount_percent) || 0;
   if (own > 0) return Math.min(95, own);
   const global = Number(config?.global_discount_percent) || 0;
-  if (config?.global_promo_enabled && global > 0) return Math.min(95, global);
+  if (config?.global_promo_enabled && global > 0 && isPromoActive(config.global_promo_ends_at)) {
+    return Math.min(95, global);
+  }
   return 0;
 }
 

@@ -46,7 +46,6 @@ const Search = lazy(() => import('@/pages/Search'));
 const Watch = lazy(() => import('@/pages/Watch'));
 const Live = lazy(() => import('@/pages/Live'));
 const Channel = lazy(() => import('@/pages/Channel'));
-const Premium = lazy(() => import('@/pages/Premium'));
 const TrixStore = lazy(() => import('@/pages/TrixStore'));
 const Upload = lazy(() => import('@/pages/Upload'));
 const StudioSetup = lazy(() => import('@/pages/StudioSetup'));
@@ -264,7 +263,6 @@ const AuthenticatedApp = () => {
             <Route path="/watch/:id" element={<Watch />} />
             <Route path="/live/:id" element={<Live />} />
             <Route path="/channel/:id" element={<Channel />} />
-            <Route path="/premium" element={<Premium />} />
             <Route path="/upload" element={<Upload />} />
             <Route path="/studio" element={<StudioSetup />} />
             <Route path="/dashboard" element={<Dashboard />} />

@@ -1,15 +1,16 @@
 import React from "react";
-import { Flame, ArrowRight } from "lucide-react";
+import { Flame } from "lucide-react";
 import { formatEuro } from "@/lib/shopPricing";
 
-export default function SpecialOfferCard({ offer, onClick }) {
+// Bloc purement informatif : il présente l'offre mais n'ouvre aucun achat.
+export default function SpecialOfferCard({ offer }) {
   if (!offer) return null;
   const hasImage = !!offer.image;
   const dark = hasImage;
 
   return (
     <div
-      className="group relative flex min-h-[186px] flex-col overflow-hidden rounded-2xl p-4 text-left transition hover:-translate-y-0.5"
+      className="group relative flex min-h-[186px] flex-col overflow-hidden rounded-2xl p-4 text-left"
       style={{
         background: hasImage ? "#0b0616" : "linear-gradient(155deg,#fbbf24,#f59e0b 52%,#ea580c)",
         border: hasImage ? "1px solid rgba(251,191,36,0.5)" : "1px solid rgba(255,255,255,0.35)",
@@ -81,14 +82,12 @@ export default function SpecialOfferCard({ offer, onClick }) {
           )}
         </div>
 
-        <button
-          onClick={onClick}
-          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-sm font-black text-[hsl(var(--background))] transition hover:brightness-105"
+        <div
+          className="mt-3 flex w-full cursor-default items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-sm font-black text-[hsl(var(--background))]"
           style={{ background: "linear-gradient(135deg,#fde68a,#fbbf24)", border: "1px solid rgba(120,53,15,0.25)" }}
         >
           {offer.cta}
-          <ArrowRight className="h-3.5 w-3.5" />
-        </button>
+        </div>
       </div>
     </div>
   );

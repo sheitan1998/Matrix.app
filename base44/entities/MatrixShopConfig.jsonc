@@ -12,10 +12,20 @@
       "default": 0,
       "description": "Pourcentage de reduction globale applique a tous les produits (0-90)"
     },
+    "global_promo_ends_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date et heure de fin de la promotion globale. Au-dela, les prix standards sont reappliques automatiquement (vide = sans limite)"
+    },
     "special_offer_enabled": {
       "type": "boolean",
       "default": true,
       "description": "Afficher le bloc Offre Speciale dans la vue d'ensemble"
+    },
+    "special_offer_ends_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date et heure de fin de l'offre speciale. Au-dela, l'offre disparait et les prix standards sont reappliques (vide = sans limite)"
     },
     "special_offer_product_id": {
       "type": "string",

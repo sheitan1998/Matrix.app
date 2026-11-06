@@ -25,7 +25,6 @@ export const BOOST_OFFERS = [
 ];
 
 export const SUBSCRIPTION_OFFERS = [
-  { id: "premium", name: "MATRIX Premium", price: "9,99 €", period: "/mois", icon: "💎", accent: "#c084fc", badge: "Sans pub", perks: ["Zéro publicité", "+500 Trix chaque mois", "Badge Premium exclusif", "Qualité 4K prioritaire"], checkout: { functionName: "stripePayment", params: { action: "createPremiumSubscription", planId: "monthly" } } },
   { id: "custom_themes", planKey: "custom_bg", name: "Thèmes Personnalisés", price: "2,99 €", period: "/mois", icon: "🎨", accent: "#c084fc", perks: ["Accès aux thèmes sur mesure", "Fond de profil personnalisé", "Actif sur tout le compte"], checkout: { functionName: "stripePayment", params: { action: "createCustomBgSubscription", plan: "custom_bg" } } },
   { id: "vote_auto", planKey: "vote_auto", name: "Vote Auto", price: "4,99 €", period: "/mois", icon: "🗳️", accent: "#38bdf8", perks: ["Votes automatisés sur tes serveurs", "Jusqu'à 3 serveurs suivis", "Pseudo de vote personnalisable"], checkout: { functionName: "stripePayment", params: { action: "createVoteAutoSubscription", plan: "vote_auto" } } },
   { id: "vip_cooldown", planKey: "vip_cooldown", name: "VIP Cooldown Réduit", price: "2,99 €", period: "/mois", icon: "⏱️", accent: "#fbbf24", badge: "1h", perks: ["Vote toutes les 1h au lieu de 2h", "Badge VIP Vote", "Cumulable avec Vote Auto"], checkout: { functionName: "stripePayment", params: { action: "createVIPSubscription", plan: "vip_vote" } } },

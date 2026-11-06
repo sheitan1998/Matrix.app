@@ -2,7 +2,7 @@ import React from "react";
 import ShopCategoryCard from "@/components/shop/ShopCategoryCard";
 import SpecialOfferCard from "@/components/shop/SpecialOfferCard";
 
-export default function ShopOverview({ categories, offer, onOpenCategory, onOpenOffer }) {
+export default function ShopOverview({ categories, offer, onOpenCategory }) {
   return (
     <section>
       <div className="mb-3 flex items-center justify-between">
@@ -18,7 +18,7 @@ export default function ShopOverview({ categories, offer, onOpenCategory, onOpen
             onClick={() => onOpenCategory(category.key)}
           />
         ))}
-        <SpecialOfferCard offer={offer} onClick={onOpenOffer} />
+        <SpecialOfferCard offer={offer} />
       </div>
     </section>
   );

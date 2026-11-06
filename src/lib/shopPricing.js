@@ -21,11 +21,20 @@ export function sectionOf(item) {
   return "other";
 }
 
+// Une promotion sans date de fin reste active ; une date dépassée la désactive.
+export function isPromoActive(endsAt, now = Date.now()) {
+  if (!endsAt) return true;
+  const ts = new Date(endsAt).getTime();
+  return Number.isNaN(ts) ? true : ts > now;
+}
+
 export function effectiveDiscountPercent(item, config = {}) {
   const own = Number(item?.discount_percent) || 0;
   if (own > 0) return Math.min(95, own);
   const global = Number(config?.global_discount_percent) || 0;
-  if (config?.global_promo_enabled && global > 0) return Math.min(95, global);
+  if (config?.global_promo_enabled && global > 0 && isPromoActive(config.global_promo_ends_at)) {
+    return Math.min(95, global);
+  }
   return 0;
 }
 
@@ -49,6 +58,7 @@ export function formatEuro(value) {
 
 export function buildSpecialOffer(config = {}, items = []) {
   if (!config?.special_offer_enabled) return null;
+  if (!isPromoActive(config.special_offer_ends_at)) return null;
   const product = items.find((i) => i.id === config.special_offer_product_id) || null;
   const discountPercent = Math.min(95, Math.max(0, Number(config.special_offer_discount_percent) || 0));
 

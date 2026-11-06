@@ -77,6 +77,11 @@ async function globalShopDiscountPercent(base44: any): Promise<number> {
     const rows = await base44.asServiceRole.entities.MatrixShopConfig.list('-created_date', 1);
     const cfg = rows?.[0] || {};
     if (!cfg.global_promo_enabled) return 0;
+    // Promotion expirée : retour automatique aux prix standards
+    if (cfg.global_promo_ends_at) {
+      const endsAt = new Date(cfg.global_promo_ends_at).getTime();
+      if (!Number.isNaN(endsAt) && endsAt <= Date.now()) return 0;
+    }
     return Math.min(95, Math.max(0, Number(cfg.global_discount_percent) || 0));
   } catch {
     return 0;

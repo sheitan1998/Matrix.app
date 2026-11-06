@@ -126,11 +126,6 @@ export default function BoutiqueMatrix() {
     setCheckout({ functionName: "cosmeticShop", params: { action: "createCheckout", itemId: item.id } });
   };
 
-  const handleOfferClick = () => {
-    if (offer?.product) setSelectedItem(offer.product);
-    else setActiveTab("boosts");
-  };
-
   return (
     <div className="relative min-h-screen overflow-x-hidden select-none rounded-md" style={{ backgroundColor: SHOP_PAGE_COLOR }}>
       <ShopBackground posX={config.bg_pos_x ?? 0} posY={config.bg_pos_y ?? 0} scale={config.bg_scale ?? 100} />
@@ -149,7 +144,6 @@ export default function BoutiqueMatrix() {
             categories={categories}
             offer={offer}
             onOpenCategory={setActiveTab}
-            onOpenOffer={handleOfferClick}
           />
         ) : (
           <>
