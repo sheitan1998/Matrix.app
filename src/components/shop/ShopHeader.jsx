@@ -8,13 +8,13 @@ export default function ShopHeader() {
     <header className="mb-5">
       <div className="flex flex-wrap items-center justify-end gap-4">
         <div className="flex items-center gap-2">
-          <Link
-            to="/wallet"
-            className="flex h-9 items-center gap-1.5 rounded-full px-4 text-xs font-bold text-white transition hover:opacity-90 hidden"
-            style={{ background: "linear-gradient(135deg,#8b5cf6,#6d28d9)", boxShadow: "0 0 18px rgba(139,92,246,0.35)" }}>
-            
-            <Wallet className="h-4 w-4" /> Mon Portefeuille
-          </Link>
+          
+
+
+
+
+
+          
           <HeaderActions />
         </div>
       </div>

@@ -103,15 +103,15 @@ export default function HeaderActions() {
         </div>
 
         {/* Boutique button — hidden on mobile */}
-        <button
-          onClick={() => setShowShopModal(true)}
-          className="hidden sm:flex items-center gap-1.5 h-9 px-4 rounded-full text-sm font-bold text-white transition hover:opacity-90 tap-sm shrink-0"
-          style={{ background: "linear-gradient(135deg, #8b5cf6, #6d28d9)", boxShadow: "0 0 15px rgba(139,92,246,0.3)" }}
-          title="Boutique">
-          
-          <ShoppingBag className="w-4 h-4" />
-          <span className="hidden sm:inline">Boutique</span>
-        </button>
+        
+
+
+
+
+
+
+
+        
 
         {/* Translation button — hidden on mobile */}
         <div className="hidden sm:flex">
@@ -119,58 +119,58 @@ export default function HeaderActions() {
         </div>
 
         {/* Messaging button — hidden on mobile */}
-        <button
-          onClick={() => setShowMessages(true)}
-          className="hidden sm:flex relative w-9 h-9 rounded-full items-center justify-center transition hover:scale-105 tap-sm shrink-0"
-          style={{ background: "rgba(18,9,28,0.85)", border: "1.5px solid rgba(168,85,247,0.4)" }}
-          title="Messagerie">
-          
-          <Mail className="w-4 h-4 text-white/70" />
-          {unreadCount > 0 &&
-          <span
-            className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
-            style={{ background: "#ec4899" }}>
-            
-              {unreadCount > 99 ? "99+" : unreadCount}
-            </span>
-          }
-        </button>
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
 
         {/* Admin button — visible only for admins */}
-        {user?.role === 'admin' &&
-        <button
-          onClick={() => nav('/admin')}
-          className="hidden sm:flex w-9 h-9 rounded-full items-center justify-center transition hover:scale-105 tap-sm shrink-0"
-          style={{ background: "rgba(168,85,247,0.15)", border: "1.5px solid rgba(168,85,247,0.4)" }}
-          title="Administration">
-          
-            <Shield className="w-4 h-4 text-white/70" />
-          </button>
-        }
+        
+
+
+
+
+
+
+
+
+        
 
         {/* Profile button */}
-        <button
-          onClick={() => setShowProfile(true)}
-          className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden flex items-center justify-center transition hover:scale-105 tap-sm shrink-0 hidden"
-          style={{ background: "rgba(18,9,28,0.85)", border: "1.5px solid rgba(168,85,247,0.4)" }}
-          title="Mon Profil">
-          
-          {user?.avatar_url ?
-          <img src={user.avatar_url} alt="" className="w-full h-full object-cover hidden" /> :
-          user?.full_name?.[0] ?
-          <span className="text-[11px] sm:text-xs font-bold text-white">{user.full_name[0].toUpperCase()}</span> :
+        
 
-          <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/70" />
-          }
-          {pendingCount > 0 &&
-          <span
-            className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
-            style={{ background: "#22C55E" }}>
-            
-              {pendingCount > 99 ? "99+" : pendingCount}
-            </span>
-          }
-        </button>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
       </div>
 
       {/* Overlays — rendered via portal to avoid backdrop-filter containing block */}
