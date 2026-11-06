@@ -13,9 +13,7 @@ import ShopProductsSection from "@/components/shop/ShopProductsSection";
 import ShopItemModal from "@/components/shop/ShopItemModal";
 import ShopFooter from "@/components/shop/ShopFooter";
 import CheckoutModal from "@/components/CheckoutModal";
-
-const SHOP_BACKGROUND =
-"https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/ee04ab000_boutique-matrix-bg.png";
+import ShopBackground, { SHOP_PAGE_COLOR } from "@/components/shop/ShopBackground";
 
 export default function BoutiqueMatrix() {
   const qc = useQueryClient();
@@ -127,26 +125,8 @@ export default function BoutiqueMatrix() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden select-none rounded-md" style={{ backgroundColor: "#05030a" }}>
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-[100svh] overflow-hidden"
-        aria-hidden="true"
-        style={{ paddingLeft: "clamp(0px, 3vw, 64px)" }}>
-        
-        <img
-          src={SHOP_BACKGROUND}
-          alt=""
-          className="h-full w-full object-cover"
-          style={{ objectPosition: "left top" }} />
-        
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-            "linear-gradient(180deg, rgba(5,3,10,0.12) 0%, rgba(5,3,10,0.30) 42%, rgba(5,3,10,0.68) 74%, #05030a 100%)"
-          }} />
-        
-      </div>
+    <div className="relative min-h-screen overflow-x-hidden select-none rounded-md" style={{ backgroundColor: SHOP_PAGE_COLOR }}>
+      <ShopBackground posX={config.bg_pos_x ?? 0} posY={config.bg_pos_y ?? 0} scale={config.bg_scale ?? 100} />
 
       <h1 className="sr-only">Boutique Matrix</h1>
 

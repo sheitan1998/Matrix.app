@@ -53,6 +53,21 @@
       "default": "Profiter de l'offre",
       "description": "Libelle du bouton de l'offre speciale"
     },
+    "bg_pos_x": {
+      "type": "number",
+      "default": 0,
+      "description": "Position horizontale de l'image de fond de la boutique en pourcentage (0 = gauche, 100 = droite)"
+    },
+    "bg_pos_y": {
+      "type": "number",
+      "default": 0,
+      "description": "Position verticale de l'image de fond de la boutique en pourcentage (0 = haut, 100 = bas)"
+    },
+    "bg_scale": {
+      "type": "number",
+      "default": 100,
+      "description": "Echelle (zoom) de l'image de fond de la boutique en pourcentage (100-220)"
+    },
     "description": {
       "type": "string",
       "maxLength": 1000

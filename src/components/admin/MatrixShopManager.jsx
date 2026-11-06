@@ -2,10 +2,19 @@ import React from "react";
 import ShopPromoPanel from "@/components/admin/ShopPromoPanel";
 import ShopCategoryManager from "@/components/admin/ShopCategoryManager";
 import ShopProductsPanel from "@/components/admin/ShopProductsPanel";
+import ShopBackgroundPanel from "@/components/admin/ShopBackgroundPanel";
 
 export default function MatrixShopManager() {
   return (
     <div className="space-y-5">
+      <div className="rounded-2xl border border-white/10 p-5" style={{ background: "rgba(15,10,25,0.6)" }}>
+        <h3 className="mb-1 text-sm font-black uppercase tracking-tight text-white">Fond de la boutique</h3>
+        <p className="mb-4 text-[10px] text-white/40">
+          Position et taille de l'image de fond, avec aperçu. Réglages appliqués en temps réel sur la page Boutique Matrix.
+        </p>
+        <ShopBackgroundPanel />
+      </div>
+
       <div className="rounded-2xl border border-white/10 p-5" style={{ background: "rgba(15,10,25,0.6)" }}>
         <h3 className="mb-1 text-sm font-black uppercase tracking-tight text-white">Offre spéciale & promotions</h3>
         <p className="mb-4 text-[10px] text-white/40">
