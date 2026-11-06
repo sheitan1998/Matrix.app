@@ -85,7 +85,7 @@ export default function SpecialOfferCard({ offer, onClick }) {
 
         <button
           onClick={onClick}
-          className={`mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2 font-black transition hover:brightness-105 text-sm ${hasImage ? "text-[#2b1206]" : "text-[#2b1206]"}`}
+          className={`mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2 font-black transition hover:brightness-105 text-sm text-[hsl(var(--background))] ${hasImage ? "" : ""}`}
           style={{ background: "linear-gradient(135deg,#fde68a,#fbbf24)", border: "1px solid rgba(120,53,15,0.25)" }}>
 
           {offer.cta}
