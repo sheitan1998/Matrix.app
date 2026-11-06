@@ -2,9 +2,13 @@ import React from "react";
 import TrixIcon from "@/components/TrixIcon";
 import { formatTrix } from "@/lib/format";
 import { effectivePrices, formatEuro } from "@/lib/shopPricing";
+import CosmeticPreview from "@/components/cosmetics/CosmeticPreview";
+
+const COSMETIC_CATEGORIES = ["badge", "avatar_animation", "profile_cover"];
 
 export default function ShopProductCard({ item, config, onOpen }) {
   const { priceEuros, priceTrix, baseEuros, discountPercent } = effectivePrices(item, config);
+  const isCosmetic = COSMETIC_CATEGORIES.includes(item.category);
 
   return (
     <button
@@ -16,11 +20,20 @@ export default function ShopProductCard({ item, config, onOpen }) {
         boxShadow: "0 10px 26px rgba(0,0,0,0.4)",
       }}
     >
-      <div className="relative aspect-[4/3] overflow-hidden" style={{ background: "radial-gradient(circle at 50% 30%, rgba(139,92,246,0.28), rgba(10,5,16,0.9))" }}>
-        {item.preview_image ? (
-          <img src={item.preview_image} alt={item.name} className="h-full w-full object-cover" loading="lazy" />
+      <div className="relative overflow-hidden" style={{ background: "radial-gradient(circle at 50% 30%, rgba(139,92,246,0.28), rgba(10,5,16,0.9))" }}>
+        {isCosmetic ? (
+          <div className="p-2">
+            <CosmeticPreview
+              item={item}
+              aspect={item.category === "profile_cover" ? "video" : "square"}
+            />
+          </div>
+        ) : item.preview_image ? (
+          <div className="aspect-[4/3]">
+            <img src={item.preview_image} alt={item.name} className="h-full w-full object-cover" loading="lazy" />
+          </div>
         ) : (
-          <span className="flex h-full w-full items-center justify-center text-4xl" aria-hidden="true">{item.icon || "✨"}</span>
+          <div className="flex aspect-[4/3] items-center justify-center text-4xl" aria-hidden="true">{item.icon || "✨"}</div>
         )}
         {discountPercent > 0 && (
           <span className="absolute right-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-black text-black" style={{ background: "linear-gradient(135deg,#fde68a,#f59e0b)" }}>

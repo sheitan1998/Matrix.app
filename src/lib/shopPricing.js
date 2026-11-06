@@ -11,8 +11,14 @@ export const DEFAULT_CATEGORIES = [
 
 export const SECTION_KEYS = DEFAULT_CATEGORIES.map((c) => c.key);
 
+const COSMETIC_CATEGORIES = ["badge", "avatar_animation", "profile_cover"];
+
 export function sectionOf(item) {
-  return item?.shop_section || "cosmetics";
+  if (item?.shop_section) return item.shop_section;
+  // Les cosmétiques créés depuis l'onglet Cosmétiques n'ont pas toujours de rayon
+  // renseigné : ils restent rattachés au rayon Cosmétiques.
+  if (COSMETIC_CATEGORIES.includes(item?.category)) return "cosmetics";
+  return "other";
 }
 
 export function effectiveDiscountPercent(item, config = {}) {

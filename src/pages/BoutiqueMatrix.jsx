@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
@@ -10,30 +10,22 @@ import ShopHeader from "@/components/shop/ShopHeader";
 import ShopTabs from "@/components/shop/ShopTabs";
 import ShopOverview from "@/components/shop/ShopOverview";
 import ShopProductsSection from "@/components/shop/ShopProductsSection";
+import ShopOfferCategory from "@/components/shop/ShopOfferCategory";
+import { OFFER_CATEGORIES } from "@/lib/shopOffers";
 import ShopItemModal from "@/components/shop/ShopItemModal";
 import ShopFooter from "@/components/shop/ShopFooter";
 import CheckoutModal from "@/components/CheckoutModal";
 import ShopBackground, { SHOP_PAGE_COLOR } from "@/components/shop/ShopBackground";
 
-// Rayons qui possèdent leur propre page d'achat dédiée
-const CATEGORY_ROUTES = {
-  trix: "/trix-store",
-  nexus: "/casino?shop=1",
-  boosts: "/boutique-nexus"
-};
-
 export default function BoutiqueMatrix() {
   const qc = useQueryClient();
   const { user, checkUserAuth } = useAuth();
   const { trackActivity } = useProgression();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const activeTab = searchParams.get("cat") || "overview";
   const setActiveTab = (key) => {
-    const route = CATEGORY_ROUTES[key];
-    if (route) navigate(route);
-    else setSearchParams(key === "overview" ? {} : { cat: key });
+    setSearchParams(key === "overview" ? {} : { cat: key });
   };
   const [selectedItem, setSelectedItem] = useState(null);
   const [checkout, setCheckout] = useState(null);
@@ -135,8 +127,8 @@ export default function BoutiqueMatrix() {
   };
 
   const handleOfferClick = () => {
-    if (offer?.product) setSelectedItem(offer.product);else
-    setActiveTab("tickets");
+    if (offer?.product) setSelectedItem(offer.product);
+    else setActiveTab("boosts");
   };
 
   return (
@@ -152,21 +144,26 @@ export default function BoutiqueMatrix() {
         <ShopHeader />
         <ShopTabs categories={categories} active={activeTab} onChange={setActiveTab} />
 
-        {activeTab === "overview" ?
-        <ShopOverview
-          categories={categories}
-          offer={offer}
-          onOpenCategory={setActiveTab}
-          onOpenOffer={handleOfferClick} /> :
-
-
-        <ShopProductsSection
-          category={activeCategory}
-          items={sectionItems}
-          config={config}
-          onOpen={setSelectedItem} />
-
-        }
+        {activeTab === "overview" ? (
+          <ShopOverview
+            categories={categories}
+            offer={offer}
+            onOpenCategory={setActiveTab}
+            onOpenOffer={handleOfferClick}
+          />
+        ) : (
+          <>
+            <ShopOfferCategory category={activeCategory} />
+            {(sectionItems.length > 0 || !OFFER_CATEGORIES.includes(activeTab)) && (
+              <ShopProductsSection
+                category={activeCategory}
+                items={sectionItems}
+                config={config}
+                onOpen={setSelectedItem}
+              />
+            )}
+          </>
+        )}
 
         <ShopFooter />
       </div>
