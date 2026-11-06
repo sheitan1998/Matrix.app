@@ -1,11 +1,10 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Tv2, Users, Cpu, Dices, Clapperboard, ListMusic, ShoppingBag, Calendar, Trophy, Compass, MessageCircle, Send, Youtube, Music2, Instagram, Settings, HelpCircle } from "lucide-react";
+import { Tv2, Users, Dices, Clapperboard, ListMusic, ShoppingBag, Calendar, Trophy, Compass, MessageCircle, Send, Youtube, Music2, Instagram, Settings, HelpCircle } from "lucide-react";
 
 const MENU = [
   { icon: Tv2, label: "Streaming", path: "/stream" },
   { icon: Users, label: "Communauté", path: "/nexus" },
-  { icon: Cpu, label: "AI Studio", path: "/ai" },
   { icon: Dices, label: "Casino", path: "/casino", badge: "18+" },
   { icon: Clapperboard, label: "Video Studio", path: "/video-studio", badge: "NEW" },
   { icon: ListMusic, label: "Playlists", path: "/playlists", badge: "NEW" },

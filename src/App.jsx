@@ -35,8 +35,6 @@ import PersistentVoicePanel from '@/components/community/PersistentVoicePanel';
 import { usePresence } from '@/hooks/usePresence';
 
 // Pages — lazy-loaded (code-split per route for instant initial bundle)
-const AIStudio = lazy(() => import('@/pages/AIStudio'));
-const AISubscription = lazy(() => import('@/pages/AISubscription'));
 const Playlists = lazy(() => import('@/pages/Playlists'));
 const Landing = lazy(() => import('@/pages/Landing'));
 const Home = lazy(() => import('@/pages/Home'));
@@ -232,8 +230,6 @@ const AuthenticatedApp = () => {
             <Route path="/community/subscription" element={<CommunitySubscription />} />
             <Route path="/wallet" element={<Wallet />} />
             <Route path="/trix-store" element={<TrixStore />} />
-            <Route path="/ai" element={<AIStudio />} />
-            <Route path="/ai/subscription" element={<AISubscription />} />
             <Route path="/video-studio" element={<VideoStudio />} />
             <Route path="/playlists" element={<Playlists />} />
             <Route path="/progression" element={<Progression />} />

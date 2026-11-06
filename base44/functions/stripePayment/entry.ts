@@ -61,6 +61,16 @@ const CASINO_COIN_PACKS: Record<string, { priceCents: number; coinTotal: number;
   pack_50000: { priceCents: 4999, coinTotal: 50000, label: 'Pack 50 000 Jetons M' },
 };
 
+// ---- Abonnements pilotés depuis le panneau admin ----
+async function loadSubscriptionPlan(base44: any, key: string) {
+  try {
+    const rows = await base44.asServiceRole.entities.ShopSubscriptionPlan.filter({ key });
+    return rows?.[0] || null;
+  } catch {
+    return null;
+  }
+}
+
 // ---- Stripe webhook signature verification (Web Crypto API) ----
 async function verifyStripeSignature(payload: string, signatureHeader: string, secret: string): Promise<boolean> {
   const parts = signatureHeader.split(',');
@@ -225,7 +235,9 @@ export default async function(req: Request): Promise<Response> {
           }
 
           if (type === 'vote_auto_subscription') {
-            const voteAutoUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+            const planCfg = await loadSubscriptionPlan(base44, 'vote_auto');
+            const accessDays = planCfg?.duration_days > 0 ? planCfg.duration_days : 30;
+            const voteAutoUntil = new Date(Date.now() + accessDays * 24 * 60 * 60 * 1000).toISOString();
             if (userId) {
               const target = await base44.asServiceRole.entities.User.get(userId);
               if (target) {
@@ -246,7 +258,9 @@ export default async function(req: Request): Promise<Response> {
           }
 
           if (type === 'custom_bg_subscription') {
-            const customBgUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+            const planCfg = await loadSubscriptionPlan(base44, 'custom_bg');
+            const accessDays = planCfg?.duration_days > 0 ? planCfg.duration_days : 30;
+            const customBgUntil = new Date(Date.now() + accessDays * 24 * 60 * 60 * 1000).toISOString();
             if (userId) {
               const target = await base44.asServiceRole.entities.User.get(userId);
               if (target) {
@@ -1016,6 +1030,16 @@ export default async function(req: Request): Promise<Response> {
     if (action === 'createVIPSubscription') {
       const { plan } = body;
       const selected = VIP_PLANS[plan] || VIP_PLANS.vip_bronze;
+      let vipUnitAmount = selected.priceCents;
+      let vipProductName = selected.label;
+      if ((plan || 'vip_bronze') === 'vip_vote') {
+        const planCfg = await loadSubscriptionPlan(base44, 'vip_cooldown');
+        if (planCfg && planCfg.is_active === false) {
+          return Response.json({ error: 'Cet abonnement est temporairement indisponible' }, { status: 400 });
+        }
+        if (planCfg?.price_cents > 0) vipUnitAmount = planCfg.price_cents;
+        if (planCfg?.label) vipProductName = planCfg.label;
+      }
 
       const params = new URLSearchParams();
       params.append('payment_method_types[]', 'card');
@@ -1024,8 +1048,8 @@ export default async function(req: Request): Promise<Response> {
       params.append('return_url', `${origin}`);
       params.append('customer_email', user.email);
       params.append('line_items[0][price_data][currency]', 'eur');
-      params.append('line_items[0][price_data][product_data][name]', selected.label);
-      params.append('line_items[0][price_data][unit_amount]', String(selected.priceCents));
+      params.append('line_items[0][price_data][product_data][name]', vipProductName);
+      params.append('line_items[0][price_data][unit_amount]', String(vipUnitAmount));
       params.append('line_items[0][price_data][recurring][interval]', 'month');
       params.append('line_items[0][quantity]', '1');
       // params.append('success_url', `${origin}/boutique-nexus?payment=success&session_id={CHECKOUT_SESSION_ID}`);
@@ -1053,7 +1077,13 @@ export default async function(req: Request): Promise<Response> {
     // ---- createVoteAutoSubscription ----
     if (action === 'createVoteAutoSubscription') {
       const { plan } = body;
+      const planCfg = await loadSubscriptionPlan(base44, 'vote_auto');
+      if (planCfg && planCfg.is_active === false) {
+        return Response.json({ error: 'Cet abonnement est temporairement indisponible' }, { status: 400 });
+      }
       const selected = VOTE_AUTO_PLANS[plan || 'vote_auto'] || VOTE_AUTO_PLANS.vote_auto;
+      const unitAmount = planCfg?.price_cents > 0 ? planCfg.price_cents : selected.priceCents;
+      const productName = planCfg?.label || selected.label;
 
       const params = new URLSearchParams();
       params.append('payment_method_types[]', 'card');
@@ -1062,8 +1092,8 @@ export default async function(req: Request): Promise<Response> {
       params.append('return_url', `${origin}`);
       params.append('customer_email', user.email);
       params.append('line_items[0][price_data][currency]', 'eur');
-      params.append('line_items[0][price_data][product_data][name]', selected.label);
-      params.append('line_items[0][price_data][unit_amount]', String(selected.priceCents));
+      params.append('line_items[0][price_data][product_data][name]', productName);
+      params.append('line_items[0][price_data][unit_amount]', String(unitAmount));
       params.append('line_items[0][price_data][recurring][interval]', 'month');
       params.append('line_items[0][quantity]', '1');
       params.append('metadata[type]', 'vote_auto_subscription');
@@ -1088,7 +1118,13 @@ export default async function(req: Request): Promise<Response> {
     // ---- createCustomBgSubscription ----
     if (action === 'createCustomBgSubscription') {
       const { plan } = body;
+      const planCfg = await loadSubscriptionPlan(base44, 'custom_bg');
+      if (planCfg && planCfg.is_active === false) {
+        return Response.json({ error: 'Cet abonnement est temporairement indisponible' }, { status: 400 });
+      }
       const selected = CUSTOM_BG_PLANS[plan || 'custom_bg'] || CUSTOM_BG_PLANS.custom_bg;
+      const unitAmount = planCfg?.price_cents > 0 ? planCfg.price_cents : selected.priceCents;
+      const productName = planCfg?.label || selected.label;
 
       const params = new URLSearchParams();
       params.append('payment_method_types[]', 'card');
@@ -1097,8 +1133,8 @@ export default async function(req: Request): Promise<Response> {
       params.append('return_url', `${origin}`);
       params.append('customer_email', user.email);
       params.append('line_items[0][price_data][currency]', 'eur');
-      params.append('line_items[0][price_data][product_data][name]', selected.label);
-      params.append('line_items[0][price_data][unit_amount]', String(selected.priceCents));
+      params.append('line_items[0][price_data][product_data][name]', productName);
+      params.append('line_items[0][price_data][unit_amount]', String(unitAmount));
       params.append('line_items[0][price_data][recurring][interval]', 'month');
       params.append('line_items[0][quantity]', '1');
       params.append('metadata[type]', 'custom_bg_subscription');

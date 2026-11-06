@@ -3,15 +3,39 @@ import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { toast } from "sonner";
 import { CreditCard } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import CheckoutModal from "@/components/CheckoutModal";
 import ShopOfferCard from "@/components/shop/ShopOfferCard";
 import { OFFERS_BY_CATEGORY, OFFER_NOTES } from "@/lib/shopOffers";
+import { formatEuro } from "@/lib/shopPricing";
 
 export default function ShopOfferCategory({ category }) {
   const { user, checkUserAuth } = useAuth();
   const [checkout, setCheckout] = useState(null);
   const [buying, setBuying] = useState(null);
-  const offers = OFFERS_BY_CATEGORY[category?.key] || [];
+
+  // Abonnements pilotés depuis le panneau admin (prix, durée, activation)
+  const { data: dbPlans = [] } = useQuery({
+    queryKey: ["shop-subscription-plans"],
+    queryFn: () => base44.entities.ShopSubscriptionPlan.list("sort_order", 50),
+    enabled: category?.key === "subscriptions",
+  });
+
+  const offers = (OFFERS_BY_CATEGORY[category?.key] || [])
+    .map((offer) => {
+      if (!offer.planKey) return offer;
+      const plan = dbPlans.find((p) => p.key === offer.planKey);
+      if (!plan) return offer;
+      return {
+        ...offer,
+        name: plan.label || offer.name,
+        price: plan.price_cents > 0 ? formatEuro(plan.price_cents / 100) : offer.price,
+        badge: plan.badge || offer.badge,
+        perks: plan.perks?.length ? plan.perks : offer.perks,
+        is_active: plan.is_active !== false,
+      };
+    })
+    .filter((offer) => offer.is_active !== false);
 
   const buy = async (offer, method) => {
     if (!user) {

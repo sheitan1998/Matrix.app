@@ -25,7 +25,6 @@ function getActivityFromPath(pathname) {
     { match: "/stream", label: "Sur la page d'accueil", type: "browsing" },
     { match: "/live", label: "Regarde des lives", type: "streaming" },
     { match: "/nexus", label: "Dans la Communauté", type: "social" },
-    { match: "/ai", label: "Utilise l'AI Studio", type: "creating" },
     { match: "/video-studio", label: "Édite une vidéo", type: "creating" },
     { match: "/upload", label: "Publie du contenu", type: "creating" },
     { match: "/progression", label: "Consulte sa progression", type: "browsing" },
