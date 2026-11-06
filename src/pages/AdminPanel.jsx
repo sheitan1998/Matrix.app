@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Shield, Users, Ticket, AlertTriangle, FileCode, ShoppingBag, BarChart3, Download, Megaphone, Dices, Gamepad2, Flag, Sticker, Star, Server } from "lucide-react";
+import { ArrowLeft, Shield, Users, Ticket, AlertTriangle, FileCode, ShoppingBag, Store, BarChart3, Download, Megaphone, Dices, Gamepad2, Flag, Sticker, Star, Server } from "lucide-react";
 import HeaderActions from "@/components/layout/HeaderActions";
 import AdminUserList from "@/components/admin/AdminUserList";
 import AdminTicketList from "@/components/admin/AdminTicketList";
@@ -9,6 +9,7 @@ import DynamicPageManager from "@/components/admin/DynamicPageManager";
 import CosmeticItemForm from "@/components/admin/CosmeticItemForm";
 import CosmeticItemList from "@/components/admin/CosmeticItemList";
 import CosmeticSalesDashboard from "@/components/admin/CosmeticSalesDashboard";
+import MatrixShopManager from "@/components/admin/MatrixShopManager";
 import GithubDownloadsDashboard from "@/components/admin/GithubDownloadsDashboard";
 import BroadcastPanel from "@/components/admin/BroadcastPanel";
 import CasinoManager from "@/components/admin/CasinoManager";
@@ -94,6 +95,7 @@ export default function AdminPanel() {
     { id: "casino", label: "Gestion du Casino", icon: Dices, section: "Casino & Mini-jeux" },
     { id: "tuto", label: "Tuto & Entraide Gaming", icon: Gamepad2, section: "Guides & Tutoriels" },
     { id: "shop", label: "Boutique", icon: ShoppingBag, section: "Système" },
+    { id: "matrix-shop", label: "Boutique Matrix", icon: Store },
     { id: "downloads", label: "Téléchargements", icon: Download },
     { id: "dashboard", label: "Statistiques", icon: BarChart3 },
     { id: "pages", label: "Pages Dynamiques", icon: FileCode },
@@ -202,6 +204,7 @@ export default function AdminPanel() {
             </div>
           </div>
         )}
+        {tab === "matrix-shop" && <MatrixShopManager />}
         {tab === "dashboard" && <CosmeticSalesDashboard />}
         {tab === "downloads" && <GithubDownloadsDashboard />}
         {tab === "broadcast" && <BroadcastPanel />}

@@ -19,6 +19,25 @@
       "default": "badge",
       "description": "Categorie du cosmetique"
     },
+    "shop_section": {
+      "type": "string",
+      "enum": [
+        "cosmetics",
+        "trix",
+        "boosts",
+        "subscriptions",
+        "vip",
+        "tickets",
+        "other"
+      ],
+      "default": "cosmetics",
+      "description": "Rayon de la Boutique Matrix dans lequel le produit apparait"
+    },
+    "discount_percent": {
+      "type": "number",
+      "default": 0,
+      "description": "Reduction appliquee a ce produit en pourcentage (0 = pas de promo)"
+    },
     "price_trix": {
       "type": "number",
       "default": 0,

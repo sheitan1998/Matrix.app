@@ -1,0 +1,80 @@
+{
+  "name": "MatrixShopConfig",
+  "type": "object",
+  "properties": {
+    "global_promo_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Active une reduction globale sur toute la boutique"
+    },
+    "global_discount_percent": {
+      "type": "number",
+      "default": 0,
+      "description": "Pourcentage de reduction globale applique a tous les produits (0-90)"
+    },
+    "special_offer_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Afficher le bloc Offre Speciale dans la vue d'ensemble"
+    },
+    "special_offer_product_id": {
+      "type": "string",
+      "description": "ID du produit MatrixShopItem mis en avant (optionnel)"
+    },
+    "special_offer_title": {
+      "type": "string",
+      "description": "Titre de l'offre speciale (surcharge le nom du produit)"
+    },
+    "special_offer_description": {
+      "type": "string",
+      "description": "Description courte de l'offre speciale"
+    },
+    "special_offer_image": {
+      "type": "string",
+      "description": "URL du visuel de l'offre speciale"
+    },
+    "special_offer_discount_percent": {
+      "type": "number",
+      "default": 50,
+      "description": "Pourcentage de reduction de l'offre speciale (0-90)"
+    },
+    "special_offer_old_price": {
+      "type": "number",
+      "default": 0,
+      "description": "Ancien prix en euros (utilise si aucun produit n'est associe)"
+    },
+    "special_offer_price": {
+      "type": "number",
+      "default": 0,
+      "description": "Prix promo en euros (utilise si aucun produit n'est associe)"
+    },
+    "special_offer_cta": {
+      "type": "string",
+      "default": "Profiter de l'offre",
+      "description": "Libelle du bouton de l'offre speciale"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
+    }
+  },
+  "required": [],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

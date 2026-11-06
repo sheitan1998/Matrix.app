@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from 'base44:runtime';
+import { effectivePrices } from '../../shared/shopPricing.ts';
 
 function normalizeAssetUrl(value: unknown, { allowText = false }: { allowText?: boolean } = {}): string {
   const raw = typeof value === 'string' ? value.trim() : '';
@@ -327,15 +328,19 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ error: 'Article invalide' }, { status: 400 });
       }
 
+      // Prix recalculé côté serveur (promo globale ou réduction produit)
+      const shopConfigs = await base44.asServiceRole.entities.MatrixShopConfig.list('-created_date', 1);
+      const priced = effectivePrices(shopItem, shopConfigs[0] || {});
+
       // Re-fetch user with asServiceRole for authoritative balance
       const freshUser = await base44.asServiceRole.entities.User.get(user.id);
       const balance = freshUser?.trix_balance || 0;
-      if (balance < shopItem.price_trix) {
+      if (balance < priced.priceTrix) {
         return Response.json({ error: 'Solde TRIX insuffisant' }, { status: 400 });
       }
 
       // Deduct Trix server-side
-      const newBalance = balance - shopItem.price_trix;
+      const newBalance = balance - priced.priceTrix;
       await base44.asServiceRole.entities.User.update(user.id, { trix_balance: newBalance });
 
       // Grant cosmetic server-side
@@ -360,8 +365,8 @@ export default async function(req: Request): Promise<Response> {
 
       // Log transaction
       await base44.asServiceRole.entities.TrixTransaction.create({
-        user_email: user.email, type: 'purchase', amount: -shopItem.price_trix,
-        description: `Achat cosmétique: ${shopItem.name} (-${shopItem.price_trix} Trix)`,
+        user_email: user.email, type: 'purchase', amount: -priced.priceTrix,
+        description: `Achat cosmétique: ${shopItem.name} (-${priced.priceTrix} Trix)`,
       });
 
       return Response.json({ success: true, newBalance });
@@ -387,12 +392,16 @@ export default async function(req: Request): Promise<Response> {
       params.append('return_url', `${origin}`);
       params.append('customer_email', user.email);
 
+      // Prix recalculé côté serveur (promo globale ou réduction produit)
+      const shopConfigs = await base44.asServiceRole.entities.MatrixShopConfig.list('-created_date', 1);
+      const priced = effectivePrices(shopItem, shopConfigs[0] || {});
+
       // Use pre-created Stripe Price ID if available, otherwise inline price_data
-      if (shopItem.stripe_price_id) {
+      if (shopItem.stripe_price_id && !priced.discountPercent) {
         params.append('line_items[0][price]', shopItem.stripe_price_id);
         params.append('line_items[0][quantity]', '1');
       } else {
-        const euroCents = Math.round((shopItem.price_euros || shopItem.price_trix / 100) * 100);
+        const euroCents = Math.round(priced.priceEuros * 100);
         params.append('line_items[0][price_data][currency]', 'eur');
         params.append('line_items[0][price_data][product_data][name]', shopItem.name);
         params.append('line_items[0][price_data][unit_amount]', String(euroCents));
