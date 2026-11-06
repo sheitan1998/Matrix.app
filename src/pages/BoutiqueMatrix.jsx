@@ -127,7 +127,7 @@ export default function BoutiqueMatrix() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden select-none rounded-md mr-64" style={{ backgroundColor: "#05030a" }}>
+    <div className="relative min-h-screen overflow-x-hidden select-none rounded-md" style={{ backgroundColor: "#05030a" }}>
       <div
         className="pointer-events-none absolute inset-x-0 top-0 h-[100svh] overflow-hidden"
         aria-hidden="true"
