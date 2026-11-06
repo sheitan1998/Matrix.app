@@ -9,6 +9,7 @@ const inputCls = "w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 
 const SECTION_LABELS = {
   cosmetics: "Cosmétiques",
   trix: "Jetons Trix",
+  nexus: "Jetons Nexus Game",
   boosts: "Boosts Flash",
   subscriptions: "Abonnements",
   vip: "VIP",

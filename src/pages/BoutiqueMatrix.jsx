@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
@@ -15,13 +15,26 @@ import ShopFooter from "@/components/shop/ShopFooter";
 import CheckoutModal from "@/components/CheckoutModal";
 import ShopBackground, { SHOP_PAGE_COLOR } from "@/components/shop/ShopBackground";
 
+// Rayons qui possèdent leur propre page d'achat dédiée
+const CATEGORY_ROUTES = {
+  trix: "/trix-store",
+  nexus: "/casino?shop=1",
+  boosts: "/boutique-nexus"
+};
+
 export default function BoutiqueMatrix() {
   const qc = useQueryClient();
   const { user, checkUserAuth } = useAuth();
   const { trackActivity } = useProgression();
-  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [activeTab, setActiveTab] = useState("overview");
+  const activeTab = searchParams.get("cat") || "overview";
+  const setActiveTab = (key) => {
+    const route = CATEGORY_ROUTES[key];
+    if (route) navigate(route);
+    else setSearchParams(key === "overview" ? {} : { cat: key });
+  };
   const [selectedItem, setSelectedItem] = useState(null);
   const [checkout, setCheckout] = useState(null);
   const [buying, setBuying] = useState(null);

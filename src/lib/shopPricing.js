@@ -1,6 +1,7 @@
 export const DEFAULT_CATEGORIES = [
   { key: "cosmetics", label: "Cosmétiques", description: "Badges, animations et couvertures exclusives.", icon: "🧥", accent_color: "#a855f7", cta_label: "Voir la catégorie", sort_order: 1 },
   { key: "trix", label: "Jetons Trix", description: "Rechargez votre solde et débloquez plus de contenu.", icon: "🪙", accent_color: "#8b5cf6", cta_label: "Voir la catégorie", sort_order: 2 },
+  { key: "nexus", label: "Jetons Nexus Game", description: "Obtenez plus de jetons Nexus Game pour vos achats.", icon: "🪙", accent_color: "#a855f7", cta_label: "Voir la catégorie", sort_order: 3 },
   { key: "boosts", label: "Boosts Flash", description: "Faites décoller votre serveur et votre visibilité.", icon: "⚡", accent_color: "#f59e0b", cta_label: "Voir la catégorie", sort_order: 3 },
   { key: "subscriptions", label: "Abonnements", description: "Accès Premium, sans engagement, résiliable.", icon: "👑", accent_color: "#c084fc", cta_label: "Voir la catégorie", sort_order: 4 },
   { key: "vip", label: "VIP", description: "Le club privé MATRIX et ses avantages uniques.", icon: "💎", accent_color: "#fbbf24", cta_label: "Voir la catégorie", sort_order: 5 },

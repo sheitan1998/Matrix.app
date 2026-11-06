@@ -68,6 +68,11 @@ export default function Casino() {
   // Handle payment success redirect
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    if (params.get("shop") === "1") {
+      setScreen("shop");
+      window.history.replaceState({}, "", "/casino");
+      return;
+    }
     if (params.get("payment") === "success") {
       // Refresh balance from server
       casinoGetBalance().then((b) => setCasinoCoins(b)).catch(() => {});
