@@ -128,7 +128,11 @@ export default function BoutiqueMatrix() {
 
   return (
     <div className="relative min-h-screen overflow-x-hidden select-none" style={{ backgroundColor: "#05030a" }}>
-      <div className="pointer-events-none fixed inset-0" aria-hidden="true">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-[100svh] overflow-hidden"
+        aria-hidden="true"
+        style={{ paddingLeft: "clamp(0px, 3vw, 64px)" }}
+      >
         <img
           src={SHOP_BACKGROUND}
           alt=""
