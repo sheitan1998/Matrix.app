@@ -14,6 +14,9 @@ import ShopItemModal from "@/components/shop/ShopItemModal";
 import ShopFooter from "@/components/shop/ShopFooter";
 import CheckoutModal from "@/components/CheckoutModal";
 
+const SHOP_BACKGROUND =
+  "https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/ee04ab000_boutique-matrix-bg.png";
+
 export default function BoutiqueMatrix() {
   const qc = useQueryClient();
   const { user, checkUserAuth } = useAuth();
@@ -125,15 +128,28 @@ export default function BoutiqueMatrix() {
 
   return (
     <div className="relative min-h-screen overflow-x-hidden select-none" style={{ backgroundColor: "#05030a" }}>
-      <div
-        className="pointer-events-none fixed inset-0"
-        style={{
-          background:
-            "radial-gradient(circle at 12% -5%, rgba(139,92,246,0.22), transparent 45%), radial-gradient(circle at 88% 0%, rgba(251,191,36,0.12), transparent 40%), radial-gradient(circle at 50% 105%, rgba(76,29,149,0.25), transparent 55%)",
-        }}
-      />
+      <div className="pointer-events-none fixed inset-0" aria-hidden="true">
+        <img
+          src={SHOP_BACKGROUND}
+          alt=""
+          className="h-full w-full object-cover"
+          style={{ objectPosition: "left top" }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(5,3,10,0.12) 0%, rgba(5,3,10,0.30) 42%, rgba(5,3,10,0.68) 74%, #05030a 100%)",
+          }}
+        />
+      </div>
 
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 pb-6 pt-4 sm:px-6">
+      <h1 className="sr-only">Boutique Matrix</h1>
+
+      <div
+        className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 pb-6 sm:px-6"
+        style={{ paddingTop: "clamp(130px, 23vh, 250px)" }}
+      >
         <ShopHeader />
         <ShopTabs categories={categories} active={activeTab} onChange={setActiveTab} />
 
