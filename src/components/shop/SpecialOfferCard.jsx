@@ -58,14 +58,14 @@ export default function SpecialOfferCard({ offer, onClick }) {
         </div>
 
         <h3
-          className={`mt-1.5 pr-10 text-sm font-black leading-snug ${hasImage ? "text-white" : "text-[#2b1206]"}`}
+          className={`mt-1.5 pr-10 text-sm font-black leading-snug hidden ${hasImage ? "text-white" : "text-[#2b1206]"}`}
           style={hasImage ? { textShadow: "0 1px 8px rgba(0,0,0,0.85)" } : undefined}>
 
           {offer.title}
         </h3>
         {offer.description &&
         <p
-          className={`mt-1 line-clamp-2 text-[11px] font-semibold leading-relaxed ${hasImage ? "text-white/75" : "text-[#4a2205]/80"}`}
+          className={`mt-1 line-clamp-2 text-[11px] font-semibold leading-relaxed hidden ${hasImage ? "text-white/75" : "text-[#4a2205]/80"}`}
           style={hasImage ? { textShadow: "0 1px 6px rgba(0,0,0,0.9)" } : undefined}>
 
             {offer.description}
@@ -74,18 +74,18 @@ export default function SpecialOfferCard({ offer, onClick }) {
 
         <div className="mt-auto flex items-end gap-2 pt-3">
           {offer.oldPrice > offer.price &&
-          <span className={`text-xs font-bold line-through ${hasImage ? "text-white/50" : "text-[#4a2205]/60"}`}>
+          <span className={`text-xs font-bold line-through hidden ${hasImage ? "text-white/50" : "text-[#4a2205]/60"}`}>
               {formatEuro(offer.oldPrice)}
             </span>
           }
-          <span className={`text-2xl font-black ${hasImage ? "text-white" : "text-[#2b1206]"}`}>
+          <span className={`text-2xl font-black hidden ${hasImage ? "text-white" : "text-[#2b1206]"}`}>
             {formatEuro(offer.price)}
           </span>
         </div>
 
         <button
           onClick={onClick}
-          className={`mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-[11px] font-black transition hover:brightness-105 ${hasImage ? "text-[#2b1206]" : "text-[#2b1206]"}`}
+          className={`mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2 font-black transition hover:brightness-105 text-sm ${hasImage ? "text-[#2b1206]" : "text-[#2b1206]"}`}
           style={{ background: "linear-gradient(135deg,#fde68a,#fbbf24)", border: "1px solid rgba(120,53,15,0.25)" }}>
 
           {offer.cta}
