@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { ArrowRight } from "lucide-react";
 
 export default function ShopCategoryCard({ category, onClick }) {
   const accent = category.accent_color || "#a855f7";
+  const [ratio, setRatio] = useState("16 / 9");
 
   // Les visuels fournis contiennent déjà le titre, la description et le bouton :
   // la carte affiche uniquement l'image et reste entièrement cliquable.
@@ -12,8 +13,9 @@ export default function ShopCategoryCard({ category, onClick }) {
         onClick={onClick}
         aria-label={category.label}
         title={category.label}
-        className="group relative block aspect-[16/9] w-full overflow-hidden rounded-2xl transition hover:-translate-y-0.5"
+        className="group relative block w-full overflow-hidden rounded-2xl transition hover:-translate-y-0.5"
         style={{
+          aspectRatio: ratio,
           border: `1px solid ${accent}55`,
           boxShadow: `0 0 0 1px ${accent}10, 0 12px 30px rgba(0,0,0,0.45)`
         }}>
@@ -21,8 +23,11 @@ export default function ShopCategoryCard({ category, onClick }) {
         <img
           src={category.image_url}
           alt={category.label}
-          loading="lazy"
-          className="absolute inset-0 h-full w-full object-cover object-center transition duration-500 group-hover:scale-[1.03]" />
+          className="absolute inset-0 h-full w-full object-cover object-center"
+          onLoad={(e) => {
+            const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
+            if (w && h) setRatio(`${w} / ${h}`);
+          }} />
 
       </button>);
 

@@ -50,7 +50,9 @@ export default function BoutiqueMatrix() {
     enabled: !!user?.email
   });
 
-  const categories = dbCategories.length > 0 ? dbCategories : DEFAULT_CATEGORIES;
+  const categories = (dbCategories.length > 0 ? dbCategories : DEFAULT_CATEGORIES).filter(
+    (c) => c.key !== "other"
+  );
   const offer = useMemo(() => buildSpecialOffer(config, items), [config, items]);
 
   const activeCategory = categories.find((c) => c.key === activeTab) || categories[0];

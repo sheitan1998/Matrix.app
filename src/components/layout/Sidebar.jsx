@@ -19,7 +19,8 @@ import {
   Lock,
   Crown,
   PanelLeftClose,
-  PanelLeftOpen } from
+  PanelLeftOpen,
+  ShieldCheck } from
 "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/useTheme";
@@ -30,6 +31,7 @@ import ThemeModal from "@/components/landing/ThemeModal";
 import FaqPanel from "@/components/landing/FaqPanel";
 import SidebarQuickActions from "@/components/layout/SidebarQuickActions";
 import { useRegisterSidebar } from "@/hooks/useSidebarPresence";
+import { useAuth } from "@/lib/AuthContext";
 
 const NEON_TEXT_SHADOW = "0 0 8px rgba(168, 85, 247, 1), 0 0 16px rgba(168, 85, 247, 0.8), 0 0 32px rgba(168, 85, 247, 0.6)";
 const NEON_SUBTITLE_SHADOW = "0 0 6px rgba(168, 85, 247, 1), 0 0 12px rgba(168, 85, 247, 0.7)";
@@ -246,6 +248,8 @@ export default function Sidebar({ noTopbar = false }) {
   const { collapsed, toggle } = useCollapsed();
   const [faqOpen, setFaqOpen] = useState(false);
   useRegisterSidebar();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const { prefs } = useTheme();
   const isLight = prefs.mode === "light" || (prefs.mode === "custom" && (() => {
     const color = prefs.customColor || "#1a0a2e";
@@ -327,6 +331,16 @@ export default function Sidebar({ noTopbar = false }) {
 
       {/* Live */}
       <div className="mt-auto pt-4 space-y-3">
+        {isAdmin &&
+        <NavItem
+          to="/admin"
+          label="Panel Admin"
+          icon={ShieldCheck}
+          active={isActive("/admin")}
+          collapsed={collapsed}
+          isLight={isLight} />
+
+        }
 
 
 
