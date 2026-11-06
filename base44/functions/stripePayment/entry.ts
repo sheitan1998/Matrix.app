@@ -71,6 +71,23 @@ async function loadSubscriptionPlan(base44: any, key: string) {
   }
 }
 
+// ---- Réduction globale de la Boutique Matrix ----
+async function globalShopDiscountPercent(base44: any): Promise<number> {
+  try {
+    const rows = await base44.asServiceRole.entities.MatrixShopConfig.list('-created_date', 1);
+    const cfg = rows?.[0] || {};
+    if (!cfg.global_promo_enabled) return 0;
+    return Math.min(95, Math.max(0, Number(cfg.global_discount_percent) || 0));
+  } catch {
+    return 0;
+  }
+}
+
+function applyDiscount(cents: number, percent: number): number {
+  if (!percent) return cents;
+  return Math.max(1, Math.round(cents * (1 - percent / 100)));
+}
+
 // ---- Stripe webhook signature verification (Web Crypto API) ----
 async function verifyStripeSignature(payload: string, signatureHeader: string, secret: string): Promise<boolean> {
   const parts = signatureHeader.split(',');
@@ -871,14 +888,18 @@ export default async function(req: Request): Promise<Response> {
       const item = itemId ? NEXUS_ITEMS[itemId] : null;
       if (!item) return Response.json({ error: 'Article invalide' }, { status: 400 });
 
+      // Réduction globale appliquée au prix en Trix
+      const flashDiscount = await globalShopDiscountPercent(base44);
+      const flashPrice = applyDiscount(item.trixPrice, flashDiscount);
+
       // Re-fetch user with asServiceRole for authoritative balance
       const freshUser = await base44.asServiceRole.entities.User.get(user.id);
       const balance = freshUser?.trix_balance || 0;
-      if (balance < item.trixPrice) {
+      if (balance < flashPrice) {
         return Response.json({ error: 'Solde Trix insuffisant' }, { status: 400 });
       }
 
-      const newBalance = balance - item.trixPrice;
+      const newBalance = balance - flashPrice;
       const newFlashBoosts = (freshUser?.flash_boosts || 0) + item.count;
       await base44.asServiceRole.entities.User.update(user.id, {
         trix_balance: newBalance,
@@ -888,8 +909,8 @@ export default async function(req: Request): Promise<Response> {
       await base44.asServiceRole.entities.TrixTransaction.create({
         user_email: user.email,
         type: 'flash_purchase',
-        amount: -item.trixPrice,
-        description: `Achat ${item.label} (-${item.trixPrice} Trix)`,
+        amount: -flashPrice,
+        description: `Achat ${item.label} (-${flashPrice} Trix)`,
       });
 
       return Response.json({ success: true, newBalance, newFlashBoosts });
@@ -937,8 +958,9 @@ export default async function(req: Request): Promise<Response> {
       params.append('return_url', `${origin}`);
       params.append('customer_email', user.email);
       params.append('line_items[0][price_data][currency]', 'eur');
+      const discount = await globalShopDiscountPercent(base44);
       params.append('line_items[0][price_data][product_data][name]', pack.label);
-      params.append('line_items[0][price_data][unit_amount]', String(pack.priceCents));
+      params.append('line_items[0][price_data][unit_amount]', String(applyDiscount(pack.priceCents, discount)));
       params.append('line_items[0][quantity]', '1');
       // params.append('success_url', `${origin}/trix-store?payment=success&session_id={CHECKOUT_SESSION_ID}`);
       // params.append('cancel_url', `${origin}/trix-store?payment=cancelled`);
@@ -972,7 +994,8 @@ export default async function(req: Request): Promise<Response> {
       params.append('customer_email', user.email);
       params.append('line_items[0][price_data][currency]', 'eur');
       params.append('line_items[0][price_data][product_data][name]', item.label);
-      params.append('line_items[0][price_data][unit_amount]', String(item.euroCents));
+      const discount = await globalShopDiscountPercent(base44);
+      params.append('line_items[0][price_data][unit_amount]', String(applyDiscount(item.euroCents, discount)));
       params.append('line_items[0][quantity]', '1');
       // params.append('success_url', `${origin}/boutique-nexus?payment=success&session_id={CHECKOUT_SESSION_ID}`);
       // params.append('cancel_url', `${origin}/boutique-nexus?payment=cancelled`);
@@ -1366,7 +1389,8 @@ export default async function(req: Request): Promise<Response> {
       params.append('customer_email', user.email);
       params.append('line_items[0][price_data][currency]', 'eur');
       params.append('line_items[0][price_data][product_data][name]', pack.label);
-      params.append('line_items[0][price_data][unit_amount]', String(pack.priceCents));
+      const discount = await globalShopDiscountPercent(base44);
+      params.append('line_items[0][price_data][unit_amount]', String(applyDiscount(pack.priceCents, discount)));
       params.append('line_items[0][quantity]', '1');
       // params.append('success_url', `${origin}/casino?payment=success&session_id={CHECKOUT_SESSION_ID}`);
       // params.append('cancel_url', `${origin}/casino?payment=cancelled`);

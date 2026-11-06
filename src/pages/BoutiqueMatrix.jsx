@@ -153,7 +153,7 @@ export default function BoutiqueMatrix() {
           />
         ) : (
           <>
-            <ShopOfferCategory category={activeCategory} />
+            <ShopOfferCategory category={activeCategory} config={config} />
             {(sectionItems.length > 0 || !OFFER_CATEGORIES.includes(activeTab)) && (
               <ShopProductsSection
                 category={activeCategory}

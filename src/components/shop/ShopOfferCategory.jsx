@@ -7,35 +7,62 @@ import { useQuery } from "@tanstack/react-query";
 import CheckoutModal from "@/components/CheckoutModal";
 import ShopOfferCard from "@/components/shop/ShopOfferCard";
 import { OFFERS_BY_CATEGORY, OFFER_NOTES } from "@/lib/shopOffers";
-import { formatEuro } from "@/lib/shopPricing";
+import { effectiveDiscountPercent, formatEuro } from "@/lib/shopPricing";
 
-export default function ShopOfferCategory({ category }) {
+// Catégories dont les offres subissent la réduction globale de la boutique.
+const DISCOUNTABLE_SECTIONS = ["trix", "nexus", "boosts"];
+
+const isImageUrl = (value) => /^https?:\/\//.test(String(value || ""));
+
+export default function ShopOfferCategory({ category, config = {} }) {
   const { user, checkUserAuth } = useAuth();
   const [checkout, setCheckout] = useState(null);
   const [buying, setBuying] = useState(null);
 
-  // Abonnements pilotés depuis le panneau admin (prix, durée, activation)
+  // Abonnements pilotés depuis le panneau admin (prix, durée, activation, visuel)
   const { data: dbPlans = [] } = useQuery({
     queryKey: ["shop-subscription-plans"],
     queryFn: () => base44.entities.ShopSubscriptionPlan.list("sort_order", 50),
     enabled: category?.key === "subscriptions",
   });
 
+  const discountPercent = DISCOUNTABLE_SECTIONS.includes(category?.key)
+    ? effectiveDiscountPercent({}, config)
+    : 0;
+
   const offers = (OFFERS_BY_CATEGORY[category?.key] || [])
     .map((offer) => {
-      if (!offer.planKey) return offer;
-      const plan = dbPlans.find((p) => p.key === offer.planKey);
-      if (!plan) return offer;
-      return {
-        ...offer,
-        name: plan.label || offer.name,
-        price: plan.price_cents > 0 ? formatEuro(plan.price_cents / 100) : offer.price,
-        badge: plan.badge || offer.badge,
-        perks: plan.perks?.length ? plan.perks : offer.perks,
-        is_active: plan.is_active !== false,
-      };
+      const plan = offer.planKey ? dbPlans.find((p) => p.key === offer.planKey) : null;
+      if (plan && plan.is_active === false) return null;
+
+      const merged = { ...offer };
+
+      if (plan) {
+        merged.name = plan.label || offer.name;
+        merged.badge = plan.badge || offer.badge;
+        merged.perks = plan.perks?.length ? plan.perks : offer.perks;
+        if (plan.price_cents > 0) merged.priceCents = plan.price_cents;
+        // Visuel : une image remplace l'icône, un emoji remplace l'icône par défaut.
+        if (plan.visual) {
+          if (isImageUrl(plan.visual)) merged.image = plan.visual;
+          else merged.icon = plan.visual;
+        }
+      }
+
+      if (discountPercent > 0 && Number(merged.priceCents) > 0) {
+        const base = Number(merged.priceCents);
+        merged.oldPrice = formatEuro(base / 100);
+        merged.priceCents = Math.round(base * (1 - discountPercent / 100));
+        merged.discountPercent = discountPercent;
+        if (merged.trixPrice > 0) {
+          merged.trixPrice = Math.round(merged.trixPrice * (1 - discountPercent / 100));
+        }
+      }
+
+      if (merged.priceCents > 0) merged.price = formatEuro(merged.priceCents / 100);
+      return merged;
     })
-    .filter((offer) => offer.is_active !== false);
+    .filter(Boolean);
 
   const buy = async (offer, method) => {
     if (!user) {

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { CreditCard, Save } from "lucide-react";
+import ImageUploadField from "@/components/admin/ImageUploadField";
 
 const inputClass =
   "w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-xs text-white outline-none focus:border-purple-400/60";
@@ -38,6 +39,7 @@ export default function SubscriptionPlansManager() {
         duration_days: Math.max(1, Math.round(Number(plan.duration_days) || 30)),
         is_active: !!plan.is_active,
         badge: plan.badge || "",
+        visual: plan.visual || "",
         perks: Array.isArray(plan.perks)
           ? plan.perks
           : String(plan.perks || "")
@@ -135,6 +137,13 @@ export default function SubscriptionPlansManager() {
                   />
                 </div>
               </div>
+
+              <ImageUploadField
+                label="Visuel (image ou emoji)"
+                value={plan.visual || ""}
+                onChange={(value) => patch(plan.id, { visual: value })}
+                hint="Remplace l'icône affichée sur la carte de l'abonnement."
+              />
 
               <div>
                 <label className="mb-1 block text-[9px] font-bold uppercase tracking-widest text-white/30">Avantages (un par ligne)</label>

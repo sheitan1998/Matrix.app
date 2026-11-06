@@ -34,6 +34,10 @@
       "type": "string",
       "description": "Badge affiche sur la carte (optionnel)"
     },
+    "visual": {
+      "type": "string",
+      "description": "Visuel de la carte : URL d'image ou emoji (optionnel, remplace l'icone par defaut)"
+    },
     "perks": {
       "type": "array",
       "items": {
