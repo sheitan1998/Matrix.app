@@ -9,6 +9,7 @@ import DynamicPageManager from "@/components/admin/DynamicPageManager";
 import CosmeticItemForm from "@/components/admin/CosmeticItemForm";
 import CosmeticItemList from "@/components/admin/CosmeticItemList";
 import CosmeticSalesDashboard from "@/components/admin/CosmeticSalesDashboard";
+import CosmeticOwnershipManager from "@/components/admin/CosmeticOwnershipManager";
 import MatrixShopManager from "@/components/admin/MatrixShopManager";
 import SubscriptionPlansManager from "@/components/admin/SubscriptionPlansManager";
 import GithubDownloadsDashboard from "@/components/admin/GithubDownloadsDashboard";
@@ -203,6 +204,9 @@ export default function AdminPanel() {
             <div>
               <h3 className="text-sm font-black text-white uppercase tracking-tight mb-3">Cosmétiques existants</h3>
               <CosmeticItemList refreshKey={shopRefresh} />
+            </div>
+            <div className="rounded-2xl border border-white/10 p-5" style={{ background: "rgba(15,10,25,0.6)" }}>
+              <CosmeticOwnershipManager refreshKey={shopRefresh} />
             </div>
           </div>
         )}
