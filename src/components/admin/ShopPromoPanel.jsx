@@ -141,7 +141,7 @@ export default function ShopPromoPanel() {
         <Field label="Description">
           <input value={config.special_offer_description || ""} onChange={(e) => set({ special_offer_description: e.target.value })} className={inputCls} placeholder="Boostez votre serveur dès maintenant" />
         </Field>
-        <Field label="Visuel (URL)">
+        <Field label="Image de fond du bloc (URL)" hint="Affichée en arrière-plan de la carte Offre Spéciale.">
           <input value={config.special_offer_image || ""} onChange={(e) => set({ special_offer_image: e.target.value })} className={inputCls} placeholder="https://..." />
         </Field>
         <Field label="Ancien prix (€)" hint="Utilisé uniquement sans produit associé.">

@@ -94,8 +94,9 @@ export default function ShopCategoryEditor({ category, onClose, onSaved }) {
           </div>
 
           <label className="block">
-            <span className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-white/35">Visuel (URL, optionnel)</span>
+            <span className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-white/35">Image de fond de la carte (URL)</span>
             <input value={form.image_url} onChange={(e) => set({ image_url: e.target.value })} className={inputCls} placeholder="https://..." />
+            <span className="mt-1 block text-[10px] text-white/25">Utilisée en arrière-plan de la carte ; les textes et le bouton restent affichés par-dessus.</span>
           </label>
 
           <div className="grid grid-cols-2 gap-3">
