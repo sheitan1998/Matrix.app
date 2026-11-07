@@ -2,7 +2,7 @@ import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { TwitchAuthProvider } from "@/context/TwitchAuthContext";
 import { TwitchMiniPlayerProvider } from "@/context/TwitchMiniPlayerContext";
 import TwitchTopbar from "./TwitchTopbar";
-import Sidebar from "@/components/layout/Sidebar";
+import TwitchSidebar from "./TwitchSidebar";
 
 export default function TwitchLayout() {
   const navigate = useNavigate();
@@ -21,7 +21,7 @@ export default function TwitchLayout() {
         <div className="min-h-screen bg-transparent text-white flex flex-col">
           <TwitchTopbar activeTab={activeTab} onTabChange={handleTabChange} />
           <div className="flex flex-1">
-            {!isFullscreen && <Sidebar />}
+            {!isFullscreen && <TwitchSidebar />}
             <main className="flex-1 min-w-0">
               <Outlet />
             </main>
