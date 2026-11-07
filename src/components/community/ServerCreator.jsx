@@ -29,7 +29,7 @@ export default function ServerCreator({ onClose, onCreated }) {
   const [form, setForm] = useState({
     name: "",
     description: "",
-    theme: "autre",
+    themes: ["autre"],
     is_public: true,
   });
   const fileInputRef = useRef(null);
@@ -48,6 +48,14 @@ export default function ServerCreator({ onClose, onCreated }) {
     setUploadingIcon(false);
   };
 
+  const toggleTheme = (key) => {
+    setForm((prev) => {
+      const active = prev.themes.includes(key);
+      const next = active ? prev.themes.filter((t) => t !== key) : [...prev.themes, key];
+      return { ...prev, themes: next.length ? next : prev.themes };
+    });
+  };
+
   const create = async () => {
     if (!form.name.trim()) { toast.error("Donne un nom à ton serveur"); return; }
     setSaving(true);
@@ -56,6 +64,7 @@ export default function ServerCreator({ onClose, onCreated }) {
       const code = Math.random().toString(36).substring(2, 8).toUpperCase();
       await base44.entities.Server.create({
         ...form,
+        theme: form.themes[0] || "autre",
         icon_url: iconUrl || undefined,
         icon_emoji: "🏠",
         banner_color: "#7c3aed",
@@ -145,18 +154,25 @@ export default function ServerCreator({ onClose, onCreated }) {
             )}
           </div>
 
-          {/* Theme */}
+          {/* Themes (multi-selection) */}
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Thème</p>
-            <div className="flex flex-wrap gap-2">
-              {THEMES.map((t) => (
-                <button key={t.key} onClick={() => setForm({ ...form, theme: t.key })}
-                  className={cn("px-3 py-1.5 rounded-xl text-xs font-semibold border transition",
-                    form.theme === t.key ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground")}>
-                  {t.label}
-                </button>
-              ))}
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Thèmes</p>
+              <span className="text-[10px] text-muted-foreground">{form.themes.length} sélectionné(s)</span>
             </div>
+            <div className="flex flex-wrap gap-2">
+              {THEMES.map((t) => {
+                const active = form.themes.includes(t.key);
+                return (
+                  <button key={t.key} type="button" onClick={() => toggleTheme(t.key)}
+                    className={cn("px-3 py-1.5 rounded-xl text-xs font-semibold border transition",
+                      active ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground")}>
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1.5">Sélectionne un ou plusieurs thèmes pour classer ton serveur.</p>
           </div>
 
           {/* Visibility */}

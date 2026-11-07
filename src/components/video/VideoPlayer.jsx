@@ -3,6 +3,7 @@ import { Radio, Youtube, ExternalLink, Play } from "lucide-react";
 import YouTubePlayer from "./YouTubePlayer";
 import QualitySelector from "./QualitySelector";
 import { useMiniPlayer } from "@/context/MiniPlayerContext";
+import { isPlayerSoundEnabled, setPlayerSoundEnabled } from "@/lib/playerSoundPreference";
 
 export default function VideoPlayer({ video }) {
   const [quality, setQuality] = React.useState("Auto");
@@ -74,7 +75,24 @@ export default function VideoPlayer({ video }) {
           </div>
         </a>
       ) : video.video_url ? (
-        <video src={video.video_url} poster={video.thumbnail_url} controls autoPlay className="w-full h-full" />
+        <video
+          src={video.video_url}
+          poster={video.thumbnail_url}
+          controls
+          className="w-full h-full"
+          onLoadedMetadata={(e) => {
+            const el = e.currentTarget;
+            // Restore the sound preference, falling back to muted if autoplay with sound is blocked
+            if (isPlayerSoundEnabled()) {
+              el.muted = false;
+              el.play().catch(() => { el.muted = true; el.play().catch(() => {}); });
+            } else {
+              el.muted = true;
+              el.play().catch(() => {});
+            }
+          }}
+          onVolumeChange={(e) => setPlayerSoundEnabled(!e.currentTarget.muted && e.currentTarget.volume > 0)}
+        />
       ) : video.thumbnail_url ? (
         <img src={video.thumbnail_url} alt={video.title} className="w-full h-full object-cover" />
       ) : (

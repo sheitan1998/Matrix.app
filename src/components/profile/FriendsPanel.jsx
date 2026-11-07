@@ -192,6 +192,9 @@ export default function FriendsPanel({ user, onClose }) {
                 <button onClick={() => acceptRequest(f)} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white flex items-center gap-1" style={{ background: "rgba(34,197,94,0.2)", border: "1px solid rgba(34,197,94,0.3)" }}>
                   <UserCheck className="w-3 h-3" /> Accepter
                 </button>
+                <button onClick={() => removeFriend(f)} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white/70 flex items-center gap-1" style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)" }}>
+                  <X className="w-3 h-3" /> Refuser
+                </button>
               </div>
               );
             })}

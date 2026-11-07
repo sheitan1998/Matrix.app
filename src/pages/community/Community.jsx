@@ -225,7 +225,12 @@ export default function Community() {
       selectServer(found);
       toast.success(`Rejoint "${found.name}" !`);
     } catch (e) {
-      toast.error(e?.response?.data?.error || "Lien invalide ou expiré");
+      const msg = e?.response?.data?.error || "Lien invalide ou expiré";
+      if (msg.toLowerCase().includes("profil")) {
+        toast.error(msg, {
+          action: { label: "Compléter mon profil", onClick: () => (window.location.href = "/mon-profil") },
+        });
+      } else toast.error(msg);
     }
   };
 
@@ -278,7 +283,11 @@ export default function Community() {
       toast.success(`Rejoint "${joinConfirmServer.name}" !`);
     } catch (e) {
       const msg = e?.response?.data?.error;
-      if (msg?.includes("banni") || msg?.includes("banned")) toast.error(msg);
+      if (msg?.toLowerCase().includes("profil")) {
+        toast.error(msg, {
+          action: { label: "Compléter mon profil", onClick: () => (window.location.href = "/mon-profil") },
+        });
+      } else if (msg?.includes("banni") || msg?.includes("banned")) toast.error(msg);
       else toast.error("Erreur lors de la rejointe du serveur");
     }
     setJoinConfirmServer(null);

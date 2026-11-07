@@ -75,6 +75,14 @@
       ],
       "default": "autre"
     },
+    "themes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Themes multiples du serveur (Musique, Gaming, etc.). Le premier sert de theme principal."
+    },
     "is_public": {
       "type": "boolean",
       "default": false

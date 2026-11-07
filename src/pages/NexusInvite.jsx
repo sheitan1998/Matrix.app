@@ -16,6 +16,7 @@ export default function NexusInvite() {
   const [joining, setJoining] = useState(false);
   const [joined, setJoined] = useState(false);
   const [error, setError] = useState(null);
+  const [profileRequired, setProfileRequired] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -47,7 +48,9 @@ export default function NexusInvite() {
       trackActivity("servers_joined");
       toast.success(`Rejoint "${server.name}" !`);
     } catch (e) {
-      toast.error(e?.response?.data?.error || "Erreur lors de la rejointe du serveur");
+      const msg = e?.response?.data?.error || "Erreur lors de la rejointe du serveur";
+      if (msg.toLowerCase().includes("profil")) setProfileRequired(true);
+      else toast.error(msg);
     }
     setJoining(false);
   };
@@ -95,6 +98,25 @@ export default function NexusInvite() {
   }
 
   const isExpired = server?.invite_expires_at && new Date(server.invite_expires_at) < new Date();
+
+  if (profileRequired) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "#0a050f" }}>
+        <div className="max-w-sm w-full text-center space-y-4">
+          <div className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center" style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.3)" }}>
+            <UserPlus className="w-8 h-8 text-purple-400" />
+          </div>
+          <h1 className="text-xl font-black text-white">Complète ton profil</h1>
+          <p className="text-sm text-white/50">
+            Choisis ton pseudo et ton avatar avant de rejoindre « {server?.name} ». C'est obligatoire pour accéder aux serveurs NEXUS.
+          </p>
+          <Link to="/mon-profil" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white" style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
+            <UserPlus className="w-4 h-4" /> Compléter mon profil
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "#0a050f" }}>

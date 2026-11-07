@@ -55,12 +55,21 @@ export default function Watch() {
   });
 
   const { data: related } = useQuery({
-    queryKey: ["related", video?.id, video?.category],
+    queryKey: ["related", video?.id, video?.category, video?._source],
     queryFn: async () => {
+      const parts = [];
       if (video._source === "youtube" && video.id) {
-        return fetchYouTube("relatedVideos", { videoId: video.id, maxResults: 15 });
+        parts.push(...(await fetchYouTube("relatedVideos", { videoId: video.id, maxResults: 25 })));
       }
-      return base44.entities.Video.filter({ category: video?.category || "other" }, "-views", 15);
+      const local = await base44.entities.Video.filter({ category: video?.category || "other" }, "-views", 20);
+      parts.push(...(local || []));
+      // Never leave the suggestions empty: top up with trending videos
+      const withoutCurrent = parts.filter((v) => v?.id && v.id !== video.id);
+      if (withoutCurrent.length < 8) {
+        const trending = await fetchYouTube("trending", { maxResults: 50 });
+        parts.push(...(trending || []));
+      }
+      return mergeYouTubeLocal(parts, []);
     },
     initialData: [],
     enabled: !!video
@@ -76,7 +85,7 @@ export default function Watch() {
     return <div className="p-8 text-muted-foreground">Chargement...</div>;
   }
 
-  const relatedFiltered = (related || []).filter((v) => v.id !== id).slice(0, 10);
+  const relatedFiltered = (related || []).filter((v) => v.id !== id).slice(0, 20);
 
   return (
     <div className="px-4 lg:px-6 py-4 max-w-[1800px] mx-auto">

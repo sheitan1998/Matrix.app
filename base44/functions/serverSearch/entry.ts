@@ -784,6 +784,18 @@ export default async function(req: Request): Promise<Response> {
           status: 'pending_received',
         });
 
+        // Dedicated notification in the recipient's notification center (Accept / Decline)
+        const senderName = String(user.pseudo || user.full_name || senderEmail.split('@')[0]).split('#')[0].trim() || 'Un utilisateur';
+        await base44.asServiceRole.entities.Notification.create({
+          user_email: targetEmail,
+          type: 'friend_request',
+          title: 'Nouvelle demande d\'ami',
+          body: `${senderName} souhaite t'ajouter en ami.`,
+          is_read: false,
+          related_user_id: senderId,
+          related_user_name: senderName,
+        });
+
         let displayPseudo = target.pseudo || target.full_name || target.email;
         if (!displayPseudo.includes('#') && target.pseudo_tag) {
           displayPseudo = `${displayPseudo}#${target.pseudo_tag}`;
@@ -848,6 +860,18 @@ export default async function(req: Request): Promise<Response> {
           status: 'pending_received',
         });
 
+        // Dedicated notification in the recipient's notification center (Accept / Decline)
+        const reqSenderName = String(user.pseudo || user.full_name || senderEmail.split('@')[0]).split('#')[0].trim() || 'Un utilisateur';
+        await base44.asServiceRole.entities.Notification.create({
+          user_email: targetEmail,
+          type: 'friend_request',
+          title: 'Nouvelle demande d\'ami',
+          body: `${reqSenderName} souhaite t'ajouter en ami.`,
+          is_read: false,
+          related_user_id: senderId,
+          related_user_name: reqSenderName,
+        });
+
         console.log('[sendFriendRequest] created pair: sender', senderId, '-> target', target_user_id);
         return Response.json({ success: true });
       }
@@ -875,14 +899,26 @@ export default async function(req: Request): Promise<Response> {
         if (myRecords.length === 0) return Response.json({ error: 'Demande introuvable.' }, { status: 404 });
         await base44.asServiceRole.entities.Friend.update(myRecords[0].id, { status: 'accepted' });
 
-        // Update reciprocal record (pending_sent -> accepted)
+        // Update reciprocal record (pending_sent -> accepted); create it if it is missing
         const reciprocal = await base44.asServiceRole.entities.Friend.filter({
           user_email: friendEmail,
           friend_user_id: myId,
         });
         if (reciprocal.length > 0) {
           await base44.asServiceRole.entities.Friend.update(reciprocal[0].id, { status: 'accepted' });
+        } else if (friendEmail) {
+          await base44.asServiceRole.entities.Friend.create({
+            user_email: friendEmail,
+            friend_user_id: myId,
+            status: 'accepted',
+          });
         }
+
+        // Close the friend-request notification (hides its Accept / Decline buttons)
+        await base44.asServiceRole.entities.Notification.updateMany(
+          { user_email: myEmail, type: 'friend_request', related_user_id: friend_user_id },
+          { $set: { is_read: true } }
+        );
 
         console.log('[acceptFriendRequest] accepted:', myId, '<->', friend_user_id);
         return Response.json({ success: true });
@@ -976,6 +1012,12 @@ export default async function(req: Request): Promise<Response> {
             await base44.asServiceRole.entities.Friend.delete(r.id);
           }
         }
+
+        // Close the friend-request notification if the request was declined / cancelled
+        await base44.asServiceRole.entities.Notification.updateMany(
+          { user_email: myEmail, type: 'friend_request', related_user_id: friend_user_id },
+          { $set: { is_read: true } }
+        );
 
         console.log('[removeFriend] removed:', myId, '<->', friend_user_id);
         return Response.json({ success: true });

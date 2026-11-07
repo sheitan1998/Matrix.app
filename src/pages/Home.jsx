@@ -27,7 +27,7 @@ export default function Home() {
     queryKey: ["videos", "home"],
     queryFn: async () => {
       const [local, yt] = await Promise.all([
-        base44.entities.Video.list("-created_date", 60),
+        base44.entities.Video.list("-created_date", 200),
         fetchYouTube("trending", { maxResults: 50 }),
       ]);
       return mergeYouTubeLocal(yt, local);

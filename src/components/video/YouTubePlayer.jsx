@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { isPlayerSoundEnabled, setPlayerSoundEnabled } from "@/lib/playerSoundPreference";
 
 // Loads the YouTube IFrame Player API script once and caches the promise.
 let apiPromise = null;
@@ -40,6 +41,7 @@ export default function YouTubePlayer({ videoId, autoplay = true, onReady, onSta
 
   useEffect(() => {
     let active = true;
+    let muteWatcher = null;
     loadYouTubeAPI().then((YT) => {
       if (!active || !wrapperRef.current || !YT?.Player) return;
       // Destroy previous player instance if any
@@ -63,7 +65,23 @@ export default function YouTubePlayer({ videoId, autoplay = true, onReady, onSta
           controls: 1,
         },
         events: {
-          onReady: (e) => onReadyRef.current?.(e.target),
+          onReady: (e) => {
+            const player = e.target;
+            // Restore the sound state chosen during the previous session
+            if (isPlayerSoundEnabled()) {
+              try {
+                player.unMute();
+                player.setVolume(100);
+              } catch {}
+            }
+            // Remember any later manual mute / unmute
+            muteWatcher = setInterval(() => {
+              try {
+                setPlayerSoundEnabled(!player.isMuted());
+              } catch {}
+            }, 1000);
+            onReadyRef.current?.(player);
+          },
           onStateChange: (e) => onStateChangeRef.current?.(e.data),
         },
       });
@@ -71,6 +89,7 @@ export default function YouTubePlayer({ videoId, autoplay = true, onReady, onSta
     });
     return () => {
       active = false;
+      if (muteWatcher) clearInterval(muteWatcher);
       if (playerRef.current) {
         try { playerRef.current.stopVideo?.(); } catch {}
         try { playerRef.current.destroy?.(); } catch {}

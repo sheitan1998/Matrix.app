@@ -15,6 +15,8 @@ import {
   HelpCircle,
   Globe,
   Tv2,
+  Youtube,
+  Twitch,
   Check,
   Lock,
   Crown,
@@ -77,6 +79,13 @@ const SECTIONS = [
   { to: "/video-studio", label: "Montage Vidéo", icon: Clapperboard },
   { to: "/sondages", label: "Sondage", icon: BarChart3 },
   { to: "/progression", label: "Niveaux/Progressions", icon: TrendingUp }]
+
+},
+{
+  title: "YouTube & Twitch",
+  items: [
+  { to: "/stream", label: "YouTube", icon: Youtube },
+  { to: "/twitch", label: "Twitch", icon: Twitch }]
 
 },
 {

@@ -19,6 +19,11 @@ export default async function(req: Request): Promise<Response> {
     }
 
     if (action === 'join') {
+      // A pseudo/profile is required before joining any server
+      if (!String(user.pseudo || '').trim()) {
+        return errorResponse(403, 'Complète ton profil (pseudo) avant de rejoindre un serveur.');
+      }
+
       const serverId = sanitizeText(body?.serverId, 100);
       if (!serverId) return errorResponse(400, 'ID du serveur manquant.');
 
