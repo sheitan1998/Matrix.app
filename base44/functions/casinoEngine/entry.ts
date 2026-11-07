@@ -93,6 +93,33 @@ async function getPlayer(base44: any, user: any) {
   });
 }
 
+// ===== Roulette : tirage uniforme et sans biais =====
+const ROULETTE_RED = new Set([1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]);
+
+function secureRandomInt(maxExclusive: number): number {
+  const limit = Math.floor(0x100000000 / maxExclusive) * maxExclusive;
+  const buffer = new Uint32Array(1);
+  let value = 0;
+  do {
+    crypto.getRandomValues(buffer);
+    value = buffer[0];
+  } while (value >= limit);
+  return value % maxExclusive;
+}
+
+function rouletteWins(betType: string, number: number): boolean {
+  const isRed = ROULETTE_RED.has(number);
+  switch (betType) {
+    case 'red': return isRed;
+    case 'black': return number !== 0 && !isRed;
+    case 'even': return number !== 0 && number % 2 === 0;
+    case 'odd': return number % 2 === 1;
+    case '1-18': return number >= 1 && number <= 18;
+    case '19-36': return number >= 19 && number <= 36;
+    default: return false;
+  }
+}
+
 function pickSlotsSymbol(symbols: any[] = SLOTS_SYMBOLS) {
   const pool: any[] = [];
   symbols.forEach(sym => { for (let i = 0; i < sym.rare; i++) pool.push(sym); });
@@ -230,7 +257,12 @@ export default async function(req: Request): Promise<Response> {
             }
           } catch {}
         }
-        const isWin = Math.random() < effectiveWinRate;
+        // Roulette : le numéro (0-36) est tiré uniformément, puis le résultat
+        // du pari en découle. Aucun ajustement lié à la mise du joueur.
+        const rouletteNumber = game === 'roulette' ? secureRandomInt(37) : null;
+        const isWin = rouletteNumber !== null
+          ? rouletteWins(String(betType || ''), rouletteNumber)
+          : Math.random() < effectiveWinRate;
         const isJackpotWin = Math.random() < JACKPOT_WIN_CHANCE;
 
         let payout = 0;
@@ -371,6 +403,7 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({
           win: isWin || isJackpotWin,
           jackpot: isJackpotWin,
+          rouletteNumber,
           payout,
           multiplier,
           slotsSymbol,

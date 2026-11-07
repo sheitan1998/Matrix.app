@@ -34,7 +34,6 @@ function getActivityFromPath(pathname) {
     { match: "/boutique-nexus", label: "Visite la boutique Nexus", type: "shopping" },
     { match: "/market", label: "Parcourt le marché", type: "shopping" },
     { match: "/best-serveurs", label: "Cherche des joueurs", type: "browsing" },
-    { match: "/sondages", label: "Participe aux sondages", type: "social" },
     { match: "/mon-profil", label: "Consulte son profil", type: "browsing" },
     { match: "/notifications", label: "Consulte ses notifications", type: "browsing" },
     { match: "/outils", label: "Utilise des outils", type: "browsing" },

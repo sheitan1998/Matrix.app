@@ -14,10 +14,16 @@ function isValidKey(key) {
   return Number.isInteger(value) && value >= 0 && value <= 36;
 }
 
+// Tirage uniforme 0-36 sans biais de modulo (rejection sampling).
 function spinNumber() {
+  const limit = Math.floor(0x100000000 / 37) * 37;
   const buffer = new Uint32Array(1);
-  crypto.getRandomValues(buffer);
-  return buffer[0] % 37;
+  let value = 0;
+  do {
+    crypto.getRandomValues(buffer);
+    value = buffer[0];
+  } while (value >= limit);
+  return value % 37;
 }
 
 // Returns the total returned to the player (stake included), or -1 if the key is invalid.

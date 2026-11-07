@@ -3,7 +3,6 @@ import { Link, useLocation } from "react-router-dom";
 import {
   Home,
   Clapperboard,
-  BarChart3,
   TrendingUp,
   ShoppingBag,
   User,
@@ -32,16 +31,19 @@ import SidebarQuickActions from "@/components/layout/SidebarQuickActions";
 import { useRegisterSidebar } from "@/hooks/useSidebarPresence";
 import { useAuth } from "@/lib/AuthContext";
 
-const NEON_TEXT_SHADOW = "0 0 8px rgba(168, 85, 247, 1), 0 0 16px rgba(168, 85, 247, 0.8), 0 0 32px rgba(168, 85, 247, 0.6)";
-const NEON_SUBTITLE_SHADOW = "0 0 6px rgba(168, 85, 247, 1), 0 0 12px rgba(168, 85, 247, 0.7)";
-const NEON_ICON_GLOW = "drop-shadow(0 0 4px rgba(168, 85, 247, 1)) drop-shadow(0 0 8px rgba(168, 85, 247, 0.6))";
-const NEON_ACTIVE_BG = "linear-gradient(90deg, rgba(147, 51, 234, 0.35) 0%, rgba(88, 28, 135, 0.12) 100%)";
-const NEON_ACTIVE_BORDER = "2px solid rgba(168, 85, 247, 1)";
-const NEON_ACTIVE_SHADOW = "0 0 16px rgba(168, 85, 247, 0.4), inset 0 0 12px rgba(168, 85, 247, 0.08)";
-const NEON_ACTIVE_TEXT = "0 0 6px rgba(168, 85, 247, 0.9), 0 0 12px rgba(168, 85, 247, 0.5)";
-const NEON_SEPARATOR = "linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.4), transparent)";
-const NEON_SECTION_COLOR = "rgba(168, 85, 247, 0.85)";
-const NEON_ICON_IDLE = "drop-shadow(0 0 3px rgba(168, 85, 247, 0.8)) drop-shadow(0 0 6px rgba(168, 85, 247, 0.4))";
+// Neon colors come from the user's theme preference (--app-neon-* variables).
+const NEON_TEXT_SHADOW = "var(--app-neon-text-shadow)";
+const NEON_SUBTITLE_SHADOW = "var(--app-neon-subtitle-shadow)";
+const NEON_ICON_GLOW = "var(--app-neon-icon-glow)";
+const NEON_ACTIVE_BG = "var(--app-neon-active-bg)";
+const NEON_ACTIVE_BORDER = "var(--app-neon-active-border)";
+const NEON_ACTIVE_SHADOW = "var(--app-neon-active-shadow)";
+const NEON_ACTIVE_TEXT = "var(--app-neon-active-text)";
+const NEON_SEPARATOR = "var(--app-neon-separator)";
+const NEON_SECTION_COLOR = "var(--app-neon-section)";
+const NEON_ICON_IDLE = "var(--app-neon-icon-idle)";
+const NEON_ICON_COLOR = "var(--app-neon-icon)";
+const NEON_ICON_BRIGHT = "var(--app-neon-bright)";
 
 // Light mode overrides — clean, high-contrast, no neon glow
 const LIGHT_SIDEBAR_BG = "#ffffff";
@@ -74,7 +76,6 @@ const SECTIONS = [
   items: [
   { to: "/", label: "Accueil", icon: Home },
   { to: "/video-studio", label: "Montage Vidéo", icon: Clapperboard },
-  { to: "/sondages", label: "Sondage", icon: BarChart3 },
   { to: "/progression", label: "Niveaux/Progressions", icon: TrendingUp }]
 
 },
@@ -109,7 +110,7 @@ function NavItem({ to, label, icon: Icon, active, collapsed, faq, onFaq, isLight
 
   const iconColor = isLight
     ? (glow ? "#6d28d9" : "#7c3aed")
-    : (glow ? "rgb(192 132 252)" : "rgba(216,180,254,0.7)");
+    : (glow ? NEON_ICON_BRIGHT : NEON_ICON_COLOR);
   const iconFilter = isLight ? "none" : (glow ? NEON_ICON_GLOW : NEON_ICON_IDLE);
 
   const link =
@@ -166,7 +167,7 @@ function ThemeSelectorItem({ collapsed, isLight }) {
         onClick={() => setOpen(true)}
         className={cn("flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 border border-transparent", isLight ? "text-gray-600 hover:text-gray-900 hover:bg-black/5" : "text-muted-foreground hover:text-white hover:bg-white/5", collapsed && "justify-center px-0")}
         title={collapsed ? "Thème" : undefined}>
-        <CurrentIcon className="w-[18px] h-[18px] shrink-0" style={{ color: isLight ? "#7c3aed" : "rgba(216,180,254,0.7)", filter: isLight ? "none" : NEON_ICON_IDLE }} />
+        <CurrentIcon className="w-[18px] h-[18px] shrink-0" style={{ color: isLight ? "#7c3aed" : NEON_ICON_COLOR, filter: isLight ? "none" : NEON_ICON_IDLE }} />
         <span className={cn("truncate transition-all duration-200 overflow-hidden", collapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>Thème</span>
       </button>
       <ThemeModal open={open} onClose={() => setOpen(false)} />
@@ -202,14 +203,14 @@ function LanguageToggleItem({ collapsed, isLight }) {
         className={cn("flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 border border-transparent", isLight ? "text-gray-600 hover:text-gray-900 hover:bg-black/5" : "text-muted-foreground hover:text-white hover:bg-white/5", collapsed && "justify-center px-0")}
         title={collapsed ? "Langue" : undefined}>
 
-        <Globe className="w-[18px] h-[18px] shrink-0" style={{ color: isLight ? "#7c3aed" : "rgba(216,180,254,0.7)", filter: isLight ? "none" : NEON_ICON_IDLE }} />
+        <Globe className="w-[18px] h-[18px] shrink-0" style={{ color: isLight ? "#7c3aed" : NEON_ICON_COLOR, filter: isLight ? "none" : NEON_ICON_IDLE }} />
         <span className={cn("truncate transition-all duration-200 overflow-hidden", collapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>Langue</span>
       </button>
       {open &&
       <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute left-0 bottom-full mb-2 w-44 rounded-xl overflow-hidden shadow-2xl z-50" style={{ background: "hsl(var(--popover))", border: "1px solid rgba(168, 85, 247, 0.2)" }}>
-            <p className="px-3 py-2 text-[10px] font-black uppercase tracking-widest border-b border-white/5" style={{ color: isLight ? "#7c3aed" : "rgba(216,180,254,0.6)" }}>Langue</p>
+            <p className="px-3 py-2 text-[10px] font-black uppercase tracking-widest border-b border-white/5" style={{ color: isLight ? "#7c3aed" : NEON_SECTION_COLOR }}>Langue</p>
             <div className="max-h-56 overflow-y-auto no-scrollbar">
               {LANGUAGES.map((lang) =>
             <button key={lang.code} disabled={saving} onClick={() => selectLanguage(lang.code)} className="flex w-full items-center gap-2 px-3 py-2 hover:bg-white/5 transition text-left disabled:opacity-50">
@@ -261,9 +262,9 @@ export default function Sidebar({ noTopbar = false }) {
   const sidebarBg = isLight ? LIGHT_SIDEBAR_BG : "rgba(10, 8, 15, 0.6)";
   const logoColor = isLight ? "#111827" : "#ffffff";
   const logoShadow = isLight ? "none" : NEON_TEXT_SHADOW;
-  const subtitleColor = isLight ? "#6b7280" : "#c084fc";
+  const subtitleColor = isLight ? "#6b7280" : NEON_ICON_BRIGHT;
   const subtitleShadow = isLight ? "none" : NEON_SUBTITLE_SHADOW;
-  const collapseBtnColor = isLight ? "#6b7280" : "rgba(216,180,254,0.7)";
+  const collapseBtnColor = isLight ? "#6b7280" : NEON_ICON_COLOR;
   const collapseBtnHoverBg = isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.1)";
   const collapseBtnHoverColor = isLight ? "#111827" : "#ffffff";
   const collapseIconFilter = isLight ? "none" : NEON_ICON_IDLE;

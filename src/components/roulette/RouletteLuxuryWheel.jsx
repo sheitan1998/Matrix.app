@@ -72,9 +72,15 @@ export default function RouletteLuxuryWheel({ spinToken, targetNumber, onDone, r
     // s'immobilise au centre de la case gagnante.
     const target = SLICES[index].mid;
     const from = angleRef.current;
-    const base = from + 6 * 360;
-    const delta = (((target - base) % 360) + 360) % 360;
-    const to = base + delta;
+
+    // Nombre de tours et sens variables : le trajet de la bille ne suit
+    // aucun schéma répétitif d'un lancer à l'autre.
+    const laps = 5 + Math.floor(Math.random() * 3);
+    const clockwise = Math.random() < 0.5;
+    const alignedDelta = (((target - from) % 360) + 360) % 360;
+    const to = clockwise
+      ? from + laps * 360 + alignedDelta
+      : from - laps * 360 + alignedDelta - 360;
     const start = performance.now();
     let finished = false;
 

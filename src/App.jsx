@@ -68,7 +68,6 @@ const VideoStudio = lazy(() => import('@/pages/VideoStudio'));
 const Progression = lazy(() => import('@/pages/Progression'));
 const Notifications = lazy(() => import('@/pages/Notifications'));
 const Outils = lazy(() => import('@/pages/Outils'));
-const Sondages = lazy(() => import('@/pages/Sondages'));
 const MonProfil = lazy(() => import('@/pages/MonProfil'));
 const BoutiqueMatrix = lazy(() => import('@/pages/BoutiqueMatrix'));
 const AffiliateDashboard = lazy(() => import('@/pages/AffiliateDashboard'));
@@ -234,7 +233,6 @@ const AuthenticatedApp = () => {
             <Route path="/progression" element={<Progression />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/outils" element={<Outils />} />
-            <Route path="/sondages" element={<Sondages />} />
             <Route path="/mon-profil" element={<MonProfil />} />
             <Route path="/boutique-matrix" element={<BoutiqueMatrix />} />
             <Route path="/boutique-nexus" element={<BoutiqueNexus />} />

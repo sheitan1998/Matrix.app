@@ -18,6 +18,16 @@ const MODES = [
 
 const COLOR_PRESETS = ["#1a0a2e", "#0d1b2a", "#1b3a1b", "#3a0d0d", "#3a2d0d", "#0d2d3a", "#2d0d3a", "#000000"];
 
+const NEON_PRESETS = [
+  { color: "#a855f7", label: "Violet" },
+  { color: "#22d3ee", label: "Cyan" },
+  { color: "#ec4899", label: "Rose" },
+  { color: "#22c55e", label: "Vert" },
+  { color: "#f59e0b", label: "Or" },
+  { color: "#3b82f6", label: "Bleu" },
+  { color: "#ef4444", label: "Rouge" },
+];
+
 export default function ThemeModal({ open, onClose }) {
   const { prefs, updatePrefs, hasCustomBg, customBgChecked, refreshCustomBg } = useTheme();
   const [uploading, setUploading] = useState(false);
@@ -145,6 +155,48 @@ export default function ThemeModal({ open, onClose }) {
                     </button>
                   );
                 })}
+              </div>
+
+              {/* Sidebar neon color */}
+              <div className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(168,85,247,0.18)" }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <Sparkles className="w-4 h-4" style={{ color: prefs.neonColor || "#a855f7" }} />
+                  <h3 className="text-sm font-bold text-white">Couleur des néons du panneau latéral</h3>
+                </div>
+                <p className="text-[11px] text-white/40 mb-3">
+                  Choisis la teinte des lueurs et du menu de gauche.
+                </p>
+                <div className="flex items-center gap-3 flex-wrap">
+                  {NEON_PRESETS.map((preset) => {
+                    const isSelected = (prefs.neonColor || "#a855f7").toLowerCase() === preset.color;
+                    return (
+                      <button
+                        key={preset.color}
+                        type="button"
+                        title={preset.label}
+                        onClick={() => updatePrefs({ neonColor: preset.color })}
+                        className="w-9 h-9 rounded-full transition-all hover:scale-110"
+                        style={{
+                          background: preset.color,
+                          border: isSelected ? "2px solid #fff" : "2px solid transparent",
+                          boxShadow: isSelected ? `0 0 16px ${preset.color}` : `0 0 8px ${preset.color}55`,
+                        }}
+                      />
+                    );
+                  })}
+                  <label
+                    className="relative w-9 h-9 rounded-full cursor-pointer flex items-center justify-center"
+                    title="Couleur personnalisée"
+                    style={{ background: "conic-gradient(red, orange, yellow, green, cyan, blue, purple, red)", border: "2px solid rgba(255,255,255,0.2)" }}>
+                    <input
+                      type="color"
+                      value={prefs.neonColor || "#a855f7"}
+                      onChange={(e) => updatePrefs({ neonColor: e.target.value })}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                    />
+                    <Palette className="w-4 h-4 text-white" style={{ filter: "drop-shadow(0 0 2px rgba(0,0,0,0.8))" }} />
+                  </label>
+                </div>
               </div>
 
               {/* Custom theme options */}

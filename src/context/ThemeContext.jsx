@@ -59,9 +59,40 @@ const SOLID_DARK_VARS = {
 const DEFAULT_PREFS = {
   mode: "original",
   customColor: "#1a0a2e",
+  neonColor: "#a855f7",
   bgImageUrl: "",
   bgOpacity: 0.5,
 };
+
+function hexToRgb(hex) {
+  const value = /^#?[0-9a-f]{6}$/i.test(hex || "") ? hex.replace("#", "") : "a855f7";
+  const n = parseInt(value, 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
+/** Neon palette for the app sidebar, derived from the chosen color. */
+function neonVars(hex) {
+  const safeHex = /^#?[0-9a-f]{6}$/i.test(hex || "") ? `#${hex.replace("#", "")}` : "#a855f7";
+  const { r, g, b } = hexToRgb(safeHex);
+  const { h, s, l } = hexToHsl(safeHex);
+  const a = (alpha) => `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  const bright = `hsl(${h} ${Math.min(100, Math.max(60, s))}% ${Math.min(92, l + 26)}%)`;
+  return {
+    "--app-neon-solid": safeHex,
+    "--app-neon-bright": bright,
+    "--app-neon-icon": a(0.7),
+    "--app-neon-section": a(0.85),
+    "--app-neon-text-shadow": `0 0 8px ${a(1)}, 0 0 16px ${a(0.8)}, 0 0 32px ${a(0.6)}`,
+    "--app-neon-subtitle-shadow": `0 0 6px ${a(1)}, 0 0 12px ${a(0.7)}`,
+    "--app-neon-icon-glow": `drop-shadow(0 0 4px ${a(1)}) drop-shadow(0 0 8px ${a(0.6)})`,
+    "--app-neon-icon-idle": `drop-shadow(0 0 3px ${a(0.8)}) drop-shadow(0 0 6px ${a(0.4)})`,
+    "--app-neon-active-bg": `linear-gradient(90deg, ${a(0.35)} 0%, ${a(0.12)} 100%)`,
+    "--app-neon-active-border": `2px solid ${a(1)}`,
+    "--app-neon-active-shadow": `0 0 16px ${a(0.4)}, inset 0 0 12px ${a(0.08)}`,
+    "--app-neon-active-text": `0 0 6px ${a(0.9)}, 0 0 12px ${a(0.5)}`,
+    "--app-neon-separator": `linear-gradient(90deg, transparent, ${a(0.4)}, transparent)`,
+  };
+}
 
 function loadPrefs() {
   try {
@@ -117,6 +148,7 @@ export function applyTheme(prefs) {
   const lightCustom = 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2] > 0.179;
   const vars = mode === "light" ? LIGHT_VARS : mode === "dark" ? SOLID_DARK_VARS : mode === "custom" && lightCustom ? LIGHT_VARS : DARK_VARS;
   applyVars(vars);
+  applyVars(neonVars(prefs.neonColor));
 
   if (mode === "custom") {
     const customHsl = `${h} ${s}% ${l}%`;

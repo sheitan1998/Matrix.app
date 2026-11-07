@@ -10,35 +10,11 @@ import { casinoPlaceBet } from "@/hooks/useCasinoJackpot";
 const RED_NUMBERS = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
 const WHEEL_NUMBERS = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
 
-function matchesBetType(num, betType) {
-  const isRed = RED_NUMBERS.includes(num);
-  if (betType === "red" && isRed) return true;
-  if (betType === "black" && !isRed && num !== 0) return true;
-  if (betType === "even" && num !== 0 && num % 2 === 0) return true;
-  if (betType === "odd" && num % 2 !== 0) return true;
-  if (betType === "1-18" && num >= 1 && num <= 18) return true;
-  if (betType === "19-36" && num >= 19 && num <= 36) return true;
-  return false;
-}
-
-function generateRouletteNumber(isWin, betType) {
-  if (isWin) {
-    switch (betType) {
-      case "red": return RED_NUMBERS[Math.floor(Math.random() * RED_NUMBERS.length)];
-      case "black": {
-        const blackNums = Array.from({ length: 37 }, (_, i) => i).filter(n => n !== 0 && !RED_NUMBERS.includes(n));
-        return blackNums[Math.floor(Math.random() * blackNums.length)];
-      }
-      case "even": return 2 * (1 + Math.floor(Math.random() * 18));
-      case "odd": return 1 + 2 * Math.floor(Math.random() * 18);
-      case "1-18": return 1 + Math.floor(Math.random() * 18);
-      case "19-36": return 19 + Math.floor(Math.random() * 18);
-      default: return Math.floor(Math.random() * 37);
-    }
-  }
-  let num, attempts = 0;
-  do { num = Math.floor(Math.random() * 37); attempts++; } while (matchesBetType(num, betType) && attempts < 50);
-  return num;
+// Le numéro gagnant est tiré côté serveur (uniforme, 0-36). Le client
+// n'oriente jamais le résultat en fonction du pari du joueur.
+function wheelNumber(serverResult) {
+  const value = Number(serverResult?.rouletteNumber);
+  return Number.isInteger(value) && value >= 0 && value <= 36 ? value : 0;
 }
 
 const BETS = [
@@ -240,7 +216,7 @@ export default function RouletteGame({ balance, setBalance, accentColor = "hsl(4
     setBallVisible(true);
     setResult(null);
 
-    const num = generateRouletteNumber(serverResult.win, bet);
+    const num = wheelNumber(serverResult);
     const numIdx = WHEEL_NUMBERS.indexOf(num);
     const sliceAngle = (Math.PI * 2) / 37;
     const currentAngle = stateRef.current.angle || 0;

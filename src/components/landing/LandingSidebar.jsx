@@ -2,7 +2,7 @@ import React, { useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  Home, Clapperboard, BarChart3, TrendingUp, ShoppingBag,
+  Home, Clapperboard, TrendingUp, ShoppingBag,
   User, Trophy, Heart, Wrench, Moon, HelpCircle, Globe,
   Gem, Shield, Star, ChevronDown, Palette
 } from "lucide-react";
@@ -13,7 +13,6 @@ import SidebarHoverIndicator from "@/components/landing/SidebarHoverIndicator";
 const NAV_ITEMS = [
   { label: "Accueil", path: "/", icon: Home },
   { label: "Montage Vidéo", path: "/video-studio", icon: Clapperboard },
-  { label: "Sondage", path: "/sondages", icon: BarChart3 },
   { label: "Niveaux/Progressions", path: "/progression", icon: TrendingUp },
   { label: "Boutique", path: "/boutique-matrix", icon: ShoppingBag },
   { label: "Mon profil", path: "/mon-profil", icon: User },
