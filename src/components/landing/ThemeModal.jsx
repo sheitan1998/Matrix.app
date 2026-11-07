@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Moon, Sun, Palette, Crown, Lock, X, Upload,
-  Check, Sparkles, Loader2, Image as ImageIcon
+  Check, Sparkles, Loader2, Image as ImageIcon, RotateCcw
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { base44 } from "@/api/base44Client";
@@ -196,6 +196,15 @@ export default function ThemeModal({ open, onClose }) {
                     />
                     <Palette className="w-4 h-4 text-white" style={{ filter: "drop-shadow(0 0 2px rgba(0,0,0,0.8))" }} />
                   </label>
+                  <button
+                    type="button"
+                    onClick={() => updatePrefs({ neonColor: "#a855f7" })}
+                    className="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold transition hover:bg-white/10 tap-sm"
+                    style={{ color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.15)" }}
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Réinitialiser par défaut
+                  </button>
                 </div>
               </div>
 

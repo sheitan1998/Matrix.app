@@ -37,7 +37,11 @@ export default function RouletteGame({ balance, setBalance, accentColor = "hsl(4
   const canvasRef = useRef(null);
   const animFrameRef = useRef(null);
   const startTimeRef = useRef(null);
-  const stateRef = useRef({ angle: 0, ballAngle: 0, target: 0, duration: 4000, done: false });
+  const stateRef = useRef({
+    angle: 0, startAngle: 0, target: 0,
+    ballFinal: 0, ballDirection: 1,
+    duration: 4000, done: false,
+  });
 
   const draw = (wheelAngle, ballAngle, showBall) => {
     const canvas = canvasRef.current;
@@ -184,12 +188,12 @@ export default function RouletteGame({ balance, setBalance, accentColor = "hsl(4
     const s = stateRef.current;
     const progress = Math.min(elapsed / s.duration, 1);
     const eased = 1 - Math.pow(1 - progress, 3);
-    const wheelAngle = eased * s.target;
+    const wheelAngle = s.startAngle + eased * s.target;
 
-    // Ball: spins opposite, decelerates faster and settles
+    // La bille tourne puis s'immobilise pile sous le repère, sur la case gagnante.
     const ballProgress = Math.min(elapsed / (s.duration * 0.75), 1);
     const ballEased = 1 - Math.pow(1 - ballProgress, 2);
-    const ballAngle = -ballEased * s.target * 3.2 + wheelAngle * 0.3;
+    const ballAngle = s.ballFinal + s.ballDirection * (1 - ballEased) * Math.PI * 2 * 9;
 
     draw(wheelAngle, ballAngle, true);
 
@@ -219,12 +223,24 @@ export default function RouletteGame({ balance, setBalance, accentColor = "hsl(4
     const num = wheelNumber(serverResult);
     const numIdx = WHEEL_NUMBERS.indexOf(num);
     const sliceAngle = (Math.PI * 2) / 37;
-    const currentAngle = stateRef.current.angle || 0;
-    const totalRotations = 6 + Math.random() * 4;
-    const target = currentAngle + totalRotations * Math.PI * 2 - numIdx * sliceAngle;
+    const startAngle = stateRef.current.angle || 0;
+    const rotations = 6 + Math.random() * 4;
+    const direction = Math.random() < 0.5 ? 1 : -1;
+    // Aligne le centre de la case gagnante sous le repère du haut.
+    const wanted = -numIdx * sliceAngle - sliceAngle / 2;
+    const aligned = ((wanted - startAngle) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+    const delta = direction * rotations * Math.PI * 2 + aligned;
     const duration = 4000 + Math.random() * 1500;
 
-    stateRef.current = { angle: currentAngle, ballAngle: 0, target: target - currentAngle, duration, done: false };
+    stateRef.current = {
+      angle: startAngle,
+      startAngle,
+      target: delta,
+      ballFinal: -Math.PI / 2,
+      ballDirection: direction,
+      duration,
+      done: false,
+    };
     startTimeRef.current = null;
     animFrameRef.current = requestAnimationFrame(animate);
 
@@ -233,20 +249,21 @@ export default function RouletteGame({ balance, setBalance, accentColor = "hsl(4
       const color = num === 0 ? "green" : isRed ? "red" : "black";
       const win = serverResult.win;
       const winAmount = serverResult.payout || 0;
+      const netGain = serverResult.netGain ?? (winAmount - stake);
       const jpHit = serverResult.jackpot;
 
       setBalance(serverResult.newBalance);
 
       if (jpHit) {
-        setResult({ num, color, win: true, gain: winAmount, jackpot: true });
-        setWinData({ amount: winAmount, multiplier: Math.round(winAmount / stake), isJackpot: true });
+        setResult({ num, color, win: true, gain: netGain, jackpot: true });
+        setWinData({ amount: netGain, multiplier: Math.max(1, Math.round(netGain / stake)), isJackpot: true });
         setShowWin(true);
-        toast.success(`🎰 JACKPOT ! ${num} — +${winAmount.toLocaleString()} 🪙`);
+        toast.success(`🎰 JACKPOT ! ${num} — +${netGain.toLocaleString()} 🪙`);
       } else if (win) {
-        setResult({ num, color, win: true, gain: winAmount });
-        setWinData({ amount: winAmount, multiplier: 2 });
+        setResult({ num, color, win: true, gain: netGain });
+        setWinData({ amount: netGain, multiplier: serverResult.multiplier || 1.6 });
         setShowWin(true);
-        toast.success(`🎉 ${num} — +${winAmount} 🪙`);
+        toast.success(`🎉 ${num} — +${netGain} 🪙`);
       } else {
         setResult({ num, color, win: false, gain: -stake });
         toast.error(`💸 ${num} — -${stake} 🪙`);

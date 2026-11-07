@@ -31,23 +31,23 @@ function payoutFor(key, number) {
   if (key.startsWith('n:')) {
     const value = Number(key.slice(2));
     if (!Number.isInteger(value) || value < 0 || value > 36) return -1;
-    return value === number ? 36 : 0;
+    return value === number ? 30 : 0;
   }
   if (number === 0) return 0;
   const red = RED.has(number);
   switch (key) {
-    case 'red': return red ? 2 : 0;
-    case 'black': return red ? 0 : 2;
-    case 'even': return number % 2 === 0 ? 2 : 0;
-    case 'odd': return number % 2 === 1 ? 2 : 0;
-    case 'low': return number <= 18 ? 2 : 0;
-    case 'high': return number >= 19 ? 2 : 0;
-    case 'dozen1': return number <= 12 ? 3 : 0;
-    case 'dozen2': return number >= 13 && number <= 24 ? 3 : 0;
-    case 'dozen3': return number >= 25 ? 3 : 0;
-    case 'col1': return number % 3 === 1 ? 3 : 0;
-    case 'col2': return number % 3 === 2 ? 3 : 0;
-    case 'col3': return number % 3 === 0 ? 3 : 0;
+    case 'red': return red ? 1.6 : 0;
+    case 'black': return red ? 0 : 1.6;
+    case 'even': return number % 2 === 0 ? 1.6 : 0;
+    case 'odd': return number % 2 === 1 ? 1.6 : 0;
+    case 'low': return number <= 18 ? 1.6 : 0;
+    case 'high': return number >= 19 ? 1.6 : 0;
+    case 'dozen1': return number <= 12 ? 2.2 : 0;
+    case 'dozen2': return number >= 13 && number <= 24 ? 2.2 : 0;
+    case 'dozen3': return number >= 25 ? 2.2 : 0;
+    case 'col1': return number % 3 === 1 ? 2.2 : 0;
+    case 'col2': return number % 3 === 2 ? 2.2 : 0;
+    case 'col3': return number % 3 === 0 ? 2.2 : 0;
     default: return -1;
   }
 }
@@ -111,7 +111,7 @@ export default async function (req: Request): Promise<Response> {
     for (const bet of bets) {
       const multiplier = payoutFor(bet.key, number);
       if (multiplier > 0) {
-        const gain = bet.amount * multiplier;
+        const gain = Math.floor(bet.amount * multiplier);
         payout += gain;
         wins.push({ key: bet.key, amount: gain });
       }

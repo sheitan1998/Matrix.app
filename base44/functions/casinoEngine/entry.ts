@@ -292,8 +292,10 @@ export default async function(req: Request): Promise<Response> {
             // Plafond global: le gain total d'un spin ne dépasse jamais 100x la mise
             payout = Math.min(payout, betAmount * MAX_WIN_CAP);
           } else if (game === 'roulette') {
-            payout = betAmount * 2;
-            multiplier = 2;
+            // Payout volontairement réduit : la roulette rapporte 1,6x la mise
+            // (marge maison renforcée pour rééquilibrer l'économie du jeu).
+            payout = Math.floor(betAmount * 1.6);
+            multiplier = 1.6;
           } else if (game === 'blackjack') {
             payout = betAmount * 2;
             multiplier = 2;

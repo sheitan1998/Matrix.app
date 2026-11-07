@@ -1,5 +1,5 @@
 import React, {
-  createContext, useContext, useState, useEffect, useCallback, useMemo,
+  createContext, useContext, useState, useEffect, useCallback, useMemo, useRef,
 } from "react";
 import { base44 } from "@/api/base44Client";
 
@@ -197,6 +197,9 @@ export function ThemeProvider({ children }) {
   const [prefs, setPrefs] = useState(loadPrefs);
   const [hasCustomBg, setHasCustomBg] = useState(false);
   const [customBgChecked, setCustomBgChecked] = useState(false);
+  const [profileReady, setProfileReady] = useState(false);
+  const savedRef = useRef("");
+  const saveTimer = useRef(null);
 
   useEffect(() => {
     applyTheme(prefs);
@@ -215,9 +218,34 @@ export function ThemeProvider({ children }) {
       } else {
         setHasCustomBg(sub);
       }
+      // Préférences de thème enregistrées dans le profil : elles prennent le
+      // dessus pour retrouver la même apparence sur un autre appareil.
+      const stored = u?.theme_prefs;
+      if (stored && typeof stored === "object") {
+        const merged = { ...loadPrefs(), ...stored };
+        savedRef.current = JSON.stringify(merged);
+        setPrefs(merged);
+      }
     } catch {}
     setCustomBgChecked(true);
+    setProfileReady(true);
   }, []);
+
+  // Sauvegarde du thème (localStorage immédiat + profil utilisateur différé).
+  useEffect(() => {
+    if (!profileReady) return;
+    const payload = JSON.stringify(prefs);
+    if (payload === savedRef.current) return;
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(async () => {
+      savedRef.current = payload;
+      try {
+        if (!(await base44.auth.isAuthenticated())) return;
+        await base44.auth.updateMe({ theme_prefs: prefs });
+      } catch {}
+    }, 700);
+    return () => clearTimeout(saveTimer.current);
+  }, [prefs, profileReady]);
 
   useEffect(() => {
     checkCustomBg();
