@@ -14,10 +14,10 @@ import { User, ArrowRight } from "lucide-react";
 const PLATFORM_CARDS = [
   { path: "/stream", label: "YouTube", desc: "Vidéos, lives, shorts. Crée ta chaîne et partage ton contenu.", iconUrl: "/media/tuto-gaming/c4e71cf23_yt_icon_red_digital.png", color: "#FF0000" },
   { path: "/twitch", label: "Twitch", desc: "Streams en direct, clips, discussions et rencontres.", color: "#9146FF" },
-  { path: "/nexus", label: "Nexus", desc: "Discute, réagis, commente. Rejoins ou crée des salons vocaux.", color: "#3B82F6" },
-  { path: "/casino", label: "Nexus Game", desc: "Roulette, machines à sous, blackjack et plus encore.", color: "#F59E0B", badge: "18+" },
-  { path: "/best-serveurs", label: "Best Serveur", desc: "Trouve des joueurs, recrute ou explore des serveurs de jeu.", color: "#8a4fff" },
-  { path: "/tuto-gaming", label: "Tuto Gaming Entraide", desc: "Guides, astuces, entraide et base de connaissances pour tous les jeux.", color: "#BF5AF2" },
+  { path: "/nexus", label: "Nexus", desc: "Discute, réagis, commente. Rejoins ou crée des salons vocaux.", color: "#3B82F6", logoUrl: "https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/8756642f5_b119924b0_EmblmecosmiquefuturisteNEXUS1.png" },
+  { path: "/casino", label: "Nexus Game", desc: "Roulette, machines à sous, blackjack et plus encore.", color: "#F59E0B", badge: "18+", logoUrl: "https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/9556b64f1_bc107644a_EmblmedorNexusGamefuturiste.png" },
+  { path: "/best-serveurs", label: "Best Serveur", desc: "Trouve des joueurs, recrute ou explore des serveurs de jeu.", color: "#8a4fff", logoUrl: "https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/994590848_a2c9d5d40_BadgenonfuturisteBestServeur.png" },
+  { path: "/tuto-gaming", label: "Tuto Gaming Entraide", desc: "Guides, astuces, entraide et base de connaissances pour tous les jeux.", color: "#BF5AF2", logoUrl: "https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/8f647df05_0706208c7_EmblmenonTutosGamingunerquicklich.png" },
 ];
 
 export default function Landing() {
@@ -86,7 +86,14 @@ export default function Landing() {
                 }}
               >
                 <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ background: u.color, boxShadow: `0 0 10px ${u.color}80` }} />
-                {u.iconUrl ? (
+                {u.logoUrl ? (
+                  <img
+                    src={u.logoUrl}
+                    alt={u.label}
+                    className="w-11 h-11 rounded-full object-cover shrink-0 transition-transform group-hover:scale-110"
+                    style={{ border: `1.5px solid ${u.color}66`, boxShadow: `0 0 14px ${u.color}44` }}
+                  />
+                ) : u.iconUrl ? (
                   <img src={u.iconUrl} alt={u.label} style={{ height: 28, width: "auto" }} className="shrink-0" />
                 ) : (
                   <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${u.color}1a`, boxShadow: `0 0 15px ${u.color}30` }}>
