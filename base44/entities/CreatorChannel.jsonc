@@ -16,20 +16,30 @@
         "youtube",
         "twitch",
         "tiktok",
-        "instagram"
+        "instagram",
+        "snapchat"
       ],
       "enumColors": [
         "red",
         "purple",
         "blue",
-        "pink"
+        "pink",
+        "yellow"
       ],
       "default": "youtube",
       "description": "Plateforme de la cha\u00eene"
     },
     "channel_url": {
       "type": "string",
-      "description": "Lien direct vers la cha\u00eene (YouTube, Twitch, TikTok ou Instagram)"
+      "description": "Lien direct vers la cha\u00eene (YouTube, Twitch, TikTok, Instagram ou Snapchat)"
+    },
+    "snapchat_username": {
+      "type": "string",
+      "description": "Pseudo Snapchat (affich\u00e9 et copiable sur la carte)"
+    },
+    "snapchat_link": {
+      "type": "string",
+      "description": "Lien direct ou QR code Snapchat (URL d'une image QR accept\u00e9e)"
     },
     "description": {
       "type": "string",

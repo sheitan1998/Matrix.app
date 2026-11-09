@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { X, Youtube, Twitch, Music2, Instagram, Loader2, RefreshCw, ImageOff } from "lucide-react";
+import { X, Youtube, Twitch, Music2, Instagram, Ghost, Loader2, RefreshCw, ImageOff, Upload } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import CreatorVisualFields from "./CreatorVisualFields";
 import { CREATOR_DEFAULT_VISUALS, needsManualVisuals } from "@/lib/creatorDefaults";
@@ -9,6 +9,7 @@ const PLATFORM_OPTIONS = [
   { key: "twitch", label: "Twitch", icon: Twitch, color: "#9146FF", hint: "twitch.tv/..." },
   { key: "tiktok", label: "TikTok", icon: Music2, color: "#25F4EE", hint: "tiktok.com/@..." },
   { key: "instagram", label: "Instagram", icon: Instagram, color: "#E1306C", hint: "instagram.com/..." },
+  { key: "snapchat", label: "Snapchat", icon: Ghost, color: "#FFFC00", hint: "snapchat.com/add/..." },
 ];
 
 const PLATFORM_URL_TESTS = {
@@ -16,7 +17,10 @@ const PLATFORM_URL_TESTS = {
   twitch: /twitch\.tv/i,
   tiktok: /tiktok\.com/i,
   instagram: /instagram\.com/i,
+  snapchat: /(snapchat\.com|snap\.chat)/i,
 };
+
+const isImageUrl = (value) => /^https?:\/\/[^\s]+\.(png|jpe?g|webp|gif|avif)(\?|$)/i.test(String(value || "").trim());
 
 const MAX_PER_PLATFORM = 3;
 
@@ -28,6 +32,9 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
   const [description, setDescription] = useState(channel?.description || "");
   const [avatarUrl, setAvatarUrl] = useState(channel?.avatar_url || "");
   const [bannerUrl, setBannerUrl] = useState(channel?.banner_url || "");
+  const [snapchatUsername, setSnapchatUsername] = useState(channel?.snapchat_username || "");
+  const [snapchatLink, setSnapchatLink] = useState(channel?.snapchat_link || "");
+  const [uploadingQr, setUploadingQr] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [metaError, setMetaError] = useState("");
   const [error, setError] = useState("");
@@ -35,6 +42,7 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
   const lastFetched = useRef("");
 
   const current = PLATFORM_OPTIONS.find((p) => p.key === platform) || PLATFORM_OPTIONS[0];
+  const isSnapchat = platform === "snapchat";
   const manualVisuals = needsManualVisuals(platform);
   const defaultVisuals = CREATOR_DEFAULT_VISUALS[platform] || {};
   const previewAvatar = avatarUrl || defaultVisuals.avatar_url || "";
@@ -47,8 +55,8 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
 
   const loadMeta = async (url, force = false) => {
     const target = url.trim();
-    // TikTok et Instagram : visuels saisis manuellement, aucune extraction possible.
-    if (manualVisuals) return;
+    // TikTok, Instagram et Snapchat : visuels manuels ou par défaut, aucune extraction possible.
+    if (manualVisuals || isSnapchat) return;
     if (!urlIsValid || !target) return;
     if (!force && lastFetched.current === `${platform}:${target}`) return;
     lastFetched.current = `${platform}:${target}`;
@@ -92,31 +100,68 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const handleQrUpload = async (file) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Choisis une image pour le QR code.");
+      return;
+    }
+    setError("");
+    setUploadingQr(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
+      if (!file_url) throw new Error("upload_failed");
+      setSnapchatLink(file_url);
+    } catch {
+      setError("Envoi du QR code impossible. Tu peux coller le lien direct Snapchat.");
+    } finally {
+      setUploadingQr(false);
+    }
+  };
+
   const handleSubmit = async () => {
+    const pseudo = snapchatUsername.replace(/^@/, "").trim();
     if (quotaReached) {
       setError(`Quota maximal de ${MAX_PER_PLATFORM} chaînes atteint pour cette catégorie.`);
       return;
     }
-    if (name.trim().length < 2) {
-      setError("Indique le pseudo de ta chaîne (2 caractères minimum).");
-      return;
-    }
-    if (!urlIsValid) {
-      setError(`Le lien doit être une URL ${current.label} valide (${current.hint}).`);
-      return;
+    if (isSnapchat) {
+      if (!/^[a-zA-Z0-9._-]{2,30}$/.test(pseudo)) {
+        setError("Indique un pseudo Snapchat valide (2 à 30 caractères).");
+        return;
+      }
+      if (snapchatLink.trim() && !/^https?:\/\//i.test(snapchatLink.trim())) {
+        setError("Le QR code doit être un lien image ou un lien Snapchat commençant par https://");
+        return;
+      }
+    } else {
+      if (name.trim().length < 2) {
+        setError("Indique le pseudo de ta chaîne (2 caractères minimum).");
+        return;
+      }
+      if (!urlIsValid) {
+        setError(`Le lien doit être une URL ${current.label} valide (${current.hint}).`);
+        return;
+      }
     }
     setError("");
     setSubmitting(true);
+    const snapLink = snapchatLink.trim();
+    const snapChannelUrl = !snapLink || isImageUrl(snapLink)
+      ? `https://www.snapchat.com/add/${pseudo}`
+      : snapLink;
     try {
       const res = await base44.functions.invoke("creatorSearch", {
         action: "saveChannel",
         id: channel?.id,
-        name: name.trim(),
+        name: isSnapchat ? pseudo : name.trim(),
         platform,
-        channel_url: channelUrl.trim(),
+        channel_url: isSnapchat ? snapChannelUrl : channelUrl.trim(),
         description: description.trim(),
-        avatar_url: manualVisuals ? (avatarUrl || defaultVisuals.avatar_url || "") : avatarUrl,
-        banner_url: manualVisuals ? (bannerUrl || defaultVisuals.banner_url || "") : bannerUrl,
+        snapchat_username: isSnapchat ? pseudo : "",
+        snapchat_link: isSnapchat ? snapLink : "",
+        avatar_url: (manualVisuals || isSnapchat) ? (avatarUrl || defaultVisuals.avatar_url || "") : avatarUrl,
+        banner_url: (manualVisuals || isSnapchat) ? (bannerUrl || defaultVisuals.banner_url || "") : bannerUrl,
         });
       if (res.data?.error) throw new Error(res.data.error);
       onSaved?.(res.data.channel);
@@ -124,6 +169,8 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
       const code = err?.response?.data?.error || err?.message;
       if (code === "quota_reached") {
         setError(`Quota maximal de ${MAX_PER_PLATFORM} chaînes atteint pour cette catégorie.`);
+      } else if (code === "snapchat_username_invalid") {
+        setError("Indique un pseudo Snapchat valide (2 à 30 caractères).");
       } else if (code === "invalid_url") {
         setError(`Le lien doit être une URL ${current.label} valide.`);
       } else {
@@ -195,7 +242,9 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
               </span>
             </div>
             <div className="pt-6 px-3 pb-3">
-              <p className="text-sm font-black text-white truncate">{name || "Nom de la chaîne"}</p>
+              <p className="text-sm font-black text-white truncate">
+                {(isSnapchat ? snapchatUsername.replace(/^@/, "").trim() : name) || "Nom de la chaîne"}
+              </p>
               <p className="text-[9px] text-white/35">Aperçu de la carte Best Creator</p>
             </div>
           </div>
@@ -231,6 +280,7 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
             </p>
           </div>
 
+          {!isSnapchat && (
           <div>
             <label className="text-[9px] font-bold uppercase tracking-wider text-white/40 mb-1 block">
               Lien direct de la chaîne *
@@ -266,6 +316,62 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
             </p>
             {metaError && <p className="text-[9px] text-amber-400/80 mt-1">{metaError}</p>}
           </div>
+          )}
+
+          {isSnapchat && (
+            <>
+              <div>
+                <label className="text-[9px] font-bold uppercase tracking-wider text-white/40 mb-1 block">
+                  Pseudo Snapchat *
+                </label>
+                <input
+                  type="text"
+                  maxLength={30}
+                  value={snapchatUsername}
+                  onChange={(e) => { setSnapchatUsername(e.target.value); setError(""); }}
+                  placeholder="Ex: matrix.gaming"
+                  className="w-full h-10 px-3 rounded-lg text-sm text-white placeholder:text-white/30 outline-none"
+                  style={{ background: "rgba(255,252,0,0.06)", border: "1px solid rgba(255,252,0,0.25)" }}
+                />
+                <p className="text-[9px] text-white/35 mt-1">
+                  Le pseudo s'affiche sur l'annonce avec un bouton de copie en un clic.
+                </p>
+              </div>
+
+              <div>
+                <label className="text-[9px] font-bold uppercase tracking-wider text-white/40 mb-1 block">
+                  Lien direct ou QR code
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={snapchatLink}
+                    onChange={(e) => { setSnapchatLink(e.target.value); setError(""); }}
+                    placeholder={`https://www.snapchat.com/add/${snapchatUsername.replace(/^@/, "").trim() || "..."}`}
+                    className="flex-1 min-w-0 h-10 px-3 rounded-lg text-sm text-white placeholder:text-white/30 outline-none"
+                    style={{ background: "rgba(255,252,0,0.06)", border: "1px solid rgba(255,252,0,0.25)" }}
+                  />
+                  <label
+                    title="Envoyer l'image du QR code"
+                    className="w-10 h-10 rounded-lg flex items-center justify-center text-white/70 transition cursor-pointer shrink-0 hover:bg-white/5"
+                    style={{ background: "rgba(255,252,0,0.1)", border: "1px solid rgba(255,252,0,0.28)" }}
+                  >
+                    {uploadingQr ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleQrUpload(e.target.files?.[0])}
+                    />
+                  </label>
+                </div>
+                <p className="text-[9px] text-white/35 mt-1">
+                  Colle le lien Snapchat ou envoie l'image du QR code. Laissé vide, le lien
+                  snapchat.com/add/{snapchatUsername.replace(/^@/, "").trim() || "pseudo"} sera utilisé.
+                </p>
+              </div>
+            </>
+          )}
 
           {manualVisuals && (
             <CreatorVisualFields
@@ -281,6 +387,7 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
             />
           )}
 
+          {!isSnapchat && (
           <div>
             <label className="text-[9px] font-bold uppercase tracking-wider text-white/40 mb-1 block">Pseudo de la chaîne *</label>
             <input
@@ -293,6 +400,7 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
               style={{ background: "rgba(138,79,255,0.05)", border: "1px solid rgba(138,79,255,0.2)" }}
             />
           </div>
+          )}
 
           <div>
             <label className="text-[9px] font-bold uppercase tracking-wider text-white/40 mb-1 block">Description</label>

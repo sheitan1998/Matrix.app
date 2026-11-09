@@ -11,6 +11,10 @@ export const CREATOR_DEFAULT_VISUALS = {
     avatar_url: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/25c2457b7_generated_image.png",
     banner_url: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/82fad7e83_generated_image.png",
   },
+  snapchat: {
+    avatar_url: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/3c66adb1c_generated_image.png",
+    banner_url: "https://media.base44.com/images/public/69e14a987a927963a9924d5a/ed2b995ee_generated_image.png",
+  },
 };
 
 export const needsManualVisuals = (platform) => MANUAL_VISUAL_PLATFORMS.includes(platform);

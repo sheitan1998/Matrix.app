@@ -23,6 +23,7 @@ const PLATFORM_URL_TESTS: Record<string, RegExp> = {
   twitch: /twitch\.tv/i,
   tiktok: /tiktok\.com/i,
   instagram: /instagram\.com/i,
+  snapchat: /(snapchat\.com|snap\.chat)/i,
 };
 
 const normalizePlatform = (value: any) => {
@@ -105,12 +106,36 @@ export default async function (req: Request): Promise<Response> {
       if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 });
 
       const platform = normalizePlatform(body?.platform);
-      const name = String(body?.name || '').trim().slice(0, 60);
-      const channelUrl = String(body?.channel_url || '').trim();
+      let name = String(body?.name || '').trim().slice(0, 60);
+      let channelUrl = String(body?.channel_url || '').trim();
       const description = String(body?.description || '').trim().slice(0, 1000);
       const avatarUrl = String(body?.avatar_url || '').trim();
       const bannerUrl = String(body?.banner_url || '').trim();
       const channelId = body?.id ? String(body.id) : '';
+
+      // Snapchat : identité par pseudo + lien direct ou QR code.
+      let snapUsername = '';
+      let snapLink = '';
+      if (platform === 'snapchat') {
+        snapUsername = String(body?.snapchat_username || name || '')
+          .replace(/^@/, '')
+          .trim()
+          .slice(0, 30);
+        snapLink = String(body?.snapchat_link || '').trim().slice(0, 500);
+        if (!/^[a-z0-9._-]{2,30}$/i.test(snapUsername)) {
+          return Response.json({ error: 'snapchat_username_invalid' }, { status: 400 });
+        }
+        const linkIsImage = /^https?:\/\/[^\s]+\.(png|jpe?g|webp|gif|avif)(\?|$)/i.test(snapLink);
+        if (snapLink && !/^https?:\/\//i.test(snapLink)) {
+          return Response.json({ error: 'invalid_url' }, { status: 400 });
+        }
+        if (!snapLink || linkIsImage) {
+          channelUrl = `https://www.snapchat.com/add/${snapUsername}`;
+        } else {
+          channelUrl = snapLink;
+        }
+        if (!name) name = snapUsername;
+      }
 
       if (name.length < 2) return Response.json({ error: 'name_invalid' }, { status: 400 });
       if (!isValidChannelUrl(channelUrl, platform)) return Response.json({ error: 'invalid_url' }, { status: 400 });
@@ -141,6 +166,8 @@ export default async function (req: Request): Promise<Response> {
           platform,
           channel_url: channelUrl,
           description,
+          snapchat_username: snapUsername,
+          snapchat_link: snapLink,
           ...visuals,
         });
         return Response.json({ success: true, channel: updated });
@@ -161,6 +188,8 @@ export default async function (req: Request): Promise<Response> {
         platform,
         channel_url: channelUrl,
         description,
+        snapchat_username: snapUsername,
+        snapchat_link: snapLink,
         ...visuals,
         owner_email: ownerEmail,
         owner_name: user.full_name || ownerEmail.split('@')[0],

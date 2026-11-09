@@ -1,11 +1,12 @@
 import React from "react";
-import { Sparkles, Youtube, Twitch, Music2, Instagram } from "lucide-react";
+import { Sparkles, Youtube, Twitch, Music2, Instagram, Ghost } from "lucide-react";
 
 export const CREATOR_PLATFORMS = {
   youtube: { key: "youtube", label: "YouTube", icon: Youtube, color: "#FF0000" },
   twitch: { key: "twitch", label: "Twitch", icon: Twitch, color: "#9146FF" },
   tiktok: { key: "tiktok", label: "TikTok", icon: Music2, color: "#25F4EE" },
   instagram: { key: "instagram", label: "Instagram", icon: Instagram, color: "#E1306C" },
+  snapchat: { key: "snapchat", label: "Snapchat", icon: Ghost, color: "#FFFC00" },
 };
 
 export const CREATOR_PLATFORM_KEYS = Object.keys(CREATOR_PLATFORMS);
@@ -18,8 +19,8 @@ const CARDS = [
 export default function CreatorPlatformCards({ selected, onSelect, counts = {}, loading }) {
   if (loading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-        {Array.from({ length: 5 }).map((_, i) => (
+      <div className="grid grid-cols-2 sm:grid-cols-6 gap-2.5">
+        {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="h-24 rounded-xl animate-pulse" style={{ background: "rgba(138,79,255,0.05)" }} />
         ))}
       </div>
@@ -27,7 +28,7 @@ export default function CreatorPlatformCards({ selected, onSelect, counts = {}, 
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+    <div className="grid grid-cols-2 sm:grid-cols-6 gap-2.5">
       {CARDS.map((card) => {
         const isSelected = selected === card.key;
         const Icon = card.icon;

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { ArrowUp, ExternalLink, Trophy, Pencil } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import CreatorVoteModal from "./CreatorVoteModal";
+import SnapchatChannelActions from "./SnapchatChannelActions";
 import { CREATOR_PLATFORMS } from "./CreatorPlatformCards";
 import { resolveCreatorVisuals } from "@/lib/creatorDefaults";
 
@@ -137,19 +138,21 @@ export default function CreatorChannelCard({ creator, rank, user, onVote, onEdit
 
           <div className="flex-1 min-w-0 pt-7">
             <p className="text-sm font-black text-white truncate">{creator.name}</p>
-            
 
-            
-            <a
-              href={creator.channel_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 mt-1 text-[9px] font-bold transition hover:opacity-80"
-              style={{ color: accent }}>
-              
-              <ExternalLink className="w-2.5 h-2.5" />
-              Voir la chaîne
-            </a>
+            {creator.platform === "snapchat" ? (
+              <SnapchatChannelActions creator={creator} accent={accent} />
+            ) : (
+              <a
+                href={creator.channel_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 mt-1 text-[9px] font-bold transition hover:opacity-80"
+                style={{ color: accent }}>
+                
+                <ExternalLink className="w-2.5 h-2.5" />
+                Voir la chaîne
+              </a>
+            )}
           </div>
         </div>
 

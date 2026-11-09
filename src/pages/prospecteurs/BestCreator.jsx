@@ -244,7 +244,7 @@ export default function BestCreator() {
             >
               <Sparkles className="w-4 h-4" style={{ color: "#a855f7", filter: "drop-shadow(0 0 6px rgba(168,85,247,0.8))" }} />
               <span className="text-xs font-black tracking-wider uppercase text-white">Best Creator</span>
-              <span className="text-[9px] text-white/40 ml-1">· YouTube &amp; Twitch réunis</span>
+              <span className="text-[9px] text-white/40 ml-1">· 5 plateformes réunies</span>
             </div>
             <div
               className="h-10 px-3 rounded-xl text-xs font-black tracking-wider uppercase flex items-center justify-center gap-1.5"
@@ -259,7 +259,7 @@ export default function BestCreator() {
           <div className="mb-5">
             <div className="flex items-center gap-2 mb-3">
               <h2 className="text-xs font-black tracking-wider uppercase text-white">Catégories</h2>
-              <span className="text-[9px] text-white/40 ml-auto">4 plateformes</span>
+              <span className="text-[9px] text-white/40 ml-auto">5 plateformes</span>
             </div>
             <CreatorPlatformCards
               selected={platform}
