@@ -1,4 +1,5 @@
 import React from "react";
+import { LifeBuoy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -6,7 +7,7 @@ import { cn } from "@/lib/utils";
  * variant "desktop" : panneau vertical dédié (bord droit de l'écran)
  * variant "mobile"  : grille à deux colonnes
  */
-export default function ProfileTabPanel({ tabs, active, onChange, variant = "desktop" }) {
+export default function ProfileTabPanel({ tabs, active, onChange, variant = "desktop", onSupport }) {
   const isMobile = variant === "mobile";
 
   return (
@@ -66,6 +67,24 @@ export default function ProfileTabPanel({ tabs, active, onChange, variant = "des
           </button>
         );
       })}
+
+      {onSupport && (
+        <div
+          className={cn("mt-1 pt-1.5", isMobile && "col-span-2")}
+          style={{ borderTop: "1px solid rgba(168,85,247,0.18)" }}
+        >
+          <button
+            onClick={onSupport}
+            className={cn(
+              "w-full flex items-center rounded-xl font-bold transition-all tap-sm text-white/45 hover:text-white/80",
+              isMobile ? "gap-2 px-2.5 py-2 text-[11px]" : "gap-2.5 px-2.5 py-2.5 text-sm"
+            )}
+          >
+            <LifeBuoy className={cn("shrink-0", isMobile ? "w-3.5 h-3.5" : "w-4 h-4")} />
+            <span className="truncate">Contacter le support</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

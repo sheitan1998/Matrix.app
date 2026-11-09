@@ -60,6 +60,49 @@ export default async function (req) {
       return Response.json({ affiliation: created });
     }
 
+    if (action === 'applyAffiliate') {
+      const existingRes = await base44.asServiceRole.entities.Affiliation.filter({ user_email: userEmail }, { limit: 1 });
+      const existing = existingRes?.items?.[0] || null;
+      if (existing?.status === 'revoked') {
+        return Response.json({ error: "Votre statut a été retiré. Contactez un administrateur." }, { status: 403 });
+      }
+
+      const displayName = String(body?.name || existing?.user_name || userName).trim().slice(0, 80);
+      const pseudo = String(body?.pseudo || user.pseudo || "").trim().slice(0, 40);
+      const description = String(body?.description || "").trim().slice(0, 2000);
+      const links = normalizeLinks(body?.links);
+
+      if (!displayName || !description) {
+        return Response.json({ error: "Nom et description sont requis." }, { status: 400 });
+      }
+
+      const payload: any = {
+        user_email: userEmail,
+        user_name: displayName,
+        user_avatar: user.avatar_url || existing?.user_avatar || "",
+        description,
+        portfolio_links: links,
+        referral_code: existing?.referral_code || cleanCode(pseudo) || code,
+      };
+
+      if (existing) {
+        if (existing.status !== 'partner') {
+          payload.status = 'affiliate';
+          payload.approved_at = existing.approved_at || new Date().toISOString();
+        }
+        const updated = await base44.asServiceRole.entities.Affiliation.update(existing.id, payload);
+        return Response.json({ affiliation: updated });
+      }
+
+      const created = await base44.asServiceRole.entities.Affiliation.create({
+        ...payload,
+        status: 'affiliate',
+        approved_at: new Date().toISOString(),
+        trix_per_month: 0,
+      });
+      return Response.json({ affiliation: created });
+    }
+
     if (action === 'applyPartner') {
       const platform = String(body?.platform || "").trim();
       const subscribers = toNumber(body?.subscribers);
@@ -97,6 +140,8 @@ export default async function (req) {
         program_type: "partner",
         message: [
           "Candidature Partenaire",
+          `Candidat : ${String(body?.name || userName).trim().slice(0, 80)}`,
+          `Pseudo : ${String(body?.pseudo || user.pseudo || userName).trim().slice(0, 40)}`,
           `Plateforme : ${platform}`,
           `Abonnés : ${subscribers.toLocaleString('fr-FR')}`,
           `Vues cumulées : ${views.toLocaleString('fr-FR')}`,

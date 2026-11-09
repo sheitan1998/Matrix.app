@@ -1,55 +1,29 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import { toast } from "sonner";
-import { useMyAffiliation } from "@/hooks/useMyAffiliation";
+import { useMyAffiliation, isActiveAffiliation } from "@/hooks/useMyAffiliation";
 import { buildReferralCode } from "@/lib/affiliateProgram";
-import AffiliateProgramCard from "@/components/affiliate/AffiliateProgramCard";
-import PartnerProgramCard from "@/components/affiliate/PartnerProgramCard";
+import ProgramSelector from "@/components/affiliate/ProgramSelector";
+import MediaKit from "@/components/affiliate/MediaKit";
+import AffiliateSection from "@/components/affiliate/AffiliateSection";
+import PartnerSection from "@/components/affiliate/PartnerSection";
 
 const HERO_IMAGE = "https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/3a68e170e_partenariat-affiliation-hero.png";
 
 export default function AffiliateDashboard() {
   const qc = useQueryClient();
   const [user, setUser] = useState(null);
-  const [activating, setActivating] = useState(false);
+  const [tab, setTab] = useState("affiliate");
 
   useEffect(() => { base44.auth.me().then(setUser).catch(() => {}); }, []);
 
   const { data: affiliation } = useMyAffiliation(user?.email);
+  const isAffiliate = isActiveAffiliation(affiliation);
+  const referralCode = user ? (affiliation?.referral_code || buildReferralCode(user)) : "";
 
-  const { data: referralCount = 0 } = useQuery({
-    queryKey: ["referral-count", user?.email],
-    queryFn: () => base44.entities.Referral.count({ referrer_email: user.email }),
-    enabled: !!user?.email,
-  });
-
-  const { data: pendingPartner = false } = useQuery({
-    queryKey: ["partner-pending", user?.email],
-    queryFn: () => base44.entities.SupportTicket.filter(
-      { user_email: user.email, program_type: "partner", status: { $in: ["open", "in_progress"] } },
-      { limit: 1 }
-    ).then((r) => !!r?.items?.[0]),
-    enabled: !!user?.email,
-  });
-
-  const referralCode = affiliation?.referral_code || (user ? buildReferralCode(user) : "");
-
-  const activateAffiliate = async () => {
-    setActivating(true);
-    try {
-      const res = await base44.functions.invoke("affiliateProgram", { action: "activateAffiliate" });
-      if (res?.data?.error) { toast.error(res.data.error); return; }
-      toast.success("Statut Affilié activé !");
-      qc.invalidateQueries({ queryKey: ["my-affiliation", user.email] });
-    } catch (err) {
-      toast.error(err?.response?.data?.error || "Erreur lors de l'activation");
-    } finally {
-      setActivating(false);
-    }
-  };
+  const refreshAffiliation = () => qc.invalidateQueries({ queryKey: ["my-affiliation", user?.email] });
 
   if (!user) {
     return (
@@ -62,7 +36,7 @@ export default function AffiliateDashboard() {
   return (
     <div className="min-h-screen bg-background pb-12">
       <div className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-xl px-4 py-3">
-        <div className="max-w-3xl mx-auto flex items-center gap-3">
+        <div className="max-w-4xl mx-auto flex items-center gap-3">
           <Link to="/mon-profil" className="text-muted-foreground hover:text-foreground transition">
             <ArrowLeft className="w-5 h-5" />
           </Link>
@@ -70,34 +44,49 @@ export default function AffiliateDashboard() {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 py-5 space-y-7">
-        <div className="relative rounded-3xl overflow-hidden" style={{ border: "1px solid rgba(168,85,247,0.3)", boxShadow: "0 0 40px rgba(168,85,247,0.18)" }}>
-          <img src={HERO_IMAGE} alt="Partenariat & Affiliation" className="w-full h-[220px] sm:h-[300px] object-cover object-center" />
-          <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(5,2,10,0.94) 0%, rgba(5,2,10,0.35) 48%, transparent 78%)" }} />
-          <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-7">
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-purple-300">Matrix Creator</p>
-            <h1 className="text-2xl sm:text-4xl font-black text-white mt-1">Partenariat & Affiliation</h1>
-            <p className="text-xs sm:text-sm text-white/60 mt-1.5 max-w-lg">
-              Devenez affilié en un clic ou rejoignez l'élite des partenaires Matrix.
+      <div className="max-w-4xl mx-auto px-4 py-5 space-y-6">
+        {/* Hero visuel principal */}
+        <div className="relative rounded-3xl overflow-hidden" style={{ border: "1px solid rgba(168,85,247,0.3)", boxShadow: "0 0 50px rgba(168,85,247,0.2)" }}>
+          <img src={HERO_IMAGE} alt="Partenariat & Affiliation" className="w-full h-[260px] sm:h-[360px] object-cover object-center" />
+          <div
+            className="absolute inset-0"
+            style={{ background: "linear-gradient(to top, rgba(5,2,10,0.96) 0%, rgba(5,2,10,0.5) 52%, rgba(5,2,10,0.12) 100%)" }}
+          />
+          <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-9">
+            <p className="text-[10px] font-black uppercase tracking-[0.35em] text-purple-300">Matrix Creators</p>
+            <h1 className="text-3xl sm:text-5xl font-black text-white mt-2 leading-none">Partenariat &amp; Affiliation</h1>
+            <p className="text-xs sm:text-sm text-white/60 mt-2.5 max-w-lg">
+              Partagez Matrix avec votre communauté, suivez vos filleuls et accédez au statut Partenaire.
             </p>
           </div>
         </div>
 
-        <AffiliateProgramCard
-          affiliation={affiliation}
-          referralCode={referralCode}
-          referralCount={referralCount}
-          onActivate={activateAffiliate}
-          activating={activating}
-        />
+        {/* Deux accès principaux */}
+        <ProgramSelector active={tab} onChange={setTab} locked={!isAffiliate} />
 
-        <PartnerProgramCard
-          affiliation={affiliation}
-          referralCode={referralCode}
-          referralCount={referralCount}
-          pending={pendingPartner}
-          onSubmitted={() => qc.invalidateQueries({ queryKey: ["partner-pending", user.email] })}
-        />
+        {/* Kit média — accessible en premier */}
+        <MediaKit />
+
+        {/* Contenu du programme sélectionné */}
+        {tab === "affiliate"
+          ? (
+            <AffiliateSection
+              user={user}
+              affiliation={affiliation}
+              referralCode={referralCode}
+              onUpdated={refreshAffiliation}
+            />
+          )
+          : (
+            <PartnerSection
+              user={user}
+              affiliation={affiliation}
+              referralCode={referralCode}
+              isAffiliate={isAffiliate}
+              onGoAffiliate={() => setTab("affiliate")}
+              onSubmitted={() => qc.invalidateQueries({ queryKey: ["partner-pending", user.email] })}
+            />
+          )}
       </div>
     </div>
   );
