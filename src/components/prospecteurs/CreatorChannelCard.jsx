@@ -3,6 +3,7 @@ import { ArrowUp, ExternalLink, Trophy, Pencil } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import CreatorVoteModal from "./CreatorVoteModal";
 import { CREATOR_PLATFORMS } from "./CreatorPlatformCards";
+import { resolveCreatorVisuals } from "@/lib/creatorDefaults";
 
 export default function CreatorChannelCard({ creator, rank, user, onVote, onEdit }) {
   const [voteStatus, setVoteStatus] = useState({ canVote: true, remaining: null });
@@ -11,6 +12,7 @@ export default function CreatorChannelCard({ creator, rank, user, onVote, onEdit
   const platform = CREATOR_PLATFORMS[creator.platform] || CREATOR_PLATFORMS.youtube;
   const PlatformIcon = platform.icon;
   const accent = platform.color;
+  const visuals = resolveCreatorVisuals(creator);
   const canEdit = !!user && (user.email === creator.owner_email || user.role === "admin");
 
   useEffect(() => {
@@ -57,9 +59,9 @@ export default function CreatorChannelCard({ creator, rank, user, onVote, onEdit
       >
         {/* Bannière nette en haut de la carte */}
         <div className="relative h-20 shrink-0 overflow-hidden">
-          {creator.banner_url ? (
+          {visuals.banner_url ? (
             <img
-              src={creator.banner_url}
+              src={visuals.banner_url}
               alt={`Bannière de ${creator.name}`}
               className="w-full h-full object-cover"
               style={{ objectPosition: "center" }}
@@ -126,8 +128,8 @@ export default function CreatorChannelCard({ creator, rank, user, onVote, onEdit
               boxShadow: `0 0 12px ${accent}cc, 0 0 26px ${accent}55`,
             }}
           >
-            {creator.avatar_url ? (
-              <img src={creator.avatar_url} alt={creator.name} className="w-full h-full object-cover" />
+            {visuals.avatar_url ? (
+              <img src={visuals.avatar_url} alt={creator.name} className="w-full h-full object-cover" />
             ) : (
               creator.name?.[0]?.toUpperCase() || "C"
             )}

@@ -1,6 +1,7 @@
 import React from "react";
 import { Trophy, ArrowUp, Youtube, Twitch } from "lucide-react";
 import { CREATOR_PLATFORMS } from "./CreatorPlatformCards";
+import { resolveCreatorVisuals } from "@/lib/creatorDefaults";
 
 const RANK_STYLES = [
   { bg: "linear-gradient(135deg, #fbbf24, #f59e0b)", glow: "rgba(251,191,36,0.3)" },
@@ -36,6 +37,7 @@ export default function CreatorRankingBlock({ title, creators, accentColor = "#a
             const rankStyle = i < 3 ? RANK_STYLES[i] : null;
             const platform = CREATOR_PLATFORMS[creator.platform] || CREATOR_PLATFORMS.youtube;
             const PlatformIcon = platform.icon;
+            const visuals = resolveCreatorVisuals(creator);
             return (
               <a
                 key={creator.id}
@@ -48,9 +50,9 @@ export default function CreatorRankingBlock({ title, creators, accentColor = "#a
                   border: `1px solid ${platform.color}20`,
                 }}
               >
-                {creator.banner_url && (
+                {visuals.banner_url && (
                   <img
-                    src={creator.banner_url}
+                    src={visuals.banner_url}
                     alt=""
                     aria-hidden="true"
                     className="absolute inset-0 w-full h-full object-cover"
@@ -79,8 +81,8 @@ export default function CreatorRankingBlock({ title, creators, accentColor = "#a
                     boxShadow: `0 0 8px ${platform.color}bb`,
                   }}
                 >
-                  {creator.avatar_url ? (
-                    <img src={creator.avatar_url} alt="" className="w-full h-full object-cover" />
+                  {visuals.avatar_url ? (
+                    <img src={visuals.avatar_url} alt="" className="w-full h-full object-cover" />
                   ) : (
                     creator.name?.[0]?.toUpperCase() || "C"
                   )}

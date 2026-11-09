@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { X, Youtube, Twitch, Music2, Instagram, Loader2, RefreshCw, ImageOff } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import CreatorVisualFields from "./CreatorVisualFields";
+import { CREATOR_DEFAULT_VISUALS, needsManualVisuals } from "@/lib/creatorDefaults";
 
 const PLATFORM_OPTIONS = [
   { key: "youtube", label: "YouTube", icon: Youtube, color: "#FF0000", hint: "youtube.com/@..." },
@@ -33,6 +35,10 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
   const lastFetched = useRef("");
 
   const current = PLATFORM_OPTIONS.find((p) => p.key === platform) || PLATFORM_OPTIONS[0];
+  const manualVisuals = needsManualVisuals(platform);
+  const defaultVisuals = CREATOR_DEFAULT_VISUALS[platform] || {};
+  const previewAvatar = avatarUrl || defaultVisuals.avatar_url || "";
+  const previewBanner = bannerUrl || defaultVisuals.banner_url || "";
   const used = Math.max(0, (ownedCounts[platform] || 0) - (isEdit && channel.platform === platform ? 1 : 0));
   const quotaReached = !isEdit && used >= MAX_PER_PLATFORM;
 
@@ -41,6 +47,8 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
 
   const loadMeta = async (url, force = false) => {
     const target = url.trim();
+    // TikTok et Instagram : visuels saisis manuellement, aucune extraction possible.
+    if (manualVisuals) return;
     if (!urlIsValid || !target) return;
     if (!force && lastFetched.current === `${platform}:${target}`) return;
     lastFetched.current = `${platform}:${target}`;
@@ -107,9 +115,9 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
         platform,
         channel_url: channelUrl.trim(),
         description: description.trim(),
-        avatar_url: avatarUrl,
-        banner_url: bannerUrl,
-      });
+        avatar_url: manualVisuals ? (avatarUrl || defaultVisuals.avatar_url || "") : avatarUrl,
+        banner_url: manualVisuals ? (bannerUrl || defaultVisuals.banner_url || "") : bannerUrl,
+        });
       if (res.data?.error) throw new Error(res.data.error);
       onSaved?.(res.data.channel);
     } catch (err) {
@@ -154,12 +162,12 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
             <div
               className="relative h-20"
               style={
-                bannerUrl
-                  ? { backgroundImage: `url(${bannerUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+                previewBanner
+                  ? { backgroundImage: `url(${previewBanner})`, backgroundSize: "cover", backgroundPosition: "center" }
                   : { background: `linear-gradient(135deg, ${current.color}55 0%, #1a0a2e 75%)` }
               }
             >
-              {!bannerUrl && (
+              {!previewBanner && (
                 <div
                   className="absolute inset-0 opacity-40"
                   style={{
@@ -173,8 +181,8 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
                 className="absolute -bottom-5 left-3 w-11 h-11 rounded-lg overflow-hidden flex items-center justify-center text-base font-black text-white"
                 style={{ background: `linear-gradient(135deg, ${current.color}, #1a0a2e)`, boxShadow: `0 0 12px ${current.color}50`, border: "1px solid rgba(255,255,255,0.12)" }}
               >
-                {avatarUrl ? (
-                  <img src={avatarUrl} alt="Logo de la chaîne" className="w-full h-full object-cover" />
+                {previewAvatar ? (
+                  <img src={previewAvatar} alt="Logo de la chaîne" className="w-full h-full object-cover" />
                 ) : (
                   name?.[0]?.toUpperCase() || <ImageOff className="w-4 h-4 text-white/40" />
                 )}
@@ -236,26 +244,42 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
                 className="flex-1 min-w-0 h-10 px-3 rounded-lg text-sm text-white placeholder:text-white/30 outline-none"
                 style={{ background: "rgba(138,79,255,0.05)", border: "1px solid rgba(138,79,255,0.2)" }}
               />
-              <button
-                type="button"
-                onClick={() => loadMeta(channelUrl, true)}
-                disabled={fetching || !urlIsValid}
-                title="Récupérer le logo et la bannière"
-                className="w-10 h-10 rounded-lg flex items-center justify-center text-white/70 transition disabled:opacity-40 tap-sm shrink-0"
-                style={{ background: "rgba(138,79,255,0.12)", border: "1px solid rgba(138,79,255,0.25)" }}
-              >
-                {fetching ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-              </button>
+              {!manualVisuals && (
+                <button
+                  type="button"
+                  onClick={() => loadMeta(channelUrl, true)}
+                  disabled={fetching || !urlIsValid}
+                  title="Récupérer le logo et la bannière"
+                  className="w-10 h-10 rounded-lg flex items-center justify-center text-white/70 transition disabled:opacity-40 tap-sm shrink-0"
+                  style={{ background: "rgba(138,79,255,0.12)", border: "1px solid rgba(138,79,255,0.25)" }}
+                >
+                  {fetching ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                </button>
+              )}
             </div>
             <p className="text-[9px] text-white/35 mt-1">
-              {fetching
-                ? "Récupération du logo et de la bannière..."
-                : platform === "tiktok" || platform === "instagram"
-                  ? "Logo et bannière récupérés automatiquement pour YouTube et Twitch."
+              {manualVisuals
+                ? "Logo et bannière à ajouter juste en dessous."
+                : fetching
+                  ? "Récupération du logo et de la bannière..."
                   : "Logo et bannière récupérés automatiquement depuis la plateforme."}
             </p>
             {metaError && <p className="text-[9px] text-amber-400/80 mt-1">{metaError}</p>}
           </div>
+
+          {manualVisuals && (
+            <CreatorVisualFields
+              platform={platform}
+              color={current.color}
+              avatarUrl={avatarUrl}
+              bannerUrl={bannerUrl}
+              onChange={({ avatar_url, banner_url }) => {
+                setAvatarUrl(avatar_url);
+                setBannerUrl(banner_url);
+                setError("");
+              }}
+            />
+          )}
 
           <div>
             <label className="text-[9px] font-bold uppercase tracking-wider text-white/40 mb-1 block">Pseudo de la chaîne *</label>
