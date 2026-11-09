@@ -126,7 +126,7 @@ function VisualSlot({ label, hint, customUrl, displayUrl, maxWidth, color, onUpl
   );
 }
 
-export default function CreatorVisualFields({ platform, color, avatarUrl, bannerUrl, onChange }) {
+export default function CreatorVisualFields({ platform, color, avatarUrl, bannerUrl, onChange, autoFetched = false }) {
   const defaults = CREATOR_DEFAULT_VISUALS[platform] || {};
 
   return (
@@ -134,8 +134,9 @@ export default function CreatorVisualFields({ platform, color, avatarUrl, banner
       <div>
         <p className="text-[10px] font-black text-white">Logo & bannière</p>
         <p className="text-[9px] text-white/40 leading-snug">
-          L'extraction automatique n'existe pas sur cette plateforme. Ajoute tes images (ou garde les visuels
-          cyberpunk par défaut).
+          {autoFetched
+            ? "Récupérés automatiquement depuis la plateforme. Tu peux les remplacer : le changement s'applique aussitôt à ta carte."
+            : "L'extraction automatique n'existe pas sur cette plateforme. Ajoute tes images (ou garde les visuels cyberpunk par défaut)."}
         </p>
       </div>
 

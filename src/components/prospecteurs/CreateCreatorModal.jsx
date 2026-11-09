@@ -373,19 +373,18 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
             </>
           )}
 
-          {manualVisuals && (
-            <CreatorVisualFields
-              platform={platform}
-              color={current.color}
-              avatarUrl={avatarUrl}
-              bannerUrl={bannerUrl}
-              onChange={({ avatar_url, banner_url }) => {
-                setAvatarUrl(avatar_url);
-                setBannerUrl(banner_url);
-                setError("");
-              }}
-            />
-          )}
+          <CreatorVisualFields
+            platform={platform}
+            color={current.color}
+            avatarUrl={avatarUrl}
+            bannerUrl={bannerUrl}
+            autoFetched={!manualVisuals && !isSnapchat}
+            onChange={({ avatar_url, banner_url }) => {
+              setAvatarUrl(avatar_url);
+              setBannerUrl(banner_url);
+              setError("");
+            }}
+          />
 
           {!isSnapchat && (
           <div>

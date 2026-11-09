@@ -56,12 +56,12 @@ export default function CreatorRankingBlock({ title, creators, accentColor = "#a
                     alt=""
                     aria-hidden="true"
                     className="absolute inset-0 w-full h-full object-cover"
-                    style={{ opacity: 0.22 }}
+                    style={{ opacity: 0.32 }}
                   />
                 )}
                 <div
                   className="absolute inset-0 pointer-events-none"
-                  style={{ background: "linear-gradient(90deg, rgba(10,5,15,0.92) 0%, rgba(10,5,15,0.6) 100%)" }}
+                  style={{ background: "linear-gradient(90deg, rgba(10,5,15,0.88) 0%, rgba(10,5,15,0.5) 100%)" }}
                 />
                 <div
                   className="relative z-10 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black shrink-0"

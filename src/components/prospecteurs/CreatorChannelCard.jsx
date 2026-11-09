@@ -59,12 +59,12 @@ export default function CreatorChannelCard({ creator, rank, user, onVote, onEdit
         }}>
         
         {/* Bannière nette en haut de la carte */}
-        <div className="relative h-20 shrink-0 overflow-hidden">
+        <div className="relative h-24 shrink-0 overflow-hidden">
           {visuals.banner_url ?
           <img
             src={visuals.banner_url}
             alt={`Bannière de ${creator.name}`}
-            className="w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover"
             style={{ objectPosition: "center" }} /> :
 
 
@@ -85,7 +85,7 @@ export default function CreatorChannelCard({ creator, rank, user, onVote, onEdit
           {/* Dégradé uniquement en bas, pour fondre la bannière dans la carte */}
           <div
             className="absolute inset-0 pointer-events-none"
-            style={{ background: "linear-gradient(180deg, rgba(10,5,15,0) 30%, rgba(10,5,15,0.9) 100%)" }} />
+            style={{ background: "linear-gradient(180deg, rgba(10,5,15,0) 45%, rgba(10,5,15,0.92) 100%)" }} />
           
 
           <div className="absolute inset-x-0 top-0 flex items-center gap-1.5 px-3 pt-2.5">
@@ -120,13 +120,13 @@ export default function CreatorChannelCard({ creator, rank, user, onVote, onEdit
         </div>
 
         {/* Logo + identité */}
-        <div className="relative z-10 flex items-start gap-2.5 px-3 -mt-6">
+        <div className="relative z-10 flex items-start gap-2.5 px-3 -mt-7">
           <div
-            className="w-14 h-14 rounded-xl overflow-hidden flex items-center justify-center text-xl font-black text-white shrink-0"
+            className="w-16 h-16 rounded-xl overflow-hidden flex items-center justify-center text-xl font-black text-white shrink-0"
             style={{
               background: `linear-gradient(135deg, ${accent}, #1a0a2e)`,
               border: `2px solid ${accent}`,
-              boxShadow: `0 0 12px ${accent}cc, 0 0 26px ${accent}55`
+              boxShadow: `0 0 0 2px rgba(10,5,15,0.85), 0 0 14px ${accent}cc, 0 0 30px ${accent}55`
             }}>
             
             {visuals.avatar_url ?
@@ -138,7 +138,6 @@ export default function CreatorChannelCard({ creator, rank, user, onVote, onEdit
 
           <div className="flex-1 min-w-0 pt-7">
             <p className="text-sm font-black text-white truncate">{creator.name}</p>
-
             {creator.platform === "snapchat" ? (
               <SnapchatChannelActions creator={creator} accent={accent} />
             ) : (
