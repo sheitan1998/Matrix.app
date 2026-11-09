@@ -20,6 +20,9 @@ export default function Register() {
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [refCode] = useState(() => {
+    try { return new URLSearchParams(window.location.search).get("ref") || ""; } catch { return ""; }
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -56,6 +59,11 @@ export default function Register() {
         terms_accepted: true,
         terms_accepted_at: new Date().toISOString(),
       });
+      if (refCode) {
+        await base44.functions
+          .invoke("affiliateProgram", { action: "trackReferral", ref_code: refCode })
+          .catch(() => {});
+      }
       window.location.href = "/";
     } catch (err) {
       setError(err.message || "Invalid verification code");

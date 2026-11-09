@@ -20,7 +20,6 @@ import TrixIcon from "@/components/TrixIcon";
 import DesktopDownloadButton from "@/components/DesktopDownloadButton";
 import SupportTicketModal from "@/components/profile/SupportTicketModal";
 import ImageCropModal from "@/components/profile/ImageCropModal";
-import { useMyAffiliation, isActiveAffiliation } from "@/hooks/useMyAffiliation";
 
 const TABS = [
 { key: "overview", label: "Vue d'ensemble", icon: Zap },
@@ -45,26 +44,12 @@ export default function ProfileContent({ onClose }) {
   const [editPseudo, setEditPseudo] = useState("");
   const [showSupport, setShowSupport] = useState(false);
   const [cropModal, setCropModal] = useState(null);
-  const [hasCreatorBadge, setHasCreatorBadge] = useState(false);
-  const { data: affiliation } = useMyAffiliation(user?.email);
-  const isCreator = hasCreatorBadge || isActiveAffiliation(affiliation);
 
   useEffect(() => {
-    base44.auth.me().then(async (me) => {
+    base44.auth.me().then((me) => {
       setUser(me);
       setEditBio(me?.bio || "");
       setEditPseudo(me?.pseudo || "");
-      if (me?.email) {
-        try {
-          const progressRes = await base44.entities.UserProgress.filter(
-            { user_email: me.email },
-            { limit: 1 }
-          );
-          const progress = progressRes?.items?.[0] || progressRes?.[0];
-          const badges = Array.isArray(progress?.badges) ? progress.badges : [];
-          setHasCreatorBadge(badges.includes("creator") || me.role === "admin");
-        } catch { setHasCreatorBadge(false); }
-      }
     }).catch(() => {});
   }, []);
 
@@ -375,8 +360,8 @@ export default function ProfileContent({ onClose }) {
           }
 
           {/* Tabs */}
-          <div className="flex gap-1 mb-4 overflow-x-auto no-scrollbar border-b border-white/5 pb-1">
-            {TABS.filter((t) => t.key !== "creator" || isCreator).map((t) =>
+          <div className="flex gap-1 mb-4 overflow-x-auto no-scrollbar border-b border-white/5 pb-1 justify-end">
+            {TABS.map((t) =>
             <button key={t.key} onClick={() => setTab(t.key)}
             className={`relative px-3 py-2.5 font-bold whitespace-nowrap transition text-base [font-family:'Inter',_system-ui,_sans-serif] ${tab === t.key ? "text-white" : "text-white/40 hover:text-white/60"}`}>
                 <t.icon className="w-3.5 h-3.5 inline mr-1" /> {t.label}
@@ -435,7 +420,7 @@ export default function ProfileContent({ onClose }) {
             {tab === "cosmetics" && <CosmeticsPanel user={user} />}
             {tab === "wallet" && <TransactionHistory user={user} />}
             {tab === "privacy" && <PrivacyPanel user={user} onUpdate={setUser} />}
-            {tab === "creator" && isCreator && <CreatorDashboard user={user} onNavigate={goTo} />}
+            {tab === "creator" && <CreatorDashboard user={user} onNavigate={goTo} />}
           </div>
         </div>
       </div>

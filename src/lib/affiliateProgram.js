@@ -1,15 +1,13 @@
-export const AFFILIATE_VIEWS = 1000;
-export const PARTNER_VIEWS = 10000;
-export const PARTNER_LIKES = 100;
+export const PARTNER_VIEWS = 100000;
 export const PARTNER_MIN_CONTENT = 5;
-export const PARTNER_SUBSCRIBERS = 1000;
+export const PARTNER_SUBSCRIBERS = 10000;
 export const PARTNER_TRIX_MONTHLY = 1000;
 
 export const PARTNER_PERKS = [
-  { icon: "💎", title: "1 000 TRIX / mois", desc: "Versement automatique chaque mois tant que vous êtes Partenaire actif." },
-  { icon: "⭐", title: "Rôle Partenaire distinctif", desc: "Badge et rôle exclusif affichés sur votre profil et vos messages." },
-  { icon: "🚀", title: "Visibilité renforcée", desc: "Mise en avant de vos mods, maps et contenus sur la plateforme." },
-  { icon: "🎯", title: "Avantages serveur", desc: "Priorité dans les recommandations et sections dédiées." },
+  { icon: "💎", title: "Versement mensuel de jetons Trix", desc: "1 000 Trix versés chaque mois tant que votre statut Partenaire est actif." },
+  { icon: "⭐", title: "Badge & rôle distinctif", desc: "Un badge exclusif sur votre profil et à côté de vos messages." },
+  { icon: "🚀", title: "Visibilité renforcée", desc: "Vos mods et maps sont mis en avant sur la plateforme." },
+  { icon: "🎯", title: "Avantages serveurs communautaires", desc: "Des avantages exclusifs sur les serveurs de la communauté Matrix." },
 ];
 
 export const PARTNER_COMMITMENTS = [
@@ -20,24 +18,28 @@ export const PARTNER_COMMITMENTS = [
 
 export function getPartnerEligibility(stats) {
   const viewsOk = stats.totalViews >= PARTNER_VIEWS;
-  const likesOk = stats.totalLikes >= PARTNER_LIKES;
   const contentOk = stats.contentCount >= PARTNER_MIN_CONTENT;
   const subscribersOk = stats.subscriberCount >= PARTNER_SUBSCRIBERS;
   return {
-    viewsOk, likesOk, contentOk, subscribersOk,
-    eligible: viewsOk && likesOk && contentOk && subscribersOk,
+    viewsOk,
+    contentOk,
+    subscribersOk,
+    eligible: viewsOk && contentOk && subscribersOk,
     progress: Math.min(100, Math.round(
       (Math.min(stats.totalViews / PARTNER_VIEWS, 1) +
-        Math.min(stats.totalLikes / PARTNER_LIKES, 1) +
         Math.min(stats.contentCount / PARTNER_MIN_CONTENT, 1) +
-        Math.min(stats.subscriberCount / PARTNER_SUBSCRIBERS, 1)) / 4 * 100
+        Math.min(stats.subscriberCount / PARTNER_SUBSCRIBERS, 1)) / 3 * 100
     )),
   };
 }
 
-export function getAffiliateEligibility(stats) {
-  return {
-    eligible: stats.totalViews >= AFFILIATE_VIEWS,
-    progress: Math.min(100, Math.round((stats.totalViews / AFFILIATE_VIEWS) * 100)),
-  };
+/** Code stable utilisé dans le lien ?ref= */
+export function buildReferralCode(user) {
+  const raw = user?.pseudo || (user?.email ? user.email.split("@")[0] : "");
+  const code = String(raw).trim().replace(/\s+/g, "").replace(/[^a-zA-Z0-9_.-]/g, "").slice(0, 32);
+  return code;
+}
+
+export function referralLink(code) {
+  return `https://matrix-hub.app/?ref=${encodeURIComponent(code || "")}`;
 }
