@@ -236,6 +236,58 @@ body {
 .goog-te-spacer-ball { display: none !important; }
 .skiptranslate iframe { display: none !important; }
 
+/* --- Effets néon : cartes de plateformes (accueil) ---
+   Chaque carte fournit ses couleurs via --pc-* (voir Landing.jsx). */
+.platform-card {
+  border-color: var(--pc-border);
+  box-shadow:
+    0 0 16px var(--pc-glow-soft),
+    inset 0 0 26px var(--pc-glow-inner);
+  transition: box-shadow 250ms ease, border-color 250ms ease;
+}
+
+.platform-card:hover {
+  border-color: var(--pc-border-hover);
+  box-shadow:
+    0 0 26px var(--pc-glow),
+    0 0 60px var(--pc-glow-soft),
+    inset 0 0 32px var(--pc-glow-inner);
+}
+
+.platform-card h3 {
+  text-shadow: 0 0 10px var(--pc-glow-soft), 0 0 22px var(--pc-glow-soft);
+  transition: text-shadow 250ms ease;
+}
+
+.platform-card:hover h3 {
+  text-shadow: 0 0 6px var(--pc-glow-strong), 0 0 18px var(--pc-glow), 0 0 34px var(--pc-glow-soft);
+}
+
+.platform-card p {
+  transition: color 250ms ease;
+}
+
+.platform-card:hover p {
+  color: hsl(var(--foreground) / 0.8);
+}
+
+/* --- Effets néon : icônes Messagerie / Notifications de la sidebar --- */
+.sqr-icon-neon {
+  color: #d8b4fe;
+  filter: drop-shadow(0 0 4px rgba(168, 85, 247, 0.95)) drop-shadow(0 0 9px rgba(168, 85, 247, 0.6));
+  transition: filter 180ms ease, color 180ms ease;
+}
+
+.sqr-action:hover .sqr-icon-neon {
+  color: #f5e8ff;
+  filter: drop-shadow(0 0 5px #c084fc) drop-shadow(0 0 12px rgba(168, 85, 247, 0.85)) drop-shadow(0 0 22px rgba(147, 51, 234, 0.6));
+}
+
+[data-matrix-theme="light"] .sqr-icon-neon {
+  color: #7c3aed;
+  filter: drop-shadow(0 0 3px rgba(124, 58, 237, 0.45));
+}
+
 @keyframes live-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }

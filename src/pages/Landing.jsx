@@ -79,10 +79,16 @@ export default function Landing() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => nav(u.path)}
-                className="relative w-full rounded-2xl overflow-hidden text-left group flex items-center gap-4 p-4 transition-all"
+                className="platform-card relative w-full rounded-2xl overflow-hidden text-left group flex items-center gap-4 p-4"
                 style={{
                   background: "hsl(var(--card))",
-                  border: `1px solid ${u.color}20`,
+                  border: `1px solid ${u.color}55`,
+                  "--pc-glow": `${u.color}99`,
+                  "--pc-glow-strong": `${u.color}`,
+                  "--pc-glow-soft": `${u.color}42`,
+                  "--pc-glow-inner": `${u.color}14`,
+                  "--pc-border": `${u.color}55`,
+                  "--pc-border-hover": `${u.color}cc`,
                 }}
               >
                 <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ background: u.color, boxShadow: `0 0 10px ${u.color}80` }} />

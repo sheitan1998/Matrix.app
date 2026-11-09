@@ -7,7 +7,6 @@ import { useNotifications as useNotificationList } from "@/hooks/useNotification
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import MessagingPanel from "@/components/messaging/MessagingPanel";
 
-const NEON_ICON_GLOW = "drop-shadow(0 0 4px rgba(168, 85, 247, 1)) drop-shadow(0 0 8px rgba(168, 85, 247, 0.6))";
 const NEON_ACTIVE_BG = "linear-gradient(90deg, rgba(147, 51, 234, 0.35) 0%, rgba(88, 28, 135, 0.12) 100%)";
 const NEON_ACTIVE_BORDER = "2px solid rgba(168, 85, 247, 1)";
 const NEON_ACTIVE_SHADOW = "0 0 16px rgba(168, 85, 247, 0.4), inset 0 0 12px rgba(168, 85, 247, 0.08)";
@@ -65,10 +64,10 @@ export default function SidebarQuickActions({ collapsed = false, isLight = false
         boxShadow: NEON_ACTIVE_SHADOW,
       };
 
-  const iconStyle = {
-    color: isLight ? "#7c3aed" : "rgba(216,180,254,0.7)",
-    filter: isLight ? "none" : NEON_ICON_GLOW,
-  };
+  // Le halo néon des icônes est géré par `.sqr-icon-neon` (index.css) afin
+  // d'être présent au repos et de s'intensifier au survol du bouton.
+  const iconStyle = isLight ? { color: "#7c3aed" } : undefined;
+  const iconClass = cn("w-[18px] h-[18px] shrink-0", !isLight && "sqr-icon-neon");
 
   const label = (text) => (
     <span className={cn("truncate transition-all duration-200 overflow-hidden", collapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>
@@ -81,10 +80,10 @@ export default function SidebarQuickActions({ collapsed = false, isLight = false
       <button
         type="button"
         onClick={openInbox}
-        className={baseClass}
+        className={cn(baseClass, "sqr-action")}
         title={collapsed ? "Messagerie" : undefined}
       >
-        <Mail className="w-[18px] h-[18px] shrink-0" style={iconStyle} />
+        <Mail className={iconClass} style={iconStyle} />
         {label("Messagerie")}
         <CountBadge count={messageCount} color="#ec4899" collapsed={collapsed} />
       </button>
@@ -92,11 +91,11 @@ export default function SidebarQuickActions({ collapsed = false, isLight = false
       <button
         type="button"
         onClick={() => nav("/notifications")}
-        className={baseClass}
+        className={cn(baseClass, "sqr-action")}
         style={isNotificationsActive ? activeStyle : undefined}
         title={collapsed ? "Notifications" : undefined}
       >
-        <Bell className="w-[18px] h-[18px] shrink-0" style={iconStyle} />
+        <Bell className={iconClass} style={iconStyle} />
         {label("Notifications")}
         <CountBadge count={notificationCount} color="#ef4444" collapsed={collapsed} />
       </button>
