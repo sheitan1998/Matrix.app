@@ -31,6 +31,7 @@ import { ProgressionProvider } from '@/context/ProgressionContext';
 import { MiniPlayerProvider } from '@/context/MiniPlayerContext';
 import { NotificationProvider } from '@/context/NotificationContext';
 import { VoiceProvider } from '@/context/VoiceContext';
+import { CallProvider } from '@/context/CallContext';
 import PersistentVoicePanel from '@/components/community/PersistentVoicePanel';
 import { usePresence } from '@/hooks/usePresence';
 
@@ -158,6 +159,7 @@ const AuthenticatedApp = () => {
       <NotificationProvider>
       <MiniPlayerProvider>
       <VoiceProvider>
+      <CallProvider>
       <AnimatedRoutes>
       <Suspense fallback={<PageLoader />}>
       <Routes>
@@ -275,6 +277,7 @@ const AuthenticatedApp = () => {
       <GlobalMessageButton />
       <BottomTabs />
       <PersistentVoicePanel />
+      </CallProvider>
       </VoiceProvider>
       </MiniPlayerProvider>
       </NotificationProvider>

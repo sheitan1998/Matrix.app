@@ -9,9 +9,7 @@ import { stripPseudoTag } from "@/lib/format";
 import UserProfilePopup from "@/components/profile/UserProfilePopup";
 import VoiceRecorder from "@/components/chat/VoiceRecorder";
 import VoiceMessagePlayer from "@/components/chat/VoiceMessagePlayer";
-import DirectVoiceCall from "@/components/messaging/DirectVoiceCall";
-import IncomingCallNotification from "@/components/messaging/IncomingCallNotification";
-import { useIncomingCall } from "@/hooks/useIncomingCall";
+import { useCall } from "@/context/CallContext";
 import ContactSkeletonRow from "@/components/messaging/ContactSkeletonRow";
 import { isEmojiOnly } from "@/lib/emojiUtils";
 import UnifiedPicker from "@/components/chat/UnifiedPicker";
@@ -44,19 +42,8 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
   const [profileUserId, setProfileUserId] = useState(null);
   const [showPicker, setShowPicker] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
-  const [voiceCallActive, setVoiceCallActive] = useState(false);
-  const [incomingCallContact, setIncomingCallContact] = useState(null);
   const messagesEndRef = useRef(null);
-
-  // Incoming call handling — when another user calls us
-  const { incomingCall, acceptCall, declineCall } = useIncomingCall(user, (callData) => {
-    setIncomingCallContact({
-      email: callData.caller_email,
-      name: callData.caller_name,
-      avatar: callData.caller_avatar,
-    });
-    setVoiceCallActive(true);
-  });
+  const { startCall } = useCall();
 
   // Fetch contacts (accepted friends + DM contacts from DirectMessage records)
   useEffect(() => {
@@ -106,16 +93,16 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
 
   // Fetch fresh profile data for all friends by user_id
   useEffect(() => {
-    if (!contacts || contacts.length === 0) return;
-
-    // Auto-select preselected DM contact
-    if (preselectedEmail) {
-      const dmContact = contacts.find(c => c.is_dm_contact && c.friend_email?.toLowerCase() === preselectedEmail.toLowerCase());
-      if (dmContact) setSelectedContact(dmContact);
+    if (!contacts || contacts.length === 0) {
+      setProfileFetchDone(true);
+      return;
     }
 
     const userIds = [...new Set(contacts.map(f => f.friend_user_id).filter(Boolean))];
-    if (userIds.length === 0) return;
+    if (userIds.length === 0) {
+      setProfileFetchDone(true);
+      return;
+    }
 
     setProfilesLoading(true);
     base44.functions.invoke("serverSearch", { action: "getUsersByIds", ids: userIds })
@@ -123,13 +110,13 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
         const map = {};
         (res?.data?.users || []).forEach(u => { map[u.id] = u; });
         setFreshUsers(map);
-        // Auto-select preselected contact if provided
         if (preselectedEmail) {
-          const friendRec = contacts.find(f => f.friend_email?.toLowerCase() === preselectedEmail.toLowerCase());
-          if (friendRec) {
-            const preselected = (res?.data?.users || []).find(u => u.id === friendRec.friend_user_id);
-            if (preselected) setSelectedContact(friendRec);
-          }
+          const target = preselectedEmail.toLowerCase();
+          const found = contacts.find(c =>
+            (c.friend_email || "").toLowerCase() === target ||
+            (map[c.friend_user_id]?.email || "").toLowerCase() === target
+          );
+          if (found) setSelectedContact(found);
         }
       })
       .catch(() => {})
@@ -165,7 +152,7 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
       // Profile found with a valid pseudo → fully resolved
       if (resolvedName) {
         return {
-          email: contact?.friend_email || "",
+          email: contact?.friend_email || fresh?.email || "",
           name: resolvedName,
           pseudo: resolvedName,
           rawUserId: contact?.friend_user_id || fresh?.id || "",
@@ -178,7 +165,7 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
       // Fetch still in progress → skeleton, no name displayed
       if (!profileFetchDone) {
         return {
-          email: contact?.friend_email || "",
+          email: contact?.friend_email || fresh?.email || "",
           name: "",
           pseudo: "",
           rawUserId: contact?.friend_user_id || "",
@@ -191,7 +178,7 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
       // Fetch done but no pseudo available → truncated email fallback (request completed)
       const fallbackName = contact?.friend_email?.split("@")[0] || "Membre";
       return {
-        email: contact?.friend_email || "",
+        email: contact?.friend_email || fresh?.email || "",
         name: fallbackName,
         pseudo: fallbackName,
         rawUserId: contact?.friend_user_id || "",
@@ -473,16 +460,21 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
                 const officialContacts = dedupedContacts.filter(c => c.is_official);
                 const teamContacts = officialContacts.filter(c => c.friend_email?.toLowerCase() === SUPPORT_EMAIL);
                 const ticketContacts = officialContacts.filter(c => c.friend_email?.toLowerCase() === TICKET_SUPPORT_EMAIL);
-                const friendContacts = dedupedContacts.filter(c => !c.is_dm_contact && !c.is_official);
+                const friendContacts = dedupedContacts
+                  .filter(c => !c.is_dm_contact && !c.is_official)
+                  .sort((a, b) => Number(resolveContact(b).online) - Number(resolveContact(a).online));
                 const requestContacts = dedupedContacts.filter(c => c.is_dm_contact);
                 const renderContact = (contact) => {
                   const info = resolveContact(contact);
                   if (!info.resolved) return <ContactSkeletonRow key={contact.id} />;
                   return (
-                    <button
+                    <div
                       key={contact.id}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => setSelectedContact(contact)}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 transition text-left ${selectedContact?.id === contact.id ? "bg-purple-500/10" : "hover:bg-white/5"}`}
+                      onKeyDown={(e) => { if (e.key === "Enter") setSelectedContact(contact); }}
+                      className={`group w-full flex items-center gap-3 px-3 py-2.5 transition text-left cursor-pointer ${selectedContact?.id === contact.id ? "bg-purple-500/10" : "hover:bg-white/5"}`}
                     >
                       <div className="relative shrink-0">
                         <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center shrink-0" style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.2)" }}>
@@ -494,12 +486,22 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
                         <p className="text-sm font-bold text-white truncate">{info.pseudo || info.name}</p>
                         <p className="text-[10px] text-white/40 truncate">{info.online ? "En ligne" : "Hors ligne"}</p>
                       </div>
+                      {info.resolved && info.email && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); startCall(info); }}
+                          className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition hover:bg-green-500/20"
+                          style={{ background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.25)" }}
+                          title={`Appeler ${info.pseudo || info.name}`}
+                        >
+                          <Phone className="w-3.5 h-3.5 text-green-400" />
+                        </button>
+                      )}
                       {info.rawUserId && (
                         <button onClick={(e) => { e.stopPropagation(); setProfileUserId(info.rawUserId); }} className="opacity-0 group-hover:opacity-100 transition text-muted-foreground hover:text-white shrink-0" title="Voir le profil">
                           <User className="w-3.5 h-3.5" />
                         </button>
                       )}
-                    </button>
+                    </div>
                   );
                 };
                 return (
@@ -583,24 +585,9 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
                   {selectedInfo.online ? "En ligne" : "Hors ligne"}
                 </p>
               </div>
-              {!isReadOnlyConversation && !voiceCallActive && selectedInfo.resolved && (
+              {!isReadOnlyConversation && selectedInfo.resolved && selectedInfo.email && (
                 <button
-                  onClick={async () => {
-                    const c = resolveContact(selectedContact);
-                    try {
-                      await base44.entities.VoiceCallSignal.create({
-                        caller_email: user.email,
-                        caller_name: user.full_name || user.email.split("@")[0],
-                        caller_avatar: user.avatar || "",
-                        recipient_email: c.email || c.friend_email,
-                        recipient_name: c.name,
-                        status: "ringing",
-                      });
-                      setVoiceCallActive(true);
-                    } catch {
-                      toast.error("Impossible de lancer l'appel");
-                    }
-                  }}
+                  onClick={() => startCall(selectedInfo)}
                   className="w-9 h-9 rounded-full flex items-center justify-center transition tap-sm shrink-0"
                   style={{ background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)" }}
                   title="Appel vocal"
@@ -655,20 +642,6 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
               )}
               <div ref={messagesEndRef} />
             </div>
-
-            {/* Voice call panel */}
-            {voiceCallActive && (
-              <div className="shrink-0" style={{ borderTop: "1px solid rgba(34,197,94,0.2)", background: "rgba(34,197,94,0.05)" }}>
-                <DirectVoiceCall
-                  contactName={incomingCallContact?.name || selectedInfo.name}
-                  contactAvatar={incomingCallContact?.avatar || selectedInfo.avatar}
-                  onEnd={() => {
-                    setVoiceCallActive(false);
-                    setIncomingCallContact(null);
-                  }}
-                />
-              </div>
-              )}
 
             {/* Input */}
             <div className="px-4 py-3 shrink-0 relative" style={{ borderTop: "1px solid rgba(168,85,247,0.1)" }}>
@@ -751,12 +724,6 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
         />
       )}
 
-      {/* Real-time incoming call notification */}
-      <IncomingCallNotification
-        call={incomingCall}
-        onAccept={acceptCall}
-        onDecline={declineCall}
-      />
     </div>
   );
 }
