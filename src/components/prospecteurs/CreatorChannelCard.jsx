@@ -137,9 +137,9 @@ export default function CreatorChannelCard({ creator, rank, user, onVote, onEdit
 
           <div className="flex-1 min-w-0 pt-7">
             <p className="text-sm font-black text-white truncate">{creator.name}</p>
-            <p className="text-[9px] text-white/40 truncate hidden">
-              {creator.owner_name ? `par ${creator.owner_name}` : "Créateur MATRIX"}
-            </p>
+            
+
+            
             <a
               href={creator.channel_url}
               target="_blank"
