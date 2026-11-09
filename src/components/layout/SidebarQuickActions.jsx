@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Bell, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -7,9 +7,16 @@ import { useNotifications as useNotificationList } from "@/hooks/useNotification
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import MessagingPanel from "@/components/messaging/MessagingPanel";
 
-const NEON_ACTIVE_BG = "linear-gradient(90deg, rgba(147, 51, 234, 0.35) 0%, rgba(88, 28, 135, 0.12) 100%)";
-const NEON_ACTIVE_BORDER = "2px solid rgba(168, 85, 247, 1)";
-const NEON_ACTIVE_SHADOW = "0 0 16px rgba(168, 85, 247, 0.4), inset 0 0 12px rgba(168, 85, 247, 0.08)";
+// Mêmes variables néon que la navigation de la sidebar (Sidebar.jsx) :
+// la couleur personnalisée du thème s'applique donc aussi à ces deux icônes.
+const NEON_ICON_GLOW = "var(--app-neon-icon-glow)";
+const NEON_ICON_IDLE = "var(--app-neon-icon-idle)";
+const NEON_ICON_COLOR = "var(--app-neon-icon)";
+const NEON_ICON_BRIGHT = "var(--app-neon-bright)";
+const NEON_ACTIVE_BG = "var(--app-neon-active-bg)";
+const NEON_ACTIVE_BORDER = "var(--app-neon-active-border)";
+const NEON_ACTIVE_SHADOW = "var(--app-neon-active-shadow)";
+const NEON_ACTIVE_TEXT = "var(--app-neon-active-text)";
 const LIGHT_ACTIVE_BG = "rgba(124,58,237,0.08)";
 const LIGHT_ACTIVE_BORDER = "2px solid #7c3aed";
 
@@ -38,6 +45,51 @@ function CountBadge({ count, color, collapsed }) {
   );
 }
 
+/** Bouton identique à un NavItem de la sidebar (glow au survol, thème néon, light mode). */
+function QuickActionButton({ icon: Icon, text, count, badgeColor, active, onClick, collapsed, isLight }) {
+  const [hovered, setHovered] = useState(false);
+  const glow = active || hovered;
+
+  const iconColor = isLight
+    ? (glow ? "#6d28d9" : "#7c3aed")
+    : (glow ? NEON_ICON_BRIGHT : NEON_ICON_COLOR);
+  const iconFilter = isLight ? "none" : (glow ? NEON_ICON_GLOW : NEON_ICON_IDLE);
+
+  const className = cn(
+    "relative flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 border border-transparent",
+    collapsed && "justify-center px-0",
+    isLight
+      ? (glow ? "text-gray-900" : "text-gray-600")
+      : (glow ? "text-white" : "text-muted-foreground")
+  );
+
+  const style = glow
+    ? isLight
+      ? { background: LIGHT_ACTIVE_BG, borderLeft: collapsed ? undefined : LIGHT_ACTIVE_BORDER }
+      : { background: NEON_ACTIVE_BG, borderLeft: collapsed ? undefined : NEON_ACTIVE_BORDER, boxShadow: NEON_ACTIVE_SHADOW, textShadow: NEON_ACTIVE_TEXT }
+    : isLight
+      ? { background: hovered ? "rgba(0,0,0,0.04)" : undefined }
+      : undefined;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className={className}
+      style={style}
+      title={collapsed ? text : undefined}
+    >
+      <Icon className="w-[18px] h-[18px] shrink-0 transition-colors" style={{ color: iconColor, filter: iconFilter }} />
+      <span className={cn("truncate transition-all duration-200 overflow-hidden", collapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>
+        {text}
+      </span>
+      <CountBadge count={count} color={badgeColor} collapsed={collapsed} />
+    </button>
+  );
+}
+
 export default function SidebarQuickActions({ collapsed = false, isLight = false }) {
   const nav = useNavigate();
   const { pathname } = useLocation();
@@ -48,57 +100,28 @@ export default function SidebarQuickActions({ collapsed = false, isLight = false
 
   if (!isAuthenticated || !user) return null;
 
-  const isNotificationsActive = pathname === "/notifications";
-
-  const baseClass = cn(
-    "relative flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 border border-transparent",
-    collapsed && "justify-center px-0",
-    isLight ? "text-gray-600 hover:text-gray-900 hover:bg-black/5" : "text-muted-foreground hover:text-white hover:bg-white/5"
-  );
-
-  const activeStyle = isLight
-    ? { background: LIGHT_ACTIVE_BG, borderLeft: collapsed ? undefined : LIGHT_ACTIVE_BORDER }
-    : {
-        background: NEON_ACTIVE_BG,
-        borderLeft: collapsed ? undefined : NEON_ACTIVE_BORDER,
-        boxShadow: NEON_ACTIVE_SHADOW,
-      };
-
-  // Le halo néon des icônes est géré par `.sqr-icon-neon` (index.css) afin
-  // d'être présent au repos et de s'intensifier au survol du bouton.
-  const iconStyle = isLight ? { color: "#7c3aed" } : undefined;
-  const iconClass = cn("w-[18px] h-[18px] shrink-0", !isLight && "sqr-icon-neon");
-
-  const label = (text) => (
-    <span className={cn("truncate transition-all duration-200 overflow-hidden", collapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>
-      {text}
-    </span>
-  );
-
   return (
     <>
-      <button
-        type="button"
+      <QuickActionButton
+        icon={Mail}
+        text="Messagerie"
+        count={messageCount}
+        badgeColor="#ec4899"
         onClick={openInbox}
-        className={cn(baseClass, "sqr-action")}
-        title={collapsed ? "Messagerie" : undefined}
-      >
-        <Mail className={iconClass} style={iconStyle} />
-        {label("Messagerie")}
-        <CountBadge count={messageCount} color="#ec4899" collapsed={collapsed} />
-      </button>
+        collapsed={collapsed}
+        isLight={isLight}
+      />
 
-      <button
-        type="button"
+      <QuickActionButton
+        icon={Bell}
+        text="Notifications"
+        count={notificationCount}
+        badgeColor="#ef4444"
+        active={pathname === "/notifications"}
         onClick={() => nav("/notifications")}
-        className={cn(baseClass, "sqr-action")}
-        style={isNotificationsActive ? activeStyle : undefined}
-        title={collapsed ? "Notifications" : undefined}
-      >
-        <Bell className={iconClass} style={iconStyle} />
-        {label("Notifications")}
-        <CountBadge count={notificationCount} color="#ef4444" collapsed={collapsed} />
-      </button>
+        collapsed={collapsed}
+        isLight={isLight}
+      />
 
       <MessagingPanel
         user={user}

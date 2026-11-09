@@ -271,23 +271,6 @@ body {
   color: hsl(var(--foreground) / 0.8);
 }
 
-/* --- Effets néon : icônes Messagerie / Notifications de la sidebar --- */
-.sqr-icon-neon {
-  color: #d8b4fe;
-  filter: drop-shadow(0 0 4px rgba(168, 85, 247, 0.95)) drop-shadow(0 0 9px rgba(168, 85, 247, 0.6));
-  transition: filter 180ms ease, color 180ms ease;
-}
-
-.sqr-action:hover .sqr-icon-neon {
-  color: #f5e8ff;
-  filter: drop-shadow(0 0 5px #c084fc) drop-shadow(0 0 12px rgba(168, 85, 247, 0.85)) drop-shadow(0 0 22px rgba(147, 51, 234, 0.6));
-}
-
-[data-matrix-theme="light"] .sqr-icon-neon {
-  color: #7c3aed;
-  filter: drop-shadow(0 0 3px rgba(124, 58, 237, 0.45));
-}
-
 @keyframes live-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
