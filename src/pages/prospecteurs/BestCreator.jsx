@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { ArrowLeft, Plus, Sparkles, Trophy, Youtube, Twitch, Zap } from "lucide-react";
 import { toast } from "sonner";
-import { slugify } from "@/lib/serverDirectory";
 import usePageSEO from "@/hooks/usePageSEO";
 import ProspecteursHeader from "@/components/prospecteurs/ProspecteursHeader";
 import ProspecteursSidebar from "@/components/prospecteurs/ProspecteursSidebar";
@@ -30,7 +29,8 @@ export default function BestCreator() {
   const [platform, setPlatform] = useState(null);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("votes_month");
-  const [showCreate, setShowCreate] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [editingChannel, setEditingChannel] = useState(null);
   const [showAutoVote, setShowAutoVote] = useState(false);
 
   useEffect(() => {
@@ -97,25 +97,35 @@ export default function BestCreator() {
       navigate("/login?returnTo=" + encodeURIComponent(window.location.pathname));
       return;
     }
-    setShowCreate(true);
+    setEditingChannel(null);
+    setShowForm(true);
   };
 
-  const handleCreate = async (data) => {
-    const created = await base44.entities.CreatorChannel.create({
-      ...data,
-      slug: slugify(data.name),
-      owner_email: user.email,
-      owner_name: user.full_name || user.email.split("@")[0],
-      votes: 0,
-      votes_month: 0,
-      votes_last_month: 0,
-      boosts: 0,
-      is_active: true,
-    });
-    setCreators((prev) => [created, ...prev]);
-    setShowCreate(false);
-    toast.success("Chaîne publiée !");
+  const openEdit = (creator) => {
+    setEditingChannel(creator);
+    setShowForm(true);
   };
+
+  const handleSaved = (channel) => {
+    if (!channel) return;
+    setCreators((prev) => {
+      const exists = prev.some((c) => c.id === channel.id);
+      return exists
+        ? prev.map((c) => (c.id === channel.id ? { ...c, ...channel } : c))
+        : [channel, ...prev];
+    });
+    setShowForm(false);
+    toast.success(editingChannel ? "Chaîne mise à jour !" : "Chaîne publiée !");
+  };
+
+  // Quota : 3 chaînes maximum par plateforme et par utilisateur.
+  const ownedCounts = useMemo(() => {
+    const mine = user ? creators.filter((c) => c.owner_email === user.email) : [];
+    return {
+      youtube: mine.filter((c) => c.platform === "youtube").length,
+      twitch: mine.filter((c) => c.platform === "twitch").length,
+    };
+  }, [creators, user]);
 
   const hasVoteAuto = !!user?.has_vote_auto &&
     (!user?.vote_auto_until || new Date(user.vote_auto_until).getTime() > Date.now());
@@ -288,7 +298,9 @@ export default function BestCreator() {
                     key={creator.id}
                     creator={creator}
                     rank={i + 1}
+                    user={user}
                     onVote={handleVote}
+                    onEdit={openEdit}
                   />
                 ))}
               </div>
@@ -297,8 +309,13 @@ export default function BestCreator() {
         </div>
       </div>
 
-      {showCreate && (
-        <CreateCreatorModal onClose={() => setShowCreate(false)} onSubmit={handleCreate} />
+      {showForm && (
+        <CreateCreatorModal
+          channel={editingChannel}
+          ownedCounts={ownedCounts}
+          onClose={() => setShowForm(false)}
+          onSaved={handleSaved}
+        />
       )}
 
       {showAutoVote && user && (

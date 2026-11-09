@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { ArrowUp, ExternalLink, Trophy } from "lucide-react";
+import { ArrowUp, ExternalLink, Trophy, Pencil } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import CreatorVoteModal from "./CreatorVoteModal";
 import { CREATOR_PLATFORMS } from "./CreatorPlatformCards";
 
-export default function CreatorChannelCard({ creator, rank, onVote }) {
+export default function CreatorChannelCard({ creator, rank, user, onVote, onEdit }) {
   const [voteStatus, setVoteStatus] = useState({ canVote: true, remaining: null });
   const [showVoteModal, setShowVoteModal] = useState(false);
 
   const platform = CREATOR_PLATFORMS[creator.platform] || CREATOR_PLATFORMS.youtube;
   const PlatformIcon = platform.icon;
   const accent = platform.color;
+  const canEdit = !!user && (user.email === creator.owner_email || user.role === "admin");
 
   useEffect(() => {
     let active = true;
@@ -54,10 +55,57 @@ export default function CreatorChannelCard({ creator, rank, onVote }) {
           boxShadow: `0 0 16px ${accent}18`,
         }}
       >
-        <div className="p-3 flex items-start gap-3">
+        {/* Bannière (image de la chaîne ou repli cyberpunk aux couleurs de la plateforme) */}
+        <div
+          className="relative h-20 shrink-0"
+          style={
+            creator.banner_url
+              ? { backgroundImage: `url(${creator.banner_url})`, backgroundSize: "cover", backgroundPosition: "center" }
+              : { background: `linear-gradient(135deg, ${accent}55 0%, #1a0a2e 75%)` }
+          }
+        >
+          {!creator.banner_url && (
+            <div
+              className="absolute inset-0 opacity-40"
+              style={{
+                backgroundImage: `linear-gradient(${accent}40 1px, transparent 1px), linear-gradient(90deg, ${accent}40 1px, transparent 1px)`,
+                backgroundSize: "18px 18px",
+              }}
+            />
+          )}
+          <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(18,9,28,0.05) 0%, rgba(18,9,28,0.9) 100%)" }} />
+
+          <div className="absolute top-2 left-2 flex items-center gap-1">
+            <PlatformIcon className="w-3.5 h-3.5" style={{ color: accent, filter: `drop-shadow(0 0 4px ${accent}aa)` }} />
+            <span className="text-[8px] font-black uppercase tracking-wider" style={{ color: accent }}>
+              {platform.label}
+            </span>
+          </div>
+
+          <div className="absolute top-2 right-2 flex items-center gap-1">
+            {rankStyle && (
+              <span
+                className="flex items-center gap-0.5 text-[9px] font-black px-1.5 py-0.5 rounded"
+                style={{ color: "#fbbf24", background: "rgba(10,5,15,0.6)", border: "1px solid rgba(251,191,36,0.35)" }}
+              >
+                <Trophy className="w-2.5 h-2.5" />#{rank}
+              </span>
+            )}
+            {canEdit && (
+              <button
+                onClick={() => onEdit?.(creator)}
+                title="Modifier ma chaîne"
+                className="w-7 h-7 rounded-lg flex items-center justify-center transition hover:bg-white/10 tap-sm"
+                style={{ background: "rgba(10,5,15,0.6)", border: "1px solid rgba(255,255,255,0.15)", color: "#fff" }}
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
           <div
-            className="w-11 h-11 rounded-lg overflow-hidden flex items-center justify-center text-base font-black text-white shrink-0"
-            style={{ background: `linear-gradient(135deg, ${accent}, #1a0a2e)`, boxShadow: `0 0 12px ${accent}40` }}
+            className="absolute -bottom-5 left-3 w-11 h-11 rounded-lg overflow-hidden flex items-center justify-center text-base font-black text-white"
+            style={{ background: `linear-gradient(135deg, ${accent}, #1a0a2e)`, boxShadow: `0 0 12px ${accent}50`, border: "1px solid rgba(255,255,255,0.12)" }}
           >
             {creator.avatar_url ? (
               <img src={creator.avatar_url} alt={creator.name} className="w-full h-full object-cover" />
@@ -65,25 +113,15 @@ export default function CreatorChannelCard({ creator, rank, onVote }) {
               creator.name?.[0]?.toUpperCase() || "C"
             )}
           </div>
+        </div>
 
+        <div className="pt-6 px-3 flex items-start gap-2">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
-              <PlatformIcon className="w-3.5 h-3.5 shrink-0" style={{ color: accent }} />
-              <span className="text-[8px] font-black uppercase tracking-wider" style={{ color: accent }}>
-                {platform.label}
-              </span>
-              {rankStyle && (
-                <span className="ml-auto flex items-center gap-0.5 text-[9px] font-black" style={{ color: "#fbbf24" }}>
-                  <Trophy className="w-2.5 h-2.5" />#{rank}
-                </span>
-              )}
-            </div>
-            <p className="text-sm font-black text-white truncate mt-0.5">{creator.name}</p>
+            <p className="text-sm font-black text-white truncate">{creator.name}</p>
             <p className="text-[9px] text-white/35 truncate">
               {creator.owner_name ? `par ${creator.owner_name}` : "Créateur MATRIX"}
             </p>
           </div>
-
           <a
             href={creator.channel_url}
             target="_blank"
@@ -97,7 +135,7 @@ export default function CreatorChannelCard({ creator, rank, onVote }) {
         </div>
 
         {creator.description && (
-          <p className="px-3 pb-2 text-[11px] leading-relaxed text-white/45 line-clamp-2">{creator.description}</p>
+          <p className="px-3 pt-1.5 pb-2 text-[11px] leading-relaxed text-white/45 line-clamp-2">{creator.description}</p>
         )}
 
         <div

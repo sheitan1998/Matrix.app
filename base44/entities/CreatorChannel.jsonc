@@ -30,7 +30,11 @@
     },
     "avatar_url": {
       "type": "string",
-      "description": "Avatar / logo de la cha\u00eene (optionnel)"
+      "description": "Avatar / logo de la cha\u00eene (r\u00e9cup\u00e9r\u00e9 automatiquement depuis la plateforme)"
+    },
+    "banner_url": {
+      "type": "string",
+      "description": "Banni\u00e8re de la cha\u00eene (r\u00e9cup\u00e9r\u00e9e automatiquement depuis la plateforme)"
     },
     "owner_email": {
       "type": "string",
