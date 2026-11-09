@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Server, Users, Search, Zap } from "lucide-react";
+import { Server, Users, Sparkles, Zap } from "lucide-react";
 import CheckoutModal from "@/components/CheckoutModal";
 
 const VIP_IMAGE = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/ca0329832_ChatGPTImage6oct202621_00_29.png";
@@ -35,12 +35,19 @@ export default function ProspecteursSidebar({ active = "servers", user, onConfig
         <span className="text-[9px] font-bold text-center">Joueurs</span>
       </Link>
       <Link
-        to="/recherche-createur"
+        to="/best-creator"
         className={`flex flex-col items-center gap-1 p-2.5 rounded-xl transition ${active === "creators" ? "text-white" : "text-white/40 hover:text-white"}`}
-        style={active === "creators" ? { background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)" } : { background: "rgba(255,255,255,0.02)" }}>
+        style={active === "creators" ? { background: "rgba(168,85,247,0.18)", border: "1px solid rgba(236,72,153,0.45)", boxShadow: "0 0 16px rgba(168,85,247,0.35)" } : { background: "rgba(255,255,255,0.02)" }}>
         
-        <Search className="w-5 h-5" />
-        <span className="text-[9px] font-bold text-center">Créateurs</span>
+        <Sparkles
+          className="w-5 h-5"
+          style={{
+            color: active === "creators" ? "#f0abfc" : undefined,
+            filter: active === "creators"
+              ? "drop-shadow(0 0 5px rgba(236,72,153,0.95)) drop-shadow(0 0 12px rgba(168,85,247,0.75))"
+              : "drop-shadow(0 0 5px rgba(168,85,247,0.45))",
+          }} />
+        <span className="text-[9px] font-bold text-center leading-tight">Best<br />Creator</span>
       </Link>
 
       {/* VIP encart (2,99€/mois) — masqué si VIP actif */}

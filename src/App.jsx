@@ -61,6 +61,7 @@ const Casino = lazy(() => import('@/pages/Casino'));
 const NexusGames = lazy(() => import('@/pages/NexusGames'));
 const RoulettePage = lazy(() => import('@/pages/nexus/Roulette'));
 const Prospecteurs = lazy(() => import('@/pages/prospecteurs/Prospecteurs'));
+const BestCreator = lazy(() => import('@/pages/prospecteurs/BestCreator'));
 const CategoryServers = lazy(() => import('@/pages/prospecteurs/CategoryServers'));
 const ServerProfile = lazy(() => import('@/pages/prospecteurs/ServerProfile'));
 const CommunitySubscription = lazy(() => import('@/pages/community/CommunitySubscription'));
@@ -183,6 +184,7 @@ const AuthenticatedApp = () => {
         <Route path="/fortnite" element={<Navigate to="/fortnite-maps" replace />} />
         {/* New routes */}
         <Route path="/best-serveurs" element={<Prospecteurs />} />
+        <Route path="/best-creator" element={<BestCreator />} />
         <Route path="/best-serveurs/category/:slug" element={<CategoryServers />} />
         <Route path="/fortnite-map" element={<Navigate to="/fortnite-maps" replace />} />
         <Route path="/fortnite-maps" element={<FortniteMaps />} />

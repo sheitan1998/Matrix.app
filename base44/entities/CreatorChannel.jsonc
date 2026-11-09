@@ -1,0 +1,104 @@
+{
+  "name": "CreatorChannel",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Pseudo / nom de la cha\u00eene"
+    },
+    "slug": {
+      "type": "string",
+      "description": "Slug unique de la cha\u00eene"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "youtube",
+        "twitch"
+      ],
+      "default": "youtube",
+      "description": "Plateforme de la cha\u00eene"
+    },
+    "channel_url": {
+      "type": "string",
+      "description": "Lien direct vers la cha\u00eene (YouTube ou Twitch)"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Description de la cha\u00eene"
+    },
+    "avatar_url": {
+      "type": "string",
+      "description": "Avatar / logo de la cha\u00eene (optionnel)"
+    },
+    "owner_email": {
+      "type": "string",
+      "description": "Email MATRIX du cr\u00e9ateur"
+    },
+    "owner_name": {
+      "type": "string",
+      "description": "Pseudo MATRIX du cr\u00e9ateur"
+    },
+    "votes": {
+      "type": "number",
+      "default": 0,
+      "description": "Votes totaux"
+    },
+    "votes_month": {
+      "type": "number",
+      "default": 0,
+      "description": "Votes du mois en cours"
+    },
+    "votes_last_month": {
+      "type": "number",
+      "default": 0,
+      "description": "Votes du mois pr\u00e9c\u00e9dent"
+    },
+    "boosts": {
+      "type": "number",
+      "default": 0,
+      "description": "Boosts appliqu\u00e9s \u00e0 la cha\u00eene"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "name",
+    "platform",
+    "channel_url",
+    "owner_email"
+  ],
+  "rls": {
+    "create": {
+      "data.owner_email": "{{user.email}}"
+    },
+    "read": {},
+    "update": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

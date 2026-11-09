@@ -1,0 +1,70 @@
+{
+  "name": "CreatorVote",
+  "type": "object",
+  "properties": {
+    "creator_id": {
+      "type": "string",
+      "description": "ID de la cha\u00eene CreatorChannel"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email du votant (vide pour un vote anonyme)"
+    },
+    "voter_pseudo": {
+      "type": "string",
+      "description": "Pseudo saisi par le votant"
+    },
+    "ip_address": {
+      "type": "string",
+      "description": "Adresse IP pour les votes non connect\u00e9s"
+    },
+    "vote_source": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "auto"
+      ],
+      "default": "manual",
+      "description": "Origine du vote"
+    },
+    "last_voted_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "creator_id"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": {},
+    "update": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

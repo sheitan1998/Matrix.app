@@ -1,0 +1,71 @@
+{
+  "name": "CreatorAutoVote",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email de l'abonn\u00e9 Vote Auto"
+    },
+    "creator_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Cha\u00eenes s\u00e9lectionn\u00e9es pour le vote automatique (max 3)"
+    },
+    "pseudo": {
+      "type": "string",
+      "description": "Pseudo utilis\u00e9 pour les votes automatiques"
+    },
+    "paused": {
+      "type": "boolean",
+      "default": false,
+      "description": "Vote Auto en pause"
+    }
+  },
+  "required": [
+    "user_email"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
