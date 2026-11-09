@@ -1,7 +1,8 @@
 import React, { useRef, useState } from "react";
 import { ImagePlus, Loader2, RotateCcw, Upload } from "lucide-react";
-import { uploadToR2 } from "@/lib/r2Upload";
+import { base44 } from "@/api/base44Client";
 import { CREATOR_DEFAULT_VISUALS } from "@/lib/creatorDefaults";
+import { normalizeAppAssetUrl } from "@/lib/urlUtils";
 
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
 
@@ -21,7 +22,14 @@ async function prepareImage(file, maxWidth) {
   return new File([blob], `${file.name.replace(/\.\w+$/, "")}.jpg`, { type: "image/jpeg" });
 }
 
-function VisualSlot({ label, hint, url, maxWidth, color, onUploaded, onReset }) {
+async function uploadVisual(file, maxWidth) {
+  const prepared = await prepareImage(file, maxWidth);
+  const { file_url } = await base44.integrations.Core.UploadPublicFile({ file: prepared });
+  if (!file_url) throw new Error("no_url");
+  return normalizeAppAssetUrl(file_url) || file_url;
+}
+
+function VisualSlot({ label, hint, customUrl, displayUrl, maxWidth, color, onUploaded, onReset }) {
   const inputRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -39,11 +47,12 @@ function VisualSlot({ label, hint, url, maxWidth, color, onUploaded, onReset }) 
     }
     setLoading(true);
     try {
-      const prepared = await prepareImage(file, maxWidth);
-      const publicUrl = await uploadToR2(prepared, "creators");
+      const publicUrl = await uploadVisual(file, maxWidth);
       onUploaded(publicUrl);
     } catch {
-      setError("Envoi impossible. Réessaie.");
+      // En cas d'échec, le visuel cyberpunk par défaut reprend sa place immédiatement.
+      onReset();
+      setError("Envoi impossible : le visuel par défaut a été réappliqué.");
     } finally {
       setLoading(false);
       if (inputRef.current) inputRef.current.value = "";
@@ -54,10 +63,10 @@ function VisualSlot({ label, hint, url, maxWidth, color, onUploaded, onReset }) 
     <div>
       <div className="flex items-center justify-between mb-1">
         <label className="text-[9px] font-bold uppercase tracking-wider text-white/40">{label}</label>
-        {url && (
+        {customUrl && (
           <button
             type="button"
-            onClick={onReset}
+            onClick={() => { setError(""); onReset(); }}
             className="flex items-center gap-1 text-[9px] font-bold text-white/40 hover:text-white transition tap-sm"
           >
             <RotateCcw className="w-2.5 h-2.5" />
@@ -80,9 +89,9 @@ function VisualSlot({ label, hint, url, maxWidth, color, onUploaded, onReset }) 
           border: `1px dashed ${color}66`,
         }}
       >
-        {url ? (
+        {displayUrl ? (
           <>
-            <img src={url} alt={label} className="absolute inset-0 w-full h-full object-cover" />
+            <img src={displayUrl} alt={label} className="absolute inset-0 w-full h-full object-cover" />
             <span
               className="relative z-10 flex items-center gap-1 px-2 py-1 rounded text-[9px] font-black uppercase tracking-wider text-white"
               style={{ background: "rgba(10,5,15,0.7)", border: "1px solid rgba(255,255,255,0.15)" }}
@@ -104,7 +113,7 @@ function VisualSlot({ label, hint, url, maxWidth, color, onUploaded, onReset }) 
         )}
       </button>
 
-      {error && <p className="text-[9px] text-red-400 mt-1">{error}</p>}
+      {error && <p className="text-[9px] text-amber-400/90 mt-1">{error}</p>}
 
       <input
         ref={inputRef}
@@ -133,7 +142,8 @@ export default function CreatorVisualFields({ platform, color, avatarUrl, banner
       <VisualSlot
         label="Logo / Avatar"
         hint="Ajouter le logo"
-        url={avatarUrl || defaults.avatar_url}
+        customUrl={avatarUrl}
+        displayUrl={avatarUrl || defaults.avatar_url}
         maxWidth={500}
         color={color}
         onUploaded={(url) => onChange({ avatar_url: url, banner_url: bannerUrl })}
@@ -143,7 +153,8 @@ export default function CreatorVisualFields({ platform, color, avatarUrl, banner
       <VisualSlot
         label="Bannière"
         hint="Ajouter la bannière"
-        url={bannerUrl || defaults.banner_url}
+        customUrl={bannerUrl}
+        displayUrl={bannerUrl || defaults.banner_url}
         maxWidth={1280}
         color={color}
         onUploaded={(url) => onChange({ avatar_url: avatarUrl, banner_url: url })}
