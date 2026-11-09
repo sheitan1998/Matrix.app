@@ -2,9 +2,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 import { resolveChannelMeta } from '../../shared/creatorMeta.ts';
 
 // Votes des chaînes Best Creator — mêmes règles que Best Serveur :
-// 2h de cooldown (1h pour les VIP), 3 chaînes maximum en Vote Auto.
+// 2h de cooldown pour chaque utilisateur, 3 chaînes maximum en Vote Auto.
 const VOTE_COOLDOWN_MS = 2 * 60 * 60 * 1000;
-const VIP_COOLDOWN_MS = 60 * 60 * 1000;
 const MAX_AUTO_CHANNELS = 3;
 // Quota de publication : 3 chaînes maximum par plateforme et par utilisateur.
 const MAX_CHANNELS_PER_PLATFORM = 3;
@@ -30,9 +29,6 @@ async function countChannels(base44: any, email: string, platform: string, exclu
   const items: any[] = page?.items || page || [];
   return items.filter((c: any) => c.owner_email === email && c.id !== excludeId).length;
 }
-
-const isVipActive = (u: any, now: number) =>
-  !!(u?.is_vip && (!u.vip_until || new Date(u.vip_until).getTime() > now));
 
 const isAutoVoteActive = (u: any, now: number) =>
   !!(u?.has_vote_auto && (!u.vote_auto_until || new Date(u.vote_auto_until).getTime() > now));
@@ -164,6 +160,28 @@ export default async function (req: Request): Promise<Response> {
       return Response.json({ success: true, channel: created, quota: { platform, used: used + 1, max: MAX_CHANNELS_PER_PLATFORM } });
     }
 
+    // ---- Complète les logos / bannières manquants (anciennes chaînes) ----
+    if (action === 'syncVisuals') {
+      if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 });
+      const ids = (Array.isArray(body?.ids) ? body.ids : []).map(String).slice(0, 40);
+      const updated: any[] = [];
+
+      for (const id of ids) {
+        const channel = await base44.asServiceRole.entities.CreatorChannel.get(id).catch(() => null);
+        if (!channel || (channel.avatar_url && channel.banner_url)) continue;
+        const meta = await resolveChannelMeta(channel.channel_url, channel.platform).catch(() => null);
+        if (!meta) continue;
+        const visuals: any = {};
+        if (meta.avatar_url) visuals.avatar_url = meta.avatar_url;
+        if (meta.banner_url) visuals.banner_url = meta.banner_url;
+        if (!Object.keys(visuals).length) continue;
+        const saved = await base44.asServiceRole.entities.CreatorChannel.update(id, visuals);
+        updated.push(saved);
+      }
+
+      return Response.json({ success: true, updated });
+    }
+
     // ---- Vote manuel ----
     if (action === 'vote') {
       const creatorId = String(body?.creatorId || '');
@@ -175,7 +193,7 @@ export default async function (req: Request): Promise<Response> {
       const creator = await base44.asServiceRole.entities.CreatorChannel.get(creatorId).catch(() => null);
       if (!creator) return Response.json({ error: 'not_found' }, { status: 404 });
 
-      const cooldown = isVipActive(user, now) ? VIP_COOLDOWN_MS : VOTE_COOLDOWN_MS;
+      const cooldown = VOTE_COOLDOWN_MS;
       const previous = await lastVote(base44, creatorId, identity);
       const elapsed = previous?.last_voted_at ? now - new Date(previous.last_voted_at).getTime() : Infinity;
       if (previous && elapsed < cooldown) {
@@ -199,7 +217,7 @@ export default async function (req: Request): Promise<Response> {
     if (action === 'getVoteStatus') {
       const creatorId = String(body?.creatorId || '');
       if (!creatorId || !identity) return Response.json({ canVote: true, remainingTime: null });
-      const cooldown = isVipActive(user, now) ? VIP_COOLDOWN_MS : VOTE_COOLDOWN_MS;
+      const cooldown = VOTE_COOLDOWN_MS;
       const previous = await lastVote(base44, creatorId, identity);
       if (!previous?.last_voted_at) return Response.json({ canVote: true, remainingTime: null });
       const elapsed = now - new Date(previous.last_voted_at).getTime();
@@ -229,7 +247,7 @@ export default async function (req: Request): Promise<Response> {
         const subscriber = firstOf(usersPage);
         if (!isAutoVoteActive(subscriber, now)) continue;
 
-        const cooldown = isVipActive(subscriber, now) ? VIP_COOLDOWN_MS : VOTE_COOLDOWN_MS;
+        const cooldown = VOTE_COOLDOWN_MS;
 
         for (const creatorId of ids) {
           const creator = await base44.asServiceRole.entities.CreatorChannel.get(creatorId).catch(() => null);

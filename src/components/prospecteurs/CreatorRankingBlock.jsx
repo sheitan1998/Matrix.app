@@ -42,11 +42,27 @@ export default function CreatorRankingBlock({ title, creators, accentColor = "#a
                 href={creator.channel_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 p-1.5 rounded-lg transition hover:bg-white/5"
-                style={{ background: i < 3 ? `${accentColor}08` : "transparent" }}
+                className="relative flex items-center gap-2 p-1.5 rounded-lg overflow-hidden transition hover:bg-white/5"
+                style={{
+                  background: i < 3 ? `${accentColor}08` : "transparent",
+                  border: `1px solid ${platform.color}20`,
+                }}
               >
+                {creator.banner_url && (
+                  <img
+                    src={creator.banner_url}
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute inset-0 w-full h-full object-cover"
+                    style={{ opacity: 0.22 }}
+                  />
+                )}
                 <div
-                  className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black shrink-0"
+                  className="absolute inset-0 pointer-events-none"
+                  style={{ background: "linear-gradient(90deg, rgba(10,5,15,0.92) 0%, rgba(10,5,15,0.6) 100%)" }}
+                />
+                <div
+                  className="relative z-10 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black shrink-0"
                   style={{
                     background: rankStyle ? rankStyle.bg : "rgba(138,79,255,0.1)",
                     color: rankStyle ? "#fff" : "rgba(255,255,255,0.4)",
@@ -56,8 +72,12 @@ export default function CreatorRankingBlock({ title, creators, accentColor = "#a
                   {i + 1}
                 </div>
                 <div
-                  className="w-6 h-6 rounded overflow-hidden flex items-center justify-center text-[10px] font-bold text-white shrink-0"
-                  style={{ background: `linear-gradient(135deg, ${platform.color}, #1a0a2e)` }}
+                  className="relative z-10 w-6 h-6 rounded overflow-hidden flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                  style={{
+                    background: `linear-gradient(135deg, ${platform.color}, #1a0a2e)`,
+                    border: `1.5px solid ${platform.color}`,
+                    boxShadow: `0 0 8px ${platform.color}bb`,
+                  }}
                 >
                   {creator.avatar_url ? (
                     <img src={creator.avatar_url} alt="" className="w-full h-full object-cover" />
@@ -65,9 +85,9 @@ export default function CreatorRankingBlock({ title, creators, accentColor = "#a
                     creator.name?.[0]?.toUpperCase() || "C"
                   )}
                 </div>
-                <span className="flex-1 text-[10px] font-bold text-white/80 truncate">{creator.name}</span>
-                <PlatformIcon className="w-3 h-3 shrink-0" style={{ color: platform.color }} />
-                <span className="text-[9px] font-black flex items-center gap-0.5" style={{ color: accentColor }}>
+                <span className="relative z-10 flex-1 text-[10px] font-bold text-white/80 truncate">{creator.name}</span>
+                <PlatformIcon className="relative z-10 w-3 h-3 shrink-0" style={{ color: platform.color }} />
+                <span className="relative z-10 text-[9px] font-black flex items-center gap-0.5" style={{ color: accentColor }}>
                   <ArrowUp className="w-2.5 h-2.5" />
                   {creator.votes_month || 0}
                 </span>

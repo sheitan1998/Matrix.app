@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { ArrowLeft, Plus, Sparkles, Trophy, Youtube, Twitch, Zap } from "lucide-react";
@@ -47,6 +47,27 @@ export default function BestCreator() {
       });
     return () => { active = false; };
   }, []);
+
+  // Complète automatiquement les logos / bannières des chaînes publiées avant la récupération des visuels.
+  const visualSyncDone = useRef(new Set());
+  useEffect(() => {
+    const missing = creators
+      .filter((c) => (!c.avatar_url || !c.banner_url) && !visualSyncDone.current.has(c.id))
+      .map((c) => c.id);
+    if (!missing.length) return;
+    missing.forEach((id) => visualSyncDone.current.add(id));
+
+    let active = true;
+    base44.functions
+      .invoke("creatorSearch", { action: "syncVisuals", ids: missing.slice(0, 40) })
+      .then((res) => {
+        const updated = res.data?.updated || [];
+        if (!active || !updated.length) return;
+        setCreators((prev) => prev.map((c) => updated.find((u) => u.id === c.id) || c));
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [creators]);
 
   const counts = useMemo(() => ({
     all: creators.length,
