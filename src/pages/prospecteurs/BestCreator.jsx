@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import usePageSEO from "@/hooks/usePageSEO";
 import ProspecteursHeader from "@/components/prospecteurs/ProspecteursHeader";
 import ProspecteursSidebar from "@/components/prospecteurs/ProspecteursSidebar";
-import CreatorPlatformCards from "@/components/prospecteurs/CreatorPlatformCards";
+import CreatorPlatformCards, { CREATOR_PLATFORMS } from "@/components/prospecteurs/CreatorPlatformCards";
 import CreatorRankingBlock from "@/components/prospecteurs/CreatorRankingBlock";
 import CreatorSearchBar from "@/components/prospecteurs/CreatorSearchBar";
 import CreatorChannelCard from "@/components/prospecteurs/CreatorChannelCard";
@@ -52,6 +52,7 @@ export default function BestCreator() {
   const visualSyncDone = useRef(new Set());
   useEffect(() => {
     const missing = creators
+      .filter((c) => (c.platform === "youtube" || c.platform === "twitch"))
       .filter((c) => (!c.avatar_url || !c.banner_url) && !visualSyncDone.current.has(c.id))
       .map((c) => c.id);
     if (!missing.length) return;
@@ -69,21 +70,26 @@ export default function BestCreator() {
     return () => { active = false; };
   }, [creators]);
 
-  const counts = useMemo(() => ({
-    all: creators.length,
-    youtube: creators.filter((c) => c.platform === "youtube").length,
-    twitch: creators.filter((c) => c.platform === "twitch").length,
-  }), [creators]);
+  const counts = useMemo(() => {
+    const result = { all: creators.length };
+    Object.keys(CREATOR_PLATFORMS).forEach((key) => {
+      result[key] = creators.filter((c) => c.platform === key).length;
+    });
+    return result;
+  }, [creators]);
 
   const generalTop = useMemo(() => [...creators].sort((a, b) => score(b) - score(a)).slice(0, 5), [creators]);
-  const youtubeTop = useMemo(
-    () => creators.filter((c) => c.platform === "youtube").sort((a, b) => score(b) - score(a)).slice(0, 5),
-    [creators]
-  );
-  const twitchTop = useMemo(
-    () => creators.filter((c) => c.platform === "twitch").sort((a, b) => score(b) - score(a)).slice(0, 5),
-    [creators]
-  );
+
+  const platformTops = useMemo(() => {
+    const tops = {};
+    Object.keys(CREATOR_PLATFORMS).forEach((key) => {
+      tops[key] = creators
+        .filter((c) => c.platform === key)
+        .sort((a, b) => score(b) - score(a))
+        .slice(0, 5);
+    });
+    return tops;
+  }, [creators]);
 
   const visible = useMemo(() => {
     let arr = platform ? creators.filter((c) => c.platform === platform) : creators;
@@ -142,11 +148,26 @@ export default function BestCreator() {
   // Quota : 3 chaînes maximum par plateforme et par utilisateur.
   const ownedCounts = useMemo(() => {
     const mine = user ? creators.filter((c) => c.owner_email === user.email) : [];
-    return {
-      youtube: mine.filter((c) => c.platform === "youtube").length,
-      twitch: mine.filter((c) => c.platform === "twitch").length,
-    };
+    const result = {};
+    Object.keys(CREATOR_PLATFORMS).forEach((key) => {
+      result[key] = mine.filter((c) => c.platform === key).length;
+    });
+    return result;
   }, [creators, user]);
+
+  // Onglet "Toutes" : classement général. Sinon : uniquement le top de la plateforme choisie.
+  const rankingBlocks = useMemo(() => {
+    if (!platform) {
+      return [{ title: "Classement général", creators: generalTop, accentColor: "#a855f7", emptyText: "Aucune chaîne classée" }];
+    }
+    const meta = CREATOR_PLATFORMS[platform];
+    return [{
+      title: `Top ${meta.label}`,
+      creators: platformTops[platform] || [],
+      accentColor: meta.color,
+      emptyText: `Aucune chaîne ${meta.label}`,
+    }];
+  }, [platform, generalTop, platformTops]);
 
   const hasVoteAuto = !!user?.has_vote_auto &&
     (!user?.vote_auto_until || new Date(user.vote_auto_until).getTime() > Date.now());
@@ -238,7 +259,7 @@ export default function BestCreator() {
           <div className="mb-5">
             <div className="flex items-center gap-2 mb-3">
               <h2 className="text-xs font-black tracking-wider uppercase text-white">Catégories</h2>
-              <span className="text-[9px] text-white/40 ml-auto">2 plateformes</span>
+              <span className="text-[9px] text-white/40 ml-auto">4 plateformes</span>
             </div>
             <CreatorPlatformCards
               selected={platform}
@@ -248,36 +269,18 @@ export default function BestCreator() {
             />
           </div>
 
-          {/* Classements : général + par plateforme */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
-            <CreatorRankingBlock
-              title="Classement général"
-              creators={generalTop}
-              accentColor="#a855f7"
-              loading={loading}
-              emptyText="Aucune chaîne classée"
-            />
-            <CreatorRankingBlock
-              title="Top YouTube"
-              creators={youtubeTop}
-              accentColor="#FF0000"
-              loading={loading}
-              emptyText="Aucune chaîne YouTube"
-            />
-            <CreatorRankingBlock
-              title="Top Twitch"
-              creators={twitchTop}
-              accentColor="#9146FF"
-              loading={loading}
-              emptyText="Aucune chaîne Twitch"
-            />
+          {/* Classement : général sur "Toutes", top de la plateforme sélectionnée sinon */}
+          <div className="grid grid-cols-1 gap-3 mb-5 md:max-w-xl">
+            {rankingBlocks.map((block) => (
+              <CreatorRankingBlock key={block.title} {...block} loading={loading} />
+            ))}
           </div>
 
           {/* Liste des chaînes */}
           <div className="rounded-2xl p-4 sm:p-5" style={{ background: "rgba(18,9,28,0.6)", border: "1px solid rgba(168,85,247,0.2)" }}>
             <div className="flex items-center gap-2 mb-3">
               <h2 className="text-xs font-black tracking-wider uppercase text-white">
-                {platform === "youtube" ? "Chaînes YouTube" : platform === "twitch" ? "Chaînes Twitch" : "Toutes les chaînes"}
+                {platform ? `Chaînes ${CREATOR_PLATFORMS[platform].label}` : "Toutes les chaînes"}
               </h2>
               <span className="text-[9px] text-white/40 ml-auto">
                 {visible.length} chaîne{visible.length !== 1 ? "s" : ""}

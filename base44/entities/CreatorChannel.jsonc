@@ -14,14 +14,22 @@
       "type": "string",
       "enum": [
         "youtube",
-        "twitch"
+        "twitch",
+        "tiktok",
+        "instagram"
+      ],
+      "enumColors": [
+        "red",
+        "purple",
+        "blue",
+        "pink"
       ],
       "default": "youtube",
       "description": "Plateforme de la cha\u00eene"
     },
     "channel_url": {
       "type": "string",
-      "description": "Lien direct vers la cha\u00eene (YouTube ou Twitch)"
+      "description": "Lien direct vers la cha\u00eene (YouTube, Twitch, TikTok ou Instagram)"
     },
     "description": {
       "type": "string",

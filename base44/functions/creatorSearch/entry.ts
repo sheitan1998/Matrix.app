@@ -17,8 +17,21 @@ const slugify = (text: string) =>
     .replace(/^-+|-+$/g, '')
     .slice(0, 60) || 'chaine';
 
+// Plateformes prises en charge (3 chaînes max par plateforme et par utilisateur).
+const PLATFORM_URL_TESTS: Record<string, RegExp> = {
+  youtube: /(youtube\.com|youtu\.be)/i,
+  twitch: /twitch\.tv/i,
+  tiktok: /tiktok\.com/i,
+  instagram: /instagram\.com/i,
+};
+
+const normalizePlatform = (value: any) => {
+  const platform = String(value || '');
+  return PLATFORM_URL_TESTS[platform] ? platform : 'youtube';
+};
+
 const isValidChannelUrl = (url: string, platform: string) =>
-  /^https?:\/\//i.test(url) && (platform === 'youtube' ? /(youtube\.com|youtu\.be)/i.test(url) : /twitch\.tv/i.test(url));
+  /^https?:\/\//i.test(url) && (PLATFORM_URL_TESTS[platform] || PLATFORM_URL_TESTS.youtube).test(url);
 
 async function countChannels(base44: any, email: string, platform: string, excludeId?: string) {
   const page = await base44.asServiceRole.entities.CreatorChannel.filter(
@@ -81,7 +94,7 @@ export default async function (req: Request): Promise<Response> {
     if (action === 'fetchChannelMeta') {
       if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 });
       const url = String(body?.url || '').trim();
-      const platform = body?.platform === 'twitch' ? 'twitch' : 'youtube';
+      const platform = normalizePlatform(body?.platform);
       if (!isValidChannelUrl(url, platform)) return Response.json({ error: 'invalid_url' }, { status: 400 });
       const meta = await resolveChannelMeta(url, platform).catch(() => null);
       return Response.json({ success: !!meta, meta: meta || null });
@@ -91,7 +104,7 @@ export default async function (req: Request): Promise<Response> {
     if (action === 'saveChannel') {
       if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 });
 
-      const platform = body?.platform === 'twitch' ? 'twitch' : 'youtube';
+      const platform = normalizePlatform(body?.platform);
       const name = String(body?.name || '').trim().slice(0, 60);
       const channelUrl = String(body?.channel_url || '').trim();
       const description = String(body?.description || '').trim().slice(0, 1000);

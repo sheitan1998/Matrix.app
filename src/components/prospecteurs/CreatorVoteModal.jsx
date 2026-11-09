@@ -130,7 +130,7 @@ export default function CreatorVoteModal({ creator, voteStatus, onClose, onVoted
             <p className="text-sm font-black text-white">
               {fmt(voteStatus.remaining.h)}:{fmt(voteStatus.remaining.m)}:{fmt(voteStatus.remaining.s)}
             </p>
-            <p className="text-[9px] text-white/30 mt-1">Reviens plus tard pour revoter</p>
+            <p className="text-[9px] text-white/30 mt-1">Un seul vote toutes les 2 heures</p>
             <button
               onClick={onClose}
               className="mt-4 h-9 px-6 rounded-lg text-[11px] font-bold transition tap-sm"

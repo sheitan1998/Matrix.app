@@ -1,11 +1,20 @@
 import React, { useEffect, useRef, useState } from "react";
-import { X, Youtube, Twitch, Loader2, RefreshCw, ImageOff } from "lucide-react";
+import { X, Youtube, Twitch, Music2, Instagram, Loader2, RefreshCw, ImageOff } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const PLATFORM_OPTIONS = [
-  { key: "youtube", label: "YouTube", icon: Youtube, color: "#FF0000", hint: "youtube.com ou youtu.be" },
-  { key: "twitch", label: "Twitch", icon: Twitch, color: "#9146FF", hint: "twitch.tv" },
+  { key: "youtube", label: "YouTube", icon: Youtube, color: "#FF0000", hint: "youtube.com/@..." },
+  { key: "twitch", label: "Twitch", icon: Twitch, color: "#9146FF", hint: "twitch.tv/..." },
+  { key: "tiktok", label: "TikTok", icon: Music2, color: "#25F4EE", hint: "tiktok.com/@..." },
+  { key: "instagram", label: "Instagram", icon: Instagram, color: "#E1306C", hint: "instagram.com/..." },
 ];
+
+const PLATFORM_URL_TESTS = {
+  youtube: /(youtube\.com|youtu\.be)/i,
+  twitch: /twitch\.tv/i,
+  tiktok: /tiktok\.com/i,
+  instagram: /instagram\.com/i,
+};
 
 const MAX_PER_PLATFORM = 3;
 
@@ -28,9 +37,7 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
   const quotaReached = !isEdit && used >= MAX_PER_PLATFORM;
 
   const urlIsValid = /^https?:\/\//i.test(channelUrl.trim()) &&
-    (platform === "youtube"
-      ? /(youtube\.com|youtu\.be)/i.test(channelUrl)
-      : /twitch\.tv/i.test(channelUrl));
+    (PLATFORM_URL_TESTS[platform] || PLATFORM_URL_TESTS.youtube).test(channelUrl);
 
   const loadMeta = async (url, force = false) => {
     const target = url.trim();
@@ -47,7 +54,9 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
       });
       const meta = res.data?.meta;
       if (!meta) {
-        setMetaError("Aucun visuel trouvé pour ce lien. Une bannière Matrix sera utilisée.");
+        setMetaError(platform === "tiktok" || platform === "instagram"
+          ? "TikTok et Instagram ne partagent pas ces visuels : un habillage Matrix sera utilisé."
+          : "Aucun visuel trouvé pour ce lien. Une bannière Matrix sera utilisée.");
         return;
       }
       if (meta.name && !name.trim()) setName(meta.name);
@@ -239,7 +248,11 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
               </button>
             </div>
             <p className="text-[9px] text-white/35 mt-1">
-              {fetching ? "Récupération du logo et de la bannière..." : "Logo et bannière récupérés automatiquement depuis la plateforme."}
+              {fetching
+                ? "Récupération du logo et de la bannière..."
+                : platform === "tiktok" || platform === "instagram"
+                  ? "Logo et bannière récupérés automatiquement pour YouTube et Twitch."
+                  : "Logo et bannière récupérés automatiquement depuis la plateforme."}
             </p>
             {metaError && <p className="text-[9px] text-amber-400/80 mt-1">{metaError}</p>}
           </div>

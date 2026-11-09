@@ -135,5 +135,10 @@ export async function resolveChannelMeta(url: string, platform: string) {
   if (platform === "twitch") {
     return fetchTwitchMeta(url, process.env.TWITCH_CLIENT_ID, process.env.TWITCH_CLIENT_SECRET);
   }
-  return fetchYouTubeMeta(url, process.env.YOUTUBE_API_KEY);
+  if (platform === "youtube") {
+    return fetchYouTubeMeta(url, process.env.YOUTUBE_API_KEY);
+  }
+  // TikTok et Instagram n'exposent pas ces visuels publiquement : leurs cartes
+  // utilisent l'habillage Matrix (dégradé néon + initiale).
+  return null;
 }
