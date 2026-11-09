@@ -7,18 +7,18 @@ import usePullToRefresh from "@/hooks/usePullToRefresh";
 import PullToRefreshIndicator from "@/components/ui/PullToRefreshIndicator";
 
 const TABS = [
-  { id: "all", label: "Vue d'ensemble" },
-  { id: "live", label: "Live" },
-  { id: "videos", label: "Vidéos" },
-  { id: "categories", label: "Catégories" },
-  { id: "channels", label: "Chaînes" },
-];
+{ id: "all", label: "Vue d'ensemble" },
+{ id: "live", label: "Live" },
+{ id: "videos", label: "Vidéos" },
+{ id: "categories", label: "Catégories" },
+{ id: "channels", label: "Chaînes" }];
+
 
 const CATEGORIES = [
-  { id: "gaming", label: "Starforge Tactics", color: "#a855f7" },
-  { id: "music", label: "Voidrunners", color: "#3b82f6" },
-  { id: "sports", label: "Legion of Stars", color: "#22c55e" },
-];
+{ id: "gaming", label: "Starforge Tactics", color: "#a855f7" },
+{ id: "music", label: "Voidrunners", color: "#3b82f6" },
+{ id: "sports", label: "Legion of Stars", color: "#22c55e" }];
+
 
 export default function Subscriptions() {
   const [tab, setTab] = useState("all");
@@ -30,15 +30,15 @@ export default function Subscriptions() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     const me = await base44.auth.me().catch(() => null);
-    if (!me) { setLoading(false); return; }
+    if (!me) {setLoading(false);return;}
     const subs = await base44.entities.Subscription.filter({ user_email: me.email });
     const subIds = subs.map((s) => s.channel_id);
 
     const [allVideos, allLive, allChannels] = await Promise.all([
-      base44.entities.Video.list("-created_date", 100),
-      base44.entities.Video.filter({ is_live: true }, "-viewers_count", 20),
-      base44.entities.Channel.list("-subscribers_count", 30),
-    ]);
+    base44.entities.Video.list("-created_date", 100),
+    base44.entities.Video.filter({ is_live: true }, "-viewers_count", 20),
+    base44.entities.Channel.list("-subscribers_count", 30)]
+    );
 
     const subVideos = subIds.length > 0 ? allVideos.filter((v) => subIds.includes(v.channel_id)) : allVideos.slice(0, 20);
     const subLive = subIds.length > 0 ? allLive.filter((v) => subIds.includes(v.channel_id)) : [];
@@ -50,7 +50,7 @@ export default function Subscriptions() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {fetchData();}, [fetchData]);
 
   const { pulling, pullY } = usePullToRefresh({ onRefresh: fetchData });
 
@@ -77,30 +77,30 @@ export default function Subscriptions() {
 
       {/* Tabs */}
       <div className="flex gap-1 overflow-x-auto no-scrollbar border-b border-white/5">
-        {TABS.map((t) => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            className={`relative px-3 py-2.5 text-xs font-bold whitespace-nowrap transition ${tab === t.id ? "text-white" : "text-white/40 hover:text-white/60"}`}>
+        {TABS.map((t) =>
+        <button key={t.id} onClick={() => setTab(t.id)}
+        className={`relative px-3 py-2.5 text-xs font-bold whitespace-nowrap transition ${tab === t.id ? "text-white" : "text-white/40 hover:text-white/60"}`}>
             {t.label}
             {tab === t.id && <div className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full" style={{ background: "#a052ff" }} />}
           </button>
-        ))}
+        )}
       </div>
 
       {/* Chaînes live */}
-      {showLive && (
-        <section>
+      {showLive &&
+      <section>
           <h2 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
             <Radio className="w-4 h-4 text-red-500" /> Chaînes live
           </h2>
-          {liveVideos.length === 0 ? (
-            <div className="rounded-2xl p-8 text-center" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.04)" }}>
+          {liveVideos.length === 0 ?
+        <div className="rounded-2xl p-8 text-center" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.04)" }}>
               <Radio className="w-8 h-8 text-white/20 mx-auto mb-2" />
               <p className="text-sm text-white/40">Aucune chaîne suivie n'est en signal pour l'instant</p>
-            </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-              {liveVideos.map((v) => (
-                <Link key={v.id} to={`/live/${v.id}`} className="rounded-2xl overflow-hidden group" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.04)" }}>
+            </div> :
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              {liveVideos.map((v) =>
+          <Link key={v.id} to={`/live/${v.id}`} className="rounded-2xl overflow-hidden group" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.04)" }}>
                   <div className="relative aspect-video">
                     {v.thumbnail_url ? <img src={v.thumbnail_url} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full bg-secondary" />}
                     <span className="absolute top-2 left-2 text-[10px] font-black px-2 py-0.5 rounded bg-red-600 text-white">LIVE</span>
@@ -111,26 +111,26 @@ export default function Subscriptions() {
                     <p className="text-xs text-white/40 mt-0.5">{v.channel_name}</p>
                   </div>
                 </Link>
-              ))}
-            </div>
           )}
+            </div>
+        }
         </section>
-      )}
+      }
 
       {/* Chaînes recommandées */}
-      {showChannels && (
-        <section>
+      {showChannels &&
+      <section>
           <h2 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
             <Users className="w-4 h-4" style={{ color: "#a052ff" }} /> Chaînes recommandées
           </h2>
-          {channels.length === 0 ? (
-            <div className="rounded-2xl p-8 text-center" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.04)" }}>
+          {channels.length === 0 ?
+        <div className="rounded-2xl p-8 text-center" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.04)" }}>
               <p className="text-sm text-white/40">Aucune chaîne recommandée pour le moment</p>
-            </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-              {channels.map((c) => (
-                <Link key={c.id} to={`/channel/${c.id}`} className="rounded-2xl p-4 flex items-center gap-3 group" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.04)" }}>
+            </div> :
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              {channels.map((c) =>
+          <Link key={c.id} to={`/channel/${c.id}`} className="rounded-2xl p-4 flex items-center gap-3 group hidden" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.04)" }}>
                   <div className="w-12 h-12 rounded-full overflow-hidden shrink-0" style={{ background: "rgba(168,85,247,0.1)" }}>
                     {c.avatar_url ? <img src={c.avatar_url} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full flex items-center justify-center text-lg font-bold text-white/40">{c.name?.[0]}</div>}
                   </div>
@@ -143,47 +143,47 @@ export default function Subscriptions() {
                     </div>
                   </div>
                 </Link>
-              ))}
-            </div>
           )}
+            </div>
+        }
         </section>
-      )}
+      }
 
       {/* Vidéos les plus récentes */}
-      {showVideos && (
-        <section>
+      {showVideos &&
+      <section>
           <h2 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
             <Video className="w-4 h-4" style={{ color: "#a052ff" }} /> Vidéos les plus récentes
           </h2>
-          {videos.length === 0 ? (
-            <div className="rounded-2xl p-8 text-center" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.04)" }}>
+          {videos.length === 0 ?
+        <div className="rounded-2xl p-8 text-center" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.04)" }}>
               <p className="text-sm text-white/40">Aucune capture récente de vos chaînes suivies</p>
-            </div>
-          ) : (
-            <VideoGrid videos={videos} isLoading={loading} />
-          )}
+            </div> :
+
+        <VideoGrid videos={videos} isLoading={loading} />
+        }
         </section>
-      )}
+      }
 
       {/* Catégories live */}
-      {showCategories && (
-        <section>
+      {showCategories &&
+      <section>
           <h2 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
             <Radio className="w-4 h-4" style={{ color: "#a052ff" }} /> Catégories live
           </h2>
           <div className="grid sm:grid-cols-3 gap-3">
-            {CATEGORIES.map((cat) => (
-              <Link key={cat.id} to={`/category/${cat.id}`} className="rounded-2xl p-5 relative overflow-hidden group" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.04)" }}>
+            {CATEGORIES.map((cat) =>
+          <Link key={cat.id} to={`/category/${cat.id}`} className="rounded-2xl p-5 relative overflow-hidden group" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.04)" }}>
                 <div className="absolute top-0 left-0 w-1.5 h-full" style={{ background: cat.color }} />
                 <div className="pl-2">
                   <p className="text-sm font-black text-white">{cat.label}</p>
                   <p className="text-[10px] text-white/40 mt-1">0 chaînes en direct</p>
                 </div>
               </Link>
-            ))}
+          )}
           </div>
         </section>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }
