@@ -20,6 +20,7 @@ import TrixIcon from "@/components/TrixIcon";
 import DesktopDownloadButton from "@/components/DesktopDownloadButton";
 import SupportTicketModal from "@/components/profile/SupportTicketModal";
 import ImageCropModal from "@/components/profile/ImageCropModal";
+import ProfileTabPanel from "@/components/profile/ProfileTabPanel";
 
 const TABS = [
 { key: "overview", label: "Vue d'ensemble", icon: Zap },
@@ -149,9 +150,9 @@ export default function ProfileContent({ onClose }) {
     <div className="min-h-screen relative overflow-y-auto overflow-x-hidden" style={{ backgroundColor: "#0a050f" }}>
       <div className="fixed inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at top, rgba(168,85,247,0.08), transparent 60%)" }} />
 
-      <div className="relative z-10 min-h-screen flex flex-col max-w-4xl mx-auto w-full">
+      <div className="relative z-10 min-h-screen flex flex-col max-w-6xl mx-auto w-full px-3 sm:px-6 lg:pr-[300px]">
         {/* Header */}
-        <header className="flex items-center justify-between px-4 sm:px-6 py-4">
+        <header className="flex items-center justify-between py-4">
           <div className="flex items-center gap-3">
             {onClose ?
             <button onClick={onClose} className="w-9 h-9 rounded-xl flex items-center justify-center transition hover:opacity-80" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}>
@@ -193,7 +194,7 @@ export default function ProfileContent({ onClose }) {
         </div>
 
         {/* Profile header */}
-        <div className="px-4 sm:px-6 -mt-12 relative">
+        <div className="-mt-12 relative">
           <div className="flex items-end gap-4 mb-4">
             {/* Avatar with frame */}
             <div className="relative shrink-0 overflow-visible">
@@ -359,15 +360,9 @@ export default function ProfileContent({ onClose }) {
             </div>
           }
 
-          {/* Tabs */}
-          <div className="flex gap-1 mb-4 overflow-x-auto no-scrollbar border-b border-white/5 pb-1 justify-end">
-            {TABS.map((t) =>
-            <button key={t.key} onClick={() => setTab(t.key)}
-            className={`relative px-3 py-2.5 font-bold whitespace-nowrap transition text-base [font-family:'Inter',_system-ui,_sans-serif] ${tab === t.key ? "text-white" : "text-white/40 hover:text-white/60"}`}>
-                <t.icon className="w-3.5 h-3.5 inline mr-1" /> {t.label}
-                {tab === t.key && <div className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full" style={{ background: "#a855f7" }} />}
-              </button>
-            )}
+          {/* Tabs — mobile (grille deux colonnes) */}
+          <div className="lg:hidden mb-4">
+            <ProfileTabPanel tabs={TABS} active={tab} onChange={setTab} variant="mobile" />
           </div>
 
           {/* Tab content */}
@@ -424,6 +419,11 @@ export default function ProfileContent({ onClose }) {
           </div>
         </div>
       </div>
+
+      {/* Panneau latéral dédié — bord droit de l'écran */}
+      <aside className="hidden lg:block fixed right-6 top-24 z-30 w-[240px] max-h-[calc(100vh-7rem)] overflow-y-auto no-scrollbar">
+        <ProfileTabPanel tabs={TABS} active={tab} onChange={setTab} />
+      </aside>
 
       {showSupport && <SupportTicketModal user={user} onClose={() => setShowSupport(false)} />}
       {cropModal &&
