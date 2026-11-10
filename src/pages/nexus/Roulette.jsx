@@ -193,21 +193,21 @@ export default function Roulette() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-1.5 pl-1.5 pr-4 hidden">
-            <span
-              className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full text-[11px] font-black text-white"
-              style={{ background: 'linear-gradient(135deg, #8B5CF6, #4c1d95)' }}>
-              
-              {user?.avatar_url ?
-              <img src={user.avatar_url} alt="" className="h-full w-full object-cover" /> :
+          
 
-              (user?.full_name || 'M').charAt(0).toUpperCase()
-              }
-            </span>
-            <span className="max-w-[140px] truncate text-xs font-bold text-white/85">
-              {user?.full_name || 'MatrixUser'}
-            </span>
-          </div>
+
+
+
+
+
+
+
+
+
+
+
+
+          
         </header>
 
         {isDesktop ?
