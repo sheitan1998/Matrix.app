@@ -147,10 +147,10 @@ export default function Roulette() {
   const wheelCard =
   <div>
       <RouletteLuxuryWheel
-        spinToken={spinToken}
-        targetNumber={targetNumber}
-        onDone={finishSpin}
-        railScale={config.accoudoir_scale} />
+      spinToken={spinToken}
+      targetNumber={targetNumber}
+      onDone={finishSpin}
+      railScale={config.accoudoir_scale} />
       <RouletteWallet balance={balance} lastGain={lastGain} labels={labels} language={language} />
     </div>;
 
@@ -193,7 +193,7 @@ export default function Roulette() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-1.5 pl-1.5 pr-4">
+          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-1.5 pl-1.5 pr-4 hidden">
             <span
               className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full text-[11px] font-black text-white"
               style={{ background: 'linear-gradient(135deg, #8B5CF6, #4c1d95)' }}>
@@ -215,9 +215,9 @@ export default function Roulette() {
             {/* Croupière à gauche */}
             <div style={panelStyle(13, 45, 22, config.dealer_scale)}>
               <RouletteDealer
-                message={dealerMessage}
-                number={bubble.number}
-                scale={config.dealer_scale} />
+              message={dealerMessage}
+              number={bubble.number}
+              scale={config.dealer_scale} />
             </div>
 
             {/* Roue */}
