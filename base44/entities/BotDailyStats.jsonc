@@ -1,0 +1,102 @@
+{
+  "name": "BotDailyStats",
+  "type": "object",
+  "properties": {
+    "integration_id": {
+      "type": "string",
+      "description": "ID de la BotIntegration"
+    },
+    "owner_email": {
+      "type": "string"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "twitch",
+        "youtube",
+        "discord"
+      ],
+      "enumColors": [
+        "purple",
+        "red",
+        "blue"
+      ]
+    },
+    "day": {
+      "type": "string",
+      "description": "Jour au format AAAA-MM-JJ"
+    },
+    "messages": {
+      "type": "number",
+      "default": 0
+    },
+    "commands": {
+      "type": "number",
+      "default": 0
+    },
+    "timeouts": {
+      "type": "number",
+      "default": 0
+    },
+    "deletions": {
+      "type": "number",
+      "default": 0
+    },
+    "filter_hits": {
+      "type": "object",
+      "additionalProperties": true,
+      "default": {},
+      "description": "Infractions par filtre"
+    },
+    "top_commands": {
+      "type": "object",
+      "additionalProperties": true,
+      "default": {},
+      "description": "Nom de commande vers nombre d'utilisations"
+    },
+    "top_chatters": {
+      "type": "object",
+      "additionalProperties": true,
+      "default": {},
+      "description": "Pseudo vers nombre de messages"
+    },
+    "quota_used": {
+      "type": "number",
+      "default": 0,
+      "description": "Quota YouTube consomm\u00e9 sur la journ\u00e9e"
+    }
+  },
+  "required": [
+    "integration_id",
+    "day"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

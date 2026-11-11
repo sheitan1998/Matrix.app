@@ -1,0 +1,162 @@
+{
+  "name": "BotIntegration",
+  "type": "object",
+  "properties": {
+    "owner_email": {
+      "type": "string",
+      "description": "Email de l'utilisateur Matrix propri\u00e9taire de l'int\u00e9gration"
+    },
+    "owner_user_id": {
+      "type": "string",
+      "description": "Identifiant de l'utilisateur Matrix propri\u00e9taire"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "twitch",
+        "youtube",
+        "discord"
+      ],
+      "enumColors": [
+        "purple",
+        "red",
+        "blue"
+      ],
+      "default": "twitch",
+      "description": "Plateforme de l'int\u00e9gration"
+    },
+    "channel_id": {
+      "type": "string",
+      "description": "Identifiant de la cha\u00eene chez la plateforme (ou identifiant du serveur Discord)"
+    },
+    "channel_name": {
+      "type": "string",
+      "description": "Nom affich\u00e9 de la cha\u00eene ou du serveur"
+    },
+    "account_user_id": {
+      "type": "string",
+      "description": "Identifiant du compte qui agit (Twitch)"
+    },
+    "account_mode": {
+      "type": "string",
+      "enum": [
+        "own",
+        "bot"
+      ],
+      "enumColors": [
+        "green",
+        "blue"
+      ],
+      "default": "own",
+      "description": "own = compte du streamer, bot = compte mod\u00e9rateur"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Bot activ\u00e9 sur cette cha\u00eene"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "connecting",
+        "connected",
+        "disconnected",
+        "error",
+        "stopped"
+      ],
+      "enumColors": [
+        "yellow",
+        "green",
+        "gray",
+        "red",
+        "gray"
+      ],
+      "default": "connecting",
+      "description": "\u00c9tat de la connexion envoy\u00e9 par le worker"
+    },
+    "is_live": {
+      "type": "boolean",
+      "default": false
+    },
+    "live_since": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_error": {
+      "type": "string",
+      "maxLength": 1000
+    },
+    "quota_used": {
+      "type": "number",
+      "default": 0,
+      "description": "Unit\u00e9s de quota YouTube consomm\u00e9es aujourd'hui"
+    },
+    "quota_limit": {
+      "type": "number",
+      "default": 10000,
+      "description": "Quota YouTube quotidien"
+    },
+    "last_seen_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Dernier message d'\u00e9tat re\u00e7u du worker"
+    },
+    "settings": {
+      "type": "object",
+      "additionalProperties": true,
+      "default": {},
+      "description": "R\u00e9glages complets du bot (commandes, filtres, minuteurs, plateformes)"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Derni\u00e8re modification des r\u00e9glages"
+    }
+  },
+  "required": [
+    "owner_email",
+    "platform",
+    "channel_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.owner_email": "{{user.email}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
