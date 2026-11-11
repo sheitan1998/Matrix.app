@@ -9,7 +9,8 @@ import LandingFooter from "@/components/landing/LandingFooter";
 import FaqPanel from "@/components/landing/FaqPanel";
 import ThemeModal from "@/components/landing/ThemeModal";
 import LandingSEO from "@/components/landing/LandingSEO";
-import { User, ArrowRight } from "lucide-react";
+import PlatformCard from "@/components/landing/PlatformCard";
+import { User, Sparkles } from "lucide-react";
 
 const PLATFORM_CARDS = [
   { path: "/stream", label: "YouTube", desc: "Vidéos, lives, shorts. Crée ta chaîne et partage ton contenu.", iconUrl: "/media/tuto-gaming/c4e71cf23_yt_icon_red_digital.png", color: "#FF0000" },
@@ -19,6 +20,20 @@ const PLATFORM_CARDS = [
   { path: "/best-serveurs", label: "Best Serveur", desc: "Trouve des joueurs, recrute ou explore des serveurs de jeu.", color: "#8a4fff", logoUrl: "https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/994590848_a2c9d5d40_BadgenonfuturisteBestServeur.png" },
   { path: "/tuto-gaming", label: "Tuto Gaming Entraide", desc: "Guides, astuces, entraide et base de connaissances pour tous les jeux.", color: "#BF5AF2", logoUrl: "https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/8f647df05_0706208c7_EmblmenonTutosGamingunerquicklich.png" },
 ];
+
+const BEST_CREATOR_CARD = {
+  path: "/best-creator",
+  label: "Best Creator",
+  desc: "Explore et vote pour les meilleurs créateurs de contenu.",
+  color: "#a855f7",
+  Icon: Sparkles,
+};
+
+const BEST_SERVEUR_CARD = PLATFORM_CARDS.find((card) => card.path === "/best-serveurs");
+const TUTO_GAMING_CARD = PLATFORM_CARDS.find((card) => card.path === "/tuto-gaming");
+const MAIN_PLATFORM_CARDS = PLATFORM_CARDS.filter(
+  (card) => card.path !== "/best-serveurs" && card.path !== "/tuto-gaming"
+);
 
 export default function Landing() {
   const nav = useNavigate();
@@ -70,49 +85,16 @@ export default function Landing() {
           {/* Platform list (center) */}
           <div className="space-y-3">
             <h2 className="text-lg font-black text-foreground mb-2 hidden lg:block">Plateformes</h2>
-            {PLATFORM_CARDS.map((u, i) => (
-              <motion.button
-                key={i}
-                initial={{ opacity: 0, x: -30 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 + i * 0.08, duration: 0.5 }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => nav(u.path)}
-                className="platform-card relative w-full rounded-2xl overflow-hidden text-left group flex items-center gap-4 p-4"
-                style={{
-                  background: "hsl(var(--card))",
-                  border: `1px solid ${u.color}55`,
-                  "--pc-glow": `${u.color}99`,
-                  "--pc-glow-strong": `${u.color}`,
-                  "--pc-glow-soft": `${u.color}42`,
-                  "--pc-glow-inner": `${u.color}14`,
-                  "--pc-border": `${u.color}55`,
-                  "--pc-border-hover": `${u.color}cc`,
-                }}
-              >
-                <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ background: u.color, boxShadow: `0 0 10px ${u.color}80` }} />
-                {u.logoUrl ? (
-                  <img
-                    src={u.logoUrl}
-                    alt={u.label}
-                    className="w-11 h-11 rounded-full object-cover shrink-0 transition-transform group-hover:scale-110"
-                    style={{ border: `1.5px solid ${u.color}66`, boxShadow: `0 0 14px ${u.color}44` }}
-                  />
-                ) : u.iconUrl ? (
-                  <img src={u.iconUrl} alt={u.label} style={{ height: 28, width: "auto" }} className="shrink-0" />
-                ) : (
-                  <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${u.color}1a`, boxShadow: `0 0 15px ${u.color}30` }}>
-                    <span className="text-lg font-black" style={{ color: u.color }}>{u.label.charAt(0)}</span>
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-black text-foreground">{u.label}</h3>
-                  <p className="text-xs leading-relaxed text-foreground/50">{u.desc}</p>
-                </div>
-                <ArrowRight className="w-5 h-5 shrink-0 transition-transform group-hover:translate-x-1" style={{ color: u.color }} />
-              </motion.button>
+            {MAIN_PLATFORM_CARDS.map((card, i) => (
+              <PlatformCard key={card.path} item={card} index={i} onClick={() => nav(card.path)} />
             ))}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <PlatformCard item={BEST_SERVEUR_CARD} index={4} compact onClick={() => nav(BEST_SERVEUR_CARD.path)} />
+              <PlatformCard item={BEST_CREATOR_CARD} index={5} compact onClick={() => nav(BEST_CREATOR_CARD.path)} />
+            </div>
+
+            <PlatformCard item={TUTO_GAMING_CARD} index={6} onClick={() => nav(TUTO_GAMING_CARD.path)} />
           </div>
 
           {/* Affiliate partners (top right) */}
