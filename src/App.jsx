@@ -77,6 +77,7 @@ const BoutiqueNexus = lazy(() => import('@/pages/BoutiqueNexus'));
 const NexusInvite = lazy(() => import('@/pages/NexusInvite'));
 const CreatorProfile = lazy(() => import('@/pages/CreatorProfile'));
 const AdminPanel = lazy(() => import('@/pages/AdminPanel'));
+const BotSettings = lazy(() => import('@/pages/live/BotSettings'));
 const RechercheJoueur = lazy(() => import('@/pages/prospecteurs/RechercheJoueur'));
 const CreatorSearch = lazy(() => import('@/pages/prospecteurs/CreatorSearch'));
 const CreatorDetail = lazy(() => import('@/pages/prospecteurs/CreatorDetail'));
@@ -237,6 +238,7 @@ const AuthenticatedApp = () => {
             <Route path="/progression" element={<Progression />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/outils" element={<Outils />} />
+            <Route path="/live-bot" element={<BotSettings />} />
             <Route path="/mon-profil" element={<MonProfil />} />
             <Route path="/boutique-matrix" element={<BoutiqueMatrix />} />
             <Route path="/boutique-nexus" element={<BoutiqueNexus />} />

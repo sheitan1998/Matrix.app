@@ -60,7 +60,7 @@ export default async function (req: Request): Promise<Response> {
     if (action === 'disconnect') {
       const record = await owned(String(body?.id || ''));
       if (!record) return Response.json({ error: 'not_found' }, { status: 404 });
-      const credentials = listOf(await base44.entities.BotCredential.filter({ integration_id: record.id }, { limit: 5 }));
+      const credentials = listOf(await base44.asServiceRole.entities.BotCredential.filter({ integration_id: record.id }, { limit: 5 }));
       for (const credential of credentials) {
         await base44.asServiceRole.entities.BotCredential.delete(credential.id);
       }
@@ -79,7 +79,7 @@ export default async function (req: Request): Promise<Response> {
     if (action === 'remove') {
       const record = await owned(String(body?.id || ''));
       if (!record) return Response.json({ error: 'not_found' }, { status: 404 });
-      const credentials = listOf(await base44.entities.BotCredential.filter({ integration_id: record.id }, { limit: 5 }));
+      const credentials = listOf(await base44.asServiceRole.entities.BotCredential.filter({ integration_id: record.id }, { limit: 5 }));
       for (const credential of credentials) {
         await base44.asServiceRole.entities.BotCredential.delete(credential.id);
       }

@@ -105,7 +105,7 @@ async function saveIntegration(base44: any, owner: { id: string; email: string }
     owner_email: owner.email,
     platform,
     access_token: tokenData.access_token,
-    refresh_token: tokenData.refresh_token || existing ? (tokenData.refresh_token || '') : '',
+    refresh_token: tokenData.refresh_token || '',
     expires_at: expiresAt,
     updated_at: now,
   };
