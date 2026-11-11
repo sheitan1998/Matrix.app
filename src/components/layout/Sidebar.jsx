@@ -18,8 +18,7 @@ import {
   Crown,
   PanelLeftClose,
   PanelLeftOpen,
-  ShieldCheck,
-  Bot } from
+  ShieldCheck } from
 "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/useTheme";
@@ -84,7 +83,6 @@ const SECTIONS = [
   title: "Mes Outils",
   items: [
   { to: "/boutique-matrix", label: "Boutique", icon: ShoppingBag },
-  { to: "/live-bot", label: "Bot Live", icon: Bot },
   { to: "/outils", label: "Outils", icon: Wrench },
   { faq: true, label: "FAQ", icon: HelpCircle }]
 
