@@ -83,15 +83,15 @@ export default function Landing() {
         {/* Content grid */}
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6 lg:gap-8">
           {/* Platform list (center) */}
-          <div className="space-y-3">
+          <div className="space-y-3 self-start min-w-0">
             <h2 className="text-lg font-black text-foreground mb-2 hidden lg:block">Plateformes</h2>
             {MAIN_PLATFORM_CARDS.map((card, i) => (
               <PlatformCard key={card.path} item={card} index={i} onClick={() => nav(card.path)} />
             ))}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <PlatformCard item={BEST_SERVEUR_CARD} index={4} compact onClick={() => nav(BEST_SERVEUR_CARD.path)} />
-              <PlatformCard item={BEST_CREATOR_CARD} index={5} compact onClick={() => nav(BEST_CREATOR_CARD.path)} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 items-stretch gap-3">
+              <PlatformCard item={BEST_SERVEUR_CARD} index={4} compact stretch onClick={() => nav(BEST_SERVEUR_CARD.path)} />
+              <PlatformCard item={BEST_CREATOR_CARD} index={5} compact stretch onClick={() => nav(BEST_CREATOR_CARD.path)} />
             </div>
 
             <PlatformCard item={TUTO_GAMING_CARD} index={6} onClick={() => nav(TUTO_GAMING_CARD.path)} />

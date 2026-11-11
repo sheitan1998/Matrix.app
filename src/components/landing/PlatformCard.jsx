@@ -2,7 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 
-export default function PlatformCard({ item, index = 0, compact = false, onClick }) {
+export default function PlatformCard({ item, index = 0, compact = false, stretch = false, onClick }) {
   const Icon = item.Icon;
   const color = item.color;
   const box = compact ? "w-10 h-10" : "w-11 h-11";
@@ -15,7 +15,7 @@ export default function PlatformCard({ item, index = 0, compact = false, onClick
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className={`platform-card relative w-full h-full rounded-2xl overflow-hidden text-left group flex items-center ${compact ? "gap-3 p-3.5" : "gap-4 p-4"}`}
+      className={`platform-card relative w-full rounded-2xl overflow-hidden text-left group flex items-center ${compact ? "gap-3 p-3.5 min-h-[78px]" : "gap-4 p-4 min-h-[86px]"} ${stretch ? "h-full" : ""}`}
       style={{
         background: "hsl(var(--card))",
         border: `1px solid ${color}55`,
@@ -57,7 +57,7 @@ export default function PlatformCard({ item, index = 0, compact = false, onClick
 
       <div className="flex-1 min-w-0">
         <h3 className={`${compact ? "text-sm" : "text-base"} font-black text-foreground`}>{item.label}</h3>
-        <p className={`leading-relaxed text-foreground/50 ${compact ? "text-[11px] line-clamp-2" : "text-xs"}`}>{item.desc}</p>
+        <p className={`leading-relaxed text-foreground/50 line-clamp-2 ${compact ? "text-[11px]" : "text-xs"}`}>{item.desc}</p>
       </div>
       <ArrowRight
         className={`${compact ? "w-4 h-4" : "w-5 h-5"} shrink-0 transition-transform group-hover:translate-x-1`}
