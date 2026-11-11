@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { ArrowUp, ExternalLink, Trophy, Pencil } from "lucide-react";
+import { ArrowUp, ExternalLink, Trophy, Pencil, Trash2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import CreatorVoteModal from "./CreatorVoteModal";
 import SnapchatChannelActions from "./SnapchatChannelActions";
 import { CREATOR_PLATFORMS } from "./CreatorPlatformCards";
 import { resolveCreatorVisuals } from "@/lib/creatorDefaults";
 
-export default function CreatorChannelCard({ creator, rank, user, onVote, onEdit }) {
+export default function CreatorChannelCard({ creator, rank, user, onVote, onEdit, onDelete }) {
   const [voteStatus, setVoteStatus] = useState({ canVote: true, remaining: null });
   const [showVoteModal, setShowVoteModal] = useState(false);
 
@@ -113,6 +113,15 @@ export default function CreatorChannelCard({ creator, rank, user, onVote, onEdit
                 style={{ background: "rgba(10,5,15,0.65)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff" }}>
                 
                   <Pencil className="w-3.5 h-3.5" />
+                </button>
+              }
+              {canEdit &&
+              <button
+                onClick={() => onDelete?.(creator)}
+                title="Supprimer cette annonce"
+                className="w-7 h-7 rounded-lg flex items-center justify-center transition hover:bg-red-500/30 tap-sm"
+                style={{ background: "rgba(10,5,15,0.65)", border: "1px solid rgba(239,68,68,0.45)", color: "#f87171" }}>
+                  <Trash2 className="w-3.5 h-3.5" />
                 </button>
               }
             </div>

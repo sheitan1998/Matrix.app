@@ -12,6 +12,7 @@ import CreatorSearchBar from "@/components/prospecteurs/CreatorSearchBar";
 import CreatorChannelCard from "@/components/prospecteurs/CreatorChannelCard";
 import CreateCreatorModal from "@/components/prospecteurs/CreateCreatorModal";
 import CreatorAutoVoteModal from "@/components/prospecteurs/CreatorAutoVoteModal";
+import CreatorDeleteConfirm from "@/components/prospecteurs/CreatorDeleteConfirm";
 
 const score = (c) => (c.votes_month || 0) + (c.boosts || 0) * 2;
 
@@ -32,6 +33,8 @@ export default function BestCreator() {
   const [showForm, setShowForm] = useState(false);
   const [editingChannel, setEditingChannel] = useState(null);
   const [showAutoVote, setShowAutoVote] = useState(false);
+  const [channelToDelete, setChannelToDelete] = useState(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => setUser(null));
@@ -131,6 +134,20 @@ export default function BestCreator() {
   const openEdit = (creator) => {
     setEditingChannel(creator);
     setShowForm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!channelToDelete) return;
+    setDeleteBusy(true);
+    try {
+      await base44.entities.CreatorChannel.delete(channelToDelete.id);
+      setCreators((prev) => prev.filter((c) => c.id !== channelToDelete.id));
+      toast.success("Annonce supprimée");
+      setChannelToDelete(null);
+    } catch {
+      toast.error("Suppression impossible. Réessaie dans un instant.");
+    }
+    setDeleteBusy(false);
   };
 
   const handleSaved = (channel) => {
@@ -325,6 +342,7 @@ export default function BestCreator() {
                     user={user}
                     onVote={handleVote}
                     onEdit={openEdit}
+                    onDelete={setChannelToDelete}
                   />
                 ))}
               </div>
@@ -344,6 +362,15 @@ export default function BestCreator() {
 
       {showAutoVote && user && (
         <CreatorAutoVoteModal user={user} creators={creators} onClose={() => setShowAutoVote(false)} />
+      )}
+
+      {channelToDelete && (
+        <CreatorDeleteConfirm
+          creator={channelToDelete}
+          busy={deleteBusy}
+          onCancel={() => !deleteBusy && setChannelToDelete(null)}
+          onConfirm={confirmDelete}
+        />
       )}
     </div>
   );

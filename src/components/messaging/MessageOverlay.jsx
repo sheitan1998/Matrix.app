@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Send, Search, X, Mail, User, Smile, Trash2, Lock, Phone } from "lucide-react";
+import { ArrowLeft, Send, Search, X, Mail, User, Smile, Trash2, Lock, Phone, UserCheck, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { playMessageSound } from "@/lib/messageSound";
 import { messageAlertsEnabled } from '@/lib/notificationPreferences';
@@ -42,6 +42,11 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
   const [profileUserId, setProfileUserId] = useState(null);
   const [showPicker, setShowPicker] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
+  const [friendships, setFriendships] = useState([]);
+  const [tab, setTab] = useState("all");
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [addPseudo, setAddPseudo] = useState("");
+  const [adding, setAdding] = useState(false);
   const messagesEndRef = useRef(null);
   const { startCall } = useCall();
 
@@ -49,10 +54,12 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
   useEffect(() => {
     if (!user?.email) return;
     Promise.all([
-      base44.entities.Friend.filter({ user_email: user.email, status: "accepted" }).catch(() => []),
+      base44.entities.Friend.filter({ user_email: user.email }, "-created_date", 200).catch(() => []),
       base44.entities.DirectMessage.filter({ recipient_email: user.email }, "-created_date", 100).catch(() => []),
       base44.entities.DirectMessage.filter({ sender_email: user.email }, "-created_date", 100).catch(() => []),
-    ]).then(([friends, receivedDms, sentDms]) => {
+    ]).then(([allFriendships, receivedDms, sentDms]) => {
+      const friends = (allFriendships || []).filter(f => f.status === "accepted");
+      setFriendships(allFriendships || []);
       const friendContacts = (friends || []).map(f => ({
         id: "friend_" + f.id,
         friend_user_id: f.friend_user_id,
@@ -89,7 +96,7 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
       dmContacts.sort((a, b) => new Date(b.last_dm_date || 0) - new Date(a.last_dm_date || 0));
       setContacts([...dmContacts, ...friendContacts]);
     }).catch(() => {}).finally(() => setLoading(false));
-  }, [user]);
+  }, [user, refreshKey]);
 
   // Fetch fresh profile data for all friends by user_id
   useEffect(() => {
@@ -98,7 +105,10 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
       return;
     }
 
-    const userIds = [...new Set(contacts.map(f => f.friend_user_id).filter(Boolean))];
+    const userIds = [...new Set([
+      ...contacts.map(f => f.friend_user_id),
+      ...friendships.map(f => f.friend_user_id),
+    ].filter(Boolean))];
     if (userIds.length === 0) {
       setProfileFetchDone(true);
       return;
@@ -124,7 +134,7 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
         setProfilesLoading(false);
         setProfileFetchDone(true);
       });
-  }, [contacts, preselectedEmail]);
+  }, [contacts, friendships, preselectedEmail]);
 
   // Resolve contact info from fresh user data or DM contact fallback
   const resolveContact = (contact) => {
@@ -386,6 +396,83 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
     }
   };
 
+  const pendingReceived = friendships.filter(f => f.status === "pending_received");
+  const pendingSent = friendships.filter(f => f.status === "pending_sent");
+
+  const parsePseudoTag = (value) => {
+    const trimmed = value.trim();
+    const hashIdx = trimmed.indexOf("#");
+    if (hashIdx === -1) return { pseudo: trimmed, tag: null };
+    return { pseudo: trimmed.slice(0, hashIdx).trim(), tag: trimmed.slice(hashIdx + 1).trim() };
+  };
+
+  const sendFriendRequest = async () => {
+    if (!addPseudo?.trim() || !user?.email) return;
+    const input = addPseudo.trim();
+    const isEmail = input.includes("@");
+    const { pseudo, tag } = parsePseudoTag(input);
+    if (!pseudo && !isEmail) { toast.error("Pseudo invalide"); return; }
+    setAdding(true);
+    try {
+      const res = await base44.functions.invoke("serverSearch", isEmail
+        ? { action: "addFriend", email: input }
+        : { action: "addFriend", pseudo, tag });
+      if (!res?.data?.success) {
+        toast.error(res?.data?.error || "Erreur lors de l'envoi");
+        return;
+      }
+      setAddPseudo("");
+      setRefreshKey(k => k + 1);
+      toast.success(`Demande envoyée à ${res.data.target_name || ""} !`);
+    } catch (err) {
+      toast.error(err?.response?.data?.error || err?.message || "Erreur lors de l'envoi");
+    }
+    setAdding(false);
+  };
+
+  const acceptRequest = async (friend) => {
+    if (!friend?.friend_user_id) return;
+    try {
+      const res = await base44.functions.invoke("serverSearch", {
+        action: "acceptFriendRequest",
+        friend_user_id: friend.friend_user_id,
+      });
+      if (!res?.data?.success) {
+        toast.error(res?.data?.error || "Erreur lors de l'acceptation");
+        return;
+      }
+      setRefreshKey(k => k + 1);
+      toast.success("Ami accepté !");
+    } catch (err) {
+      toast.error(err?.response?.data?.error || err?.message || "Erreur");
+    }
+  };
+
+  const declineRequest = async (friend) => {
+    if (!friend?.friend_user_id) return;
+    try {
+      const res = await base44.functions.invoke("serverSearch", {
+        action: "removeFriend",
+        friend_user_id: friend.friend_user_id,
+      });
+      if (!res?.data?.success) {
+        toast.error(res?.data?.error || "Erreur lors du refus");
+        return;
+      }
+      setRefreshKey(k => k + 1);
+      toast.success("Demande refusée");
+    } catch (err) {
+      toast.error(err?.response?.data?.error || err?.message || "Erreur");
+    }
+  };
+
+  const pendingName = (friend) => {
+    const fresh = friend?.friend_user_id ? freshUsers[friend.friend_user_id] : null;
+    return stripPseudoTag(fresh?.pseudo || fresh?.full_name || friend?.friend_name)
+      || friend?.friend_email?.split("@")[0]
+      || "Utilisateur";
+  };
+
   const filteredContacts = contacts.filter(c => {
     const info = resolveContact(c);
     return !searchQuery ||
@@ -410,6 +497,56 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
 
   const selectedInfo = selectedContact ? resolveContact(selectedContact) : null;
 
+  const visibleContacts = (tab === "online"
+    ? dedupedContacts.filter(c => resolveContact(c).online)
+    : dedupedContacts
+  ).sort((a, b) => Number(resolveContact(b).isOfficial) - Number(resolveContact(a).isOfficial)
+    || Number(resolveContact(b).online) - Number(resolveContact(a).online));
+
+  const officialRows = visibleContacts.filter(c => resolveContact(c).isOfficial);
+  const friendRows = visibleContacts.filter(c => !resolveContact(c).isOfficial);
+
+  const renderContact = (contact) => {
+    const info = resolveContact(contact);
+    if (!info.resolved) return <ContactSkeletonRow key={contact.id} />;
+    return (
+      <div
+        key={contact.id}
+        role="button"
+        tabIndex={0}
+        onClick={() => setSelectedContact(contact)}
+        onKeyDown={(e) => { if (e.key === "Enter") setSelectedContact(contact); }}
+        className={`group w-full flex items-center gap-3 px-3 py-2.5 transition text-left cursor-pointer ${selectedContact?.id === contact.id ? "bg-purple-500/10" : "hover:bg-white/5"}`}
+      >
+        <div className="relative shrink-0">
+          <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center shrink-0" style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.2)" }}>
+            {info.avatar ? <img src={info.avatar} className="w-full h-full object-cover" alt="" /> : <span className="text-sm font-bold text-purple-300">{info.name?.[0]?.toUpperCase() || "?"}</span>}
+          </div>
+          <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2" style={{ background: info.online ? "#22C55E" : "#6b7280", borderColor: "#0a050f" }} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-white truncate">{info.pseudo || info.name}</p>
+          <p className="text-[10px] text-white/40 truncate">{info.online ? "En ligne" : "Hors ligne"}</p>
+        </div>
+        {info.resolved && info.email && !info.isOfficial && (
+          <button
+            onClick={(e) => { e.stopPropagation(); startCall(info); }}
+            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition hover:bg-green-500/20"
+            style={{ background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.25)" }}
+            title={`Appeler ${info.pseudo || info.name}`}
+          >
+            <Phone className="w-3.5 h-3.5 text-green-400" />
+          </button>
+        )}
+        {info.rawUserId && (
+          <button onClick={(e) => { e.stopPropagation(); setProfileUserId(info.rawUserId); }} className="opacity-0 group-hover:opacity-100 transition text-muted-foreground hover:text-white shrink-0" title="Voir le profil">
+            <User className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="h-screen flex flex-col" style={{ background: "#0a050f" }}>
       {/* Header */}
@@ -428,111 +565,170 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
           className={`${selectedContact ? "hidden md:flex" : "flex"} w-full md:w-80 flex-col shrink-0`}
           style={{ borderRight: "1px solid rgba(168,85,247,0.1)" }}
         >
-          {/* Search */}
-          <div className="p-3 shrink-0">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-              <input
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Rechercher un contact..."
-                className="w-full pl-9 pr-3 py-2 rounded-xl bg-black/40 border border-white/5 text-white placeholder:text-white/30 outline-none text-sm"
-              />
+          {/* Onglets : En ligne / Tous / En attente */}
+          <div className="p-3 pb-0 shrink-0">
+            <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(168,85,247,0.15)" }}>
+              {[
+                { key: "online", label: "En ligne" },
+                { key: "all", label: "Tous" },
+                { key: "pending", label: "En attente" },
+              ].map(t => (
+                <button
+                  key={t.key}
+                  onClick={() => setTab(t.key)}
+                  className="flex-1 h-8 px-1 rounded-lg text-[10px] font-bold whitespace-nowrap transition tap-sm"
+                  style={tab === t.key
+                    ? { background: "linear-gradient(135deg, #a855f7, #6d28d9)", color: "#fff" }
+                    : { color: "rgba(255,255,255,0.5)" }}
+                >
+                  {t.label}
+                </button>
+              ))}
+              <button
+                onClick={() => setTab("pending")}
+                className="h-8 px-2 rounded-lg text-[10px] font-bold flex items-center gap-1 shrink-0 tap-sm"
+                style={{ background: "rgba(168,85,247,0.18)", border: "1px solid rgba(168,85,247,0.35)", color: "#d8b4fe" }}
+                title="Ajouter un ami"
+              >
+                <Send className="w-3 h-3" /> Ajouter
+              </button>
             </div>
           </div>
+
+          {/* Recherche (onglets En ligne et Tous) */}
+          {tab !== "pending" && (
+            <div className="p-3 shrink-0">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                <input
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Rechercher un contact..."
+                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-black/40 border border-white/5 text-white placeholder:text-white/30 outline-none text-sm"
+                />
+              </div>
+            </div>
+          )}
+
           {/* Contacts */}
           <div className="flex-1 overflow-y-auto scrollbar-thin">
-            {loading ? (
+            {tab === "pending" ? (
+              <div className="p-3 space-y-3">
+                {/* Ajout d'ami — identique à la page Mon profil */}
+                <div className="p-4 rounded-2xl" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(168,85,247,0.15)" }}>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2 mb-3">
+                    <Search className="w-4 h-4" style={{ color: "#a855f7" }} /> Rechercher un utilisateur
+                  </h3>
+                  <div className="flex gap-2">
+                    <input
+                      value={addPseudo}
+                      onChange={e => setAddPseudo(e.target.value)}
+                      onKeyDown={e => e.key === "Enter" && sendFriendRequest()}
+                      placeholder="Pseudo#1234 ou email"
+                      className="flex-1 min-w-0 px-3 py-2.5 rounded-xl text-sm text-white placeholder-white/30 outline-none"
+                      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                    />
+                    <button
+                      onClick={sendFriendRequest}
+                      disabled={adding}
+                      className="px-4 rounded-xl text-sm font-bold text-white transition disabled:opacity-50 flex items-center gap-1.5 shrink-0"
+                      style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}
+                    >
+                      <Send className="w-3.5 h-3.5" /> Ajouter
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-white/30 mt-2">Format : Pseudo#1234 (le tag identifie l'utilisateur) ou son email</p>
+                </div>
+
+                {pendingReceived.length > 0 && (
+                  <div className="p-4 rounded-2xl" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(234,179,8,0.2)" }}>
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2 mb-3">
+                      <Clock className="w-4 h-4 text-yellow-500" /> Demandes reçues ({pendingReceived.length})
+                    </h3>
+                    <div className="space-y-2">
+                      {pendingReceived.map(f => {
+                        const fresh = f.friend_user_id ? freshUsers[f.friend_user_id] : null;
+                        const name = pendingName(f);
+                        return (
+                          <div key={f.id} className="flex items-center gap-2 p-2 rounded-xl" style={{ background: "rgba(255,255,255,0.03)" }}>
+                            <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: "rgba(168,85,247,0.2)" }}>
+                              {fresh?.avatar_url ? <img src={fresh.avatar_url} alt="" className="w-full h-full object-cover" /> : name[0]?.toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold text-white truncate">{name}</p>
+                              <p className="text-[9px] text-white/40 truncate">{f.friend_email}</p>
+                            </div>
+                            <button onClick={() => acceptRequest(f)} title="Accepter" className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 tap-sm" style={{ background: "rgba(34,197,94,0.2)", border: "1px solid rgba(34,197,94,0.3)" }}>
+                              <UserCheck className="w-3.5 h-3.5 text-green-400" />
+                            </button>
+                            <button onClick={() => declineRequest(f)} title="Refuser" className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 tap-sm" style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)" }}>
+                              <X className="w-3.5 h-3.5 text-red-400" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {pendingSent.length > 0 && (
+                  <div className="p-4 rounded-2xl" style={{ background: "rgba(15,10,25,0.6)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <h3 className="text-sm font-bold text-white/60 flex items-center gap-2 mb-3">
+                      <Send className="w-4 h-4" /> Demandes envoyées ({pendingSent.length})
+                    </h3>
+                    <div className="space-y-2">
+                      {pendingSent.map(f => {
+                        const fresh = f.friend_user_id ? freshUsers[f.friend_user_id] : null;
+                        const name = pendingName(f);
+                        return (
+                          <div key={f.id} className="flex items-center gap-2 p-2 rounded-xl" style={{ background: "rgba(255,255,255,0.03)" }}>
+                            <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: "rgba(168,85,247,0.2)" }}>
+                              {fresh?.avatar_url ? <img src={fresh.avatar_url} alt="" className="w-full h-full object-cover" /> : name[0]?.toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold text-white/70 truncate">{name}</p>
+                              <p className="text-[9px] text-white/30 truncate">{f.friend_email}</p>
+                            </div>
+                            <span className="text-[9px] text-white/40 px-2 py-1 rounded shrink-0" style={{ background: "rgba(255,255,255,0.05)" }}>En attente</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {pendingReceived.length + pendingSent.length === 0 && (
+                  <p className="text-sm text-white/40 text-center py-4">Aucune demande en attente.</p>
+                )}
+              </div>
+            ) : loading ? (
               <>
                 {Array.from({ length: 5 }).map((_, i) => (
                   <ContactSkeletonRow key={`skeleton-loading-${i}`} />
                 ))}
               </>
-            ) : filteredContacts.length === 0 ? (
+            ) : visibleContacts.length === 0 ? (
               <div className="text-center py-8 px-4">
                 <Mail className="w-8 h-8 text-purple-400/30 mx-auto mb-2" />
                 <p className="text-sm text-white/40">
-                  {searchQuery ? "Aucun contact trouvé" : "Ajoute des amis pour commencer à discuter"}
+                  {searchQuery ? "Aucun contact trouvé" : tab === "online" ? "Aucun ami en ligne" : "Ajoute des amis pour commencer à discuter"}
                 </p>
               </div>
             ) : (
-              (() => {
-                const officialContacts = dedupedContacts.filter(c => c.is_official);
-                const teamContacts = officialContacts.filter(c => c.friend_email?.toLowerCase() === SUPPORT_EMAIL);
-                const ticketContacts = officialContacts.filter(c => c.friend_email?.toLowerCase() === TICKET_SUPPORT_EMAIL);
-                const friendContacts = dedupedContacts
-                  .filter(c => !c.is_dm_contact && !c.is_official)
-                  .sort((a, b) => Number(resolveContact(b).online) - Number(resolveContact(a).online));
-                const requestContacts = dedupedContacts.filter(c => c.is_dm_contact);
-                const renderContact = (contact) => {
-                  const info = resolveContact(contact);
-                  if (!info.resolved) return <ContactSkeletonRow key={contact.id} />;
-                  return (
-                    <div
-                      key={contact.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => setSelectedContact(contact)}
-                      onKeyDown={(e) => { if (e.key === "Enter") setSelectedContact(contact); }}
-                      className={`group w-full flex items-center gap-3 px-3 py-2.5 transition text-left cursor-pointer ${selectedContact?.id === contact.id ? "bg-purple-500/10" : "hover:bg-white/5"}`}
-                    >
-                      <div className="relative shrink-0">
-                        <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center shrink-0" style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.2)" }}>
-                          {info.avatar ? <img src={info.avatar} className="w-full h-full object-cover" alt="" /> : <span className="text-sm font-bold text-purple-300">{info.name?.[0]?.toUpperCase() || "?"}</span>}
-                        </div>
-                        <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2" style={{ background: info.online ? "#22C55E" : "#6b7280", borderColor: "#0a050f" }} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-white truncate">{info.pseudo || info.name}</p>
-                        <p className="text-[10px] text-white/40 truncate">{info.online ? "En ligne" : "Hors ligne"}</p>
-                      </div>
-                      {info.resolved && info.email && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); startCall(info); }}
-                          className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition hover:bg-green-500/20"
-                          style={{ background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.25)" }}
-                          title={`Appeler ${info.pseudo || info.name}`}
-                        >
-                          <Phone className="w-3.5 h-3.5 text-green-400" />
-                        </button>
-                      )}
-                      {info.rawUserId && (
-                        <button onClick={(e) => { e.stopPropagation(); setProfileUserId(info.rawUserId); }} className="opacity-0 group-hover:opacity-100 transition text-muted-foreground hover:text-white shrink-0" title="Voir le profil">
-                          <User className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  );
-                };
-                return (
+              <>
+                {officialRows.length > 0 && (
                   <>
-                    {teamContacts.length > 0 && (
-                      <>
-                        <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider" style={{ color: "#a855f7" }}>Équipe Matrix</p>
-                        {teamContacts.map(renderContact)}
-                      </>
-                    )}
-                    {ticketContacts.length > 0 && (
-                      <>
-                        <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider" style={{ color: "#a855f7" }}>Support</p>
-                        {ticketContacts.map(renderContact)}
-                      </>
-                    )}
-                    {friendContacts.length > 0 && (
-                      <>
-                        <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white/30">Amis</p>
-                        {friendContacts.map(renderContact)}
-                      </>
-                    )}
-                    {requestContacts.length > 0 && (
-                      <>
-                        <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider" style={{ color: "#fbbf24" }}>Demandes de message</p>
-                        {requestContacts.map(renderContact)}
-                      </>
-                    )}
+                    <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider" style={{ color: "#a855f7" }}>Équipe Matrix & Support</p>
+                    {officialRows.map(renderContact)}
                   </>
-                );
-              })()
+                )}
+                {friendRows.length > 0 && (
+                  <>
+                    <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white/30">Amis</p>
+                    {friendRows.map(renderContact)}
+                  </>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -585,7 +781,7 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
                   {selectedInfo.online ? "En ligne" : "Hors ligne"}
                 </p>
               </div>
-              {!isReadOnlyConversation && selectedInfo.resolved && selectedInfo.email && (
+              {!isReadOnlyConversation && selectedInfo.resolved && selectedInfo.email && !selectedInfo.isOfficial && (
                 <button
                   onClick={() => startCall(selectedInfo)}
                   className="w-9 h-9 rounded-full flex items-center justify-center transition tap-sm shrink-0"
@@ -606,9 +802,9 @@ export default function MessageOverlay({ user, preselectedEmail, onClose, onMess
                   const isSent = msg.sender_email === user.email;
                   return (
                     <div key={msg.id} className={`flex group ${isSent ? "justify-end" : "justify-start"}`}>
-                      <div className="relative">
+                      <div className="relative max-w-[75%]">
                         <div
-                          className="max-w-[70%] px-3.5 py-2 rounded-2xl"
+                          className="px-3.5 py-2 rounded-2xl w-fit max-w-full"
                           style={
                             isSent
                               ? { background: "linear-gradient(135deg, #7c3aed, #6d28d9)", boxShadow: "0 2px 12px rgba(124,58,237,0.3)", borderBottomRightRadius: "4px" }
