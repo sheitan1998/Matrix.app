@@ -22,12 +22,13 @@ const SECTIONS = [
     ytIcon: true,
     title: "2. Services API YouTube — Données collectées et utilisées",
     content: [
-      "L'intégration YouTube de MATRIX utilise la YouTube Data API v3 fournie par Google LLC. Cette intégration nous permet d'afficher des vidéos, chaînes et contenus YouTube au sein de l'application.",
-      "Données YouTube accédées via l'API : titres, descriptions, miniatures, statistiques (vues, likes, nombre d'abonnés, nombre de vidéos) et métadonnées de chaînes et vidéos publiques. Ces données sont récupérées en lecture seule depuis l'API YouTube Data v3.",
-      "Données collectées auprès de l'utilisateur connecté (avec son consentement OAuth) : identifiant de chaîne YouTube, nom de la chaîne, photo de profil, statistiques agrégées de la chaîne.",
-      "Stockage et durée de conservation : les données récupérées via l'API YouTube sont utilisées uniquement pour l'affichage en temps réel dans l'application. Aucune donnée issue de l'API YouTube n'est conservée en base de données ou en cache local au-delà de 30 jours. Un nettoyage automatique des données expirées est effectué au-delà de cette période.",
-      "Utilisation des données : les données YouTube sont utilisées exclusivement pour afficher du contenu et des statistiques dans MATRIX. Elles ne sont pas revendues, partagées avec des tiers à des fins commerciales, ni utilisées à des fins de profilage publicitaire.",
-      "Partage des données : MATRIX n'envoie aucune donnée issue de l'API YouTube à des tiers autres que Google LLC (dans le cadre de l'utilisation légitime de leur API). Aucun partage commercial n'est effectué.",
+      "L'intégration YouTube de MATRIX repose sur les YouTube API Services (YouTube Data API v3 et YouTube Live Streaming API) fournies par Google LLC. Elle permet d'afficher des vidéos, chaînes et contenus YouTube et, lorsque vous connectez volontairement votre chaîne, d'animer et de modérer votre tchat en direct.",
+      "1. Collecte des données — Lorsque vous activez la connexion YouTube via l'authentification OAuth de Google, MATRIX accède uniquement aux informations de profil de base de votre chaîne (identifiant, nom de la chaîne, photo de profil) et aux interactions de tchat en direct (lecture des messages, envoi de messages et commandes de modération). Les scopes OAuth demandés sont : https://www.googleapis.com/auth/youtube.readonly (lecture du profil et des données publiques) et https://www.googleapis.com/auth/youtube.force-ssl (lecture et modération du tchat en direct). Aucun autre accès n'est demandé.",
+      "2. Utilisation des données — Les jetons d'accès OAuth et les flux de tchat en direct sont exploités exclusivement par le bot MATRIX et les outils de diffusion en direct de la plateforme, pour assurer l'automatisation (messages programmés, minuteurs, annonces de live) et le traitement des commandes. Ils ne sont utilisés pour aucune autre finalité.",
+      "3. Sécurité et non-partage — Les données utilisateur et les jetons d'authentification sont stockés de manière hautement sécurisée : les jetons OAuth sont conservés côté serveur dans un espace privé, jamais transmis au navigateur ni exposés publiquement, et supprimés dès la déconnexion de la chaîne. Les données issues des API Google ne sont en aucun cas vendues, partagées avec des tiers, ni utilisées à des fins publicitaires ou marketing.",
+      "Données publiques lues via l'API : titres, descriptions, miniatures, statistiques (vues, likes, nombre d'abonnés, nombre de vidéos) et métadonnées des chaînes et vidéos publiques, en lecture seule.",
+      "Stockage et durée de conservation : les données d'affichage récupérées via l'API YouTube ne sont pas conservées plus de 30 jours en cache, avec un nettoyage automatique au-delà de cette période. Les jetons OAuth sont conservés tant que la connexion de la chaîne est active et sont définitivement supprimés dès que vous déconnectez la chaîne.",
+      "Vous pouvez révoquer à tout moment l'accès accordé à MATRIX depuis votre compte Google (myaccount.google.com/permissions). La révocation désactive immédiatement le bot sur la chaîne concernée.",
       "Aucune donnée privée issue de votre compte YouTube (messages privés, historique de navigation, informations de paiement) n'est accessible, collectée ni stockée par MATRIX.",
     ],
   },
@@ -37,7 +38,7 @@ const SECTIONS = [
     title: "3. Données d'appareil, Cookies et Stockage local",
     content: [
       "MATRIX utilise le stockage local du navigateur (localStorage) et des cookies de session pour maintenir votre connexion, mémoriser vos préférences (thème, langue, dernière vidéo vue) et assurer le bon fonctionnement de l'application.",
-      "Les tokens d'authentification OAuth (accès YouTube) sont stockés dans le localStorage de votre navigateur afin de maintenir votre session sans reconnexion à chaque visite. Ces tokens sont limités aux scopes demandés et peuvent être révoqués à tout moment depuis votre compte Google.",
+      "Les jetons d'authentification OAuth YouTube ne sont jamais stockés dans votre navigateur : ils sont conservés exclusivement côté serveur, dans un espace privé accessible uniquement aux fonctions du bot, et limités aux scopes demandés. Seuls les jetons de session MATRIX (connexion à l'application) sont conservés dans le localStorage.",
       "Des cookies techniques strictement nécessaires sont utilisés pour la gestion de session. Aucun cookie de tracking publicitaire tiers n'est déposé par MATRIX.",
       "Vous pouvez effacer ces données à tout moment via les paramètres de votre navigateur ou en vous déconnectant de MATRIX.",
     ],
@@ -58,10 +59,13 @@ const SECTIONS = [
     title: "5. Conditions YouTube & Google — Liens obligatoires",
     content: [
       "L'utilisation des fonctionnalités YouTube intégrées dans MATRIX est soumise aux conditions d'utilisation et aux règles de confidentialité de YouTube et de Google. Nous vous invitons à consulter ces documents :",
+      "MATRIX adhère à la Google API Services User Data Policy, y compris aux exigences d'utilisation limitée (Limited Use). L'utilisation et le transfert, par MATRIX, des informations reçues des API Google respectent cette politique.",
     ],
     links: [
-      { label: "Conditions d'utilisation de YouTube", url: "https://www.youtube.com/t/terms" },
+      { label: "Conditions d'utilisation des Services API YouTube", url: "https://developers.google.com/youtube/terms/api-services-terms-of-service" },
+      { label: "Google API Services User Data Policy", url: "https://developers.google.com/terms/api-services-user-data-policy" },
       { label: "Politique de confidentialité de Google", url: "https://www.google.com/policies/privacy" },
+      { label: "Conditions d'utilisation de YouTube", url: "https://www.youtube.com/t/terms" },
     ],
   },
   {
@@ -154,7 +158,7 @@ export default function Privacy() {
             </div>
           </div>
           <p className="text-xs text-white/40 font-mono">
-            Dernière mise à jour : 4 octobre 2026
+            Dernière mise à jour : 11 novembre 2026
           </p>
         </div>
 
