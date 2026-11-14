@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 const TABS = [
 { to: "/stream", icon: Home, label: "Accueil" },
 { to: "/nexus", icon: MessageCircle, label: "Nexus" },
-{ to: "/casino", icon: Dices, label: "Game" },
+{ to: "/nexus-game", icon: Dices, label: "Game" },
 { to: "/shorts", icon: Clapperboard, label: "Shorts" },
 { to: "/", icon: LayoutGrid, label: "Univers" }];
 
@@ -15,7 +15,7 @@ const TABS = [
 const tabMemory = {
   "/stream": "/stream",
   "/nexus": "/nexus",
-  "/casino": "/casino",
+  "/nexus-game": "/nexus-game",
   "/shorts": "/shorts",
   "/": "/"
 };

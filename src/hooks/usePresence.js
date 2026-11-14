@@ -16,7 +16,7 @@ function getActivityFromPath(pathname) {
   if (!pathname) return { label: "En ligne", type: "idle" };
 
   const map = [
-    { match: "/casino", label: "Joue au Casino", type: "gaming" },
+    { match: "/nexus-game", label: "Joue sur Nexus Game", type: "gaming" },
     { match: "/shorts", label: "Regarde des Shorts", type: "streaming" },
     { match: "/tuto-gaming", label: "Explore les tutoriels gaming", type: "browsing" },
     { match: "/twitch/watch", label: "Regarde un stream Twitch", type: "streaming" },

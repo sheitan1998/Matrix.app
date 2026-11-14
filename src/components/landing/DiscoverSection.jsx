@@ -7,7 +7,7 @@ const ITEMS = [
   { icon: Users, title: "Salons personnalisés", desc: "Crée ton espace, invite tes amis, parle en vocal ou texte.", path: "/nexus" },
   { icon: Star, title: "Créateurs mis en avant", desc: "Découvre les talents de la communauté Matrix.", path: "/trending" },
   { icon: BarChart3, title: "Système de niveaux", desc: "Monte en niveau, débloque des badges et des avantages.", path: "/mon-profil" },
-  { icon: Calendar, title: "Événements & tournois", desc: "Participe à des événements exclusifs et gagne des récompenses.", path: "/casino" },
+  { icon: Calendar, title: "Événements & tournois", desc: "Participe à des événements exclusifs et gagne des récompenses.", path: "/nexus-game" },
 ];
 
 export default function DiscoverSection() {

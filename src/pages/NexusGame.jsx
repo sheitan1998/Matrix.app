@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, User, ShoppingBag, Gamepad2, Loader2, RefreshCw, SearchX } from "lucide-react";
-import { base44 } from "@/api/base44Client";
 import CasinoToken from "@/components/casino/CasinoToken";
-import { casinoGetBalance } from "@/hooks/useCasinoJackpot";
+import useCasinoCoins from "@/hooks/useCasinoCoins";
 import { formatBet } from "@/components/casino/slotThemes";
 import usePageSEO from "@/hooks/usePageSEO";
 import useGameCatalog, { GAME_CATEGORIES } from "@/hooks/useGameCatalog";
@@ -13,6 +12,7 @@ import NexusCategoryRow from "@/components/nexus/catalogue/NexusCategoryRow";
 import NexusGameCard from "@/components/nexus/catalogue/NexusGameCard";
 import NexusFilters from "@/components/nexus/catalogue/NexusFilters";
 import NexusGamePlayer from "@/components/nexus/catalogue/NexusGamePlayer";
+import NexusArcadePlayer from "@/components/nexus/catalogue/NexusArcadePlayer";
 
 const BANNER_URL = "https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/a9f79135d_nexus-game-banner.png";
 
@@ -24,17 +24,15 @@ export default function NexusGame() {
   });
 
   const catalog = useGameCatalog();
-  const [balance, setBalance] = useState(0);
+  const [balance, setBalance, refreshBalance] = useCasinoCoins();
   const [selectedGame, setSelectedGame] = useState(null);
+  const [arcadeGame, setArcadeGame] = useState(null);
 
   useEffect(() => {
-    base44.auth
-      .me()
-      .then((user) => {
-        if (!user) return;
-        return casinoGetBalance().then(setBalance);
-      })
-      .catch(() => {});
+    const requested = new URLSearchParams(window.location.search).get("game");
+    if (["slots", "wheel", "roulette", "scratch", "shop"].includes(requested)) {
+      setArcadeGame(requested);
+    }
   }, []);
 
   const online = !catalog.loading && !catalog.error;
@@ -115,7 +113,11 @@ export default function NexusGame() {
             online={online}
           />
 
-          <NexusFeaturedGames />
+          <NexusFeaturedGames
+            onOpen={setArcadeGame}
+            balance={balance}
+            onRecharge={() => setArcadeGame("shop")}
+          />
 
           <NexusCategoryRow categories={["Tous", ...GAME_CATEGORIES]} value={catalog.category} onChange={catalog.setCategory} />
 
@@ -192,6 +194,17 @@ export default function NexusGame() {
       </div>
 
       <NexusGamePlayer game={selectedGame} onClose={() => setSelectedGame(null)} />
+
+      <NexusArcadePlayer
+        game={arcadeGame}
+        balance={balance}
+        setBalance={setBalance}
+        onRefreshBalance={refreshBalance}
+        onClose={() => {
+          setArcadeGame(null);
+          refreshBalance();
+        }}
+      />
     </div>
   );
 }

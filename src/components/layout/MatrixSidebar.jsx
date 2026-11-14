@@ -5,12 +5,12 @@ import { Tv2, Users, Dices, Clapperboard, ListMusic, ShoppingBag, Calendar, Trop
 const MENU = [
   { icon: Tv2, label: "Streaming", path: "/stream" },
   { icon: Users, label: "Communauté", path: "/nexus" },
-  { icon: Dices, label: "Casino", path: "/casino", badge: "18+" },
+  { icon: Dices, label: "Nexus Game", path: "/nexus-game", badge: "18+" },
   { icon: Clapperboard, label: "Video Studio", path: "/video-studio", badge: "NEW" },
   { icon: ListMusic, label: "Playlists", path: "/playlists", badge: "NEW" },
   { icon: ShoppingBag, label: "Marketplace", path: "/market" },
   { icon: Calendar, label: "Événements", path: "/nexus" },
-  { icon: Trophy, label: "Arena", path: "/casino" },
+  { icon: Trophy, label: "Arena", path: "/nexus-game" },
   { icon: Compass, label: "Explorer", path: "/stream" },
 ];
 

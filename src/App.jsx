@@ -57,10 +57,7 @@ const Marketplace = lazy(() => import('@/pages/marketplace/Marketplace'));
 const MarketHome = lazy(() => import('@/pages/marketplace/MarketHome'));
 const MarketSubscription = lazy(() => import('@/pages/marketplace/MarketSubscription'));
 const ListingDetail = lazy(() => import('@/pages/marketplace/ListingDetail'));
-const Casino = lazy(() => import('@/pages/Casino'));
-const NexusGames = lazy(() => import('@/pages/NexusGames'));
 const NexusGame = lazy(() => import('@/pages/NexusGame'));
-const RoulettePage = lazy(() => import('@/pages/nexus/Roulette'));
 const Prospecteurs = lazy(() => import('@/pages/prospecteurs/Prospecteurs'));
 const BestCreator = lazy(() => import('@/pages/prospecteurs/BestCreator'));
 const CategoryServers = lazy(() => import('@/pages/prospecteurs/CategoryServers'));
@@ -114,6 +111,11 @@ const TwitchChannelPage = lazy(() => import('@/pages/twitch/TwitchChannelPage'))
 function CanonicalFarmingRedirect() {
   const { search } = useLocation();
   return <Navigate to={`/farming${search}`} replace />;
+}
+
+function NexusGameRedirect() {
+  const { search } = useLocation();
+  return <Navigate to={`/nexus-game${search}`} replace />;
 }
 
 // Updater — eager (runs on startup)
@@ -228,10 +230,9 @@ const AuthenticatedApp = () => {
             <Route path="/market/browse" element={<Marketplace />} />
             <Route path="/market/subscription" element={<MarketSubscription />} />
             <Route path="/market/:id" element={<ListingDetail />} />
-            <Route path="/casino" element={<Casino />} />
-            <Route path="/nexus-games" element={<NexusGames />} />
             <Route path="/nexus-game" element={<NexusGame />} />
-            <Route path="/roulette" element={<RoulettePage />} />
+            <Route path="/casino" element={<NexusGameRedirect />} />
+            <Route path="/roulette" element={<Navigate to="/nexus-game?game=roulette" replace />} />
             <Route path="/community/subscription" element={<CommunitySubscription />} />
             <Route path="/wallet" element={<Wallet />} />
             <Route path="/trix-store" element={<TrixStore />} />
