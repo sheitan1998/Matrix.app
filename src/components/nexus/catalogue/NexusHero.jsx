@@ -43,7 +43,7 @@ export default function NexusHero({ bannerUrl, search, onSearchChange, onSubmit,
         className="absolute left-1/2 bottom-5 -translate-x-1/2 w-[min(92%,560px)]">
         
         <div
-          className="flex items-center gap-2 h-12 pl-4 pr-1.5 rounded-xl pb-2"
+          className="flex items-center gap-2 h-12 rounded-xl px-4"
           style={{
             background: "rgba(12,6,22,0.85)",
             border: "1px solid rgba(168,85,247,0.5)",
