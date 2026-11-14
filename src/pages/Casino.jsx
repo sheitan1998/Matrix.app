@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Home, ShoppingBag, User, Sparkles, Ticket, CircleDashed } from "lucide-react";
+import { ArrowLeft, Home, ShoppingBag, User, Sparkles, Ticket, CircleDashed, Gamepad2 } from "lucide-react";
 import { casinoGetBalance, casinoGetProfile, casinoGetWon24h } from "@/hooks/useCasinoJackpot";
 import SlotsGame from "@/components/casino/SlotsGame";
 import CasinoToken from "@/components/casino/CasinoToken";
@@ -68,6 +68,13 @@ export default function Casino() {
   // Handle payment success redirect
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const gameParam = params.get("game");
+    if (gameParam === "wheel" || gameParam === "scratch" || gameParam === "slots") {
+      setScreen(gameParam);
+      trackActivity("nexus_games");
+      window.history.replaceState({}, "", "/casino");
+      return;
+    }
     if (params.get("shop") === "1") {
       setScreen("shop");
       window.history.replaceState({}, "", "/casino");
@@ -140,6 +147,10 @@ export default function Casino() {
 
         {/* Right: nav buttons + 24h gains */}
         <div className="flex items-center gap-2">
+          <Link to="/nexus-game" className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold text-white transition hover:opacity-90 tap-sm"
+          style={{ background: "rgba(168,85,247,0.14)", border: "1px solid rgba(168,85,247,0.35)" }}>
+            <Gamepad2 className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Catalogue</span>
+          </Link>
           {screen !== "profile" &&
           <button onClick={() => setScreen("profile")} className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold text-white/80 transition hover:opacity-90 tap-sm"
           style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
