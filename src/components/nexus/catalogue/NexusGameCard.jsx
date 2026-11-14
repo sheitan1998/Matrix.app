@@ -42,9 +42,9 @@ export default function NexusGameCard({ game, onPlay }) {
         <p className="text-sm font-black text-white truncate">{game.title}</p>
         <div className="flex items-center gap-1.5 mt-1">
           <span className="text-[9px] font-semibold text-white/35 truncate">{game.tags.slice(0, 2).join(" · ")}</span>
-          <span className="ml-auto text-[9px] font-bold shrink-0 hidden" style={{ color: "#a855f7" }}>
-            HTML5
-          </span>
+          
+
+          
         </div>
         <span
           className="mt-2 flex items-center justify-center gap-1.5 h-8 rounded-lg text-[10px] font-black uppercase tracking-wider text-white transition group-hover:opacity-90"
