@@ -18,8 +18,8 @@ import usePageSEO from "@/hooks/usePageSEO";
 
 export default function FortniteStats() {
   usePageSEO({
-    title: "Statistiques Joueur Fortnite | MATRIX",
-    description: "Consultez les statistiques détaillées de n'importe quel joueur Fortnite. K/D, victoires, parties et plus encore.",
+    title: "Statistiques Fortnite — Profils et classements | Matrix Hub",
+    description: "Recherchez les statistiques Fortnite d'un joueur : victoires, K/D, rangs et historique de carrière directement sur Matrix Hub.",
     path: "/fortnite-stats",
   });
 

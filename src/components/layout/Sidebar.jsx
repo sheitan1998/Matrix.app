@@ -289,9 +289,9 @@ export default function Sidebar({ noTopbar = false }) {
 
       {/* Logo + Subtitle */}
       <div className="px-3 pb-4 mb-1">
-        <h1 className="text-2xl font-black tracking-tight" style={{ color: logoColor, textShadow: logoShadow }}>
+        <div className="text-2xl font-black tracking-tight" style={{ color: logoColor, textShadow: logoShadow }}>
           {collapsed ? "M" : "MATRIX"}
-        </h1>
+        </div>
         {!collapsed &&
         <p className="text-[10px] font-semibold uppercase tracking-widest mt-0.5" style={{ color: subtitleColor, textShadow: subtitleShadow }}>
             Explorez la plateforme

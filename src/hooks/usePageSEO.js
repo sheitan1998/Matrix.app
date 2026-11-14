@@ -1,6 +1,5 @@
 import { useEffect } from "react";
-
-const SITE_URL = "https://matrix-hub.base44.app";
+import { SITE_URL, SITE_NAME, DEFAULT_IMAGE } from "@/lib/seoRoutes";
 
 function upsertMeta(attr, key, content) {
   let el = document.querySelector(`meta[${attr}="${key}"]`);
@@ -12,27 +11,82 @@ function upsertMeta(attr, key, content) {
   el.setAttribute("content", content);
 }
 
+function upsertLink(rel, href) {
+  let el = document.querySelector(`link[rel="${rel}"]`);
+  if (!el) {
+    el = document.createElement("link");
+    el.setAttribute("rel", rel);
+    document.head.appendChild(el);
+  }
+  el.setAttribute("href", href);
+}
+
 /**
- * usePageSEO — sets document title, meta description and OpenGraph tags.
+ * usePageSEO — sets title, description, canonical, OpenGraph, Twitter and JSON-LD
+ * for the current public page.
  * @param {object} opts
- * @param {string} opts.title       Full <title> for the page
- * @param {string} opts.description Meta description
- * @param {string} [opts.path]      Page path (for og:url)
+ * @param {string} [opts.title]       Full <title> (format: "Page — Matrix Hub")
+ * @param {string} [opts.description] Unique meta description
+ * @param {string} [opts.path]        Canonical path (defaults to the current URL)
+ * @param {string} [opts.image]       OpenGraph image
+ * @param {string} [opts.type]        og:type
+ * @param {boolean} [opts.noindex]    Keep the page out of search results
+ * @param {object} [opts.schema]      JSON-LD object for this page
  */
-export default function usePageSEO({ title, description, path }) {
+export default function usePageSEO({
+  title,
+  description,
+  path,
+  image,
+  type = "website",
+  noindex = false,
+  schema,
+} = {}) {
   useEffect(() => {
-    if (title) document.title = title;
+    upsertMeta(
+      "name",
+      "robots",
+      noindex ? "noindex,nofollow" : "index,follow,max-image-preview:large"
+    );
+
+    upsertMeta("property", "og:site_name", SITE_NAME);
+    upsertMeta("property", "og:locale", "fr_FR");
+    upsertMeta("name", "twitter:card", "summary_large_image");
+
+    if (!title && !description) return;
+
+    if (title) {
+      document.title = title;
+      upsertMeta("property", "og:title", title);
+      upsertMeta("name", "twitter:title", title);
+    }
     if (description) {
       upsertMeta("name", "description", description);
       upsertMeta("property", "og:description", description);
+      upsertMeta("name", "twitter:description", description);
     }
-    if (title) {
-      upsertMeta("property", "og:title", title);
+
+    const canonical = SITE_URL + (path || window.location.pathname);
+    upsertLink("canonical", canonical);
+    upsertMeta("property", "og:url", canonical);
+    upsertMeta("property", "og:type", type);
+
+    const ogImage = image || DEFAULT_IMAGE;
+    upsertMeta("property", "og:image", ogImage);
+    upsertMeta("name", "twitter:image", ogImage);
+
+    const scriptId = "matrix-page-jsonld";
+    let script = document.getElementById(scriptId);
+    if (schema) {
+      if (!script) {
+        script = document.createElement("script");
+        script.type = "application/ld+json";
+        script.id = scriptId;
+        document.head.appendChild(script);
+      }
+      script.textContent = JSON.stringify(schema);
+    } else if (script) {
+      script.remove();
     }
-    if (path) {
-      upsertMeta("property", "og:url", SITE_URL + path);
-    }
-    upsertMeta("property", "og:type", "website");
-    upsertMeta("property", "og:site_name", "MATRIX");
-  }, [title, description, path]);
+  }, [title, description, path, image, type, noindex, schema]);
 }

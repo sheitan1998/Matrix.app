@@ -56,7 +56,7 @@ export default function Landing() {
         {/* Top bar */}
         <header className="flex items-center justify-between mb-6 lg:mb-8">
           <div className="lg:hidden">
-            <h1 className="text-2xl font-black text-foreground">MATRIX</h1>
+            <div className="text-2xl font-black text-foreground">MATRIX</div>
             <p className="text-[9px] tracking-[0.25em] uppercase text-foreground/40 font-mono">Explorez la plateforme</p>
           </div>
           <div className="hidden lg:block" />
@@ -122,8 +122,30 @@ export default function Landing() {
         {/* Footer */}
         <LandingFooter />
 
+        {/* Main navigation links (crawlable) */}
+        <nav aria-label="Explorer Matrix Hub" className="mt-6">
+          <ul className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+            {[
+              { to: "/stream", label: "Streaming" },
+              { to: "/twitch", label: "Twitch" },
+              { to: "/nexus", label: "Nexus" },
+              { to: "/nexus-game", label: "Nexus Game" },
+              { to: "/best-serveurs", label: "Best Serveur" },
+              { to: "/best-creator", label: "Best Creator" },
+              { to: "/tuto-gaming", label: "Tuto Gaming" },
+              { to: "/fortnite-maps", label: "Fortnite Maps" },
+            ].map((link) => (
+              <li key={link.to}>
+                <Link to={link.to} className="text-[11px] font-semibold text-foreground/45 hover:text-foreground/80 transition tap-sm">
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
         {/* Legal footer */}
-        <footer className="mt-6 flex flex-col items-center gap-3 pt-4">
+        <footer className="mt-4 flex flex-col items-center gap-3 pt-4">
           <div className="flex items-center gap-4">
             <Link to="/about" className="text-[11px] text-foreground/40 hover:text-foreground/70 transition tap-sm">À propos</Link>
             <Link to="/contact" className="text-[11px] text-foreground/40 hover:text-foreground/70 transition tap-sm">Contact</Link>

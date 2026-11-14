@@ -53,7 +53,7 @@ export default function LandingSidebar({ onFaq, onOpenTheme }) {
       {/* Logo header */}
       <div className="relative z-10 px-5 pt-6 pb-5" style={{ borderBottom: "1px solid hsl(var(--border))" }}>
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <h1 data-sidebar-brand className="text-3xl font-black tracking-tight text-foreground">MATRIX</h1>
+          <div data-sidebar-brand className="text-3xl font-black tracking-tight text-foreground">MATRIX</div>
           <div className="flex items-center gap-2 mt-1.5">
             <div className="h-px w-6" style={{ background: "linear-gradient(to right, transparent, #a855f7)" }} />
             <div className="flex items-center gap-1">

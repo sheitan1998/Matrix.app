@@ -10,8 +10,8 @@ import { base44 } from "@/api/base44Client";
 
 export default function FortniteShop() {
   usePageSEO({
-    title: "Boutique Fortnite du Jour | MATRIX",
-    description: "Découvrez la boutique Fortnite du jour avec tous les objets, skins, pioches et emotes disponibles.",
+    title: "Boutique Fortnite du jour — Skins et objets | Matrix Hub",
+    description: "Découvrez la boutique Fortnite du jour : skins, pioches, dances et packs VBucks, mis à jour quotidiennement sur Matrix Hub.",
     path: "/fortnite-shop",
   });
 

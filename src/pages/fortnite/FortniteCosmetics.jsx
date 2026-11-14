@@ -22,8 +22,8 @@ export default function FortniteCosmetics() {
   const navigate = useNavigate();
   const { cosmeticId = "" } = useParams();
   usePageSEO({
-    title: "Cosmétiques Fortnite | MATRIX",
-    description: "Recherchez et votez pour vos cosmétiques Fortnite préférés. Skins, pioches, sacs, emotes et plus encore.",
+    title: "Cosmétiques Fortnite — Skins, pioches et emotes | Matrix Hub",
+    description: "Parcourez le catalogue complet des cosmétiques Fortnite : skins, dos, pioches, emotes et raretés, recherchez et votez sur Matrix Hub.",
     path: cosmeticId ? fortniteCosmeticPath({ id: cosmeticId }) : "/fortnite-cosmetics",
   });
 

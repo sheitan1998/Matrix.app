@@ -13,13 +13,14 @@ import NexusGameCard from "@/components/nexus/catalogue/NexusGameCard";
 import NexusFilters from "@/components/nexus/catalogue/NexusFilters";
 import NexusGamePlayer from "@/components/nexus/catalogue/NexusGamePlayer";
 import NexusArcadePlayer from "@/components/nexus/catalogue/NexusArcadePlayer";
+import SeoContentBlock from "@/components/seo/SeoContentBlock";
 
 const BANNER_URL = "https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/a9f79135d_nexus-game-banner.png";
 
 export default function NexusGame() {
   usePageSEO({
-    title: "Nexus Game — Catalogue de jeux HTML5 | MATRIX",
-    description: "Explorez des centaines de jeux HTML5 gratuits sur Nexus Game : action, aventure, course, puzzle, arcade et bien plus. Filtres avancés et lecture intégrée.",
+    title: "Nexus Game — Jeux en ligne et casino virtuel | Matrix Hub",
+    description: "Explorez le catalogue Nexus Game : roulette, machines à sous, blackjack, tickets à gratter et centaines de jeux HTML5 jouables directement sur Matrix Hub, avec la monnaie virtuelle TRIX.",
     path: "/nexus-game",
   });
 
@@ -105,6 +106,7 @@ export default function NexusGame() {
 
       <div className="relative z-10 max-w-[1500px] mx-auto px-4 sm:px-6 py-5 grid gap-5 lg:grid-cols-[1fr_300px]">
         <div className="min-w-0 space-y-6">
+          <h1 className="sr-only">Nexus Game — catalogue de jeux en ligne et casino virtuel Matrix Hub</h1>
           <NexusHero
             bannerUrl={BANNER_URL}
             search={catalog.search}
@@ -191,6 +193,29 @@ export default function NexusGame() {
         <aside className="min-w-0 lg:sticky lg:top-4 self-start">
           <NexusFilters catalog={catalog} />
         </aside>
+      </div>
+
+      <div className="relative z-10 max-w-[1500px] mx-auto px-4 sm:px-6 pb-8">
+        <SeoContentBlock
+          eyebrow="Nexus Game"
+          title="Le catalogue de jeux et le casino virtuel de Matrix Hub"
+          intro="Nexus Game réunit un catalogue de centaines de jeux HTML5 jouables directement dans le navigateur et une sélection de jeux d'arcade comme la roulette, les machines à sous, le blackjack ou les tickets à gratter. Tous les jeux utilisent la monnaie virtuelle TRIX, sans argent réel : vous jouez, vous progressez et vous débloquez de nouveaux contenus au fil de vos parties."
+          sections={[
+            { title: "Catalogue de jeux HTML5", text: "Filtrez par catégorie, durée, difficulté ou compatibilité mobile et lancez un jeu sans installation ni téléchargement." },
+            { title: "Roulette et machines à sous", text: "Retrouvez les grands classiques du casino d'arcade avec des thèmes visuels, des mises libres et des gains en TRIX." },
+            { title: "Tickets à gratter et roue de la fortune", text: "Tentez votre chance sur des jeux rapides, avec des récompenses quotidiennes et des jackpots progressifs." },
+            { title: "Monnaie virtuelle TRIX", text: "Rechargez votre solde TRIX depuis la boutique Nexus et suivez vos gains, vos pertes et votre historique de jeu." },
+            { title: "Progression et classements", text: "Gagnez de l'expérience, débloquez des succès et comparez vos résultats aux classements de la communauté." },
+            { title: "Boutique Nexus", text: "Échangez vos TRIX contre des cosmétiques, des bonus et des avantages pour personnaliser votre profil Matrix Hub." },
+          ]}
+          links={[
+            { href: "/boutique-nexus", label: "Boutique Nexus" },
+            { href: "/best-serveurs", label: "Best Serveur" },
+            { href: "/best-creator", label: "Best Creator" },
+            { href: "/stream", label: "Streaming" },
+            { href: "/progression", label: "Progression" },
+          ]}
+        />
       </div>
 
       <NexusGamePlayer game={selectedGame} onClose={() => setSelectedGame(null)} />

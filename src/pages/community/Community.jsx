@@ -57,8 +57,8 @@ const defaultChannels = [
 
 export default function Community() {
   usePageSEO({
-    title: "Nexus - Communauté MATRIX | Salons, serveurs & chat",
-    description: "Rejoignez Nexus, la communauté MATRIX. Créez des serveurs, discutez en temps réel, partagez en vocal et texte.",
+    title: "Nexus — Salons et communauté gaming | Matrix Hub",
+    description: "Rejoignez les serveurs Nexus de Matrix Hub : salons textuels et vocaux, rôles personnalisés, forums et modération communautaire pour les gamers francophones.",
     path: "/nexus"
   });
   const [user, setUser] = useState(null);

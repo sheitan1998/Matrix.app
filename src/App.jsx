@@ -9,6 +9,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import ParamRedirect from '@/components/ParamRedirect';
+import RouteSEO from '@/components/seo/RouteSEO';
 import LanguageBridge from '@/components/profile/LanguageBridge';
 import AuthGate from '@/components/AuthGate';
 import Login from '@/pages/Login';
@@ -159,6 +160,7 @@ const AuthenticatedApp = () => {
 
   return (
     <>
+      <RouteSEO />
       <LanguageBridge />
       <ProgressionProvider>
       <NotificationProvider>

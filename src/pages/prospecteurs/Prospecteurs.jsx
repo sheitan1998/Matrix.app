@@ -16,12 +16,13 @@ import ServerReminderModal from "@/components/prospecteurs/ServerReminderModal";
 import VoteAutoSetupModal from "@/components/prospecteurs/VoteAutoSetupModal";
 import { List as ListIcon } from "lucide-react";
 import usePageSEO from "@/hooks/usePageSEO";
+import SeoContentBlock from "@/components/seo/SeoContentBlock";
 
 
 export default function Prospecteurs() {
   usePageSEO({
-    title: "Best Serveur - Annuaire des serveurs de jeu | MATRIX",
-    description: "Découvrez et votez pour les meilleurs serveurs de jeu. Trouvez des joueurs, recrutez et explorez des serveurs Nexus et Discord.",
+    title: "Best Serveur — Annuaire des serveurs de jeu | Matrix Hub",
+    description: "Classement et annuaire des meilleurs serveurs de jeu francophones : serveurs Nexus et Discord, catégories, votes, recrutement de joueurs et petites annonces communautaires.",
     path: "/best-serveurs"
   });
   const navigate = useNavigate();
@@ -248,6 +249,7 @@ export default function Prospecteurs() {
         <ProspecteursSidebar active="servers" user={user} onConfigureVoteAuto={() => setShowVoteAutoSetup(true)} />
 
         <div className="flex-1 px-4 sm:px-6 py-5">
+          <h1 className="sr-only">Best Serveur — annuaire et classement des serveurs de jeu Matrix Hub</h1>
           {/* Back + Publish */}
           <div className="flex items-center justify-between mb-5">
             <Link
@@ -408,6 +410,26 @@ export default function Prospecteurs() {
 
 
           
+          <SeoContentBlock
+            eyebrow="Best Serveur"
+            title="Trouvez le serveur de jeu idéal sur Matrix Hub"
+            intro="Best Serveur est l'annuaire communautaire des serveurs de jeu francophones. Chaque serveur dispose d'une fiche publique avec sa description, son thème, son nombre de membres, ses votes et ses liens utiles. Les joueurs votent chaque mois pour faire remonter les communautés les plus actives, tandis que les propriétaires publient et gèrent leurs annonces, suivent leurs statistiques et recrutent de nouveaux membres."
+            sections={[
+              { title: "Serveurs Nexus", text: "Créez un serveur interne avec salons textuels et vocaux, rôles personnalisés, emojis et thèmes visuels, sans quitter la plateforme." },
+              { title: "Serveurs Discord", text: "Découvrez des serveurs Discord francophones par jeu, ambiance ou taille de communauté, avec un lien d'invitation vérifié." },
+              { title: "Votes et classement", text: "Votez une fois par jour pour vos serveurs préférés et consultez le classement mensuel des communautés les plus soutenues." },
+              { title: "Recrutement de joueurs", text: "Publiez une annonce de recrutement ou une recherche de coéquipiers pour trouver des joueurs partageant votre style de jeu." },
+              { title: "Catégories de jeux", text: "Parcourez les serveurs par catégorie : FPS, RPG, survie, sandbox, simulation, course et bien d'autres univers." },
+              { title: "Boosts et visibilité", text: "Mettez en avant votre serveur grâce aux boosts et gagnez en visibilité auprès de la communauté Matrix Hub." },
+            ]}
+            links={[
+              { href: "/best-creator", label: "Best Creator" },
+              { href: "/tuto-gaming", label: "Guides et tutoriels gaming" },
+              { href: "/nexus", label: "Communauté Nexus" },
+              { href: "/nexus-game", label: "Nexus Game" },
+              { href: "/stream", label: "Streaming" },
+            ]}
+          />
         </div>
       </div>
 

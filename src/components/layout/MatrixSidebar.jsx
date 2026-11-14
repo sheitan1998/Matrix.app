@@ -29,9 +29,9 @@ export default function MatrixSidebar() {
   return (
     <aside className="hidden lg:flex flex-col w-60 shrink-0 h-screen sticky top-0 p-4"
       style={{ background: "rgba(10,10,12,0.7)", backdropFilter: "blur(16px)", borderRight: "1px solid rgba(255,255,255,0.06)" }}>
-      <h1 className="text-2xl font-black tracking-tight text-white mb-6 px-2">
+      <div className="text-2xl font-black tracking-tight text-white mb-6 px-2">
         <span style={{ background: "linear-gradient(135deg, #a855f7, #3b82f6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", filter: "drop-shadow(0 0 12px rgba(168,85,247,0.5))" }}>M</span>ATRIX
-      </h1>
+      </div>
 
       <nav className="flex-1 space-y-0.5 overflow-y-auto scrollbar-thin">
         {MENU.map((item) => {

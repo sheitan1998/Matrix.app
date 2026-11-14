@@ -7,14 +7,23 @@ export default function PlatformCard({ item, index = 0, compact = false, stretch
   const color = item.color;
   const box = compact ? "w-10 h-10" : "w-11 h-11";
 
+  const handleClick = (event) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+    if (onClick) {
+      event.preventDefault();
+      onClick(event);
+    }
+  };
+
   return (
-    <motion.button
+    <motion.a
+      href={item.path}
       initial={{ opacity: 0, x: -30 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: 0.3 + index * 0.08, duration: 0.5 }}
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
-      onClick={onClick}
+      onClick={handleClick}
       className={`platform-card relative w-full rounded-2xl overflow-hidden text-left group flex items-center ${compact ? "gap-3 p-3.5 min-h-[78px]" : "gap-4 p-4 min-h-[86px]"} ${stretch ? "h-full" : ""}`}
       style={{
         background: "hsl(var(--card))",
@@ -56,13 +65,13 @@ export default function PlatformCard({ item, index = 0, compact = false, stretch
       )}
 
       <div className="flex-1 min-w-0">
-        <h3 className={`${compact ? "text-sm" : "text-base"} font-black text-foreground`}>{item.label}</h3>
+        <div className={`${compact ? "text-sm" : "text-base"} font-black text-foreground`}>{item.label}</div>
         <p className={`leading-relaxed text-foreground/50 line-clamp-2 ${compact ? "text-[11px]" : "text-xs"}`}>{item.desc}</p>
       </div>
       <ArrowRight
         className={`${compact ? "w-4 h-4" : "w-5 h-5"} shrink-0 transition-transform group-hover:translate-x-1`}
         style={{ color }}
       />
-    </motion.button>
+    </motion.a>
   );
 }

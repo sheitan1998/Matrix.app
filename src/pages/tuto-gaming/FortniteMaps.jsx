@@ -19,8 +19,8 @@ export default function FortniteMaps() {
   const { mapCode: routeMapCode } = useParams();
   const mapCode = normalizeFortniteMapCode(routeMapCode);
   usePageSEO({
-    title: "Fortnite Maps - Cartes créatives | MATRIX",
-    description: "Découvrez et partagez les meilleures cartes créatives Fortnite. Explorez, votez et publiez vos maps préférées.",
+    title: "Fortnite Maps — Codes de maps créatives | Matrix Hub",
+    description: "Trouvez les meilleurs codes de maps Fortnite : tycoon, horreur, deathrun, parkour, RPG et Battle Royale, avec statistiques et vote communautaire.",
     path: mapCode ? fortniteMapPath({ map_code: mapCode }) : "/fortnite-maps",
   });
 

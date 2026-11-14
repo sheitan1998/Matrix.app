@@ -13,13 +13,14 @@ import CreatorChannelCard from "@/components/prospecteurs/CreatorChannelCard";
 import CreateCreatorModal from "@/components/prospecteurs/CreateCreatorModal";
 import CreatorAutoVoteModal from "@/components/prospecteurs/CreatorAutoVoteModal";
 import CreatorDeleteConfirm from "@/components/prospecteurs/CreatorDeleteConfirm";
+import SeoContentBlock from "@/components/seo/SeoContentBlock";
 
 const score = (c) => (c.votes_month || 0) + (c.boosts || 0) * 2;
 
 export default function BestCreator() {
   usePageSEO({
-    title: "Best Creator - Classement des chaînes YouTube & Twitch | MATRIX",
-    description: "Découvrez, publiez et votez pour les meilleures chaînes YouTube et Twitch de la communauté MATRIX. Classement général et par plateforme.",
+    title: "Best Creator — Classement des créateurs YouTube et Twitch | Matrix Hub",
+    description: "Découvrez et votez pour les meilleurs créateurs de contenu YouTube, Twitch, TikTok, Instagram et Snapchat. Classements mensuels, boosts et chaînes à explorer sur Matrix Hub.",
     path: "/best-creator",
   });
 
@@ -224,6 +225,7 @@ export default function BestCreator() {
         />
 
         <div className="flex-1 px-4 sm:px-6 py-5 min-w-0">
+          <h1 className="sr-only">Best Creator — classement des créateurs de contenu YouTube, Twitch et réseaux sociaux</h1>
           {/* Retour + Publier */}
           <div className="flex items-center justify-between mb-5 gap-2">
             <Link to="/" className="inline-flex items-center gap-1.5 text-white/50 hover:text-white transition tap-sm">
@@ -348,6 +350,27 @@ export default function BestCreator() {
               </div>
             )}
           </div>
+
+          <SeoContentBlock
+            eyebrow="Best Creator"
+            title="Le classement des créateurs de contenu francophones"
+            intro="Best Creator met en lumière les créateurs qui animent la communauté Matrix Hub. Publiez votre chaîne, présentez votre univers et laissez les visiteurs voter pour vous. Le classement général et les classements par plateforme sont recalculés chaque mois à partir des votes reçus et des boosts, afin de récompenser les créateurs les plus réguliers et les plus soutenus."
+            sections={[
+              { title: "YouTube et Twitch", text: "Ajoutez votre chaîne YouTube ou Twitch, récupérez automatiquement votre avatar et votre bannière, puis suivez votre progression." },
+              { title: "TikTok, Instagram et Snapchat", text: "Partagez aussi vos profils de créateur sur les réseaux sociaux et rendez vos contenus courts immédiatement découvrables." },
+              { title: "Votes communautaires", text: "Les visiteurs peuvent voter une fois par jour pour leurs créateurs préférés, connectés ou non, avec un suivi des votes mensuels." },
+              { title: "Vote Auto", text: "Les abonnés Vote Auto soutiennent automatiquement jusqu'à trois chaînes chaque jour, sans action manuelle." },
+              { title: "Boosts de visibilité", text: "Boostez une chaîne pour la mettre en avant sur la page et lui donner un avantage dans le classement." },
+              { title: "Profils publics", text: "Chaque créateur dispose d'une fiche publique avec ses liens, sa description et ses statistiques de votes." },
+            ]}
+            links={[
+              { href: "/best-serveurs", label: "Best Serveur" },
+              { href: "/stream", label: "Streaming" },
+              { href: "/twitch", label: "Twitch" },
+              { href: "/affiliate", label: "Programme partenaire" },
+              { href: "/tuto-gaming", label: "Tuto Gaming" },
+            ]}
+          />
         </div>
       </div>
 
