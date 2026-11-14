@@ -46,9 +46,9 @@ export default function NexusGamePlayer({ game, onClose }) {
         
         <div className="min-w-0">
           <p className="text-sm font-black text-white truncate">{game.title}</p>
-          <p className="text-[10px] text-white/40 truncate hidden">
-            {game.category} · HTML5{game.instructions ? ` · ${game.instructions.slice(0, 60)}` : ""}
-          </p>
+          
+
+          
         </div>
         <div className="ml-auto flex items-center gap-2">
           <button
