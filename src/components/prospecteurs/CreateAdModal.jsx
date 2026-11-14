@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { uploadImageWithToast } from "@/lib/imageModeration";
 import MultiTagSelect from "@/components/prospecteurs/MultiTagSelect";
 import CategorySelect from "@/components/prospecteurs/CategorySelect";
+import { findForbiddenLink } from "@/lib/serverLinkRules";
 
 const GAMES = [
   "GTA RP", "GTA V", "Minecraft", "Rust", "ARK: Survival Evolved", "Palworld",
@@ -42,7 +43,6 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
     categories: editAd?.categories || (editAd?.category ? [editAd.category] : []),
     category_slugs: editAd?.category_slugs || (editAd?.category_slug ? [editAd.category_slug] : []),
     additional_info: editAd?.additional_info || "",
-    max_players: editAd?.max_players || 0,
     player_count_needed: editAd?.player_count_needed || 1,
     availability_hours: editAd?.availability_hours || "",
     player_pseudo: editAd?.player_pseudo || "",
@@ -84,6 +84,18 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.title.trim() || !form.description.trim()) return;
+
+    const forbidden = findForbiddenLink(
+      form.title,
+      form.description,
+      form.additional_info,
+      form.discord_link,
+      form.website_url
+    );
+    if (forbidden) {
+      toast.error(forbidden);
+      return;
+    }
 
     if (isPlayerAd) {
       if ((form.games || []).length === 0 || !form.availability_hours.trim()) return;
@@ -340,23 +352,6 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
                 />
               </div>
             </>
-          )}
-
-          {/* Max players (server only) */}
-          {!isPlayerAd && (
-            <div>
-              <label className={labelClass}>Nombre maximum de joueurs</label>
-              <input
-                type="number"
-                min="0"
-                max="9999"
-                value={form.max_players || ""}
-                onChange={(e) => handleChange("max_players", parseInt(e.target.value) || 0)}
-                placeholder="Ex: 300"
-                className="w-full h-10 px-3 rounded-lg text-sm text-white placeholder:text-white/25 outline-none"
-                style={inputStyle}
-              />
-            </div>
           )}
 
           {/* Description */}

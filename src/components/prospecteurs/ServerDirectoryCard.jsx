@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ArrowUp, Flame, ExternalLink, Users, Zap, Pencil, Trash2, Share2, Check, ThumbsUp, MousePointerClick, Globe } from "lucide-react";
+import { ArrowUp, Flame, ExternalLink, Zap, Pencil, Trash2, Share2, Check, ThumbsUp, MousePointerClick, Globe } from "lucide-react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
@@ -345,16 +345,10 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
           <Flame className="w-2.5 h-2.5" style={{ color: "#fbbf24" }} />
           {boostCount}
         </span>
-        {server.max_players > 0 && (
-          <span className="flex items-center gap-0.5">
-            <Users className="w-2.5 h-2.5" />
-            {server.players_count || 0}/{server.max_players}
-          </span>
-        )}
       </div>
 
       {/* Actions */}
-      <div className="px-3 pb-3 flex items-center gap-1.5">
+      <div className="px-3 pb-2 flex items-center gap-1.5">
         <button
           onClick={() => setShowVoteModal(true)}
           disabled={!voteStatus.canVote || loading}
@@ -393,44 +387,50 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
         >
           {copied ? <Check className="w-3 h-3" /> : <Share2 className="w-3 h-3" />}
         </button>
-        {shareSlug && (
-          <Link
-            to={`/servers/${shareSlug}`}
-            onClick={handleTrackClick}
-            className="h-7 px-2 rounded-md flex items-center justify-center transition tap-sm text-[9px] font-bold"
-            style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.1)" }}
-            title="Voir la fiche"
-          >
-            <ExternalLink className="w-3 h-3" />
-          </Link>
-        )}
-        {server.discord_link && (
-          <a
-            href={server.discord_link}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={handleTrackClick}
-            className="h-7 px-2 rounded-md flex items-center justify-center transition tap-sm text-[9px] font-bold"
-            style={{ background: `${typeConfig.color}20`, color: typeConfig.color, border: `1px solid ${typeConfig.color}30` }}
-            title={server.discord_link}
-          >
-            <ExternalLink className="w-3 h-3" />
-          </a>
-        )}
-        {server.website_url && (
-          <a
-            href={server.website_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={handleTrackClick}
-            className="h-7 px-2 rounded-md flex items-center justify-center transition tap-sm text-[9px] font-bold"
-            style={{ background: "rgba(34,197,94,0.12)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.25)" }}
-            title={server.website_url}
-          >
-            <Globe className="w-3 h-3" />
-          </a>
-        )}
       </div>
+
+      {/* Liens fournis lors de la publication — un bouton par lien renseigné */}
+      {(shareSlug || server.website_url || server.discord_link) && (
+        <div className="px-3 pb-3 flex flex-wrap items-center gap-1.5">
+          {shareSlug && (
+            <Link
+              to={`/servers/${shareSlug}`}
+              onClick={handleTrackClick}
+              className="h-7 px-2 rounded-md flex items-center gap-1 transition tap-sm text-[9px] font-bold"
+              style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.1)" }}
+            >
+              <ExternalLink className="w-3 h-3" />
+              Voir la fiche
+            </Link>
+          )}
+          {server.website_url && (
+            <a
+              href={server.website_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={handleTrackClick}
+              className="h-7 px-2 rounded-md flex items-center gap-1 transition tap-sm text-[9px] font-bold"
+              style={{ background: "rgba(34,197,94,0.12)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.25)" }}
+            >
+              <Globe className="w-3 h-3" />
+              Voir le site
+            </a>
+          )}
+          {server.discord_link && (
+            <a
+              href={server.discord_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={handleTrackClick}
+              className="h-7 px-2 rounded-md flex items-center gap-1 transition tap-sm text-[9px] font-bold"
+              style={{ background: `${typeConfig.color}20`, color: typeConfig.color, border: `1px solid ${typeConfig.color}30` }}
+            >
+              <ExternalLink className="w-3 h-3" />
+              Rejoindre le serveur
+            </a>
+          )}
+        </div>
+      )}
 
       {/* Vote modal with pseudo */}
       {showVoteModal && (

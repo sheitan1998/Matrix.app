@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import {
-  ArrowLeft, ArrowUp, Flame, Share2, ExternalLink, Users, Zap, Globe,
+  ArrowLeft, ArrowUp, Flame, Share2, ExternalLink, Zap, Globe,
   Server as ServerIcon, MessageCircle, Copy, Check, Loader2, Pencil, Trash2,
 } from "lucide-react";
 import BoostAdModal from "@/components/prospecteurs/BoostAdModal";
@@ -269,7 +269,7 @@ export default function ServerProfile() {
               style={{ background: `${config.color}20`, color: config.color, border: `1px solid ${config.color}30` }}
             >
               <ExternalLink className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Rejoindre</span>
+              <span className="hidden sm:inline">Rejoindre le serveur</span>
             </a>
           )}
           {server.website_url && (
@@ -281,7 +281,7 @@ export default function ServerProfile() {
               style={{ background: "rgba(34,197,94,0.12)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.25)" }}
             >
               <Globe className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Site web</span>
+              <span className="hidden sm:inline">Voir le site</span>
             </a>
           )}
         </div>
@@ -312,7 +312,7 @@ export default function ServerProfile() {
         </div>
 
         {/* Server info */}
-        {(server.ip || server.max_players > 0 || server.category || server.website_url) && (
+        {(server.ip || server.category || server.website_url) && (
           <div className="rounded-xl p-4 mb-4" style={{ background: "rgba(18,9,28,0.6)", border: "1px solid rgba(138,79,255,0.15)" }}>
             <h2 className="text-xs font-black uppercase tracking-wider text-white mb-2">Informations</h2>
             <div className="space-y-1.5">
@@ -326,14 +326,6 @@ export default function ServerProfile() {
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-white/40">Adresse IP</span>
                   <span className="text-[10px] font-bold text-white font-mono">{server.ip}{server.port ? `:${server.port}` : ""}</span>
-                </div>
-              )}
-              {server.max_players > 0 && (
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-white/40">Joueurs max</span>
-                  <span className="text-[10px] font-bold text-white flex items-center gap-1">
-                    <Users className="w-3 h-3" /> {server.players_count || 0}/{server.max_players}
-                  </span>
                 </div>
               )}
               {server.website_url && (

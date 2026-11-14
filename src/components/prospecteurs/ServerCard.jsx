@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { ArrowUp, Flame, ExternalLink, Users, Trash2, Pencil, Zap } from "lucide-react";
+import { ArrowUp, Flame, ExternalLink, Trash2, Pencil, Zap, Globe } from "lucide-react";
+import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import AdMessages from "./AdMessages";
@@ -243,12 +244,6 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
           <Flame className="w-2.5 h-2.5" style={{ color: "#fbbf24" }} />
           {boostCount} boost{boostCount !== 1 ? "s" : ""}
         </span>
-        {server.max_players > 0 && (
-          <span className="flex items-center gap-0.5">
-            <Users className="w-2.5 h-2.5" />
-            {server.players_count || 0}/{server.max_players}
-          </span>
-        )}
       </div>
 
       {/* Actions */}
@@ -283,19 +278,47 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
           <Zap className="w-3 h-3" />
           <span className="hidden sm:inline">Boost</span>
         </button>
-        {server.discord_link && (
-          <a
-            href={server.discord_link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="h-7 px-2 rounded-md flex items-center justify-center transition tap-sm text-[9px] font-bold"
-            style={{ background: `${typeColor}20`, color: typeColor, border: `1px solid ${typeColor}30` }}
-            title={server.discord_link}
-          >
-            <ExternalLink className="w-3 h-3" />
-          </a>
-        )}
       </div>
+
+      {/* Liens fournis lors de la publication — un bouton par lien renseigné */}
+      {(server.slug || server.id || server.website_url || server.discord_link) && (
+        <div className="px-3 pb-3 flex flex-wrap items-center gap-1.5">
+          {(server.slug || server.id) && (
+            <Link
+              to={`/servers/${server.slug || server.id}`}
+              className="h-7 px-2 rounded-md flex items-center gap-1 transition tap-sm text-[9px] font-bold"
+              style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.1)" }}
+            >
+              <ExternalLink className="w-3 h-3" />
+              Voir la fiche
+            </Link>
+          )}
+          {server.website_url && (
+            <a
+              href={server.website_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="h-7 px-2 rounded-md flex items-center gap-1 transition tap-sm text-[9px] font-bold"
+              style={{ background: "rgba(34,197,94,0.12)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.25)" }}
+            >
+              <Globe className="w-3 h-3" />
+              Voir le site
+            </a>
+          )}
+          {server.discord_link && (
+            <a
+              href={server.discord_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="h-7 px-2 rounded-md flex items-center gap-1 transition tap-sm text-[9px] font-bold"
+              style={{ background: `${typeColor}20`, color: typeColor, border: `1px solid ${typeColor}30` }}
+            >
+              <ExternalLink className="w-3 h-3" />
+              Rejoindre le serveur
+            </a>
+          )}
+        </div>
+      )}
 
       {/* Boost modal */}
       {showBoost && (

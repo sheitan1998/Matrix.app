@@ -3,6 +3,33 @@ import { rateLimitByIp } from '../../shared/security.ts';
 import { computeHmacSha256, sendVoteWebhook } from '../../shared/voteWebhook.ts';
 import { VOTE_COOLDOWN_MS, getLastVote, processAllAutoVotes } from '../../shared/autoVote.ts';
 import { dispatchEvent } from '../../shared/nexusEngine.ts';
+import { validateServerLinks } from '../../shared/serverLinks.ts';
+
+// Champs qu'un propriétaire peut renseigner / modifier sur son annonce.
+// (max_players a été retiré du formulaire de publication.)
+const AD_EDITABLE_FIELDS = [
+  'title', 'slug', 'description', 'discord_link', 'website_url', 'type', 'server_type',
+  'category', 'category_slug', 'categories', 'category_slugs', 'games', 'game',
+  'profile_image', 'cover_image', 'additional_info', 'ip', 'port',
+  'player_count_needed', 'availability_hours', 'player_pseudo',
+];
+
+const pickAdFields = (data: Record<string, any>) => {
+  const clean: Record<string, any> = {};
+  for (const field of AD_EDITABLE_FIELDS) {
+    if (data[field] !== undefined) clean[field] = data[field];
+  }
+  return clean;
+};
+
+const adLinkError = (data: Record<string, any>) =>
+  validateServerLinks(
+    data.title,
+    data.description,
+    data.additional_info,
+    data.discord_link,
+    data.website_url,
+  );
 
 const BOOST_COST = 500; // 500 Trix minimum per boost
 const PLAYER_BOOST_COST = 50; // 50 Trix for player ad boost
@@ -150,6 +177,56 @@ export default async function(req: Request): Promise<Response> {
     }
 
     switch (action) {
+
+      // ---- Create a server ad (links validated server-side) ----
+      case 'createAd': {
+        if (!user) return Response.json({ error: 'Authentication required' }, { status: 401 });
+        const data = params.data || {};
+
+        const linkError = adLinkError(data);
+        if (linkError) return Response.json({ error: linkError }, { status: 400 });
+
+        const title = String(data.title || '').trim();
+        const description = String(data.description || '').trim();
+        if (!title || !description) {
+          return Response.json({ error: 'Le nom et la description sont obligatoires.' }, { status: 400 });
+        }
+
+        const created = await base44.asServiceRole.entities.ServerAd.create({
+          ...pickAdFields(data),
+          title,
+          description,
+          type: data.type === 'player' ? 'player' : 'server',
+          server_type: data.server_type === 'discord' ? 'discord' : 'nexus',
+          author_email: user.email,
+          author_name: user.full_name || user.email.split('@')[0],
+          author_avatar: user.avatar_url || '',
+          api_key: crypto.randomUUID(),
+        });
+
+        return Response.json({ success: true, ad: created });
+      }
+
+      // ---- Update an owned server ad (links validated server-side) ----
+      case 'updateAd': {
+        if (!user) return Response.json({ error: 'Authentication required' }, { status: 401 });
+        const { serverAdId } = params;
+        const data = params.data || {};
+        if (!serverAdId) return Response.json({ error: 'Missing serverAdId' }, { status: 400 });
+
+        const existing = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
+        if (!existing) return Response.json({ error: 'Ad not found' }, { status: 404 });
+        if (existing.author_email !== user.email && user.role !== 'admin') {
+          return Response.json({ error: 'Forbidden' }, { status: 403 });
+        }
+
+        const linkError = adLinkError({ ...existing, ...data });
+        if (linkError) return Response.json({ error: linkError }, { status: 400 });
+
+        const update = pickAdFields(data);
+        await base44.asServiceRole.entities.ServerAd.update(serverAdId, update);
+        return Response.json({ success: true, ad: { ...existing, ...update } });
+      }
 
       // ---- Vote for a server (2h cooldown, no auth required - IP fallback) ----
       case 'vote': {
