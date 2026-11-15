@@ -1,6 +1,7 @@
 // Re-export depuis les modules focusés (gta6/)
 export {
   GTA6_LOGO,
+  GTA6_KEY_ART,
   GTA6_PLATFORMS,
   GTA6_TABS,
   GTA6_INFO,
@@ -11,5 +12,6 @@ export {
   GTA6_WEAPONS,
   GTA6_LOCATIONS,
   GTA6_MISSIONS,
+  GTA6_TROPHIES,
   GTA6_WIKI_SECTIONS,
 } from "./gta6";
