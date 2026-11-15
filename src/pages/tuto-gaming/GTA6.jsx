@@ -5,7 +5,7 @@ import GTA6DetailModal from "@/components/tuto-gaming/GTA6DetailModal";
 import GTA6GalleryCard from '@/components/tuto-gaming/GTA6GalleryCard';
 import { getGta6TabItems, resolveGta6Selection } from '@/components/tuto-gaming/gta6/gta6Registry';
 import {
-  GTA6_PLATFORMS, GTA6_TABS, GTA6_INFO, GTA6_HIGHLIGHTS, GTA6_SYNOPSIS, GTA6_WIKI_SECTIONS, GTA6_KEY_ART } from
+  GTA6_PLATFORMS, GTA6_TABS, GTA6_INFO, GTA6_HIGHLIGHTS, GTA6_SYNOPSIS, GTA6_WIKI_SECTIONS } from
 "@/components/tuto-gaming/gta6Data";
 
 const HIGHLIGHT_ICONS = { "👥": Users, "🗺️": MapIcon, "🚗": Zap, "🎯": Target };
@@ -40,14 +40,6 @@ export default function GTA6() {
             boxShadow: "0 0 40px rgba(191,90,242,0.15)"
           }}>
           
-          <img
-            src={GTA6_KEY_ART}
-            alt="Affiche officielle Grand Theft Auto VI"
-            className="absolute inset-0 w-full h-full object-cover opacity-35 pointer-events-none" />
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{ background: "linear-gradient(90deg, rgba(10,5,15,0.94) 0%, rgba(10,5,15,0.6) 55%, rgba(10,5,15,0.9) 100%)" }} />
-
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-3">
               <Gamepad2 className="w-6 h-6" style={{ color: "#BF5AF2" }} />
@@ -162,11 +154,7 @@ export default function GTA6() {
         {/* Véhicules */}
         {tab === "vehicules" &&
         <div className="space-y-4">
-            <h2 className="text-lg font-black text-foreground">Véhicules & Cosmétiques</h2>
-            <p className="text-sm text-muted-foreground mb-2">
-              Véhicules, variantes et options de personnalisation identifiés dans les supports officiels
-              Rockstar Games. Aucun élément non visible dans ces supports n'est ajouté.
-            </p>
+            <h2 className="text-lg font-black text-foreground">Véhicules & Voitures</h2>
             {renderGallery()}
           </div>
         }
@@ -190,7 +178,7 @@ export default function GTA6() {
         {/* Missions & Guides */}
         {tab === "missions" &&
         <div className="space-y-4">
-            <h2 className="text-lg font-black text-foreground">Quêtes & Missions</h2>
+            <h2 className="text-lg font-black text-foreground">Guides de Missions & Activités</h2>
             <p className="text-sm text-muted-foreground mb-2">Les missions, leurs étapes exactes et leurs récompenses ne sont pas publiées dans les sources officielles référencées. Les fiches ci-dessous sont uniquement des méthodes générales de préparation, pas des solutions GTA VI confirmées.</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {items.map((m) =>
@@ -204,19 +192,6 @@ export default function GTA6() {
                 </button>
             )}
             </div>
-          </div>
-        }
-
-        {/* Succès / Trophées */}
-        {tab === "succes" &&
-        <div className="space-y-4">
-            <h2 className="text-lg font-black text-foreground">Succès & Trophées</h2>
-            <p className="text-sm text-muted-foreground mb-2">
-              Rockstar Games n'a pas encore publié la liste officielle des trophées. Les fiches ci-dessous
-              rassemblent les éléments prévisionnels issus des communautés, clairement identifiés comme
-              non confirmés, ainsi que la structure attendue du trophée de platine.
-            </p>
-            {renderGallery()}
           </div>
         }
 

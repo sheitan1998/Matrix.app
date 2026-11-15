@@ -1,7 +1,6 @@
 // Barrel export - GTA VI data module
 export {
   GTA6_LOGO,
-  GTA6_KEY_ART,
   GTA6_PLATFORMS,
   GTA6_TABS,
   GTA6_INFO,
@@ -14,4 +13,3 @@ export { GTA6_VEHICLES } from "./gta6Vehicles";
 export { GTA6_WEAPONS } from "./gta6Weapons";
 export { GTA6_LOCATIONS } from "./gta6Locations";
 export { GTA6_MISSIONS, GTA6_WIKI_SECTIONS } from "./gta6Missions";
-export { GTA6_TROPHIES } from "./gta6Trophies";

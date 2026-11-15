@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { BookOpen, Lock } from "lucide-react";
 import { normalizeAppAssetUrl } from "@/lib/urlUtils";
-import { OPEN_GAMES_BY_SLUG } from "@/lib/openGames";
 
 export default function GameCard({ game, guideCount = 0, index = 0 }) {
   const isActive = game.is_active !== false;
@@ -58,17 +57,6 @@ export default function GameCard({ game, guideCount = 0, index = 0 }) {
           </div>
       }
 
-        {/* Statut */}
-        <span
-        className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider"
-        style={{
-          background: isActive ? "rgba(34,197,94,0.15)" : "rgba(255,255,255,0.08)",
-          color: isActive ? "#4ADE80" : "rgba(255,255,255,0.45)",
-          border: `1px solid ${isActive ? "rgba(34,197,94,0.4)" : "rgba(255,255,255,0.12)"}`
-        }}>
-          {isActive ? "Disponible" : "Bientôt"}
-        </span>
-
         {/* Game name overlay */}
         <div
         className="absolute inset-0 flex items-end p-4"
@@ -108,8 +96,7 @@ export default function GameCard({ game, guideCount = 0, index = 0 }) {
 
   if (isActive) {
     const dedicatedRoutes = { dofus: '/dofus', minecraft: '/minecraft', 'rocket-league': '/rocket-league', 'farming-simulator-25': '/farming', 'gta-6': '/gta-6', rust: '/rust', valheim: '/valheim', valorant: '/valorant' };
-    const to = OPEN_GAMES_BY_SLUG[game.slug] ? `/jeu/${game.slug}` : dedicatedRoutes[game.slug] || `/tuto-gaming/${game.slug}`;
-    return <Link to={to}>{cardContent}</Link>;
+    return <Link to={dedicatedRoutes[game.slug] || `/tuto-gaming/${game.slug}`}>{cardContent}</Link>;
   }
   return <div className="opacity-70 cursor-not-allowed">{cardContent}</div>;
 }

@@ -84,7 +84,6 @@ const Privacy = lazy(() => import('@/pages/Privacy'));
 const About = lazy(() => import('@/pages/About'));
 const Contact = lazy(() => import('@/pages/Contact'));
 const TutoGamingHub = lazy(() => import('@/pages/tuto-gaming/TutoGamingHub'));
-const OpenGameDetail = lazy(() => import('@/pages/tuto-gaming/OpenGameDetail'));
 const GameDetailPage = lazy(() => import('@/pages/tuto-gaming/GameDetailPage'));
 const QuestDetailPage = lazy(() => import('@/pages/tuto-gaming/QuestDetailPage'));
 const WikiEntryDetailPage = lazy(() => import('@/pages/tuto-gaming/WikiEntryDetailPage'));
@@ -210,7 +209,6 @@ const AuthenticatedApp = () => {
           <Route path="/tuto-gaming/dofus" element={<Navigate to="/dofus" replace />} />
           <Route path="/tuto-gaming/rocket-league" element={<Navigate to="/rocket-league" replace />} />
           <Route path="/tuto-gaming" element={<TutoGamingHub />} />
-          <Route path="/jeu/:slug" element={<OpenGameDetail />} />
           <Route path="/minecraft" element={<Minecraft />} />
           <Route path="/tuto-gaming/:gameSlug" element={<GameDetailPage />} />
           <Route path="/tuto-gaming/:gameSlug/quest/:questId" element={<QuestDetailPage />} />

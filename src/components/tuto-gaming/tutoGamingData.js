@@ -73,7 +73,6 @@ export const FEATURED_GAMES = [
   {
     name: "GTA VI",
     slug: "gta-6",
-    image_url: "https://www.rockstargames.com/VI/_next/static/media/Official_Cover_Art_landscape.12.uu2irr.2_a.jpg?akim=1&imdensity=1&imwidth=1280",
     card_gradient: "linear-gradient(135deg, #0a050f 0%, #2d0d3a 50%, #0a050f 100%)",
     is_active: true,
   },

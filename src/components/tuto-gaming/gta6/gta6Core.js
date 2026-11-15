@@ -11,16 +11,13 @@ export const GTA6_PLATFORMS = [
   { name: "Xbox Series X/S", icon: "🎯", color: "#107C10" },
 ];
 
-export const GTA6_KEY_ART = "https://www.rockstargames.com/VI/_next/static/media/Official_Cover_Art_landscape.12.uu2irr.2_a.jpg?akim=1&imdensity=1&imwidth=1920";
-
 export const GTA6_TABS = [
   { id: "presentation", label: "Présentation" },
   { id: "personnages", label: "Personnages" },
-  { id: "vehicules", label: "Véhicules & Cosmétiques" },
+  { id: "vehicules", label: "Véhicules" },
   { id: "armes", label: "Armes" },
   { id: "lieux", label: "Lieux & Monde" },
-  { id: "missions", label: "Quêtes & Missions" },
-  { id: "succes", label: "Succès / Trophées" },
+  { id: "missions", label: "Missions & Activités" },
   { id: "wiki", label: "Wiki" },
 ];
 
