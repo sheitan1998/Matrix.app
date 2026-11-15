@@ -16,6 +16,7 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
+import Mfa from '@/pages/Mfa';
 import OAuthCallback from '@/pages/OAuthCallback';
 import OAuthConsent from '@/pages/OAuthConsent';
 // Layout & app shell — eager (rendered immediately after auth)
@@ -178,6 +179,7 @@ const AuthenticatedApp = () => {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/mfa" element={<Mfa />} />
         <Route path="/oauth/callback" element={<OAuthCallback />} />
         <Route path="/oauth" element={<Navigate to="/oauth/callback" replace />} />
         <Route path="/oauth/consent" element={<OAuthConsent />} />

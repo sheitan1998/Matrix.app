@@ -1,9 +1,10 @@
-import { CANONICAL_APP_ORIGIN } from "@/lib/canonicalOrigin";
+import { RUNTIME_APP_ORIGIN } from "@/lib/canonicalOrigin";
 
 const isNode = typeof window === 'undefined';
 const windowObj = isNode ? { localStorage: new Map(), location: { href: '', search: '', pathname: '/', hash: '' } } : window;
 const storage = windowObj.localStorage;
-const DEFAULT_APP_BASE_URL = CANONICAL_APP_ORIGIN;
+// Origine qui sert réellement l'application (et donc ses assets /media/...).
+const DEFAULT_APP_BASE_URL = RUNTIME_APP_ORIGIN;
 
 const ABSOLUTE_URL_PROTOCOL = /^[a-zA-Z][a-zA-Z\d+\-.]*:/;
 
@@ -63,10 +64,12 @@ export function resolveAssetUrl(assetUrl, appBaseUrl = DEFAULT_APP_BASE_URL) {
   if (isAbsoluteUrl(trimmed) || trimmed.startsWith('data:') || trimmed.startsWith('blob:')) {
     return trimmed;
   }
-  // All relative paths (including /media/...) resolve to the production server
-  // so they load correctly in the Tauri desktop webview as well as the web app.
-  const base = normalizeBaseUrl(appBaseUrl) || DEFAULT_APP_BASE_URL;
+  // Relative paths (including /media/...) stay relative on the web: they load
+  // from whichever origin serves the app (preview, published domain, custom
+  // domain). Only the Tauri desktop webview needs an absolute production URL.
   const normalizedPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  if (!isTauriWebview()) return normalizedPath;
+  const base = normalizeBaseUrl(appBaseUrl) || DEFAULT_APP_BASE_URL;
   return `${base}${normalizedPath}`;
 }
 

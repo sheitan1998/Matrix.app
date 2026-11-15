@@ -1,3 +1,10 @@
-/sitemap.xml    /sitemap.xml    200
-/robots.txt     /robots.txt     200
-/*    /index.html   200
+# Ne jamais réécrire l'API, les fonctions ni les assets vers l'app (sinon les
+# réponses JSON deviennent de l'HTML et les images ne se chargent plus).
+/api/*        /api/:splat        200
+/functions/*  /functions/:splat  200
+/media/*      /media/:splat      200
+/assets/*     /assets/:splat     200
+/icons/*      /icons/:splat      200
+
+# Fallback SPA (routes React)
+/*            /index.html       200

@@ -1,4 +1,4 @@
-import { CANONICAL_APP_ORIGIN } from "@/lib/canonicalOrigin";
+import { RUNTIME_APP_ORIGIN } from "@/lib/canonicalOrigin";
 
 const TAURI_HOST_SUFFIX = ".tauri.localhost";
 const ASSET_PATH_RE = /^\/(?:media|icons)\//i;
@@ -18,7 +18,7 @@ function shouldCanonicalizePath(value) {
 
 function toCanonicalUrl(path) {
   try {
-    return new URL(path, CANONICAL_APP_ORIGIN).toString();
+    return new URL(path, RUNTIME_APP_ORIGIN).toString();
   } catch {
     return path;
   }

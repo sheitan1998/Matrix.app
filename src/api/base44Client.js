@@ -1,14 +1,17 @@
 import { createClient } from '@base44/sdk';
 import { appParams } from '@/lib/app-params';
-import { CANONICAL_APP_ORIGIN } from '@/lib/canonicalOrigin';
+import { RUNTIME_APP_ORIGIN } from '@/lib/canonicalOrigin';
 
 const { appId, token, functionsVersion } = appParams;
 
+// Same-origin: l'API doit être appelée sur l'origine qui sert l'application
+// (preview, domaine publié ou domaine personnalisé), jamais sur un domaine
+// externe qui ne route pas /api.
 export const base44 = createClient({
   appId,
   token,
   functionsVersion,
-  serverUrl: CANONICAL_APP_ORIGIN,
+  serverUrl: RUNTIME_APP_ORIGIN,
   requiresAuth: false,
-  appBaseUrl: CANONICAL_APP_ORIGIN
+  appBaseUrl: RUNTIME_APP_ORIGIN
 });
