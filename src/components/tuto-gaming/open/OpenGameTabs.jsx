@@ -1,8 +1,8 @@
 import React from "react";
-import { ShoppingBag, ScrollText, Users, Trophy } from "lucide-react";
+import { ShoppingBag, CalendarDays, ScrollText, Crown, Users, Trophy } from "lucide-react";
 import { TAB_META } from "@/lib/openGames";
 
-const ICONS = { shopping: ShoppingBag, scroll: ScrollText, users: Users, trophy: Trophy };
+const ICONS = { shopping: ShoppingBag, calendar: CalendarDays, scroll: ScrollText, crown: Crown, users: Users, trophy: Trophy };
 
 export default function OpenGameTabs({ active, onChange, accent, counts = {} }) {
   return (

@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
       return Response.json({ player });
     }
 
-    const key = `game:${slug}`;
+    const key = `game:v3:${slug}`;
     const cached = cache.getCached(key, TTL);
     if (cached) return Response.json(cached);
 

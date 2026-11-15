@@ -138,8 +138,32 @@ export const GAME_POSTERS = {
 };
 
 export const TAB_META = [
-  { id: "shop", label: "Boutique & Rotations", icon: "shopping" },
-  { id: "quests", label: "Quêtes, Missions & Passe", icon: "scroll" },
-  { id: "characters", label: "Personnages & Cosmétiques", icon: "users" },
-  { id: "achievements", label: "Succès du jeu", icon: "trophy" },
+  { id: "shop", label: "Boutique", icon: "shopping" },
+  { id: "rotations", label: "Rotations & Événements", icon: "calendar" },
+  { id: "quests", label: "Quêtes & Missions", icon: "scroll" },
+  { id: "battlepass", label: "Passe de combat", icon: "crown" },
+  { id: "characters", label: "Personnages & Skins", icon: "users" },
+  { id: "achievements", label: "Succès", icon: "trophy" },
 ];
+
+export const RARITY_COLORS = {
+  common: "#94a3b8",
+  uncommon: "#4ade80",
+  rare: "#38bdf8",
+  epic: "#a855f7",
+  legendary: "#f59e0b",
+  mythic: "#ec4899",
+  exotic: "#f97316",
+};
+
+// Nettoie les résidus techniques des wikis ({Tunable…}, {Keyword…}, balises, liens).
+export function cleanGameText(text, max = 600) {
+  let s = String(text ?? "");
+  s = s.replace(/<[^>]*>/g, " ");
+  for (let i = 0; i < 3; i += 1) s = s.replace(/\{[^{}]*\}/g, " ");
+  s = s.replace(/\[\[([^\]|]*)\|([^\]]*)\]\]/g, "$2");
+  s = s.replace(/\[\[([^\]]*)\]\]/g, "$1");
+  s = s.replace(/'{2,}/g, "");
+  s = s.replace(/\s+/g, " ").trim();
+  return s.length > max ? `${s.slice(0, max).trim()}…` : s;
+}
