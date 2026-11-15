@@ -9,6 +9,7 @@ export type WikiPage = {
   title: string;
   extract?: string;
   image?: string | null;
+  categories?: string[];
   url?: string | null;
 };
 
@@ -53,13 +54,14 @@ export async function wikiQuery(host: string, generator: Record<string, string>,
     formatversion: "2",
     origin: "*",
     redirects: "1",
-    prop: "pageimages|extracts|info",
+    prop: "pageimages|extracts|info|categories",
     inprop: "url",
     exintro: "1",
     explaintext: "1",
     exlimit: "max",
     piprop: "thumbnail|name",
     pithumbsize: "520",
+    cllimit: "max",
     ...generator,
     ...(generator.generator === "categorymembers" ? { gcmlimit: String(limit) } : { gsrlimit: String(limit) }),
   });
@@ -74,10 +76,52 @@ export async function wikiQuery(host: string, generator: Record<string, string>,
       title: cleanWiki(p?.title, 120),
       extract: cleanWiki(p?.extract, 900),
       image: imageOf(host, p),
+      categories: (p?.categories || [])
+        .map((c: any) => String(c?.title || c?.category || "").replace(/^Category:/i, ""))
+        .filter(Boolean),
       url: p?.fullurl || null,
     }))
     .filter((p) => p.title && !p.title.startsWith("Category:") && !p.title.startsWith("File:"))
     .sort((a, b) => Number(!!b.image) - Number(!!a.image));
+}
+
+// Descriptions complètes : l'API limite les extraits à 20 pages par requête.
+// On complète donc par lots pour que chaque fiche ait sa description nettoyée.
+export async function wikiExtracts(host: string, pages: { title: string; pageid?: number }[]): Promise<Record<string, string>> {
+  const out: Record<string, string> = {};
+  const chunks: { title: string; pageid?: number }[][] = [];
+  for (let i = 0; i < pages.length; i += 20) chunks.push(pages.slice(i, i + 20));
+
+  for (const chunk of chunks) {
+    const ids = chunk.map((p) => p.pageid).filter((id): id is number => typeof id === "number");
+    const params = new URLSearchParams({
+      action: "query",
+      format: "json",
+      formatversion: "2",
+      redirects: "1",
+      prop: "extracts",
+      explaintext: "1",
+      exintro: "1",
+      exlimit: "max",
+      ...(ids.length === chunk.length
+        ? { pageids: ids.join("|") }
+        : { titles: chunk.map((p) => p.title).join("|") }),
+    });
+    try {
+      const data = await jget(`https://${host}/api.php?${params.toString()}`);
+      const raw = data?.query?.pages;
+      const found: any[] = Array.isArray(raw) ? raw : raw ? Object.values(raw) : [];
+      found.forEach((p) => {
+        if (!p?.title || !p?.extract) return;
+        const key = cleanWiki(p.title, 120);
+        if (key && !out[key]) out[key] = cleanWiki(p.extract, 1200);
+      });
+    } catch {
+      /* un lot manquant ne bloque pas les autres */
+    }
+  }
+
+  return out;
 }
 
 export function wikiPageUrl(host: string, title: string) {

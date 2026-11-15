@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { ImageOff, Maximize2 } from "lucide-react";
-import { RARITY_COLORS, cleanGameText } from "@/lib/openGames";
+import { cleanGameText, rarityMeta } from "@/lib/openGames";
 
 // Carte cliquable : visuel officiel obligatoire, jamais d'initiales de secours.
 export default function OpenGameItemCard({ item, accent, fallback, onSelect }) {
@@ -11,8 +11,7 @@ export default function OpenGameItemCard({ item, accent, fallback, onSelect }) {
     setSrc(item.image || fallback || null);
   }, [item.id, item.image, fallback]);
 
-  const rarity = String(item.rarity || "").toLowerCase();
-  const rarityColor = RARITY_COLORS[rarity] || null;
+  const rarity = rarityMeta(item.rarity);
   const desc = cleanGameText(item.subtitle || item.desc, 90);
 
   return (
@@ -49,14 +48,12 @@ export default function OpenGameItemCard({ item, accent, fallback, onSelect }) {
           </span>
         )}
 
-        {rarityColor && (
-          <span
-            className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider"
-            style={{ background: `${rarityColor}22`, color: rarityColor, border: `1px solid ${rarityColor}66` }}
-          >
-            {item.rarity}
-          </span>
-        )}
+        <span
+          className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider"
+          style={{ background: `${rarity.color}22`, color: rarity.color, border: `1px solid ${rarity.color}66` }}
+        >
+          {rarity.label}
+        </span>
 
         {item.price && (
           <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: "rgba(10,5,18,0.85)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.35)" }}>

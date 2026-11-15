@@ -15,14 +15,23 @@ async function jget(url) {
 
 export const CLIENT_GAMES = new Set(["guild-wars-2", "dota-2"]);
 
+const DOTA_RARITY = {
+  common: "common",
+  rare: "rare",
+  epic: "epic",
+  legendary: "legendary",
+  immortal: "mythic",
+  arcana: "exotic",
+};
+
 // --- Guild Wars 2 : API officielle, aucune clé ---
 async function gw2() {
   const [items, stories, professions, daily, achievements, seasons] = await Promise.allSettled([
-    jget("https://api.guildwars2.com/v2/items?page=0&page_size=24"),
-    jget("https://api.guildwars2.com/v2/stories?page=0&page_size=24"),
+    jget("https://api.guildwars2.com/v2/items?page=0&page_size=100"),
+    jget("https://api.guildwars2.com/v2/stories?page=0&page_size=100"),
     jget("https://api.guildwars2.com/v2/professions?ids=all"),
     jget("https://api.guildwars2.com/v2/achievements/daily"),
-    jget("https://api.guildwars2.com/v2/achievements?page=0&page_size=24"),
+    jget("https://api.guildwars2.com/v2/achievements?page=0&page_size=100"),
     jget("https://api.guildwars2.com/v2/stories/seasons?ids=all"),
   ]);
   const val = (r, f = []) => (r.status === "fulfilled" ? r.value : f);
@@ -128,16 +137,21 @@ async function dota2() {
     .map(([key, v]) => ({ key, ...v }))
     .filter((it) => it?.img && Number(it.cost) > 0 && it.dname)
     .sort((a, b) => Number(b.cost) - Number(a.cost))
-    .slice(0, 24)
     .map((it) => ({
       id: it.key,
       name: it.dname,
       image: cdn(it.img),
       tag: it.qual || "Objet",
-      subtitle: `${Number(it.cost).toLocaleString("fr-FR")} or`,
+      subtitle: `${Number(it.cost).toLocaleString("fr-FR")} or · ${it.qual || "Objet"}`,
       price: `${Number(it.cost).toLocaleString("fr-FR")} or`,
-      desc: clamp(it.lore || it.notes || ""),
-      stats: [{ label: "Coût", value: `${Number(it.cost).toLocaleString("fr-FR")} or` }],
+      rarity: DOTA_RARITY[String(it.qual || "").toLowerCase()] || null,
+      desc: clamp(it.lore || it.notes || it.desc || ""),
+      stats: [
+        { label: "Coût", value: `${Number(it.cost).toLocaleString("fr-FR")} or` },
+        { label: "Qualité", value: it.qual || "—" },
+        ...(it.mc !== undefined ? [{ label: "Mana", value: String(it.mc) }] : []),
+        ...(it.cd !== undefined ? [{ label: "Rechargement", value: `${it.cd} s` }] : []),
+      ],
     }));
 
   const characters = stats.map((h) => ({
@@ -147,6 +161,14 @@ async function dota2() {
     tag: (h.roles || [])[0] || "Héros",
     subtitle: `${h.primary_attr?.toUpperCase()} · ${h.attack_type}`,
     desc: clamp(`${(h.roles || []).join(", ")} — ${h.pub_win || 0} % de victoires publiques.`),
+    stats: [
+      { label: "Attribut principal", value: String(h.primary_attr || "—").toUpperCase() },
+      { label: "Type d'attaque", value: h.attack_type || "—" },
+      { label: "Rôles", value: (h.roles || []).join(", ") || "—" },
+      { label: "Victoires publiques", value: `${h.pub_win || 0} %` },
+      { label: "Parties analysées", value: Number(h.pub_pick || 0).toLocaleString("fr-FR") },
+      { label: "Picks pro", value: String(h.pro_pick || 0) },
+    ],
   }));
 
   const rotations = [...stats]

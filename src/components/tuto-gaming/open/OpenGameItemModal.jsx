@@ -1,20 +1,19 @@
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { ExternalLink, ImageOff, Maximize2, X } from "lucide-react";
-import { RARITY_COLORS, cleanGameText } from "@/lib/openGames";
+import { ImageOff, Maximize2, X } from "lucide-react";
+import { cleanGameText, rarityMeta } from "@/lib/openGames";
 
 export default function OpenGameItemModal({ item, accent = "#a855f7", fallback, onClose }) {
   const [zoom, setZoom] = useState(false);
   if (!item) return null;
 
   const image = item.image || fallback || null;
-  const rarity = String(item.rarity || "").toLowerCase();
-  const rarityColor = RARITY_COLORS[rarity] || null;
+  const rarity = rarityMeta(item.rarity);
 
   const facts = [
+    { label: "Rareté", value: rarity.label, color: rarity.color },
     item.tag && { label: "Catégorie", value: item.tag },
-    item.rarity && { label: "Rareté", value: item.rarity, color: rarityColor },
-    item.price && { label: "Prix / coût", value: item.price },
+    item.price && { label: "Prix / coût", value: item.price, color: "#fbbf24" },
   ].filter(Boolean);
 
   return (
@@ -28,7 +27,7 @@ export default function OpenGameItemModal({ item, accent = "#a855f7", fallback, 
         <div className="rounded-2xl overflow-hidden" style={{ background: "#0a0512", border: `1px solid ${accent}44` }}>
           <div className="relative flex items-center justify-center" style={{ background: `radial-gradient(circle at 50% 20%, ${accent}22, #08030f 75%)`, minHeight: 260 }}>
             {image ? (
-              <img src={image} alt={item.name} className="w-full max-h-[46vh] object-contain p-4" />
+              <img src={image} alt={item.name} className="w-full max-h-[52vh] object-contain p-4" />
             ) : (
               <ImageOff className="w-10 h-10 my-16" style={{ color: `${accent}55` }} />
             )}
@@ -58,6 +57,9 @@ export default function OpenGameItemModal({ item, accent = "#a855f7", fallback, 
           <div className="p-5">
             <div className="flex items-start gap-3 flex-wrap">
               <h3 className="text-lg sm:text-xl font-black text-white leading-tight flex-1 min-w-[200px]">{item.name}</h3>
+              <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider" style={{ background: `${rarity.color}1f`, color: rarity.color, border: `1px solid ${rarity.color}66` }}>
+                {rarity.label}
+              </span>
               {item.tag && (
                 <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider" style={{ background: `${accent}1f`, color: accent, border: `1px solid ${accent}55` }}>
                   {item.tag}
@@ -78,9 +80,13 @@ export default function OpenGameItemModal({ item, accent = "#a855f7", fallback, 
               </div>
             )}
 
-            {item.desc && (
+            {item.desc ? (
               <p className="text-xs text-white/60 leading-relaxed mt-4 whitespace-pre-line">
-                {cleanGameText(item.desc, 1400)}
+                {cleanGameText(item.desc, 2500)}
+              </p>
+            ) : (
+              <p className="text-xs text-white/35 leading-relaxed mt-4">
+                Description officielle non détaillée par la source ouverte pour cette fiche.
               </p>
             )}
 
@@ -98,17 +104,6 @@ export default function OpenGameItemModal({ item, accent = "#a855f7", fallback, 
               </div>
             )}
 
-            {item.url && (
-              <a
-                href={item.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 mt-4 text-[11px] font-bold tap-sm"
-                style={{ color: accent }}
-              >
-                <ExternalLink className="w-3.5 h-3.5" /> Voir la fiche complète
-              </a>
-            )}
           </div>
         </div>
 

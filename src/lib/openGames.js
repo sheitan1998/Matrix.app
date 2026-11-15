@@ -156,6 +156,27 @@ export const RARITY_COLORS = {
   exotic: "#f97316",
 };
 
+export const RARITY_LABELS = {
+  common: "Commun",
+  uncommon: "Peu commun",
+  rare: "Rare",
+  epic: "Épique",
+  legendary: "Légendaire",
+  mythic: "Mythique",
+  exotic: "Exotique",
+};
+
+// Rareté affichée dans la fiche : valeur détectée, sinon "Commun".
+export function rarityMeta(value) {
+  const key = String(value || "").toLowerCase();
+  const normalized = RARITY_COLORS[key] ? key : "common";
+  return {
+    key: normalized,
+    label: RARITY_LABELS[normalized],
+    color: RARITY_COLORS[normalized],
+  };
+}
+
 // Nettoie les résidus techniques des wikis ({Tunable…}, {Keyword…}, balises, liens).
 export function cleanGameText(text, max = 600) {
   let s = String(text ?? "");

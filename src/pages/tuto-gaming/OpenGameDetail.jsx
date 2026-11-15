@@ -6,7 +6,7 @@ import useOpenGame from "@/hooks/useOpenGame";
 import { OPEN_GAMES_BY_SLUG, TAB_META } from "@/lib/openGames";
 import OpenGameHero from "@/components/tuto-gaming/open/OpenGameHero";
 import OpenGameTabs from "@/components/tuto-gaming/open/OpenGameTabs";
-import OpenGameItemCard from "@/components/tuto-gaming/open/OpenGameItemCard";
+import OpenGameCollection from "@/components/tuto-gaming/open/OpenGameCollection";
 import OpenGameItemModal from "@/components/tuto-gaming/open/OpenGameItemModal";
 import OpenGamePlayerSearch from "@/components/tuto-gaming/open/OpenGamePlayerSearch";
 
@@ -86,17 +86,13 @@ export default function OpenGameDetail() {
           </div>
         ) : current.items?.length ? (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {current.items.map((item, i) => (
-                <OpenGameItemCard
-                  key={`${item.id}-${i}`}
-                  item={item}
-                  accent={accent}
-                  fallback={game.image_url}
-                  onSelect={setSelected}
-                />
-              ))}
-            </div>
+            <OpenGameCollection
+              key={`${game.slug}:${tab}`}
+              items={current.items}
+              accent={accent}
+              fallback={game.image_url}
+              onSelect={setSelected}
+            />
             {current.note && <p className="text-[10px] text-white/30 mt-3">{current.note}</p>}
           </>
         ) : (

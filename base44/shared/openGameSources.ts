@@ -2,7 +2,7 @@
 // 6 onglets stricts : boutique, rotations, quêtes, passe, personnages/skins, succès.
 // Le contenu vient des API publiques de jeux et des wikis officiels ouverts (MediaWiki).
 
-import { cleanWiki, jget, wikiPageUrl, wikiQuery, type WikiPage } from "./openGameWiki.ts";
+import { cleanWiki, jget, wikiExtracts, wikiQuery, type WikiPage } from "./openGameWiki.ts";
 
 export type TabKey = "shop" | "rotations" | "quests" | "battlepass" | "characters" | "achievements";
 
@@ -25,20 +25,51 @@ type TabCfg = { categories?: string[]; query?: string; tag: string };
 type GameCfg = { hosts: string[]; tabs: Record<TabKey, TabCfg> };
 
 const TAB_KEYS: TabKey[] = ["shop", "rotations", "quests", "battlepass", "characters", "achievements"];
-const LIMIT = 24;
+// Toutes les entrées disponibles sont chargées (l'affichage est paginé côté interface).
+const LIMIT = 48;
 
-function toItem(page: WikiPage, tag: string, host: string): OpenGameItem {
-  const desc = page.extract || "";
+// Rareté déduite des catégories officielles du wiki (jamais inventée).
+const RARITY_WORDS: [string, string[]][] = [
+  ["mythic", ["mythic", "mythique"]],
+  ["legendary", ["legendary", "légendaire", "legendaire"]],
+  ["exotic", ["exotic", "exotique"]],
+  ["epic", ["epic", "épique", "epique"]],
+  ["rare", ["rare"]],
+  ["uncommon", ["uncommon", "peu commun"]],
+  ["common", ["common", "commun"]],
+];
+
+function detectRarity(page: WikiPage): string | null {
+  const meta = `${page.title} ${(page.categories || []).join(" ")}`.toLowerCase();
+  for (const [key, words] of RARITY_WORDS) {
+    if (words.some((word) => meta.includes(word))) return key;
+  }
+  // « legendary skin », « epic outfit »… dans la description officielle.
+  const text = String(page.extract || "").toLowerCase();
+  const match = text.match(
+    /\b(mythic|legendary|epic|rare|uncommon|exotic)\b(?=[^.]{0,40}\b(skin|outfit|cosmetic|item|weapon|rarity|reward)\b)/
+  );
+  return match ? match[1] : null;
+}
+
+function toItem(page: WikiPage, tag: string): OpenGameItem {
+  const rarity = detectRarity(page);
   return {
     id: String(page.pageid ?? page.title),
     name: page.title,
     image: page.image || null,
     tag,
-    desc,
+    desc: page.extract || "",
     subtitle: null,
-    rarity: null,
+    rarity,
     price: null,
-    url: page.url || wikiPageUrl(host, page.title),
+    stats: [
+      { label: "Type", value: tag },
+      ...(rarity ? [{ label: "Rareté", value: rarity }] : []),
+      ...((page.categories || []).length
+        ? [{ label: "Catégorie officielle", value: (page.categories || []).slice(0, 2).join(" · ") }]
+        : []),
+    ],
   };
 }
 
@@ -92,9 +123,26 @@ async function wikiTab(cfg: TabCfg, hosts: string[], label: string): Promise<Tab
     return { items: [], note: `${label} — source ouverte momentanément indisponible.` };
   }
 
+  // Descriptions complètes pour toutes les fiches affichées (pas seulement les 20 premières).
+  // Certains wikis n'activent pas les extraits : on tente alors les autres hôtes officiels.
+  const missing = best.pages.filter((p) => !p.extract).slice(0, LIMIT);
+  if (missing.length) {
+    for (const host of [best.host, ...hosts.filter((h) => h !== best.host)]) {
+      const extracts = await wikiExtracts(host, missing.map((p) => (host === best.host
+        ? { title: p.title, pageid: p.pageid }
+        : { title: p.title })));
+      const filled = missing.filter((p) => extracts[p.title]).length;
+      if (!filled) continue;
+      best.pages = best.pages.map((p) =>
+        p.extract ? p : { ...p, extract: extracts[p.title] || p.extract || "" }
+      );
+      if (filled >= missing.length / 2) break;
+    }
+  }
+
   return {
-    items: best.pages.map((p) => toItem(p, cfg.tag, best!.host)),
-    note: `${label} — données et visuels du wiki officiel public (${best.host}), sans clé API.`,
+    items: best.pages.map((p) => toItem(p, cfg.tag)),
+    note: `${label} — ${best.pages.length} entrées, données et visuels du wiki officiel public (${best.host}), sans clé API.`,
   };
 }
 
@@ -243,14 +291,15 @@ async function osrsShop(): Promise<Tab | null> {
           subtitle: `Achat ${Number(p.high).toLocaleString("fr-FR")} · vente ${Number(p.low || p.high).toLocaleString("fr-FR")} gp`,
           desc: cleanWiki(m.examine, 320) || "Objet échangeable au Grand Exchange.",
           stats: [
+            { label: "Prix d'achat", value: `${Number(p.high).toLocaleString("fr-FR")} gp` },
+            { label: "Prix de vente", value: `${Number(p.low || p.high).toLocaleString("fr-FR")} gp` },
             { label: "Limite d'achat", value: String(m.limit ?? "—") },
             { label: "Membres", value: m.members ? "Oui" : "Non" },
           ],
-          url: `https://oldschool.runescape.wiki/w/${encodeURIComponent(String(m.name).replace(/ /g, "_"))}`,
         };
       })
       .sort((a, b) => Number(String(b.price).replace(/\D/g, "")) - Number(String(a.price).replace(/\D/g, "")))
-      .slice(0, LIMIT);
+      .slice(0, 300);
     if (!items.length) return null;
     return { items, note: "Prix réels du Grand Exchange (API officielle publique), sans clé." };
   } catch {
@@ -267,11 +316,14 @@ export async function buildOpenGame(slug: string) {
   if (!cfg) throw new Error("Jeu inconnu");
 
   const tabs: Partial<Record<TabKey, Tab>> = {};
-  await Promise.all(
-    TAB_KEYS.map(async (key) => {
-      tabs[key] = await wikiTab(cfg.tabs[key], cfg.hosts, TAB_LABELS[key]);
-    })
-  );
+  // Deux onglets à la fois : limite la charge sur les wikis tout en restant rapide.
+  for (let i = 0; i < TAB_KEYS.length; i += 2) {
+    await Promise.all(
+      TAB_KEYS.slice(i, i + 2).map(async (key) => {
+        tabs[key] = await wikiTab(cfg.tabs[key], cfg.hosts, TAB_LABELS[key]);
+      })
+    );
+  }
 
   if (slug === "osrs") {
     const live = await osrsShop();
