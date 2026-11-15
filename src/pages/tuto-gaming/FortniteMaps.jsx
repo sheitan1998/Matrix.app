@@ -156,13 +156,13 @@ export default function FortniteMaps() {
       {sections.show_api_maps && <ApiFeaturedMaps search={search} category={activeCategory} user={user} onSelect={selectMap} />}
       {/* Featured maps with live player counts (manual) */}
       <FeaturedMaps onSelect={selectMap} user={user} />
-      <h2 className="mb-3 text-lg font-black text-foreground hidden">Cartes de la communauté</h2>
+      
 
       {/* Results count */}
       <div className="flex items-center justify-between mb-3">
-        <span className="text-[10px] text-white/30 uppercase tracking-wider hidden">
-          {total} map{total > 1 ? "s" : ""}
-        </span>
+        
+
+        
       </div>
 
       {/* Maps grid */}
