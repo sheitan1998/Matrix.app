@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import GameCard from "@/components/tuto-gaming/GameCard";
 import { COMING_SOON_GAMES, FEATURED_GAMES } from "@/components/tuto-gaming/tutoGamingData";
 import { useTutoGamingAssets, getAssetUrl, getAssetField } from "@/hooks/useTutoGamingAssets";
+import { OPEN_GAMES, GAME_POSTERS } from "@/lib/openGames";
 
 export default function TutoGamingHub() {
   const [games, setGames] = useState([]);
@@ -49,13 +50,14 @@ export default function TutoGamingHub() {
     const assetKey = `game_${g.slug}`;
     return {
       ...g,
-      image_url: getAssetUrl(assets, assetKey, g.image_url),
+      image_url: getAssetUrl(assets, assetKey, g.image_url || GAME_POSTERS[g.slug]),
       name: getAssetField(assets, assetKey, "title", g.name),
     };
   };
   const allDisplayGames = [
     ...games.map(applyAsset),
     ...FEATURED_GAMES.map(applyAsset),
+    ...OPEN_GAMES.map(applyAsset),
     ...COMING_SOON_GAMES.map((g) => ({ ...g, is_active: false })),
   ].filter((g, i, arr) => arr.findIndex((x) => x.slug === g.slug) === i);
   const filteredGames = allDisplayGames.filter((g) =>
