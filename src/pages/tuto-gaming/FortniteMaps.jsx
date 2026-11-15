@@ -21,7 +21,7 @@ export default function FortniteMaps() {
   usePageSEO({
     title: "Fortnite Maps — Codes de maps créatives | Matrix Hub",
     description: "Trouvez les meilleurs codes de maps Fortnite : tycoon, horreur, deathrun, parkour, RPG et Battle Royale, avec statistiques et vote communautaire.",
-    path: mapCode ? fortniteMapPath({ map_code: mapCode }) : "/fortnite-maps",
+    path: mapCode ? fortniteMapPath({ map_code: mapCode }) : "/fortnite-maps"
   });
 
   const [search, setSearch] = useState("");
@@ -37,18 +37,18 @@ export default function FortniteMaps() {
     show_api_maps: true,
     show_daily_shop: true,
     show_cosmetics: true,
-    show_player_stats: true,
+    show_player_stats: true
   });
   const { assets } = useTutoGamingAssets();
   const fortniteBanner = getAssetUrl(assets, "fortnite_banner", FORTNITE_BANNER);
 
   useEffect(() => {
-    base44.functions
-      .invoke("fortniteApi", { action: "getSectionsConfig" })
-      .then((res) => {
-        if (res.data) setSections(res.data);
-      })
-      .catch(() => {});
+    base44.functions.
+    invoke("fortniteApi", { action: "getSectionsConfig" }).
+    then((res) => {
+      if (res.data) setSections(res.data);
+    }).
+    catch(() => {});
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
@@ -71,41 +71,41 @@ export default function FortniteMaps() {
       {/* Back */}
       <Link
         to="/tuto-gaming"
-        className="inline-flex items-center gap-1.5 text-white/40 hover:text-white transition mb-5 tap-sm"
-      >
+        className="inline-flex items-center gap-1.5 text-white/40 hover:text-white transition mb-5 tap-sm">
+        
         <ArrowLeft className="w-4 h-4" />
         <span className="text-xs font-bold">Retour au Hub</span>
       </Link>
 
       {/* Navigation buttons */}
       <div className="flex items-center gap-2 mb-5 flex-wrap">
-        {sections.show_daily_shop && (
-          <Link
-            to="/fortnite-shop"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition tap-sm"
-            style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", color: "#f59e0b" }}
-          >
+        {sections.show_daily_shop &&
+        <Link
+          to="/fortnite-shop"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition tap-sm"
+          style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", color: "#f59e0b" }}>
+          
             <ShoppingBag className="w-4 h-4" /> Boutique du Jour
           </Link>
-        )}
-        {sections.show_cosmetics && (
-          <Link
-            to="/fortnite-cosmetics"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition tap-sm"
-            style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)", color: "#22c55e" }}
-          >
+        }
+        {sections.show_cosmetics &&
+        <Link
+          to="/fortnite-cosmetics"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition tap-sm"
+          style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)", color: "#22c55e" }}>
+          
             <Shirt className="w-4 h-4" /> Cosmétiques
           </Link>
-        )}
-        {sections.show_player_stats && (
-          <Link
-            to="/fortnite-stats"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition tap-sm"
-            style={{ background: "rgba(191,90,242,0.1)", border: "1px solid rgba(191,90,242,0.2)", color: "#BF5AF2" }}
-          >
+        }
+        {sections.show_player_stats &&
+        <Link
+          to="/fortnite-stats"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition tap-sm"
+          style={{ background: "rgba(191,90,242,0.1)", border: "1px solid rgba(191,90,242,0.2)", color: "#BF5AF2" }}>
+          
             <User className="w-4 h-4" /> Statistiques Joueur
           </Link>
-        )}
+        }
       </div>
 
       {/* Search */}
@@ -115,16 +115,16 @@ export default function FortniteMaps() {
           style={{
             borderRadius: "9999px",
             background: "rgba(13,5,24,0.7)",
-            border: "1.5px solid rgba(191,90,242,0.25)",
-          }}
-        >
+            border: "1.5px solid rgba(191,90,242,0.25)"
+          }}>
+          
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Rechercher par titre ou créateur..."
-            className="w-full h-11 px-5 pr-11 bg-transparent text-sm text-white placeholder:text-white/30 outline-none"
-          />
+            className="w-full h-11 px-5 pr-11 bg-transparent text-sm text-white placeholder:text-white/30 outline-none" />
+          
           <div className="absolute right-4">
             <Search className="w-4 h-4" style={{ color: "#BF5AF2" }} />
           </div>
@@ -133,20 +133,20 @@ export default function FortniteMaps() {
 
       {/* Category filters */}
       <div className="flex items-center gap-1.5 mb-5 overflow-x-auto no-scrollbar pb-1">
-        {MAP_CATEGORIES.map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => setActiveCategory(cat.id)}
-            className="px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition tap-sm"
-            style={
-              activeCategory === cat.id
-                ? { background: `${cat.color}20`, color: cat.color, border: `1px solid ${cat.color}50` }
-                : { background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.4)", border: "1px solid rgba(255,255,255,0.06)" }
-            }
-          >
+        {MAP_CATEGORIES.map((cat) =>
+        <button
+          key={cat.id}
+          onClick={() => setActiveCategory(cat.id)}
+          className="px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition tap-sm"
+          style={
+          activeCategory === cat.id ?
+          { background: `${cat.color}20`, color: cat.color, border: `1px solid ${cat.color}50` } :
+          { background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.4)", border: "1px solid rgba(255,255,255,0.06)" }
+          }>
+          
             {cat.label}
           </button>
-        ))}
+        )}
       </div>
 
       {/* Page title */}
@@ -156,56 +156,56 @@ export default function FortniteMaps() {
       {sections.show_api_maps && <ApiFeaturedMaps search={search} category={activeCategory} user={user} onSelect={selectMap} />}
       {/* Featured maps with live player counts (manual) */}
       <FeaturedMaps onSelect={selectMap} user={user} />
-      <h2 className="mb-3 text-lg font-black text-foreground">Cartes de la communauté</h2>
+      <h2 className="mb-3 text-lg font-black text-foreground hidden">Cartes de la communauté</h2>
 
       {/* Results count */}
       <div className="flex items-center justify-between mb-3">
-        <span className="text-[10px] text-white/30 uppercase tracking-wider">
+        <span className="text-[10px] text-white/30 uppercase tracking-wider hidden">
           {total} map{total > 1 ? "s" : ""}
         </span>
       </div>
 
       {/* Maps grid */}
-      {loading ? (
-        <div className="flex justify-center py-12">
+      {loading ?
+      <div className="flex justify-center py-12">
           <Loader2 className="w-6 h-6 animate-spin text-white/30" />
-        </div>
-      ) : error ? (
-        <p role="alert" className="py-8 text-center text-sm text-destructive">Impossible de charger les cartes. <button onClick={fetchMaps} className="underline">Réessayer</button></p>
-      ) : filteredMaps.length === 0 ? (
-        <div className="text-center py-16">
+        </div> :
+      error ?
+      <p role="alert" className="py-8 text-center text-sm text-destructive">Impossible de charger les cartes. <button onClick={fetchMaps} className="underline">Réessayer</button></p> :
+      filteredMaps.length === 0 ?
+      <div className="text-center py-16 hidden">
           <MapIcon className="w-12 h-12 text-white/10 mx-auto mb-4" />
           <p className="text-sm text-white/40 mb-2">
             {search ? `Aucune map trouvée pour "${search}"` : "Aucune map disponible pour le moment."}
           </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-          {filteredMaps.map((m, i) => (
-            <FortniteMapCard key={m.id} map={m} index={i} onClick={selectMap} user={user} />
-          ))}
-        </div>
-      )}
+        </div> :
 
-      {hasMore && (
-        <div className="flex justify-center mt-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+          {filteredMaps.map((m, i) =>
+        <FortniteMapCard key={m.id} map={m} index={i} onClick={selectMap} user={user} />
+        )}
+        </div>
+      }
+
+      {hasMore &&
+      <div className="flex justify-center mt-6">
           <button onClick={loadMore} disabled={loadingMore} className="rounded-lg bg-primary px-6 py-2.5 text-xs font-bold text-primary-foreground disabled:opacity-50">
             {loadingMore ? "Chargement…" : "Voir plus"}
           </button>
         </div>
-      )}
+      }
 
-      {linkedMapLoading && !selectedMap && (
-        <div role="status" className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80">
+      {linkedMapLoading && !selectedMap &&
+      <div role="status" className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80">
           <Loader2 className="h-7 w-7 animate-spin text-white" />
           <span className="sr-only">Chargement de la carte</span>
         </div>
-      )}
-      {(linkedMapError || (routeMapCode && !mapCode)) && !selectedMap && (
-        <div role="alert" className="fixed bottom-4 left-1/2 z-[102] -translate-x-1/2 rounded-lg bg-red-950 px-4 py-3 text-sm text-red-100">
+      }
+      {(linkedMapError || routeMapCode && !mapCode) && !selectedMap &&
+      <div role="alert" className="fixed bottom-4 left-1/2 z-[102] -translate-x-1/2 rounded-lg bg-red-950 px-4 py-3 text-sm text-red-100">
           Carte introuvable. <button type="button" onClick={closeMap} className="underline">Fermer</button>
         </div>
-      )}
+      }
 
       {/* Detail modal */}
       <MapDetailModal
@@ -216,8 +216,8 @@ export default function FortniteMaps() {
           closeMap();
           setEditMap(m);
           setShowSubmit(true);
-        }}
-      />
+        }} />
+      
 
       {/* Edit modal */}
       <SubmitMapModal
@@ -228,8 +228,8 @@ export default function FortniteMaps() {
           setEditMap(null);
         }}
         onSuccess={fetchMaps}
-        userEmail={user?.email}
-      />
-    </div>
-  );
+        userEmail={user?.email} />
+      
+    </div>);
+
 }
