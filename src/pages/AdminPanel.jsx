@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Shield, Users, Ticket, AlertTriangle, FileCode, ShoppingBag, Store, BarChart3, Download, Megaphone, Dices, Gamepad2, Flag, Sticker, Star, Server, CreditCard, Boxes } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Bot, Shield, Users, Ticket, AlertTriangle, FileCode, ShoppingBag, Store, BarChart3, Download, Megaphone, Dices, Gamepad2, Flag, Sticker, Star, Server, CreditCard, Boxes } from "lucide-react";
 import HeaderActions from "@/components/layout/HeaderActions";
 import AdminUserList from "@/components/admin/AdminUserList";
 import AdminTicketList from "@/components/admin/AdminTicketList";
@@ -110,6 +110,7 @@ export default function AdminPanel() {
     { id: "nexus-servers", label: "Serveurs Nexus", icon: Server },
     { id: "broadcast", label: "Annonces", icon: Megaphone },
     { id: "fortnite", label: "Fortnite API", icon: Gamepad2, section: "Intégrations" },
+    { id: "live-bot", label: "Live - Bot", icon: Bot, path: "/live-bot" },
   ];
 
   return (
@@ -173,7 +174,7 @@ export default function AdminPanel() {
                     <p className="text-[8px] font-black uppercase tracking-widest text-white/20 px-3 pt-3 pb-1">{t.section}</p>
                   )}
                   <button
-                    onClick={() => setTab(t.id)}
+                    onClick={() => (t.path ? nav(t.path) : setTab(t.id))}
                     className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition ${tab === t.id ? "text-white" : "text-white/40 hover:text-white/60"}`}
                     style={tab === t.id ? { background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)" } : { background: "rgba(255,255,255,0.03)", border: "1px solid transparent" }}
                   >
@@ -182,6 +183,7 @@ export default function AdminPanel() {
                     {t.id === "tickets" && openTickets > 0 && (
                       <span className="ml-auto px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white" style={{ background: "#a855f7" }}>{openTickets}</span>
                     )}
+                    {t.path && <ArrowUpRight className="w-3 h-3 ml-auto opacity-40 shrink-0" />}
                   </button>
                 </React.Fragment>
               );

@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Bot, Hash, Twitch, Youtube } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "@/lib/AuthContext";
 import useBotIntegrations from "@/hooks/useBotIntegrations";
 import useBotOverview from "@/hooks/useBotOverview";
 import WorkerEndpoints from "@/components/live/bot/WorkerEndpoints";
@@ -18,6 +20,7 @@ const TABS = [
 ];
 
 export default function BotSettings() {
+  const { user } = useAuth();
   const { integrations, config, loading, reload } = useBotIntegrations();
   const { overview, reloadOverview } = useBotOverview();
   const [tab, setTab] = useState("twitch");
@@ -64,6 +67,8 @@ export default function BotSettings() {
       window.history.replaceState({}, "", "/live-bot");
     }
   }, []);
+
+  if (user && user.role !== "admin") return <Navigate to="/" replace />;
 
   const byPlatform = (platform) => integrations.find((item) => item.platform === platform) || null;
 
