@@ -1,0 +1,110 @@
+{
+  "name": "BotConfig",
+  "type": "object",
+  "properties": {
+    "owner_email": {
+      "type": "string",
+      "description": "Email de l'utilisateur Matrix propri\u00e9taire de la configuration"
+    },
+    "paused": {
+      "type": "boolean",
+      "default": false,
+      "description": "Interrupteur g\u00e9n\u00e9ral : bot en pause sur toutes les plateformes"
+    },
+    "test_requested_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date de la derni\u00e8re demande de message de test"
+    },
+    "discord_invite_url": {
+      "type": "string",
+      "description": "Lien OAuth2 d'invitation du bot Discord"
+    },
+    "discord_guild_id": {
+      "type": "string",
+      "description": "Identifiant du serveur Discord cible"
+    },
+    "discord_guild_name": {
+      "type": "string"
+    },
+    "discord_guild_icon": {
+      "type": "string"
+    },
+    "discord_member_count": {
+      "type": "number",
+      "default": 0
+    },
+    "discord_guilds": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "member_count": {
+            "type": "number",
+            "default": 0
+          },
+          "bot_present": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      },
+      "default": [],
+      "description": "Cache des serveurs Discord o\u00f9 le bot est pr\u00e9sent"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
+    }
+  },
+  "required": [
+    "owner_email"
+  ],
+  "rls": {
+    "create": {
+      "data.owner_email": "{{user.email}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

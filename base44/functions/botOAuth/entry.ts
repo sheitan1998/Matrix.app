@@ -85,6 +85,7 @@ async function saveIntegration(base44: any, owner: { id: string; email: string }
     platform,
     channel_id: channel.id,
     channel_name: channel.name,
+    channel_avatar_url: channel.avatar || existing?.channel_avatar_url || '',
     account_user_id: channel.accountId,
     account_mode: accountMode,
     enabled: true,
@@ -173,7 +174,7 @@ export default async function (req: Request): Promise<Response> {
         const account = (await userRes.json().catch(() => ({}))).data?.[0];
         if (!account) return redirectTo(req, 'error=twitch_profil_introuvable');
 
-        let channel = { id: account.id, name: account.display_name || account.login, accountId: account.id };
+        let channel = { id: account.id, name: account.display_name || account.login, accountId: account.id, avatar: account.profile_image_url || '' };
         if (state.mode === 'bot') {
           const login = String(state.target || '').trim().replace(/^@/, '');
           if (!login) return redirectTo(req, 'error=pseudo_streamer_manquant');
@@ -183,7 +184,7 @@ export default async function (req: Request): Promise<Response> {
           });
           const streamer = (await channelRes.json().catch(() => ({}))).data?.[0];
           if (!streamer) return redirectTo(req, 'error=chaine_twitch_introuvable');
-          channel = { id: streamer.id, name: streamer.display_name || streamer.login, accountId: account.id };
+          channel = { id: streamer.id, name: streamer.display_name || streamer.login, accountId: account.id, avatar: streamer.profile_image_url || '' };
         }
 
         await saveIntegration(base44, { id: state.uid, email: state.email }, 'twitch', channel, tokenData, state.mode === 'bot' ? 'bot' : 'own');
@@ -218,7 +219,12 @@ export default async function (req: Request): Promise<Response> {
           base44,
           { id: state.uid, email: state.email },
           'youtube',
-          { id: channelData.id, name: channelData.snippet?.title || 'YouTube', accountId: channelData.id },
+          {
+            id: channelData.id,
+            name: channelData.snippet?.title || 'YouTube',
+            accountId: channelData.id,
+            avatar: channelData.snippet?.thumbnails?.default?.url || '',
+          },
           tokenData,
           'own',
         );

@@ -20,7 +20,9 @@ export default function ConnectPlatformCard({ platform, busy, onConnect }) {
       return;
     }
     setError("");
-    onConnect(platform === "twitch" ? { action: "startTwitch", accountMode: mode, target } : { action: "startYouTube" });
+    onConnect(platform === "twitch"
+      ? { action: "startTwitch", accountMode: mode, target }
+      : { action: "startYouTube", accountMode: mode });
   };
 
   return (
@@ -35,48 +37,44 @@ export default function ConnectPlatformCard({ platform, busy, onConnect }) {
         </div>
       </div>
 
-      {platform === "twitch" && (
-        <div className="mt-4 space-y-3">
-          <div>
-            <BotLabel>Compte utilisé</BotLabel>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { key: "own", label: "Mon compte streamer" },
-                { key: "bot", label: "Compte bot modérateur" },
-              ].map((opt) => (
-                <button
-                  key={opt.key}
-                  type="button"
-                  onClick={() => { setMode(opt.key); setError(""); }}
-                  className="h-10 rounded-xl text-xs font-bold transition tap-sm"
-                  style={{
-                    background: mode === opt.key ? "rgba(168,85,247,0.2)" : "rgba(255,255,255,0.04)",
-                    border: `1px solid ${mode === opt.key ? "rgba(168,85,247,0.6)" : "rgba(255,255,255,0.1)"}`,
-                    color: mode === opt.key ? "#fff" : "rgba(255,255,255,0.5)",
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
+      <div className="mt-4">
+        <BotLabel>Compte utilisé</BotLabel>
+        <div className="grid grid-cols-2 gap-2">
+          {[
+            { key: "own", label: platform === "twitch" ? "Mon compte streamer" : "Mon compte créateur" },
+            { key: "bot", label: "Compte bot modérateur" },
+          ].map((opt) => (
+            <button
+              key={opt.key}
+              type="button"
+              onClick={() => { setMode(opt.key); setError(""); }}
+              className="h-10 rounded-xl text-xs font-bold transition tap-sm"
+              style={{
+                background: mode === opt.key ? "rgba(168,85,247,0.2)" : "rgba(255,255,255,0.04)",
+                border: `1px solid ${mode === opt.key ? "rgba(168,85,247,0.6)" : "rgba(255,255,255,0.1)"}`,
+                color: mode === opt.key ? "#fff" : "rgba(255,255,255,0.5)",
+              }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
-          {mode === "bot" && (
-            <div>
-              <BotLabel>Pseudo Twitch du streamer</BotLabel>
-              <input
-                value={target}
-                onChange={(e) => { setTarget(e.target.value); setError(""); }}
-                placeholder="ex : matrixgaming"
-                className={fieldClass}
-                style={fieldStyle}
-              />
-              <p className="mt-2 text-[11px] px-2.5 py-2 rounded-lg flex items-start gap-1.5" style={{ background: "rgba(234,179,8,0.1)", border: "1px solid rgba(234,179,8,0.3)", color: "#fde68a" }}>
-                <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                Ce compte doit être modérateur de la chaîne (commande /mod sur Twitch).
-              </p>
-            </div>
-          )}
+      {platform === "twitch" && mode === "bot" && (
+        <div className="mt-3">
+          <BotLabel>Pseudo Twitch du streamer</BotLabel>
+          <input
+            value={target}
+            onChange={(event) => { setTarget(event.target.value); setError(""); }}
+            placeholder="ex : matrixgaming"
+            className={fieldClass}
+            style={fieldStyle}
+          />
+          <p className="mt-2 text-[11px] px-2.5 py-2 rounded-lg flex items-start gap-1.5" style={{ background: "rgba(234,179,8,0.1)", border: "1px solid rgba(234,179,8,0.3)", color: "#fde68a" }}>
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+            Ce compte doit être modérateur de la chaîne (commande /mod sur Twitch).
+          </p>
         </div>
       )}
 

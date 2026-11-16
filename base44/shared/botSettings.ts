@@ -7,6 +7,34 @@ const ESCALATION = () => [
   { type: 'timeout', seconds: 600 },
 ];
 
+export const TWITCH_ALERTS = () => ({
+  follow: { enabled: false, message: 'Merci {user} pour le follow !' },
+  sub: { enabled: false, message: 'Merci {user} pour l’abonnement !' },
+  giftSub: { enabled: false, message: 'Merci pour le sub cadeau offert à la communauté !' },
+  raid: { enabled: false, minViewers: 5, message: 'Raid de {user} avec {viewers} viewers, on lâche des emotes !' },
+  bits: { enabled: false, message: 'Merci {user} pour les bits !' },
+});
+
+export const YOUTUBE_ALERTS = () => ({
+  member: { enabled: false, message: 'Bienvenue {user} dans la chaîne !' },
+  superChat: { enabled: false, message: 'Merci {user} pour le Super Chat !' },
+  superSticker: { enabled: false, message: 'Merci {user} pour le Super Sticker !' },
+});
+
+const FILTERS = () => ({
+  blacklist: { enabled: false, exempt: 'regulars', words: [], offenseWindowMinutes: 30, escalation: ESCALATION() },
+  caps: { enabled: false, exempt: 'regulars', minLength: 15, maxPercent: 70, offenseWindowMinutes: 30, escalation: ESCALATION() },
+  emotes: { enabled: false, exempt: 'regulars', maxEmotes: 10, offenseWindowMinutes: 30, escalation: ESCALATION() },
+  links: { enabled: false, exempt: 'regulars', whitelist: [], allowClips: false, offenseWindowMinutes: 30, escalation: ESCALATION() },
+  symbols: { enabled: false, exempt: 'regulars', minLength: 10, maxPercent: 50, maxConsecutive: 10, offenseWindowMinutes: 30, escalation: ESCALATION() },
+  repetitions: { enabled: false, exempt: 'regulars', maxSameMessages: 3, windowSeconds: 60, maxRepeatedChars: 15, maxRepeatedWords: 6, offenseWindowMinutes: 30, escalation: ESCALATION() },
+});
+
+const MODERATION = () => ({
+  action: 'delete',
+  warning: '{user}, ce message n’est pas autorisé ici.',
+});
+
 export function defaultSettings() {
   return {
     prefix: '!',
@@ -20,17 +48,21 @@ export function defaultSettings() {
       permit: { enabled: true, level: 'moderators', seconds: 60 },
     },
     commands: [],
-    filters: {
-      blacklist: { enabled: false, exempt: 'regulars', words: [], offenseWindowMinutes: 30, escalation: ESCALATION() },
-      caps: { enabled: false, exempt: 'regulars', minLength: 15, maxPercent: 70, offenseWindowMinutes: 30, escalation: ESCALATION() },
-      emotes: { enabled: false, exempt: 'regulars', maxEmotes: 10, offenseWindowMinutes: 30, escalation: ESCALATION() },
-      links: { enabled: false, exempt: 'regulars', whitelist: [], offenseWindowMinutes: 30, escalation: ESCALATION() },
-      symbols: { enabled: false, exempt: 'regulars', minLength: 10, maxPercent: 50, maxConsecutive: 10, offenseWindowMinutes: 30, escalation: ESCALATION() },
-      repetitions: { enabled: false, exempt: 'regulars', maxSameMessages: 3, windowSeconds: 60, maxRepeatedChars: 15, maxRepeatedWords: 6, offenseWindowMinutes: 30, escalation: ESCALATION() },
-    },
+    filters: FILTERS(),
+    moderation: MODERATION(),
     timers: [],
     timersOnlyWhenLive: true,
-    youtube: { videoId: '', liveChatEnabled: true, quotaLimit: 10000 },
+    alerts: TWITCH_ALERTS(),
+    youtube: {
+      videoId: '',
+      liveChatEnabled: true,
+      quotaLimit: 10000,
+      commands: [],
+      filters: FILTERS(),
+      moderation: MODERATION(),
+      timers: [],
+      alerts: YOUTUBE_ALERTS(),
+    },
     twitch: {
       liveAlertEnabled: false,
       liveAlertChannelId: '',
@@ -40,6 +72,27 @@ export function defaultSettings() {
       announceChannelId: '',
       announceLiveEnabled: false,
       announceMessage: '🔴 {channel} est en live sur {platform} : {link}',
+      announceMention: 'none',
+      announceEmbedTitle: '',
+      announceEmbedColor: '#a855f7',
+      announceShowThumbnail: true,
+      announceWatchButton: true,
+      announceDeleteAfterLive: false,
+      welcomeEnabled: false,
+      welcomeChannelId: '',
+      welcomeMessage: 'Bienvenue {user} sur {server} ! Nous sommes {memberCount} membres.',
+      welcomeRoleId: '',
+      moderationEnabled: false,
+      moderationLogChannelId: '',
+      moderationAntiInvite: true,
+      moderationAntiSpam: true,
+      moderationWords: [],
+      slashCommandsEnabled: true,
+      slashHelp: true,
+      slashLive: true,
+      slashRank: true,
+      slashClear: true,
+      customSlash: [],
       ticketChannelId: '',
       ticketPanelMessageId: '',
       ticketPanelTitle: 'Support Matrix',
@@ -68,9 +121,12 @@ const num = (value: any, min: number, max: number, fallback: number) => {
 
 const text = (value: any, max: number) => (typeof value === 'string' ? value.slice(0, max) : '');
 
-const LEVELS = ['everyone', 'regulars', 'moderators'];
+const bool = (value: any, fallback: boolean) => (typeof value === 'boolean' ? value : fallback);
+
+const LEVELS = ['everyone', 'subscribers', 'vips', 'regulars', 'moderators'];
 const EXEMPTS = ['regulars', 'subscribers', 'moderators'];
 const STEP_TYPES = ['delete', 'timeout', 'warn'];
+const ACTIONS = ['delete', 'timeout60', 'timeout300', 'timeout600', 'ban'];
 
 function sanitizeEscalation(steps: any) {
   return (Array.isArray(steps) ? steps : []).slice(0, 10).map((step: any) => ({
@@ -87,7 +143,10 @@ function sanitizeFilter(key: string, raw: any, base: any) {
   filter.offenseWindowMinutes = num(filter.offenseWindowMinutes, 1, 1440, 30);
   filter.escalation = sanitizeEscalation(filter.escalation);
   if (key === 'blacklist') filter.words = (Array.isArray(filter.words) ? filter.words : []).map((w: any) => text(String(w || '').trim(), 64)).filter(Boolean).slice(0, 500);
-  if (key === 'links') filter.whitelist = (Array.isArray(filter.whitelist) ? filter.whitelist : []).map((w: any) => text(String(w || '').trim(), 120)).filter(Boolean).slice(0, 200);
+  if (key === 'links') {
+    filter.whitelist = (Array.isArray(filter.whitelist) ? filter.whitelist : []).map((w: any) => text(String(w || '').trim(), 120)).filter(Boolean).slice(0, 200);
+    filter.allowClips = filter.allowClips === true;
+  }
   if (key === 'caps' || key === 'symbols') {
     filter.minLength = num(filter.minLength, 1, 500, key === 'caps' ? 15 : 10);
     filter.maxPercent = num(filter.maxPercent, 1, 100, key === 'caps' ? 70 : 50);
@@ -101,6 +160,72 @@ function sanitizeFilter(key: string, raw: any, base: any) {
     filter.maxRepeatedWords = num(filter.maxRepeatedWords, 1, 50, 6);
   }
   return filter;
+}
+
+function sanitizeFilters(raw: any) {
+  const base = FILTERS() as any;
+  const merged = isPlain(raw) ? raw : {};
+  const out: any = {};
+  for (const key of Object.keys(base)) out[key] = sanitizeFilter(key, merged[key], base[key]);
+  return out;
+}
+
+function sanitizeModeration(raw: any) {
+  const merged = deepMerge(MODERATION(), isPlain(raw) ? raw : {});
+  return {
+    action: ACTIONS.includes(merged.action) ? merged.action : 'delete',
+    warning: text(merged.warning, 300),
+  };
+}
+
+function sanitizeCommands(list: any) {
+  return (Array.isArray(list) ? list : []).map((cmd: any) => ({
+    name: String(cmd?.name || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 32),
+    response: text(cmd?.response, 400),
+    level: LEVELS.includes(cmd?.level) ? cmd.level : 'everyone',
+    enabled: cmd?.enabled !== false,
+    cooldown: cmd?.cooldown === null || cmd?.cooldown === '' || cmd?.cooldown === undefined
+      ? null
+      : num(cmd.cooldown, 0, 3600, 0),
+  })).filter((cmd: any) => cmd.name && cmd.response).slice(0, 200);
+}
+
+function sanitizeTimers(list: any) {
+  return (Array.isArray(list) ? list : []).map((timer: any, index: number) => ({
+    id: text(timer?.id, 40) || `timer-${index + 1}`,
+    name: text(timer?.name, 80) || `Minuteur ${index + 1}`,
+    messages: (Array.isArray(timer?.messages) ? timer.messages : [])
+      .map((m: any) => text(String(m || '').trim(), 400)).filter(Boolean).slice(0, 20),
+    intervalMinutes: num(timer?.intervalMinutes, 1, 1440, 15),
+    minLines: num(timer?.minLines, 0, 500, 5),
+    enabled: timer?.enabled !== false,
+  })).filter((timer: any) => timer.messages.length > 0).slice(0, 100);
+}
+
+function sanitizeAlerts(raw: any, base: any) {
+  const merged = deepMerge(base, isPlain(raw) ? raw : {});
+  const out: any = {};
+  for (const [key, def] of Object.entries(base as any)) {
+    const entry: any = isPlain((merged as any)[key]) ? (merged as any)[key] : {};
+    out[key] = { enabled: entry.enabled === true, message: text(entry.message, 300) };
+    if ('minViewers' in (def as any)) out[key].minViewers = num(entry.minViewers, 1, 100000, (def as any).minViewers);
+  }
+  return out;
+}
+
+function sanitizeYoutube(raw: any) {
+  const base = defaultSettings().youtube as any;
+  const merged = deepMerge(base, isPlain(raw) ? raw : {});
+  return {
+    videoId: text(String(merged.videoId || '').trim(), 40),
+    liveChatEnabled: merged.liveChatEnabled !== false,
+    quotaLimit: num(merged.quotaLimit, 0, 1000000, 10000),
+    commands: sanitizeCommands(merged.commands),
+    filters: sanitizeFilters(merged.filters),
+    moderation: sanitizeModeration(merged.moderation),
+    timers: sanitizeTimers(merged.timers),
+    alerts: sanitizeAlerts(merged.alerts, YOUTUBE_ALERTS()),
+  };
 }
 
 export function sanitizeSettings(input: any) {
@@ -123,53 +248,56 @@ export function sanitizeSettings(input: any) {
     };
   }
 
-  merged.commands = (Array.isArray(merged.commands) ? merged.commands : []).map((cmd: any) => ({
-    name: String(cmd?.name || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 32),
-    response: text(cmd?.response, 400),
-    level: LEVELS.includes(cmd?.level) ? cmd.level : 'everyone',
-    enabled: cmd?.enabled !== false,
-    cooldown: cmd?.cooldown === null || cmd?.cooldown === '' || cmd?.cooldown === undefined
-      ? null
-      : num(cmd.cooldown, 0, 3600, 0),
-  })).filter((cmd: any) => cmd.name && cmd.response).slice(0, 200);
-
-  const baseFilters = defaultSettings().filters as any;
-  merged.filters = merged.filters || {};
-  for (const key of Object.keys(baseFilters)) {
-    merged.filters[key] = sanitizeFilter(key, merged.filters[key], baseFilters[key]);
-  }
-
-  merged.timers = (Array.isArray(merged.timers) ? merged.timers : []).map((timer: any, index: number) => ({
-    id: text(timer?.id, 40) || `timer-${index + 1}`,
-    name: text(timer?.name, 80) || `Minuteur ${index + 1}`,
-    messages: (Array.isArray(timer?.messages) ? timer.messages : [])
-      .map((m: any) => text(String(m || '').trim(), 400)).filter(Boolean).slice(0, 20),
-    intervalMinutes: num(timer?.intervalMinutes, 1, 1440, 15),
-    minLines: num(timer?.minLines, 0, 500, 5),
-    enabled: timer?.enabled !== false,
-  })).filter((timer: any) => timer.messages.length > 0).slice(0, 100);
-
+  merged.commands = sanitizeCommands(merged.commands);
+  merged.filters = sanitizeFilters(merged.filters);
+  merged.moderation = sanitizeModeration(merged.moderation);
+  merged.timers = sanitizeTimers(merged.timers);
   merged.timersOnlyWhenLive = merged.timersOnlyWhenLive !== false;
+  merged.alerts = sanitizeAlerts(merged.alerts, TWITCH_ALERTS());
 
-  merged.youtube = merged.youtube || {};
-  merged.youtube.videoId = text(String(merged.youtube.videoId || '').trim(), 40);
-  merged.youtube.liveChatEnabled = merged.youtube.liveChatEnabled !== false;
-  merged.youtube.quotaLimit = num(merged.youtube.quotaLimit, 0, 1000000, 10000);
+  merged.youtube = sanitizeYoutube(merged.youtube);
 
   merged.twitch = merged.twitch || {};
   merged.twitch.liveAlertEnabled = merged.twitch.liveAlertEnabled === true;
   merged.twitch.liveAlertChannelId = text(String(merged.twitch.liveAlertChannelId || '').trim(), 64);
   merged.twitch.liveAlertMessage = text(merged.twitch.liveAlertMessage, 400);
 
-  merged.discord = merged.discord || {};
-  merged.discord.announceChannelId = text(String(merged.discord.announceChannelId || '').trim(), 64);
-  merged.discord.announceLiveEnabled = merged.discord.announceLiveEnabled === true;
-  merged.discord.announceMessage = text(merged.discord.announceMessage, 400);
-  merged.discord.ticketChannelId = text(String(merged.discord.ticketChannelId || '').trim(), 64);
-  merged.discord.ticketPanelMessageId = text(String(merged.discord.ticketPanelMessageId || '').trim(), 64);
-  merged.discord.ticketPanelTitle = text(merged.discord.ticketPanelTitle, 120);
-  merged.discord.ticketPanelDescription = text(merged.discord.ticketPanelDescription, 800);
-  merged.discord.ticketFixedPanel = merged.discord.ticketFixedPanel !== false;
+  const discord = deepMerge(defaultSettings().discord, isPlain(merged.discord) ? merged.discord : {});
+  merged.discord = {
+    announceChannelId: text(String(discord.announceChannelId || '').trim(), 64),
+    announceLiveEnabled: discord.announceLiveEnabled === true,
+    announceMessage: text(discord.announceMessage, 400),
+    announceMention: text(String(discord.announceMention || 'none').trim(), 64) || 'none',
+    announceEmbedTitle: text(discord.announceEmbedTitle, 120),
+    announceEmbedColor: /^#[0-9a-fA-F]{6}$/.test(String(discord.announceEmbedColor || '')) ? discord.announceEmbedColor : '#a855f7',
+    announceShowThumbnail: bool(discord.announceShowThumbnail, true),
+    announceWatchButton: bool(discord.announceWatchButton, true),
+    announceDeleteAfterLive: discord.announceDeleteAfterLive === true,
+    welcomeEnabled: discord.welcomeEnabled === true,
+    welcomeChannelId: text(String(discord.welcomeChannelId || '').trim(), 64),
+    welcomeMessage: text(discord.welcomeMessage, 400),
+    welcomeRoleId: text(String(discord.welcomeRoleId || '').trim(), 64),
+    moderationEnabled: discord.moderationEnabled === true,
+    moderationLogChannelId: text(String(discord.moderationLogChannelId || '').trim(), 64),
+    moderationAntiInvite: bool(discord.moderationAntiInvite, true),
+    moderationAntiSpam: bool(discord.moderationAntiSpam, true),
+    moderationWords: (Array.isArray(discord.moderationWords) ? discord.moderationWords : [])
+      .map((w: any) => text(String(w || '').trim(), 64)).filter(Boolean).slice(0, 200),
+    slashCommandsEnabled: bool(discord.slashCommandsEnabled, true),
+    slashHelp: bool(discord.slashHelp, true),
+    slashLive: bool(discord.slashLive, true),
+    slashRank: bool(discord.slashRank, true),
+    slashClear: bool(discord.slashClear, true),
+    customSlash: (Array.isArray(discord.customSlash) ? discord.customSlash : []).map((entry: any) => ({
+      name: String(entry?.name || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 32),
+      response: text(entry?.response, 400),
+    })).filter((entry: any) => entry.name && entry.response).slice(0, 50),
+    ticketChannelId: text(String(discord.ticketChannelId || '').trim(), 64),
+    ticketPanelMessageId: text(String(discord.ticketPanelMessageId || '').trim(), 64),
+    ticketPanelTitle: text(discord.ticketPanelTitle, 120),
+    ticketPanelDescription: text(discord.ticketPanelDescription, 800),
+    ticketFixedPanel: discord.ticketFixedPanel !== false,
+  };
 
   return merged;
 }

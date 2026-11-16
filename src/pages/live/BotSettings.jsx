@@ -3,7 +3,9 @@ import { Bot, Hash, Twitch, Youtube } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import useBotIntegrations from "@/hooks/useBotIntegrations";
+import useBotOverview from "@/hooks/useBotOverview";
 import WorkerEndpoints from "@/components/live/bot/WorkerEndpoints";
+import WorkerStatusBar from "@/components/live/bot/WorkerStatusBar";
 import TwitchBotTab from "@/components/live/bot/TwitchBotTab";
 import YouTubeBotTab from "@/components/live/bot/YouTubeBotTab";
 import DiscordBotTab from "@/components/live/bot/DiscordBotTab";
@@ -15,10 +17,13 @@ const TABS = [
 ];
 
 export default function BotSettings() {
-  const { integrations, loading, reload } = useBotIntegrations();
+  const { integrations, config, loading, reload } = useBotIntegrations();
+  const { overview, reloadOverview } = useBotOverview();
   const [tab, setTab] = useState("twitch");
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [refreshingGuilds, setRefreshingGuilds] = useState(false);
+  const [refreshingId, setRefreshingId] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -42,13 +47,16 @@ export default function BotSettings() {
     return res.data;
   };
 
-  const toggleEnabled = async (integration, enabled) => {
-    if (enabled && !window.confirm("Le bot peut supprimer des messages et exclure des spectateurs sur cette chaîne. Activer ?")) return;
+  const refreshAll = async () => {
+    await Promise.all([reload(), reloadOverview()]);
+  };
+
+  const togglePause = async (paused) => {
     setBusy(true);
     try {
-      await call({ action: "setEnabled", id: integration.id, enabled });
-      await reload();
-      toast.success(enabled ? "Bot activé" : "Bot désactivé");
+      await call({ action: "setPaused", paused });
+      await refreshAll();
+      toast.success(paused ? "Bot mis en pause sur toutes les plateformes" : "Bot activé, le worker relance les connexions");
     } catch {
       toast.error("Impossible de changer l'état du bot.");
     } finally {
@@ -56,12 +64,40 @@ export default function BotSettings() {
     }
   };
 
+  const testBot = async () => {
+    setBusy(true);
+    try {
+      const res = await call({ action: "test" });
+      await refreshAll();
+      if (res.count > 0) toast.success(`Message de test demandé sur ${res.count} plateforme(s)`);
+      else toast.error("Aucune plateforme active : connecte Twitch ou YouTube d'abord.");
+    } catch {
+      toast.error("Test impossible pour le moment.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const save = async (integration, settings) => {
+    if (!integration) return;
+    setSaving(true);
+    try {
+      await call({ action: "saveSettings", id: integration.id, patch: settings });
+      await refreshAll();
+      toast.success("Configuration enregistrée — le worker l'applique sous 30 secondes");
+    } catch {
+      toast.error("Enregistrement impossible.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const disconnect = async (integration) => {
-    if (!window.confirm("Déconnecter cette chaîne ? Les jetons d'accès seront supprimés.")) return;
+    if (!integration || !window.confirm("Déconnecter cette chaîne ? Les jetons d'accès seront supprimés.")) return;
     setBusy(true);
     try {
       await call({ action: "disconnect", id: integration.id });
-      await reload();
+      await refreshAll();
       toast.success("Chaîne déconnectée");
     } catch {
       toast.error("Déconnexion impossible.");
@@ -71,29 +107,16 @@ export default function BotSettings() {
   };
 
   const remove = async (integration) => {
-    if (!window.confirm("Supprimer définitivement cette intégration et ses réglages ?")) return;
+    if (!integration || !window.confirm("Supprimer définitivement cette intégration et ses réglages ?")) return;
     setBusy(true);
     try {
       await call({ action: "remove", id: integration.id });
-      await reload();
+      await refreshAll();
       toast.success("Intégration supprimée");
     } catch {
       toast.error("Suppression impossible.");
     } finally {
       setBusy(false);
-    }
-  };
-
-  const save = async (integration, settings) => {
-    setSaving(true);
-    try {
-      await call({ action: "saveSettings", id: integration.id, patch: settings });
-      await reload();
-      toast.success("Réglages enregistrés, le worker les applique sous 30 secondes");
-    } catch {
-      toast.error("Enregistrement impossible.");
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -114,7 +137,7 @@ export default function BotSettings() {
     setBusy(true);
     try {
       await call({ action: "createDiscord", ...payload });
-      await reload();
+      await refreshAll();
       toast.success("Serveur Discord enregistré");
     } catch {
       toast.error("Enregistrement impossible. Vérifie le nom du serveur.");
@@ -123,14 +146,72 @@ export default function BotSettings() {
     }
   };
 
-  const common = { busy, saving, onConnect: connect, onRemove: remove };
+  const refreshLive = async (integration) => {
+    if (!integration) return;
+    setRefreshingId(integration.id);
+    try {
+      const res = await call({ action: "refreshLive", id: integration.id });
+      await refreshAll();
+      toast.success(res.live ? `Live détecté${res.title ? ` : ${res.title}` : ""}` : "Aucun live en cours détecté");
+    } catch (error) {
+      toast.error(`Détection impossible : ${error.message}`);
+    } finally {
+      setRefreshingId("");
+    }
+  };
+
+  const callDiscord = async (payload) => {
+    const res = await base44.functions.invoke("botDiscord", payload);
+    if (res.data?.error) throw new Error(res.data.error);
+    return res.data;
+  };
+
+  const inviteDiscord = async () => {
+    setBusy(true);
+    try {
+      const res = await callDiscord({ action: "invite" });
+      if (res.url) window.open(res.url, "_blank", "noopener,noreferrer");
+      toast.success("Lien d'invitation Discord ouvert");
+    } catch {
+      toast.error("Bot Discord non configuré : ajoute le secret DISCORD_CLIENT_ID.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const refreshGuilds = async () => {
+    setRefreshingGuilds(true);
+    try {
+      const res = await callDiscord({ action: "servers" });
+      await refreshAll();
+      toast.success(`${res.guilds?.length || 0} serveur(s) disponible(s)`);
+    } catch {
+      toast.error("Bot Discord non configuré : ajoute le secret DISCORD_BOT_TOKEN.");
+    } finally {
+      setRefreshingGuilds(false);
+    }
+  };
+
+  const selectGuild = async (guildId) => {
+    setBusy(true);
+    try {
+      await call({ action: "selectDiscordServer", guildId });
+      await refreshAll();
+      toast.success("Serveur Discord associé au bot");
+    } catch {
+      toast.error("Impossible d'associer ce serveur.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const twitch = byPlatform("twitch");
   const youtube = byPlatform("youtube");
   const discord = byPlatform("discord");
 
   return (
     <div className="min-h-screen" style={{ background: "transparent" }}>
-      <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+      <div className="max-w-4xl mx-auto px-4 py-8 space-y-5">
         <header className="flex items-start gap-3">
           <div
             className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
@@ -145,6 +226,8 @@ export default function BotSettings() {
             </p>
           </div>
         </header>
+
+        <WorkerStatusBar overview={overview} busy={busy} onPause={togglePause} onTest={testBot} />
 
         <WorkerEndpoints />
 
@@ -182,29 +265,39 @@ export default function BotSettings() {
             {tab === "twitch" && (
               <TwitchBotTab
                 integration={twitch}
-                {...common}
-                onEnable={(enabled) => toggleEnabled(twitch, enabled)}
+                busy={busy}
+                saving={saving}
+                onConnect={connect}
                 onDisconnect={() => disconnect(twitch)}
+                onRemove={() => remove(twitch)}
                 onSave={(settings) => save(twitch, settings)}
               />
             )}
             {tab === "youtube" && (
               <YouTubeBotTab
                 integration={youtube}
-                {...common}
-                onEnable={(enabled) => toggleEnabled(youtube, enabled)}
+                busy={busy}
+                saving={saving}
+                onConnect={connect}
                 onDisconnect={() => disconnect(youtube)}
+                onRemove={() => remove(youtube)}
                 onSave={(settings) => save(youtube, settings)}
-                onOpenTwitch={() => setTab("twitch")}
+                onRefreshLive={() => refreshLive(youtube)}
+                refreshing={refreshingId === youtube?.id}
               />
             )}
             {tab === "discord" && (
               <DiscordBotTab
                 integration={discord}
+                config={config}
                 busy={busy}
                 saving={saving}
-                onRemove={() => remove(discord)}
+                refreshingGuilds={refreshingGuilds}
                 onSave={(settings) => save(discord, settings)}
+                onRemove={() => remove(discord)}
+                onInvite={inviteDiscord}
+                onRefreshGuilds={refreshGuilds}
+                onSelectGuild={selectGuild}
                 onCreate={createDiscord}
               />
             )}

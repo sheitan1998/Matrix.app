@@ -3,12 +3,14 @@ import { base44 } from "@/api/base44Client";
 
 export default function useBotIntegrations() {
   const [integrations, setIntegrations] = useState([]);
+  const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const reload = useCallback(async () => {
     try {
       const res = await base44.functions.invoke("botConfig", { action: "list" });
       setIntegrations(res.data?.integrations || []);
+      setConfig(res.data?.config || null);
     } finally {
       setLoading(false);
     }
@@ -18,5 +20,5 @@ export default function useBotIntegrations() {
     reload();
   }, [reload]);
 
-  return { integrations, loading, reload };
+  return { integrations, config, loading, reload };
 }

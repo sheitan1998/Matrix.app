@@ -45,7 +45,7 @@ export default function TimersEditor({ timers = [], onChange }) {
           </div>
 
           <div className="mt-2">
-            <BotLabel>Messages envoyés à tour de rôle</BotLabel>
+            <BotLabel>Message du minuteur</BotLabel>
             <textarea
               rows={3}
               value={(timer.messages || []).join("\n")}
@@ -69,7 +69,7 @@ export default function TimersEditor({ timers = [], onChange }) {
               />
             </div>
             <div>
-              <BotLabel>Lignes de chat minimum</BotLabel>
+              <BotLabel>Minimum de messages dans le chat</BotLabel>
               <input
                 type="number"
                 min={0}

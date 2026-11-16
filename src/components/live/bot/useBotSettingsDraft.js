@@ -19,5 +19,7 @@ export default function useBotSettingsDraft(integration) {
 
   const patchTop = (key, value) => setDraft((prev) => ({ ...(prev || {}), [key]: value }));
 
-  return { draft, setDraft, dirty, patchSection, patchTop };
+  const reset = () => setDraft(integration?.settings || null);
+
+  return { draft, setDraft, dirty, patchSection, patchTop, reset };
 }

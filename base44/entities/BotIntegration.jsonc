@@ -33,6 +33,10 @@
       "type": "string",
       "description": "Nom affich\u00e9 de la cha\u00eene ou du serveur"
     },
+    "channel_avatar_url": {
+      "type": "string",
+      "description": "Avatar de la cha\u00eene ou du serveur connect\u00e9"
+    },
     "account_user_id": {
       "type": "string",
       "description": "Identifiant du compte qui agit (Twitch)"
@@ -100,6 +104,11 @@
       "type": "string",
       "format": "date-time",
       "description": "Dernier message d'\u00e9tat re\u00e7u du worker"
+    },
+    "test_requested_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Demande de message de test lue par le worker"
     },
     "settings": {
       "type": "object",
