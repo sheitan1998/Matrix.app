@@ -24,8 +24,8 @@ export const OG_IMAGES = {
     "https://media.base44.com/images/public/69e14a987a927963a9924d5a/7443b35aa_generated_image.png",
 };
 
-export const OG_IMAGE_WIDTH = 1200;
-export const OG_IMAGE_HEIGHT = 630;
+export const OG_IMAGE_WIDTH = 1024;
+export const OG_IMAGE_HEIGHT = 1024;
 
 /** Alt text anglais décrivant chaque visuel OG. */
 export const OG_IMAGE_ALT = {
