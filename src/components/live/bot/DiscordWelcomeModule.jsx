@@ -1,6 +1,6 @@
 import React from "react";
 import BotSwitch from "./BotSwitch";
-import { BotLabel } from "./botUi";
+import { BotLabel, fieldStyle } from "./botUi";
 import DiscordChannelSelect from "./DiscordChannelSelect";
 import DiscordRoleSelect from "./DiscordRoleSelect";
 
