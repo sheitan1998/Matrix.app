@@ -71,6 +71,30 @@ const GENERIC = new Set([
   "image du jeu",
 ]);
 
+/** Noms anglais pour les alt génériques, afin de rester descriptif. */
+const GENERIC_NOUNS = {
+  avatar: "Profile picture",
+  logo: "Logo",
+  icon: "Icon",
+  thumbnail: "Thumbnail",
+  thumb: "Thumbnail",
+  preview: "Preview",
+  cover: "Cover image",
+  banner: "Banner",
+  background: "Background artwork",
+  photo: "Photo",
+  picture: "Picture",
+  image: "Image",
+  img: "Image",
+  upload: "Uploaded image",
+  uploaded: "Uploaded image",
+  file: "Uploaded file",
+  media: "Media",
+  visual: "Visual",
+  placeholder: "Placeholder image",
+  thumbnail_image: "Thumbnail",
+};
+
 const FRENCH_ALT = {
   vignette: "Thumbnail",
   "aperçu": "Preview",
@@ -117,6 +141,11 @@ export function contextualAlt(pathname, currentAlt) {
     return `${translated} from ${label}`;
   }
 
-  if (FRENCH_ALT[key] && key) return `${FRENCH_ALT[key]} from ${label}`;
+  const translated = FRENCH_ALT[key];
+  if (translated) return `${translated} from ${label}`;
+
+  const noun = GENERIC_NOUNS[key];
+  if (noun) return `${noun} from ${label}`;
+
   return `Screenshot of ${label}`;
 }
