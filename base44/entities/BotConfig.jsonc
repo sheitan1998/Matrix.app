@@ -96,6 +96,12 @@
       "default": {},
       "description": "message_id du panneau publi\u00e9 par cl\u00e9 (tickets, rules, roles) pour \u00e9diter sans doublon"
     },
+    "guilds": {
+      "type": "object",
+      "additionalProperties": true,
+      "default": {},
+      "description": "R\u00e9glages Discord par serveur : { [guildId]: { settings: { welcome, leave, boost, birthday }, dm, tickets, mod, levels } }"
+    },
     "pending_actions": {
       "type": "array",
       "items": {

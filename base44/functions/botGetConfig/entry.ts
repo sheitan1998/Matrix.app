@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { isBotRequestAuthorized, listOf, unauthorized } from '../../shared/botAuth.ts';
 import { sanitizeSettings } from '../../shared/botSettings.ts';
+import { buildGuildConfig } from '../../shared/guildConfig.ts';
 
 // GET /functions/botGetConfig — appelé par le worker.
 // Une entrée JSON propre par chaîne connectée : réglages complets (défauts inclus),
@@ -68,6 +69,7 @@ export default async function (req: Request): Promise<Response> {
     const byOwner = new Map<string, any>(discordIntegrations.map((item: any) => [item.owner_email, item]));
     const deliveredAt = new Date().toISOString();
     const discord = [];
+    const guilds: Record<string, any> = {};
     const pendingActions = [];
 
     for (const config of configs.slice(0, 200)) {
@@ -87,6 +89,16 @@ export default async function (req: Request): Promise<Response> {
         }
       }
 
+      // Réglages du serveur dans la structure exacte attendue par le bot.
+      const storedGuilds = config?.guilds && typeof config.guilds === 'object' && !Array.isArray(config.guilds)
+        ? config.guilds
+        : {};
+      guilds[String(config.discord_guild_id)] = buildGuildConfig(
+        integration?.settings || {},
+        config,
+        storedGuilds[config.discord_guild_id],
+      );
+
       discord.push({
         integrationId: integration?.id || '',
         ownerEmail: config.owner_email,
@@ -99,7 +111,7 @@ export default async function (req: Request): Promise<Response> {
       });
     }
 
-    return Response.json({ generatedAt: new Date().toISOString(), channels, discord, pendingActions });
+    return Response.json({ generatedAt: new Date().toISOString(), guilds, channels, discord, pendingActions });
   } catch (error) {
     return Response.json({ error: error instanceof Error ? error.message : 'Unexpected error' }, { status: 500 });
   }

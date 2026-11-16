@@ -185,7 +185,8 @@ export function panelPayload(panelKey: string, panel: any) {
         type: 2,
         style: 1,
         label: clip(panel?.buttonLabel, 80) || base.buttonLabel,
-        custom_id: `panel:${panelKey}`,
+        // Le bot Discord reconnaît l'ouverture de ticket sur ce custom_id exact.
+        custom_id: panelKey === 'tickets' ? 'tk:open' : `panel:${panelKey}`,
         ...emojiPart(panel?.buttonEmoji),
       }],
     });

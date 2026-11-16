@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { secrets } from 'base44:runtime';
 import { listOf } from '../../shared/botAuth.ts';
 import { sanitizeSettings } from '../../shared/botSettings.ts';
+import { buildGuildConfig } from '../../shared/guildConfig.ts';
 import {
   botGuildIds,
   buildAdminGuilds,
@@ -112,8 +113,9 @@ export default async function (req: Request): Promise<Response> {
         await base44.entities.BotIntegration.filter({ owner_email: user.email, platform: 'discord' }, { limit: 1 }),
       )[0];
 
+      let settings = integration?.settings || {};
       if (integration) {
-        const settings = sanitizeSettings({
+        settings = sanitizeSettings({
           ...(integration.settings || {}),
           discord: {
             ...((integration.settings || {}).discord || {}),
@@ -126,10 +128,21 @@ export default async function (req: Request): Promise<Response> {
         await base44.entities.BotIntegration.update(integration.id, { settings, updated_at: now });
       }
 
+      const nextPanels = {
+        ...storedPanels,
+        [panelKey]: { message_id: String(result.message.id), channel_id: channelId, published_at: now },
+      };
+
+      // Réglages serveur : le panneau publié (salon + message) est mémorisé pour le bot.
+      const storedGuilds = config?.guilds && typeof config.guilds === 'object' && !Array.isArray(config.guilds)
+        ? config.guilds
+        : {};
+
       await saveConfig({
-        discord_panels: {
-          ...storedPanels,
-          [panelKey]: { message_id: String(result.message.id), channel_id: channelId, published_at: now },
+        discord_panels: nextPanels,
+        guilds: {
+          ...storedGuilds,
+          [guildId]: buildGuildConfig(settings, { ...config, discord_panels: nextPanels }, storedGuilds[guildId]),
         },
       });
 
