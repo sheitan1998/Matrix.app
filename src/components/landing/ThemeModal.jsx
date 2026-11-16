@@ -287,7 +287,7 @@ export default function ThemeModal({ open, onClose }) {
                             <div className="space-y-3">
                               {prefs.bgImageUrl && (
                                 <div className="relative w-full h-24 rounded-xl overflow-hidden" style={{ background: "#0a050f" }}>
-                                  <img src={prefs.bgImageUrl} alt="Fond" className="w-full h-full object-cover" />
+                                  <img src={prefs.bgImageUrl} alt="Selected Matrix Hub profile background artwork" className="w-full h-full object-cover" />
                                   <button
                                     onClick={() => updatePrefs({ bgImageUrl: "" })}
                                     className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center tap-sm"

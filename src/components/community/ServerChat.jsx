@@ -374,7 +374,7 @@ export default function ServerChat({ server, channel, theme, user, access }) {
                   ) : null}
                   {msg.type === "file" && msg.file_url ? (
                     msg.file_url.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i) ? (
-                      <img src={msg.file_url} alt="Uploaded" className="max-w-xs max-h-64 rounded-xl mb-1 border border-white/10" />
+                      <img src={msg.file_url} alt="Image shared in this Matrix Hub community chat message" className="max-w-xs max-h-64 rounded-xl mb-1 border border-white/10" />
                     ) : (
                       <a href={msg.file_url} target="_blank" rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 px-3 py-2 rounded-xl mb-1 transition hover:opacity-80"

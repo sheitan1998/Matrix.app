@@ -72,7 +72,7 @@ export default function RouletteDealer({ message, number, scale = 100 }) {
 
         <img
           src={DEALER_IMAGE}
-          alt="Croupière Nexus"
+          alt="Nexus casino roulette dealer welcoming players at the table"
           className="relative h-auto w-full object-contain"
           style={{
             filter: 'drop-shadow(0 22px 38px rgba(0,0,0,0.5))',

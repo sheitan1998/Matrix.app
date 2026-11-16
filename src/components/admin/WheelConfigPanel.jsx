@@ -209,7 +209,7 @@ export default function WheelConfigPanel() {
         {config.title_image && (
           <>
             <div className="rounded-xl p-3 text-center" style={{ background: "rgba(0,0,0,0.3)" }}>
-              <img src={config.title_image} alt="Aperçu titre" className="h-auto mx-auto" style={{ maxHeight: 100 }} />
+              <img src={config.title_image} alt="Wheel of Fortune title artwork preview" className="h-auto mx-auto" style={{ maxHeight: 100 }} />
             </div>
             <div>
               <label className="text-[10px] font-bold text-white/50 mb-1 block">Échelle ({config.title_image_scale ?? 100}%)</label>

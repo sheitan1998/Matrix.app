@@ -29,16 +29,17 @@ export default function CreatorProfile() {
   useEffect(() => {
     if (data?.creator) {
       const c = data.creator;
-      const fullName = c.pseudo || "Créateur";
-      document.title = `${fullName} — Créateur MATRIX`;
-      setMeta("description", `${c.bio || `Profil de ${fullName} sur MATRIX`}. Niveau ${c.level}, ${c.badge_count} badges, ${formatTrix(c.total_trix_received)} TRIX reçus.`);
-      setMeta("og:title", `${fullName} — Créateur MATRIX`);
-      setMeta("og:description", c.bio || `Découvrez le profil de ${fullName} sur MATRIX`);
+      const fullName = c.pseudo || "Creator";
+      document.title = `${fullName} — Creator profile | Matrix Hub`;
+      setMeta("description", `${c.bio || `${fullName}'s creator profile on Matrix Hub`}. Level ${c.level}, ${c.badge_count} badges, ${formatTrix(c.total_trix_received)} TRIX earned.`);
+      setMeta("og:title", `${fullName} — Creator profile | Matrix Hub`);
+      setMeta("og:description", c.bio || `Discover ${fullName}'s streaming and gaming profile on Matrix Hub`);
       setMeta("og:type", "profile");
       if (c.avatar_url) setMeta("og:image", c.avatar_url);
+      if (c.avatar_url) setMeta("og:image:alt", `${fullName} creator avatar on Matrix Hub`);
     }
     return () => {
-      document.title = "MATRIX";
+      document.title = "Matrix Hub";
     };
   }, [data]);
 

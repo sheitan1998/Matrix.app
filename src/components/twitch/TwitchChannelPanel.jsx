@@ -43,7 +43,7 @@ export default function TwitchChannelPanel({ login }) {
     <div className="rounded-2xl bg-[#0f0b1a] border border-[#2a1f3e] overflow-hidden">
       <div className="relative h-32 sm:h-44 bg-gradient-to-br from-[#1a0f2e] to-[#0a0714]">
         {user.offline_image_url && (
-          <img src={user.offline_image_url} alt="Bannière" className="w-full h-full object-cover" />
+          <img src={user.offline_image_url} alt={`${user.display_name || user.login || "Twitch channel"} channel banner when offline`} className="w-full h-full object-cover" />
         )}
         {isLive && (
           <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ef4444] text-white text-xs font-bold animate-pulse">

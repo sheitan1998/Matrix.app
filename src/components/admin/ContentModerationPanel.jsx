@@ -197,7 +197,7 @@ export default function ContentModerationPanel() {
                   {report.content_preview && (
                     <div className="mt-2 p-2 rounded-lg" style={{ background: "rgba(0,0,0,0.3)" }}>
                       {report.content_preview.startsWith("http") ? (
-                        <img src={report.content_preview} alt="Aperçu" className="max-h-32 rounded-lg" />
+                        <img src={report.content_preview} alt="Reported content preview under Matrix Hub moderation review" className="max-h-32 rounded-lg" />
                       ) : (
                         <p className="text-xs text-white/50 italic">"{report.content_preview}"</p>
                       )}

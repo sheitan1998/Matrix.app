@@ -73,7 +73,7 @@ export default function ReportContentModal({ open, onClose, contentType, content
           {contentPreview && (
             <div className="p-2 rounded-lg" style={{ background: "rgba(0,0,0,0.3)" }}>
               {contentPreview.startsWith("http") ? (
-                <img src={contentPreview} alt="Aperçu" className="max-h-24 rounded-lg" />
+                <img src={contentPreview} alt="Preview of the content being reported on Matrix Hub" className="max-h-24 rounded-lg" />
               ) : (
                 <p className="text-xs text-white/50 italic truncate">"{contentPreview}"</p>
               )}

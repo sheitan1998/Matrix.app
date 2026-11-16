@@ -21,8 +21,8 @@ import SeoContentBlock from "@/components/seo/SeoContentBlock";
 
 export default function Prospecteurs() {
   usePageSEO({
-    title: "Best Serveur — Annuaire des serveurs de jeu | Matrix Hub",
-    description: "Classement et annuaire des meilleurs serveurs de jeu francophones : serveurs Nexus et Discord, catégories, votes, recrutement de joueurs et petites annonces communautaires.",
+    title: "Best Serveur — Game server directory | Matrix Hub",
+    description: "Browse and vote for the best game servers: Nexus and Discord communities, categories, player recruitment and community ads.",
     path: "/best-serveurs"
   });
   const navigate = useNavigate();

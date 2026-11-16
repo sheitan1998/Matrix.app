@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import ParamRedirect from '@/components/ParamRedirect';
 import RouteSEO from '@/components/seo/RouteSEO';
+import ImageAltEnforcer from '@/components/seo/ImageAltEnforcer';
 import LanguageBridge from '@/components/profile/LanguageBridge';
 import AuthGate from '@/components/AuthGate';
 import Login from '@/pages/Login';
@@ -163,6 +164,7 @@ const AuthenticatedApp = () => {
   return (
     <>
       <RouteSEO />
+      <ImageAltEnforcer />
       <LanguageBridge />
       <ProgressionProvider>
       <NotificationProvider>

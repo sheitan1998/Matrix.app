@@ -9,7 +9,7 @@ export default function NexusHero({ bannerUrl, search, onSearchChange, onSubmit,
       
       <img
         src={bannerUrl}
-        alt="Nexus Game — des milliers de jeux, une seule plateforme"
+        alt="Nexus Game online catalogue with thousands of playable games on one platform"
         className="w-full h-[240px] sm:h-[300px] object-cover" />
       
       <div

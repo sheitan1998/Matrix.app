@@ -40,7 +40,7 @@ export default function DynamicPage() {
 
       setPage(p);
       // Set SEO
-      document.title = p.seo_title || `${p.title} — Matrix`;
+      document.title = p.seo_title || `${p.title} — Matrix Hub`;
       setLoading(false);
     }).catch(() => {
       setNotFound(true);

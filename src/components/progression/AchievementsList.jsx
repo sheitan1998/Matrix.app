@@ -60,7 +60,7 @@ export default function AchievementsList() {
               {/* Trophy image */}
               <div className="w-16 h-16 shrink-0 flex items-center justify-center"
                 style={{ filter: isClaimed ? 'drop-shadow(0 0 8px rgba(0,242,255,0.5))' : 'opacity(0.9)' }}>
-                <img src={a.icon} alt="Trophée" className="w-16 h-16 object-contain" />
+                <img src={a.icon} alt="Matrix Hub achievement trophy icon" className="w-16 h-16 object-contain" />
               </div>
 
               {/* Name + progress */}

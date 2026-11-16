@@ -54,7 +54,7 @@ export default function GTA6() {
         >
           <img
             src={GTA6_KEY_ART}
-            alt="Affiche officielle Grand Theft Auto VI"
+            alt="Official Grand Theft Auto VI key art poster"
             className="absolute inset-0 w-full h-full object-cover opacity-35 pointer-events-none"
           />
           <div

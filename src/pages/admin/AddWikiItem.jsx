@@ -180,7 +180,7 @@ export default function AddWikiItem() {
               >
                 {thumbnailUrl ? (
                   <div className="relative">
-                    <img src={thumbnailUrl} alt="Vignette" className="w-full h-40 object-contain" />
+                    <img src={thumbnailUrl} alt="Thumbnail preview of the Matrix Hub wiki item" className="w-full h-40 object-contain" />
                     <button
                       type="button"
                       onClick={() => setThumbnailUrl("")}
@@ -221,7 +221,7 @@ export default function AddWikiItem() {
               >
                 {specSheetUrl ? (
                   <div className="relative">
-                    <img src={specSheetUrl} alt="Fiche technique" className="w-full h-40 object-contain" />
+                    <img src={specSheetUrl} alt="Spec sheet preview of the Matrix Hub wiki item" className="w-full h-40 object-contain" />
                     <button
                       type="button"
                       onClick={() => setSpecSheetUrl("")}

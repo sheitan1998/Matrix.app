@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { SITE_URL, SITE_NAME, DEFAULT_IMAGE } from "@/lib/seoRoutes";
+import { SITE_URL, SITE_NAME, SITE_LOCALE, DEFAULT_IMAGE } from "@/lib/seoRoutes";
+import { pickOgImage, pickOgImageAlt, OG_IMAGE_WIDTH, OG_IMAGE_HEIGHT } from "@/lib/ogImages";
 
 function upsertMeta(attr, key, content) {
   let el = document.querySelector(`meta[${attr}="${key}"]`);
@@ -23,12 +24,14 @@ function upsertLink(rel, href) {
 
 /**
  * usePageSEO — sets title, description, canonical, OpenGraph, Twitter and JSON-LD
- * for the current public page.
+ * for the current public page. Every page gets a valid OpenGraph image: the
+ * route's thematic visual, then the site default.
  * @param {object} opts
  * @param {string} [opts.title]       Full <title> (format: "Page — Matrix Hub")
  * @param {string} [opts.description] Unique meta description
  * @param {string} [opts.path]        Canonical path (defaults to the current URL)
  * @param {string} [opts.image]       OpenGraph image
+ * @param {string} [opts.imageAlt]    English description of the OpenGraph image
  * @param {string} [opts.type]        og:type
  * @param {boolean} [opts.noindex]    Keep the page out of search results
  * @param {object} [opts.schema]      JSON-LD object for this page
@@ -38,6 +41,7 @@ export default function usePageSEO({
   description,
   path,
   image,
+  imageAlt,
   type = "website",
   noindex = false,
   schema,
@@ -50,7 +54,7 @@ export default function usePageSEO({
     );
 
     upsertMeta("property", "og:site_name", SITE_NAME);
-    upsertMeta("property", "og:locale", "fr_FR");
+    upsertMeta("property", "og:locale", SITE_LOCALE);
     upsertMeta("name", "twitter:card", "summary_large_image");
 
     if (!title && !description) return;
@@ -66,14 +70,21 @@ export default function usePageSEO({
       upsertMeta("name", "twitter:description", description);
     }
 
-    const canonical = SITE_URL + (path || window.location.pathname);
+    const currentPath = path || window.location.pathname;
+    const canonical = SITE_URL + currentPath;
     upsertLink("canonical", canonical);
     upsertMeta("property", "og:url", canonical);
     upsertMeta("property", "og:type", type);
 
-    const ogImage = image || DEFAULT_IMAGE;
+    const ogImage = image || pickOgImage(currentPath) || DEFAULT_IMAGE;
+    const ogImageAlt = imageAlt || pickOgImageAlt(currentPath);
     upsertMeta("property", "og:image", ogImage);
+    upsertMeta("property", "og:image:secure_url", ogImage);
+    upsertMeta("property", "og:image:width", String(OG_IMAGE_WIDTH));
+    upsertMeta("property", "og:image:height", String(OG_IMAGE_HEIGHT));
+    upsertMeta("property", "og:image:alt", ogImageAlt);
     upsertMeta("name", "twitter:image", ogImage);
+    upsertMeta("name", "twitter:image:alt", ogImageAlt);
 
     const scriptId = "matrix-page-jsonld";
     let script = document.getElementById(scriptId);
@@ -88,5 +99,5 @@ export default function usePageSEO({
     } else if (script) {
       script.remove();
     }
-  }, [title, description, path, image, type, noindex, schema]);
+  }, [title, description, path, image, imageAlt, type, noindex, schema]);
 }

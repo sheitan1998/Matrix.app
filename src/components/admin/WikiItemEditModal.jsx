@@ -131,7 +131,7 @@ export default function WikiItemEditModal({ item, onClose, onSaved }) {
               <div className="relative rounded-lg border border-dashed border-white/10 overflow-hidden" style={{ background: "#1a1a1a" }}>
                 {thumbnailUrl ? (
                   <div className="relative">
-                    <img src={thumbnailUrl} alt="Vignette" className="w-full h-36 object-contain" />
+                    <img src={thumbnailUrl} alt="Thumbnail preview of the Matrix Hub wiki item" className="w-full h-36 object-contain" />
                     <button type="button" onClick={() => setThumbnailUrl("")} className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 text-white text-xs flex items-center justify-center hover:bg-red-500/80">✕</button>
                   </div>
                 ) : (
@@ -149,7 +149,7 @@ export default function WikiItemEditModal({ item, onClose, onSaved }) {
               <div className="relative rounded-lg border border-dashed border-white/10 overflow-hidden" style={{ background: "#1a1a1a" }}>
                 {specSheetUrl ? (
                   <div className="relative">
-                    <img src={specSheetUrl} alt="Fiche technique" className="w-full h-36 object-contain" />
+                    <img src={specSheetUrl} alt="Spec sheet preview of the Matrix Hub wiki item" className="w-full h-36 object-contain" />
                     <button type="button" onClick={() => setSpecSheetUrl("")} className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 text-white text-xs flex items-center justify-center hover:bg-red-500/80">✕</button>
                   </div>
                 ) : (

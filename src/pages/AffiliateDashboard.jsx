@@ -47,7 +47,7 @@ export default function AffiliateDashboard() {
       <div className="max-w-4xl mx-auto px-4 py-5 space-y-6">
         {/* Hero visuel principal */}
         <div className="relative rounded-3xl overflow-hidden" style={{ border: "1px solid rgba(168,85,247,0.3)", boxShadow: "0 0 50px rgba(168,85,247,0.2)" }}>
-          <img src={HERO_IMAGE} alt="Partenariat & Affiliation" className="w-full h-[260px] sm:h-[360px] object-cover object-center" />
+          <img src={HERO_IMAGE} alt="Matrix Hub partnership and affiliate programme banner" className="w-full h-[260px] sm:h-[360px] object-cover object-center" />
           <div
             className="absolute inset-0"
             style={{ background: "linear-gradient(to top, rgba(5,2,10,0.96) 0%, rgba(5,2,10,0.5) 52%, rgba(5,2,10,0.12) 100%)" }}

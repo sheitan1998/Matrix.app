@@ -229,7 +229,7 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
                 style={{ background: `linear-gradient(135deg, ${current.color}, #1a0a2e)`, boxShadow: `0 0 12px ${current.color}50`, border: "1px solid rgba(255,255,255,0.12)" }}
               >
                 {previewAvatar ? (
-                  <img src={previewAvatar} alt="Logo de la chaîne" className="w-full h-full object-cover" />
+                  <img src={previewAvatar} alt="Channel logo preview for this Matrix Hub creator profile" className="w-full h-full object-cover" />
                 ) : (
                   name?.[0]?.toUpperCase() || <ImageOff className="w-4 h-4 text-white/40" />
                 )}

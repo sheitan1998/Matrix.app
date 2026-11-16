@@ -19,8 +19,8 @@ const score = (c) => (c.votes_month || 0) + (c.boosts || 0) * 2;
 
 export default function BestCreator() {
   usePageSEO({
-    title: "Best Creator — Classement des créateurs YouTube et Twitch | Matrix Hub",
-    description: "Découvrez et votez pour les meilleurs créateurs de contenu YouTube, Twitch, TikTok, Instagram et Snapchat. Classements mensuels, boosts et chaînes à explorer sur Matrix Hub.",
+    title: "Best Creator — YouTube and Twitch creator rankings | Matrix Hub",
+    description: "Discover and vote for the best content creators on YouTube, Twitch, TikTok, Instagram and Snapchat with monthly Matrix Hub rankings.",
     path: "/best-creator",
   });
 
