@@ -1,8 +1,16 @@
 import React from "react";
 import BotSwitch from "./BotSwitch";
 import { fieldClass, fieldStyle, BotLabel } from "./botUi";
+import DiscordChannelSelect from "./DiscordChannelSelect";
+import DiscordRoleSelect from "./DiscordRoleSelect";
 
-export default function DiscordAnnounceModule({ discord = {}, onChange }) {
+const MENTIONS = [
+  { value: "none", label: "Aucune mention" },
+  { value: "everyone", label: "@everyone" },
+  { value: "here", label: "@here" },
+];
+
+export default function DiscordAnnounceModule({ discord = {}, onChange, resources, guildId }) {
   const set = (patch) => onChange(patch);
 
   return (
@@ -19,22 +27,24 @@ export default function DiscordAnnounceModule({ discord = {}, onChange }) {
           <div className="grid gap-2 sm:grid-cols-2">
             <div>
               <BotLabel>Salon d'annonce</BotLabel>
-              <input
-                value={discord.announceChannelId || ""}
-                onChange={(event) => set({ announceChannelId: event.target.value })}
-                placeholder="#annonces-live ou ID du salon"
-                className={fieldClass}
-                style={fieldStyle}
+              <DiscordChannelSelect
+                value={discord.announceChannelId}
+                onChange={(announceChannelId) => set({ announceChannelId })}
+                resources={resources}
+                guildId={guildId}
+                placeholder="#annonces-live"
               />
             </div>
             <div>
               <BotLabel>Rôle à mentionner</BotLabel>
-              <input
-                value={discord.announceMention || ""}
-                onChange={(event) => set({ announceMention: event.target.value })}
-                placeholder="@everyone, @here ou ID du rôle"
-                className={fieldClass}
-                style={fieldStyle}
+              <DiscordRoleSelect
+                value={discord.announceMention || "none"}
+                onChange={(announceMention) => set({ announceMention: announceMention || "none" })}
+                resources={resources}
+                guildId={guildId}
+                allowNone={false}
+                extras={MENTIONS}
+                placeholder="Aucune mention"
               />
             </div>
           </div>

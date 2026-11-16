@@ -93,6 +93,11 @@ export function defaultSettings() {
       slashRank: true,
       slashClear: true,
       customSlash: [],
+      panels: {
+        tickets: { channelId: '', title: 'Support Matrix', description: 'Ouvre un ticket, un membre de l’équipe te répondra.', color: '#5865f2', buttonLabel: 'Ouvrir un ticket', buttonEmoji: '🎫' },
+        rules: { channelId: '', title: 'Règlement du serveur', description: 'Merci de lire et respecter ces règles.', color: '#22c55e', buttonLabel: 'J’accepte le règlement', buttonEmoji: '✅' },
+        roles: { channelId: '', title: 'Choisis tes rôles', description: 'Sélectionne le rôle qui te correspond.', color: '#a855f7', placeholder: 'Choisis ton rôle', options: [] },
+      },
       ticketChannelId: '',
       ticketPanelMessageId: '',
       ticketPanelTitle: 'Support Matrix',
@@ -213,6 +218,50 @@ function sanitizeAlerts(raw: any, base: any) {
   return out;
 }
 
+function sanitizePanels(raw: any) {
+  const base = defaultSettings().discord.panels as any;
+  const merged = deepMerge(base, isPlain(raw) ? raw : {});
+  const hex = (value: any, fallback: string) => (/^#[0-9a-fA-F]{6}$/.test(String(value || '')) ? String(value) : fallback);
+  const channel = (value: any) => text(String(value || '').trim().replace(/\D/g, ''), 25);
+
+  return {
+    tickets: {
+      channelId: channel(merged?.tickets?.channelId),
+      title: text(merged?.tickets?.title, 120) || base.tickets.title,
+      description: text(merged?.tickets?.description, 1800) || base.tickets.description,
+      color: hex(merged?.tickets?.color, base.tickets.color),
+      buttonLabel: text(merged?.tickets?.buttonLabel, 80) || base.tickets.buttonLabel,
+      buttonEmoji: text(merged?.tickets?.buttonEmoji, 32),
+      messageId: text(String(merged?.tickets?.messageId || '').replace(/\D/g, ''), 25),
+    },
+    rules: {
+      channelId: channel(merged?.rules?.channelId),
+      title: text(merged?.rules?.title, 120) || base.rules.title,
+      description: text(merged?.rules?.description, 1800) || base.rules.description,
+      color: hex(merged?.rules?.color, base.rules.color),
+      buttonLabel: text(merged?.rules?.buttonLabel, 80) || base.rules.buttonLabel,
+      buttonEmoji: text(merged?.rules?.buttonEmoji, 32),
+      messageId: text(String(merged?.rules?.messageId || '').replace(/\D/g, ''), 25),
+    },
+    roles: {
+      channelId: channel(merged?.roles?.channelId),
+      title: text(merged?.roles?.title, 120) || base.roles.title,
+      description: text(merged?.roles?.description, 1800) || base.roles.description,
+      color: hex(merged?.roles?.color, base.roles.color),
+      placeholder: text(merged?.roles?.placeholder, 100) || base.roles.placeholder,
+      messageId: text(String(merged?.roles?.messageId || '').replace(/\D/g, ''), 25),
+      options: (Array.isArray(merged?.roles?.options) ? merged.roles.options : [])
+        .map((option: any) => ({
+          roleId: text(String(option?.roleId || '').replace(/\D/g, ''), 25),
+          label: text(option?.label, 80),
+          emoji: text(option?.emoji, 32),
+        }))
+        .filter((option: any) => option.roleId)
+        .slice(0, 25),
+    },
+  };
+}
+
 function sanitizeYoutube(raw: any) {
   const base = defaultSettings().youtube as any;
   const merged = deepMerge(base, isPlain(raw) ? raw : {});
@@ -292,6 +341,7 @@ export function sanitizeSettings(input: any) {
       name: String(entry?.name || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 32),
       response: text(entry?.response, 400),
     })).filter((entry: any) => entry.name && entry.response).slice(0, 50),
+    panels: sanitizePanels(discord.panels),
     ticketChannelId: text(String(discord.ticketChannelId || '').trim(), 64),
     ticketPanelMessageId: text(String(discord.ticketPanelMessageId || '').trim(), 64),
     ticketPanelTitle: text(discord.ticketPanelTitle, 120),

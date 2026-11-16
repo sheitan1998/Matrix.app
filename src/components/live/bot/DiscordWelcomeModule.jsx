@@ -1,8 +1,10 @@
 import React from "react";
 import BotSwitch from "./BotSwitch";
-import { fieldClass, fieldStyle, BotLabel } from "./botUi";
+import { BotLabel } from "./botUi";
+import DiscordChannelSelect from "./DiscordChannelSelect";
+import DiscordRoleSelect from "./DiscordRoleSelect";
 
-export default function DiscordWelcomeModule({ discord = {}, onChange }) {
+export default function DiscordWelcomeModule({ discord = {}, onChange, resources, guildId }) {
   const set = (patch) => onChange(patch);
 
   return (
@@ -19,22 +21,22 @@ export default function DiscordWelcomeModule({ discord = {}, onChange }) {
           <div className="grid gap-2 sm:grid-cols-2">
             <div>
               <BotLabel>Salon de bienvenue</BotLabel>
-              <input
-                value={discord.welcomeChannelId || ""}
-                onChange={(event) => set({ welcomeChannelId: event.target.value })}
-                placeholder="#bienvenue ou ID du salon"
-                className={fieldClass}
-                style={fieldStyle}
+              <DiscordChannelSelect
+                value={discord.welcomeChannelId}
+                onChange={(welcomeChannelId) => set({ welcomeChannelId })}
+                resources={resources}
+                guildId={guildId}
+                placeholder="#bienvenue"
               />
             </div>
             <div>
               <BotLabel>Rôle attribué automatiquement</BotLabel>
-              <input
-                value={discord.welcomeRoleId || ""}
-                onChange={(event) => set({ welcomeRoleId: event.target.value })}
-                placeholder="ID du rôle"
-                className={fieldClass}
-                style={fieldStyle}
+              <DiscordRoleSelect
+                value={discord.welcomeRoleId}
+                onChange={(welcomeRoleId) => set({ welcomeRoleId })}
+                resources={resources}
+                guildId={guildId}
+                placeholder="Choisir un rôle"
               />
             </div>
           </div>

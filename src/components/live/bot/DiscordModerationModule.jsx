@@ -1,9 +1,10 @@
 import React from "react";
 import BotSwitch from "./BotSwitch";
 import TagListInput from "./TagListInput";
-import { fieldClass, fieldStyle, BotLabel } from "./botUi";
+import { BotLabel } from "./botUi";
+import DiscordChannelSelect from "./DiscordChannelSelect";
 
-export default function DiscordModerationModule({ discord = {}, onChange }) {
+export default function DiscordModerationModule({ discord = {}, onChange, resources, guildId }) {
   const set = (patch) => onChange(patch);
 
   return (
@@ -19,12 +20,12 @@ export default function DiscordModerationModule({ discord = {}, onChange }) {
         <>
           <div>
             <BotLabel>Salon des logs</BotLabel>
-            <input
-              value={discord.moderationLogChannelId || ""}
-              onChange={(event) => set({ moderationLogChannelId: event.target.value })}
-              placeholder="#logs-modération ou ID du salon"
-              className={fieldClass}
-              style={fieldStyle}
+            <DiscordChannelSelect
+              value={discord.moderationLogChannelId}
+              onChange={(moderationLogChannelId) => set({ moderationLogChannelId })}
+              resources={resources}
+              guildId={guildId}
+              placeholder="#logs-modération"
             />
           </div>
 

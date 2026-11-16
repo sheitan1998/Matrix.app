@@ -1,11 +1,20 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { secrets } from 'base44:runtime';
 import { listOf } from '../../shared/botAuth.ts';
+import { sanitizeSettings } from '../../shared/botSettings.ts';
+import {
+  botGuildIds,
+  buildAdminGuilds,
+  fetchGuildResources,
+  inviteUrl,
+  panelPayload,
+  sendPanelMessage,
+  userGuilds,
+} from '../../shared/discordApi.ts';
 
-// Connexion Discord du bot : lien d'invitation + serveurs où le bot est présent.
-// Isolée de botConfig pour que la page reste fonctionnelle si Discord n'est pas configuré.
-const DISCORD_API = 'https://discord.com/api/v10';
-const DISCORD_PERMISSIONS = '1099780287510';
+// Discord du bot : invitation, serveurs admin de l'utilisateur connecté,
+// salons/rôles d'un serveur et publication des panneaux (tickets, règlement, rôles).
+const PANEL_KEYS = ['tickets', 'rules', 'roles'];
 
 export default async function (req: Request): Promise<Response> {
   try {
@@ -17,61 +26,120 @@ export default async function (req: Request): Promise<Response> {
     const action = String(body?.action || '');
     const now = new Date().toISOString();
 
-    const existing = listOf(
+    const clientId = secrets.get('DISCORD_CLIENT_ID') || '';
+    const botToken = secrets.get('DISCORD_BOT_TOKEN') || '';
+
+    const config = listOf(
       await base44.entities.BotConfig.filter({ owner_email: user.email }, { limit: 1 }),
     )[0] || null;
 
-    const save = async (patch: Record<string, any>) => {
-      if (existing) return await base44.entities.BotConfig.update(existing.id, { ...patch, updated_at: now });
-      return await base44.entities.BotConfig.create({ owner_email: user.email, ...patch, updated_at: now });
+    const saveConfig = async (patch: Record<string, any>) => {
+      const payload = { ...patch, updated_at: now };
+      if (config) return await base44.entities.BotConfig.update(config.id, payload);
+      return await base44.entities.BotConfig.create({ owner_email: user.email, ...payload });
     };
 
     if (action === 'invite') {
-      const clientId = secrets.get('DISCORD_CLIENT_ID');
       if (!clientId) return Response.json({ error: 'discord_non_configure' }, { status: 400 });
-      const url = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&permissions=${DISCORD_PERMISSIONS}&scope=bot%20applications.commands`;
-      await save({ discord_invite_url: url });
+      const guildId = String(body?.guildId || '').replace(/\D/g, '');
+      const url = inviteUrl(clientId, guildId);
+      await saveConfig({ discord_invite_url: url });
       return Response.json({ url });
     }
 
+    if (!config?.discord_user_id) return Response.json({ error: 'user_not_connected' }, { status: 400 });
+    if (!botToken) return Response.json({ error: 'discord_non_configure' }, { status: 400 });
+
+    const accessToken = String(config.discord_access_token || '');
+    const expiresAt = Number(config.discord_token_expires_at) || 0;
+    if (!accessToken || expiresAt < Date.now() + 60000) {
+      return Response.json({ error: 'user_token_expired' }, { status: 400 });
+    }
+
+    const adminGuildIds = new Set(
+      (Array.isArray(config.discord_guilds) ? config.discord_guilds : [])
+        .filter((guild: any) => guild?.admin !== false)
+        .map((guild: any) => String(guild.id)),
+    );
+
+    const canManageGuild = (guildId: string) => (
+      !!guildId && (adminGuildIds.has(guildId) || (!adminGuildIds.size && config?.discord_guild_id === guildId))
+    );
+
     if (action === 'servers') {
-      const token = secrets.get('DISCORD_BOT_TOKEN');
-      if (!token) return Response.json({ error: 'discord_non_configure', guilds: [] }, { status: 400 });
-
-      const guildRes = await fetch(`${DISCORD_API}/users/@me/guilds`, {
-        headers: { Authorization: `Bot ${token}` },
-        signal: AbortSignal.timeout(15000),
+      const list = await userGuilds(accessToken).catch((error) => {
+        throw error;
       });
-      const guildData = await guildRes.json().catch(() => []);
-      if (!guildRes.ok) return Response.json({ error: 'discord_refused', guilds: [] }, { status: 502 });
-
-      const list = Array.isArray(guildData) ? guildData.slice(0, 12) : [];
-      const guilds = await Promise.all(list.map(async (guild: any) => {
-        let memberCount = 0;
-        try {
-          const detail = await fetch(`${DISCORD_API}/guilds/${guild.id}?with_counts=true`, {
-            headers: { Authorization: `Bot ${token}` },
-            signal: AbortSignal.timeout(10000),
-          }).then((res) => res.json());
-          memberCount = Number(detail?.approximate_member_count) || Number(detail?.member_count) || 0;
-        } catch {
-          memberCount = 0;
-        }
-        return {
-          id: String(guild.id),
-          name: guild.name || 'Serveur Discord',
-          icon: guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128` : '',
-          member_count: memberCount,
-          bot_present: true,
-        };
-      }));
-
-      await save({ discord_guilds: guilds });
+      const present = await botGuildIds(botToken).catch(() => new Set<string>());
+      const guilds = await buildAdminGuilds(list, botToken, present);
+      await saveConfig({ discord_guilds: guilds });
       return Response.json({ guilds });
+    }
+
+    const guildId = String(body?.guildId || '').replace(/\D/g, '');
+    if (!guildId) return Response.json({ error: 'guild_required' }, { status: 400 });
+    if (!canManageGuild(guildId)) return Response.json({ error: 'guild_not_allowed' }, { status: 403 });
+
+    if (action === 'resources') {
+      const resources = await fetchGuildResources(guildId, botToken);
+      return Response.json(resources);
+    }
+
+    if (action === 'publishPanel') {
+      const panelKey = String(body?.panelKey || '');
+      if (!PANEL_KEYS.includes(panelKey)) return Response.json({ error: 'panel_invalid' }, { status: 400 });
+
+      const panel = body?.panel && typeof body.panel === 'object' ? body.panel : {};
+      const channelId = String(panel?.channelId || '').replace(/\D/g, '');
+      if (!channelId) return Response.json({ error: 'channel_required' }, { status: 400 });
+
+      const storedPanels = config?.discord_panels && typeof config.discord_panels === 'object' ? config.discord_panels : {};
+      const previous = storedPanels[panelKey];
+      const messageId = previous && String(previous.channel_id) === channelId ? String(previous.message_id || '') : '';
+
+      const result = await sendPanelMessage({
+        token: botToken,
+        channelId,
+        messageId,
+        payload: panelPayload(panelKey, panel),
+      });
+
+      if (result.error) {
+        return Response.json({ error: result.error, detail: result.detail || '', panelKey }, { status: 400 });
+      }
+
+      const integration = listOf(
+        await base44.entities.BotIntegration.filter({ owner_email: user.email, platform: 'discord' }, { limit: 1 }),
+      )[0];
+
+      if (integration) {
+        const settings = sanitizeSettings({
+          ...(integration.settings || {}),
+          discord: {
+            ...((integration.settings || {}).discord || {}),
+            panels: {
+              ...(((integration.settings || {}).discord || {}).panels || {}),
+              [panelKey]: { ...panel, messageId: String(result.message.id) },
+            },
+          },
+        });
+        await base44.entities.BotIntegration.update(integration.id, { settings, updated_at: now });
+      }
+
+      await saveConfig({
+        discord_panels: {
+          ...storedPanels,
+          [panelKey]: { message_id: String(result.message.id), channel_id: channelId, published_at: now },
+        },
+      });
+
+      return Response.json({ messageId: String(result.message.id), channelId, panelKey });
     }
 
     return Response.json({ error: `Unknown action: ${action}` }, { status: 400 });
   } catch (error) {
-    return Response.json({ error: error instanceof Error ? error.message : 'Unexpected error' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Unexpected error';
+    const known = ['missing_access', 'bot_not_in_guild', 'bot_refused', 'user_token_expired', 'discord_refused'];
+    return Response.json({ error: known.includes(message) ? message : 'discord_error', detail: message }, { status: 400 });
   }
 }

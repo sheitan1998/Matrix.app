@@ -9,6 +9,7 @@ import WorkerStatusBar from "@/components/live/bot/WorkerStatusBar";
 import TwitchBotTab from "@/components/live/bot/TwitchBotTab";
 import YouTubeBotTab from "@/components/live/bot/YouTubeBotTab";
 import DiscordBotTab from "@/components/live/bot/DiscordBotTab";
+import { discordErrorMessage } from "@/lib/discordErrors";
 
 const TABS = [
   { key: "twitch", label: "Twitch", icon: Twitch, color: "#a855f7" },
@@ -24,9 +25,34 @@ export default function BotSettings() {
   const [saving, setSaving] = useState(false);
   const [refreshingGuilds, setRefreshingGuilds] = useState(false);
   const [refreshingId, setRefreshingId] = useState("");
+  const [publishingKey, setPublishingKey] = useState("");
+  const redirectUri = `${window.location.origin}/live-bot`;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    const state = params.get("state");
+
+    if (code) {
+      setTab("discord");
+      window.history.replaceState({}, "", "/live-bot");
+      (async () => {
+        setBusy(true);
+        try {
+          const res = await base44.functions.invoke("discordOAuth", { action: "callback", code, state, redirectUri });
+          if (res.data?.error) throw new Error(res.data.error);
+          await Promise.all([reload(), reloadOverview()]);
+          const name = res.data?.user?.name ? ` (${res.data.user.name})` : "";
+          toast.success(`Compte Discord connecté${name} · ${res.data?.guilds?.length || 0} serveur(s) administrateur`);
+        } catch (error) {
+          toast.error(discordErrorMessage(error?.response?.data?.error || error?.message));
+        } finally {
+          setBusy(false);
+        }
+      })();
+      return;
+    }
+
     const connected = params.get("connected");
     const error = params.get("error");
     if (connected) {
@@ -133,19 +159,6 @@ export default function BotSettings() {
     }
   };
 
-  const createDiscord = async (payload) => {
-    setBusy(true);
-    try {
-      await call({ action: "createDiscord", ...payload });
-      await refreshAll();
-      toast.success("Serveur Discord enregistré");
-    } catch {
-      toast.error("Enregistrement impossible. Vérifie le nom du serveur.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const refreshLive = async (integration) => {
     if (!integration) return;
     setRefreshingId(integration.id);
@@ -160,20 +173,66 @@ export default function BotSettings() {
     }
   };
 
-  const callDiscord = async (payload) => {
-    const res = await base44.functions.invoke("botDiscord", payload);
+  const callDiscord = async (payload, retry = true) => {
+    try {
+      const res = await base44.functions.invoke("botDiscord", payload);
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data;
+    } catch (error) {
+      const code = error?.response?.data?.error || error?.message;
+      if (retry && code === "user_token_expired") {
+        await base44.functions.invoke("discordOAuth", { action: "refresh" });
+        return callDiscord(payload, false);
+      }
+      throw error;
+    }
+  };
+
+  const callDiscordOAuth = async (payload) => {
+    const res = await base44.functions.invoke("discordOAuth", payload);
     if (res.data?.error) throw new Error(res.data.error);
     return res.data;
   };
 
-  const inviteDiscord = async () => {
+  const discordFailure = (error) => error?.response?.data?.error || error?.message || "discord_error";
+
+  const connectDiscordUser = async () => {
     setBusy(true);
     try {
-      const res = await callDiscord({ action: "invite" });
+      const res = await callDiscordOAuth({ action: "authUrl", redirectUri });
+      if (res.url) {
+        window.location.href = res.url;
+        return;
+      }
+      throw new Error("discord_oauth_non_configure");
+    } catch (error) {
+      toast.error(discordErrorMessage(discordFailure(error)));
+      setBusy(false);
+    }
+  };
+
+  const disconnectDiscordUser = async () => {
+    if (!window.confirm("Déconnecter ton compte Discord ? Les serveurs administrateur ne seront plus listés.")) return;
+    setBusy(true);
+    try {
+      await callDiscordOAuth({ action: "disconnectUser" });
+      await refreshAll();
+      toast.success("Compte Discord déconnecté");
+    } catch (error) {
+      toast.error(discordErrorMessage(discordFailure(error)));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const inviteDiscord = async (guildId) => {
+    setBusy(true);
+    try {
+      const res = await callDiscord({ action: "invite", guildId });
       if (res.url) window.open(res.url, "_blank", "noopener,noreferrer");
-      toast.success("Lien d'invitation Discord ouvert");
-    } catch {
-      toast.error("Bot Discord non configuré : ajoute le secret DISCORD_CLIENT_ID.");
+      toast.success(guildId ? "Invitation du bot ouverte pour ce serveur" : "Lien d'invitation Discord ouvert");
+    } catch (error) {
+      toast.error(discordErrorMessage(discordFailure(error)));
     } finally {
       setBusy(false);
     }
@@ -184,9 +243,9 @@ export default function BotSettings() {
     try {
       const res = await callDiscord({ action: "servers" });
       await refreshAll();
-      toast.success(`${res.guilds?.length || 0} serveur(s) disponible(s)`);
-    } catch {
-      toast.error("Bot Discord non configuré : ajoute le secret DISCORD_BOT_TOKEN.");
+      toast.success(`${res.guilds?.length || 0} serveur(s) administrateur`);
+    } catch (error) {
+      toast.error(discordErrorMessage(discordFailure(error)));
     } finally {
       setRefreshingGuilds(false);
     }
@@ -198,10 +257,30 @@ export default function BotSettings() {
       await call({ action: "selectDiscordServer", guildId });
       await refreshAll();
       toast.success("Serveur Discord associé au bot");
-    } catch {
-      toast.error("Impossible d'associer ce serveur.");
+    } catch (error) {
+      toast.error(discordErrorMessage(discordFailure(error)));
     } finally {
       setBusy(false);
+    }
+  };
+
+  const publishPanel = async (panelKey, panel) => {
+    const integration = byPlatform("discord");
+    if (!integration?.channel_id) {
+      toast.error("Choisis d'abord un serveur Discord.");
+      return;
+    }
+    setPublishingKey(panelKey);
+    try {
+      await callDiscord({ action: "publishPanel", guildId: integration.channel_id, panelKey, panel });
+      await refreshAll();
+      toast.success("Panneau publié sur Discord");
+    } catch (error) {
+      toast.error(discordErrorMessage(discordFailure(error)), {
+        description: "Vérifie que le bot a « Voir le salon », « Envoyer des messages » et « Intégrer des liens » dans ce salon.",
+      });
+    } finally {
+      setPublishingKey("");
     }
   };
 
@@ -293,12 +372,16 @@ export default function BotSettings() {
                 busy={busy}
                 saving={saving}
                 refreshingGuilds={refreshingGuilds}
+                publishingKey={publishingKey}
+                redirectUri={redirectUri}
                 onSave={(settings) => save(discord, settings)}
                 onRemove={() => remove(discord)}
                 onInvite={inviteDiscord}
                 onRefreshGuilds={refreshGuilds}
                 onSelectGuild={selectGuild}
-                onCreate={createDiscord}
+                onConnectUser={connectDiscordUser}
+                onDisconnectUser={disconnectDiscordUser}
+                onPublish={publishPanel}
               />
             )}
           </>

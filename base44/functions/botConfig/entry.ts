@@ -46,8 +46,28 @@ export default async function (req: Request): Promise<Response> {
         inviteUrl: config?.discord_invite_url || '',
         guildId: config?.discord_guild_id || '',
         guilds: Array.isArray(config?.discord_guilds) ? config.discord_guilds : [],
+        user: {
+          id: config?.discord_user_id || '',
+          name: config?.discord_user_name || '',
+          avatar: config?.discord_user_avatar || '',
+          connected: !!config?.discord_user_id,
+        },
+        panels: config?.discord_panels && typeof config.discord_panels === 'object' ? config.discord_panels : {},
+        pending: (Array.isArray(config?.pending_actions) ? config.pending_actions : [])
+          .filter((entry: any) => entry?.status !== 'delivered')
+          .slice(-20),
       },
     });
+
+    // File d'attente lue par le worker (botGetConfig) : chaque réglage enregistré
+    // laisse une action à appliquer côté Discord.
+    const queuePending = async (entry: Record<string, any>) => {
+      const config = await loadConfig();
+      const existing = Array.isArray(config?.pending_actions) ? config.pending_actions : [];
+      await saveConfig({
+        pending_actions: [...existing, { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, status: 'pending', created_at: now, ...entry }].slice(-30),
+      });
+    };
 
     if (action === 'list') {
       const page = await base44.entities.BotIntegration.filter(
@@ -242,6 +262,8 @@ export default async function (req: Request): Promise<Response> {
         ? await base44.entities.BotIntegration.update(existing.id, fields)
         : await base44.entities.BotIntegration.create(fields);
 
+      await queuePending({ type: 'guild', label: `Serveur ${guild.name}`, guild_id: guild.id });
+
       return Response.json({ integration: stripSecrets(integration) });
     }
 
@@ -250,6 +272,9 @@ export default async function (req: Request): Promise<Response> {
       if (!record) return Response.json({ error: 'not_found' }, { status: 404 });
       const settings = sanitizeSettings(deepMerge(record.settings || {}, body?.patch || {}));
       const saved = await base44.entities.BotIntegration.update(record.id, { settings, updated_at: now });
+      if (record.platform === 'discord') {
+        await queuePending({ type: 'settings', label: 'Réglages Discord', guild_id: record.channel_id || '' });
+      }
       return Response.json({ integration: stripSecrets(saved) });
     }
 

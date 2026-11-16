@@ -34,6 +34,31 @@
       "type": "number",
       "default": 0
     },
+    "discord_user_id": {
+      "type": "string",
+      "description": "Identifiant du compte Discord connect\u00e9 via OAuth2 (identify + guilds)"
+    },
+    "discord_user_name": {
+      "type": "string"
+    },
+    "discord_user_avatar": {
+      "type": "string"
+    },
+    "discord_access_token": {
+      "type": "string",
+      "description": "Jeton OAuth2 utilisateur \u2014 jamais renvoy\u00e9 au navigateur"
+    },
+    "discord_refresh_token": {
+      "type": "string"
+    },
+    "discord_token_expires_at": {
+      "type": "number",
+      "default": 0
+    },
+    "discord_oauth_state": {
+      "type": "string",
+      "description": "Valeur anti-CSRF du dernier d\u00e9marrage OAuth Discord"
+    },
     "discord_guilds": {
       "type": "array",
       "items": {
@@ -54,12 +79,62 @@
           },
           "bot_present": {
             "type": "boolean",
+            "default": false
+          },
+          "admin": {
+            "type": "boolean",
             "default": true
           }
         }
       },
       "default": [],
-      "description": "Cache des serveurs Discord o\u00f9 le bot est pr\u00e9sent"
+      "description": "Serveurs Discord o\u00f9 l'utilisateur connect\u00e9 est propri\u00e9taire ou administrateur"
+    },
+    "discord_panels": {
+      "type": "object",
+      "additionalProperties": true,
+      "default": {},
+      "description": "message_id du panneau publi\u00e9 par cl\u00e9 (tickets, rules, roles) pour \u00e9diter sans doublon"
+    },
+    "pending_actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "guild_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "delivered"
+            ],
+            "enumColors": [
+              "yellow",
+              "green"
+            ],
+            "default": "pending"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "delivered_at": {
+            "type": "string"
+          }
+        }
+      },
+      "default": [],
+      "description": "File d'actions Discord lue par le worker via botGetConfig"
     },
     "updated_at": {
       "type": "string",
