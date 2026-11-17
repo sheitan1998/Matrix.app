@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { fetchAllServers, fetchUniverseServers, detectServerType, slugify } from "@/lib/serverDirectory";
+import { fetchAllServers, detectServerType, slugify } from "@/lib/serverDirectory";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Plus, Server as ServerIcon, Trophy, Bell } from "lucide-react";
+import { ArrowLeft, Plus, Server as ServerIcon, Trophy, Bell, X } from "lucide-react";
 import { toast } from "sonner";
 import ProspecteursHeader from "@/components/prospecteurs/ProspecteursHeader";
 import ProspecteursSidebar from "@/components/prospecteurs/ProspecteursSidebar";
@@ -28,14 +28,19 @@ export default function Prospecteurs() {
     path: "/best-serveurs"
   });
   const navigate = useNavigate();
+  // Deep links: /best-serveurs?view=list&category=<slug>&tag=<tag>&q=<search>
+  const urlParams = useMemo(() => new URLSearchParams(window.location.search), []);
+  const [view, setView] = useState(() =>
+    urlParams.get("view") === "list" || urlParams.get("tag") || urlParams.get("category") ? "list" : "categories"
+  );
   const [user, setUser] = useState(null);
   const [ads, setAds] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState(() => urlParams.get("category") || null);
+  const [search, setSearch] = useState(() => urlParams.get("q") || "");
   const [sortBy, setSortBy] = useState("votes_month");
-  const [tagFilter, setTagFilter] = useState("");
+  const [tagFilter, setTagFilter] = useState(() => urlParams.get("tag") || "");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createType, setCreateType] = useState("server");
   const [createServerType, setCreateServerType] = useState("nexus");
@@ -132,6 +137,25 @@ export default function Prospecteurs() {
 
   // All categories shown in unified view
   const tabCategories = useMemo(() => categories, [categories]);
+
+  const activeCategoryName = categories.find((c) => c.slug === selectedCategory)?.name || "";
+
+  // Switch to the full server list view (optionally filtered)
+  const openServerList = ({ category = null, tag = "", query = "" } = {}) => {
+    setSelectedCategory(category);
+    setTagFilter(tag);
+    setSearch(query);
+    setView("list");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const backToCategories = () => {
+    setView("categories");
+    setSearch("");
+    setTagFilter("");
+    setSelectedCategory(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const handleVote = (adId, data) => {
     setAds((prev) => prev.map((a) => a.id === adId ? {
@@ -303,6 +327,18 @@ export default function Prospecteurs() {
               <span className="text-[9px] text-white/40 ml-1">· Nexus & Discord réunis</span>
             </div>
             <button
+              onClick={() => (view === "list" ? backToCategories() : openServerList())}
+              className="h-10 px-3 sm:px-4 rounded-xl text-xs font-black tracking-wider uppercase transition flex items-center justify-center gap-1.5 tap-sm"
+              style={view === "list"
+                ? { background: "rgba(255,255,255,0.06)", color: "#fff", border: "1px solid rgba(255,255,255,0.16)" }
+                : { background: "rgba(168,85,247,0.18)", color: "#e9d5ff", border: "1px solid rgba(168,85,247,0.45)", boxShadow: "0 0 14px rgba(168,85,247,0.22)" }}
+              title={view === "list" ? "Revenir à la grille des catégories" : "Afficher la liste complète des serveurs"}>
+              
+              {view === "list" ? <ArrowLeft className="w-4 h-4" /> : <ListIcon className="w-4 h-4" />}
+              <span className="hidden sm:inline">{view === "list" ? "Retour aux catégories" : "Tous les serveurs"}</span>
+              <span className="sm:hidden">{view === "list" ? "Catégories" : "Serveurs"}</span>
+            </button>
+            <button
               onClick={() => setShowReminder(true)}
               className="h-10 px-3 rounded-xl text-xs font-black tracking-wider uppercase transition flex items-center justify-center gap-1.5 tap-sm"
               style={{ background: "rgba(138,79,255,0.12)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.25)" }}
@@ -322,82 +358,116 @@ export default function Prospecteurs() {
             </button>
           </div>
 
-          {/* Category grid */}
-          <div className="mb-5">
-            <div className="flex items-center gap-2 mb-3">
-              <h2 className="text-xs font-black tracking-wider uppercase text-white">
-                Catégories
-              </h2>
-              <span className="text-[9px] text-white/40 ml-auto">
-                {tabCategories.length} catégorie{tabCategories.length !== 1 ? "s" : ""}
-              </span>
+          {/* Category grid — default view */}
+          {view === "categories" && (
+            <div className="mb-5">
+              <div className="flex items-center gap-2 mb-3">
+                <h2 className="text-xs font-black tracking-wider uppercase text-white">
+                  Catégories
+                </h2>
+                <span className="text-[9px] text-white/40 ml-auto">
+                  {tabCategories.length} catégorie{tabCategories.length !== 1 ? "s" : ""}
+                </span>
+              </div>
+              <CategoryGrid
+                categories={tabCategories}
+                selectedSlug={null}
+                onSelect={(slug) => openServerList({ category: slug })}
+                serverCounts={serverCounts}
+                loading={loading} />
+              
             </div>
-            <CategoryGrid
-              categories={tabCategories}
-              selectedSlug={selectedCategory}
-              onSelect={(slug) => {
-                if (slug) {
-                  navigate(`/best-serveurs/category/${slug}`);
-                } else {
-                  setSelectedCategory(null);
+          )}
+
+          {/* Server list view */}
+          {view === "list" && (
+            <div className="mb-5">
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <button
+                  onClick={backToCategories}
+                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[10px] font-bold text-white transition hover:opacity-90 tap-sm"
+                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)" }}>
+                  
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  Retour aux catégories
+                </button>
+                {activeCategoryName &&
+                <button
+                  onClick={() => setSelectedCategory(null)}
+                  className="inline-flex items-center gap-1 h-8 px-3 rounded-lg text-[10px] font-bold transition hover:opacity-90 tap-sm"
+                  style={{ background: "rgba(168,85,247,0.15)", color: "#e9d5ff", border: "1px solid rgba(168,85,247,0.35)" }}
+                  title="Retirer le filtre de catégorie">
+                  
+                  {activeCategoryName}
+                  <X className="w-3 h-3" />
+                </button>
                 }
-              }}
-              serverCounts={serverCounts}
-              loading={loading} />
-            
-          </div>
+              </div>
 
-          {/* Server list with search + sort */}
-          <div className="mb-5">
-            <div className="flex items-center gap-2 mb-3">
-              <h2 className="text-xs font-black tracking-wider uppercase text-white">Tous les serveurs</h2>
-              <span className="text-[9px] text-white/40 ml-auto">
-                {sortedServers.length} serveur{sortedServers.length !== 1 ? "s" : ""}
-              </span>
-            </div>
-            <div className="mb-4">
-              <ServerSearchBar
-                search={search}
-                onSearchChange={setSearch}
-                sortBy={sortBy}
-                onSortChange={setSortBy}
-                resultCount={sortedServers.length}
-                activeTag={tagFilter}
-                onClearTag={() => setTagFilter("")}
-              />
-            </div>
+              <div className="flex items-center gap-2 mb-3">
+                <div
+                  className="h-9 px-4 rounded-xl flex items-center gap-2"
+                  style={{ background: "rgba(168,85,247,0.10)", border: "1px solid rgba(168,85,247,0.25)" }}>
+                  
+                  <ListIcon className="w-4 h-4" style={{ color: "#a855f7" }} />
+                  <h2 className="text-xs font-black tracking-wider uppercase text-white">Tous les serveurs</h2>
+                </div>
+                <span className="text-[9px] text-white/40 ml-auto">
+                  {sortedServers.length} serveur{sortedServers.length !== 1 ? "s" : ""}
+                </span>
+              </div>
 
-            {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="h-48 rounded-xl animate-pulse" style={{ background: "rgba(138,79,255,0.05)" }} />
-                ))}
+              <div className="mb-4">
+                <ServerSearchBar
+                  search={search}
+                  onSearchChange={setSearch}
+                  sortBy={sortBy}
+                  onSortChange={setSortBy}
+                  resultCount={sortedServers.length}
+                  activeTag={tagFilter}
+                  onClearTag={() => setTagFilter("")}
+                />
               </div>
-            ) : sortedServers.length === 0 ? (
-              <div className="rounded-xl p-8 text-center" style={{ background: "rgba(18,9,28,0.4)", border: "1px dashed rgba(138,79,255,0.15)" }}>
-                <ServerIcon className="w-8 h-8 mx-auto mb-2 text-white/20" />
-                <p className="text-xs text-white/40">Aucun serveur pour le moment</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {sortedServers.map((server, i) => (
-                  <ServerDirectoryCard
-                    key={server.id}
-                    server={server}
-                    rank={i + 1}
-                    onVote={handleVote}
-                    onDelete={handleDeleteAd}
-                    onEdit={handleEditAd}
-                    onCategoryClick={(categorySlug) => {
-                      if (categorySlug) navigate(`/best-serveurs/category/${categorySlug}`);
-                    }}
-                    onTagClick={(tag) => setTagFilter(tag)}
-                    currentUser={user}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+
+              {loading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="h-48 rounded-xl animate-pulse" style={{ background: "rgba(138,79,255,0.05)" }} />
+                  ))}
+                </div>
+              ) : sortedServers.length === 0 ? (
+                <div className="rounded-xl p-8 text-center" style={{ background: "rgba(18,9,28,0.4)", border: "1px dashed rgba(138,79,255,0.15)" }}>
+                  <ServerIcon className="w-8 h-8 mx-auto mb-2 text-white/20" />
+                  <p className="text-xs text-white/40">Aucun serveur pour le moment</p>
+                  <button
+                    onClick={backToCategories}
+                    className="mt-3 h-8 px-3 rounded-lg text-[10px] font-bold text-white tap-sm"
+                    style={{ background: "rgba(168,85,247,0.18)", border: "1px solid rgba(168,85,247,0.4)" }}>
+                    
+                    Revenir aux catégories
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {sortedServers.map((server, i) => (
+                    <ServerDirectoryCard
+                      key={server.id}
+                      server={server}
+                      rank={i + 1}
+                      onVote={handleVote}
+                      onDelete={handleDeleteAd}
+                      onEdit={handleEditAd}
+                      onCategoryClick={(categorySlug) => {
+                        if (categorySlug) openServerList({ category: categorySlug });
+                      }}
+                      onTagClick={(tag) => openServerList({ tag })}
+                      currentUser={user}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           
 
 

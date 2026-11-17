@@ -9,6 +9,7 @@ import {
 import BoostAdModal from "@/components/prospecteurs/BoostAdModal";
 import VoteModal from "@/components/prospecteurs/VoteModal";
 import ServerApiPanel from "@/components/prospecteurs/ServerApiPanel";
+import { serverTags } from "@/lib/serverTags";
 
 export default function ServerProfile() {
   const { slug } = useParams();
@@ -312,7 +313,7 @@ export default function ServerProfile() {
         </div>
 
         {/* Server info */}
-        {(server.ip || server.category || server.website_url) && (
+        {(server.ip || server.category || server.website_url || serverTags(server).length > 0) && (
           <div className="rounded-xl p-4 mb-4" style={{ background: "rgba(18,9,28,0.6)", border: "1px solid rgba(138,79,255,0.15)" }}>
             <h2 className="text-xs font-black uppercase tracking-wider text-white mb-2">Informations</h2>
             <div className="space-y-1.5">
@@ -320,6 +321,23 @@ export default function ServerProfile() {
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-white/40">Catégorie</span>
                   <span className="text-[10px] font-bold text-white">{server.category}</span>
+                </div>
+              )}
+              {serverTags(server).length > 0 && (
+                <div className="flex items-start justify-between gap-2">
+                  <span className="text-[10px] text-white/40 shrink-0">Étiquettes</span>
+                  <div className="flex flex-wrap justify-end gap-1">
+                    {serverTags(server).map((tag) => (
+                      <Link
+                        key={tag}
+                        to={`/best-serveurs?view=list&tag=${encodeURIComponent(tag)}`}
+                        className="text-[9px] font-bold px-1.5 py-0.5 rounded tap-sm"
+                        style={{ background: "rgba(168,85,247,0.12)", color: "#d8b4fe", border: "1px solid rgba(168,85,247,0.25)" }}
+                      >
+                        #{tag}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               )}
               {server.ip && (
