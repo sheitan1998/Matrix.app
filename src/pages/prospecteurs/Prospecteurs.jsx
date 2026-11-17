@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { fetchAllServers, detectServerType, slugify } from "@/lib/serverDirectory";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Plus, Server as ServerIcon, Trophy, Bell, X } from "lucide-react";
+import { ArrowLeft, Plus, Server as ServerIcon, Trophy, Bell } from "lucide-react";
 import { toast } from "sonner";
 import ProspecteursHeader from "@/components/prospecteurs/ProspecteursHeader";
 import ProspecteursSidebar from "@/components/prospecteurs/ProspecteursSidebar";
@@ -17,7 +17,6 @@ import VoteAutoSetupModal from "@/components/prospecteurs/VoteAutoSetupModal";
 import { List as ListIcon } from "lucide-react";
 import usePageSEO from "@/hooks/usePageSEO";
 import SeoContentBlock from "@/components/seo/SeoContentBlock";
-import { serverMatchesCategory } from "@/lib/serverCategories";
 import { serverHasTag, serverTags } from "@/lib/serverTags";
 
 
@@ -31,13 +30,13 @@ export default function Prospecteurs() {
   // Deep links: /best-serveurs?view=list&category=<slug>&tag=<tag>&q=<search>
   const urlParams = useMemo(() => new URLSearchParams(window.location.search), []);
   const [view, setView] = useState(() =>
-    urlParams.get("view") === "list" || urlParams.get("tag") || urlParams.get("category") ? "list" : "categories"
+    urlParams.get("view") === "list" || urlParams.get("tag") ? "list" : "categories"
   );
   const [user, setUser] = useState(null);
   const [ads, setAds] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState(() => urlParams.get("category") || null);
+
   const [search, setSearch] = useState(() => urlParams.get("q") || "");
   const [sortBy, setSortBy] = useState("votes_month");
   const [tagFilter, setTagFilter] = useState(() => urlParams.get("tag") || "");
@@ -83,17 +82,11 @@ export default function Prospecteurs() {
 
   const typedServers = ads;
 
-  // Filter by category (multi-catégories prises en compte)
-  const categoryFiltered = useMemo(() => {
-    if (!selectedCategory) return typedServers;
-    return typedServers.filter((s) => serverMatchesCategory(s, { slug: selectedCategory }));
-  }, [typedServers, selectedCategory]);
-
   // Filter by tag (clic sur une étiquette)
   const tagFiltered = useMemo(() => {
-    if (!tagFilter) return categoryFiltered;
-    return categoryFiltered.filter((s) => serverHasTag(s, tagFilter));
-  }, [categoryFiltered, tagFilter]);
+    if (!tagFilter) return typedServers;
+    return typedServers.filter((s) => serverHasTag(s, tagFilter));
+  }, [typedServers, tagFilter]);
 
   // Filter by search (nom, description, jeu et étiquettes)
   const searchFiltered = useMemo(() => {
@@ -138,22 +131,27 @@ export default function Prospecteurs() {
   // All categories shown in unified view
   const tabCategories = useMemo(() => categories, [categories]);
 
-  const activeCategoryName = categories.find((c) => c.slug === selectedCategory)?.name || "";
-
-  // Switch to the full server list view (optionally filtered)
-  const openServerList = ({ category = null, tag = "", query = "" } = {}) => {
-    setSelectedCategory(category);
+  // Switch to the global server list view (optionally filtered by tag)
+  const openServerList = ({ tag = "", query = "" } = {}) => {
     setTagFilter(tag);
     setSearch(query);
     setView("list");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // A category keeps its own page and ranking
+  const openCategory = (categorySlug) => {
+    if (categorySlug) {
+      navigate(`/best-serveurs/category/${categorySlug}`);
+      return;
+    }
+    openServerList();
+  };
+
   const backToCategories = () => {
     setView("categories");
     setSearch("");
     setTagFilter("");
-    setSelectedCategory(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -372,7 +370,7 @@ export default function Prospecteurs() {
               <CategoryGrid
                 categories={tabCategories}
                 selectedSlug={null}
-                onSelect={(slug) => openServerList({ category: slug })}
+                onSelect={openCategory}
                 serverCounts={serverCounts}
                 loading={loading} />
               
@@ -391,17 +389,6 @@ export default function Prospecteurs() {
                   <ArrowLeft className="w-3.5 h-3.5" />
                   Retour aux catégories
                 </button>
-                {activeCategoryName &&
-                <button
-                  onClick={() => setSelectedCategory(null)}
-                  className="inline-flex items-center gap-1 h-8 px-3 rounded-lg text-[10px] font-bold transition hover:opacity-90 tap-sm"
-                  style={{ background: "rgba(168,85,247,0.15)", color: "#e9d5ff", border: "1px solid rgba(168,85,247,0.35)" }}
-                  title="Retirer le filtre de catégorie">
-                  
-                  {activeCategoryName}
-                  <X className="w-3 h-3" />
-                </button>
-                }
               </div>
 
               <div className="flex items-center gap-2 mb-3">
@@ -457,9 +444,7 @@ export default function Prospecteurs() {
                       onVote={handleVote}
                       onDelete={handleDeleteAd}
                       onEdit={handleEditAd}
-                      onCategoryClick={(categorySlug) => {
-                        if (categorySlug) openServerList({ category: categorySlug });
-                      }}
+                      onCategoryClick={openCategory}
                       onTagClick={(tag) => openServerList({ tag })}
                       currentUser={user}
                     />

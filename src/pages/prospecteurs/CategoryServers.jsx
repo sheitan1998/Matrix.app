@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { ArrowLeft, Trophy, Server as ServerIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -127,7 +127,7 @@ export default function CategoryServers() {
           <div className="flex items-center gap-2 mb-5">
             <button onClick={() => navigate("/best-serveurs")} className="inline-flex items-center gap-1.5 text-white/50 hover:text-white transition tap-sm">
               <ArrowLeft className="w-4 h-4" />
-              <span className="text-xs font-bold">Annuaire</span>
+              <span className="text-xs font-bold">Retour aux catégories</span>
             </button>
             <span className="text-white/20 text-xs">/</span>
             <span className="text-xs font-bold text-white">{category?.name || "..."}</span>
@@ -205,7 +205,7 @@ export default function CategoryServers() {
                     onCategoryClick={(categorySlug) => {
                       if (categorySlug && categorySlug !== slug) navigate(`/best-serveurs/category/${categorySlug}`);
                     }}
-                    onTagClick={(tag) => setTagFilter(tag)}
+                    onTagClick={(tag) => navigate(`/best-serveurs?view=list&tag=${encodeURIComponent(tag)}`)}
                     currentUser={user}
                   />
                 ))}

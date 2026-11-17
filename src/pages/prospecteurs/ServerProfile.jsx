@@ -10,6 +10,7 @@ import BoostAdModal from "@/components/prospecteurs/BoostAdModal";
 import VoteModal from "@/components/prospecteurs/VoteModal";
 import ServerApiPanel from "@/components/prospecteurs/ServerApiPanel";
 import { serverTags } from "@/lib/serverTags";
+import { slugify } from "@/lib/serverDirectory";
 
 export default function ServerProfile() {
   const { slug } = useParams();
@@ -320,7 +321,12 @@ export default function ServerProfile() {
               {server.category && (
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-white/40">Catégorie</span>
-                  <span className="text-[10px] font-bold text-white">{server.category}</span>
+                  <Link
+                    to={`/best-serveurs/category/${server.category_slug || slugify(server.category)}`}
+                    className="text-[10px] font-bold text-white hover:text-purple-300 transition tap-sm"
+                  >
+                    {server.category}
+                  </Link>
                 </div>
               )}
               {serverTags(server).length > 0 && (
