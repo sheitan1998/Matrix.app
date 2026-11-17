@@ -10,7 +10,7 @@ import { serverTags } from "@/lib/serverTags";
 
 const BADGE_CONFIG = {
   nexus: { color: "#22c55e", label: "NEXUS" },
-  discord: { color: "#5865F2", label: "DISCORD" },
+  discord: { color: "#5865F2", label: "DISCORD" }
 };
 
 export default function ServerDirectoryCard({ server, rank, onVote, onDelete, onEdit, onCategoryClick, onTagClick, currentUser }) {
@@ -55,7 +55,7 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
   const canManage = isOwner || currentUser?.role === "admin";
   const categories = serverCategoryList(server);
   const tags = serverTags(server);
-  const games = server.games && server.games.length > 0 ? server.games : (server.game ? [server.game] : []);
+  const games = server.games && server.games.length > 0 ? server.games : server.game ? [server.game] : [];
   const description = server.description || "";
   const canExpand = description.length > 110;
 
@@ -68,20 +68,20 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
       try {
         const res = await base44.functions.invoke("serverSearch", {
           action: "getVoteStatus",
-          serverAdId: server.id,
+          serverAdId: server.id
         });
         if (active && res.data) {
           setVoteStatus({
             canVote: res.data.canVote,
-            remaining: res.data.remainingTime,
+            remaining: res.data.remainingTime
           });
         }
       } catch {
-        /* silent */
-      }
+
+        /* silent */}
     };
     checkStatus();
-    return () => { active = false; };
+    return () => {active = false;};
   }, [server.id]);
 
   useEffect(() => {
@@ -91,8 +91,8 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
         if (prev.canVote) return prev;
         let { h, m, s } = prev.remaining;
         s--;
-        if (s < 0) { s = 59; m--; }
-        if (m < 0) { m = 59; h--; }
+        if (s < 0) {s = 59;m--;}
+        if (m < 0) {m = 59;h--;}
         if (h < 0) return { canVote: true, remaining: null };
         return { canVote: false, remaining: { h, m, s } };
       });
@@ -106,7 +106,7 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
     try {
       const res = await base44.functions.invoke("serverSearch", {
         action: "vote",
-        serverAdId: server.id,
+        serverAdId: server.id
       });
       if (res.data?.success) {
         setVoteStatus({ canVote: false, remaining: { h: 2, m: 0, s: 0 } });
@@ -133,7 +133,7 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
         votes: data.votes,
         votes_month: data.votes_month,
         clicks: data.clicks,
-        clicks_month: data.clicks_month,
+        clicks_month: data.clicks_month
       });
     }
   };
@@ -142,7 +142,7 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
     try {
       const res = await base44.functions.invoke("serverSearch", {
         action: "deleteAd",
-        serverAdId: server.id,
+        serverAdId: server.id
       });
       if (res.data?.success) {
         onDelete?.(server.id);
@@ -158,9 +158,9 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
   const fmt = (n) => String(n).padStart(2, "0");
   const rankBadge = rank <= 3;
   const rankColors = [
-    "linear-gradient(135deg, #fbbf24, #f59e0b)", // 1st gold
-    "linear-gradient(135deg, #e5e7eb, #9ca3af)", // 2nd silver
-    "linear-gradient(135deg, #d97706, #b45309)", // 3rd bronze
+  "linear-gradient(135deg, #fbbf24, #f59e0b)", // 1st gold
+  "linear-gradient(135deg, #e5e7eb, #9ca3af)", // 2nd silver
+  "linear-gradient(135deg, #d97706, #b45309)" // 3rd bronze
   ];
 
   return (
@@ -168,191 +168,191 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
       className="rounded-xl overflow-hidden transition group flex flex-col"
       style={{
         background: "rgba(18,9,28,0.6)",
-        border: server.is_boosted
-          ? "1px solid rgba(251,191,36,0.3)"
-          : "1px solid rgba(138,79,255,0.15)",
-      }}
-    >
+        border: server.is_boosted ?
+        "1px solid rgba(251,191,36,0.3)" :
+        "1px solid rgba(138,79,255,0.15)"
+      }}>
+      
       {/* Banner */}
-      {hasBanner ? (
-        <div className="relative h-20 w-full overflow-hidden">
+      {hasBanner ?
+      <div className="relative h-20 w-full overflow-hidden">
           <img src={bannerUrl} alt="" className="w-full h-full object-cover" />
           <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(18,9,28,0.2) 0%, rgba(18,9,28,0.7) 100%)" }} />
           {/* Rank badge */}
-          {rank > 0 && (
-            <div
-              className="absolute top-1.5 left-1.5 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shrink-0"
-              style={{
-                background: rankBadge ? rankColors[rank - 1] : "linear-gradient(135deg, #8a4fff, #5b21b6)",
-                color: "#fff",
-                boxShadow: rankBadge ? `0 0 12px ${rankBadge ? "rgba(251,191,36,0.4)" : "rgba(138,79,255,0.3)"}` : "0 0 8px rgba(138,79,255,0.3)",
-                border: "2px solid #12091c",
-              }}
-            >
+          {rank > 0 &&
+        <div
+          className="absolute top-1.5 left-1.5 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shrink-0"
+          style={{
+            background: rankBadge ? rankColors[rank - 1] : "linear-gradient(135deg, #8a4fff, #5b21b6)",
+            color: "#fff",
+            boxShadow: rankBadge ? `0 0 12px ${rankBadge ? "rgba(251,191,36,0.4)" : "rgba(138,79,255,0.3)"}` : "0 0 8px rgba(138,79,255,0.3)",
+            border: "2px solid #12091c"
+          }}>
+          
               {rank}
             </div>
-          )}
+        }
           {/* Type badge */}
           <span
-            className="absolute top-1.5 right-1.5 text-[7px] font-black px-1.5 py-0.5 rounded"
-            style={{ background: `${typeConfig.color}30`, color: typeConfig.color, backdropFilter: "blur(4px)" }}
-          >
+          className="absolute top-1.5 right-1.5 text-[7px] font-black px-1.5 py-0.5 rounded"
+          style={{ background: `${typeConfig.color}30`, color: typeConfig.color, backdropFilter: "blur(4px)" }}>
+          
             {typeConfig.label}
           </span>
-          {server.is_boosted && (
-            <span
-              className="absolute bottom-1.5 right-1.5 text-[7px] font-black px-1.5 py-0.5 rounded flex items-center gap-0.5"
-              style={{ background: "rgba(251,191,36,0.2)", color: "#fbbf24", backdropFilter: "blur(4px)" }}
-            >
+          {server.is_boosted &&
+        <span
+          className="absolute bottom-1.5 right-1.5 text-[7px] font-black px-1.5 py-0.5 rounded flex items-center gap-0.5"
+          style={{ background: "rgba(251,191,36,0.2)", color: "#fbbf24", backdropFilter: "blur(4px)" }}>
+          
               <Flame className="w-2 h-2" /> BOOSTÉ
             </span>
-          )}
-          {canManage && (
-            <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1">
+        }
+          {canManage &&
+        <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1">
               <button
-                onClick={() => onEdit?.(server)}
-                className="w-6 h-6 rounded flex items-center justify-center transition tap-sm"
-                style={{ background: "rgba(138,79,255,0.3)", color: "#a855f7", backdropFilter: "blur(4px)" }}
-              >
+            onClick={() => onEdit?.(server)}
+            className="w-6 h-6 rounded flex items-center justify-center transition tap-sm"
+            style={{ background: "rgba(138,79,255,0.3)", color: "#a855f7", backdropFilter: "blur(4px)" }}>
+            
                 <Pencil className="w-3 h-3" />
               </button>
               <button
-                onClick={handleDelete}
-                className="w-6 h-6 rounded flex items-center justify-center transition tap-sm"
-                style={{ background: "rgba(239,68,68,0.3)", color: "#ef4444", backdropFilter: "blur(4px)" }}
-              >
+            onClick={handleDelete}
+            className="w-6 h-6 rounded flex items-center justify-center transition tap-sm"
+            style={{ background: "rgba(239,68,68,0.3)", color: "#ef4444", backdropFilter: "blur(4px)" }}>
+            
                 <Trash2 className="w-3 h-3" />
               </button>
             </div>
-          )}
-        </div>
-      ) : (
-        <div className="px-3 pt-2 flex items-center justify-between">
+        }
+        </div> :
+
+      <div className="px-3 pt-2 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            {rank > 0 && (
-              <div
-                className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0"
-                style={{
-                  background: rankBadge ? rankColors[rank - 1] : "linear-gradient(135deg, #8a4fff, #5b21b6)",
-                  color: "#fff",
-                }}
-              >
+            {rank > 0 &&
+          <div
+            className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0"
+            style={{
+              background: rankBadge ? rankColors[rank - 1] : "linear-gradient(135deg, #8a4fff, #5b21b6)",
+              color: "#fff"
+            }}>
+            
                 {rank}
               </div>
-            )}
+          }
             <span
-              className="text-[7px] font-black px-1.5 py-0.5 rounded inline-flex items-center gap-0.5"
-              style={{ background: `${typeConfig.color}20`, color: typeConfig.color }}
-            >
+            className="text-[7px] font-black px-1.5 py-0.5 rounded inline-flex items-center gap-0.5"
+            style={{ background: `${typeConfig.color}20`, color: typeConfig.color }}>
+            
               {typeConfig.label}
             </span>
           </div>
-          {server.is_boosted ? (
-            <span
-              className="text-[7px] font-black px-1.5 py-0.5 rounded inline-flex items-center gap-0.5"
-              style={{ background: "rgba(251,191,36,0.15)", color: "#fbbf24" }}
-            >
+          {server.is_boosted ?
+        <span
+          className="text-[7px] font-black px-1.5 py-0.5 rounded inline-flex items-center gap-0.5"
+          style={{ background: "rgba(251,191,36,0.15)", color: "#fbbf24" }}>
+          
               <Flame className="w-2 h-2" /> BOOSTÉ
-            </span>
-          ) : canManage ? (
-            <div className="flex items-center gap-1">
+            </span> :
+        canManage ?
+        <div className="flex items-center gap-1">
               <button
-                onClick={() => onEdit?.(server)}
-                className="w-6 h-6 rounded flex items-center justify-center transition tap-sm"
-                style={{ background: "rgba(138,79,255,0.1)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}
-              >
+            onClick={() => onEdit?.(server)}
+            className="w-6 h-6 rounded flex items-center justify-center transition tap-sm"
+            style={{ background: "rgba(138,79,255,0.1)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}>
+            
                 <Pencil className="w-3 h-3" />
               </button>
               <button
-                onClick={handleDelete}
-                className="w-6 h-6 rounded flex items-center justify-center transition tap-sm"
-                style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)" }}
-              >
+            onClick={handleDelete}
+            className="w-6 h-6 rounded flex items-center justify-center transition tap-sm"
+            style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)" }}>
+            
                 <Trash2 className="w-3 h-3" />
               </button>
-            </div>
-          ) : (
-            <span />
-          )}
+            </div> :
+
+        <span />
+        }
         </div>
-      )}
+      }
 
       {/* Logo + title */}
       <div className="p-3 flex items-center gap-2.5">
         <div
           className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center text-sm font-black text-white shrink-0"
-          style={{ background: "linear-gradient(135deg, #8a4fff, #5b21b6)" }}
-        >
-          {hasLogo ? (
-            <img src={logoUrl} alt="" className="w-full h-full object-cover" />
-          ) : (
-            initial
-          )}
+          style={{ background: "linear-gradient(135deg, #8a4fff, #5b21b6)" }}>
+          
+          {hasLogo ?
+          <img src={logoUrl} alt="" className="w-full h-full object-cover" /> :
+
+          initial
+          }
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-xs font-bold text-white truncate">{server.title}</p>
-          {(games.length > 0 || categories.length > 0) && (
-            <div className="flex items-center gap-1 flex-wrap mt-0.5">
-              {games.slice(0, 3).map((g, i) => (
-                <span key={`game-${i}`} className="text-[9px] text-white/40 truncate">{g}</span>
-              ))}
-              {categories.map((category) => (
-                <button
-                  key={`${category.slug}-${category.name}`}
-                  type="button"
-                  onClick={() => onCategoryClick?.(category.slug)}
-                  title={`Filtrer par ${category.name}`}
-                  className="text-[7px] font-bold px-1 py-0.5 rounded transition hover:brightness-150 tap-sm"
-                  style={{ background: "rgba(138,79,255,0.1)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.25)" }}
-                >
+          {(games.length > 0 || categories.length > 0) &&
+          <div className="flex items-center gap-1 flex-wrap mt-0.5">
+              {games.slice(0, 3).map((g, i) =>
+            <span key={`game-${i}`} className="text-[9px] text-white/40 truncate hidden">{g}</span>
+            )}
+              {categories.map((category) =>
+            <button
+              key={`${category.slug}-${category.name}`}
+              type="button"
+              onClick={() => onCategoryClick?.(category.slug)}
+              title={`Filtrer par ${category.name}`}
+              className="text-[7px] font-bold px-1 py-0.5 rounded transition hover:brightness-150 tap-sm"
+              style={{ background: "rgba(138,79,255,0.1)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.25)" }}>
+              
                   {category.name}
                 </button>
-              ))}
+            )}
             </div>
-          )}
+          }
         </div>
       </div>
 
       {/* Description */}
       <div className="px-3 pb-2 flex-1">
         <p className={`text-[10px] text-white/50 leading-relaxed ${expanded ? "" : "line-clamp-2"}`}>{description}</p>
-        {canExpand && (
-          <button
-            type="button"
-            onClick={() => setExpanded((value) => !value)}
-            className="mt-1 inline-flex items-center gap-0.5 text-[9px] font-bold transition hover:opacity-80 tap-sm"
-            style={{ color: "#a855f7" }}
-          >
+        {canExpand &&
+        <button
+          type="button"
+          onClick={() => setExpanded((value) => !value)}
+          className="mt-1 inline-flex items-center gap-0.5 text-[9px] font-bold transition hover:opacity-80 tap-sm"
+          style={{ color: "#a855f7" }}>
+          
             {expanded ? <>Voir moins <ChevronUp className="w-2.5 h-2.5" /></> : <>Voir plus <ChevronDown className="w-2.5 h-2.5" /></>}
           </button>
-        )}
+        }
       </div>
 
       {/* Étiquettes cliquables */}
-      {tags.length > 0 && (
-        <div className="px-3 pb-2 flex flex-wrap gap-1">
-          {tags.map((tag) => (
-            <button
-              key={tag}
-              type="button"
-              onClick={() => onTagClick?.(tag)}
-              title={`Filtrer les serveurs avec l'étiquette ${tag}`}
-              className="text-[8px] font-bold px-1.5 py-0.5 rounded transition hover:brightness-150 tap-sm"
-              style={{ background: "rgba(168,85,247,0.1)", color: "#d8b4fe", border: "1px solid rgba(168,85,247,0.25)" }}
-            >
+      {tags.length > 0 &&
+      <div className="px-3 pb-2 flex flex-wrap gap-1">
+          {tags.map((tag) =>
+        <button
+          key={tag}
+          type="button"
+          onClick={() => onTagClick?.(tag)}
+          title={`Filtrer les serveurs avec l'étiquette ${tag}`}
+          className="text-[8px] font-bold px-1.5 py-0.5 rounded transition hover:brightness-150 tap-sm"
+          style={{ background: "rgba(168,85,247,0.1)", color: "#d8b4fe", border: "1px solid rgba(168,85,247,0.25)" }}>
+          
               #{tag}
             </button>
-          ))}
+        )}
         </div>
-      )}
+      }
 
       {/* Stats — votes & clicks counters (Top-Serveurs style) */}
       <div className="px-3 pb-2 grid grid-cols-2 gap-2">
         {/* Votes block — purple */}
         <div
           className="relative rounded-lg p-2 overflow-hidden"
-          style={{ background: "linear-gradient(135deg, rgba(138,79,255,0.20), rgba(109,40,217,0.10))", border: "1px solid rgba(138,79,255,0.28)" }}
-        >
+          style={{ background: "linear-gradient(135deg, rgba(138,79,255,0.20), rgba(109,40,217,0.10))", border: "1px solid rgba(138,79,255,0.28)" }}>
+          
           <svg className="absolute right-0 bottom-0 opacity-25 pointer-events-none" width="64" height="30" viewBox="0 0 64 30" fill="none">
             <polyline points="0,24 10,20 20,22 30,12 40,15 50,7 64,9" stroke="#a855f7" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
@@ -367,8 +367,8 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
         {/* Clicks block — light */}
         <div
           className="relative rounded-lg p-2 overflow-hidden"
-          style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03))", border: "1px solid rgba(255,255,255,0.14)" }}
-        >
+          style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03))", border: "1px solid rgba(255,255,255,0.14)" }}>
+          
           <svg className="absolute right-0 bottom-0 opacity-25 pointer-events-none" width="64" height="30" viewBox="0 0 64 30" fill="none">
             <polyline points="0,20 10,22 20,14 30,17 40,8 50,11 64,4" stroke="#f97316" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
@@ -396,28 +396,28 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
           disabled={!voteStatus.canVote || loading}
           className="flex-1 h-7 rounded-md text-[10px] font-bold transition flex items-center justify-center gap-1 tap-sm"
           style={
-            voteStatus.canVote
-              ? { background: "rgba(138,79,255,0.15)", color: "#8a4fff", border: "1px solid rgba(138,79,255,0.2)" }
-              : { background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.3)", border: "1px solid rgba(255,255,255,0.05)" }
-          }
-        >
-          {voteStatus.canVote ? (
-            <>
+          voteStatus.canVote ?
+          { background: "rgba(138,79,255,0.15)", color: "#8a4fff", border: "1px solid rgba(138,79,255,0.2)" } :
+          { background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.3)", border: "1px solid rgba(255,255,255,0.05)" }
+          }>
+          
+          {voteStatus.canVote ?
+          <>
               <ArrowUp className="w-3 h-3" /> Voter
-            </>
-          ) : (
-            <>
+            </> :
+
+          <>
               <Flame className="w-3 h-3" />
               {fmt(voteStatus.remaining.h)}:{fmt(voteStatus.remaining.m)}:{fmt(voteStatus.remaining.s)}
             </>
-          )}
+          }
         </button>
         <button
           onClick={() => setShowBoost(true)}
           className="h-7 px-2 rounded-md flex items-center justify-center gap-0.5 transition tap-sm text-[9px] font-bold"
           style={{ background: "rgba(251,191,36,0.12)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.2)" }}
-          title="Booster ce serveur"
-        >
+          title="Booster ce serveur">
+          
           <Zap className="w-3 h-3" />
           <span className="hidden sm:inline">Boost</span>
         </button>
@@ -425,79 +425,79 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
           onClick={handleShare}
           className="h-7 px-2 rounded-md flex items-center justify-center gap-0.5 transition tap-sm text-[9px] font-bold"
           style={{ background: "rgba(138,79,255,0.12)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}
-          title="Partager la fiche"
-        >
+          title="Partager la fiche">
+          
           {copied ? <Check className="w-3 h-3" /> : <Share2 className="w-3 h-3" />}
         </button>
       </div>
 
       {/* Liens fournis lors de la publication — un bouton par lien renseigné */}
-      {(shareSlug || server.website_url || server.discord_link) && (
-        <div className="px-3 pb-3 flex flex-wrap items-center gap-1.5">
-          {shareSlug && (
-            <Link
-              to={`/servers/${shareSlug}`}
-              onClick={handleTrackClick}
-              className="h-7 px-2 rounded-md flex items-center gap-1 transition tap-sm text-[9px] font-bold"
-              style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.1)" }}
-            >
+      {(shareSlug || server.website_url || server.discord_link) &&
+      <div className="px-3 pb-3 flex flex-wrap items-center gap-1.5">
+          {shareSlug &&
+        <Link
+          to={`/servers/${shareSlug}`}
+          onClick={handleTrackClick}
+          className="h-7 px-2 rounded-md flex items-center gap-1 transition tap-sm text-[9px] font-bold"
+          style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.1)" }}>
+          
               <ExternalLink className="w-3 h-3" />
               Voir la fiche
             </Link>
-          )}
-          {server.website_url && (
-            <a
-              href={server.website_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={handleTrackClick}
-              className="h-7 px-2 rounded-md flex items-center gap-1 transition tap-sm text-[9px] font-bold"
-              style={{ background: "rgba(34,197,94,0.12)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.25)" }}
-            >
+        }
+          {server.website_url &&
+        <a
+          href={server.website_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={handleTrackClick}
+          className="h-7 px-2 rounded-md flex items-center gap-1 transition tap-sm text-[9px] font-bold"
+          style={{ background: "rgba(34,197,94,0.12)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.25)" }}>
+          
               <Globe className="w-3 h-3" />
               Voir le site
             </a>
-          )}
-          {server.discord_link && (
-            <a
-              href={server.discord_link}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={handleTrackClick}
-              className="h-7 px-2 rounded-md flex items-center gap-1 transition tap-sm text-[9px] font-bold"
-              style={{ background: `${typeConfig.color}20`, color: typeConfig.color, border: `1px solid ${typeConfig.color}30` }}
-            >
+        }
+          {server.discord_link &&
+        <a
+          href={server.discord_link}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={handleTrackClick}
+          className="h-7 px-2 rounded-md flex items-center gap-1 transition tap-sm text-[9px] font-bold"
+          style={{ background: `${typeConfig.color}20`, color: typeConfig.color, border: `1px solid ${typeConfig.color}30` }}>
+          
               <ExternalLink className="w-3 h-3" />
               Rejoindre le serveur
             </a>
-          )}
+        }
         </div>
-      )}
+      }
 
       {/* Vote modal with pseudo */}
-      {showVoteModal && (
-        <VoteModal
-          server={server}
-          voteStatus={voteStatus}
-          onClose={() => setShowVoteModal(false)}
-          onVoted={(data) => {
-            setVoteStatus({ canVote: false, remaining: { h: 2, m: 0, s: 0 } });
-            onVote(server.id, data);
-          }}
-        />
-      )}
+      {showVoteModal &&
+      <VoteModal
+        server={server}
+        voteStatus={voteStatus}
+        onClose={() => setShowVoteModal(false)}
+        onVoted={(data) => {
+          setVoteStatus({ canVote: false, remaining: { h: 2, m: 0, s: 0 } });
+          onVote(server.id, data);
+        }} />
+
+      }
 
       {/* Boost modal */}
-      {showBoost && (
-        <BoostAdModal
-          adId={server.id}
-          adTitle={server.title}
-          flashBoosts={flashBoosts}
-          trixBalance={trixBalance}
-          onBoosted={handleBoosted}
-          onClose={() => setShowBoost(false)}
-        />
-      )}
-    </div>
-  );
+      {showBoost &&
+      <BoostAdModal
+        adId={server.id}
+        adTitle={server.title}
+        flashBoosts={flashBoosts}
+        trixBalance={trixBalance}
+        onBoosted={handleBoosted}
+        onClose={() => setShowBoost(false)} />
+
+      }
+    </div>);
+
 }
