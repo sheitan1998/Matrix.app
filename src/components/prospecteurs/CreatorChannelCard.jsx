@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ArrowUp, ExternalLink, Trophy, Pencil, Trash2 } from "lucide-react";
+import { ArrowUp, ExternalLink, Trophy, Pencil, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import CreatorVoteModal from "./CreatorVoteModal";
 import SnapchatChannelActions from "./SnapchatChannelActions";
@@ -9,6 +9,7 @@ import { resolveCreatorVisuals } from "@/lib/creatorDefaults";
 export default function CreatorChannelCard({ creator, rank, user, onVote, onEdit, onDelete }) {
   const [voteStatus, setVoteStatus] = useState({ canVote: true, remaining: null });
   const [showVoteModal, setShowVoteModal] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   const platform = CREATOR_PLATFORMS[creator.platform] || CREATOR_PLATFORMS.youtube;
   const PlatformIcon = platform.icon;
@@ -147,27 +148,44 @@ export default function CreatorChannelCard({ creator, rank, user, onVote, onEdit
 
           <div className="flex-1 min-w-0 pt-7">
             <p className="text-sm font-black text-white truncate">{creator.name}</p>
-            {creator.platform === "snapchat" ? (
+            {creator.platform === "snapchat" && (
               <SnapchatChannelActions creator={creator} accent={accent} />
-            ) : (
-              <a
-                href={creator.channel_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 mt-1 text-[9px] font-bold transition hover:opacity-80"
-                style={{ color: accent }}>
-                
-                <ExternalLink className="w-2.5 h-2.5" />
-                Voir la chaîne
-              </a>
             )}
           </div>
         </div>
 
+        {creator.platform !== "snapchat" && creator.channel_url && (
+          <a
+            href={creator.channel_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="relative z-10 mx-3 mt-2 h-11 rounded-xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-wider transition hover:brightness-110 tap-sm"
+            style={{
+              background: `linear-gradient(135deg, ${accent}, ${accent}bb)`,
+              color: "#fff",
+              border: `1px solid ${accent}`,
+              boxShadow: `0 0 16px ${accent}55`
+            }}>
+            <ExternalLink className="w-4 h-4" />
+            Voir la chaîne
+          </a>
+        )}
+
         {creator.description &&
-        <p className="relative z-10 px-3 pt-2 pb-2 text-[11px] leading-relaxed text-white/50 line-clamp-2">
+        <div className="relative z-10 px-3 pt-2 pb-2">
+          <p className={`text-[11px] leading-relaxed text-white/50 ${expanded ? "" : "line-clamp-2"}`}>
             {creator.description}
           </p>
+          {creator.description.length > 110 && (
+            <button
+              type="button"
+              onClick={() => setExpanded((value) => !value)}
+              className="mt-1 inline-flex items-center gap-0.5 text-[9px] font-bold transition hover:opacity-80 tap-sm"
+              style={{ color: accent }}>
+              {expanded ? <>Voir moins <ChevronUp className="w-2.5 h-2.5" /></> : <>Voir plus <ChevronDown className="w-2.5 h-2.5" /></>}
+            </button>
+          )}
+        </div>
         }
 
         <div

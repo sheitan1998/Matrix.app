@@ -2,12 +2,15 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { ArrowLeft, Trophy, Server as ServerIcon } from "lucide-react";
+import { toast } from "sonner";
 import ProspecteursHeader from "@/components/prospecteurs/ProspecteursHeader";
 import ProspecteursSidebar from "@/components/prospecteurs/ProspecteursSidebar";
 import ServerDirectoryCard from "@/components/prospecteurs/ServerDirectoryCard";
 import ServerSearchBar from "@/components/prospecteurs/ServerSearchBar";
 import ServerRankingBlock from "@/components/prospecteurs/ServerRankingBlock";
-import { fetchAllServers, sortByScore } from "@/lib/serverDirectory";
+import CreateAdModal from "@/components/prospecteurs/CreateAdModal";
+import { fetchAllServers, sortByScore, slugify, detectServerType } from "@/lib/serverDirectory";
+import { serverMatchesCategory } from "@/lib/serverCategories";
 
 export default function CategoryServers() {
   const { slug } = useParams();
@@ -18,6 +21,7 @@ export default function CategoryServers() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("votes_month");
+  const [editingAd, setEditingAd] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -29,16 +33,9 @@ export default function CategoryServers() {
       setCategory(cat);
       if (!cat) { setLoading(false); return; }
 
-      // Unified: fetch all server ads matching this category (Nexus + Discord combined)
-      const list = await fetchAllServers({
-        $or: [
-          { category_slug: slug },
-          { category: cat.name },
-          { category_slugs: slug },
-          { categories: cat.name },
-        ],
-      });
-      setServers(list || []);
+      // Unified: fetch all server ads, then keep those owning this category (multi-catégories incluses)
+      const list = await fetchAllServers();
+      setServers((list || []).filter((server) => serverMatchesCategory(server, { slug, name: cat.name })));
       setLoading(false);
     };
     fetchData();
@@ -65,6 +62,36 @@ export default function CategoryServers() {
       clicks: data.clicks ?? s.clicks,
       clicks_month: data.clicks_month ?? s.clicks_month,
     } : s)));
+  };
+
+  const handleUpdateAd = async (data) => {
+    if (!editingAd) return;
+    try {
+      const payload = {
+        ...data,
+        slug: slugify(data.title),
+        server_type: detectServerType(data.discord_link),
+      };
+      const res = await base44.functions.invoke("serverSearch", {
+        action: "updateAd",
+        serverAdId: editingAd.id,
+        data: payload,
+      });
+      if (res.data?.error) {
+        toast.error(res.data.error);
+        return;
+      }
+      const updated = res.data?.ad || { ...editingAd, ...payload };
+      setServers((prev) =>
+        prev
+          .map((s) => (s.id === editingAd.id ? { ...s, ...updated } : s))
+          .filter((s) => serverMatchesCategory(s, { slug, name: category?.name }))
+      );
+      setEditingAd(null);
+      toast.success("Serveur modifié !");
+    } catch (err) {
+      toast.error(err?.response?.data?.error || "Erreur lors de la modification");
+    }
   };
 
   if (!loading && !category) {
@@ -151,13 +178,33 @@ export default function CategoryServers() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {visibleServers.map((server, i) => (
-                  <ServerDirectoryCard key={server.id} server={server} rank={i + 1} onVote={handleVote} currentUser={user} />
+                  <ServerDirectoryCard
+                    key={server.id}
+                    server={server}
+                    rank={i + 1}
+                    onVote={handleVote}
+                    onDelete={(id) => setServers((prev) => prev.filter((s) => s.id !== id))}
+                    onEdit={setEditingAd}
+                    onCategoryClick={(categorySlug) => {
+                      if (categorySlug && categorySlug !== slug) navigate(`/best-serveurs/category/${categorySlug}`);
+                    }}
+                    currentUser={user}
+                  />
                 ))}
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {editingAd && (
+        <CreateAdModal
+          initialType="server"
+          editAd={editingAd}
+          onClose={() => setEditingAd(null)}
+          onSubmit={handleUpdateAd}
+        />
+      )}
     </div>
   );
 }

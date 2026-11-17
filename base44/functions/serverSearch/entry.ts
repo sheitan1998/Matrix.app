@@ -10,7 +10,7 @@ import { validateServerLinks } from '../../shared/serverLinks.ts';
 const AD_EDITABLE_FIELDS = [
   'title', 'slug', 'description', 'discord_link', 'website_url', 'type', 'server_type',
   'category', 'category_slug', 'categories', 'category_slugs', 'games', 'game',
-  'profile_image', 'cover_image', 'additional_info', 'ip', 'port',
+  'profile_image', 'cover_image', 'logo_url', 'banner_url', 'additional_info', 'ip', 'port',
   'player_count_needed', 'availability_hours', 'player_pseudo',
 ];
 
@@ -630,7 +630,7 @@ export default async function(req: Request): Promise<Response> {
         const ad = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
         if (!ad) return Response.json({ error: 'Ad not found' }, { status: 404 });
 
-        if (ad.author_email !== user.email) {
+        if (ad.author_email !== user?.email && user?.role !== 'admin') {
           return Response.json({ error: 'Not authorized' }, { status: 403 });
         }
 

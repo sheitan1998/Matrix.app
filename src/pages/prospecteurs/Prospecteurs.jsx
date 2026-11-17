@@ -17,6 +17,7 @@ import VoteAutoSetupModal from "@/components/prospecteurs/VoteAutoSetupModal";
 import { List as ListIcon } from "lucide-react";
 import usePageSEO from "@/hooks/usePageSEO";
 import SeoContentBlock from "@/components/seo/SeoContentBlock";
+import { serverMatchesCategory } from "@/lib/serverCategories";
 
 
 export default function Prospecteurs() {
@@ -75,14 +76,10 @@ export default function Prospecteurs() {
 
   const typedServers = ads;
 
-  // Filter by category
+  // Filter by category (multi-catégories prises en compte)
   const categoryFiltered = useMemo(() => {
     if (!selectedCategory) return typedServers;
-    return typedServers.filter((s) => {
-      if (s.category_slug === selectedCategory) return true;
-      const catSlug = (s.category || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-      return catSlug === selectedCategory;
-    });
+    return typedServers.filter((s) => serverMatchesCategory(s, { slug: selectedCategory }));
   }, [typedServers, selectedCategory]);
 
   // Filter by search
@@ -342,74 +339,56 @@ export default function Prospecteurs() {
           </div>
 
           {/* Server list with search + sort */}
-          
+          <div className="mb-5">
+            <div className="flex items-center gap-2 mb-3">
+              <h2 className="text-xs font-black tracking-wider uppercase text-white">
+                Tous les serveurs
+              </h2>
+              <span className="text-[9px] text-white/40 ml-auto">
+                {sortedServers.length} serveur{sortedServers.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+            <div className="mb-4">
+              <ServerSearchBar
+                search={search}
+                onSearchChange={setSearch}
+                sortBy={sortBy}
+                onSortChange={setSortBy}
+                resultCount={sortedServers.length}
+              />
+            </div>
+
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="h-48 rounded-xl animate-pulse" style={{ background: "rgba(138,79,255,0.05)" }} />
+                ))}
+              </div>
+            ) : sortedServers.length === 0 ? (
+              <div className="rounded-xl p-8 text-center" style={{ background: "rgba(18,9,28,0.4)", border: "1px dashed rgba(138,79,255,0.15)" }}>
+                <ServerIcon className="w-8 h-8 mx-auto mb-2 text-white/20" />
+                <p className="text-xs text-white/40">Aucun serveur pour le moment</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {sortedServers.map((server, i) => (
+                  <ServerDirectoryCard
+                    key={server.id}
+                    server={server}
+                    rank={i + 1}
+                    onVote={handleVote}
+                    onDelete={handleDeleteAd}
+                    onEdit={handleEditAd}
+                    onCategoryClick={(categorySlug) => {
+                      if (categorySlug) navigate(`/best-serveurs/category/${categorySlug}`);
+                    }}
+                    currentUser={user}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-          
           <SeoContentBlock
             eyebrow="Best Serveur"
             title="Trouvez le serveur de jeu idéal sur Matrix Hub"

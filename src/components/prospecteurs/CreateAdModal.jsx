@@ -4,7 +4,6 @@ import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { uploadImageWithToast } from "@/lib/imageModeration";
 import MultiTagSelect from "@/components/prospecteurs/MultiTagSelect";
-import CategorySelect from "@/components/prospecteurs/CategorySelect";
 import { findForbiddenLink } from "@/lib/serverLinkRules";
 
 const GAMES = [
@@ -20,6 +19,10 @@ const GAMES = [
   "FIFA / EA FC", "NBA 2K", "Madden NFL", "Gran Turismo", "Forza Horizon",
   "Autre",
 ];
+
+const slugifyName = (text) =>
+  (text || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
 const inputStyle = {
   background: "#0d0814",
@@ -47,8 +50,8 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
     availability_hours: editAd?.availability_hours || "",
     player_pseudo: editAd?.player_pseudo || "",
   });
-  const [profileImage, setProfileImage] = useState(editAd?.profile_image || "");
-  const [coverImage, setCoverImage] = useState(editAd?.cover_image || "");
+  const [profileImage, setProfileImage] = useState(editAd?.profile_image || editAd?.logo_url || "");
+  const [coverImage, setCoverImage] = useState(editAd?.cover_image || editAd?.banner_url || "");
   const [uploadingField, setUploadingField] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [serverCategories, setServerCategories] = useState([]);
@@ -108,25 +111,24 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
     }
 
     setSubmitting(true);
-    const slugify = (text) =>
-      text.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
     const data = {
       ...form,
       type: adType,
       profile_image: profileImage,
+      logo_url: profileImage,
       cover_image: isPlayerAd ? "" : coverImage,
+      banner_url: isPlayerAd ? "" : coverImage,
       discord_link: isPlayerAd ? "" : form.discord_link,
       website_url: isPlayerAd ? "" : (form.website_url.trim().startsWith("https://") ? form.website_url.trim() : ""),
       games: form.games || [],
       categories: form.categories || [],
       category_slugs: form.category_slugs || (form.categories && form.categories.length > 0
-        ? form.categories.map((c) => availableCategories.find((ac) => ac.name === c)?.slug || slugify(c))
+        ? form.categories.map((c) => availableCategories.find((ac) => ac.name === c)?.slug || slugifyName(c))
         : []),
       game: (form.games && form.games[0]) || form.game || "",
       category: (form.categories && form.categories[0]) || form.category || "",
-      category_slug: form.category_slugs?.[0] || form.category_slug || (form.category ? slugify(form.category) : ""),
+      category_slug: form.category_slugs?.[0] || form.category_slug || (form.category ? slugifyName(form.category) : ""),
     };
     await onSubmit(data);
     setSubmitting(false);
@@ -261,46 +263,52 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
             />
           </div>
 
-          {/* Games */}
-          <div>
-            <label className={labelClass}>
-              <Gamepad2 className="w-3 h-3 inline mr-1" />
-              Jeux {isPlayerAd ? "*" : "(optionnel)"}
-            </label>
-            <MultiTagSelect
-              options={GAMES}
-              value={form.games || []}
-              onChange={(games) => {
-                setForm((prev) => ({ ...prev, games, game: games[0] || prev.game }));
-              }}
-              placeholder="Sélectionner un ou plusieurs jeux"
-              max={10}
-            />
-            {isPlayerAd && (form.games || []).length === 0 && (
-              <p className="text-[9px] text-red-400 mt-1">Sélectionne au moins un jeu</p>
-            )}
-          </div>
+          {/* Games (player ads only) */}
+          {isPlayerAd && (
+            <div>
+              <label className={labelClass}>
+                <Gamepad2 className="w-3 h-3 inline mr-1" />
+                Jeux *
+              </label>
+              <MultiTagSelect
+                options={GAMES}
+                value={form.games || []}
+                onChange={(games) => {
+                  setForm((prev) => ({ ...prev, games, game: games[0] || prev.game }));
+                }}
+                placeholder="Sélectionner un ou plusieurs jeux"
+                max={10}
+              />
+              {(form.games || []).length === 0 && (
+                <p className="text-[9px] text-red-400 mt-1">Sélectionne au moins un jeu</p>
+              )}
+            </div>
+          )}
 
-          {/* Category (server only) */}
+          {/* Categories (server only) — sélection multiple */}
           {!isPlayerAd && (
             <div>
-              <label className={labelClass}>Catégorie</label>
-              <CategorySelect
-                value={form.category || ""}
-                onChange={(c) => {
-                  const name = c.name;
-                  const slug = c.slug || (name ? name.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") : "");
+              <label className={labelClass}>Catégories</label>
+              <MultiTagSelect
+                options={availableCategories.map((c) => ({ value: c.name, label: c.name }))}
+                value={form.categories || []}
+                onChange={(names) => {
+                  const slugs = names.map(
+                    (name) => availableCategories.find((c) => c.name === name)?.slug || slugifyName(name)
+                  );
                   setForm((prev) => ({
                     ...prev,
-                    category: name,
-                    category_slug: slug,
-                    categories: name ? [name] : [],
-                    category_slugs: slug ? [slug] : [],
+                    categories: names,
+                    category_slugs: slugs,
+                    category: names[0] || "",
+                    category_slug: slugs[0] || "",
                   }));
                 }}
-                options={availableCategories}
-                placeholder="— Sélectionner une catégorie —"
+                placeholder="Sélectionner une ou plusieurs catégories"
               />
+              <p className="text-[9px] text-white/25 mt-1">
+                Clique sur les catégories pour les ajouter ou les retirer.
+              </p>
             </div>
           )}
 

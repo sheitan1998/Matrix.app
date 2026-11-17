@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { ArrowUp, Flame, ExternalLink, Zap, Pencil, Trash2, Share2, Check, ThumbsUp, MousePointerClick, Globe } from "lucide-react";
+import { ArrowUp, Flame, ExternalLink, Zap, Pencil, Trash2, Share2, Check, ThumbsUp, MousePointerClick, Globe, ChevronDown, ChevronUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import BoostAdModal from "./BoostAdModal";
 import VoteModal from "./VoteModal";
+import { serverCategoryList } from "@/lib/serverCategories";
 
 const BADGE_CONFIG = {
   nexus: { color: "#22c55e", label: "NEXUS" },
   discord: { color: "#5865F2", label: "DISCORD" },
 };
 
-export default function ServerDirectoryCard({ server, rank, onVote, onDelete, onEdit, currentUser }) {
+export default function ServerDirectoryCard({ server, rank, onVote, onDelete, onEdit, onCategoryClick, currentUser }) {
   const [voteStatus, setVoteStatus] = useState({ canVote: true, remaining: null });
   const [loading, setLoading] = useState(false);
   const [showBoost, setShowBoost] = useState(false);
@@ -20,6 +21,7 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
   const [boostCount, setBoostCount] = useState(server.boosts || 0);
   const [copied, setCopied] = useState(false);
   const [showVoteModal, setShowVoteModal] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   const shareSlug = server.slug || server.id;
 
@@ -49,6 +51,11 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
   const hasLogo = !!server.logo_url || !!server.profile_image || !!server.server_icon;
   const hasBanner = !!server.banner_url || !!server.cover_image;
   const isOwner = currentUser?.email === server.author_email;
+  const canManage = isOwner || currentUser?.role === "admin";
+  const categories = serverCategoryList(server);
+  const games = server.games && server.games.length > 0 ? server.games : (server.game ? [server.game] : []);
+  const description = server.description || "";
+  const canExpand = description.length > 110;
 
   const logoUrl = server.logo_url || server.profile_image || server.server_icon;
   const bannerUrl = server.banner_url || server.cover_image;
@@ -136,7 +143,7 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
         serverAdId: server.id,
       });
       if (res.data?.success) {
-        onDelete(server.id);
+        onDelete?.(server.id);
         toast.success("Serveur supprimé");
       } else {
         toast.error(res.data?.error || "Erreur");
@@ -198,7 +205,7 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
               <Flame className="w-2 h-2" /> BOOSTÉ
             </span>
           )}
-          {isOwner && (
+          {canManage && (
             <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1">
               <button
                 onClick={() => onEdit?.(server)}
@@ -245,7 +252,7 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
             >
               <Flame className="w-2 h-2" /> BOOSTÉ
             </span>
-          ) : isOwner ? (
+          ) : canManage ? (
             <div className="flex items-center gap-1">
               <button
                 onClick={() => onEdit?.(server)}
@@ -282,26 +289,41 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-xs font-bold text-white truncate">{server.title}</p>
-          <div className="flex items-center gap-1 flex-wrap">
-            {(server.games && server.games.length > 0 ? server.games : (server.game ? [server.game] : [])).slice(0, 3).map((g, i) => (
-              <span key={i} className="text-[9px] text-white/40 truncate">{g}</span>
-            ))}
-            {(server.categories && server.categories.length > 0 ? server.categories : (server.category ? [server.category] : [])).slice(0, 2).map((c, i) => (
-              <span
-                key={i}
-                className="text-[7px] font-bold px-1 py-0.5 rounded"
-                style={{ background: "rgba(138,79,255,0.1)", color: "#8a4fff" }}
-              >
-                {c}
-              </span>
-            ))}
-          </div>
+          {(games.length > 0 || categories.length > 0) && (
+            <div className="flex items-center gap-1 flex-wrap mt-0.5">
+              {games.slice(0, 3).map((g, i) => (
+                <span key={`game-${i}`} className="text-[9px] text-white/40 truncate">{g}</span>
+              ))}
+              {categories.map((category) => (
+                <button
+                  key={`${category.slug}-${category.name}`}
+                  type="button"
+                  onClick={() => onCategoryClick?.(category.slug)}
+                  title={`Filtrer par ${category.name}`}
+                  className="text-[7px] font-bold px-1 py-0.5 rounded transition hover:brightness-150 tap-sm"
+                  style={{ background: "rgba(138,79,255,0.1)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.25)" }}
+                >
+                  {category.name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Description */}
       <div className="px-3 pb-2 flex-1">
-        <p className="text-[10px] text-white/50 leading-relaxed line-clamp-2">{server.description}</p>
+        <p className={`text-[10px] text-white/50 leading-relaxed ${expanded ? "" : "line-clamp-2"}`}>{description}</p>
+        {canExpand && (
+          <button
+            type="button"
+            onClick={() => setExpanded((value) => !value)}
+            className="mt-1 inline-flex items-center gap-0.5 text-[9px] font-bold transition hover:opacity-80 tap-sm"
+            style={{ color: "#a855f7" }}
+          >
+            {expanded ? <>Voir moins <ChevronUp className="w-2.5 h-2.5" /></> : <>Voir plus <ChevronDown className="w-2.5 h-2.5" /></>}
+          </button>
+        )}
       </div>
 
       {/* Stats — votes & clicks counters (Top-Serveurs style) */}
