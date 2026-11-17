@@ -63,7 +63,7 @@
         "type": "string"
       },
       "default": [],
-      "description": "Categories multiples associees au serveur"
+      "description": "Categories multiples associees au serveur (3 maximum)"
     },
     "category_slugs": {
       "type": "array",
@@ -72,6 +72,14 @@
       },
       "default": [],
       "description": "Slugs des categories multiples (cache pour filtrage)"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Etiquettes du serveur (5 maximum)"
     },
     "games": {
       "type": "array",

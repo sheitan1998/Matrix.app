@@ -1,5 +1,6 @@
 import React from "react";
 import { ExternalLink, Pencil, Trash2, Server as ServerIcon, User } from "lucide-react";
+import { serverTags } from "@/lib/serverTags";
 
 export default function AdminDirectoryRow({ item, type, busy, onEdit, onDelete }) {
   const isServer = type === "server";
@@ -11,6 +12,7 @@ export default function AdminDirectoryRow({ item, type, busy, onEdit, onDelete }
     ? (Array.isArray(item.categories) && item.categories.length ? item.categories : (item.category ? [item.category] : []))
     : [item.platform];
   const owner = isServer ? item.author_email : item.owner_email;
+  const tags = isServer ? serverTags(item) : [];
   const link = isServer ? item.website_url || item.discord_link : item.channel_url;
 
   return (
@@ -39,6 +41,19 @@ export default function AdminDirectoryRow({ item, type, busy, onEdit, onDelete }
           ))}
           <span className="text-[9px] text-white/30 truncate">{owner}</span>
         </div>
+        {tags.length > 0 && (
+          <div className="flex items-center gap-1 flex-wrap mt-0.5">
+            {tags.map((tag) => (
+              <span
+                key={tag}
+                className="text-[8px] font-bold px-1 py-0.5 rounded"
+                style={{ background: "rgba(168,85,247,0.1)", color: "#d8b4fe", border: "1px solid rgba(168,85,247,0.2)" }}
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {link && (

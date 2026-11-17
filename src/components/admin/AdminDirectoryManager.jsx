@@ -99,7 +99,8 @@ export default function AdminDirectoryManager() {
     return servers.filter((s) =>
       (s.title || "").toLowerCase().includes(query) ||
       (s.description || "").toLowerCase().includes(query) ||
-      (s.author_email || "").toLowerCase().includes(query)
+      (s.author_email || "").toLowerCase().includes(query) ||
+      (Array.isArray(s.tags) && s.tags.some((tag) => (tag || "").toLowerCase().includes(query)))
     );
   }, [servers, search]);
 

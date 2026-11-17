@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { uploadImageWithToast } from "@/lib/imageModeration";
 import MultiTagSelect from "@/components/prospecteurs/MultiTagSelect";
+import TagSelector from "@/components/prospecteurs/TagSelector";
 import { findForbiddenLink } from "@/lib/serverLinkRules";
 
 const GAMES = [
@@ -45,6 +46,7 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
     games: editAd?.games || (editAd?.game ? [editAd.game] : []),
     categories: editAd?.categories || (editAd?.category ? [editAd.category] : []),
     category_slugs: editAd?.category_slugs || (editAd?.category_slug ? [editAd.category_slug] : []),
+    tags: editAd?.tags || [],
     additional_info: editAd?.additional_info || "",
     player_count_needed: editAd?.player_count_needed || 1,
     availability_hours: editAd?.availability_hours || "",
@@ -122,7 +124,8 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
       discord_link: isPlayerAd ? "" : form.discord_link,
       website_url: isPlayerAd ? "" : (form.website_url.trim().startsWith("https://") ? form.website_url.trim() : ""),
       games: form.games || [],
-      categories: form.categories || [],
+      categories: (form.categories || []).slice(0, 3),
+      tags: isPlayerAd ? [] : (form.tags || []),
       category_slugs: form.category_slugs || (form.categories && form.categories.length > 0
         ? form.categories.map((c) => availableCategories.find((ac) => ac.name === c)?.slug || slugifyName(c))
         : []),
@@ -305,10 +308,26 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
                   }));
                 }}
                 placeholder="Sélectionner une ou plusieurs catégories"
+                max={3}
               />
               <p className="text-[9px] text-white/25 mt-1">
-                Clique sur les catégories pour les ajouter ou les retirer.
+                3 catégories maximum — désélectionne-en une pour en choisir une autre.
               </p>
+            </div>
+          )}
+
+          {/* Étiquettes / tags (serveur uniquement)  5 maximum */}
+          {!isPlayerAd && (
+            <div>
+              <label className={labelClass}>
+                Étiquettes / Tags
+                <span className="text-white/20 ml-1 normal-case tracking-normal">(optionnel)</span>
+              </label>
+              <TagSelector
+                value={form.tags || []}
+                onChange={(tags) => handleChange("tags", tags)}
+                max={5}
+              />
             </div>
           )}
 

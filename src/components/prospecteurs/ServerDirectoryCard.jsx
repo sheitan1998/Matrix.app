@@ -6,13 +6,14 @@ import { toast } from "sonner";
 import BoostAdModal from "./BoostAdModal";
 import VoteModal from "./VoteModal";
 import { serverCategoryList } from "@/lib/serverCategories";
+import { serverTags } from "@/lib/serverTags";
 
 const BADGE_CONFIG = {
   nexus: { color: "#22c55e", label: "NEXUS" },
   discord: { color: "#5865F2", label: "DISCORD" },
 };
 
-export default function ServerDirectoryCard({ server, rank, onVote, onDelete, onEdit, onCategoryClick, currentUser }) {
+export default function ServerDirectoryCard({ server, rank, onVote, onDelete, onEdit, onCategoryClick, onTagClick, currentUser }) {
   const [voteStatus, setVoteStatus] = useState({ canVote: true, remaining: null });
   const [loading, setLoading] = useState(false);
   const [showBoost, setShowBoost] = useState(false);
@@ -53,6 +54,7 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
   const isOwner = currentUser?.email === server.author_email;
   const canManage = isOwner || currentUser?.role === "admin";
   const categories = serverCategoryList(server);
+  const tags = serverTags(server);
   const games = server.games && server.games.length > 0 ? server.games : (server.game ? [server.game] : []);
   const description = server.description || "";
   const canExpand = description.length > 110;
@@ -325,6 +327,24 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
           </button>
         )}
       </div>
+
+      {/* Étiquettes cliquables */}
+      {tags.length > 0 && (
+        <div className="px-3 pb-2 flex flex-wrap gap-1">
+          {tags.map((tag) => (
+            <button
+              key={tag}
+              type="button"
+              onClick={() => onTagClick?.(tag)}
+              title={`Filtrer les serveurs avec l'étiquette ${tag}`}
+              className="text-[8px] font-bold px-1.5 py-0.5 rounded transition hover:brightness-150 tap-sm"
+              style={{ background: "rgba(168,85,247,0.1)", color: "#d8b4fe", border: "1px solid rgba(168,85,247,0.25)" }}
+            >
+              #{tag}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Stats — votes & clicks counters (Top-Serveurs style) */}
       <div className="px-3 pb-2 grid grid-cols-2 gap-2">

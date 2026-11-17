@@ -18,6 +18,7 @@ import { List as ListIcon } from "lucide-react";
 import usePageSEO from "@/hooks/usePageSEO";
 import SeoContentBlock from "@/components/seo/SeoContentBlock";
 import { serverMatchesCategory } from "@/lib/serverCategories";
+import { serverHasTag, serverTags } from "@/lib/serverTags";
 
 
 export default function Prospecteurs() {
@@ -34,6 +35,7 @@ export default function Prospecteurs() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("votes_month");
+  const [tagFilter, setTagFilter] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createType, setCreateType] = useState("server");
   const [createServerType, setCreateServerType] = useState("nexus");
@@ -82,16 +84,23 @@ export default function Prospecteurs() {
     return typedServers.filter((s) => serverMatchesCategory(s, { slug: selectedCategory }));
   }, [typedServers, selectedCategory]);
 
-  // Filter by search
+  // Filter by tag (clic sur une étiquette)
+  const tagFiltered = useMemo(() => {
+    if (!tagFilter) return categoryFiltered;
+    return categoryFiltered.filter((s) => serverHasTag(s, tagFilter));
+  }, [categoryFiltered, tagFilter]);
+
+  // Filter by search (nom, description, jeu et étiquettes)
   const searchFiltered = useMemo(() => {
-    if (!search.trim()) return categoryFiltered;
+    if (!search.trim()) return tagFiltered;
     const q = search.trim().toLowerCase();
-    return categoryFiltered.filter((s) =>
+    return tagFiltered.filter((s) =>
     (s.title || "").toLowerCase().includes(q) ||
     (s.description || "").toLowerCase().includes(q) ||
-    (s.game || "").toLowerCase().includes(q)
+    (s.game || "").toLowerCase().includes(q) ||
+    serverTags(s).some((tag) => tag.toLowerCase().includes(q))
     );
-  }, [categoryFiltered, search]);
+  }, [tagFiltered, search]);
 
   // Sort
   const sortedServers = useMemo(() => {
@@ -339,6 +348,56 @@ export default function Prospecteurs() {
           </div>
 
           {/* Server list with search + sort */}
+          <div className="mb-5">
+            <div className="flex items-center gap-2 mb-3">
+              <h2 className="text-xs font-black tracking-wider uppercase text-white">Tous les serveurs</h2>
+              <span className="text-[9px] text-white/40 ml-auto">
+                {sortedServers.length} serveur{sortedServers.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+            <div className="mb-4">
+              <ServerSearchBar
+                search={search}
+                onSearchChange={setSearch}
+                sortBy={sortBy}
+                onSortChange={setSortBy}
+                resultCount={sortedServers.length}
+                activeTag={tagFilter}
+                onClearTag={() => setTagFilter("")}
+              />
+            </div>
+
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="h-48 rounded-xl animate-pulse" style={{ background: "rgba(138,79,255,0.05)" }} />
+                ))}
+              </div>
+            ) : sortedServers.length === 0 ? (
+              <div className="rounded-xl p-8 text-center" style={{ background: "rgba(18,9,28,0.4)", border: "1px dashed rgba(138,79,255,0.15)" }}>
+                <ServerIcon className="w-8 h-8 mx-auto mb-2 text-white/20" />
+                <p className="text-xs text-white/40">Aucun serveur pour le moment</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {sortedServers.map((server, i) => (
+                  <ServerDirectoryCard
+                    key={server.id}
+                    server={server}
+                    rank={i + 1}
+                    onVote={handleVote}
+                    onDelete={handleDeleteAd}
+                    onEdit={handleEditAd}
+                    onCategoryClick={(categorySlug) => {
+                      if (categorySlug) navigate(`/best-serveurs/category/${categorySlug}`);
+                    }}
+                    onTagClick={(tag) => setTagFilter(tag)}
+                    currentUser={user}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
           
 
 

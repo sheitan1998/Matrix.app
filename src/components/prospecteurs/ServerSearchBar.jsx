@@ -7,9 +7,28 @@ const SORT_OPTIONS = [
   { value: "general", label: "Classement général", icon: Trophy },
 ];
 
-export default function ServerSearchBar({ search, onSearchChange, sortBy, onSortChange, resultCount }) {
+export default function ServerSearchBar({ search, onSearchChange, sortBy, onSortChange, resultCount, activeTag, onClearTag }) {
   return (
-    <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+    <div className="space-y-2">
+      {activeTag && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span
+            className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold"
+            style={{ background: "rgba(168,85,247,0.15)", color: "#d8b4fe", border: "1px solid rgba(168,85,247,0.35)" }}
+          >
+            #{activeTag}
+          </span>
+          <button
+            type="button"
+            onClick={() => onClearTag?.()}
+            className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold transition hover:opacity-80 tap-sm"
+            style={{ background: "rgba(239,68,68,0.12)", color: "#f87171", border: "1px solid rgba(239,68,68,0.3)" }}
+          >
+            <X className="w-3 h-3" /> Effacer le filtre
+          </button>
+        </div>
+      )}
+      <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
       {/* Search input */}
       <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30" />
@@ -17,7 +36,7 @@ export default function ServerSearchBar({ search, onSearchChange, sortBy, onSort
           type="text"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Rechercher un serveur..."
+          placeholder="Rechercher un serveur, une étiquette..."
           className="w-full h-9 pl-9 pr-8 rounded-lg text-xs text-white placeholder:text-white/30 outline-none"
           style={{
             background: "rgba(18,9,28,0.6)",
@@ -58,6 +77,7 @@ export default function ServerSearchBar({ search, onSearchChange, sortBy, onSort
       <span className="text-[9px] text-white/40 whitespace-nowrap hidden sm:inline">
         {resultCount} résultat{resultCount !== 1 ? "s" : ""}
       </span>
+      </div>
     </div>
   );
 }

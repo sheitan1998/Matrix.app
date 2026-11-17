@@ -11,6 +11,7 @@ import ServerRankingBlock from "@/components/prospecteurs/ServerRankingBlock";
 import CreateAdModal from "@/components/prospecteurs/CreateAdModal";
 import { fetchAllServers, sortByScore, slugify, detectServerType } from "@/lib/serverDirectory";
 import { serverMatchesCategory } from "@/lib/serverCategories";
+import { serverHasTag, serverTags } from "@/lib/serverTags";
 
 export default function CategoryServers() {
   const { slug } = useParams();
@@ -21,6 +22,7 @@ export default function CategoryServers() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("votes_month");
+  const [tagFilter, setTagFilter] = useState("");
   const [editingAd, setEditingAd] = useState(null);
 
   useEffect(() => {
@@ -45,14 +47,21 @@ export default function CategoryServers() {
 
   const visibleServers = useMemo(() => {
     let arr = servers;
+    if (tagFilter) {
+      arr = arr.filter((s) => serverHasTag(s, tagFilter));
+    }
     if (search.trim()) {
       const q = search.trim().toLowerCase();
-      arr = arr.filter((s) => (s.title || "").toLowerCase().includes(q) || (s.description || "").toLowerCase().includes(q));
+      arr = arr.filter((s) =>
+        (s.title || "").toLowerCase().includes(q) ||
+        (s.description || "").toLowerCase().includes(q) ||
+        serverTags(s).some((tag) => tag.toLowerCase().includes(q))
+      );
     }
     if (sortBy === "newest") return [...arr].sort((a, b) => (b.created_date || "").localeCompare(a.created_date || ""));
     if (sortBy === "votes_month") return sortByScore(arr);
     return [...arr].sort((a, b) => ((b.votes || 0) + (b.boosts || 0) * 2) - ((a.votes || 0) + (a.boosts || 0) * 2));
-  }, [servers, search, sortBy]);
+  }, [servers, search, sortBy, tagFilter]);
 
   const handleVote = (adId, data) => {
     setServers((prev) => prev.map((s) => (s.id === adId ? {
@@ -162,7 +171,15 @@ export default function CategoryServers() {
               <span className="text-[9px] text-white/40 ml-auto">{visibleServers.length} serveur{visibleServers.length !== 1 ? "s" : ""}</span>
             </div>
             <div className="mb-4">
-              <ServerSearchBar search={search} onSearchChange={setSearch} sortBy={sortBy} onSortChange={setSortBy} resultCount={visibleServers.length} />
+              <ServerSearchBar
+                search={search}
+                onSearchChange={setSearch}
+                sortBy={sortBy}
+                onSortChange={setSortBy}
+                resultCount={visibleServers.length}
+                activeTag={tagFilter}
+                onClearTag={() => setTagFilter("")}
+              />
             </div>
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -188,6 +205,7 @@ export default function CategoryServers() {
                     onCategoryClick={(categorySlug) => {
                       if (categorySlug && categorySlug !== slug) navigate(`/best-serveurs/category/${categorySlug}`);
                     }}
+                    onTagClick={(tag) => setTagFilter(tag)}
                     currentUser={user}
                   />
                 ))}

@@ -9,16 +9,37 @@ import { validateServerLinks } from '../../shared/serverLinks.ts';
 // (max_players a été retiré du formulaire de publication.)
 const AD_EDITABLE_FIELDS = [
   'title', 'slug', 'description', 'discord_link', 'website_url', 'type', 'server_type',
-  'category', 'category_slug', 'categories', 'category_slugs', 'games', 'game',
+  'category', 'category_slug', 'categories', 'category_slugs', 'tags', 'games', 'game',
   'profile_image', 'cover_image', 'logo_url', 'banner_url', 'additional_info', 'ip', 'port',
   'player_count_needed', 'availability_hours', 'player_pseudo',
 ];
+
+// Nettoie une liste d'étiquettes : sans #, sans doublon, 24 caractères et 5 étiquettes maximum.
+const cleanTags = (raw: any): string[] => {
+  const list = Array.isArray(raw) ? raw : typeof raw === 'string' ? raw.split(',') : [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of list) {
+    const tag = String(item || '').replace(/^#+/, '').replace(/\s+/g, ' ').trim().slice(0, 24);
+    if (!tag) continue;
+    const key = tag.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(tag);
+    if (out.length >= 5) break;
+  }
+  return out;
+};
 
 const pickAdFields = (data: Record<string, any>) => {
   const clean: Record<string, any> = {};
   for (const field of AD_EDITABLE_FIELDS) {
     if (data[field] !== undefined) clean[field] = data[field];
   }
+  // 3 catégories maximum par serveur
+  if (Array.isArray(clean.categories)) clean.categories = clean.categories.slice(0, 3);
+  if (Array.isArray(clean.category_slugs)) clean.category_slugs = clean.category_slugs.slice(0, 3);
+  if (clean.tags !== undefined) clean.tags = cleanTags(clean.tags);
   return clean;
 };
 
@@ -125,7 +146,11 @@ export default async function(req: Request): Promise<Response> {
         port: found.port,
         discord_server_id: found.discord_server_id,
         game: found.game,
+        games: found.games || [],
         category: found.category,
+        categories: found.categories || [],
+        category_slugs: found.category_slugs || [],
+        tags: found.tags || [],
         votes: found.votes,
         votes_month: found.votes_month,
         boosts: found.boosts,
@@ -586,7 +611,7 @@ export default async function(req: Request): Promise<Response> {
         const rx = { $regex: q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' };
         const baseQ = { type: 'server' };
         const query = q
-          ? { ...baseQ, $or: [ { title: rx }, { slug: rx }, { game: rx }, { games: rx }, { category: rx }, { categories: rx }, { server_type: rx }, { description: rx } ] }
+          ? { ...baseQ, $or: [ { title: rx }, { slug: rx }, { game: rx }, { games: rx }, { category: rx }, { categories: rx }, { tags: rx }, { server_type: rx }, { description: rx } ] }
           : baseQ;
         const page = await base44.asServiceRole.entities.ServerAd.filter(query, '-votes_month', 30);
         const items = page?.items || page || [];
