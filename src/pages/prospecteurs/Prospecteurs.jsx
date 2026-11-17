@@ -157,7 +157,7 @@ export default function Prospecteurs() {
       const res = await base44.functions.invoke("serverSearch", {
         action: "updateAd",
         serverAdId: editingAd.id,
-        data: payload,
+        data: payload
       });
       if (res.data?.error) {
         toast.error(res.data.error);
@@ -179,7 +179,7 @@ export default function Prospecteurs() {
     try {
       const res = await base44.functions.invoke("serverSearch", {
         action: "createAd",
-        data: { ...withUniverse(data), slug: slugify(data.title) },
+        data: { ...withUniverse(data), slug: slugify(data.title) }
       });
       if (res.data?.error) {
         toast.error(res.data.error);
@@ -286,9 +286,9 @@ export default function Prospecteurs() {
               className="flex-1 h-10 px-5 rounded-xl flex items-center gap-2"
               style={{
                 background: "rgba(168,85,247,0.10)",
-                border: "1px solid rgba(168,85,247,0.25)",
-              }}
-            >
+                border: "1px solid rgba(168,85,247,0.25)"
+              }}>
+              
               <ServerIcon className="w-4 h-4" style={{ color: "#a855f7" }} />
               <span className="text-xs font-black tracking-wider uppercase text-white">Vos serveurs</span>
               <span className="text-[9px] text-white/40 ml-1">· Nexus & Discord réunis</span>
@@ -339,7 +339,7 @@ export default function Prospecteurs() {
           </div>
 
           {/* Server list with search + sort */}
-          <div className="mb-5">
+          <div className="mb-5 hidden">
             <div className="flex items-center gap-2 mb-3">
               <h2 className="text-xs font-black tracking-wider uppercase text-white">
                 Tous les serveurs
@@ -354,39 +354,39 @@ export default function Prospecteurs() {
                 onSearchChange={setSearch}
                 sortBy={sortBy}
                 onSortChange={setSortBy}
-                resultCount={sortedServers.length}
-              />
+                resultCount={sortedServers.length} />
+              
             </div>
 
-            {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="h-48 rounded-xl animate-pulse" style={{ background: "rgba(138,79,255,0.05)" }} />
-                ))}
-              </div>
-            ) : sortedServers.length === 0 ? (
-              <div className="rounded-xl p-8 text-center" style={{ background: "rgba(18,9,28,0.4)", border: "1px dashed rgba(138,79,255,0.15)" }}>
+            {loading ?
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {Array.from({ length: 3 }).map((_, i) =>
+              <div key={i} className="h-48 rounded-xl animate-pulse" style={{ background: "rgba(138,79,255,0.05)" }} />
+              )}
+              </div> :
+            sortedServers.length === 0 ?
+            <div className="rounded-xl p-8 text-center" style={{ background: "rgba(18,9,28,0.4)", border: "1px dashed rgba(138,79,255,0.15)" }}>
                 <ServerIcon className="w-8 h-8 mx-auto mb-2 text-white/20" />
                 <p className="text-xs text-white/40">Aucun serveur pour le moment</p>
+              </div> :
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {sortedServers.map((server, i) =>
+              <ServerDirectoryCard
+                key={server.id}
+                server={server}
+                rank={i + 1}
+                onVote={handleVote}
+                onDelete={handleDeleteAd}
+                onEdit={handleEditAd}
+                onCategoryClick={(categorySlug) => {
+                  if (categorySlug) navigate(`/best-serveurs/category/${categorySlug}`);
+                }}
+                currentUser={user} />
+
+              )}
               </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {sortedServers.map((server, i) => (
-                  <ServerDirectoryCard
-                    key={server.id}
-                    server={server}
-                    rank={i + 1}
-                    onVote={handleVote}
-                    onDelete={handleDeleteAd}
-                    onEdit={handleEditAd}
-                    onCategoryClick={(categorySlug) => {
-                      if (categorySlug) navigate(`/best-serveurs/category/${categorySlug}`);
-                    }}
-                    currentUser={user}
-                  />
-                ))}
-              </div>
-            )}
+            }
           </div>
 
           <SeoContentBlock
@@ -394,21 +394,21 @@ export default function Prospecteurs() {
             title="Trouvez le serveur de jeu idéal sur Matrix Hub"
             intro="Best Serveur est l'annuaire communautaire des serveurs de jeu francophones. Chaque serveur dispose d'une fiche publique avec sa description, son thème, son nombre de membres, ses votes et ses liens utiles. Les joueurs votent chaque mois pour faire remonter les communautés les plus actives, tandis que les propriétaires publient et gèrent leurs annonces, suivent leurs statistiques et recrutent de nouveaux membres."
             sections={[
-              { title: "Serveurs Nexus", text: "Créez un serveur interne avec salons textuels et vocaux, rôles personnalisés, emojis et thèmes visuels, sans quitter la plateforme." },
-              { title: "Serveurs Discord", text: "Découvrez des serveurs Discord francophones par jeu, ambiance ou taille de communauté, avec un lien d'invitation vérifié." },
-              { title: "Votes et classement", text: "Votez une fois par jour pour vos serveurs préférés et consultez le classement mensuel des communautés les plus soutenues." },
-              { title: "Recrutement de joueurs", text: "Publiez une annonce de recrutement ou une recherche de coéquipiers pour trouver des joueurs partageant votre style de jeu." },
-              { title: "Catégories de jeux", text: "Parcourez les serveurs par catégorie : FPS, RPG, survie, sandbox, simulation, course et bien d'autres univers." },
-              { title: "Boosts et visibilité", text: "Mettez en avant votre serveur grâce aux boosts et gagnez en visibilité auprès de la communauté Matrix Hub." },
-            ]}
+            { title: "Serveurs Nexus", text: "Créez un serveur interne avec salons textuels et vocaux, rôles personnalisés, emojis et thèmes visuels, sans quitter la plateforme." },
+            { title: "Serveurs Discord", text: "Découvrez des serveurs Discord francophones par jeu, ambiance ou taille de communauté, avec un lien d'invitation vérifié." },
+            { title: "Votes et classement", text: "Votez une fois par jour pour vos serveurs préférés et consultez le classement mensuel des communautés les plus soutenues." },
+            { title: "Recrutement de joueurs", text: "Publiez une annonce de recrutement ou une recherche de coéquipiers pour trouver des joueurs partageant votre style de jeu." },
+            { title: "Catégories de jeux", text: "Parcourez les serveurs par catégorie : FPS, RPG, survie, sandbox, simulation, course et bien d'autres univers." },
+            { title: "Boosts et visibilité", text: "Mettez en avant votre serveur grâce aux boosts et gagnez en visibilité auprès de la communauté Matrix Hub." }]
+            }
             links={[
-              { href: "/best-creator", label: "Best Creator" },
-              { href: "/tuto-gaming", label: "Guides et tutoriels gaming" },
-              { href: "/nexus", label: "Communauté Nexus" },
-              { href: "/nexus-game", label: "Nexus Game" },
-              { href: "/stream", label: "Streaming" },
-            ]}
-          />
+            { href: "/best-creator", label: "Best Creator" },
+            { href: "/tuto-gaming", label: "Guides et tutoriels gaming" },
+            { href: "/nexus", label: "Communauté Nexus" },
+            { href: "/nexus-game", label: "Nexus Game" },
+            { href: "/stream", label: "Streaming" }]
+            } />
+          
         </div>
       </div>
 
