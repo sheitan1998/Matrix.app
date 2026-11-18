@@ -82,6 +82,7 @@ const BotSettings = lazy(() => import('@/pages/live/BotSettings'));
 const RechercheJoueur = lazy(() => import('@/pages/prospecteurs/RechercheJoueur'));
 const CreatorSearch = lazy(() => import('@/pages/prospecteurs/CreatorSearch'));
 const CreatorDetail = lazy(() => import('@/pages/prospecteurs/CreatorDetail'));
+const CreatorAdProfile = lazy(() => import('@/pages/prospecteurs/CreatorAdProfile'));
 const Privacy = lazy(() => import('@/pages/Privacy'));
 const About = lazy(() => import('@/pages/About'));
 const Contact = lazy(() => import('@/pages/Contact'));
@@ -187,6 +188,7 @@ const AuthenticatedApp = () => {
         <Route path="/oauth/consent" element={<OAuthConsent />} />
         <Route path="/nexus/invite/:code" element={<NexusInvite />} />
         <Route path="/servers/:slug" element={<ServerProfile />} />
+        <Route path="/createur/:slug" element={<CreatorAdProfile />} />
         {/* 301 redirects — old URLs → new URLs */}
         <Route path="/prospecteurs" element={<Navigate to="/best-serveurs" replace />} />
         <Route path="/prospecteurs/category/:slug" element={<ParamRedirect to="/best-serveurs/category" param="slug" />} />

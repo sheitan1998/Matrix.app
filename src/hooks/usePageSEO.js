@@ -47,6 +47,8 @@ export default function usePageSEO({
   schema,
 } = {}) {
   useEffect(() => {
+    document.documentElement.lang = "fr";
+
     upsertMeta(
       "name",
       "robots",

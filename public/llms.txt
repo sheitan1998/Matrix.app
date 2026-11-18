@@ -1,0 +1,36 @@
+# Matrix Hub
+
+> Plateforme francophone qui réunit le streaming, les serveurs de jeu Nexus et Discord, un annuaire communautaire (Best Serveur), un classement de créateurs (Best Creator), des guides gaming et des mini-jeux.
+
+Matrix Hub est un hub gaming et créatif : les joueurs y trouvent des serveurs et des communautés, les créateurs y publient leur chaîne YouTube, Twitch, TikTok, Instagram ou Snapchat, et les passionnés y consultent des guides, des wikis et des outils pour leurs jeux.
+
+## Pages principales
+
+- [Accueil](https://matrix-hub.app/) : présentation de la plateforme et de ses univers.
+- [Best Serveur](https://matrix-hub.app/best-serveurs) : annuaire des serveurs Discord et Nexus gaming, classés par votes mensuels.
+- [Best Creator](https://matrix-hub.app/best-creator) : classement et référencement des créateurs de contenu.
+- [Tuto Gaming](https://matrix-hub.app/tuto-gaming) : guides, wikis et tutoriels par jeu.
+- [À propos](https://matrix-hub.app/about) : mission et fonctionnement de Matrix Hub.
+- [Contact](https://matrix-hub.app/contact) : support et partenariats.
+- [Confidentialité](https://matrix-hub.app/privacy) : données personnelles et cookies.
+
+## Univers gaming documentés
+
+- [Farming Simulator 25](https://matrix-hub.app/farming) : mods, catégories et guides.
+- [Minecraft](https://matrix-hub.app/minecraft) : mods, encyclopédie et recettes.
+- [Dofus](https://matrix-hub.app/dofus) : stuff builder, classes, quêtes et guides.
+- [Rocket League](https://matrix-hub.app/rocket-league) : boutique, presets et statistiques.
+- [Valheim](https://matrix-hub.app/valheim) : guides, boss et seeds.
+- [Rust](https://matrix-hub.app/rust) : calculateur de raid et guides.
+- [Valorant](https://matrix-hub.app/valorant) : agents, armes et guides.
+- [GTA VI](https://matrix-hub.app/gta-6) : actualités, véhicules et guides.
+- [Fortnite](https://matrix-hub.app/fortnite-maps) : codes de maps créatives, boutique, cosmétiques et statistiques.
+
+## Contenus communautaires
+
+Chaque serveur publié dispose d'une fiche publique à l'adresse `https://matrix-hub.app/servers/<slug>` et chaque annonce créateur d'une fiche à l'adresse `https://matrix-hub.app/createur/<slug>`. Ces fiches ne sont indexées que lorsqu'elles contiennent une description suffisamment complète.
+
+## Sitemaps
+
+- [Sitemap des pages](https://matrix-hub.app/sitemap.xml)
+- [Sitemap dynamique des annonces](https://matrix-hub.app/functions/sitemapDynamic)

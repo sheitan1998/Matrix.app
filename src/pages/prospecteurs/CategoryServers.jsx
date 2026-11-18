@@ -12,6 +12,8 @@ import CreateAdModal from "@/components/prospecteurs/CreateAdModal";
 import { fetchAllServers, sortByScore, slugify, detectServerType } from "@/lib/serverDirectory";
 import { serverMatchesCategory } from "@/lib/serverCategories";
 import { serverHasTag, serverTags } from "@/lib/serverTags";
+import usePageSEO from "@/hooks/usePageSEO";
+import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 
 export default function CategoryServers() {
   const { slug } = useParams();
@@ -24,6 +26,17 @@ export default function CategoryServers() {
   const [sortBy, setSortBy] = useState("votes_month");
   const [tagFilter, setTagFilter] = useState("");
   const [editingAd, setEditingAd] = useState(null);
+
+  // SEO : métadonnées propres à la catégorie réellement chargée.
+  usePageSEO({
+    title: category
+      ? `Serveurs ${category.name} — classement Best Serveur | Matrix Hub`
+      : "Serveurs par catégorie — Best Serveur | Matrix Hub",
+    description: category
+      ? `Annuaire des serveurs ${category.name} classés par votes sur Matrix Hub : descriptions, liens d'invitation, nombre de membres et recrutement de joueurs.`
+      : "Parcourez les serveurs de jeu par catégorie sur Matrix Hub : classements, descriptions et liens d'invitation.",
+    path: `/best-serveurs/category/${slug}`,
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -132,6 +145,13 @@ export default function CategoryServers() {
             <span className="text-white/20 text-xs">/</span>
             <span className="text-xs font-bold text-white">{category?.name || "..."}</span>
           </div>
+          <SeoBreadcrumbs
+            items={[
+              { label: "Accueil", href: "/" },
+              { label: "Best Serveur", href: "/best-serveurs" },
+              { label: category?.name || "Catégorie" },
+            ]}
+          />
 
           {/* Category banner */}
           <div className="relative h-32 sm:h-40 rounded-2xl overflow-hidden mb-5">

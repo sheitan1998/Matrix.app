@@ -7,8 +7,6 @@ Disallow: /dashboard
 Disallow: /studio
 Disallow: /upload
 Disallow: /live-bot
-Disallow: /api/
-Disallow: /functions/
 Disallow: /oauth
 
 # Comptes, profils sensibles et espaces membres
@@ -37,6 +35,33 @@ Disallow: /auth/
 
 # Pages de résultats et de lecture générées dynamiquement
 Disallow: /search
-Disallow: /*?*
+
+# API et fonctions techniques (le sitemap dynamique reste accessible)
+Disallow: /api/
+Allow: /functions/sitemapDynamic
+Disallow: /functions/
+
+# Robots des moteurs de recherche IA : accès aux pages publiques autorisé
+User-agent: GPTBot
+Allow: /
+Disallow: /admin
+Disallow: /mon-profil
+Disallow: /wallet
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /admin
+Disallow: /mon-profil
+Disallow: /wallet
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /admin
+Disallow: /mon-profil
+Disallow: /wallet
+
+User-agent: Google-Extended
+Allow: /
 
 Sitemap: https://matrix-hub.app/sitemap.xml
+Sitemap: https://matrix-hub.app/functions/sitemapDynamic

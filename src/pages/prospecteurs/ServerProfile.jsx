@@ -11,6 +11,9 @@ import VoteModal from "@/components/prospecteurs/VoteModal";
 import ServerApiPanel from "@/components/prospecteurs/ServerApiPanel";
 import { serverTags } from "@/lib/serverTags";
 import { slugify } from "@/lib/serverDirectory";
+import usePageSEO from "@/hooks/usePageSEO";
+import { SITE_URL } from "@/lib/seoRoutes";
+import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 
 export default function ServerProfile() {
   const { slug } = useParams();
@@ -24,6 +27,36 @@ export default function ServerProfile() {
   const [showBoost, setShowBoost] = useState(false);
   const [showVoteModal, setShowVoteModal] = useState(false);
   const [user, setUser] = useState(null);
+
+  // SEO : métadonnées construites à partir des informations réelles du serveur.
+  const seoPath = server ? `/servers/${server.slug || server.id}` : undefined;
+  const seoDescription = (server?.description || "").replace(/\s+/g, " ").trim();
+  const seoLinks = [server?.discord_link, server?.website_url].filter(Boolean);
+  usePageSEO(
+    server
+      ? {
+          title: `${server.title} — serveur ${server.server_type === "discord" ? "Discord" : "Nexus"} | Matrix Hub`,
+          description: (
+            seoDescription.length >= 60
+              ? seoDescription
+              : `${server.title} : votes, description et lien d'invitation de ce serveur ${server.server_type === "discord" ? "Discord" : "Nexus"} sur l'annuaire Matrix Hub.`
+          ).slice(0, 158),
+          path: seoPath,
+          image: server.banner_url || server.cover_image || server.logo_url || server.profile_image,
+          type: "profile",
+          noindex: seoDescription.length < 120,
+          schema: {
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            name: server.title,
+            description: seoDescription || undefined,
+            url: `${SITE_URL}${seoPath}`,
+            logo: server.logo_url || server.profile_image || undefined,
+            ...(seoLinks.length ? { sameAs: seoLinks } : {}),
+          },
+        }
+      : {}
+  );
 
   useEffect(() => {
     const fetchServer = async () => {
@@ -287,6 +320,15 @@ export default function ServerProfile() {
             </a>
           )}
         </div>
+
+        <SeoBreadcrumbs
+          className="mt-1"
+          items={[
+            { label: "Accueil", href: "/" },
+            { label: "Best Serveur", href: "/best-serveurs" },
+            { label: server.title },
+          ]}
+        />
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-2 mb-4">

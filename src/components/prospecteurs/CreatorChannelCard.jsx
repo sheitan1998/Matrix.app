@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { ArrowUp, ExternalLink, Trophy, Pencil, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import CreatorVoteModal from "./CreatorVoteModal";
@@ -147,7 +148,11 @@ export default function CreatorChannelCard({ creator, rank, user, onVote, onEdit
           </div>
 
           <div className="flex-1 min-w-0 pt-7">
-            <p className="text-sm font-black text-white truncate">{creator.name}</p>
+            <Link
+              to={`/createur/${creator.slug || creator.id}`}
+              className="text-sm font-black text-white truncate block hover:text-purple-300 transition">
+              {creator.name}
+            </Link>
             {creator.platform === "snapchat" && (
               <SnapchatChannelActions creator={creator} accent={accent} />
             )}

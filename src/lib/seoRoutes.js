@@ -2,148 +2,128 @@ import { pickOgImage, pickOgImageAlt, ogCategory, OG_BANNERS } from "@/lib/ogIma
 
 export const SITE_URL = "https://matrix-hub.app";
 export const SITE_NAME = "Matrix Hub";
-export const SITE_LOCALE = "en_US";
+export const SITE_LOCALE = "fr_FR";
 export const DEFAULT_IMAGE = OG_BANNERS.home.url;
 
 /**
- * English titles, descriptions and Open Graph visuals for every public route.
- * Title format: "[Page name] — Matrix Hub" or "Matrix Hub — ..." for the home page.
- * `image` overrides the thematic image automatically assigned by ogCategory().
+ * Registre SEO centralisé — une entrée unique par route publique.
+ * Chaque page possède un titre, une description et un visuel Open Graph propres.
+ * Aucune génération automatique de métadonnées génériques.
  */
 const ROUTES = {
   "/": {
-    title: "Matrix Hub — Live streaming, gaming servers & creator community",
+    title: "Matrix Hub — Le hub des gamers, streamers et créateurs",
     description:
-      "Matrix Hub brings YouTube and Twitch streaming, Nexus and Discord game servers, creator tools, mini-games and a worldwide gaming community together in one platform.",
-  },
-  "/stream": {
-    title: "Video streaming and live channels — Matrix Hub",
-    description:
-      "Watch videos, shorts and live streams, launch your own channel and edit your clips with the built-in Matrix Hub studio.",
-  },
-  "/trending": {
-    title: "Trending videos and streams — Matrix Hub",
-    description:
-      "Discover the most watched videos, live streams and shorts trending across the Matrix Hub streaming community.",
-  },
-  "/twitch": {
-    title: "Live on Twitch — Matrix Hub",
-    description:
-      "Follow your favourite Twitch streams, browse categories and chat with the community live on Matrix Hub.",
-  },
-  "/nexus": {
-    title: "Nexus — Gaming hubs, voice rooms and community servers — Matrix Hub",
-    description:
-      "Join Matrix Hub Nexus servers: text and voice channels, custom roles, forums and community moderation built for gamers worldwide.",
-  },
-  "/shorts": {
-    title: "Shorts — Short and viral game clips — Matrix Hub",
-    description:
-      "Scroll Matrix Hub Shorts: gaming clips, stream highlights and short videos from the creative community.",
+      "Streaming, serveurs de jeu Nexus et Discord, annuaire Best Serveur, classement Best Creator, guides gaming et mini-jeux réunis sur une seule plateforme communautaire.",
+    image: OG_BANNERS.home.url,
   },
   "/best-serveurs": {
-    title: "Best Serveur — Game server directory — Matrix Hub",
+    title: "Annuaire de serveurs Discord et Nexus gaming | Matrix Hub",
     description:
-      "Browse and vote for the best game servers: Nexus and Discord communities, categories, player recruitment and community ads.",
+      "Trouvez un serveur Discord gaming, une communauté Nexus ou des coéquipiers : catégories, étiquettes, votes mensuels et fiches détaillées de chaque serveur.",
+    image: OG_BANNERS.bestServer.url,
   },
   "/best-creator": {
-    title: "Best Creator — YouTube and Twitch creator rankings — Matrix Hub",
+    title: "Best Creator — classement et visibilité des créateurs | Matrix Hub",
     description:
-      "Discover and vote for the best content creators on YouTube, Twitch, TikTok, Instagram and Snapchat with monthly Matrix Hub rankings.",
-  },
-  "/nexus-game": {
-    title: "Nexus Game — Online games and virtual casino — Matrix Hub",
-    description:
-      "Explore the Nexus Game catalogue: roulette, slots, blackjack, scratch cards and hundreds of HTML5 games playable on Matrix Hub with the TRIX virtual currency.",
-  },
-  "/progression": {
-    title: "Levels, achievements and progression — Matrix Hub",
-    description:
-      "Track your Matrix Hub progression: levels, achievements, XP, leaderboards and community rewards.",
+      "Publiez votre chaîne YouTube, Twitch, TikTok, Instagram ou Snapchat, rejoignez le classement mensuel des créateurs et gagnez en visibilité auprès de la communauté gaming.",
+    image: OG_BANNERS.bestCreator.url,
   },
   "/tuto-gaming": {
-    title: "Tuto Gaming — Game guides, wikis and walkthroughs — Matrix Hub",
+    title: "Guides et tutoriels gaming : wiki, astuces et mods | Matrix Hub",
     description:
-      "Guides, tutorials, collaborative wikis and databases for your favourite games: Farming Simulator, Fortnite, Minecraft, Dofus and many more on Matrix Hub.",
+      "Guides pas à pas, wikis collaboratifs, astuces et mods pour Farming Simulator 25, Minecraft, Dofus, Fortnite, Rust, Valheim, Valorant et bien d'autres jeux.",
   },
   "/farming": {
-    title: "Farming Simulator 25 — Mods, guides and tutorials — Matrix Hub",
+    title: "Farming Simulator 25 : mods, guides et catégories | Matrix Hub",
     description:
-      "Download Farming Simulator 25 mods, read tutorials and browse community categories and tips to progress faster on Matrix Hub.",
+      "Téléchargez des mods Farming Simulator 25, consultez les tutoriels, les catégories de matériel et les astuces de la communauté pour progresser plus vite.",
   },
   "/minecraft": {
-    title: "Minecraft — Mods, encyclopedia and guides — Matrix Hub",
+    title: "Minecraft : mods Modrinth, encyclopédie et recettes | Matrix Hub",
     description:
-      "Explore Minecraft on Matrix Hub: Modrinth mod catalogue, block encyclopedia, crafting recipes and community guides.",
+      "Catalogue de mods Modrinth, encyclopédie des blocs, recettes d'artisanat et guides Minecraft réunis dans un seul espace communautaire.",
   },
   "/dofus": {
-    title: "Dofus — Stuff builder, classes, quests and guides — Matrix Hub",
+    title: "Dofus : stuff builder, classes, quêtes et guides | Matrix Hub",
     description:
-      "Optimise your Dofus character: stuff builder, characteristics, classes, spells, quests, almanax and world maps on Matrix Hub.",
+      "Optimisez votre personnage Dofus : stuff builder, caractéristiques, classes, sorts, quêtes, almanax et cartes du monde dans un outil gratuit.",
   },
   "/rocket-league": {
-    title: "Rocket League — Shop, presets and stats — Matrix Hub",
+    title: "Rocket League : boutique, presets et statistiques | Matrix Hub",
     description:
-      "Track the Rocket League item shop, build your car presets, browse the item catalogue and check rank statistics on Matrix Hub.",
+      "Suivez la boutique Rocket League du jour, créez vos presets de voiture, parcourez le catalogue d'objets et consultez vos statistiques de rang.",
   },
   "/valheim": {
-    title: "Valheim — Guides, bosses, gear and seeds — Matrix Hub",
+    title: "Valheim : guides, boss, équipements et seeds | Matrix Hub",
     description:
-      "Valheim guides, bosses, equipment, resources and seed sharing: find the perfect map and progress with the Matrix Hub community.",
+      "Guides Valheim, boss, équipements, ressources et partage de seeds : trouvez la carte idéale et progressez avec la communauté Matrix Hub.",
   },
   "/rust": {
-    title: "Rust — Raid calculator, guides and servers — Matrix Hub",
+    title: "Rust : calculateur de raid, guides et serveurs | Matrix Hub",
     description:
-      "Calculate your raids, read base-building guides and find servers and resources to survive longer in Rust on Matrix Hub.",
+      "Calculez vos raids, lisez les guides de construction de base et trouvez des serveurs et des ressources pour survivre plus longtemps sur Rust.",
   },
   "/valorant": {
-    title: "Valorant — Agents, weapons and guides — Matrix Hub",
+    title: "Valorant : agents, armes, cartes et guides | Matrix Hub",
     description:
-      "Agent profiles, weapon statistics, maps and Valorant guides to prepare your matches and climb the competitive ranks on Matrix Hub.",
+      "Fiches d'agents, statistiques d'armes, cartes et guides Valorant pour préparer vos matchs et progresser dans les rangs compétitifs.",
   },
   "/gta-6": {
-    title: "GTA VI — News, vehicles and guides — Matrix Hub",
+    title: "GTA VI : actualités, véhicules et guides | Matrix Hub",
     description:
-      "Everything about GTA VI: news, vehicles, characters, weapons, locations and community guides ahead of launch on Matrix Hub.",
+      "Tout sur GTA VI : actualités, véhicules, personnages, armes, lieux et guides communautaires à l'approche de la sortie du jeu.",
   },
   "/fortnite-maps": {
-    title: "Fortnite Maps — Creative map codes — Matrix Hub",
+    title: "Codes de maps Fortnite créatives | Matrix Hub",
     description:
-      "Find the best Fortnite map codes: tycoon, horror, deathrun, parkour, RPG and battle royale maps with stats and community votes.",
+      "Trouvez les meilleurs codes de maps Fortnite : tycoon, horreur, deathrun, parkour, RPG et battle royale avec statistiques et votes de la communauté.",
   },
   "/fortnite-shop": {
-    title: "Fortnite item shop today — Skins and items — Matrix Hub",
+    title: "Boutique Fortnite du jour : skins et objets | Matrix Hub",
     description:
-      "Browse today's Fortnite item shop: skins, pickaxes, emotes and V-Bucks packs updated daily on Matrix Hub.",
+      "Parcourez la boutique Fortnite du jour : skins, pioches, emotes et packs de V-Bucks mis à jour chaque jour sur Matrix Hub.",
   },
   "/fortnite-cosmetics": {
-    title: "Fortnite cosmetics — Skins, pickaxes and emotes — Matrix Hub",
+    title: "Cosmétiques Fortnite : skins, pioches et emotes | Matrix Hub",
     description:
-      "Browse the full Fortnite cosmetics catalogue: outfits, back blings, pickaxes, emotes and rarities, search and vote on Matrix Hub.",
+      "Explorez le catalogue complet des cosmétiques Fortnite : tenues, sacs à dos, pioches, emotes et raretés, avec recherche et votes communautaires.",
   },
   "/fortnite-stats": {
-    title: "Fortnite stats — Player profiles and leaderboards — Matrix Hub",
+    title: "Statistiques Fortnite : profils et classements | Matrix Hub",
     description:
-      "Look up any Fortnite player's stats: wins, K/D, ranks and career history directly on Matrix Hub.",
+      "Consultez les statistiques d'un joueur Fortnite : victoires, ratio éliminations/morts, rangs et historique de carrière directement sur Matrix Hub.",
+  },
+  "/nexus-game": {
+    title: "Nexus Game : jeux en ligne et casino virtuel | Matrix Hub",
+    description:
+      "Découvrez le catalogue Nexus Game : roulette, machines à sous, blackjack, cartes à gratter et des centaines de jeux HTML5 jouables avec la monnaie virtuelle TRIX.",
+    image: OG_BANNERS.nexusGame.url,
+  },
+  "/nexus": {
+    title: "Nexus — serveurs communautaires et salons vocaux | Matrix Hub",
+    description:
+      "Rejoignez les serveurs Nexus de Matrix Hub : salons textuels et vocaux, rôles personnalisés, forums et modération communautaire pensés pour les gamers.",
+    image: OG_BANNERS.nexus.url,
   },
   "/about": {
-    title: "About Matrix Hub — The all-in-one gaming platform",
+    title: "À propos de Matrix Hub — la plateforme gaming tout-en-un",
     description:
-      "Learn about the Matrix Hub mission: bringing streaming, community, games and creative tools together for creators and gamers worldwide.",
+      "Découvrez la mission de Matrix Hub : réunir le streaming, les communautés de joueurs, les jeux et les outils de création sur une seule plateforme.",
   },
   "/contact": {
-    title: "Contact and support — Matrix Hub",
+    title: "Contact et support — Matrix Hub",
     description:
-      "Contact the Matrix Hub team about a question, a partnership, a technical issue or a community moderation request.",
+      "Contactez l'équipe Matrix Hub pour une question, un partenariat, un problème technique ou une demande de modération communautaire.",
   },
   "/privacy": {
-    title: "Privacy and cookie policy — Matrix Hub",
+    title: "Politique de confidentialité et cookies — Matrix Hub",
     description:
-      "How Matrix Hub collects, uses and protects your personal data: cookies, connected services, payments, hosting and your rights.",
+      "Comment Matrix Hub collecte, utilise et protège vos données personnelles : cookies, services connectés, paiements, hébergement et vos droits.",
   },
 };
 
-/** Member / private routes: never indexed. */
+/** Routes membres et techniques : jamais indexées. */
 const NOINDEX_PREFIXES = [
   "/admin",
   "/mon-profil",
@@ -176,6 +156,11 @@ const NOINDEX_PREFIXES = [
   "/live",
   "/channel",
   "/search",
+  "/stream",
+  "/twitch",
+  "/shorts",
+  "/community/subscription",
+  "/progression",
   "/nexus/invite",
   "/auth",
   "/experience",
@@ -189,168 +174,154 @@ function titleize(slug) {
     .trim();
 }
 
-/** Game / server / listing / content detail pages: metadata built from the slug. */
+/** Fiches dynamiques : métadonnées construites à partir du slug réel. */
 function resolveDynamic(parts) {
   if (parts[0] === "tuto-gaming" && parts[1] && !parts[2]) {
     const game = titleize(parts[1]);
     return {
-      title: `${game} — Guides, wiki and walkthroughs — Matrix Hub`,
-      description: `${game} guides, tutorials, collaborative wiki and tips shared by the Matrix Hub gaming community.`,
-      image: pickOgImage("/tuto-gaming"),
+      title: `${game} — guides, wiki et astuces | Matrix Hub`,
+      description: `Guides, tutoriels, wiki collaboratif et astuces ${game} partagés par la communauté gaming de Matrix Hub.`,
     };
   }
   if (parts[0] === "tuto-gaming" && parts[2] === "quest") {
     const game = titleize(parts[1]);
     return {
-      title: `${game} quest — Step-by-step guide — Matrix Hub`,
-      description: `Complete walkthrough of this ${game} quest on Matrix Hub: steps, rewards and community tips.`,
-      image: pickOgImage("/tuto-gaming"),
+      title: `Quête ${game} — solution pas à pas | Matrix Hub`,
+      description: `Solution complète de cette quête ${game} sur Matrix Hub : étapes, récompenses et conseils de la communauté.`,
     };
   }
   if (parts[0] === "tuto-gaming" && parts[2] === "wiki") {
     const game = titleize(parts[1]);
     return {
-      title: `${game} wiki entry — Data and tips — Matrix Hub`,
-      description: `${game} wiki entry on Matrix Hub: item details, stats, tips and community contributions.`,
-      image: pickOgImage("/tuto-gaming"),
+      title: `Wiki ${game} — fiche et données | Matrix Hub`,
+      description: `Fiche wiki ${game} sur Matrix Hub : caractéristiques, statistiques, conseils et contributions de la communauté.`,
     };
   }
   if (parts[0] === "tuto-gaming" && parts[1] === "farming-simulator-25" && parts[2] === "mods") {
     return {
-      title: "Farming Simulator 25 mods — Download and install — Matrix Hub",
+      title: "Mods Farming Simulator 25 — télécharger et installer | Matrix Hub",
       description:
-        "Browse Farming Simulator 25 mods on Matrix Hub: tractors, tools, maps and installation guides for PC and console.",
-      image: pickOgImage("/farming"),
+        "Parcourez les mods Farming Simulator 25 sur Matrix Hub : tracteurs, outils, cartes et guides d'installation pour PC et console.",
     };
   }
   if (parts[0] === "tuto-gaming" && parts[1] === "farming-simulator-25" && parts[2]) {
     const category = titleize(parts[2]);
     return {
-      title: `Farming Simulator 25 — ${category} mods — Matrix Hub`,
-      description: `${category} mods for Farming Simulator 25 on Matrix Hub: downloads, descriptions and community ratings.`,
-      image: pickOgImage("/farming"),
+      title: `Farming Simulator 25 — mods ${category} | Matrix Hub`,
+      description: `Mods ${category} pour Farming Simulator 25 : téléchargements, descriptions et notes de la communauté Matrix Hub.`,
     };
   }
   if (parts[0] === "jeu" && parts[1]) {
     const game = titleize(parts[1]);
     return {
-      title: `${game} — Shop, quests and achievements — Matrix Hub`,
-      description: `${game} database on Matrix Hub: in-game shop, quests, collections and achievements with live public data.`,
-      image: pickOgImage("/jeu"),
+      title: `${game} — boutique, quêtes et succès | Matrix Hub`,
+      description: `Base de données ${game} sur Matrix Hub : boutique en jeu, quêtes, collections et succès alimentés par des données publiques.`,
     };
   }
   if (parts[0] === "servers" && parts[1]) {
     const name = titleize(parts[1]);
     return {
-      title: `${name} — Game server profile — Matrix Hub`,
-      description: `Discover ${name} on Matrix Hub: description, votes, boosts and how to join this gaming community server.`,
-      image: pickOgImage("/best-serveurs"),
+      title: `${name} — fiche serveur de jeu | Matrix Hub`,
+      description: `Découvrez ${name} sur Matrix Hub : description, votes, boosts et informations pour rejoindre ce serveur communautaire.`,
+      image: OG_BANNERS.bestServer.url,
     };
   }
   if (parts[0] === "best-serveurs" && parts[1] === "category" && parts[2]) {
     const category = titleize(parts[2]);
     return {
-      title: `${category} game servers — Best Serveur — Matrix Hub`,
-      description: `Directory of ${category} game servers ranked by votes on Matrix Hub: descriptions, links and player recruitment.`,
-      image: pickOgImage("/best-serveurs"),
+      title: `Serveurs ${category} — classement Best Serveur | Matrix Hub`,
+      description: `Annuaire des serveurs ${category} classés par votes sur Matrix Hub : descriptions, liens et recrutement de joueurs.`,
+      image: OG_BANNERS.bestServer.url,
     };
   }
   if (parts[0] === "creator" && parts[1]) {
     const name = titleize(parts[1]);
     return {
-      title: `${name} — Creator profile — Matrix Hub`,
-      description: `Public profile of ${name} on Matrix Hub: channels, content and links from the creator community.`,
-      image: pickOgImage("/creator"),
+      title: `${name} — profil créateur | Matrix Hub`,
+      description: `Profil public de ${name} sur Matrix Hub : chaînes, contenus et liens de ce créateur de la communauté gaming.`,
+      image: OG_BANNERS.bestCreator.url,
     };
   }
   if (parts[0] === "fortnite-maps" && parts[1]) {
     const code = titleize(parts[1]);
     return {
-      title: `Fortnite map ${code} — Creative code and stats — Matrix Hub`,
-      description: `Fortnite creative map ${code} on Matrix Hub: gameplay details, statistics, player votes and the map code to play it.`,
-      image: pickOgImage("/fortnite-maps"),
+      title: `Map Fortnite ${code} — code créatif et statistiques | Matrix Hub`,
+      description: `Map créative Fortnite ${code} sur Matrix Hub : détails de jeu, statistiques, votes des joueurs et code pour la lancer.`,
     };
   }
   if (parts[0] === "fortnite-cosmetics" && parts[1]) {
     const name = titleize(parts[1]);
     return {
-      title: `${name} — Fortnite cosmetic — Matrix Hub`,
-      description: `${name} Fortnite cosmetic on Matrix Hub: images, rarity, release details and community votes.`,
-      image: pickOgImage("/fortnite-cosmetics"),
+      title: `${name} — cosmétique Fortnite | Matrix Hub`,
+      description: `${name}, cosmétique Fortnite sur Matrix Hub : images, rareté, détails de sortie et votes de la communauté.`,
     };
   }
   if (parts[0] === "page" && parts[1]) {
     const name = titleize(parts[1]);
     return {
       title: `${name} — Matrix Hub`,
-      description: `${name} on Matrix Hub: live streaming, gaming hubs and community servers.`,
-      image: pickOgImage("/page"),
+      description: `${name} sur Matrix Hub : streaming, hubs gaming et serveurs communautaires.`,
     };
   }
   if (parts[0] === "twitch" && parts[1] === "watch" && parts[2]) {
     const channel = titleize(parts[2]);
     return {
-      title: `${channel} — Twitch live stream — Matrix Hub`,
-      description: `Watch ${channel} live on Matrix Hub with Twitch chat, stream info and viewer statistics.`,
-      image: pickOgImage("/twitch/watch"),
+      title: `${channel} — live Twitch | Matrix Hub`,
+      description: `Regardez ${channel} en direct sur Matrix Hub avec le chat Twitch, les informations du stream et les statistiques de spectateurs.`,
+      noindex: true,
     };
   }
   if (parts[0] === "twitch" && parts[1] === "channel" && parts[2]) {
     const channel = titleize(parts[2]);
     return {
-      title: `${channel} — Twitch channel profile — Matrix Hub`,
-      description: `${channel} on Matrix Hub: stream schedule, latest videos, clips and channel statistics.`,
-      image: pickOgImage("/twitch/channel"),
+      title: `${channel} — chaîne Twitch | Matrix Hub`,
+      description: `${channel} sur Matrix Hub : planning des streams, dernières vidéos, clips et statistiques de la chaîne.`,
+      noindex: true,
     };
   }
   if (parts[0] === "twitch" && parts[1] === "category" && parts[2]) {
     const category = titleize(parts[2]);
     return {
-      title: `${category} — Live Twitch streams — Matrix Hub`,
-      description: `Watch ${category} live streams on Matrix Hub: top channels, viewers and live gameplay.`,
-      image: pickOgImage("/twitch"),
+      title: `${category} — streams Twitch en direct | Matrix Hub`,
+      description: `Regardez les streams ${category} en direct sur Matrix Hub : meilleures chaînes, spectateurs et gameplay en temps réel.`,
+      noindex: true,
     };
   }
   if (parts[0] === "watch" && parts[1]) {
     return {
-      title: "Watch video — Matrix Hub",
-      description: "Watch this video on Matrix Hub with comments, related content and creator information.",
+      title: "Regarder une vidéo — Matrix Hub",
+      description: "Regardez cette vidéo sur Matrix Hub avec les commentaires, les contenus associés et les informations du créateur.",
       noindex: true,
-      image: pickOgImage("/watch"),
     };
   }
   if (parts[0] === "live" && parts[1]) {
     return {
-      title: "Live stream — Matrix Hub",
-      description: "Watch this live stream on Matrix Hub with real-time chat, reactions and viewer count.",
+      title: "Live — Matrix Hub",
+      description: "Regardez ce live sur Matrix Hub avec le chat en temps réel, les réactions et le nombre de spectateurs.",
       noindex: true,
-      image: pickOgImage("/live"),
     };
   }
   if (parts[0] === "channel" && parts[1]) {
     return {
-      title: "Creator channel — Matrix Hub",
-      description: "Creator channel on Matrix Hub: videos, streams, playlists and subscriber information.",
+      title: "Chaîne de créateur — Matrix Hub",
+      description: "Chaîne de créateur sur Matrix Hub : vidéos, streams, playlists et informations d'abonnement.",
       noindex: true,
-      image: pickOgImage("/channel"),
     };
   }
   return null;
 }
 
 /**
- * resolveSeo — metadata to apply for a given pathname.
- * Every route receives an English title, description and Open Graph image.
+ * resolveSeo — métadonnées à appliquer pour un chemin donné.
+ * Chaque route publique reçoit un titre, une description et une bannière uniques.
  */
 export function resolveSeo(pathname) {
   const path = (pathname || "/").replace(/\/+$/, "") || "/";
   const parts = path.split("/").filter(Boolean);
-  const image = pickOgImage(path);
-  const imageAlt = pickOgImageAlt(path);
 
   const finish = (seo) => ({
-    image,
-    imageAlt,
+    image: seo.image || pickOgImage(path),
+    imageAlt: pickOgImageAlt(path),
     type: "website",
     ogCategory: ogCategory(path),
     ...seo,
@@ -368,15 +339,14 @@ export function resolveSeo(pathname) {
   if (isPrivate || parts[0] === "404") {
     return finish({
       noindex: true,
-      title: "Member area — Matrix Hub",
-      description: "Private Matrix Hub area, available after signing in to your account.",
+      title: "Espace membre — Matrix Hub",
+      description: "Espace privé de Matrix Hub, accessible après connexion à votre compte.",
     });
   }
 
-  // Toute autre route reçoit quand même un titre et une description anglais.
-  const label = titleize(parts[parts.length - 1] || "Home");
+  const label = titleize(parts[parts.length - 1] || "Accueil");
   return finish({
     title: `${label} — Matrix Hub`,
-    description: `${label} on Matrix Hub: live streaming, gaming guides, community servers and creator tools.`,
+    description: `${label} sur Matrix Hub : streaming, guides gaming, serveurs communautaires et outils pour créateurs.`,
   });
 }

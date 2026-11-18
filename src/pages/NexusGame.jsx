@@ -19,8 +19,8 @@ const BANNER_URL = "https://base44.app/api/apps/69e14a987a927963a9924d5a/files/m
 
 export default function NexusGame() {
   usePageSEO({
-    title: "Nexus Game — Online games and virtual casino | Matrix Hub",
-    description: "Explore the Nexus Game catalogue: roulette, slots, blackjack, scratch cards and hundreds of HTML5 games playable on Matrix Hub with the TRIX virtual currency.",
+    title: "Nexus Game : jeux en ligne et casino virtuel | Matrix Hub",
+    description: "Découvrez le catalogue Nexus Game : roulette, machines à sous, blackjack, cartes à gratter et des centaines de jeux HTML5 jouables avec la monnaie virtuelle TRIX.",
     path: "/nexus-game",
   });
 

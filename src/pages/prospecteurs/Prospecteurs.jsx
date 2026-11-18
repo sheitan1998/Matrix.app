@@ -17,13 +17,14 @@ import VoteAutoSetupModal from "@/components/prospecteurs/VoteAutoSetupModal";
 import { List as ListIcon } from "lucide-react";
 import usePageSEO from "@/hooks/usePageSEO";
 import SeoContentBlock from "@/components/seo/SeoContentBlock";
+import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 import { serverHasTag, serverTags } from "@/lib/serverTags";
 
 
 export default function Prospecteurs() {
   usePageSEO({
-    title: "Best Serveur — Game server directory | Matrix Hub",
-    description: "Browse and vote for the best game servers: Nexus and Discord communities, categories, player recruitment and community ads.",
+    title: "Annuaire de serveurs Discord et Nexus gaming | Matrix Hub",
+    description: "Trouvez un serveur Discord gaming, une communauté Nexus ou des coéquipiers : catégories, étiquettes, votes mensuels et fiches détaillées de chaque serveur.",
     path: "/best-serveurs"
   });
   const navigate = useNavigate();
@@ -277,7 +278,12 @@ export default function Prospecteurs() {
         <ProspecteursSidebar active="servers" user={user} onConfigureVoteAuto={() => setShowVoteAutoSetup(true)} />
 
         <div className="flex-1 px-4 sm:px-6 py-5">
-          <h1 className="sr-only">Best Serveur — annuaire et classement des serveurs de jeu Matrix Hub</h1>
+          <SeoBreadcrumbs
+            items={[
+              { label: "Accueil", href: "/" },
+              { label: "Best Serveur" },
+            ]}
+          />
           {/* Back + Publish */}
           <div className="flex items-center justify-between mb-5">
             <Link
@@ -321,7 +327,7 @@ export default function Prospecteurs() {
               }}>
               
               <ServerIcon className="w-4 h-4" style={{ color: "#a855f7" }} />
-              <span className="text-xs font-black tracking-wider uppercase text-white">Vos serveurs</span>
+              <h1 className="text-xs font-black tracking-wider uppercase text-white">Vos serveurs</h1>
               <span className="text-[9px] text-white/40 ml-1">· Nexus & Discord réunis</span>
             </div>
             <button
@@ -515,12 +521,19 @@ export default function Prospecteurs() {
             { title: "Catégories de jeux", text: "Parcourez les serveurs par catégorie : FPS, RPG, survie, sandbox, simulation, course et bien d'autres univers." },
             { title: "Boosts et visibilité", text: "Mettez en avant votre serveur grâce aux boosts et gagnez en visibilité auprès de la communauté Matrix Hub." }]
             }
+            faq={[
+            { question: "Comment trouver un serveur Discord gaming ?", answer: "Parcourez l'annuaire Best Serveur : les catégories regroupent les serveurs par jeu et par thème, et les étiquettes comme #Chill ou #Communauté filtrent la liste. Chaque fiche indique la description, les votes et le lien d'invitation du serveur." },
+            { question: "Comment publier mon serveur sur Matrix Hub ?", answer: "Créez un compte, cliquez sur Publier un serveur puis renseignez le nom, la description, jusqu'à trois catégories, cinq étiquettes et votre lien d'invitation. La publication est gratuite et la fiche est immédiatement visible dans l'annuaire." },
+            { question: "Le vote pour un serveur est-il gratuit ?", answer: "Oui. Chaque visiteur peut voter une fois par jour pour un serveur, sans paiement. Les votes du mois alimentent le classement et sont remis à zéro au début de chaque mois." },
+            { question: "Quelle différence entre un serveur Nexus et un serveur Discord ?", answer: "Un serveur Nexus est hébergé directement dans Matrix Hub avec ses salons textuels et vocaux. Un serveur Discord renvoie vers une communauté Discord externe via son lien d'invitation." },
+            { question: "Comment mon serveur progresse dans le classement ?", answer: "Le classement combine les votes du mois et les boosts reçus. Plus votre communauté vote régulièrement, plus votre fiche remonte dans l'annuaire et dans les pages de catégorie." }]
+            }
             links={[
             { href: "/best-creator", label: "Best Creator" },
             { href: "/tuto-gaming", label: "Guides et tutoriels gaming" },
-            { href: "/nexus", label: "Communauté Nexus" },
-            { href: "/nexus-game", label: "Nexus Game" },
-            { href: "/stream", label: "Streaming" }]
+            { href: "/dofus", label: "Guides Dofus" },
+            { href: "/fortnite-maps", label: "Codes de maps Fortnite" },
+            { href: "/about", label: "À propos de Matrix Hub" }]
             } />
           
         </div>

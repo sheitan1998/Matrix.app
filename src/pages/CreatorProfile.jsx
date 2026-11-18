@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Play, Eye, Heart, Trophy, Zap, Coins, Award, UserPlus, ArrowLeft } from "lucide-react";
+import { Play, Eye, Heart, Zap, Coins, Award, UserPlus, ArrowLeft } from "lucide-react";
 import { formatViews, formatTrix, formatTimeAgo } from "@/lib/format";
+import usePageSEO from "@/hooks/usePageSEO";
+import { SITE_URL } from "@/lib/seoRoutes";
 
 export default function CreatorProfile() {
   const { username } = useParams();
@@ -25,23 +27,31 @@ export default function CreatorProfile() {
       });
   }, [username]);
 
-  // SEO: update document title and meta tags
-  useEffect(() => {
-    if (data?.creator) {
-      const c = data.creator;
-      const fullName = c.pseudo || "Creator";
-      document.title = `${fullName} — Creator profile | Matrix Hub`;
-      setMeta("description", `${c.bio || `${fullName}'s creator profile on Matrix Hub`}. Level ${c.level}, ${c.badge_count} badges, ${formatTrix(c.total_trix_received)} TRIX earned.`);
-      setMeta("og:title", `${fullName} — Creator profile | Matrix Hub`);
-      setMeta("og:description", c.bio || `Discover ${fullName}'s streaming and gaming profile on Matrix Hub`);
-      setMeta("og:type", "profile");
-      if (c.avatar_url) setMeta("og:image", c.avatar_url);
-      if (c.avatar_url) setMeta("og:image:alt", `${fullName} creator avatar on Matrix Hub`);
-    }
-    return () => {
-      document.title = "Matrix Hub";
-    };
-  }, [data]);
+  // SEO : titre, description, canonical et données structurées de la fiche créateur.
+  const seoCreator = data?.creator;
+  usePageSEO(
+    seoCreator
+      ? {
+          title: `${seoCreator.pseudo} — profil créateur | Matrix Hub`,
+          description: `${seoCreator.bio || `Profil du créateur ${seoCreator.pseudo} sur Matrix Hub.`} Niveau ${seoCreator.level || 1}, ${seoCreator.badge_count || 0} badges et ${formatTrix(seoCreator.total_trix_received || 0)} TRIX reçus.`,
+          path: `/creator/${username}`,
+          image: seoCreator.avatar_url,
+          type: "profile",
+          schema: {
+            "@context": "https://schema.org",
+            "@type": "ProfilePage",
+            url: `${SITE_URL}/creator/${username}`,
+            mainEntity: {
+              "@type": "Person",
+              name: seoCreator.pseudo,
+              description: seoCreator.bio || undefined,
+              image: seoCreator.avatar_url || undefined,
+              url: `${SITE_URL}/creator/${username}`,
+            },
+          },
+        }
+      : {}
+  );
 
   if (loading) {
     return (
@@ -215,18 +225,4 @@ function TabButton({ active, onClick, label }) {
       {active && <div className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full bg-primary" />}
     </button>
   );
-}
-
-function setMeta(name, content) {
-  let el = document.querySelector(`meta[name="${name}"]`);
-  if (!el) {
-    el = document.createElement("meta");
-    el.setAttribute("name", name);
-    document.head.appendChild(el);
-  }
-  el.setAttribute("content", content);
-  // Also set og: equivalent
-  if (name === "description") {
-    setMeta("og:description", content);
-  }
 }

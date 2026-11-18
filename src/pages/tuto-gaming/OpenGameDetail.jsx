@@ -18,8 +18,8 @@ export default function OpenGameDetail() {
   const { data, loading, error, reload } = useOpenGame(game ? slug : null);
 
   usePageSEO({
-    title: game ? `${game.name} — Shop, quests and achievements | Matrix Hub` : "Game not found",
-    description: game ? `${game.description} Live public data, no API key required.` : undefined,
+    title: game ? `${game.name} — boutique, quêtes et succès | Matrix Hub` : "Jeu introuvable — Matrix Hub",
+    description: game ? `${game.description} Données publiques en direct, sans clé API.` : undefined,
     path: `/jeu/${slug}`,
   });
 

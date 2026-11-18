@@ -14,13 +14,14 @@ import CreateCreatorModal from "@/components/prospecteurs/CreateCreatorModal";
 import CreatorAutoVoteModal from "@/components/prospecteurs/CreatorAutoVoteModal";
 import CreatorDeleteConfirm from "@/components/prospecteurs/CreatorDeleteConfirm";
 import SeoContentBlock from "@/components/seo/SeoContentBlock";
+import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 
 const score = (c) => (c.votes_month || 0) + (c.boosts || 0) * 2;
 
 export default function BestCreator() {
   usePageSEO({
-    title: "Best Creator — YouTube and Twitch creator rankings | Matrix Hub",
-    description: "Discover and vote for the best content creators on YouTube, Twitch, TikTok, Instagram and Snapchat with monthly Matrix Hub rankings.",
+    title: "Best Creator — classement et visibilité des créateurs | Matrix Hub",
+    description: "Publiez votre chaîne YouTube, Twitch, TikTok, Instagram ou Snapchat, rejoignez le classement mensuel des créateurs et gagnez en visibilité auprès de la communauté gaming.",
     path: "/best-creator",
   });
 
@@ -225,7 +226,12 @@ export default function BestCreator() {
         />
 
         <div className="flex-1 px-4 sm:px-6 py-5 min-w-0">
-          <h1 className="sr-only">Best Creator — classement des créateurs de contenu YouTube, Twitch et réseaux sociaux</h1>
+          <SeoBreadcrumbs
+            items={[
+              { label: "Accueil", href: "/" },
+              { label: "Best Creator" },
+            ]}
+          />
           {/* Retour + Publier */}
           <div className="flex items-center justify-between mb-5 gap-2">
             <Link to="/" className="inline-flex items-center gap-1.5 text-white/50 hover:text-white transition tap-sm">
@@ -262,7 +268,7 @@ export default function BestCreator() {
               style={{ background: "rgba(168,85,247,0.10)", border: "1px solid rgba(168,85,247,0.25)" }}
             >
               <Sparkles className="w-4 h-4" style={{ color: "#a855f7", filter: "drop-shadow(0 0 6px rgba(168,85,247,0.8))" }} />
-              <span className="text-xs font-black tracking-wider uppercase text-white">Best Creator</span>
+              <h1 className="text-xs font-black tracking-wider uppercase text-white">Best Creator</h1>
               <span className="text-[9px] text-white/40 ml-1">· 5 plateformes réunies</span>
             </div>
             <div
@@ -363,12 +369,19 @@ export default function BestCreator() {
               { title: "Boosts de visibilité", text: "Boostez une chaîne pour la mettre en avant sur la page et lui donner un avantage dans le classement." },
               { title: "Profils publics", text: "Chaque créateur dispose d'une fiche publique avec ses liens, sa description et ses statistiques de votes." },
             ]}
+            faq={[
+              { question: "Comment faire connaître ma chaîne YouTube ou Twitch ?", answer: "Publiez votre chaîne sur Best Creator : elle apparaît immédiatement dans l'annuaire, dans le classement de sa plateforme et sur une fiche publique partageable avec ses liens et sa description." },
+              { question: "Le référencement de ma chaîne est-il gratuit ?", answer: "Oui, la publication et le référencement de vos chaînes sont gratuits. Chaque compte peut publier jusqu'à trois chaînes par plateforme (YouTube, Twitch, TikTok, Instagram, Snapchat)." },
+              { question: "Comment fonctionne le classement Best Creator ?", answer: "Le classement additionne les votes du mois et les boosts reçus, puis remet les compteurs à zéro chaque mois. Un classement général et un classement par plateforme sont affichés sur la page." },
+              { question: "Qu'est-ce que le Vote Auto ?", answer: "Le Vote Auto est une option qui soutient automatiquement jusqu'à trois chaînes chaque jour, sans action manuelle, pour les créateurs qui veulent progresser régulièrement dans le classement." },
+              { question: "Où trouver les serveurs et communautés à rejoindre ?", answer: "L'annuaire Best Serveur réunit les serveurs Discord et Nexus gaming par catégorie et par étiquette, avec leurs votes et leurs liens d'invitation." },
+            ]}
             links={[
               { href: "/best-serveurs", label: "Best Serveur" },
-              { href: "/stream", label: "Streaming" },
-              { href: "/twitch", label: "Twitch" },
-              { href: "/affiliate", label: "Programme partenaire" },
               { href: "/tuto-gaming", label: "Tuto Gaming" },
+              { href: "/fortnite-maps", label: "Codes de maps Fortnite" },
+              { href: "/minecraft", label: "Guides Minecraft" },
+              { href: "/about", label: "À propos de Matrix Hub" },
             ]}
           />
         </div>
