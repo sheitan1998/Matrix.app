@@ -1,9 +1,29 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 
 const SITE_URL = "https://matrix-hub.app";
-const MIN_SERVER_DESCRIPTION = 120;
+const MIN_SERVER_DESCRIPTION = 30;
 const MIN_CREATOR_DESCRIPTION = 80;
 const MAX_URLS = 2000;
+
+/**
+ * Une fiche serveur est indexable dès qu'elle porte un contenu propre :
+ * description suffisante, jeux, catégories ou étiquettes.
+ * Règle identique à isServerIndexable() côté front (src/lib/serverSeo.js).
+ */
+function hasServerContent(server: any): boolean {
+  const description = String(server?.description || "").replace(/\s+/g, " ").trim();
+  const games = [...(server?.games || []), server?.game].filter(Boolean);
+  const categories = [...(server?.categories || []), server?.category].filter(
+    (name: any) => name && !["discord", "nexus"].includes(String(name).trim().toLowerCase())
+  );
+  const tags = server?.tags || [];
+  return (
+    description.length >= MIN_SERVER_DESCRIPTION ||
+    games.length > 0 ||
+    categories.length > 0 ||
+    tags.length > 0
+  );
+}
 
 function escapeXml(value) {
   return String(value)
@@ -38,8 +58,7 @@ export default async function (req) {
     const servers = serversPage.status === "fulfilled" ? serversPage.value.items || [] : [];
     for (const server of servers) {
       const slug = server.slug || server.id;
-      const description = (server.description || "").replace(/\s+/g, " ").trim();
-      if (!slug || description.length < MIN_SERVER_DESCRIPTION) continue;
+      if (!slug || !hasServerContent(server)) continue;
       urls.push(toEntry(`${SITE_URL}/servers/${slug}`, server.updated_date));
     }
 

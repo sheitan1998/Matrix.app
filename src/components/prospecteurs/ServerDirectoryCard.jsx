@@ -176,7 +176,11 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
       {/* Banner */}
       {hasBanner ?
       <div className="relative h-20 w-full overflow-hidden">
-          <img src={bannerUrl} alt="" className="w-full h-full object-cover" />
+          <img
+            src={bannerUrl}
+            alt={`Bannière du serveur ${server.title} sur Matrix Hub`}
+            className="w-full h-full object-cover"
+          />
           <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(18,9,28,0.2) 0%, rgba(18,9,28,0.7) 100%)" }} />
           {/* Rank badge */}
           {rank > 0 &&
@@ -284,7 +288,7 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
           style={{ background: "linear-gradient(135deg, #8a4fff, #5b21b6)" }}>
           
           {hasLogo ?
-          <img src={logoUrl} alt="" className="w-full h-full object-cover" /> :
+          <img src={logoUrl} alt={`Logo du serveur ${server.title}`} className="w-full h-full object-cover" /> :
 
           initial
           }
@@ -442,7 +446,7 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
           style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.1)" }}>
           
               <ExternalLink className="w-3 h-3" />
-              Voir la fiche
+              Voir la fiche<span className="sr-only"> {server.title}</span>
             </Link>
         }
           {server.website_url &&

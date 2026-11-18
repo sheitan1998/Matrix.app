@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
@@ -12,8 +12,9 @@ import ServerApiPanel from "@/components/prospecteurs/ServerApiPanel";
 import { serverTags } from "@/lib/serverTags";
 import { slugify } from "@/lib/serverDirectory";
 import usePageSEO from "@/hooks/usePageSEO";
-import { SITE_URL } from "@/lib/seoRoutes";
 import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
+import { buildServerSeo } from "@/lib/serverSeo";
+import ServerSeoContent from "@/components/prospecteurs/ServerSeoContent";
 
 export default function ServerProfile() {
   const { slug } = useParams();
@@ -28,35 +29,10 @@ export default function ServerProfile() {
   const [showVoteModal, setShowVoteModal] = useState(false);
   const [user, setUser] = useState(null);
 
-  // SEO : métadonnées construites à partir des informations réelles du serveur.
-  const seoPath = server ? `/servers/${server.slug || server.id}` : undefined;
-  const seoDescription = (server?.description || "").replace(/\s+/g, " ").trim();
-  const seoLinks = [server?.discord_link, server?.website_url].filter(Boolean);
-  usePageSEO(
-    server
-      ? {
-          title: `${server.title} — serveur ${server.server_type === "discord" ? "Discord" : "Nexus"} | Matrix Hub`,
-          description: (
-            seoDescription.length >= 60
-              ? seoDescription
-              : `${server.title} : votes, description et lien d'invitation de ce serveur ${server.server_type === "discord" ? "Discord" : "Nexus"} sur l'annuaire Matrix Hub.`
-          ).slice(0, 158),
-          path: seoPath,
-          image: server.banner_url || server.cover_image || server.logo_url || server.profile_image,
-          type: "profile",
-          noindex: seoDescription.length < 120,
-          schema: {
-            "@context": "https://schema.org",
-            "@type": "Organization",
-            name: server.title,
-            description: seoDescription || undefined,
-            url: `${SITE_URL}${seoPath}`,
-            logo: server.logo_url || server.profile_image || undefined,
-            ...(seoLinks.length ? { sameAs: seoLinks } : {}),
-          },
-        }
-      : {}
-  );
+  // SEO : title, description, canonical, Open Graph et JSON-LD uniques,
+  // construits uniquement à partir des informations réelles du serveur.
+  const seo = useMemo(() => (server ? buildServerSeo(server) : {}), [server]);
+  usePageSEO(seo);
 
   useEffect(() => {
     const fetchServer = async () => {
@@ -202,7 +178,11 @@ export default function ServerProfile() {
       {/* Banner */}
       {bannerUrl ? (
         <div className="relative h-40 sm:h-56 w-full overflow-hidden">
-          <img src={bannerUrl} alt="" className="w-full h-full object-cover" />
+          <img
+            src={bannerUrl}
+            alt={`Bannière du serveur ${server.title} sur Matrix Hub`}
+            className="w-full h-full object-cover"
+          />
           <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(18,9,28,0.3) 0%, rgba(18,9,28,0.9) 100%)" }} />
         </div>
       ) : (
@@ -222,7 +202,15 @@ export default function ServerProfile() {
               border: "4px solid #12091c",
             }}
           >
-            {logoUrl ? <img src={logoUrl} alt="" className="w-full h-full object-cover" /> : initial}
+            {logoUrl ? (
+              <img
+                src={logoUrl}
+                alt={`Logo du serveur ${server.title}`}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              initial
+            )}
           </div>
           <div className="flex-1 pb-1">
             <div className="flex items-center gap-2 flex-wrap">
@@ -412,6 +400,8 @@ export default function ServerProfile() {
             </div>
           </div>
         )}
+
+        <ServerSeoContent server={server} />
 
         {/* Owner actions */}
         {isOwner && (
