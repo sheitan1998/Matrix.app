@@ -48,17 +48,40 @@ export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
 
-    const [serversPage, creatorsPage] = await Promise.allSettled([
+    const [serversPage, creatorsPage, categoriesPage] = await Promise.allSettled([
       base44.asServiceRole.entities.ServerAd.filter({ type: "server" }, { sort: "-updated_date", limit: MAX_URLS }),
       base44.asServiceRole.entities.CreatorChannel.filter({ is_active: true }, { sort: "-updated_date", limit: MAX_URLS }),
+      base44.asServiceRole.entities.ServerCategory.filter({ is_active: true }, { sort: "sort_order", limit: 500 }),
     ]);
 
     const urls = [];
 
     const servers = serversPage.status === "fulfilled" ? serversPage.value.items || [] : [];
-    for (const server of servers) {
+    const eligibleServers = servers.filter(hasServerContent);
+
+    // Pages de catégories de l'annuaire Best Serveur (/best-serveurs/category/:slug).
+    // Une catégorie n'est listée que si au moins une fiche indexable l'utilise.
+    const usedSlugs = new Set<string>();
+    const usedNames = new Set<string>();
+    for (const server of eligibleServers) {
+      for (const slug of [...(server.category_slugs || []), server.category_slug]) {
+        if (slug) usedSlugs.add(String(slug));
+      }
+      for (const name of [...(server.categories || []), server.category]) {
+        if (name) usedNames.add(String(name));
+      }
+    }
+
+    const categories = categoriesPage.status === "fulfilled" ? categoriesPage.value.items || [] : [];
+    for (const category of categories) {
+      if (!category.slug) continue;
+      if (!usedSlugs.has(String(category.slug)) && !usedNames.has(String(category.name))) continue;
+      urls.push(toEntry(`${SITE_URL}/best-serveurs/category/${category.slug}`, category.updated_date));
+    }
+
+    for (const server of eligibleServers) {
       const slug = server.slug || server.id;
-      if (!slug || !hasServerContent(server)) continue;
+      if (!slug) continue;
       urls.push(toEntry(`${SITE_URL}/servers/${slug}`, server.updated_date));
     }
 

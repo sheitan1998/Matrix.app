@@ -63,5 +63,5 @@ Disallow: /wallet
 User-agent: Google-Extended
 Allow: /
 
+# Sitemap unique du site (index : pages fixes + annonces serveurs/créateurs)
 Sitemap: https://matrix-hub.app/sitemap.xml
-Sitemap: https://matrix-hub.app/functions/sitemapDynamic

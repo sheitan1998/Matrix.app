@@ -1,22 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://matrix-hub.app/</loc></url>
-  <url><loc>https://matrix-hub.app/best-serveurs</loc></url>
-  <url><loc>https://matrix-hub.app/best-creator</loc></url>
-  <url><loc>https://matrix-hub.app/tuto-gaming</loc></url>
-  <url><loc>https://matrix-hub.app/farming</loc></url>
-  <url><loc>https://matrix-hub.app/minecraft</loc></url>
-  <url><loc>https://matrix-hub.app/dofus</loc></url>
-  <url><loc>https://matrix-hub.app/rocket-league</loc></url>
-  <url><loc>https://matrix-hub.app/valheim</loc></url>
-  <url><loc>https://matrix-hub.app/rust</loc></url>
-  <url><loc>https://matrix-hub.app/valorant</loc></url>
-  <url><loc>https://matrix-hub.app/gta-6</loc></url>
-  <url><loc>https://matrix-hub.app/fortnite-maps</loc></url>
-  <url><loc>https://matrix-hub.app/fortnite-shop</loc></url>
-  <url><loc>https://matrix-hub.app/fortnite-cosmetics</loc></url>
-  <url><loc>https://matrix-hub.app/fortnite-stats</loc></url>
-  <url><loc>https://matrix-hub.app/about</loc></url>
-  <url><loc>https://matrix-hub.app/contact</loc></url>
-  <url><loc>https://matrix-hub.app/privacy</loc></url>
-</urlset>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap><loc>https://matrix-hub.app/sitemap-pages.xml</loc></sitemap>
+  <sitemap><loc>https://matrix-hub.app/functions/sitemapDynamic</loc></sitemap>
+</sitemapindex>
