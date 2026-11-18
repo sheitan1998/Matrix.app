@@ -1,10 +1,9 @@
-import { pickOgImage, pickOgImageAlt, ogCategory } from "@/lib/ogImages";
+import { pickOgImage, pickOgImageAlt, ogCategory, OG_BANNERS } from "@/lib/ogImages";
 
 export const SITE_URL = "https://matrix-hub.app";
 export const SITE_NAME = "Matrix Hub";
 export const SITE_LOCALE = "en_US";
-export const DEFAULT_IMAGE =
-  "https://media.base44.com/images/public/69e14a987a927963a9924d5a/d423a042e_Code_Generated_Image1.png";
+export const DEFAULT_IMAGE = OG_BANNERS.home.url;
 
 /**
  * English titles, descriptions and Open Graph visuals for every public route.

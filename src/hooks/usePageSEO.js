@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { SITE_URL, SITE_NAME, SITE_LOCALE, DEFAULT_IMAGE } from "@/lib/seoRoutes";
-import { pickOgImage, pickOgImageAlt, OG_IMAGE_WIDTH, OG_IMAGE_HEIGHT } from "@/lib/ogImages";
+import { pickOgBanner } from "@/lib/ogImages";
 
 function upsertMeta(attr, key, content) {
   let el = document.querySelector(`meta[${attr}="${key}"]`);
@@ -76,12 +76,13 @@ export default function usePageSEO({
     upsertMeta("property", "og:url", canonical);
     upsertMeta("property", "og:type", type);
 
-    const ogImage = image || pickOgImage(currentPath) || DEFAULT_IMAGE;
-    const ogImageAlt = imageAlt || pickOgImageAlt(currentPath);
+    const banner = pickOgBanner(currentPath);
+    const ogImage = image || banner.url || DEFAULT_IMAGE;
+    const ogImageAlt = imageAlt || banner.alt;
     upsertMeta("property", "og:image", ogImage);
     upsertMeta("property", "og:image:secure_url", ogImage);
-    upsertMeta("property", "og:image:width", String(OG_IMAGE_WIDTH));
-    upsertMeta("property", "og:image:height", String(OG_IMAGE_HEIGHT));
+    upsertMeta("property", "og:image:width", String(banner.width));
+    upsertMeta("property", "og:image:height", String(banner.height));
     upsertMeta("property", "og:image:alt", ogImageAlt);
     upsertMeta("name", "twitter:image", ogImage);
     upsertMeta("name", "twitter:image:alt", ogImageAlt);

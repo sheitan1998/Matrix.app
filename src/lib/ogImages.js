@@ -1,74 +1,81 @@
 /**
- * Visuels Open Graph par univers Matrix Hub.
- * Chaque route reçoit une image pertinente (streaming, esport, guides, etc.)
- * au lieu de l'unique visuel générique.
+ * Bannières Open Graph officielles Matrix Hub.
+ * Une seule bannière par univers, sans génération automatique d'images génériques.
+ * Les visuels sont hébergés sur le stockage public définitif de l'app.
  */
-export const OG_IMAGES = {
-  streaming:
-    "https://media.base44.com/images/public/69e14a987a927963a9924d5a/3d5354424_generated_image.png",
-  twitch:
-    "https://media.base44.com/images/public/69e14a987a927963a9924d5a/00f0d12c0_generated_image.png",
-  guides:
-    "https://media.base44.com/images/public/69e14a987a927963a9924d5a/582538bc7_generated_image.png",
-  esports:
-    "https://media.base44.com/images/public/69e14a987a927963a9924d5a/e93fe67f6_generated_image.png",
-  fortnite:
-    "https://media.base44.com/images/public/69e14a987a927963a9924d5a/b8a2a0a7a_generated_image.png",
-  casino:
-    "https://media.base44.com/images/public/69e14a987a927963a9924d5a/be1c3c446_generated_image.png",
-  community:
-    "https://media.base44.com/images/public/69e14a987a927963a9924d5a/522afbb6e_generated_image.png",
-  shop:
-    "https://media.base44.com/images/public/69e14a987a927963a9924d5a/a09617db4_generated_image.png",
-  survival:
-    "https://media.base44.com/images/public/69e14a987a927963a9924d5a/7443b35aa_generated_image.png",
+export const OG_BANNERS = {
+  home: {
+    url: "https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/fc03e8ae4_home_og_banner.png",
+    width: 1734,
+    height: 907,
+    alt: "Matrix Hub logo on a neon purple background with the tagline: the hub for gamers, streamers and creators",
+  },
+  bestServer: {
+    url: "https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/2c431e1a1_bestServer_og_banner.png",
+    width: 1672,
+    height: 941,
+    alt: "Best Server banner with a golden crown, neon purple lighting and a grid of game logos on Matrix Hub",
+  },
+  nexusGame: {
+    url: "https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/c9ece57e1_nexusGame_og_banner.png",
+    width: 2048,
+    height: 768,
+    alt: "Nexus Game banner with a gaming controller, casino chips, a slot machine and a golden crown",
+  },
+  nexus: {
+    url: "https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/9846ea0b1_nexus_og_banner.png",
+    width: 400,
+    height: 210,
+    alt: "Matrix Nexus banner with guardian lions, the Matrix logo and a desktop preview of the server hub",
+  },
+  bestCreator: {
+    url: "https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/c114acce0_bestCreator_og_banner.png",
+    width: 1672,
+    height: 941,
+    alt: "Best Creator banner with a golden crown, a studio microphone, a ring light and social platform logos",
+  },
 };
 
-export const OG_IMAGE_WIDTH = 1024;
-export const OG_IMAGE_HEIGHT = 1024;
-
-/** Alt text anglais décrivant chaque visuel OG. */
-export const OG_IMAGE_ALT = {
-  streaming: "Matrix Hub video streaming interface with live channels and a neon green glowing player",
-  twitch: "Gaming broadcast desk with a microphone and neon purple live stream lighting",
-  guides: "Glowing treasure chest and adventure map for gaming guides and walkthroughs",
-  esports: "Competitive esports arena with players facing a neon scoreboard",
-  fortnite: "Colourful battle royale island with parachuting players and a flying bus",
-  casino: "Virtual casino floor with a glowing roulette wheel, chips and playing cards",
-  community: "Holographic gaming community network of chat bubbles and player avatars",
-  shop: "Digital creator shop with holographic product cards, gold badge and game tokens",
-  survival: "Survival game landscape with a lone warrior, campfire and longhouse at dusk",
-};
-
-/** Un chemin → une catégorie de visuel OG. */
+/** Une route → une bannière officielle (l'accueil par défaut). */
 const RULES = [
-  [/^\/twitch(\/|$)/, "twitch"],
-  [/^\/(stream|watch|live|shorts|trending|channel|search|playlists|video-studio|upload|studio|dashboard|subscriptions)(\/|$)/, "streaming"],
-  [/^\/(farming|minecraft|valheim|rust)(\/|$)/, "survival"],
-  [/^\/(dofus|gta-6|jeu|tuto-gaming)(\/|$)/, "guides"],
-  [/^\/fortnite/, "fortnite"],
-  [/^\/(valorant|rocket-league)(\/|$)/, "esports"],
-  [/^\/(nexus-game|casino|roulette)(\/|$)/, "casino"],
-  [/^\/(nexus|best-serveurs|best-creator|servers|creator|community|recherche-joueur|recherche-createur|progression|mon-profil)(\/|$)/, "community"],
-  [/^\/(boutique-matrix|boutique-nexus|market|trix-store|wallet|affiliate|outils)(\/|$)/, "shop"],
-  [/^\/(about|contact|privacy|page)(\/|$)/, "community"],
+  [/^\/best-creator(\/|$)/, "bestCreator"],
+  [/^\/creator(\/|$)/, "bestCreator"],
+  [/^\/profil-createur(\/|$)/, "bestCreator"],
+  [/^\/recherche-createur(\/|$)/, "bestCreator"],
+  [/^\/best-serveurs(\/|$)/, "bestServer"],
+  [/^\/servers(\/|$)/, "bestServer"],
+  [/^\/recherche-joueur(\/|$)/, "bestServer"],
+  [/^\/nexus-game(\/|$)/, "nexusGame"],
+  [/^\/(casino|roulette)(\/|$)/, "nexusGame"],
+  [/^\/nexus(\/|$)/, "nexus"],
+  [/^\/community(\/|$)/, "nexus"],
 ];
 
-/** Catégorie Open Graph pour un chemin donné (streaming par défaut). */
-export function ogCategory(pathname) {
+/** Clé de la bannière officielle associée à un chemin. */
+export function ogBannerKey(pathname) {
   const path = (pathname || "/").toLowerCase().replace(/\/+$/, "") || "/";
-  for (const [pattern, category] of RULES) {
-    if (pattern.test(path)) return category;
+  for (const [pattern, key] of RULES) {
+    if (pattern.test(path)) return key;
   }
-  return "streaming";
+  return "home";
 }
 
-/** URL d'image Open Graph pertinente pour un chemin. */
+/** Bannière officielle (URL, dimensions et alt) pour un chemin. */
+export function pickOgBanner(pathname) {
+  return OG_BANNERS[ogBannerKey(pathname)] || OG_BANNERS.home;
+}
+
+/** URL de la bannière officielle pour un chemin. */
 export function pickOgImage(pathname) {
-  return OG_IMAGES[ogCategory(pathname)] || OG_IMAGES.streaming;
+  return pickOgBanner(pathname).url;
 }
 
-/** Alt text Open Graph pour un chemin. */
+/** Alt text de la bannière officielle pour un chemin. */
 export function pickOgImageAlt(pathname) {
-  return OG_IMAGE_ALT[ogCategory(pathname)] || OG_IMAGE_ALT.streaming;
+  return pickOgBanner(pathname).alt;
+}
+
+/** Catégorie Open Graph (clé de bannière) pour un chemin. */
+export function ogCategory(pathname) {
+  return ogBannerKey(pathname);
 }
