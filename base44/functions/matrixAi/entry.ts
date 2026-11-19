@@ -28,6 +28,7 @@ MISSION
 RÈGLES ABSOLUES
 - Ton amical, moderne, direct, adapté à la culture gaming/créateurs. Réponds en français par défaut, ou dans la langue de l'utilisateur.
 - ZÉRO HALLUCINATION : n'invente jamais de serveur, de créateur, de fonctionnalité, de prix, de récompense (TRIX coins) ou de statut officiel absent des données retournées par tes outils. Si une recherche interne ne donne aucun résultat, dis-le honnêtement et propose à l'utilisateur de créer ou référencer son serveur sur Best Serveur (matrix-hub.app/best-serveurs).
+- INFORMATIONS EXTERNES : tu n'es pas limité à Matrix. Pour toute question hors du périmètre Matrix (actualité, jeu, sortie, prix, culture générale, technique), appuie-toi sur les résultats de recherche web fournis et cite tes sources en liens Markdown. Si la recherche web ne renvoie rien d'utile, dis-le clairement au lieu d'inventer.
 - SÉCURITÉ : refuse toute demande liée à la triche (cheats, hacks, aimbots), au piratage, au contournement de sécurité ou à des contenus illégaux ou toxiques.
 - Réponses concises et structurées en Markdown (titres courts, listes, gras). Pas de blabla inutile.`;
 
@@ -261,9 +262,32 @@ function looksLikeDiscovery(text: string): boolean {
   return domain.test(text) && intent.test(text);
 }
 
-function looksLikeWebQuestion(text: string): boolean {
-  const rx = /(actualit|news|patch ?notes|mise à jour|mise a jour|derni[èe]re version|sortie|date de sortie|sort quand|saison \d|tier ?list|meta actuelle|esport|tournoi|r[ée]compense du mois|combien co[ûu]te|prix du jeu|bug connu|serveur down|hors ligne|statut des serveurs)/i;
-  return rx.test(text || '');
+/**
+ * Recherche web : lancée dès qu'une demande n'est pas purement interne à Matrix
+ * ou de la simple rédaction. Elle n'est donc plus limitée aux actualités.
+ */
+function needsWebSearch(text: string): boolean {
+  const t = String(text || '').trim();
+  if (!t) return false;
+
+  // Info datée / vérifiable : toujours web.
+  const freshness = /(actualit|news|patch ?notes|mise à jour|mise a jour|derni[èe]re version|sortie|date de sortie|sort quand|saison \d|tier ?list|meta actuelle|esport|tournoi|r[ée]compense du mois|combien co[ûu]te|prix|bug connu|serveur down|hors ligne|statut)/i;
+  if (freshness.test(t)) return true;
+
+  // Rédaction pure : pas besoin d'internet.
+  const writing = /(r[ée]dige|r[ée]diger|corrige|reformule|traduis|description pour|annonce pour|id[ée]es? de (vid[ée]o|stream|contenu)|slogan|bio|titre pour)/i;
+  if (writing.test(t)) return false;
+
+  // Périmètre strictement Matrix (annuaire, TRIX, Nexus, profil, site).
+  const matrixOnly = /(matrix|best[- ]serveurs?|best[- ]creators?|trix|nexus|matrix ai|mon serveur|mes serveurs|mon annonce|ma cha[îi]ne|mon profil|ce site|sur le site)/i;
+  if (matrixOnly.test(t)) return false;
+
+  // Découverte de serveurs / créateurs de l'annuaire : base Matrix uniquement.
+  const directoryVocab = /(serveur|serveurs|cr[ée]ateur|cr[ée]ateurs|streamer|streamers|cha[îi]ne|cha[îi]nes|communaut[ée]|annuaire)/i;
+  if (looksLikeDiscovery(t) && directoryVocab.test(t)) return false;
+
+  // Tout le reste (culture générale, jeux, technique, questions diverses) : web.
+  return true;
 }
 
 export default async function (req: Request): Promise<Response> {
@@ -333,11 +357,13 @@ export default async function (req: Request): Promise<Response> {
       conversation = await base44.asServiceRole.entities.AiConversation
         .get(conversationId)
         .catch((e) => (e.status === 404 ? null : Promise.reject(e)));
-      if (!conversation || conversation.user_email !== user.email) {
+      // Vérification d'appartenance stricte : la discussion doit être celle de l'utilisateur connecté.
+      if (!conversation || conversation.user_id !== user.id) {
         return Response.json({ error: 'Conversation introuvable' }, { status: 404 });
       }
     } else {
       conversation = await base44.asServiceRole.entities.AiConversation.create({
+        user_id: user.id,
         user_email: user.email,
         title: titleFrom(content),
         last_message_at: new Date().toISOString(),
@@ -346,14 +372,15 @@ export default async function (req: Request): Promise<Response> {
 
     await base44.asServiceRole.entities.AiMessage.create({
       conversation_id: conversation.id,
+      user_id: user.id,
       user_email: user.email,
       role: 'user',
       content,
     });
 
-    // Contexte limité aux 8 derniers messages.
+    // Contexte limité aux 8 derniers messages, filtré sur le propriétaire.
     const historyPage = await base44.asServiceRole.entities.AiMessage.filter(
-      { conversation_id: conversation.id },
+      { conversation_id: conversation.id, user_id: user.id },
       '-created_date',
       HISTORY_SIZE,
     );
@@ -362,7 +389,7 @@ export default async function (req: Request): Promise<Response> {
       .map((m) => `${m.role === 'user' ? 'Utilisateur' : 'Matrix AI'}: ${m.content}`)
       .join('\n\n');
 
-    const webLikely = looksLikeWebQuestion(content);
+    const webLikely = needsWebSearch(content);
     const pseudo = user.pseudo || user.full_name || 'membre Matrix';
 
     // ---- Appel 1 : décision (réponse directe ou outils) ----
@@ -376,7 +403,7 @@ ${transcript}
 Analyse le dernier message.
 - OBLIGATOIRE : si le message parle de serveurs, de créateurs/streamers/chaînes ou de jeux Matrix, tu DOIS renseigner "tool_calls" (1 à 3 appels) et laisser "answer" vide. Ne réponds jamais de mémoire sur ces sujets.
 - Sinon, écris directement la réponse finale Markdown dans "answer".
-- "needs_web" = true uniquement si une information externe récente (actualité, patch, sortie, prix d'un jeu) est indispensable.`;
+- "needs_web" = true dès que la demande sort du périmètre Matrix (actualité, jeu, culture générale, technique, prix, sortie...) : tu t'appuies alors sur la recherche web fournie. false seulement pour l'annuaire Matrix (serveurs, créateurs, jeux du site), les infos internes Matrix ou la simple rédaction.`;
 
     const decisionSchema = {
       type: 'object',
@@ -420,7 +447,7 @@ Analyse le dernier message.
         { tool: 'search_matrix_creators', query: content },
       ];
     }
-    const needsWeb = Boolean(decision.needs_web) || webLikely;
+    const needsWeb = webLikely || (Boolean(decision.needs_web) && !toolCalls.length);
     let answer = String(decision.answer || '').trim();
     let cards = [];
 
@@ -493,6 +520,7 @@ Rédige la réponse finale en Markdown à partir de ces résultats UNIQUEMENT.
 
     const assistantMessage = await base44.asServiceRole.entities.AiMessage.create({
       conversation_id: conversation.id,
+      user_id: user.id,
       user_email: user.email,
       role: 'assistant',
       content: answer,

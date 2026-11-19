@@ -2,9 +2,13 @@
   "name": "AiConversation",
   "type": "object",
   "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Identifiant du proprietaire (isolation stricte des discussions)"
+    },
     "user_email": {
       "type": "string",
-      "description": "Email du proprietaire de la discussion"
+      "description": "Email du proprietaire de la discussion (affichage)"
     },
     "title": {
       "type": "string",
@@ -18,17 +22,17 @@
     }
   },
   "required": [
-    "user_email",
+    "user_id",
     "title"
   ],
   "rls": {
     "create": {
-      "data.user_email": "{{user.email}}"
+      "data.user_id": "{{user.id}}"
     },
     "read": {
       "$or": [
         {
-          "data.user_email": "{{user.email}}"
+          "data.user_id": "{{user.id}}"
         },
         {
           "user_condition": {
@@ -40,7 +44,7 @@
     "update": {
       "$or": [
         {
-          "data.user_email": "{{user.email}}"
+          "data.user_id": "{{user.id}}"
         },
         {
           "user_condition": {
@@ -52,7 +56,7 @@
     "delete": {
       "$or": [
         {
-          "data.user_email": "{{user.email}}"
+          "data.user_id": "{{user.id}}"
         },
         {
           "user_condition": {

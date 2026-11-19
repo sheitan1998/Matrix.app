@@ -6,9 +6,13 @@
       "type": "string",
       "description": "ID de la discussion AiConversation"
     },
+    "user_id": {
+      "type": "string",
+      "description": "Identifiant du proprietaire (isolation stricte des messages)"
+    },
     "user_email": {
       "type": "string",
-      "description": "Email du proprietaire du message"
+      "description": "Email du proprietaire du message (affichage)"
     },
     "role": {
       "type": "string",
@@ -64,18 +68,18 @@
   },
   "required": [
     "conversation_id",
-    "user_email",
+    "user_id",
     "role",
     "content"
   ],
   "rls": {
     "create": {
-      "data.user_email": "{{user.email}}"
+      "data.user_id": "{{user.id}}"
     },
     "read": {
       "$or": [
         {
-          "data.user_email": "{{user.email}}"
+          "data.user_id": "{{user.id}}"
         },
         {
           "user_condition": {
@@ -88,7 +92,7 @@
     "delete": {
       "$or": [
         {
-          "data.user_email": "{{user.email}}"
+          "data.user_id": "{{user.id}}"
         },
         {
           "user_condition": {

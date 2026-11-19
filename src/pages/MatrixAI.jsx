@@ -31,12 +31,12 @@ export default function MatrixAI() {
   const bottomRef = useRef(null);
   const { quota, setQuota, refresh, remainingMs } = useAiQuota();
 
-  const loadConversations = useCallback(async (email) => {
-    const target = email || user?.email;
+  const loadConversations = useCallback(async (userId) => {
+    const target = userId || user?.id;
     if (!target) return;
     try {
       const res = await base44.entities.AiConversation.filter(
-        { user_email: target },
+        { user_id: target },
         "-last_message_at",
         40
       );
@@ -53,7 +53,7 @@ export default function MatrixAI() {
         const me = await base44.auth.me();
         if (!active) return;
         setUser(me);
-        await loadConversations(me.email);
+        await loadConversations(me.id);
       } catch {
         if (active) setLoadingConversations(false);
         return;
