@@ -1,0 +1,101 @@
+{
+  "name": "AiMessage",
+  "type": "object",
+  "properties": {
+    "conversation_id": {
+      "type": "string",
+      "description": "ID de la discussion AiConversation"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email du proprietaire du message"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "user",
+        "assistant"
+      ],
+      "enumColors": [
+        "purple",
+        "green"
+      ],
+      "default": "user"
+    },
+    "content": {
+      "type": "string",
+      "description": "Contenu Markdown du message"
+    },
+    "attached_cards": {
+      "type": "array",
+      "default": [],
+      "description": "Mini-cartes de recommandation (serveurs / createurs Matrix)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "subtitle": {
+            "type": "string"
+          },
+          "image": {
+            "type": "string"
+          },
+          "votes": {
+            "type": "number",
+            "default": 0
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "conversation_id",
+    "user_email",
+    "role",
+    "content"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": false,
+    "delete": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

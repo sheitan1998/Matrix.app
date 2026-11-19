@@ -40,6 +40,23 @@ const AI_PLANS: Record<string, { priceCents: number; label: string }> = {
   pro: { priceCents: 1999, label: 'AI Pro' },
 };
 
+// Abonnements Matrix AI (récurrents) — mettent à jour User.plan_tier
+const MATRIX_AI_PLANS: Record<string, { priceCents: number; label: string; tier: string }> = {
+  plus: { priceCents: 499, label: 'Matrix Plus — 100 messages IA / 24h', tier: 'plus' },
+  ultra: { priceCents: 999, label: 'Matrix Ultra — messages IA illimités', tier: 'ultra' },
+};
+
+function matrixAiPlanPatch(tier: string) {
+  const now = new Date().toISOString();
+  return {
+    plan_tier: tier,
+    ai_messages_used: 0,
+    ai_last_reset_at: now,
+    ai_hour_count: 0,
+    ai_hour_started_at: now,
+  };
+}
+
 const COMMUNITY_PLANS: Record<string, { priceCents: number; label: string; boosts: number }> = {
   booster: { priceCents: 1000, label: 'Community Booster', boosts: 2 },
   vip: { priceCents: 2500, label: 'Community VIP', boosts: 8 },
@@ -335,6 +352,23 @@ export default async function(req: Request): Promise<Response> {
             });
           }
 
+          if (type === 'matrix_ai_subscription') {
+            const planId = data.metadata?.plan_id;
+            const aiPlan = planId ? MATRIX_AI_PLANS[planId] : null;
+            if (aiPlan && userId) {
+              await base44.asServiceRole.entities.User.update(userId, {
+                ...matrixAiPlanPatch(aiPlan.tier),
+                stripe_customer_id: data.customer || undefined,
+              });
+              console.log('[stripePayment] Matrix AI tier activé:', userId, aiPlan.tier);
+            }
+            await base44.asServiceRole.entities.TrixTransaction.create({
+              user_email: userEmail, type: 'matrix_ai_sub', amount: 0,
+              stripe_event_id: data.id,
+              description: `Abonnement Matrix AI ${planId} - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
+            });
+          }
+
           if (type === 'community_subscription') {
             const commPlanId = data.metadata?.plan_id;
             const commPlan = commPlanId ? COMMUNITY_PLANS[commPlanId] : null;
@@ -461,6 +495,20 @@ export default async function(req: Request): Promise<Response> {
           return Response.json({ received: true });
         }
 
+        // ---- Matrix AI subscription handling ----
+        if (subType === 'matrix_ai_subscription') {
+          const aiPlan = MATRIX_AI_PLANS[data.metadata?.plan_id] || null;
+          const isActive = data.status === 'active' || data.status === 'trialing';
+          if (userId) {
+            await base44.asServiceRole.entities.User.update(userId, {
+              ...(isActive && aiPlan ? matrixAiPlanPatch(aiPlan.tier) : { plan_tier: 'starter' }),
+              stripe_customer_id: data.customer || undefined,
+            });
+            console.log('[stripePayment] Matrix AI abonnement:', userId, 'status:', data.status, 'tier:', isActive ? aiPlan?.tier : 'starter');
+          }
+          return Response.json({ received: true });
+        }
+
         // ---- VIP subscription handling ----
         const plan = VIP_PLANS[planId] || VIP_PLANS.monthly;
         if (userId) {
@@ -499,6 +547,9 @@ export default async function(req: Request): Promise<Response> {
               custom_bg_until: new Date().toISOString(),
             });
             console.log('[stripePayment] Custom BG revoked:', userId);
+          } else if (subType === 'matrix_ai_subscription') {
+            await base44.asServiceRole.entities.User.update(userId, { plan_tier: 'starter' });
+            console.log('[stripePayment] Matrix AI revoked:', userId);
           } else {
             await base44.asServiceRole.entities.User.update(userId, {
               is_vip: false,
@@ -794,6 +845,24 @@ export default async function(req: Request): Promise<Response> {
           description: `Abonnement AI ${aiPlanId} - ${(session.amount_total / 100).toFixed(2)}€ (session ${session.id})`,
         });
         return Response.json({ success: true, type, aiPlanId });
+      }
+
+      if (type === 'matrix_ai_subscription') {
+        const planId = session.metadata?.plan_id;
+        const aiPlan = planId ? MATRIX_AI_PLANS[planId] : null;
+        if (!aiPlan) return Response.json({ error: 'Plan Matrix AI invalide' }, { status: 400 });
+        if (userId) {
+          await base44.asServiceRole.entities.User.update(userId, {
+            ...matrixAiPlanPatch(aiPlan.tier),
+            stripe_customer_id: session.customer || undefined,
+          });
+        }
+        await base44.asServiceRole.entities.TrixTransaction.create({
+          user_email: userEmail, type: 'matrix_ai_sub', amount: 0,
+          stripe_event_id: stripeSessionId,
+          description: `Abonnement Matrix AI ${planId} - ${(session.amount_total / 100).toFixed(2)}€ (session ${session.id})`,
+        });
+        return Response.json({ success: true, type, tier: aiPlan.tier });
       }
 
       if (type === 'community_subscription') {
@@ -1276,6 +1345,42 @@ export default async function(req: Request): Promise<Response> {
       params.append('metadata[user_email]', user.email);
       params.append('metadata[user_id]', user.id);
       params.append('metadata[plan_id]', planId);
+
+      const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${stripeKey}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params,
+      });
+      const session = await res.json();
+      if (session.error) return Response.json({ error: session.error.message }, { status: 400 });
+      return Response.json({ clientSecret: session.client_secret, sessionId: session.id, publishableKey: STRIPE_PUBLISHABLE_KEY });
+    }
+
+    // ---- createMatrixAiSubscription (récurrent mensuel, Matrix Plus / Ultra) ----
+    if (action === 'createMatrixAiSubscription') {
+      const { planId } = body;
+      const plan = planId ? MATRIX_AI_PLANS[planId] : null;
+      if (!plan) return Response.json({ error: 'Plan Matrix AI invalide' }, { status: 400 });
+
+      const params = new URLSearchParams();
+      params.append('payment_method_types[]', 'card');
+      params.append('mode', 'subscription');
+      params.append('ui_mode', 'embedded');
+      params.append('return_url', `${origin}`);
+      params.append('customer_email', user.email);
+      params.append('line_items[0][price_data][currency]', 'eur');
+      params.append('line_items[0][price_data][product_data][name]', plan.label);
+      params.append('line_items[0][price_data][unit_amount]', String(plan.priceCents));
+      params.append('line_items[0][price_data][recurring][interval]', 'month');
+      params.append('line_items[0][quantity]', '1');
+      params.append('metadata[type]', 'matrix_ai_subscription');
+      params.append('metadata[user_email]', user.email);
+      params.append('metadata[user_id]', user.id);
+      params.append('metadata[plan_id]', planId);
+      params.append('subscription_data[metadata][type]', 'matrix_ai_subscription');
+      params.append('subscription_data[metadata][user_email]', user.email);
+      params.append('subscription_data[metadata][user_id]', user.id);
+      params.append('subscription_data[metadata][plan_id]', planId);
 
       const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
         method: 'POST',

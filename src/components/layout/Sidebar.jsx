@@ -18,7 +18,8 @@ import {
   Crown,
   PanelLeftClose,
   PanelLeftOpen,
-  ShieldCheck } from
+  ShieldCheck,
+  Sparkles } from
 "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/useTheme";
@@ -75,6 +76,7 @@ const SECTIONS = [
   title: "Navigation",
   items: [
   { to: "/", label: "Accueil", icon: Home },
+  { to: "/matrix-ai", label: "Matrix AI", icon: Sparkles },
   { to: "/video-studio", label: "Montage Vidéo", icon: Clapperboard },
   { to: "/progression", label: "Niveaux/Progressions", icon: TrendingUp }]
 

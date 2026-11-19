@@ -412,6 +412,88 @@
       "type": "number",
       "default": 5,
       "description": "Duree de l'alerte en secondes"
+    },
+    "plan_tier": {
+      "type": "string",
+      "enum": [
+        "starter",
+        "plus",
+        "ultra"
+      ],
+      "enumColors": [
+        "gray",
+        "purple",
+        "yellow"
+      ],
+      "default": "starter",
+      "description": "Palier d'abonnement Matrix AI (starter = 10 messages / 24h, plus = 100, ultra = illimite)",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "ai_messages_used": {
+      "type": "number",
+      "default": 0,
+      "description": "Messages Matrix AI consommes sur la fenetre glissante de 24h (gere cote serveur)",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "ai_last_reset_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Debut de la fenetre de 24h courante du quota Matrix AI",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "ai_daily_extra_credits": {
+      "type": "number",
+      "default": 0,
+      "description": "Credits bonus ajoutes au plafond quotidien Matrix AI",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "ai_hour_started_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Debut de la fenetre anti-spam horaire Matrix AI (plan Ultra)",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "ai_hour_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Messages Matrix AI envoyes dans la fenetre anti-spam horaire (plan Ultra)",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     }
   },
   "required": []
