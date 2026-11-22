@@ -13,20 +13,20 @@ import PlatformCard from "@/components/landing/PlatformCard";
 import { User, Sparkles } from "lucide-react";
 
 const PLATFORM_CARDS = [
-  { path: "/stream", label: "YouTube", desc: "Vidéos, lives, shorts. Crée ta chaîne et partage ton contenu.", iconUrl: "/media/tuto-gaming/c4e71cf23_yt_icon_red_digital.png", color: "#FF0000" },
-  { path: "/twitch", label: "Twitch", desc: "Streams en direct, clips, discussions et rencontres.", color: "#9146FF" },
-  { path: "/nexus", label: "Nexus", desc: "Discute, réagis, commente. Rejoins ou crée des salons vocaux.", color: "#3B82F6", logoUrl: "https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/8756642f5_b119924b0_EmblmecosmiquefuturisteNEXUS1.png" },
-  { path: "/nexus-game", label: "Nexus Game", desc: "Roulette, machines à sous, blackjack et plus encore.", color: "#F59E0B", badge: "18+", logoUrl: "https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/9556b64f1_bc107644a_EmblmedorNexusGamefuturiste.png" },
-  { path: "/best-serveurs", label: "Best Serveur", desc: "Trouve des joueurs, recrute ou explore des serveurs de jeu.", color: "#8a4fff", logoUrl: "https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/994590848_a2c9d5d40_BadgenonfuturisteBestServeur.png" },
-  { path: "/tuto-gaming", label: "Tuto Gaming Entraide", desc: "Guides, astuces, entraide et base de connaissances pour tous les jeux.", color: "#BF5AF2", logoUrl: "https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/8f647df05_0706208c7_EmblmenonTutosGamingunerquicklich.png" },
-];
+{ path: "/stream", label: "YouTube", desc: "Vidéos, lives, shorts. Crée ta chaîne et partage ton contenu.", iconUrl: "/media/tuto-gaming/c4e71cf23_yt_icon_red_digital.png", color: "#FF0000" },
+{ path: "/twitch", label: "Twitch", desc: "Streams en direct, clips, discussions et rencontres.", color: "#9146FF" },
+{ path: "/nexus", label: "Nexus", desc: "Discute, réagis, commente. Rejoins ou crée des salons vocaux.", color: "#3B82F6", logoUrl: "https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/8756642f5_b119924b0_EmblmecosmiquefuturisteNEXUS1.png" },
+{ path: "/nexus-game", label: "Nexus Game", desc: "Roulette, machines à sous, blackjack et plus encore.", color: "#F59E0B", badge: "18+", logoUrl: "https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/9556b64f1_bc107644a_EmblmedorNexusGamefuturiste.png" },
+{ path: "/best-serveurs", label: "Best Serveur", desc: "Trouve des joueurs, recrute ou explore des serveurs de jeu.", color: "#8a4fff", logoUrl: "https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/994590848_a2c9d5d40_BadgenonfuturisteBestServeur.png" },
+{ path: "/tuto-gaming", label: "Tuto Gaming Entraide", desc: "Guides, astuces, entraide et base de connaissances pour tous les jeux.", color: "#BF5AF2", logoUrl: "https://base44.app/api/apps/69e14a987a927963a9924d5a/files/mp/public/69e14a987a927963a9924d5a/8f647df05_0706208c7_EmblmenonTutosGamingunerquicklich.png" }];
+
 
 const BEST_CREATOR_CARD = {
   path: "/best-creator",
   label: "Best Creator",
   desc: "Explore et vote pour les meilleurs créateurs de contenu.",
   color: "#a855f7",
-  Icon: Sparkles,
+  Icon: Sparkles
 };
 
 const BEST_SERVEUR_CARD = PLATFORM_CARDS.find((card) => card.path === "/best-serveurs");
@@ -62,21 +62,21 @@ export default function Landing() {
           <div className="hidden lg:block" />
 
           <div className="flex items-center gap-3">
-            {!user && (
-              <motion.button
-                initial={{ opacity: 0, y: -15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-                onClick={() => setShowAuth(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-full tap-sm shrink-0"
-                style={{ border: "1.5px solid hsl(var(--border))", background: "hsl(var(--card))" }}
-              >
+            {!user &&
+            <motion.button
+              initial={{ opacity: 0, y: -15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              onClick={() => setShowAuth(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-full tap-sm shrink-0"
+              style={{ border: "1.5px solid hsl(var(--border))", background: "hsl(var(--card))" }}>
+              
                 <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "hsl(var(--muted))" }}>
                   <User className="w-3.5 h-3.5" style={{ color: "hsl(var(--muted-foreground))" }} />
                 </div>
                 <span className="text-xs font-bold text-foreground">Se connecter</span>
               </motion.button>
-            )}
+            }
           </div>
         </header>
 
@@ -85,9 +85,9 @@ export default function Landing() {
           {/* Platform list (center) */}
           <div className="space-y-3 self-start min-w-0">
             <h2 className="text-lg font-black text-foreground mb-2 hidden lg:block">Plateformes</h2>
-            {MAIN_PLATFORM_CARDS.map((card, i) => (
-              <PlatformCard key={card.path} item={card} index={i} onClick={() => nav(card.path)} />
-            ))}
+            {MAIN_PLATFORM_CARDS.map((card, i) =>
+            <PlatformCard key={card.path} item={card} index={i} onClick={() => nav(card.path)} />
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 items-stretch gap-3">
               <PlatformCard item={BEST_SERVEUR_CARD} index={4} compact stretch onClick={() => nav(BEST_SERVEUR_CARD.path)} />
@@ -103,8 +103,8 @@ export default function Landing() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.5 }}
-              className="mb-3 flex items-center gap-2"
-            >
+              className="mb-3 flex items-center gap-2">
+              
               <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.2)" }}>
                 <span className="text-base">🌌</span>
               </div>
@@ -126,21 +126,21 @@ export default function Landing() {
         <nav aria-label="Explorer Matrix Hub" className="mt-6">
           <ul className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
             {[
-              { to: "/stream", label: "Streaming" },
-              { to: "/twitch", label: "Twitch" },
-              { to: "/nexus", label: "Nexus" },
-              { to: "/nexus-game", label: "Nexus Game" },
-              { to: "/best-serveurs", label: "Best Serveur" },
-              { to: "/best-creator", label: "Best Creator" },
-              { to: "/tuto-gaming", label: "Tuto Gaming" },
-              { to: "/fortnite-maps", label: "Fortnite Maps" },
-            ].map((link) => (
-              <li key={link.to}>
-                <Link to={link.to} className="text-[11px] font-semibold text-foreground/45 hover:text-foreground/80 transition tap-sm">
+            { to: "/stream", label: "Streaming" },
+            { to: "/twitch", label: "Twitch" },
+            { to: "/nexus", label: "Nexus" },
+            { to: "/nexus-game", label: "Nexus Game" },
+            { to: "/best-serveurs", label: "Best Serveur" },
+            { to: "/best-creator", label: "Best Creator" },
+            { to: "/tuto-gaming", label: "Tuto Gaming" },
+            { to: "/fortnite-maps", label: "Fortnite Maps" }].
+            map((link) =>
+            <li key={link.to}>
+                <Link to={link.to} className="text-[11px] font-semibold text-foreground/45 hover:text-foreground/80 transition tap-sm hidden">
                   {link.label}
                 </Link>
               </li>
-            ))}
+            )}
           </ul>
         </nav>
 
@@ -158,6 +158,6 @@ export default function Landing() {
       <AuthModal open={showAuth} onClose={() => setShowAuth(false)} />
       <FaqPanel open={showFaq} onClose={() => setShowFaq(false)} />
       <ThemeModal open={showTheme} onClose={() => setShowTheme(false)} />
-    </div>
-  );
+    </div>);
+
 }
