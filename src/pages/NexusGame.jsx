@@ -87,20 +87,20 @@ export default function NexusGame() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Link
-            to="/mon-profil"
-            className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold text-white/80 transition hover:opacity-90 tap-sm hidden"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-            
-            <User className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Profil</span>
-          </Link>
-          <Link
-            to="/boutique-nexus"
-            className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold text-white transition hover:opacity-90 tap-sm hidden"
-            style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)", boxShadow: "0 0 12px rgba(168,85,247,0.25)" }}>
-            
-            <ShoppingBag className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Boutique</span>
-          </Link>
+          
+
+
+
+
+
+          
+          
+
+
+
+
+
+          
         </div>
       </header>
 
