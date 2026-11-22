@@ -21,7 +21,7 @@ export default function NexusGame() {
   usePageSEO({
     title: "Nexus Game : jeux en ligne et casino virtuel | Matrix Hub",
     description: "Découvrez le catalogue Nexus Game : roulette, machines à sous, blackjack, cartes à gratter et des centaines de jeux HTML5 jouables avec la monnaie virtuelle TRIX.",
-    path: "/nexus-game",
+    path: "/nexus-game"
   });
 
   const catalog = useGameCatalog();
@@ -42,13 +42,13 @@ export default function NexusGame() {
     <div className="min-h-screen relative" style={{ background: "#0a050f" }}>
       <div
         className="fixed inset-0 pointer-events-none"
-        style={{ background: "radial-gradient(ellipse at top, rgba(168,85,247,0.12), transparent 65%)" }}
-      />
+        style={{ background: "radial-gradient(ellipse at top, rgba(168,85,247,0.12), transparent 65%)" }} />
+      
 
       <header
         className="relative z-30 flex items-center justify-between gap-3 px-4 sm:px-6 h-16"
-        style={{ background: "rgba(10,5,15,0.85)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(168,85,247,0.18)" }}
-      >
+        style={{ background: "rgba(10,5,15,0.85)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(168,85,247,0.18)" }}>
+        
         <div className="flex items-center gap-2 sm:gap-3">
           <Link to="/" className="flex items-center gap-2 text-white/60 hover:text-white transition tap-sm">
             <ArrowLeft className="w-4 h-4" />
@@ -56,8 +56,8 @@ export default function NexusGame() {
           </Link>
           <div
             className="flex items-center gap-2 px-3 h-9 rounded-xl"
-            style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.25)" }}
-          >
+            style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.25)" }}>
+            
             <CasinoToken size={20} />
             <span className="text-sm font-mono font-black" style={{ color: "#c084fc" }}>
               {formatBet(balance)}
@@ -72,16 +72,16 @@ export default function NexusGame() {
               background: "linear-gradient(135deg, #e9d5ff, #a855f7)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
-              filter: "drop-shadow(0 0 10px rgba(168,85,247,0.5))",
-            }}
-          >
+              filter: "drop-shadow(0 0 10px rgba(168,85,247,0.5))"
+            }}>
+            
             NEXUS GAME
           </span>
           <span className="flex items-center gap-1 text-[9px] font-bold text-white/40 mt-0.5">
             <span
               className="w-1.5 h-1.5 rounded-full"
-              style={{ background: online ? "#22c55e" : "#f59e0b", boxShadow: `0 0 6px ${online ? "#22c55e" : "#f59e0b"}` }}
-            />
+              style={{ background: online ? "#22c55e" : "#f59e0b", boxShadow: `0 0 6px ${online ? "#22c55e" : "#f59e0b"}` }} />
+            
             {online ? "Catalogue connecté" : catalog.loading ? "Connexion..." : "Catalogue indisponible"}
           </span>
         </div>
@@ -89,16 +89,16 @@ export default function NexusGame() {
         <div className="flex items-center gap-2">
           <Link
             to="/mon-profil"
-            className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold text-white/80 transition hover:opacity-90 tap-sm"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
-          >
+            className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold text-white/80 transition hover:opacity-90 tap-sm hidden"
+            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            
             <User className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Profil</span>
           </Link>
           <Link
             to="/boutique-nexus"
-            className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold text-white transition hover:opacity-90 tap-sm"
-            style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)", boxShadow: "0 0 12px rgba(168,85,247,0.25)" }}
-          >
+            className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold text-white transition hover:opacity-90 tap-sm hidden"
+            style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)", boxShadow: "0 0 12px rgba(168,85,247,0.25)" }}>
+            
             <ShoppingBag className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Boutique</span>
           </Link>
         </div>
@@ -112,14 +112,14 @@ export default function NexusGame() {
             search={catalog.search}
             onSearchChange={catalog.setSearch}
             onSubmit={() => document.getElementById("catalogue-grid")?.scrollIntoView({ behavior: "smooth", block: "start" })}
-            online={online}
-          />
+            online={online} />
+          
 
           <NexusFeaturedGames
             onOpen={setArcadeGame}
             balance={balance}
-            onRecharge={() => setArcadeGame("shop")}
-          />
+            onRecharge={() => setArcadeGame("shop")} />
+          
 
           <NexusCategoryRow categories={["Tous", ...GAME_CATEGORIES]} value={catalog.category} onChange={catalog.setCategory} />
 
@@ -132,61 +132,61 @@ export default function NexusGame() {
               </span>
             </div>
 
-            {catalog.loading ? (
-              <div className="flex flex-col items-center justify-center py-16 gap-3">
+            {catalog.loading ?
+            <div className="flex flex-col items-center justify-center py-16 gap-3">
                 <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#a855f7" }} />
                 <p className="text-xs text-white/50">Synchronisation du catalogue...</p>
-              </div>
-            ) : catalog.error ? (
-              <div
-                className="rounded-xl p-8 text-center"
-                style={{ background: "rgba(18,9,28,0.7)", border: "1px dashed rgba(168,85,247,0.25)" }}
-              >
+              </div> :
+            catalog.error ?
+            <div
+              className="rounded-xl p-8 text-center"
+              style={{ background: "rgba(18,9,28,0.7)", border: "1px dashed rgba(168,85,247,0.25)" }}>
+              
                 <RefreshCw className="w-7 h-7 mx-auto mb-2 text-white/30" />
                 <p className="text-xs text-white/50 mb-3">{catalog.error}</p>
                 <button
-                  onClick={() => window.location.reload()}
-                  className="h-9 px-4 rounded-lg text-xs font-bold text-white tap-sm"
-                  style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}
-                >
+                onClick={() => window.location.reload()}
+                className="h-9 px-4 rounded-lg text-xs font-bold text-white tap-sm"
+                style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
+                
                   Réessayer
                 </button>
-              </div>
-            ) : catalog.filtered.length === 0 ? (
-              <div
-                className="rounded-xl p-8 text-center"
-                style={{ background: "rgba(18,9,28,0.7)", border: "1px dashed rgba(168,85,247,0.25)" }}
-              >
+              </div> :
+            catalog.filtered.length === 0 ?
+            <div
+              className="rounded-xl p-8 text-center"
+              style={{ background: "rgba(18,9,28,0.7)", border: "1px dashed rgba(168,85,247,0.25)" }}>
+              
                 <SearchX className="w-7 h-7 mx-auto mb-2 text-white/25" />
                 <p className="text-xs text-white/50 mb-3">Aucun jeu ne correspond à ces filtres.</p>
                 <button
-                  onClick={catalog.resetFilters}
-                  className="h-9 px-4 rounded-lg text-xs font-bold text-white tap-sm"
-                  style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}
-                >
+                onClick={catalog.resetFilters}
+                className="h-9 px-4 rounded-lg text-xs font-bold text-white tap-sm"
+                style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
+                
                   Réinitialiser les filtres
                 </button>
-              </div>
-            ) : (
-              <>
+              </div> :
+
+            <>
                 <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
-                  {catalog.visibleGames.map((game) => (
-                    <NexusGameCard key={game.id} game={game} onPlay={setSelectedGame} />
-                  ))}
+                  {catalog.visibleGames.map((game) =>
+                <NexusGameCard key={game.id} game={game} onPlay={setSelectedGame} />
+                )}
                 </div>
-                {catalog.hasMore && (
-                  <div className="flex justify-center mt-5">
+                {catalog.hasMore &&
+              <div className="flex justify-center mt-5">
                     <button
-                      onClick={catalog.loadMore}
-                      className="h-10 px-6 rounded-xl text-xs font-black uppercase tracking-wider text-white transition hover:opacity-90 tap-sm"
-                      style={{ background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.4)", color: "#e9d5ff" }}
-                    >
+                  onClick={catalog.loadMore}
+                  className="h-10 px-6 rounded-xl text-xs font-black uppercase tracking-wider text-white transition hover:opacity-90 tap-sm"
+                  style={{ background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.4)", color: "#e9d5ff" }}>
+                  
                       Afficher plus de jeux
                     </button>
                   </div>
-                )}
+              }
               </>
-            )}
+            }
           </section>
         </div>
 
@@ -201,21 +201,21 @@ export default function NexusGame() {
           title="Le catalogue de jeux et le casino virtuel de Matrix Hub"
           intro="Nexus Game réunit un catalogue de centaines de jeux HTML5 jouables directement dans le navigateur et une sélection de jeux d'arcade comme la roulette, les machines à sous, le blackjack ou les tickets à gratter. Tous les jeux utilisent la monnaie virtuelle TRIX, sans argent réel : vous jouez, vous progressez et vous débloquez de nouveaux contenus au fil de vos parties."
           sections={[
-            { title: "Catalogue de jeux HTML5", text: "Filtrez par catégorie, durée, difficulté ou compatibilité mobile et lancez un jeu sans installation ni téléchargement." },
-            { title: "Roulette et machines à sous", text: "Retrouvez les grands classiques du casino d'arcade avec des thèmes visuels, des mises libres et des gains en TRIX." },
-            { title: "Tickets à gratter et roue de la fortune", text: "Tentez votre chance sur des jeux rapides, avec des récompenses quotidiennes et des jackpots progressifs." },
-            { title: "Monnaie virtuelle TRIX", text: "Rechargez votre solde TRIX depuis la boutique Nexus et suivez vos gains, vos pertes et votre historique de jeu." },
-            { title: "Progression et classements", text: "Gagnez de l'expérience, débloquez des succès et comparez vos résultats aux classements de la communauté." },
-            { title: "Boutique Nexus", text: "Échangez vos TRIX contre des cosmétiques, des bonus et des avantages pour personnaliser votre profil Matrix Hub." },
-          ]}
+          { title: "Catalogue de jeux HTML5", text: "Filtrez par catégorie, durée, difficulté ou compatibilité mobile et lancez un jeu sans installation ni téléchargement." },
+          { title: "Roulette et machines à sous", text: "Retrouvez les grands classiques du casino d'arcade avec des thèmes visuels, des mises libres et des gains en TRIX." },
+          { title: "Tickets à gratter et roue de la fortune", text: "Tentez votre chance sur des jeux rapides, avec des récompenses quotidiennes et des jackpots progressifs." },
+          { title: "Monnaie virtuelle TRIX", text: "Rechargez votre solde TRIX depuis la boutique Nexus et suivez vos gains, vos pertes et votre historique de jeu." },
+          { title: "Progression et classements", text: "Gagnez de l'expérience, débloquez des succès et comparez vos résultats aux classements de la communauté." },
+          { title: "Boutique Nexus", text: "Échangez vos TRIX contre des cosmétiques, des bonus et des avantages pour personnaliser votre profil Matrix Hub." }]
+          }
           links={[
-            { href: "/boutique-nexus", label: "Boutique Nexus" },
-            { href: "/best-serveurs", label: "Best Serveur" },
-            { href: "/best-creator", label: "Best Creator" },
-            { href: "/stream", label: "Streaming" },
-            { href: "/progression", label: "Progression" },
-          ]}
-        />
+          { href: "/boutique-nexus", label: "Boutique Nexus" },
+          { href: "/best-serveurs", label: "Best Serveur" },
+          { href: "/best-creator", label: "Best Creator" },
+          { href: "/stream", label: "Streaming" },
+          { href: "/progression", label: "Progression" }]
+          } />
+        
       </div>
 
       <NexusGamePlayer game={selectedGame} onClose={() => setSelectedGame(null)} />
@@ -228,8 +228,8 @@ export default function NexusGame() {
         onClose={() => {
           setArcadeGame(null);
           refreshBalance();
-        }}
-      />
-    </div>
-  );
+        }} />
+      
+    </div>);
+
 }
