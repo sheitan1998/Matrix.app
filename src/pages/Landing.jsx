@@ -136,9 +136,9 @@ export default function Landing() {
             { to: "/fortnite-maps", label: "Fortnite Maps" }].
             map((link) =>
             <li key={link.to}>
-                <Link to={link.to} className="text-[11px] font-semibold text-foreground/45 hover:text-foreground/80 transition tap-sm hidden">
-                  {link.label}
-                </Link>
+                
+
+              
               </li>
             )}
           </ul>

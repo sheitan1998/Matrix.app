@@ -74,13 +74,13 @@ export default function LandingSEO() {
           <ul className="flex flex-wrap gap-x-5 gap-y-2">
             {INTERNAL_LINKS.map((link) =>
             <li key={link.href}>
-                <Link
-                to={link.href}
-                className="text-[11px] font-bold underline decoration-purple-500/40 hover:text-foreground transition hidden"
-                style={{ color: "#d8b4fe" }}>
                 
-                  {link.label}
-                </Link>
+
+
+
+
+
+              
               </li>
             )}
           </ul>
