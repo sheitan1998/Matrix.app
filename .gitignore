@@ -34,3 +34,4 @@ base44/.app.jsonc
 
 # Tauri build artifacts (never commit compiled Rust outputs)
 src-tauri/target/
+migration-output/

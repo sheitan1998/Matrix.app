@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { X, Upload, Loader2, FileArchive, Trash2, ImagePlus } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { uploadOptimizedImage } from "@/lib/imageStorage";
 import { toast } from "sonner";
 import CreatorAgreementCheckbox from "@/components/tuto-gaming/CreatorAgreementCheckbox";
 
@@ -77,7 +78,7 @@ export default function FarmingModForm({ mod, userEmail, userName, userAvatar, o
       if (images.length > 0) {
         setUploadingImages(true);
         const results = await Promise.all(
-          images.map((img) => base44.integrations.Core.UploadPublicFile({ file: img }))
+          images.map((img) => uploadOptimizedImage(img, { usage: "gallery" }))
         );
         uploadedImageUrls = results.map((r) => r.file_url);
         setUploadingImages(false);

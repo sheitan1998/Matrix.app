@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { uploadOptimizedImage } from "@/lib/imageStorage";
 import { Upload, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { normalizeAppAssetUrl } from "@/lib/urlUtils";
@@ -17,7 +17,7 @@ export default function ImageUploadField({ label, value, onChange, hint, aspect 
     if (!file) return;
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
+      const { file_url } = await uploadOptimizedImage(file, { usage: "banner" });
       onChange(normalizeAppAssetUrl(file_url));
       toast.success("Image uploadée");
     } catch {

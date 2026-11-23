@@ -48,7 +48,7 @@ export default function ListingForm({ onClose }) {
   const uploadPhoto = async (file) => {
     setUploading(true);
     try {
-      const { file_url } = await uploadImageWithToast(file);
+      const { file_url } = await uploadImageWithToast(file, { usage: "listing" });
       setPhotos((p) => [...p, file_url]);
     } catch { /* error already toasted */ }
     setUploading(false);

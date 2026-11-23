@@ -41,9 +41,9 @@ export default function ListingDetail() {
         {/* Photos */}
         <div>
           <div className="aspect-square rounded-2xl overflow-hidden bg-secondary/40 border border-border mb-3">
-            {photos[photoIdx] ? (
-              <img src={photos[photoIdx]} alt="" className="w-full h-full object-cover" />
-            ) : (
+            {photos.length > 0 ? photos.map((p, i) => (
+              <img key={p} src={p} alt={`${listing.title} - photo ${i + 1} sur ${photos.length}`} width={1200} height={1200} loading={i === 0 ? "eager" : "lazy"} decoding="async" aria-hidden={i === photoIdx ? undefined : true} className={`w-full h-full object-cover ${i === photoIdx ? "" : "hidden"}`} />
+            )) : (
               <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">Pas de photo</div>
             )}
           </div>
@@ -52,7 +52,7 @@ export default function ListingDetail() {
               {photos.map((p, i) => (
                 <button key={i} onClick={() => setPhotoIdx(i)}
                   className={`shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition ${i === photoIdx ? "border-orange-500" : "border-border"}`}>
-                  <img src={p} alt="" className="w-full h-full object-cover" />
+                  <img src={p} alt="" width={64} height={64} loading="lazy" className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>

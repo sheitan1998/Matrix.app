@@ -1,30 +1,13 @@
 import React, { useRef, useState } from "react";
 import { ImagePlus, Loader2, RotateCcw, Upload } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { uploadOptimizedImage } from "@/lib/imageStorage";
 import { CREATOR_DEFAULT_VISUALS } from "@/lib/creatorDefaults";
 import { normalizeAppAssetUrl } from "@/lib/urlUtils";
 
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
 
-// Réduit l'image avant l'envoi pour garder des cartes rapides à charger.
-async function prepareImage(file, maxWidth) {
-  const bitmap = typeof createImageBitmap === "function"
-    ? await createImageBitmap(file).catch(() => null)
-    : null;
-  if (!bitmap) return file;
-  const scale = Math.min(1, maxWidth / bitmap.width);
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
-  canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
-  if (!blob) return file;
-  return new File([blob], `${file.name.replace(/\.\w+$/, "")}.jpg`, { type: "image/jpeg" });
-}
-
 async function uploadVisual(file, maxWidth) {
-  const prepared = await prepareImage(file, maxWidth);
-  const { file_url } = await base44.integrations.Core.UploadPublicFile({ file: prepared });
+  const { file_url } = await uploadOptimizedImage(file, { usage: maxWidth <= 500 ? "thumbnail" : "banner" });
   if (!file_url) throw new Error("no_url");
   return normalizeAppAssetUrl(file_url) || file_url;
 }
