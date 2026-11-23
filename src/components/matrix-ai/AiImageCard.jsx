@@ -37,6 +37,7 @@ export default function AiImageCard({ url, prompt }) {
         src={url}
         alt={prompt || "Image générée par Matrix AI"}
         loading="lazy"
+        referrerPolicy="no-referrer"
         onError={() => setFailed(true)}
         className="w-full max-w-sm rounded-xl object-cover"
         style={{ border: "1px solid rgba(138,79,255,0.3)", boxShadow: "0 0 24px rgba(138,79,255,0.2)" }}

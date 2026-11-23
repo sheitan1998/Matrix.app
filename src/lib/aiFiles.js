@@ -32,6 +32,10 @@ export function classifyFile(name, mime) {
   return null;
 }
 
+export function isImageAttachment(file) {
+  return file?.kind === 'image' || classifyFile(file?.name, file?.type) === 'image';
+}
+
 /** Contrôle côté client avant envoi : renvoie un message d'erreur ou null. */
 export function checkFileBeforeUpload(file) {
   if (!classifyFile(file.name, file.type)) {

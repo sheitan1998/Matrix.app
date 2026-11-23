@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Mic, MicOff } from "lucide-react";
 
 const ERROR_MESSAGES = {
@@ -15,14 +15,16 @@ function getRecognitionCtor() {
 }
 
 /** Dictée vocale : transcrit la voix dans le champ sans envoyer le message. */
-export default function AiVoiceInput({ value, onChange, disabled, onListeningChange }) {
+export default function AiVoiceInput({ value, onChange, disabled, onListeningChange, sendSignal = 0 }) {
   const [listening, setListening] = useState(false);
   const [error, setError] = useState("");
   const recognitionRef = useRef(null);
+  const sessionRef = useRef(0);
   const baseRef = useRef("");
   const finalRef = useRef("");
   const valueRef = useRef(value);
   const errorTimer = useRef(null);
+  const lastSignal = useRef(sendSignal);
 
   useEffect(() => {
     valueRef.current = value;
@@ -32,12 +34,51 @@ export default function AiVoiceInput({ value, onChange, disabled, onListeningCha
     onListeningChange?.(listening);
   }, [listening, onListeningChange]);
 
+  // Arrêt complet : les événements tardifs de l'ancienne session sont ignorés et les handlers détachés.
+  const halt = useCallback(() => {
+    sessionRef.current += 1;
+    const recognition = recognitionRef.current;
+    recognitionRef.current = null;
+    if (recognition) {
+      recognition.onresult = null;
+      recognition.onerror = null;
+      recognition.onend = null;
+      try {
+        recognition.abort();
+      } catch {
+        /* déjà arrêté */
+      }
+    }
+    baseRef.current = "";
+    finalRef.current = "";
+    setListening(false);
+  }, []);
+
+  useEffect(() => {
+    if (sendSignal !== lastSignal.current) {
+      lastSignal.current = sendSignal;
+      halt();
+    }
+  }, [sendSignal, halt]);
+
+  useEffect(() => {
+    if (!String(value || "").trim() && recognitionRef.current) halt();
+  }, [value, halt]);
+
   useEffect(() => () => {
     clearTimeout(errorTimer.current);
-    try {
-      recognitionRef.current?.abort();
-    } catch {
-      /* déjà arrêté */
+    sessionRef.current += 1;
+    const recognition = recognitionRef.current;
+    recognitionRef.current = null;
+    if (recognition) {
+      recognition.onresult = null;
+      recognition.onerror = null;
+      recognition.onend = null;
+      try {
+        recognition.abort();
+      } catch {
+        /* déjà arrêté */
+      }
     }
   }, []);
 
@@ -48,8 +89,9 @@ export default function AiVoiceInput({ value, onChange, disabled, onListeningCha
   };
 
   const stop = () => {
+    const recognition = recognitionRef.current;
     try {
-      recognitionRef.current?.stop();
+      recognition?.stop();
     } catch {
       /* déjà arrêté */
     }
@@ -64,6 +106,9 @@ export default function AiVoiceInput({ value, onChange, disabled, onListeningCha
     }
 
     setError("");
+    sessionRef.current += 1;
+    const session = sessionRef.current;
+    const isCurrent = () => sessionRef.current === session;
     const recognition = new Ctor();
     recognition.lang = "fr-FR";
     recognition.continuous = true;
@@ -75,6 +120,7 @@ export default function AiVoiceInput({ value, onChange, disabled, onListeningCha
     finalRef.current = "";
 
     recognition.onresult = (event) => {
+      if (!isCurrent()) return;
       let interim = "";
       for (let i = event.resultIndex; i < event.results.length; i += 1) {
         const result = event.results[i];
@@ -87,6 +133,7 @@ export default function AiVoiceInput({ value, onChange, disabled, onListeningCha
     };
 
     recognition.onerror = (event) => {
+      if (!isCurrent()) return;
       if (event.error !== "no-speech") {
         showError(ERROR_MESSAGES[event.error] || "Dictée interrompue — réessaie.");
       } else {
@@ -95,13 +142,18 @@ export default function AiVoiceInput({ value, onChange, disabled, onListeningCha
       setListening(false);
     };
 
-    recognition.onend = () => setListening(false);
+    recognition.onend = () => {
+      if (!isCurrent()) return;
+      recognitionRef.current = null;
+      setListening(false);
+    };
 
     recognitionRef.current = recognition;
     try {
       recognition.start();
       setListening(true);
     } catch {
+      recognitionRef.current = null;
       showError("Impossible de démarrer la dictée.");
       setListening(false);
     }

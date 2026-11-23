@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ArrowUp, Loader2, ImagePlus, Paperclip, X, FileText } from "lucide-react";
+import { ArrowUp, Loader2, Paperclip, X, FileText } from "lucide-react";
 import AiVoiceInput from "./AiVoiceInput";
-import { ACCEPT_ATTRIBUTE, MAX_ATTACHMENTS } from "@/lib/aiFiles";
+import AiAttachmentImage from "./AiAttachmentImage";
+import { ACCEPT_ATTRIBUTE, MAX_ATTACHMENTS, isImageAttachment } from "@/lib/aiFiles";
 
 export default function AiComposer({
   value,
@@ -9,8 +10,6 @@ export default function AiComposer({
   onSend,
   sending,
   disabled,
-  imageMode = false,
-  onToggleImageMode,
   attachments = [],
   uploading = false,
   onAddFiles,
@@ -19,6 +18,7 @@ export default function AiComposer({
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
   const [listening, setListening] = useState(false);
+  const [sendSignal, setSendSignal] = useState(0);
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -29,6 +29,12 @@ export default function AiComposer({
 
   const canSend = !sending && !disabled && !uploading && (value.trim() || attachments.length > 0);
 
+  const handleSend = () => {
+    if (!canSend) return;
+    setSendSignal((count) => count + 1);
+    onSend();
+  };
+
   const handleFiles = (event) => {
     const files = Array.from(event.target.files || []);
     event.target.value = "";
@@ -38,7 +44,7 @@ export default function AiComposer({
   const handleKeyDown = (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
-      if (canSend) onSend();
+      handleSend();
     }
   };
 
@@ -58,7 +64,11 @@ export default function AiComposer({
               className="flex items-center gap-1.5 max-w-[220px] rounded-lg pl-2 pr-1 py-1 text-[10px] font-bold text-white/80"
               style={{ background: "rgba(138,79,255,0.15)", border: "1px solid rgba(138,79,255,0.35)" }}
             >
-              <FileText className="w-3 h-3 shrink-0" style={{ color: "#c4b5fd" }} />
+              {isImageAttachment(file) ? (
+                <AiAttachmentImage file={file} imgClassName="w-7 h-7 rounded object-cover shrink-0" />
+              ) : (
+                <FileText className="w-3 h-3 shrink-0" style={{ color: "#c4b5fd" }} />
+              )}
               <span className="truncate">{file.name}</span>
               <button
                 type="button"
@@ -84,11 +94,7 @@ export default function AiComposer({
           onKeyDown={handleKeyDown}
           rows={1}
           maxLength={4000}
-          placeholder={
-            imageMode
-              ? "Décris l'image à générer (compte comme 1 message)..."
-              : "Demande à Matrix AI, colle un lien ou joins un fichier..."
-          }
+          placeholder="Demande à Matrix AI, décris une image à générer, colle un lien ou joins un fichier..."
           className="flex-1 bg-transparent text-[12px] text-white placeholder:text-white/30 outline-none resize-none py-1.5 max-h-36 scrollbar-thin"
           disabled={sending}
         />
@@ -111,30 +117,15 @@ export default function AiComposer({
         >
           {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
         </button>
-        <button
-          type="button"
-          onClick={onToggleImageMode}
-          disabled={sending}
-          aria-pressed={imageMode}
-          aria-label="Mode génération d'image"
-          title="Générer une image"
-          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition disabled:opacity-40 tap-sm"
-          style={
-            imageMode
-              ? { background: "rgba(34,211,238,0.2)", color: "#22d3ee", border: "1px solid rgba(34,211,238,0.5)" }
-              : { background: "rgba(138,79,255,0.1)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(138,79,255,0.2)" }
-          }
-        >
-          <ImagePlus className="w-4 h-4" />
-        </button>
         <AiVoiceInput
           value={value}
           onChange={onChange}
           disabled={sending || disabled}
           onListeningChange={setListening}
+          sendSignal={sendSignal}
         />
         <button
-          onClick={onSend}
+          onClick={handleSend}
           disabled={!canSend}
           className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition disabled:opacity-40 tap-sm"
           style={{

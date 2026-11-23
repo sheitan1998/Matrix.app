@@ -12,7 +12,7 @@ import AiUpgradeModal from "@/components/matrix-ai/AiUpgradeModal";
 import AiConnectorsPanel from "@/components/matrix-ai/AiConnectorsPanel";
 import AuthModal from "@/components/landing/AuthModal";
 import useAiQuota from "@/hooks/useAiQuota";
-import { checkFileBeforeUpload, MAX_ATTACHMENTS } from "@/lib/aiFiles";
+import { checkFileBeforeUpload, isImageAttachment, MAX_ATTACHMENTS } from "@/lib/aiFiles";
 import { isImageRequest } from "@/lib/aiIntent";
 
 const THINKING_STEPS = [
@@ -49,7 +49,6 @@ export default function MatrixAI() {
   const [activeId, setActiveId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState(() => readDraft()?.content || "");
-  const [imageMode, setImageMode] = useState(() => Boolean(readDraft()?.image));
   const [sending, setSending] = useState(false);
   const [sendingImage, setSendingImage] = useState(false);
   const [attachments, setAttachments] = useState([]);
@@ -64,6 +63,7 @@ export default function MatrixAI() {
   const bottomRef = useRef(null);
   const initializedFor = useRef(null);
   const sendRef = useRef(null);
+  const previewUrls = useRef(new Set());
   const { quota, setQuota, refresh, remainingMs } = useAiQuota(authenticated);
 
   const loadConversations = useCallback(async () => {
@@ -119,13 +119,12 @@ export default function MatrixAI() {
     const files = options.attachments ?? attachments;
     if ((!typed && !files.length) || sending || uploading) return;
     const content = typed || "Analyse le ou les fichiers joints et résume-les.";
-    const asImage = Boolean(options.image ?? imageMode) || (!files.length && isImageRequest(content));
+    const asImage = Boolean(options.image) || (!files.length && isImageRequest(content));
 
     // Lecture libre pour les visiteurs : l'envoi exige une connexion, le message est gardé en brouillon.
     if (!authenticated) {
       writeDraft({ content, image: asImage });
       setInput(content);
-      setImageMode(asImage);
       setAuthOpen(true);
       return;
     }
@@ -139,7 +138,6 @@ export default function MatrixAI() {
     setMessages((prev) => [...prev, { id: tempId, role: "user", content, attachments: files }]);
     setInput("");
     setAttachments([]);
-    setImageMode(false);
     setError("");
     setSending(true);
     setSendingImage(asImage);
@@ -149,7 +147,7 @@ export default function MatrixAI() {
         action: asImage ? "generateImage" : "chat",
         conversation_id: activeId || undefined,
         content,
-        attachments: files.map(({ url, name, type, size }) => ({ url, name, type, size })),
+        attachments: files.map(({ url, name, type, size, kind }) => ({ url, name, type, size, kind })),
       });
       const data = res.data || {};
       setActiveId(data.conversation_id || activeId);
@@ -165,7 +163,6 @@ export default function MatrixAI() {
       setMessages((prev) => prev.filter((item) => item.id !== tempId));
       setInput(typed);
       setAttachments(files);
-      setImageMode(asImage);
 
       if (status === 429) {
         if (payload?.quota) setQuota(payload.quota);
@@ -203,7 +200,13 @@ export default function MatrixAI() {
         }
         try {
           const { file_url } = await base44.integrations.Core.UploadFile({ file });
-          uploaded.push({ url: file_url, name: file.name, type: file.type, size: file.size });
+          const entry = { url: file_url, name: file.name, type: file.type, size: file.size };
+          if (isImageAttachment(entry)) {
+            entry.kind = "image";
+            entry.previewUrl = URL.createObjectURL(file);
+            previewUrls.current.add(entry.previewUrl);
+          }
+          uploaded.push(entry);
         } catch {
           toast.error(`${file.name} : envoi impossible, réessaie.`);
         }
@@ -214,10 +217,40 @@ export default function MatrixAI() {
     }
   };
 
+  const releasePreviews = useCallback((keep = []) => {
+    const kept = new Set(keep.map((file) => file.previewUrl).filter(Boolean));
+    previewUrls.current.forEach((url) => {
+      if (!kept.has(url)) {
+        URL.revokeObjectURL(url);
+        previewUrls.current.delete(url);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    const urls = previewUrls.current;
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url));
+      urls.clear();
+    };
+  }, []);
+
+  const removeAttachment = (index) => {
+    setAttachments((prev) => {
+      const target = prev[index];
+      if (target?.previewUrl) {
+        URL.revokeObjectURL(target.previewUrl);
+        previewUrls.current.delete(target.previewUrl);
+      }
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
   const openConversation = async (conversation) => {
     setMobileOpen(false);
     setActiveId(conversation.id);
     setError("");
+    releasePreviews(attachments);
     setMessages(await fetchMessages(conversation.id));
   };
 
@@ -225,8 +258,8 @@ export default function MatrixAI() {
     setActiveId(null);
     setMessages([]);
     setInput("");
-    setImageMode(false);
     setAttachments([]);
+    releasePreviews();
     setError("");
     setMobileOpen(false);
   };
@@ -256,7 +289,6 @@ export default function MatrixAI() {
       if (draft) {
         writeDraft(null);
         setInput("");
-        setImageMode(false);
         sendRef.current(draft.content, { image: Boolean(draft.image) });
         return;
       }
@@ -296,13 +328,13 @@ export default function MatrixAI() {
   const openAuth = () => {
     setUpgradeOpen(false);
     const draft = String(input).trim();
-    if (draft) writeDraft({ content: draft, image: imageMode });
+    if (draft) writeDraft({ content: draft, image: isImageRequest(draft) });
     setAuthOpen(true);
   };
 
   const handleInputChange = (value) => {
     setInput(value);
-    if (!authenticated) writeDraft(value.trim() ? { content: value, image: imageMode } : null);
+    if (!authenticated) writeDraft(value.trim() ? { content: value, image: isImageRequest(value) } : null);
   };
 
   const activeConversation = conversations.find((item) => item.id === activeId);
@@ -395,12 +427,10 @@ export default function MatrixAI() {
           onSend={() => sendMessage()}
           sending={sending}
           disabled={sending}
-          imageMode={imageMode}
-          onToggleImageMode={() => setImageMode((value) => !value)}
           attachments={attachments}
           uploading={uploading}
           onAddFiles={addFiles}
-          onRemoveAttachment={(index) => setAttachments((prev) => prev.filter((_, i) => i !== index))}
+          onRemoveAttachment={removeAttachment}
         />
       </div>
 

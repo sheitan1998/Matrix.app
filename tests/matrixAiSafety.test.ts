@@ -54,6 +54,13 @@ test('détection des demandes d\'image en langage naturel', () => {
   assert.ok(isImageRequest('Peux-tu créer un logo pour mon serveur Discord ?'));
   assert.ok(isImageRequest('Je voudrais une illustration de forêt'));
   assert.ok(isImageRequest('Dessine-moi un robot'));
+  assert.ok(isImageRequest('Une photo de chat astronaute'));
+  assert.ok(isImageRequest('Image carte blanche'));
+  assert.ok(isImageRequest('carte blanche'));
+  assert.ok(isImageRequest('Crea una imagen de un dragón'));
+  assert.ok(isImageRequest('Erstelle ein Bild von einem Drachen'));
+  assert.ok(isImageRequest('Genera un\'immagine di un drago'));
+  assert.ok(!isImageRequest('Photo de profil, comment la changer ?'));
   assert.ok(!isImageRequest('Comment créer une image Docker ?'));
   assert.ok(!isImageRequest('Quels sont les meilleurs serveurs Minecraft ?'));
 });
