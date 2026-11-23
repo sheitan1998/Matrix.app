@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
 import { toast } from "sonner";
 import { Loader2, Sparkles, AlertCircle } from "lucide-react";
 import AiSidebar from "@/components/matrix-ai/AiSidebar";
@@ -8,6 +9,8 @@ import AiEmptyState from "@/components/matrix-ai/AiEmptyState";
 import AiMessageBubble from "@/components/matrix-ai/AiMessageBubble";
 import AiComposer from "@/components/matrix-ai/AiComposer";
 import AiUpgradeModal from "@/components/matrix-ai/AiUpgradeModal";
+import AiConnectorsPanel from "@/components/matrix-ai/AiConnectorsPanel";
+import AuthModal from "@/components/landing/AuthModal";
 import useAiQuota from "@/hooks/useAiQuota";
 
 const THINKING_STEPS = [
@@ -15,56 +18,82 @@ const THINKING_STEPS = [
   "Matrix AI recherche sur Matrix...",
   "Matrix AI vérifie les données Matrix...",
 ];
+const IMAGE_STEPS = ["Matrix AI génère ton image...", "Matrix AI peaufine les détails..."];
+const DRAFT_KEY = "matrix_ai_pending_draft";
+
+const readDraft = () => {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    const draft = raw ? JSON.parse(raw) : null;
+    return draft && typeof draft.content === "string" && draft.content.trim() ? draft : null;
+  } catch {
+    return null;
+  }
+};
+const writeDraft = (draft) => {
+  try {
+    if (draft) localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    else localStorage.removeItem(DRAFT_KEY);
+  } catch {
+    // Stockage indisponible : le brouillon reste au moins dans le champ de saisie.
+  }
+};
 
 export default function MatrixAI() {
-  const [user, setUser] = useState(null);
+  const { user, isAuthenticated, isLoadingAuth } = useAuth();
+  const authenticated = Boolean(isAuthenticated && user?.id);
   const [conversations, setConversations] = useState([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [activeId, setActiveId] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(() => readDraft()?.content || "");
+  const [imageMode, setImageMode] = useState(() => Boolean(readDraft()?.image));
   const [sending, setSending] = useState(false);
+  const [sendingImage, setSendingImage] = useState(false);
   const [thinkingStep, setThinkingStep] = useState(0);
   const [error, setError] = useState("");
   const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [connectorsVersion, setConnectorsVersion] = useState(0);
   const bottomRef = useRef(null);
-  const { quota, setQuota, refresh, remainingMs } = useAiQuota();
+  const initializedFor = useRef(null);
+  const oauthHandled = useRef(false);
+  const sendRef = useRef(null);
+  const { quota, setQuota, refresh, remainingMs } = useAiQuota(authenticated);
 
-  const loadConversations = useCallback(async (userId) => {
-    const target = userId || user?.id;
-    if (!target) return;
+  const loadConversations = useCallback(async () => {
+    if (!user?.id) return [];
     try {
       const res = await base44.entities.AiConversation.filter(
-        { user_id: target },
+        { user_id: user.id },
         "-last_message_at",
         40
       );
-      setConversations(res?.items || res || []);
+      const items = res?.items || res || [];
+      setConversations(items);
+      return items;
     } catch {
       setConversations([]);
+      return [];
     }
-  }, [user]);
+  }, [user?.id]);
 
-  useEffect(() => {
-    let active = true;
-    const init = async () => {
+  const fetchMessages = useCallback(
+    async (conversationId) => {
       try {
-        const me = await base44.auth.me();
-        if (!active) return;
-        setUser(me);
-        await loadConversations(me.id);
+        const res = await base44.entities.AiMessage.filter(
+          { conversation_id: conversationId, user_id: user.id },
+          "created_date",
+          200
+        );
+        return res?.items || res || [];
       } catch {
-        if (active) setLoadingConversations(false);
-        return;
+        return [];
       }
-      if (active) setLoadingConversations(false);
-    };
-    init();
-    return () => {
-      active = false;
-    };
-  }, [loadConversations]);
+    },
+    [user?.id]
+  );
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -76,52 +105,26 @@ export default function MatrixAI() {
       return;
     }
     const timer = setInterval(() => {
-      setThinkingStep((step) => (step + 1) % THINKING_STEPS.length);
+      setThinkingStep((step) => step + 1);
     }, 2200);
     return () => clearInterval(timer);
   }, [sending]);
 
-  const openConversation = async (conversation) => {
-    setMobileOpen(false);
-    setActiveId(conversation.id);
-    setError("");
-    try {
-      const res = await base44.entities.AiMessage.filter(
-        { conversation_id: conversation.id },
-        "created_date",
-        200
-      );
-      setMessages(res?.items || res || []);
-    } catch {
-      setMessages([]);
-    }
-  };
-
-  const startNewConversation = () => {
-    setActiveId(null);
-    setMessages([]);
-    setInput("");
-    setError("");
-    setMobileOpen(false);
-  };
-
-  const deleteConversation = async (conversation) => {
-    try {
-      await base44.entities.AiMessage.deleteMany({ conversation_id: conversation.id });
-      await base44.entities.AiConversation.delete(conversation.id);
-      setConversations((prev) => prev.filter((item) => item.id !== conversation.id));
-      if (activeId === conversation.id) startNewConversation();
-      toast.success("Discussion supprimée");
-    } catch {
-      toast.error("Impossible de supprimer la discussion");
-    }
-  };
-
-  const sendMessage = async (rawText) => {
+  const sendMessage = async (rawText, options = {}) => {
     const content = String(rawText ?? input).trim();
     if (!content || sending) return;
+    const asImage = Boolean(options.image ?? imageMode);
 
-    if (quota && !quota.unlimited && (quota.remaining ?? 0) <= 0) {
+    // Lecture libre pour les visiteurs : l'envoi exige une connexion, le message est gardé en brouillon.
+    if (!authenticated) {
+      writeDraft({ content, image: asImage });
+      setInput(content);
+      setImageMode(asImage);
+      setAuthOpen(true);
+      return;
+    }
+
+    if (quota && (quota.remaining ?? 1) <= 0) {
       setUpgradeOpen(true);
       return;
     }
@@ -129,12 +132,14 @@ export default function MatrixAI() {
     const tempId = `temp-${Date.now()}`;
     setMessages((prev) => [...prev, { id: tempId, role: "user", content }]);
     setInput("");
+    setImageMode(false);
     setError("");
     setSending(true);
+    setSendingImage(asImage);
 
     try {
       const res = await base44.functions.invoke("matrixAi", {
-        action: "chat",
+        action: asImage ? "generateImage" : "chat",
         conversation_id: activeId || undefined,
         content,
       });
@@ -150,25 +155,139 @@ export default function MatrixAI() {
       const status = err?.response?.status;
       const payload = err?.response?.data;
       setMessages((prev) => prev.filter((item) => item.id !== tempId));
+      setInput(content);
+      setImageMode(asImage);
 
       if (status === 429) {
         if (payload?.quota) setQuota(payload.quota);
         setUpgradeOpen(true);
+      } else if (status === 401) {
+        writeDraft({ content, image: asImage });
+        setAuthOpen(true);
+      } else if (status === 503) {
+        setError(payload?.message || "Matrix AI est très sollicité. Réessaie dans quelques secondes.");
       } else {
-        setError(payload?.error || "Matrix AI est momentanément indisponible. Réessaie dans un instant.");
-        setInput(content);
+        setError(payload?.message || payload?.error || "Matrix AI est momentanément indisponible. Réessaie dans un instant.");
       }
     } finally {
       setSending(false);
     }
   };
 
+  const openConversation = async (conversation) => {
+    setMobileOpen(false);
+    setActiveId(conversation.id);
+    setError("");
+    setMessages(await fetchMessages(conversation.id));
+  };
+
+  const startNewConversation = () => {
+    setActiveId(null);
+    setMessages([]);
+    setInput("");
+    setImageMode(false);
+    setError("");
+    setMobileOpen(false);
+  };
+
+  // À l'ouverture : liste des discussions de l'utilisateur, discussion active affichée directement,
+  // puis envoi automatique du brouillon enregistré avant la connexion.
+  useEffect(() => {
+    if (isLoadingAuth) return;
+    if (!authenticated) {
+      initializedFor.current = null;
+      setConversations([]);
+      setActiveId(null);
+      setMessages([]);
+      setLoadingConversations(false);
+      return;
+    }
+    if (initializedFor.current === user.id) return;
+    initializedFor.current = user.id;
+
+    let active = true;
+    (async () => {
+      setLoadingConversations(true);
+      const items = await loadConversations();
+      if (!active) return;
+      setLoadingConversations(false);
+      const draft = readDraft();
+      if (draft) {
+        writeDraft(null);
+        setInput("");
+        setImageMode(false);
+        sendRef.current(draft.content, { image: Boolean(draft.image) });
+        return;
+      }
+      if (items[0]) {
+        setActiveId(items[0].id);
+        const loaded = await fetchMessages(items[0].id);
+        if (active) setMessages(loaded);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [isLoadingAuth, authenticated, user?.id, loadConversations, fetchMessages]);
+
+  useEffect(() => {
+    sendRef.current = sendMessage;
+  });
+
+  // Retour OAuth Google Drive : ?code=...&state=... (ou ?error=...).
+  useEffect(() => {
+    if (!authenticated || oauthHandled.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    const state = params.get("state");
+    const oauthError = params.get("error");
+    if (!state || (!code && !oauthError)) return;
+    oauthHandled.current = true;
+    window.history.replaceState({}, "", window.location.pathname);
+
+    base44.functions
+      .invoke("aiConnectors", { action: "callback", code, state, error: oauthError })
+      .then(() => toast.success("Google Drive connecté"))
+      .catch((err) => {
+        toast.error(err?.response?.data?.message || "Connexion Google Drive impossible");
+      })
+      .finally(() => setConnectorsVersion((v) => v + 1));
+  }, [authenticated]);
+
+  const deleteConversation = async (conversation) => {
+    try {
+      await base44.entities.AiMessage.deleteMany({ conversation_id: conversation.id, user_id: user.id });
+      await base44.entities.AiConversation.delete(conversation.id);
+      setConversations((prev) => prev.filter((item) => item.id !== conversation.id));
+      if (activeId === conversation.id) startNewConversation();
+      toast.success("Discussion supprimée");
+    } catch {
+      toast.error("Impossible de supprimer la discussion");
+    }
+  };
+
   const handleUpgraded = async () => {
     await refresh();
+    setConnectorsVersion((v) => v + 1);
     toast.success("Abonnement activé, ton quota est mis à jour !");
   };
 
+  const openAuth = () => {
+    setUpgradeOpen(false);
+    const draft = String(input).trim();
+    if (draft) writeDraft({ content: draft, image: imageMode });
+    setAuthOpen(true);
+  };
+
+  const handleInputChange = (value) => {
+    setInput(value);
+    if (!authenticated) writeDraft(value.trim() ? { content: value, image: imageMode } : null);
+  };
+
   const activeConversation = conversations.find((item) => item.id === activeId);
+  const thinkingLabel = sendingImage
+    ? IMAGE_STEPS[thinkingStep % IMAGE_STEPS.length]
+    : THINKING_STEPS[thinkingStep % THINKING_STEPS.length];
 
   return (
     <div
@@ -184,15 +303,28 @@ export default function MatrixAI() {
         onSelect={openConversation}
         onNew={startNewConversation}
         onDelete={deleteConversation}
-        loading={loadingConversations}
+        loading={loadingConversations || isLoadingAuth}
         mobileOpen={mobileOpen}
         onCloseMobile={() => setMobileOpen(false)}
+        guest={!authenticated}
+        onLogin={openAuth}
+        footerSlot={
+          authenticated ? (
+            <AiConnectorsPanel
+              quota={quota}
+              refreshToken={connectorsVersion}
+              onUpgrade={() => setUpgradeOpen(true)}
+              onMemoryToggled={(enabled) => setQuota((prev) => (prev ? { ...prev, memory_enabled: enabled } : prev))}
+            />
+          ) : null
+        }
       />
 
       <div className="flex-1 min-w-0 flex flex-col">
         <AiQuotaBar
           quota={quota}
           remainingMs={remainingMs}
+          guest={!authenticated}
           onUpgrade={() => setUpgradeOpen(true)}
           onOpenHistory={() => setMobileOpen(true)}
         />
@@ -226,7 +358,7 @@ export default function MatrixAI() {
                   className="rounded-2xl rounded-tl-sm px-3.5 py-2.5"
                   style={{ background: "rgba(20,12,34,0.85)", border: "1px solid rgba(138,79,255,0.18)" }}
                 >
-                  <p className="text-[11px] text-white/50 animate-pulse">{THINKING_STEPS[thinkingStep]}</p>
+                  <p className="text-[11px] text-white/50 animate-pulse">{thinkingLabel}</p>
                 </div>
               </div>
             )}
@@ -247,10 +379,12 @@ export default function MatrixAI() {
 
         <AiComposer
           value={input}
-          onChange={setInput}
+          onChange={handleInputChange}
           onSend={() => sendMessage()}
           sending={sending}
           disabled={sending}
+          imageMode={imageMode}
+          onToggleImageMode={() => setImageMode((value) => !value)}
         />
       </div>
 
@@ -260,7 +394,11 @@ export default function MatrixAI() {
         quota={quota}
         remainingMs={remainingMs}
         onUpgraded={handleUpgraded}
+        guest={!authenticated}
+        onLogin={openAuth}
       />
+
+      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} redirectTo="/matrix-ai" />
     </div>
   );
 }

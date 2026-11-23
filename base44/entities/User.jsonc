@@ -426,7 +426,7 @@
         "yellow"
       ],
       "default": "starter",
-      "description": "Palier d'abonnement Matrix AI (starter = 10 messages / 24h, plus = 100, ultra = illimite)",
+      "description": "Palier d'abonnement Matrix AI (starter = 10 messages / 24h, plus = 100 messages / 24h, ultra = 7000 messages / semaine)",
       "rls": {
         "write": {
           "user_condition": {
@@ -447,10 +447,10 @@
         }
       }
     },
-    "ai_last_reset_at": {
+    "quota_reset_at": {
       "type": "string",
       "format": "date-time",
-      "description": "Debut de la fenetre de 24h courante du quota Matrix AI",
+      "description": "Fin de la fenetre de 24h propre a l'utilisateur (quota journalier Matrix AI, geree cote serveur)",
       "rls": {
         "write": {
           "user_condition": {
@@ -471,10 +471,10 @@
         }
       }
     },
-    "ai_hour_started_at": {
-      "type": "string",
-      "format": "date-time",
-      "description": "Debut de la fenetre anti-spam horaire Matrix AI (plan Ultra)",
+    "ai_week_used": {
+      "type": "number",
+      "default": 0,
+      "description": "Messages Matrix AI consommes sur la fenetre hebdomadaire courante (Matrix Ultra, gere cote serveur)",
       "rls": {
         "write": {
           "user_condition": {
@@ -483,10 +483,22 @@
         }
       }
     },
-    "ai_hour_count": {
-      "type": "number",
-      "default": 0,
-      "description": "Messages Matrix AI envoyes dans la fenetre anti-spam horaire (plan Ultra)",
+    "ai_week_started_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Debut de la fenetre hebdomadaire de 7 jours (Matrix Ultra)",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "ai_memory_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Memoire des discussions Matrix AI activee (Matrix Plus et Ultra)",
       "rls": {
         "write": {
           "user_condition": {

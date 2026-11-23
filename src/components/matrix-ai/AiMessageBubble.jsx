@@ -2,6 +2,7 @@ import React from "react";
 import ReactMarkdown from "react-markdown";
 import { Sparkles, User } from "lucide-react";
 import AiRecommendationCards from "./AiRecommendationCards";
+import AiImageCard from "./AiImageCard";
 
 export default function AiMessageBubble({ message, user }) {
   const isUser = message.role === "user";
@@ -45,7 +46,11 @@ export default function AiMessageBubble({ message, user }) {
           style={{ background: "rgba(20,12,34,0.85)", border: "1px solid rgba(138,79,255,0.18)" }}
         >
           <div className="rich-text-content text-[12px] text-white/85 leading-relaxed break-words">
-            <ReactMarkdown>{message.content || ""}</ReactMarkdown>
+            {message.kind === "image" && message.image_url ? (
+              <AiImageCard url={message.image_url} prompt={String(message.content || "").replace(/^Image générée : /, "")} />
+            ) : (
+              <ReactMarkdown>{message.content || ""}</ReactMarkdown>
+            )}
           </div>
         </div>
         <AiRecommendationCards cards={message.attached_cards || []} />

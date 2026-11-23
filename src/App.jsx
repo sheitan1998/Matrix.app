@@ -230,6 +230,10 @@ const AuthenticatedApp = () => {
           <Route path="/valheim" element={<Valheim />} />
           <Route path="/valorant" element={<Valorant />} />
         </Route>
+        {/* Matrix AI : lecture libre pour les visiteurs, l'envoi exige une connexion */}
+        <Route element={<AppSidebarLayout />}>
+          <Route path="/matrix-ai" element={<MatrixAI />} />
+        </Route>
         <Route element={<ProtectedRoute unauthenticatedElement={<AuthGate />} />}>
           <Route path="/nexus" element={<Community />} />
           <Route path="/auth/twitch/callback" element={<TwitchCallback />} />
@@ -253,7 +257,6 @@ const AuthenticatedApp = () => {
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/outils" element={<Outils />} />
             <Route path="/live-bot" element={<BotSettings />} />
-            <Route path="/matrix-ai" element={<MatrixAI />} />
             <Route path="/mon-profil" element={<MonProfil />} />
             <Route path="/boutique-matrix" element={<BoutiqueMatrix />} />
             <Route path="/boutique-nexus" element={<BoutiqueNexus />} />

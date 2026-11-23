@@ -1,11 +1,12 @@
 import React from "react";
-import { Gamepad2, PenLine, Flame, Lightbulb, Sparkles } from "lucide-react";
+import { Gamepad2, PenLine, Flame, Lightbulb, Sparkles, Image as ImageIcon } from "lucide-react";
 
 export const QUICK_PROMPTS = [
   { icon: Gamepad2, label: "Trouve-moi un serveur actif sur Fortnite ou GTA" },
   { icon: PenLine, label: "Aide-moi à rédiger une annonce attractive pour mon serveur" },
   { icon: Flame, label: "Quels sont les créateurs tendance sur Matrix en ce moment ?" },
   { icon: Lightbulb, label: "Donne-moi 5 idées de concepts vidéos/streams gaming" },
+  { icon: ImageIcon, label: "Génère une image : un setup gaming néon violet futuriste", image: true },
 ];
 
 export default function AiEmptyState({ onSelectPrompt }) {
@@ -33,7 +34,7 @@ export default function AiEmptyState({ onSelectPrompt }) {
           return (
             <button
               key={prompt.label}
-              onClick={() => onSelectPrompt(prompt.label)}
+              onClick={() => onSelectPrompt(prompt.label, { image: Boolean(prompt.image) })}
               className="text-left rounded-xl p-3 flex items-start gap-2.5 transition hover:-translate-y-0.5"
               style={{
                 background: "rgba(138,79,255,0.07)",
