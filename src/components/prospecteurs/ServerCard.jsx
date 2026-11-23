@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import AdMessages from "./AdMessages";
 import BoostAdModal from "./BoostAdModal";
 import LiveStatusBadge from "./LiveStatusBadge";
+import { requestVoteStatus } from "@/lib/voteStatusBatch";
 
 export default function ServerCard({ server, onVote, onDelete, onEdit, currentUser }) {
   const [voteStatus, setVoteStatus] = useState({ canVote: true, remaining: null });
@@ -21,23 +22,14 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
 
   useEffect(() => {
     let active = true;
-    const checkStatus = async () => {
-      try {
-        const res = await base44.functions.invoke("serverSearch", {
-          action: "getVoteStatus",
-          serverAdId: server.id,
+    requestVoteStatus(server.id).then((status) => {
+      if (active && status) {
+        setVoteStatus({
+          canVote: !!status.canVote,
+          remaining: status.remainingTime || null,
         });
-        if (active && res.data) {
-          setVoteStatus({
-            canVote: res.data.canVote,
-            remaining: res.data.remainingTime,
-          });
-        }
-      } catch {
-        /* silent */
       }
-    };
-    checkStatus();
+    });
     return () => { active = false; };
   }, [server.id]);
 

@@ -8,6 +8,7 @@ import VoteModal from "./VoteModal";
 import { serverCategoryList } from "@/lib/serverCategories";
 import { serverTags, TAG_CHIP_CLASS, tagChipStyle } from "@/lib/serverTags";
 import LiveStatusBadge from "./LiveStatusBadge";
+import { requestVoteStatus } from "@/lib/voteStatusBatch";
 
 const BADGE_CONFIG = {
   nexus: { color: "#22c55e", label: "NEXUS" },
@@ -65,23 +66,14 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
 
   useEffect(() => {
     let active = true;
-    const checkStatus = async () => {
-      try {
-        const res = await base44.functions.invoke("serverSearch", {
-          action: "getVoteStatus",
-          serverAdId: server.id
+    requestVoteStatus(server.id).then((status) => {
+      if (active && status) {
+        setVoteStatus({
+          canVote: !!status.canVote,
+          remaining: status.remainingTime || null
         });
-        if (active && res.data) {
-          setVoteStatus({
-            canVote: res.data.canVote,
-            remaining: res.data.remainingTime
-          });
-        }
-      } catch {
-
-        /* silent */}
-    };
-    checkStatus();
+      }
+    });
     return () => {active = false;};
   }, [server.id]);
 
