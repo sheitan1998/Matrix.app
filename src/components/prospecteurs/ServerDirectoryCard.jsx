@@ -6,7 +6,8 @@ import { toast } from "sonner";
 import BoostAdModal from "./BoostAdModal";
 import VoteModal from "./VoteModal";
 import { serverCategoryList } from "@/lib/serverCategories";
-import { serverTags } from "@/lib/serverTags";
+import { serverTags, TAG_CHIP_CLASS, tagChipStyle } from "@/lib/serverTags";
+import LiveStatusBadge from "./LiveStatusBadge";
 
 const BADGE_CONFIG = {
   nexus: { color: "#22c55e", label: "NEXUS" },
@@ -294,7 +295,10 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
           }
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-bold text-white truncate">{server.title}</p>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <p className="text-xs font-bold text-white truncate">{server.title}</p>
+            <LiveStatusBadge server={server} className="ml-auto" />
+          </div>
           {(games.length > 0 || categories.length > 0) &&
           <div className="flex items-center gap-1 flex-wrap mt-0.5">
               {games.slice(0, 3).map((g, i) =>
@@ -341,8 +345,8 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
           type="button"
           onClick={() => onTagClick?.(tag)}
           title={`Filtrer les serveurs avec l'étiquette ${tag}`}
-          className="text-[8px] font-bold px-1.5 py-0.5 rounded transition hover:brightness-150 tap-sm"
-          style={{ background: "rgba(168,85,247,0.1)", color: "#d8b4fe", border: "1px solid rgba(168,85,247,0.25)" }}>
+          className={TAG_CHIP_CLASS}
+          style={tagChipStyle(tag)}>
           
               #{tag}
             </button>

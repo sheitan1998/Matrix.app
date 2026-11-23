@@ -124,6 +124,29 @@
       "default": 0,
       "description": "Port du serveur Nexus"
     },
+    "live_tracking_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Active le compteur de joueurs en temps reel (utilise ip et port)"
+    },
+    "live_protocol": {
+      "type": "string",
+      "enum": [
+        "minecraft",
+        "fivem",
+        "tcp"
+      ],
+      "default": "minecraft",
+      "description": "Protocole de suivi en direct: Minecraft, FiveM ou simple test de port TCP"
+    },
+    "gallery_images": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Galerie de 5 images maximum, affichee uniquement sur la fiche detaillee"
+    },
     "webhook_api_key": {
       "type": "string",
       "description": "Cle API webhook pour le vote Nexus (cote serveur uniquement)"
