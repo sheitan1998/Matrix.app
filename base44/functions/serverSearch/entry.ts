@@ -187,10 +187,11 @@ async function probeLiveStatus(host: string, port: number): Promise<Probe> {
 }
 
 async function getLiveStatus(ad: any) {
-  const cached = liveCache.get(ad.id);
+  const host = String(ad.ip || '').trim();
+  const cacheKey = `${ad.id}|${host}|${Number(ad.port) || 0}`;
+  const cached = liveCache.get(cacheKey);
   if (cached && Date.now() - cached.at < LIVE_CACHE_TTL_MS) return cached.value;
 
-  const host = String(ad.ip || '').trim();
   let value: Record<string, any>;
   if (!host || !isSafeHost(host)) {
     value = { enabled: false, online: false, players: 0, max: 0 };
@@ -203,7 +204,7 @@ async function getLiveStatus(ad: any) {
     }
   }
   value.checked_at = new Date().toISOString();
-  liveCache.set(ad.id, { at: Date.now(), value });
+  liveCache.set(cacheKey, { at: Date.now(), value });
   if (liveCache.size > 500) liveCache.delete(liveCache.keys().next().value as string);
   return value;
 }
@@ -322,7 +323,7 @@ export default async function(req: Request): Promise<Response> {
 
     const user = await base44.auth.me().catch(() => null);
     // Vote and getVoteStatus don't require auth (IP-based fallback for anonymous visitors)
-    if (!user && action !== 'vote' && action !== 'getVoteStatus' && action !== 'getServerBySlug' &&     action !== 'trackClick' && action !== 'getLiveStatus' && action !== 'getReviews') {
+    if (!user && action !== 'vote' && action !== 'getVoteStatus' && action !== 'getServerBySlug' &&     action !== 'trackClick' && action !== 'getLiveStatus' && action !== 'getLiveStatuses' && action !== 'getReviews') {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -429,6 +430,27 @@ export default async function(req: Request): Promise<Response> {
       const ad = await base44.asServiceRole.entities.ServerAd.get(serverAdId).catch(() => null);
       if (!ad) return Response.json({ error: 'Not found' }, { status: 404 });
       return Response.json(await getLiveStatus(ad));
+    }
+
+    // ---- live statuses for many servers at once (avoids one request per card) ----
+    if (action === 'getLiveStatuses') {
+      const ids: string[] = Array.isArray(params.serverAdIds)
+        ? [...new Set<string>(params.serverAdIds.filter((i: unknown) => typeof i === 'string' && i.length > 0 && i.length <= 128))].slice(0, 50)
+        : [];
+      if (ids.length === 0) return Response.json({ statuses: {} });
+      if (!rateLimitByIp(req, 'liveStatusBatch', 60, 60_000)) {
+        return Response.json({ error: 'Too many requests' }, { status: 429 });
+      }
+      const statuses: Record<string, any> = {};
+      const queue = [...ids];
+      const worker = async () => {
+        for (let id = queue.shift(); id !== undefined; id = queue.shift()) {
+          const ad = await base44.asServiceRole.entities.ServerAd.get(id).catch(() => null);
+          if (ad) statuses[id] = await getLiveStatus(ad);
+        }
+      };
+      await Promise.all(Array.from({ length: Math.min(8, ids.length) }, worker));
+      return Response.json({ statuses });
     }
 
     // ---- get server by slug (public - no auth required) ----
