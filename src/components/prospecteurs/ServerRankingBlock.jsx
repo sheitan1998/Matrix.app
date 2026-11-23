@@ -20,9 +20,9 @@ export default function ServerRankingBlock({ title, icon: Icon = Trophy, servers
       </div>
 
       {loading ? (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {Array.from({ length: skeletonCount }).map((_, i) => (
-            <div key={i} className="h-8 rounded-lg animate-pulse" style={{ background: "rgba(138,79,255,0.05)" }} />
+            <div key={i} className="h-20 sm:h-24 rounded-lg animate-pulse" style={{ background: "rgba(138,79,255,0.05)" }} />
           ))}
         </div>
       ) : servers.length === 0 ? (
@@ -31,7 +31,7 @@ export default function ServerRankingBlock({ title, icon: Icon = Trophy, servers
           <p className="text-[10px] text-white/30">{emptyText}</p>
         </div>
       ) : (
-        <div className="space-y-1">
+        <div className="space-y-2">
           {servers.map((server, i) => {
             const rankStyle = i < 3 ? RANK_STYLES[i] : null;
             const logoUrl = server.logo_url || server.profile_image || server.server_icon;
@@ -40,7 +40,7 @@ export default function ServerRankingBlock({ title, icon: Icon = Trophy, servers
               <Link
                 key={server.id}
                 to={`/servers/${server.slug || server.id}`}
-                className="relative flex items-center gap-2 px-2 py-1.5 min-h-[48px] rounded-lg overflow-hidden transition hover:brightness-110"
+                className="relative flex items-center gap-3 px-3 h-20 sm:h-24 rounded-lg overflow-hidden transition hover:brightness-110"
                 style={{
                   background: `linear-gradient(135deg, #1a0a2e, ${accentColor}33)`,
                   border: `1px solid ${accentColor}30`,
@@ -51,24 +51,24 @@ export default function ServerRankingBlock({ title, icon: Icon = Trophy, servers
                 )}
                 <div
                   className="absolute inset-0 pointer-events-none"
-                  style={{ background: "linear-gradient(90deg, rgba(10,5,15,0.75) 0%, rgba(10,5,15,0.3) 55%, rgba(10,5,15,0.1) 100%)" }}
+                  style={{ background: "linear-gradient(90deg, rgba(10,5,15,0.65) 0%, rgba(10,5,15,0.2) 55%, rgba(10,5,15,0.05) 100%)" }}
                 />
                 <div
-                  className="relative z-10 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black shrink-0"
+                  className="relative z-10 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shrink-0"
                   style={{ background: rankStyle ? rankStyle.bg : "rgba(138,79,255,0.1)", color: rankStyle ? "#fff" : "rgba(255,255,255,0.4)", boxShadow: rankStyle ? `0 0 6px ${rankStyle.glow}` : "none" }}
                 >
                   {i + 1}
                 </div>
-                <div className="relative z-10 w-8 h-8 rounded overflow-hidden flex items-center justify-center text-[11px] font-bold text-white shrink-0" style={{ background: "linear-gradient(135deg, #8a4fff, #5b21b6)" }}>
+                <div className="relative z-10 w-12 h-12 sm:w-14 sm:h-14 rounded-lg overflow-hidden flex items-center justify-center text-base font-bold text-white shrink-0" style={{ background: "linear-gradient(135deg, #8a4fff, #5b21b6)" }}>
                   {logoUrl ? <img src={logoUrl} alt="" className="w-full h-full object-cover" /> : (server.title?.[0]?.toUpperCase() || "S")}
                 </div>
-                <span className="relative z-10 flex-1 min-w-0 text-[11px] font-bold text-white truncate" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}>{server.title}</span>
-                {server.is_boosted && <Flame className="relative z-10 w-3 h-3 shrink-0" style={{ color: "#fbbf24" }} />}
+                <span className="relative z-10 flex-1 min-w-0 text-sm sm:text-base font-bold text-white truncate" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}>{server.title}</span>
+                {server.is_boosted && <Flame className="relative z-10 w-4 h-4 shrink-0" style={{ color: "#fbbf24" }} />}
                 <span
-                  className="relative z-10 shrink-0 text-[11px] font-black flex items-center gap-0.5 px-2 py-0.5 rounded-full"
-                  style={{ color: accentColor, background: "rgba(18,9,28,0.85)", border: `1px solid ${accentColor}80` }}
+                  className="relative z-10 shrink-0                   text-sm font-black flex items-center gap-1 px-3 py-1 rounded-full"
+                                    style={{ color: accentColor, background: "rgba(18,9,28,0.85)", border: `1px solid ${accentColor}80`, boxShadow: `0 0 8px ${accentColor}55` }}
                 >
-                  <ArrowUp className="w-3 h-3" />
+                                    <ArrowUp className="w-4 h-4" />
                   {server.votes_month || 0}
                 </span>
               </Link>
