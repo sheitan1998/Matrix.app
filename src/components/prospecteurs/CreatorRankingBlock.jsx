@@ -1,5 +1,5 @@
 import React from "react";
-import { Trophy, ArrowUp, Youtube, Twitch } from "lucide-react";
+import { Trophy, ArrowUp } from "lucide-react";
 import { CREATOR_PLATFORMS } from "./CreatorPlatformCards";
 import { resolveCreatorVisuals } from "@/lib/creatorDefaults";
 
@@ -44,10 +44,10 @@ export default function CreatorRankingBlock({ title, creators, accentColor = "#a
                 href={creator.channel_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="relative flex items-center gap-2 p-1.5 rounded-lg overflow-hidden transition hover:bg-white/5"
+                className="relative flex items-center gap-2 px-2 py-1.5 min-h-[48px] rounded-lg overflow-hidden transition hover:brightness-110"
                 style={{
-                  background: i < 3 ? `${accentColor}08` : "transparent",
-                  border: `1px solid ${platform.color}20`,
+                                  background: `linear-gradient(135deg, #1a0a2e, ${accentColor}33)`,
+                                  border: `1px solid ${platform.color}40`,
                 }}
               >
                 {visuals.banner_url && (
@@ -55,13 +55,13 @@ export default function CreatorRankingBlock({ title, creators, accentColor = "#a
                     src={visuals.banner_url}
                     alt=""
                     aria-hidden="true"
+                                    loading="lazy"
                     className="absolute inset-0 w-full h-full object-cover"
-                    style={{ opacity: 0.32 }}
                   />
                 )}
                 <div
                   className="absolute inset-0 pointer-events-none"
-                  style={{ background: "linear-gradient(90deg, rgba(10,5,15,0.88) 0%, rgba(10,5,15,0.5) 100%)" }}
+                                  style={{ background: "linear-gradient(90deg, rgba(10,5,15,0.75) 0%, rgba(10,5,15,0.3) 55%, rgba(10,5,15,0.1) 100%)" }}
                 />
                 <div
                   className="relative z-10 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black shrink-0"
@@ -87,10 +87,13 @@ export default function CreatorRankingBlock({ title, creators, accentColor = "#a
                     creator.name?.[0]?.toUpperCase() || "C"
                   )}
                 </div>
-                <span className="relative z-10 flex-1 text-[10px] font-bold text-white/80 truncate">{creator.name}</span>
+                <span className="relative z-10 flex-1 min-w-0 text-[11px] font-bold text-white truncate" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}>{creator.name}</span>
                 <PlatformIcon className="relative z-10 w-3 h-3 shrink-0" style={{ color: platform.color }} />
-                <span className="relative z-10 text-[9px] font-black flex items-center gap-0.5" style={{ color: accentColor }}>
-                  <ArrowUp className="w-2.5 h-2.5" />
+                <span
+                  className="relative z-10 shrink-0 text-[11px] font-black flex items-center gap-0.5 px-2 py-0.5 rounded-full"
+                  style={{ color: accentColor, background: "rgba(18,9,28,0.85)", border: `1px solid ${accentColor}80` }}
+                >
+                  <ArrowUp className="w-3 h-3" />
                   {creator.votes_month || 0}
                 </span>
               </a>
