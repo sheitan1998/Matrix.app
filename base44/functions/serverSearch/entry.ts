@@ -12,7 +12,96 @@ const AD_EDITABLE_FIELDS = [
   'category', 'category_slug', 'categories', 'category_slugs', 'tags', 'games', 'game',
   'profile_image', 'cover_image', 'logo_url', 'banner_url', 'additional_info', 'ip', 'port',
   'player_count_needed', 'availability_hours', 'player_pseudo',
+  'live_tracking_enabled', 'live_protocol', 'gallery_images',
 ];
+
+const MAX_GALLERY_IMAGES = 5;
+const LIVE_PROTOCOLS = ['minecraft', 'fivem', 'tcp'];
+const LIVE_TIMEOUT_MS = 4000;
+const LIVE_CACHE_TTL_MS = 30_000;
+const liveCache = new Map<string, { at: number; value: Record<string, any> }>();
+
+const cleanGallery = (raw: any): string[] =>
+  (Array.isArray(raw) ? raw : [])
+    .map((u) => String(u || '').trim())
+    .filter((u) => /^https:\/\//i.test(u) && u.length <= 1000)
+    .filter((u, i, arr) => arr.indexOf(u) === i)
+    .slice(0, MAX_GALLERY_IMAGES);
+
+// Refuse localhost / private ranges so the status probe cannot be used to scan internal networks.
+const isSafeHost = (host: string): boolean => {
+  const h = host.trim().toLowerCase();
+  if (!h || h.length > 253 || !/^[a-z0-9.-]+$/.test(h)) return false;
+  if (h === 'localhost' || h.endsWith('.local') || h.endsWith('.internal')) return false;
+  const m = h.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
+  if (m) {
+    const [a, b] = [Number(m[1]), Number(m[2])];
+    if ([a, b, Number(m[3]), Number(m[4])].some((n) => n > 255)) return false;
+    if (a === 0 || a === 10 || a === 127 || a >= 224) return false;
+    if (a === 169 && b === 254) return false;
+    if (a === 172 && b >= 16 && b <= 31) return false;
+    if (a === 192 && b === 168) return false;
+    if (a === 100 && b >= 64 && b <= 127) return false;
+  } else if (/^[0-9.]+$/.test(h)) {
+    return false;
+  }
+  return true;
+};
+
+const fetchJson = async (url: string) => {
+  const res = await fetch(url, { signal: AbortSignal.timeout(LIVE_TIMEOUT_MS), redirect: 'error' });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+};
+
+async function probeLiveStatus(host: string, port: number, protocol: string) {
+  if (protocol === 'minecraft') {
+    const data = await fetchJson(`https://api.mcsrvstat.us/3/${encodeURIComponent(host)}${port ? `:${port}` : ''}`);
+    if (!data?.online) return { online: false, players: 0, max: 0 };
+    return { online: true, players: Number(data.players?.online) || 0, max: Number(data.players?.max) || 0 };
+  }
+  const targetPort = port || 30120;
+  if (protocol === 'fivem') {
+    const [info, players] = await Promise.all([
+      fetchJson(`http://${host}:${targetPort}/info.json`),
+      fetchJson(`http://${host}:${targetPort}/players.json`),
+    ]);
+    return {
+      online: true,
+      players: Array.isArray(players) ? players.length : 0,
+      max: Number(info?.vars?.sv_maxClients) || 0,
+    };
+  }
+  const conn = await Promise.race([
+    Deno.connect({ hostname: host, port: targetPort }),
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), LIVE_TIMEOUT_MS)),
+  ]);
+  try { conn.close(); } catch { /* already closed */ }
+  return { online: true, players: 0, max: 0 };
+}
+
+async function getLiveStatus(ad: any) {
+  const cached = liveCache.get(ad.id);
+  if (cached && Date.now() - cached.at < LIVE_CACHE_TTL_MS) return cached.value;
+
+  const host = String(ad.ip || '').trim();
+  const protocol = LIVE_PROTOCOLS.includes(ad.live_protocol) ? ad.live_protocol : 'minecraft';
+  let value: Record<string, any>;
+  if (!ad.live_tracking_enabled || !host || !isSafeHost(host)) {
+    value = { enabled: false, online: false, players: 0, max: 0, protocol };
+  } else {
+    try {
+      const r = await probeLiveStatus(host, Number(ad.port) || 0, protocol);
+      value = { enabled: true, ...r, protocol };
+    } catch {
+      value = { enabled: true, online: false, players: 0, max: 0, protocol };
+    }
+  }
+  value.checked_at = new Date().toISOString();
+  liveCache.set(ad.id, { at: Date.now(), value });
+  if (liveCache.size > 500) liveCache.delete(liveCache.keys().next().value as string);
+  return value;
+}
 
 // Nettoie une liste d'étiquettes : sans #, sans doublon, 24 caractères et 5 étiquettes maximum.
 const cleanTags = (raw: any): string[] => {
@@ -40,6 +129,14 @@ const pickAdFields = (data: Record<string, any>) => {
   if (Array.isArray(clean.categories)) clean.categories = clean.categories.slice(0, 3);
   if (Array.isArray(clean.category_slugs)) clean.category_slugs = clean.category_slugs.slice(0, 3);
   if (clean.tags !== undefined) clean.tags = cleanTags(clean.tags);
+  if (clean.gallery_images !== undefined) clean.gallery_images = cleanGallery(clean.gallery_images);
+  if (clean.live_tracking_enabled !== undefined) clean.live_tracking_enabled = !!clean.live_tracking_enabled;
+  if (clean.live_protocol !== undefined && !LIVE_PROTOCOLS.includes(clean.live_protocol)) clean.live_protocol = 'minecraft';
+  if (clean.ip !== undefined) clean.ip = String(clean.ip || '').trim().slice(0, 253);
+  if (clean.port !== undefined) {
+    const port = Math.trunc(Number(clean.port));
+    clean.port = Number.isFinite(port) && port > 0 && port <= 65535 ? port : 0;
+  }
   return clean;
 };
 
@@ -110,8 +207,22 @@ export default async function(req: Request): Promise<Response> {
 
     const user = await base44.auth.me().catch(() => null);
     // Vote and getVoteStatus don't require auth (IP-based fallback for anonymous visitors)
-    if (!user && action !== 'vote' && action !== 'getVoteStatus' && action !== 'getServerBySlug' && action !== 'trackClick') {
+    if (!user && action !== 'vote' && action !== 'getVoteStatus' && action !== 'getServerBySlug' && action !== 'trackClick' && action !== 'getLiveStatus') {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // ---- live player count (public, cached, never throws on unreachable servers) ----
+    if (action === 'getLiveStatus') {
+      const { serverAdId } = params;
+      if (!serverAdId || typeof serverAdId !== 'string' || serverAdId.length > 128) {
+        return Response.json({ error: 'Invalid serverAdId' }, { status: 400 });
+      }
+      if (!rateLimitByIp(req, 'liveStatus', 120, 60_000)) {
+        return Response.json({ error: 'Too many requests' }, { status: 429 });
+      }
+      const ad = await base44.asServiceRole.entities.ServerAd.get(serverAdId).catch(() => null);
+      if (!ad) return Response.json({ error: 'Not found' }, { status: 404 });
+      return Response.json(await getLiveStatus(ad));
     }
 
     // ---- get server by slug (public - no auth required) ----
@@ -151,6 +262,9 @@ export default async function(req: Request): Promise<Response> {
         categories: found.categories || [],
         category_slugs: found.category_slugs || [],
         tags: found.tags || [],
+        gallery_images: cleanGallery(found.gallery_images),
+        live_tracking_enabled: !!found.live_tracking_enabled,
+        live_protocol: found.live_protocol,
         votes: found.votes,
         votes_month: found.votes_month,
         boosts: found.boosts,

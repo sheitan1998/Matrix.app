@@ -5,6 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import AdMessages from "./AdMessages";
 import BoostAdModal from "./BoostAdModal";
+import LiveStatusBadge from "./LiveStatusBadge";
 
 export default function ServerCard({ server, onVote, onDelete, onEdit, currentUser }) {
   const [voteStatus, setVoteStatus] = useState({ canVote: true, remaining: null });
@@ -209,7 +210,10 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-bold text-white truncate">{server.title}</p>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <p className="text-xs font-bold text-white truncate">{server.title}</p>
+            <LiveStatusBadge server={server} className="ml-auto" />
+          </div>
           <div className="flex items-center gap-1 flex-wrap">
             {server.game && (
               <span className="text-[9px] text-white/40 truncate">{server.game}</span>

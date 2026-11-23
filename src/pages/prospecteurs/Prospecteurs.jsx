@@ -34,6 +34,7 @@ export default function Prospecteurs() {
     urlParams.get("view") === "list" || urlParams.get("tag") ? "list" : "categories"
   );
   const [user, setUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [ads, setAds] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -52,7 +53,7 @@ export default function Prospecteurs() {
   const [showVoteAutoSetup, setShowVoteAutoSetup] = useState(false);
 
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => setUser(null));
+    base44.auth.me().then(setUser).catch(() => setUser(null)).finally(() => setAuthChecked(true));
     base44.entities.ServerCategory.list("sort_order", 200).then((cats) => setCategories(cats || []));
   }, []);
 
@@ -241,6 +242,16 @@ export default function Prospecteurs() {
     setEditingAd(null);
     setShowCreateModal(true);
   };
+
+  // Lien direct depuis la fiche serveur : /best-serveurs?publish=1
+  const [publishHandled, setPublishHandled] = useState(false);
+  useEffect(() => {
+    if (publishHandled || urlParams.get("publish") !== "1") return;
+    if (user === null && !authChecked) return;
+    setPublishHandled(true);
+    window.history.replaceState({}, "", window.location.pathname);
+    openCreateModal();
+  }, [user, authChecked, publishHandled]);
 
   return (
     <div

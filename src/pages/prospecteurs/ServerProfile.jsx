@@ -3,13 +3,15 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import {
-  ArrowLeft, ArrowUp, Flame, Share2, ExternalLink, Zap, Globe,
+  ArrowLeft, ArrowUp, Flame, Share2, ExternalLink, Zap, Globe, Plus,
   Server as ServerIcon, MessageCircle, Copy, Check, Loader2, Pencil, Trash2,
 } from "lucide-react";
 import BoostAdModal from "@/components/prospecteurs/BoostAdModal";
 import VoteModal from "@/components/prospecteurs/VoteModal";
 import ServerApiPanel from "@/components/prospecteurs/ServerApiPanel";
-import { serverTags } from "@/lib/serverTags";
+import { serverTags, TAG_CHIP_CLASS, tagChipStyle } from "@/lib/serverTags";
+import LiveStatusBadge from "@/components/prospecteurs/LiveStatusBadge";
+import ServerGallery from "@/components/prospecteurs/ServerGallery";
 import { slugify } from "@/lib/serverDirectory";
 import usePageSEO from "@/hooks/usePageSEO";
 import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
@@ -175,6 +177,15 @@ export default function ServerProfile() {
 
   return (
     <div className="min-h-screen" style={{ background: "#12091c" }}>
+      <div className="relative">
+      {/* Publier son serveur — haut à droite de la bannière */}
+      <Link
+        to="/best-serveurs?publish=1"
+        className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 h-9 px-3 rounded-lg text-xs font-black flex items-center gap-1.5 tap-sm"
+        style={{ background: "linear-gradient(135deg, #8a4fff, #5b21b6)", color: "#fff", boxShadow: "0 0 14px rgba(138,79,255,0.45)" }}
+      >
+        <Plus className="w-4 h-4" /> Publier son serveur
+      </Link>
       {/* Banner */}
       {bannerUrl ? (
         <div className="relative h-40 sm:h-56 w-full overflow-hidden">
@@ -191,6 +202,7 @@ export default function ServerProfile() {
           style={{ background: `linear-gradient(135deg, ${config.color}15, rgba(18,9,28,0.8))` }}
         />
       )}
+      </div>
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 -mt-12 relative pb-12">
         {/* Logo + title */}
@@ -215,6 +227,7 @@ export default function ServerProfile() {
           <div className="flex-1 pb-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-lg sm:text-2xl font-black text-white">{server.title}</h1>
+              <LiveStatusBadge server={server} className="!text-[10px] !px-2 !py-1" />
               <span
                 className="text-[8px] font-black px-2 py-0.5 rounded inline-flex items-center gap-1"
                 style={{ background: `${config.color}20`, color: config.color }}
@@ -343,6 +356,8 @@ export default function ServerProfile() {
           <p className="text-sm text-white/70 leading-relaxed whitespace-pre-wrap">{server.description}</p>
         </div>
 
+        <ServerGallery images={server.gallery_images} title={server.title} />
+
         {/* Server info */}
         {(server.ip || server.category || server.website_url || serverTags(server).length > 0) && (
           <div className="rounded-xl p-4 mb-4" style={{ background: "rgba(18,9,28,0.6)", border: "1px solid rgba(138,79,255,0.15)" }}>
@@ -367,8 +382,8 @@ export default function ServerProfile() {
                       <Link
                         key={tag}
                         to={`/best-serveurs?view=list&tag=${encodeURIComponent(tag)}`}
-                        className="text-[9px] font-bold px-1.5 py-0.5 rounded tap-sm"
-                        style={{ background: "rgba(168,85,247,0.12)", color: "#d8b4fe", border: "1px solid rgba(168,85,247,0.25)" }}
+                        className={TAG_CHIP_CLASS}
+                        style={tagChipStyle(tag)}
                       >
                         #{tag}
                       </Link>

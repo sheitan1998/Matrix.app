@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { X, Gamepad2, Image as ImageIcon, Upload, Users, Globe, Link2 } from "lucide-react";
+import { X, Gamepad2, Image as ImageIcon, Upload, Users, Globe, Link2, Radio } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { uploadImageWithToast } from "@/lib/imageModeration";
@@ -19,6 +19,13 @@ const GAMES = [
   "Pokémon", "Super Smash Bros", "Super Mario", "Animal Crossing", "Splatoon",
   "FIFA / EA FC", "NBA 2K", "Madden NFL", "Gran Turismo", "Forza Horizon",
   "Autre",
+];
+
+const MAX_GALLERY = 5;
+const LIVE_PROTOCOLS = [
+  { value: "minecraft", label: "Minecraft" },
+  { value: "fivem", label: "FiveM / GTA RP" },
+  { value: "tcp", label: "Autre (test du port)" },
 ];
 
 const slugifyName = (text) =>
@@ -51,7 +58,14 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
     player_count_needed: editAd?.player_count_needed || 1,
     availability_hours: editAd?.availability_hours || "",
     player_pseudo: editAd?.player_pseudo || "",
+    ip: editAd?.ip || "",
+    port: editAd?.port || "",
+    live_tracking_enabled: !!editAd?.live_tracking_enabled,
+    live_protocol: editAd?.live_protocol || "minecraft",
   });
+  const [gallery, setGallery] = useState(Array.isArray(editAd?.gallery_images) ? editAd.gallery_images.slice(0, MAX_GALLERY) : []);
+  const [galleryUrl, setGalleryUrl] = useState("");
+  const galleryInputRef = useRef(null);
   const [profileImage, setProfileImage] = useState(editAd?.profile_image || editAd?.logo_url || "");
   const [coverImage, setCoverImage] = useState(editAd?.cover_image || editAd?.banner_url || "");
   const [uploadingField, setUploadingField] = useState("");
@@ -86,6 +100,42 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
     finally { setUploadingField(""); }
   };
 
+  const handleGalleryUpload = async (files) => {
+    const room = MAX_GALLERY - gallery.length;
+    const picked = Array.from(files || []).slice(0, room);
+    if (picked.length === 0) return;
+    setUploadingField("gallery");
+    try {
+      const urls = [];
+      for (const file of picked) {
+        try {
+          const result = await uploadImageWithToast(file);
+          if (result?.file_url) urls.push(result.file_url);
+        } catch { /* error already toasted */ }
+      }
+      setGallery((prev) => [...prev, ...urls].slice(0, MAX_GALLERY));
+    } finally {
+      setUploadingField("");
+      if (galleryInputRef.current) galleryInputRef.current.value = "";
+    }
+  };
+
+  const handleGalleryUrlAdd = () => {
+    const url = galleryUrl.trim();
+    if (!url) return;
+    if (!url.startsWith("https://")) {
+      toast.error("L'URL de l'image doit commencer par https://");
+      return;
+    }
+    if (gallery.includes(url)) {
+      toast.error("Cette image est déjà dans la galerie");
+      return;
+    }
+    if (gallery.length >= MAX_GALLERY) return;
+    setGallery((prev) => [...prev, url]);
+    setGalleryUrl("");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.title.trim() || !form.description.trim()) return;
@@ -114,8 +164,15 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
 
     setSubmitting(true);
 
+    const livePort = parseInt(form.port, 10);
+    const liveOn = !isPlayerAd && form.live_tracking_enabled && form.ip.trim() !== "";
+
     const data = {
       ...form,
+      ip: isPlayerAd ? "" : form.ip.trim(),
+      port: isPlayerAd || !(livePort > 0 && livePort <= 65535) ? 0 : livePort,
+      live_tracking_enabled: liveOn,
+      gallery_images: isPlayerAd ? [] : gallery.slice(0, MAX_GALLERY),
       type: adType,
       profile_image: profileImage,
       logo_url: profileImage,
@@ -446,6 +503,143 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
                 />
                 <p className="text-[9px] text-white/25 mt-1">Le lien doit commencer par https://</p>
               </div>
+            </div>
+          )}
+
+          {/* Suivi en direct + galerie (serveur uniquement) */}
+          {!isPlayerAd && (
+            <div className="space-y-3 rounded-lg p-3" style={{ background: "rgba(138,79,255,0.04)", border: "1px solid rgba(138,79,255,0.15)" }}>
+              <label className="flex items-center justify-between gap-2 cursor-pointer">
+                <span className={`${labelClass} !mb-0 flex items-center`}>
+                  <Radio className="w-3 h-3 inline mr-1" />
+                  Compteur de joueurs en direct
+                  <span className="text-white/20 ml-1 normal-case tracking-normal">(optionnel)</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={form.live_tracking_enabled}
+                  onChange={(e) => handleChange("live_tracking_enabled", e.target.checked)}
+                  className="accent-purple-500 w-4 h-4"
+                />
+              </label>
+              {form.live_tracking_enabled && (
+                <>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="col-span-2">
+                      <label className={labelClass}>IP / adresse</label>
+                      <input
+                        type="text"
+                        maxLength={253}
+                        value={form.ip}
+                        onChange={(e) => handleChange("ip", e.target.value)}
+                        placeholder="play.monserveur.fr"
+                        className="w-full h-10 px-3 rounded-lg text-sm text-white placeholder:text-white/25 outline-none"
+                        style={inputStyle}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelClass}>Port</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="65535"
+                        value={form.port}
+                        onChange={(e) => handleChange("port", e.target.value)}
+                        placeholder="25565"
+                        className="w-full h-10 px-3 rounded-lg text-sm text-white placeholder:text-white/25 outline-none"
+                        style={inputStyle}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className={labelClass}>Type de jeu</label>
+                    <select
+                      value={form.live_protocol}
+                      onChange={(e) => handleChange("live_protocol", e.target.value)}
+                      className="w-full h-10 px-3 rounded-lg text-sm text-white outline-none"
+                      style={inputStyle}
+                    >
+                      {LIVE_PROTOCOLS.map((p) => (
+                        <option key={p.value} value={p.value}>{p.label}</option>
+                      ))}
+                    </select>
+                    <p className="text-[9px] text-white/25 mt-1">
+                      Affiche « 12/64 en ligne » ou « Hors ligne » à côté du titre. « Autre » indique seulement si le port répond.
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {!isPlayerAd && (
+            <div>
+              <label className={labelClass}>
+                <ImageIcon className="w-3 h-3 inline mr-1" />
+                Galerie de la fiche ({gallery.length}/{MAX_GALLERY})
+                <span className="text-white/20 ml-1 normal-case tracking-normal">(visible sur la fiche uniquement)</span>
+              </label>
+              {gallery.length > 0 && (
+                <div className="grid grid-cols-5 gap-1.5 mb-2">
+                  {gallery.map((url, i) => (
+                    <div
+                      key={`${url}-${i}`}
+                      className="relative aspect-square rounded-lg overflow-hidden"
+                      style={{ border: "1px solid rgba(138,79,255,0.2)" }}
+                    >
+                      <img src={url} alt="" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setGallery((prev) => prev.filter((_, idx) => idx !== i))}
+                        className="absolute top-0.5 right-0.5 w-5 h-5 rounded flex items-center justify-center text-white"
+                        style={{ background: "rgba(239,68,68,0.85)" }}
+                        aria-label="Supprimer l'image"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {gallery.length < MAX_GALLERY && (
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={galleryInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => handleGalleryUpload(e.target.files)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => galleryInputRef.current?.click()}
+                    disabled={uploadingField === "gallery"}
+                    className="h-9 px-3 rounded-lg text-[10px] font-bold transition flex items-center gap-1 tap-sm shrink-0"
+                    style={inputStyle}
+                  >
+                    <Upload className="w-3 h-3" />
+                    {uploadingField === "gallery" ? "..." : "Ajouter"}
+                  </button>
+                  <input
+                    type="url"
+                    value={galleryUrl}
+                    onChange={(e) => setGalleryUrl(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleGalleryUrlAdd(); } }}
+                    placeholder="ou URL https://..."
+                    className="flex-1 min-w-0 h-9 px-3 rounded-lg text-xs text-white placeholder:text-white/25 outline-none"
+                    style={inputStyle}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleGalleryUrlAdd}
+                    className="h-9 px-2 rounded-lg text-[10px] font-bold tap-sm shrink-0"
+                    style={inputStyle}
+                  >
+                    OK
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
