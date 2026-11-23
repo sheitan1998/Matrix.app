@@ -12,8 +12,8 @@ import AiUpgradeModal from "@/components/matrix-ai/AiUpgradeModal";
 import AiConnectorsPanel from "@/components/matrix-ai/AiConnectorsPanel";
 import AuthModal from "@/components/landing/AuthModal";
 import useAiQuota from "@/hooks/useAiQuota";
-import { checkFileBeforeUpload, MAX_ATTACHMENTS } from "../../base44/shared/aiFiles.ts";
-import { isImageRequest } from "../../base44/shared/aiIntent.ts";
+import { checkFileBeforeUpload, MAX_ATTACHMENTS } from "@/lib/aiFiles";
+import { isImageRequest } from "@/lib/aiIntent";
 
 const THINKING_STEPS = [
   "Matrix AI réfléchit...",

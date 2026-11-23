@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ArrowUp, Loader2, ImagePlus, Paperclip, X, FileText } from "lucide-react";
 import AiVoiceInput from "./AiVoiceInput";
-import { ACCEPT_ATTRIBUTE, MAX_ATTACHMENTS } from "../../../base44/shared/aiFiles.ts";
+import { ACCEPT_ATTRIBUTE, MAX_ATTACHMENTS } from "@/lib/aiFiles";
 
 export default function AiComposer({
   value,
