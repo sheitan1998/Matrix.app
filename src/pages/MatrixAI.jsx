@@ -12,6 +12,8 @@ import AiUpgradeModal from "@/components/matrix-ai/AiUpgradeModal";
 import AiConnectorsPanel from "@/components/matrix-ai/AiConnectorsPanel";
 import AuthModal from "@/components/landing/AuthModal";
 import useAiQuota from "@/hooks/useAiQuota";
+import { checkFileBeforeUpload, MAX_ATTACHMENTS } from "../../base44/shared/aiFiles.ts";
+import { isImageRequest } from "../../base44/shared/aiIntent.ts";
 
 const THINKING_STEPS = [
   "Matrix AI réfléchit...",
@@ -50,6 +52,9 @@ export default function MatrixAI() {
   const [imageMode, setImageMode] = useState(() => Boolean(readDraft()?.image));
   const [sending, setSending] = useState(false);
   const [sendingImage, setSendingImage] = useState(false);
+  const [attachments, setAttachments] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [connectorsOpen, setConnectorsOpen] = useState(false);
   const [thinkingStep, setThinkingStep] = useState(0);
   const [error, setError] = useState("");
   const [upgradeOpen, setUpgradeOpen] = useState(false);
@@ -111,9 +116,11 @@ export default function MatrixAI() {
   }, [sending]);
 
   const sendMessage = async (rawText, options = {}) => {
-    const content = String(rawText ?? input).trim();
-    if (!content || sending) return;
-    const asImage = Boolean(options.image ?? imageMode);
+    const typed = String(rawText ?? input).trim();
+    const files = options.attachments ?? attachments;
+    if ((!typed && !files.length) || sending || uploading) return;
+    const content = typed || "Analyse le ou les fichiers joints et résume-les.";
+    const asImage = Boolean(options.image ?? imageMode) || (!files.length && isImageRequest(content));
 
     // Lecture libre pour les visiteurs : l'envoi exige une connexion, le message est gardé en brouillon.
     if (!authenticated) {
@@ -130,8 +137,9 @@ export default function MatrixAI() {
     }
 
     const tempId = `temp-${Date.now()}`;
-    setMessages((prev) => [...prev, { id: tempId, role: "user", content }]);
+    setMessages((prev) => [...prev, { id: tempId, role: "user", content, attachments: files }]);
     setInput("");
+    setAttachments([]);
     setImageMode(false);
     setError("");
     setSending(true);
@@ -142,6 +150,7 @@ export default function MatrixAI() {
         action: asImage ? "generateImage" : "chat",
         conversation_id: activeId || undefined,
         content,
+        attachments: files.map(({ url, name, type, size }) => ({ url, name, type, size })),
       });
       const data = res.data || {};
       setActiveId(data.conversation_id || activeId);
@@ -155,7 +164,8 @@ export default function MatrixAI() {
       const status = err?.response?.status;
       const payload = err?.response?.data;
       setMessages((prev) => prev.filter((item) => item.id !== tempId));
-      setInput(content);
+      setInput(typed);
+      setAttachments(files);
       setImageMode(asImage);
 
       if (status === 429) {
@@ -174,6 +184,37 @@ export default function MatrixAI() {
     }
   };
 
+  const addFiles = async (files) => {
+    if (!authenticated) {
+      setAuthOpen(true);
+      return;
+    }
+    const room = MAX_ATTACHMENTS - attachments.length;
+    if (files.length > room) toast.error(`${MAX_ATTACHMENTS} fichiers maximum par message.`);
+    const batch = files.slice(0, Math.max(room, 0));
+    if (!batch.length) return;
+    setUploading(true);
+    try {
+      const uploaded = [];
+      for (const file of batch) {
+        const problem = checkFileBeforeUpload(file);
+        if (problem) {
+          toast.error(`${file.name} : ${problem}`);
+          continue;
+        }
+        try {
+          const { file_url } = await base44.integrations.Core.UploadFile({ file });
+          uploaded.push({ url: file_url, name: file.name, type: file.type, size: file.size });
+        } catch {
+          toast.error(`${file.name} : envoi impossible, réessaie.`);
+        }
+      }
+      if (uploaded.length) setAttachments((prev) => [...prev, ...uploaded].slice(0, MAX_ATTACHMENTS));
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const openConversation = async (conversation) => {
     setMobileOpen(false);
     setActiveId(conversation.id);
@@ -186,6 +227,7 @@ export default function MatrixAI() {
     setMessages([]);
     setInput("");
     setImageMode(false);
+    setAttachments([]);
     setError("");
     setMobileOpen(false);
   };
@@ -308,16 +350,7 @@ export default function MatrixAI() {
         onCloseMobile={() => setMobileOpen(false)}
         guest={!authenticated}
         onLogin={openAuth}
-        footerSlot={
-          authenticated ? (
-            <AiConnectorsPanel
-              quota={quota}
-              refreshToken={connectorsVersion}
-              onUpgrade={() => setUpgradeOpen(true)}
-              onMemoryToggled={(enabled) => setQuota((prev) => (prev ? { ...prev, memory_enabled: enabled } : prev))}
-            />
-          ) : null
-        }
+        onOpenConnectors={() => setConnectorsOpen(true)}
       />
 
       <div className="flex-1 min-w-0 flex flex-col">
@@ -385,8 +418,26 @@ export default function MatrixAI() {
           disabled={sending}
           imageMode={imageMode}
           onToggleImageMode={() => setImageMode((value) => !value)}
+          attachments={attachments}
+          uploading={uploading}
+          onAddFiles={addFiles}
+          onRemoveAttachment={(index) => setAttachments((prev) => prev.filter((_, i) => i !== index))}
         />
       </div>
+
+      {authenticated && (
+        <AiConnectorsPanel
+          open={connectorsOpen}
+          onClose={() => setConnectorsOpen(false)}
+          quota={quota}
+          refreshToken={connectorsVersion}
+          onUpgrade={() => {
+            setConnectorsOpen(false);
+            setUpgradeOpen(true);
+          }}
+          onMemoryToggled={(enabled) => setQuota((prev) => (prev ? { ...prev, memory_enabled: enabled } : prev))}
+        />
+      )}
 
       <AiUpgradeModal
         open={upgradeOpen}

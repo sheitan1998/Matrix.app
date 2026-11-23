@@ -7,8 +7,8 @@ const PLANS = [
   {
     id: "plus",
     name: "Matrix Plus",
-    price: "9,99 €",
-    priceNote: "9,99 € / mois — sans engagement",
+    price: "19,99 €",
+    priceNote: "19,99 € / mois — sans engagement",
     icon: Zap,
     accent: "#a855f7",
     features: [
@@ -20,8 +20,8 @@ const PLANS = [
   {
     id: "ultra",
     name: "Matrix Ultra",
-    price: "70 €",
-    priceNote: "à partir de 70 € / mois — sans engagement",
+    price: "89,99 €",
+    priceNote: "89,99 € / mois — sans engagement",
     icon: Crown,
     accent: "#fbbf24",
     features: [

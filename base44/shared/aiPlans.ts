@@ -32,7 +32,7 @@ export const AI_TIER_PLANS: Record<AiTier, AiPlan> = {
   plus: {
     tier: 'plus',
     label: 'Matrix Plus',
-    priceCents: 999,
+    priceCents: 1999,
     window: 'day',
     limit: 100,
     memory: true,
@@ -43,7 +43,7 @@ export const AI_TIER_PLANS: Record<AiTier, AiPlan> = {
   ultra: {
     tier: 'ultra',
     label: 'Matrix Ultra',
-    priceCents: 7000,
+    priceCents: 8999,
     window: 'week',
     limit: 7000,
     memory: true,
@@ -57,12 +57,12 @@ export const AI_TIER_PLANS: Record<AiTier, AiPlan> = {
 export const MATRIX_AI_PLANS: Record<string, { priceCents: number; label: string; tier: AiTier }> = {
   plus: {
     priceCents: AI_TIER_PLANS.plus.priceCents,
-    label: 'Matrix Plus — 100 messages IA / 24h, mémoire et connecteurs',
+    label: 'Matrix Plus — 19,99 €/mois : 100 messages IA / 24h, mémoire et connecteurs',
     tier: 'plus',
   },
   ultra: {
     priceCents: AI_TIER_PLANS.ultra.priceCents,
-    label: 'Matrix Ultra — 7 000 messages IA / semaine, accès prioritaire et nouveautés en avance',
+    label: 'Matrix Ultra — 89,99 €/mois : 10x plus d\'utilisation hebdomadaire que Matrix Plus, accès prioritaire et nouveautés en avance',
     tier: 'ultra',
   },
 };

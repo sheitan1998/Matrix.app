@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
-import { Brain, HardDrive, Loader2, Lock, Trash2 } from "lucide-react";
+import { Brain, HardDrive, Link2, Loader2, Lock, Paperclip, Trash2, X } from "lucide-react";
 
 const STATE_TEXT = {
   not_configured: "Bientôt disponible : le connecteur n'est pas encore configuré.",
@@ -14,7 +14,24 @@ const STATE_TEXT = {
 const errorMessage = (err, fallback) =>
   err?.response?.data?.message || err?.response?.data?.error || fallback;
 
-export default function AiConnectorsPanel({ quota, refreshToken = 0, onUpgrade, onMemoryToggled }) {
+function StatusBadge({ tone, children }) {
+  const colors = {
+    ok: { color: "#34d399", background: "rgba(52,211,153,0.12)", border: "rgba(52,211,153,0.35)" },
+    off: { color: "rgba(255,255,255,0.55)", background: "rgba(255,255,255,0.06)", border: "rgba(255,255,255,0.15)" },
+    locked: { color: "#fbbf24", background: "rgba(251,191,36,0.1)", border: "rgba(251,191,36,0.3)" },
+    warn: { color: "#f87171", background: "rgba(248,113,113,0.1)", border: "rgba(248,113,113,0.3)" },
+  }[tone];
+  return (
+    <span
+      className="ml-auto shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black"
+      style={{ color: colors.color, background: colors.background, border: `1px solid ${colors.border}` }}
+    >
+      {children}
+    </span>
+  );
+}
+
+export default function AiConnectorsPanel({ open, onClose, quota, refreshToken = 0, onUpgrade, onMemoryToggled }) {
   const [connector, setConnector] = useState(null);
   const [busy, setBusy] = useState(false);
   const [memories, setMemories] = useState([]);
@@ -41,12 +58,19 @@ export default function AiConnectorsPanel({ quota, refreshToken = 0, onUpgrade, 
   }, []);
 
   useEffect(() => {
-    loadConnector();
-  }, [loadConnector, refreshToken, quota?.plan_tier]);
+    if (open) loadConnector();
+  }, [open, loadConnector, refreshToken, quota?.plan_tier]);
 
   useEffect(() => {
-    if (memoryOpen) loadMemories();
-  }, [memoryOpen, loadMemories]);
+    if (open && memoryOpen) loadMemories();
+  }, [open, memoryOpen, loadMemories]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (event) => event.key === "Escape" && onClose?.();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
 
   const connect = async () => {
     setBusy(true);
@@ -108,20 +132,46 @@ export default function AiConnectorsPanel({ quota, refreshToken = 0, onUpgrade, 
 
   const state = connector?.state || "disconnected";
   const canConnect = state === "disconnected" || state === "pending_review" || state === "reauth_required";
+  if (!open) return null;
   const card = { background: "rgba(138,79,255,0.07)", border: "1px solid rgba(138,79,255,0.2)" };
 
+  const driveBadge =
+    state === "connected" ? <StatusBadge tone="ok">Connecté</StatusBadge>
+    : state === "upgrade_required" ? <StatusBadge tone="locked">Matrix Plus</StatusBadge>
+    : state === "not_configured" ? <StatusBadge tone="off">Bientôt</StatusBadge>
+    : state === "reauth_required" ? <StatusBadge tone="warn">Expiré</StatusBadge>
+    : <StatusBadge tone="off">Non connecté</StatusBadge>;
+
   return (
-    <div className="px-3 pt-2 space-y-2" style={{ borderTop: "1px solid rgba(138,79,255,0.12)" }}>
-      <p className="text-[9px] font-black uppercase tracking-[0.18em] text-white/35 pt-1">Connecteurs & mémoire</p>
+    <div className="fixed inset-0 z-[80] flex justify-end" role="dialog" aria-modal="true" aria-label="Connecteurs">
+      <button
+        aria-label="Fermer les connecteurs"
+        onClick={onClose}
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm cursor-default"
+      />
+      <div
+        className="relative w-full max-w-sm h-full overflow-y-auto scrollbar-thin px-4 py-5 space-y-3"
+        style={{
+          background: "linear-gradient(180deg, #170d28 0%, #0b0614 100%)",
+          borderLeft: "1px solid rgba(138,79,255,0.35)",
+          boxShadow: "-10px 0 60px rgba(138,79,255,0.22)",
+        }}
+      >
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/35">Matrix AI</p>
+          <h2 className="text-base font-black text-white">Connecteurs</h2>
+        </div>
+        <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-white/50 hover:text-white tap-sm" aria-label="Fermer">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
 
       <div className="rounded-xl p-2.5 space-y-1.5" style={card}>
         <div className="flex items-center gap-2">
           <HardDrive className="w-3.5 h-3.5" style={{ color: "#c4b5fd" }} />
           <span className="text-[11px] font-bold text-white/80">Google Drive</span>
-          {state === "connected" && (
-            <span className="ml-auto text-[9px] font-black text-emerald-400">Connecté</span>
-          )}
-          {state === "upgrade_required" && <Lock className="ml-auto w-3 h-3 text-white/30" />}
+          {driveBadge}
         </div>
         <p className="text-[9px] text-white/40 leading-snug">
           {state === "connected"
@@ -169,7 +219,7 @@ export default function AiConnectorsPanel({ quota, refreshToken = 0, onUpgrade, 
               role="switch"
               aria-checked={memoryEnabled}
               aria-label="Activer la mémoire"
-              className="ml-auto w-8 h-[18px] rounded-full relative transition"
+              className="ml-auto shrink-0 w-8 h-[18px] rounded-full relative transition"
               style={{ background: memoryEnabled ? "#8a4fff" : "rgba(255,255,255,0.15)" }}
             >
               <span
@@ -227,6 +277,29 @@ export default function AiConnectorsPanel({ quota, refreshToken = 0, onUpgrade, 
             )}
           </div>
         )}
+      </div>
+
+      <div className="rounded-xl p-2.5 space-y-1.5" style={card}>
+        <div className="flex items-center gap-2">
+          <Link2 className="w-3.5 h-3.5" style={{ color: "#c4b5fd" }} />
+          <span className="text-[11px] font-bold text-white/80">Lecture de liens</span>
+          <StatusBadge tone="ok">Actif</StatusBadge>
+        </div>
+        <p className="text-[9px] text-white/40 leading-snug">
+          Colle jusqu'à 3 liens (https) dans ton message : Matrix AI lit la page et l'analyse. Les adresses internes et les sites qui bloquent la lecture sont refusés.
+        </p>
+      </div>
+
+      <div className="rounded-xl p-2.5 space-y-1.5" style={card}>
+        <div className="flex items-center gap-2">
+          <Paperclip className="w-3.5 h-3.5" style={{ color: "#c4b5fd" }} />
+          <span className="text-[11px] font-bold text-white/80">Fichiers joints</span>
+          <StatusBadge tone="ok">Actif</StatusBadge>
+        </div>
+        <p className="text-[9px] text-white/40 leading-snug">
+          Images, PDF, texte, code et données (4 fichiers de 10 Mo maximum par message) avec le bouton trombone de la barre de saisie.
+        </p>
+      </div>
       </div>
     </div>
   );
