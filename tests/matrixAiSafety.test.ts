@@ -5,6 +5,38 @@ import { extractUrls, isImageRequest } from '../base44/shared/aiIntent.ts';
 import { assertSafeUrl, fetchReadablePage, htmlToReadable, isPrivateAddress } from '../base44/shared/aiWeb.ts';
 import { validateAttachments } from '../base44/shared/aiFiles.ts';
 import { composeImagePrompt, normalizeBrief } from '../base44/shared/aiImage.ts';
+import { buildWebhookPayload, sendWebhook, validateWebhookUrl } from '../base44/shared/aiConnectors.ts';
+import { CONNECTOR_CATALOG } from '../src/lib/aiConnectors.js';
+
+test('webhooks : https public uniquement', async () => {
+  const resolver = async () => ['93.184.216.34'];
+  assert.equal(await validateWebhookUrl('https://hook.eu1.make.com/abc', resolver), 'https://hook.eu1.make.com/abc');
+  for (const bad of ['http://example.com/x', 'https://localhost/x', 'https://127.0.0.1/x', 'https://10.0.0.5/x', 'https://[::1]/x', 'https://user:pw@example.com/x', 'https://example.com:8443/x', 'ftp://example.com']) {
+    await assert.rejects(() => validateWebhookUrl(bad, resolver), bad);
+  }
+  await assert.rejects(() => validateWebhookUrl('https://evil.example/x', async () => ['192.168.1.2']));
+});
+
+test('webhooks : envoi, formats et erreurs', async () => {
+  const resolver = async () => ['93.184.216.34'];
+  let sent;
+  const ok = await sendWebhook('https://discord.com/api/webhooks/1/abc', 'salut', { kind: 'message' }, {
+    resolver,
+    fetchImpl: async (_url, init) => { sent = JSON.parse(init.body); return new Response(null, { status: 204 }); },
+  });
+  assert.ok(ok.ok);
+  assert.equal(sent.content, 'salut');
+  assert.equal(buildWebhookPayload('https://hook.make.com/x', 'a', { kind: 'test' }).text, 'a');
+  const redirect = await sendWebhook('https://hook.make.com/x', 'a', { kind: 'message' }, {
+    resolver, fetchImpl: async () => new Response(null, { status: 302, headers: { location: 'http://127.0.0.1' } }),
+  });
+  assert.equal(redirect.ok, false);
+  const down = await sendWebhook('https://hook.make.com/x', 'a', { kind: 'message' }, {
+    resolver, fetchImpl: async () => { throw new TypeError('fail'); },
+  });
+  assert.equal(down.ok, false);
+  assert.ok(!JSON.stringify(CONNECTOR_CATALOG).toLowerCase().includes('drive'));
+});
 
 const publicResolver = async () => ['93.184.216.34'];
 
