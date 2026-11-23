@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowUpRight, MessageSquare, Trash2, Plus, X, Sparkles } from "lucide-react";
+import { ArrowUpRight, MessageSquare, Trash2, Plus, X, Sparkles, Plug } from "lucide-react";
 
 function relativeDate(value) {
   if (!value) return "";
@@ -26,7 +26,7 @@ export default function AiSidebar({
   onCloseMobile,
   guest = false,
   onLogin,
-  footerSlot = null,
+  onOpenConnectors,
 }) {
   return (
     <>
@@ -141,8 +141,16 @@ export default function AiSidebar({
           )}
         </div>
 
-        {footerSlot}
         <div className="px-3 pb-4 pt-2 space-y-1.5" style={{ borderTop: "1px solid rgba(138,79,255,0.12)" }}>
+          {!guest && (
+            <button
+              onClick={onOpenConnectors}
+              className="w-full h-9 rounded-lg text-[11px] font-black text-white flex items-center justify-center gap-2 transition hover:brightness-125 tap-sm"
+              style={{ background: "rgba(138,79,255,0.18)", border: "1px solid rgba(138,79,255,0.4)" }}
+            >
+              <Plug className="w-3.5 h-3.5" style={{ color: "#c4b5fd" }} /> Connecteurs
+            </button>
+          )}
           <Link
             to="/best-serveurs"
             className="flex items-center justify-between px-2 py-2 rounded-lg text-[10px] font-bold text-white/50 hover:text-white transition tap-sm"

@@ -1,5 +1,9 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { AI_TIER_PLANS, DAY_MS, WEEK_MS, normalizeTier } from '../../shared/aiPlans.ts';
+import { buildAttachmentContext, validateAttachments } from '../../shared/aiFiles.ts';
+import { IMAGE_BRIEF_SCHEMA, buildImageBriefPrompt, composeImagePrompt, normalizeBrief } from '../../shared/aiImage.ts';
+import { extractUrls, isImageRequest, stripImageCommand } from '../../shared/aiIntent.ts';
+import { buildLinkContext, fetchReadablePage } from '../../shared/aiWeb.ts';
 import { getValidAccessToken, googleConfig, looksLikeDriveRequest, searchDrive } from '../../shared/aiConnectors.ts';
 
 const MAX_RESULTS = 5;
@@ -68,16 +72,6 @@ function titleFrom(content: string): string {
   const clean = String(content || '').replace(/\s+/g, ' ').trim();
   if (!clean) return 'Nouvelle discussion';
   return clean.length > 60 ? `${clean.slice(0, 57)}…` : clean;
-}
-
-function isImageRequest(text: string): boolean {
-  const t = String(text || '').trim();
-  if (/^\/(image|imagine|img)\b/i.test(t)) return true;
-  return /^(g[ée]n[èe]re|cr[ée]e|dessine|fais|fabrique|generate|create|draw|make)\b.{0,40}\b(image|illustration|logo|banni[èe]re|banner|affiche|poster|avatar|wallpaper|dessin|picture|photo)\b/i.test(t);
-}
-
-function stripImageCommand(text: string): string {
-  return String(text || '').replace(/^\/(image|imagine|img)\b\s*/i, '').trim();
 }
 
 /**
@@ -442,12 +436,18 @@ export default async function (req: Request): Promise<Response> {
     }
 
     // ---------- Envoi d'un message (texte ou image) ----------
-    const rawContent = String(body?.content || '').trim();
+    const { accepted: attachments, rejected: rejectedFiles } = validateAttachments(body?.attachments);
+    if (rejectedFiles.length) {
+      return jsonError('invalid_attachment', 400, { message: rejectedFiles.join(' ') });
+    }
+    let rawContent = String(body?.content || '').trim();
+    if (!rawContent && attachments.length) rawContent = 'Analyse le ou les fichiers joints et résume-les.';
     if (!rawContent) return jsonError('Message vide', 400);
     if (rawContent.length > MAX_CONTENT) {
       return jsonError('Message trop long (4000 caractères maximum)', 400);
     }
-    const imageMode = action === 'generateImage' || isImageRequest(rawContent);
+    // Une demande d'image en langage naturel déclenche la génération, sauf si des fichiers sont joints à analyser.
+    const imageMode = action === 'generateImage' || (!attachments.length && isImageRequest(rawContent));
     const content = imageMode ? stripImageCommand(rawContent) : rawContent;
     if (imageMode && (!content || content.length > MAX_IMAGE_PROMPT)) {
       return jsonError(`Décris l'image souhaitée (${MAX_IMAGE_PROMPT} caractères maximum).`, 400);
@@ -512,11 +512,28 @@ export default async function (req: Request): Promise<Response> {
         user_email: user.email,
         role: 'user',
         content: rawContent,
+        attachments: attachments.map(({ url, name, type, size, kind }) => ({ url, name, type, size, kind })),
       });
 
       // ---------- Génération d'image (clé API uniquement côté serveur) ----------
       if (imageMode) {
-        const generated = await base44.asServiceRole.integrations.Core.GenerateImage({ prompt: content });
+        // Le brief structuré améliore la fidélité ; en cas d'échec on retombe sur la demande brute.
+        const recent = await base44.asServiceRole.entities.AiMessage
+          .filter({ conversation_id: conversation.id, user_id: user.id }, '-created_date', 6)
+          .then((page) => (page?.items || page || []).slice().reverse())
+          .catch(() => []);
+        const briefContext = recent
+          .map((m) => `${m.role === 'user' ? 'Utilisateur' : 'Matrix AI'}: ${String(m.content || '').slice(0, 300)}`)
+          .join('\n');
+        const brief = await base44.asServiceRole.integrations.Core.InvokeLLM({
+          prompt: buildImageBriefPrompt(content, briefContext),
+          model: CHAT_MODEL,
+          response_json_schema: IMAGE_BRIEF_SCHEMA,
+        })
+          .then((raw) => normalizeBrief(parseJson(raw)))
+          .catch(() => null);
+        const imagePrompt = composeImagePrompt(content, brief);
+        const generated = await base44.asServiceRole.integrations.Core.GenerateImage({ prompt: imagePrompt });
         const imageUrl = String(generated?.url || '');
         if (!imageUrl) throw new Error("La génération d'image a échoué.");
         const imageMessage = await base44.asServiceRole.entities.AiMessage.create({
@@ -567,9 +584,19 @@ export default async function (req: Request): Promise<Response> {
         ? `\nSouvenirs sur l'utilisateur (mémoire persistante, à utiliser avec naturel) :\n${memories.map((m) => `- ${String(m.content).slice(0, MAX_MEMORY_LENGTH)}`).join('\n')}\n`
         : '';
       const driveBlock = await driveContext(base44, user.id, quota.plan, content).catch(() => '');
-      const extraContext = `${memoryBlock}${driveBlock ? `\n${driveBlock}\n` : ''}`;
 
-    const webLikely = needsWebSearch(content);
+      // Liens : lecture serveur protégée contre le SSRF (une demande = un message, 3 liens maximum).
+      const urls = extractUrls(content);
+      const pages = await Promise.all(urls.map((url) => fetchReadablePage(url)));
+      const linkBlock = buildLinkContext(pages);
+      const fileContext = await buildAttachmentContext(attachments);
+      const fileUrls = fileContext.fileUrls;
+      const extraContext = [memoryBlock, driveBlock, linkBlock, fileContext.block]
+        .filter(Boolean)
+        .map((block) => `\n${block}\n`)
+        .join('');
+
+    const webLikely = !pages.length && !attachments.length && needsWebSearch(content);
     const pseudo = user.pseudo || user.full_name || 'membre Matrix';
 
     // ---- Appel 1 : décision (réponse directe ou outils) ----
@@ -615,6 +642,7 @@ Analyse le dernier message.
         model: webLikely ? WEB_MODEL : CHAT_MODEL,
         add_context_from_internet: webLikely,
         response_json_schema: decisionSchema,
+        ...(fileUrls.length ? { file_urls: fileUrls } : {}),
       }),
     ) || {};
 
@@ -680,6 +708,7 @@ Rédige la réponse finale en Markdown à partir de ces résultats UNIQUEMENT.
           model: needsWeb ? WEB_MODEL : CHAT_MODEL,
           add_context_from_internet: needsWeb,
           response_json_schema: answerSchema,
+          ...(fileUrls.length ? { file_urls: fileUrls } : {}),
         }),
       ) || {};
 

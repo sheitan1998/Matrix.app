@@ -17,6 +17,19 @@ export default function AiMessageBubble({ message, user }) {
           <p className="text-[12px] text-white leading-relaxed whitespace-pre-wrap break-words">
             {message.content}
           </p>
+          {Array.isArray(message.attachments) && message.attachments.length > 0 && (
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {message.attachments.map((file, index) => (
+                <span
+                  key={`${file.name}-${index}`}
+                  className="max-w-[180px] truncate rounded-md px-1.5 py-0.5 text-[10px] font-bold text-white/90"
+                  style={{ background: "rgba(255,255,255,0.14)" }}
+                >
+                  📎 {file.name}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
         <div
           className="w-7 h-7 rounded-lg shrink-0 overflow-hidden flex items-center justify-center mt-0.5"

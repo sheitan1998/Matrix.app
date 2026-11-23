@@ -43,6 +43,21 @@
       "type": "string",
       "description": "URL de l'image generee par Matrix AI (kind = image)"
     },
+    "attachments": {
+      "type": "array",
+      "default": [],
+      "description": "Fichiers joints par l'utilisateur (images, PDF, texte, code, donnees)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": { "type": "string" },
+          "name": { "type": "string" },
+          "type": { "type": "string" },
+          "size": { "type": "number" },
+          "kind": { "type": "string" }
+        }
+      }
+    },
     "attached_cards": {
       "type": "array",
       "default": [],
