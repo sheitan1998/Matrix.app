@@ -49,54 +49,141 @@ const isSafeHost = (host: string): boolean => {
 };
 
 const fetchJson = async (url: string) => {
-  const res = await fetch(url, { signal: AbortSignal.timeout(LIVE_TIMEOUT_MS), redirect: 'error' });
+  const res = await fetch(url, {
+    signal: AbortSignal.timeout(LIVE_TIMEOUT_MS),
+    redirect: 'error',
+    headers: { 'User-Agent': 'MatrixServerStatus/1.0', Accept: 'application/json' },
+  });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 };
 
 type Probe = { online: boolean; players: number; max: number };
 
-async function probeMinecraft(host: string, port: number): Promise<Probe | null> {
-  const data = await fetchJson(`https://api.mcsrvstat.us/3/${encodeURIComponent(host)}${port ? `:${port}` : ''}`);
-  if (!data?.online) return null;
-  return { online: true, players: Number(data.players?.online) || 0, max: Number(data.players?.max) || 0 };
+const toCount = (v: unknown): number => {
+  const n = Math.trunc(Number(v));
+  return Number.isFinite(n) && n > 0 ? n : 0;
+};
+const withTimeout = <T>(p: Promise<T>, ms = LIVE_TIMEOUT_MS): Promise<T> =>
+  Promise.race([p, new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))]);
+
+// Minecraft : protocole Server List Ping natif (aucune dépendance à un service tiers).
+const mcVarInt = (n: number): number[] => {
+  const out: number[] = [];
+  let v = n >>> 0;
+  do {
+    let b = v & 0x7f;
+    v >>>= 7;
+    if (v !== 0) b |= 0x80;
+    out.push(b);
+  } while (v !== 0);
+  return out;
+};
+
+async function probeMinecraftNative(host: string, port: number): Promise<Probe | null> {
+  const conn = await withTimeout(Deno.connect({ hostname: host, port }));
+  try {
+    const hostBytes = new TextEncoder().encode(host);
+    const handshakeBody = [
+      0x00, ...mcVarInt(767), ...mcVarInt(hostBytes.length), ...hostBytes,
+      (port >> 8) & 0xff, port & 0xff, 0x01,
+    ];
+    await conn.write(new Uint8Array([...mcVarInt(handshakeBody.length), ...handshakeBody, 0x01, 0x00]));
+
+    let buf = new Uint8Array(0);
+    const chunk = new Uint8Array(4096);
+    const readVarInt = (b: Uint8Array, at: number): [number, number] | null => {
+      let val = 0;
+      for (let i = 0; i < 5; i++) {
+        if (at + i >= b.length) return null;
+        val |= (b[at + i] & 0x7f) << (7 * i);
+        if ((b[at + i] & 0x80) === 0) return [val, at + i + 1];
+      }
+      throw new Error('bad varint');
+    };
+    const deadline = Date.now() + LIVE_TIMEOUT_MS;
+    while (Date.now() < deadline && buf.length < 262144) {
+      const n = await withTimeout(conn.read(chunk), Math.max(1, deadline - Date.now()));
+      if (n === null) break;
+      const merged = new Uint8Array(buf.length + n);
+      merged.set(buf);
+      merged.set(chunk.subarray(0, n), buf.length);
+      buf = merged;
+
+      const len = readVarInt(buf, 0);
+      if (!len) continue;
+      const id = readVarInt(buf, len[1]);
+      if (!id) continue;
+      const strLen = readVarInt(buf, id[1]);
+      if (!strLen) continue;
+      if (id[0] !== 0x00) return null;
+      if (buf.length < strLen[1] + strLen[0]) continue;
+      const json = JSON.parse(new TextDecoder().decode(buf.subarray(strLen[1], strLen[1] + strLen[0])));
+      if (!json?.players) return null;
+      return { online: true, players: toCount(json.players.online), max: toCount(json.players.max) };
+    }
+    return null;
+  } finally {
+    try { conn.close(); } catch { /* already closed */ }
+  }
 }
 
+// Repli Minecraft via l'API publique (utile quand le port est filtré depuis l'hébergeur).
+async function probeMinecraftApi(host: string, port: number): Promise<Probe | null> {
+  const data = await fetchJson(`https://api.mcsrvstat.us/3/${encodeURIComponent(host)}${port ? `:${port}` : ''}`);
+  if (!data?.online) return null;
+  return { online: true, players: toCount(data.players?.online), max: toCount(data.players?.max) };
+}
+
+// FiveM / RedM : le maximum peut se trouver dans info.json, dynamic.json ou être absent.
 async function probeFivem(host: string, port: number): Promise<Probe | null> {
-  const [info, players] = await Promise.all([
-    fetchJson(`http://${host}:${port}/info.json`),
-    fetchJson(`http://${host}:${port}/players.json`),
+  const base = `http://${host}:${port}`;
+  const [info, players, dynamic] = await Promise.allSettled([
+    fetchJson(`${base}/info.json`),
+    fetchJson(`${base}/players.json`),
+    fetchJson(`${base}/dynamic.json`),
   ]);
-  const max = Number(info?.vars?.sv_maxClients) || 0;
-  if (!Array.isArray(players) || !max) return null;
-  return { online: true, players: players.length, max };
+  const infoV = info.status === 'fulfilled' ? info.value : null;
+  const playersV = players.status === 'fulfilled' ? players.value : null;
+  const dynV = dynamic.status === 'fulfilled' ? dynamic.value : null;
+  if (!infoV && !Array.isArray(playersV) && !dynV) return null;
+  const count = Array.isArray(playersV) ? playersV.length : toCount(dynV?.clients);
+  const max = toCount(dynV?.sv_maxclients) || toCount(infoV?.vars?.sv_maxClients) || toCount(infoV?.vars?.sv_maxclients);
+  return { online: true, players: count, max };
 }
 
 async function probeTcp(host: string, port: number): Promise<Probe> {
-  const conn = await Promise.race([
-    Deno.connect({ hostname: host, port }),
-    new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), LIVE_TIMEOUT_MS)),
-  ]);
+  const conn = await withTimeout(Deno.connect({ hostname: host, port }));
   try { conn.close(); } catch { /* already closed */ }
   return { online: true, players: 0, max: 0 };
 }
 
-// Détection automatique : on essaie chaque protocole connu (FiveM, Minecraft), puis on se
-// replie sur un simple test d'ouverture du port. Aucun choix de jeu n'est nécessaire.
+// Détection automatique sans choix de jeu : toutes les sondes tournent en parallèle et on garde
+// le premier résultat qui expose un maximum de joueurs (X/Y). À défaut, « En ligne » si une
+// sonde a répondu, sinon « Hors ligne ».
 async function probeLiveStatus(host: string, port: number): Promise<Probe> {
   const targetPort = port || 25565;
-  const attempts = await Promise.allSettled([
+  const probes: Promise<Probe | null>[] = [
     probeFivem(host, targetPort),
-    probeMinecraft(host, port),
-  ]);
-  for (const a of attempts) {
-    if (a.status === 'fulfilled' && a.value) return a.value;
-  }
-  try {
-    return await probeTcp(host, targetPort);
-  } catch {
-    return { online: false, players: 0, max: 0 };
-  }
+    probeMinecraftNative(host, targetPort),
+    probeMinecraftApi(host, port),
+    probeTcp(host, targetPort),
+  ];
+  return new Promise<Probe>((resolve) => {
+    let pending = probes.length;
+    let fallback: Probe | null = null;
+    const done = () => {
+      if (--pending === 0) resolve(fallback || { online: false, players: 0, max: 0 });
+    };
+    for (const p of probes) {
+      p.then((r) => {
+        if (r?.online) {
+          if (r.max > 0) resolve(r);
+          else if (!fallback || r.players > fallback.players) fallback = r;
+        }
+      }).catch(() => { /* sonde indisponible */ }).finally(done);
+    }
+  });
 }
 
 async function getLiveStatus(ad: any) {
