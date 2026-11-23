@@ -362,7 +362,7 @@ export default function ServerProfile() {
         <ReviewsSection targetType="server" targetId={server.id} isOwner={isOwner} user={user} />
 
         {/* Server info */}
-        {(server.ip || server.category || server.website_url || serverTags(server).length > 0) && (
+        {(server.category || server.website_url || serverTags(server).length > 0) && (
           <div className="rounded-xl p-4 mb-4" style={{ background: "rgba(18,9,28,0.6)", border: "1px solid rgba(138,79,255,0.15)" }}>
             <h2 className="text-xs font-black uppercase tracking-wider text-white mb-2">Informations</h2>
             <div className="space-y-1.5">
@@ -392,12 +392,6 @@ export default function ServerProfile() {
                       </Link>
                     ))}
                   </div>
-                </div>
-              )}
-              {server.ip && (
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-white/40">Adresse IP</span>
-                  <span className="text-[10px] font-bold text-white font-mono">{server.ip}{server.port ? `:${server.port}` : ""}</span>
                 </div>
               )}
               {server.website_url && (

@@ -22,12 +22,6 @@ const GAMES = [
   "Autre",
 ];
 
-const LIVE_PROTOCOLS = [
-  { value: "minecraft", label: "Minecraft" },
-  { value: "fivem", label: "FiveM / GTA RP" },
-  { value: "tcp", label: "Autre (test du port)" },
-];
-
 const slugifyName = (text) =>
   (text || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -127,7 +121,7 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
     setSubmitting(true);
 
     const livePort = parseInt(form.port, 10);
-    const liveOn = !isPlayerAd && form.live_tracking_enabled && form.ip.trim() !== "";
+    const liveOn = !isPlayerAd && form.ip.trim() !== "";
 
     const data = {
       ...form,
@@ -471,21 +465,12 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
           {/* Suivi en direct + galerie (serveur uniquement) */}
           {!isPlayerAd && (
             <div className="space-y-3 rounded-lg p-3" style={{ background: "rgba(138,79,255,0.04)", border: "1px solid rgba(138,79,255,0.15)" }}>
-              <label className="flex items-center justify-between gap-2 cursor-pointer">
-                <span className={`${labelClass} !mb-0 flex items-center`}>
-                  <Radio className="w-3 h-3 inline mr-1" />
-                  Compteur de joueurs en direct
-                  <span className="text-white/20 ml-1 normal-case tracking-normal">(optionnel)</span>
-                </span>
-                <input
-                  type="checkbox"
-                  checked={form.live_tracking_enabled}
-                  onChange={(e) => handleChange("live_tracking_enabled", e.target.checked)}
-                  className="accent-purple-500 w-4 h-4"
-                />
-              </label>
-              {form.live_tracking_enabled && (
-                <>
+              <span className={`${labelClass} !mb-0 flex items-center`}>
+                <Radio className="w-3 h-3 inline mr-1" />
+                Compteur de joueurs en direct
+                <span className="text-white/20 ml-1 normal-case tracking-normal">(optionnel)</span>
+              </span>
+              <>
                   <div className="grid grid-cols-3 gap-2">
                     <div className="col-span-2">
                       <label className={labelClass}>IP / adresse</label>
@@ -513,24 +498,10 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
                       />
                     </div>
                   </div>
-                  <div>
-                    <label className={labelClass}>Type de jeu</label>
-                    <select
-                      value={form.live_protocol}
-                      onChange={(e) => handleChange("live_protocol", e.target.value)}
-                      className="w-full h-10 px-3 rounded-lg text-sm text-white outline-none"
-                      style={inputStyle}
-                    >
-                      {LIVE_PROTOCOLS.map((p) => (
-                        <option key={p.value} value={p.value}>{p.label}</option>
-                      ))}
-                    </select>
-                    <p className="text-[9px] text-white/25 mt-1">
-                      Affiche « 12/64 en ligne » ou « Hors ligne » à côté du titre. « Autre » indique seulement si le port répond.
-                    </p>
-                  </div>
+                  <p className="text-[9px] text-white/25">
+                    Détection automatique : affiche « 12/64 en ligne », « En ligne » ou « Hors ligne » à côté du titre. L'adresse reste privée.
+                  </p>
                 </>
-              )}
             </div>
           )}
 
