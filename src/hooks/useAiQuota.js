@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
 
-/** Quota Matrix AI : état serveur + compte à rebours temps réel. */
-export default function useAiQuota() {
+/** Quota Matrix AI : état serveur + compte à rebours temps réel (fenêtre propre à chaque utilisateur). */
+export default function useAiQuota(enabled = true) {
   const [quota, setQuota] = useState(null);
   const [now, setNow] = useState(Date.now());
   const refreshing = useRef(false);
 
   const refresh = useCallback(async () => {
+    if (!enabled) return null;
     try {
       const res = await base44.functions.invoke("matrixAi", { action: "status" });
       setQuota(res.data);
@@ -15,11 +16,12 @@ export default function useAiQuota() {
     } catch {
       return null;
     }
-  }, []);
+  }, [enabled]);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    if (enabled) refresh();
+    else setQuota(null);
+  }, [enabled, refresh]);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -46,11 +48,12 @@ export function formatCountdown(ms) {
   const m = Math.floor((total % 3600) / 60);
   const s = total % 60;
   const pad = (n) => String(n).padStart(2, "0");
+  const days = Math.floor(h / 24);
   return {
     h,
     m,
     s,
-    label: h > 0 ? `${pad(h)}h ${pad(m)}m` : `${pad(m)}m ${pad(s)}s`,
+    label: days > 0 ? `${days}j ${pad(h % 24)}h ${pad(m)}m` : h > 0 ? `${pad(h)}h ${pad(m)}m` : `${pad(m)}m ${pad(s)}s`,
     clock: `${pad(h)}:${pad(m)}:${pad(s)}`,
   };
 }

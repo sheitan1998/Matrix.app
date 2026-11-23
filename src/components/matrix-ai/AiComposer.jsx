@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ArrowUp, Loader2 } from "lucide-react";
+import { ArrowUp, Loader2, ImagePlus } from "lucide-react";
 import AiVoiceInput from "./AiVoiceInput";
 
-export default function AiComposer({ value, onChange, onSend, sending, disabled }) {
+export default function AiComposer({ value, onChange, onSend, sending, disabled, imageMode = false, onToggleImageMode }) {
   const textareaRef = useRef(null);
   const [listening, setListening] = useState(false);
 
@@ -39,10 +39,30 @@ export default function AiComposer({ value, onChange, onSend, sending, disabled 
           onKeyDown={handleKeyDown}
           rows={1}
           maxLength={4000}
-          placeholder="Demande à Matrix AI : serveurs, créateurs, annonces, idées de contenu..."
+          placeholder={
+            imageMode
+              ? "Décris l'image à générer (compte comme 1 message)..."
+              : "Demande à Matrix AI : serveurs, créateurs, annonces, idées de contenu..."
+          }
           className="flex-1 bg-transparent text-[12px] text-white placeholder:text-white/30 outline-none resize-none py-1.5 max-h-36 scrollbar-thin"
           disabled={sending}
         />
+        <button
+          type="button"
+          onClick={onToggleImageMode}
+          disabled={sending}
+          aria-pressed={imageMode}
+          aria-label="Mode génération d'image"
+          title="Générer une image"
+          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition disabled:opacity-40 tap-sm"
+          style={
+            imageMode
+              ? { background: "rgba(34,211,238,0.2)", color: "#22d3ee", border: "1px solid rgba(34,211,238,0.5)" }
+              : { background: "rgba(138,79,255,0.1)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(138,79,255,0.2)" }
+          }
+        >
+          <ImagePlus className="w-4 h-4" />
+        </button>
         <AiVoiceInput
           value={value}
           onChange={onChange}

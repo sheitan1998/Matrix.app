@@ -1,0 +1,60 @@
+{
+  "name": "AiConnector",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Identifiant du proprietaire du connecteur"
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "google_drive"
+      ],
+      "default": "google_drive"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "connected",
+        "error"
+      ],
+      "default": "connected"
+    },
+    "account_email": {
+      "type": "string",
+      "description": "Compte externe connecte (affichage)"
+    },
+    "scopes": {
+      "type": "string",
+      "description": "Permissions OAuth accordees"
+    },
+    "access_token_enc": {
+      "type": "string",
+      "description": "Access token chiffre (AES-GCM, cle serveur uniquement)"
+    },
+    "refresh_token_enc": {
+      "type": "string",
+      "description": "Refresh token chiffre (AES-GCM, cle serveur uniquement)"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Expiration de l'access token"
+    },
+    "connected_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "user_id",
+    "provider"
+  ],
+  "rls": {
+    "create": false,
+    "read": false,
+    "update": false,
+    "delete": false
+  }
+}

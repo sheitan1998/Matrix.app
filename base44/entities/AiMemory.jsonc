@@ -1,0 +1,51 @@
+{
+  "name": "AiMemory",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Identifiant du proprietaire (memoire strictement isolee par utilisateur)"
+    },
+    "content": {
+      "type": "string",
+      "maxLength": 300,
+      "description": "Souvenir persistant (preference, fait stable) reutilise entre les discussions"
+    },
+    "source_conversation_id": {
+      "type": "string",
+      "description": "Discussion AiConversation d'ou provient le souvenir"
+    }
+  },
+  "required": [
+    "user_id",
+    "content"
+  ],
+  "rls": {
+    "create": false,
+    "read": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": false,
+    "delete": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

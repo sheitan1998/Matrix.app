@@ -30,6 +30,19 @@
       "type": "string",
       "description": "Contenu Markdown du message"
     },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "text",
+        "image"
+      ],
+      "default": "text",
+      "description": "Type de message (texte ou image generee)"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "URL de l'image generee par Matrix AI (kind = image)"
+    },
     "attached_cards": {
       "type": "array",
       "default": [],
@@ -73,9 +86,7 @@
     "content"
   ],
   "rls": {
-    "create": {
-      "data.user_id": "{{user.id}}"
-    },
+    "create": false,
     "read": {
       "$or": [
         {

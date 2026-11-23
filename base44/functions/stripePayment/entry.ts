@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from 'base44:runtime';
+import { MATRIX_AI_PLANS } from '../../shared/aiPlans.ts';
 
 // ---- Server-side catalogs (client sends only IDs; backend determines prices) ----
 const TRIX_PACKS: Record<string, { priceCents: number; trixTotal: number; label: string }> = {
@@ -40,20 +41,14 @@ const AI_PLANS: Record<string, { priceCents: number; label: string }> = {
   pro: { priceCents: 1999, label: 'AI Pro' },
 };
 
-// Abonnements Matrix AI (récurrents) — mettent à jour User.plan_tier
-const MATRIX_AI_PLANS: Record<string, { priceCents: number; label: string; tier: string }> = {
-  plus: { priceCents: 499, label: 'Matrix Plus — 100 messages IA / 24h', tier: 'plus' },
-  ultra: { priceCents: 999, label: 'Matrix Ultra — messages IA illimités', tier: 'ultra' },
-};
-
+// Abonnements Matrix AI (récurrents mensuels) — prix et limites définis dans shared/aiPlans.ts
 function matrixAiPlanPatch(tier: string) {
-  const now = new Date().toISOString();
   return {
     plan_tier: tier,
     ai_messages_used: 0,
-    ai_last_reset_at: now,
-    ai_hour_count: 0,
-    ai_hour_started_at: now,
+    quota_reset_at: null,
+    ai_week_used: 0,
+    ai_week_started_at: null,
   };
 }
 

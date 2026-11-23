@@ -7,7 +7,7 @@ import { X, Mail, Lock, Loader2, AlertCircle } from "lucide-react";
 import GoogleIcon from "@/components/GoogleIcon";
 import { startOAuthLogin } from "@/lib/startOAuthLogin";
 
-export default function AuthModal({ open, onClose }) {
+export default function AuthModal({ open, onClose, redirectTo = "/" }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,7 +24,7 @@ export default function AuthModal({ open, onClose }) {
     setLoading(true);
     try {
       await base44.auth.loginViaEmailPassword(email, password);
-      window.location.href = "/";
+      window.location.href = redirectTo;
     } catch (err) {
       setLoading(false);
       setError(err.message || "Email ou mot de passe incorrect");

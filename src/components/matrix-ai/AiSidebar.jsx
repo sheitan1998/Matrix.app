@@ -24,6 +24,9 @@ export default function AiSidebar({
   loading,
   mobileOpen,
   onCloseMobile,
+  guest = false,
+  onLogin,
+  footerSlot = null,
 }) {
   return (
     <>
@@ -75,6 +78,19 @@ export default function AiSidebar({
                 <div key={i} className="h-10 rounded-lg animate-pulse" style={{ background: "rgba(138,79,255,0.06)" }} />
               ))}
             </div>
+          ) : guest ? (
+            <div className="px-3 py-6 space-y-3">
+              <p className="text-[11px] text-white/30 leading-relaxed">
+                Connecte-toi pour retrouver tes discussions : elles sont privées et liées à ton compte.
+              </p>
+              <button
+                onClick={onLogin}
+                className="w-full h-9 rounded-lg text-[11px] font-black text-white tap-sm"
+                style={{ background: "rgba(138,79,255,0.25)", border: "1px solid rgba(138,79,255,0.4)" }}
+              >
+                Se connecter
+              </button>
+            </div>
           ) : conversations.length === 0 ? (
             <p className="px-3 py-6 text-[11px] text-white/30 leading-relaxed">
               Aucune discussion pour le moment. Lance-toi avec un prompt rapide.
@@ -125,6 +141,7 @@ export default function AiSidebar({
           )}
         </div>
 
+        {footerSlot}
         <div className="px-3 pb-4 pt-2 space-y-1.5" style={{ borderTop: "1px solid rgba(138,79,255,0.12)" }}>
           <Link
             to="/best-serveurs"

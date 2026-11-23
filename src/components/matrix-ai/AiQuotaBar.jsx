@@ -4,14 +4,17 @@ import { formatCountdown } from "@/hooks/useAiQuota";
 
 const TIER_LABEL = { starter: "Starter", plus: "Matrix Plus", ultra: "Matrix Ultra" };
 
-export default function AiQuotaBar({ quota, remainingMs, onUpgrade, onOpenHistory }) {
-  const unlimited = Boolean(quota?.unlimited);
+export default function AiQuotaBar({ quota, remainingMs, onUpgrade, onOpenHistory, guest = false }) {
+  const weekly = quota?.window === "week";
   const limit = quota?.limit ?? 10;
-  const remaining = unlimited ? null : quota?.remaining ?? limit;
+  const remaining = quota?.remaining ?? limit;
   const used = quota?.used ?? 0;
-  const percent = unlimited ? 100 : Math.max(0, Math.min(100, (remaining / Math.max(1, limit)) * 100));
+  const percent = Math.max(0, Math.min(100, (remaining / Math.max(1, limit)) * 100));
   const countdown = formatCountdown(remainingMs);
-  const low = !unlimited && remaining <= 2;
+  const low = remaining <= Math.max(2, Math.floor(limit * 0.05));
+  const windowStarted = Boolean(quota?.next_reset_at);
+  const isUltra = quota?.plan_tier === "ultra";
+  const windowLabel = weekly ? "cette semaine" : "sur 24 h";
 
   return (
     <div
@@ -47,17 +50,23 @@ export default function AiQuotaBar({ quota, remainingMs, onUpgrade, onOpenHistor
 
         <div className="min-w-0">
           <p className="text-[11px] font-bold text-white leading-tight">
-            {unlimited ? "Messages illimités" : `${remaining} / ${limit} messages restants`}
+            {guest
+              ? "Connecte-toi pour discuter avec Matrix AI"
+              : `${remaining} / ${limit} messages restants ${windowLabel}`}
           </p>
-          <p className="text-[9px] text-white/35 leading-tight">
-            {unlimited
-              ? `Anti-spam : ${quota?.hourly_used ?? 0}/${quota?.hourly_limit ?? 30} messages cette heure`
-              : `Renouvellement dans ${countdown.label}`}
-          </p>
+          {!guest && (
+            <p className="text-[9px] text-white/35 leading-tight">
+              {windowStarted
+                ? `Renouvellement dans ${countdown.label}`
+                : weekly
+                  ? "Ta semaine démarre à ton prochain message"
+                  : "Ta fenêtre de 24 h démarre à ton prochain message"}
+            </p>
+          )}
         </div>
       </div>
 
-      {!unlimited && (
+      {!guest && (
         <div className="hidden sm:block w-32 h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
           <div
             className="h-full rounded-full transition-all duration-500"
@@ -72,9 +81,11 @@ export default function AiQuotaBar({ quota, remainingMs, onUpgrade, onOpenHistor
       )}
 
       <div className="ml-auto flex items-center gap-2">
-        <span className="hidden md:block text-[9px] text-white/30">
-          {used} message{used !== 1 ? "s" : ""} utilisés
-        </span>
+        {!guest && (
+          <span className="hidden md:block text-[9px] text-white/30">
+            {used} message{used !== 1 ? "s" : ""} utilisé{used !== 1 ? "s" : ""}
+          </span>
+        )}
         <button
           onClick={onUpgrade}
           className="h-8 px-3 rounded-lg text-[10px] font-black transition hover:brightness-110 tap-sm"
@@ -84,7 +95,7 @@ export default function AiQuotaBar({ quota, remainingMs, onUpgrade, onOpenHistor
             boxShadow: "0 0 16px rgba(138,79,255,0.28)",
           }}
         >
-          Passer à Matrix Plus
+          {guest ? "Voir les offres" : isUltra ? "Mon abonnement" : quota?.plan_tier === "plus" ? "Passer à Matrix Ultra" : "Passer à Matrix Plus"}
         </button>
       </div>
     </div>
