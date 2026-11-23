@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Gamepad2, BookOpen, Target, Map as MapIcon, Users, Zap } from "lucide-react";
 import GTA6DetailModal from "@/components/tuto-gaming/GTA6DetailModal";
-import GTA6GalleryCard from "@/components/tuto-gaming/GTA6GalleryCard";
+import GTA6Catalog from "@/components/tuto-gaming/GTA6Catalog";
 import { getGta6TabItems, resolveGta6Selection } from "@/components/tuto-gaming/gta6/gta6Registry";
 import {
   GTA6_PLATFORMS,
@@ -16,6 +16,39 @@ import {
 
 const HIGHLIGHT_ICONS = { "👥": Users, "🗺️": MapIcon, "🚗": Zap, "🎯": Target };
 
+// One entry per data-driven tab; the items come from gta6Registry, so adding a record to
+// the matching data file is enough to publish a new card.
+const GTA6_CATALOG_SECTIONS = {
+  quetes: {
+    title: "Quêtes",
+    intro: "Structure prête pour les quêtes principales, secondaires et activités. Rockstar n'a publié aucune liste officielle : les fiches sont à compléter après la sortie.",
+  },
+  missions: {
+    title: "Missions",
+    intro: "Les missions, leurs étapes exactes et leurs récompenses ne sont pas publiées dans les sources officielles référencées. Les fiches sont uniquement des méthodes générales de préparation, pas des solutions GTA VI confirmées.",
+  },
+  succes: {
+    title: "Succès & Trophées",
+    intro: "Rockstar Games n'a pas encore publié la liste officielle des trophées. Les fiches rassemblent des éléments prévisionnels issus des communautés, clairement identifiés comme non confirmés.",
+  },
+  lieux: {
+    title: "Carte & Lieux",
+    intro: "Régions, villes et points d'intérêt de l'État de Leonida identifiés dans les supports officiels.",
+  },
+  armes: {
+    title: "Armes & Équipements",
+    intro: "Armes et équipements identifiés dans les supports officiels Rockstar Games.",
+  },
+  vehicules: {
+    title: "Véhicules & Cosmétiques",
+    intro: "Véhicules, variantes et options de personnalisation identifiés dans les supports officiels Rockstar Games. Aucun élément non visible dans ces supports n'est ajouté.",
+  },
+  personnages: {
+    title: "Personnages",
+    intro: "Personnages officiellement présentés par Rockstar Games.",
+  },
+};
+
 export default function GTA6() {
   const [tab, setTab] = useState("presentation");
   const [selectedId, setSelectedId] = useState(null);
@@ -24,13 +57,7 @@ export default function GTA6() {
   const selected = resolveGta6Selection(tab, selectedId);
   const setSelected = (item) => setSelectedId(item?.id || null);
 
-  const renderGallery = () => (
-    <div key={tab} data-gta-category={tab} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-      {items.map((item) => (
-        <GTA6GalleryCard key={`${item.type}:${item.id}`} item={item} onClick={setSelected} />
-      ))}
-    </div>
-  );
+  const catalog = GTA6_CATALOG_SECTIONS[tab];
 
   return (
     <div className="min-h-screen" style={{ background: "hsl(var(--background))" }}>
@@ -204,95 +231,11 @@ export default function GTA6() {
           </div>
         )}
 
-        {/* Personnages */}
-        {tab === "personnages" && (
+        {catalog && (
           <div className="space-y-4">
-            <h2 className="text-lg font-black text-foreground">Personnages Officiels</h2>
-            {renderGallery()}
-          </div>
-        )}
-
-        {/* Véhicules */}
-        {tab === "vehicules" && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-black text-foreground">Véhicules &amp; Cosmétiques</h2>
-            <p className="text-sm text-muted-foreground mb-2">
-              Véhicules, variantes et options de personnalisation identifiés dans les supports officiels
-              Rockstar Games. Aucun élément non visible dans ces supports n'est ajouté.
-            </p>
-            {renderGallery()}
-          </div>
-        )}
-
-        {/* Armes */}
-        {tab === "armes" && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-black text-foreground">Armes &amp; Équipements</h2>
-            {renderGallery()}
-          </div>
-        )}
-
-        {/* Lieux & Monde */}
-        {tab === "lieux" && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-black text-foreground">Lieux &amp; Monde Ouvert</h2>
-            {renderGallery()}
-          </div>
-        )}
-
-        {/* Missions & Guides */}
-        {tab === "missions" && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-black text-foreground">Quêtes &amp; Missions</h2>
-            <p className="text-sm text-muted-foreground mb-2">
-              Les missions, leurs étapes exactes et leurs récompenses ne sont pas publiées dans les sources
-              officielles référencées. Les fiches ci-dessous sont uniquement des méthodes générales de
-              préparation, pas des solutions GTA VI confirmées.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {items.map((mission) => (
-                <button
-                  key={mission.name}
-                  onClick={() => setSelected(mission)}
-                  className="text-left p-4 rounded-xl transition tap-sm"
-                  style={{
-                    background: "hsl(var(--card))",
-                    border: `1px solid ${mission.color}44`,
-                    boxShadow: `0 0 12px ${mission.color}10`,
-                  }}
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <span
-                      className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider"
-                      style={{ background: `${mission.color}22`, color: mission.color }}
-                    >
-                      {mission.category}
-                    </span>
-                    <span
-                      className="px-2 py-0.5 rounded-full text-[9px] font-bold"
-                      style={{ background: "rgba(34,211,238,0.1)", color: "#22D3EE" }}
-                    >
-                      {mission.status}
-                    </span>
-                  </div>
-                  <h3 className="text-sm font-black text-foreground mb-1">{mission.name}</h3>
-                  <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">{mission.desc}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Succès / Trophées */}
-        {tab === "succes" && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-black text-foreground">Succès &amp; Trophées</h2>
-            <p className="text-sm text-muted-foreground mb-2">
-              Rockstar Games n'a pas encore publié la liste officielle des trophées. Les fiches ci-dessous
-              rassemblent les éléments prévisionnels issus des communautés, clairement identifiés comme non
-              confirmés, ainsi que la structure attendue du trophée de platine.
-            </p>
-            {renderGallery()}
+            <h2 className="text-lg font-black text-foreground">{catalog.title}</h2>
+            <p className="text-sm text-muted-foreground mb-2">{catalog.intro}</p>
+            <GTA6Catalog key={tab} items={items} onSelect={setSelected} label={catalog.title} />
           </div>
         )}
 

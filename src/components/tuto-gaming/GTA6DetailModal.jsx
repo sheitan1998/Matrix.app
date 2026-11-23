@@ -202,7 +202,7 @@ export default function GTA6DetailModal({ item, onClose }) {
           )}
 
           {/* Mission steps */}
-          {item.type === 'activity' && item.steps && Array.isArray(item.steps) && item.steps.length > 0 && (
+          {(item.type === 'activity' || item.type === 'quest') && item.steps && Array.isArray(item.steps) && item.steps.length > 0 && (
             <div className="mt-4 p-3 rounded-lg" style={{ background: `${accent}08`, border: `1px solid ${accent}22` }}>
               <p className="text-[10px] uppercase tracking-wider font-bold mb-2" style={{ color: accent }}>Déroulement</p>
               <ol className="space-y-1.5">

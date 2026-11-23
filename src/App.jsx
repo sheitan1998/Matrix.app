@@ -188,8 +188,6 @@ const AuthenticatedApp = () => {
         <Route path="/oauth" element={<Navigate to="/oauth/callback" replace />} />
         <Route path="/oauth/consent" element={<OAuthConsent />} />
         <Route path="/nexus/invite/:code" element={<NexusInvite />} />
-        <Route path="/servers/:slug" element={<ServerProfile />} />
-        <Route path="/createur/:slug" element={<CreatorAdProfile />} />
         {/* 301 redirects — old URLs → new URLs */}
         <Route path="/prospecteurs" element={<Navigate to="/best-serveurs" replace />} />
         <Route path="/prospecteurs/category/:slug" element={<ParamRedirect to="/best-serveurs/category" param="slug" />} />
@@ -197,9 +195,6 @@ const AuthenticatedApp = () => {
         <Route path="/tuto-gaming/fortnite" element={<Navigate to="/fortnite-maps" replace />} />
         <Route path="/fortnite" element={<Navigate to="/fortnite-maps" replace />} />
         {/* New routes */}
-        <Route path="/best-serveurs" element={<Prospecteurs />} />
-        <Route path="/best-creator" element={<BestCreator />} />
-        <Route path="/best-serveurs/category/:slug" element={<CategoryServers />} />
         <Route path="/fortnite-map" element={<Navigate to="/fortnite-maps" replace />} />
         <Route path="/fortnite-maps" element={<FortniteMaps />} />
         <Route path="/fortnite-maps/:mapCode" element={<FortniteMaps />} />
@@ -233,6 +228,11 @@ const AuthenticatedApp = () => {
         {/* Matrix AI : lecture libre pour les visiteurs, l'envoi exige une connexion */}
         <Route element={<AppSidebarLayout />}>
           <Route path="/matrix-ai" element={<MatrixAI />} />
+          <Route path="/best-serveurs" element={<Prospecteurs />} />
+          <Route path="/best-creator" element={<BestCreator />} />
+          <Route path="/best-serveurs/category/:slug" element={<CategoryServers />} />
+          <Route path="/servers/:slug" element={<ServerProfile />} />
+          <Route path="/createur/:slug" element={<CreatorAdProfile />} />
         </Route>
         <Route element={<ProtectedRoute unauthenticatedElement={<AuthGate />} />}>
           <Route path="/nexus" element={<Community />} />

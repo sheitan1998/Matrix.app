@@ -18,8 +18,9 @@ export const GTA6_TABS = [
   { id: "personnages", label: "Personnages" },
   { id: "vehicules", label: "Véhicules & Cosmétiques" },
   { id: "armes", label: "Armes" },
-  { id: "lieux", label: "Lieux & Monde" },
-  { id: "missions", label: "Quêtes & Missions" },
+  { id: "lieux", label: "Carte & Lieux" },
+  { id: "quetes", label: "Quêtes" },
+  { id: "missions", label: "Missions" },
   { id: "succes", label: "Succès / Trophées" },
   { id: "wiki", label: "Wiki" },
 ];
