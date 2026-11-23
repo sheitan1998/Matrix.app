@@ -51,25 +51,17 @@ export default function CreatorRankingBlock({ title, creators, accentColor = "#a
                 }}
               >
                 {visuals.banner_url && (
-                  <div
-                    className="absolute inset-y-0 right-0 w-[70%] pointer-events-none"
-                    style={{
-                      WebkitMaskImage: "linear-gradient(90deg, transparent 0%, #000 35%, #000 100%)",
-                      maskImage: "linear-gradient(90deg, transparent 0%, #000 35%, #000 100%)",
-                    }}
-                  >
-                    <img
-                      src={visuals.banner_url}
-                      alt=""
-                      aria-hidden="true"
-                      loading="lazy"
-                      className="w-full h-full object-contain object-right"
-                    />
-                  </div>
+                  <img
+                    src={visuals.banner_url}
+                    alt=""
+                    aria-hidden="true"
+                    loading="lazy"
+                    className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
+                  />
                 )}
                 <div
                   className="absolute inset-0 pointer-events-none"
-                                  style={{ background: "linear-gradient(90deg, rgba(10,5,15,0.65) 0%, rgba(10,5,15,0.2) 55%, rgba(10,5,15,0.05) 100%)" }}
+                  style={{ background: "linear-gradient(90deg, rgba(10,5,15,0.7) 0%, rgba(10,5,15,0.35) 45%, rgba(10,5,15,0.1) 100%)" }}
                 />
                 <div
                   className="relative z-10 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black shrink-0"
