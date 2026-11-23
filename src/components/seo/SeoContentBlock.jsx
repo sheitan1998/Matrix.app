@@ -85,13 +85,13 @@ export default function SeoContentBlock({ eyebrow, title, intro, sections = [], 
       <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
           {links.map((link) =>
         <li key={link.href}>
-              <Link
-            to={link.href}
-            className="text-[11px] font-bold underline decoration-purple-500/40 hover:text-white transition hidden"
-            style={{ color: "#d8b4fe" }}>
-            
-                {link.label}
-              </Link>
+              
+
+
+
+
+
+          
             </li>
         )}
         </ul>
