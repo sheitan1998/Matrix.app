@@ -128,7 +128,8 @@ export default function NexusGame() {
               <Gamepad2 className="w-4 h-4" style={{ color: "#a855f7" }} />
               <h2 className="text-xs font-black tracking-wider uppercase text-white">Catalogue de jeux</h2>
               <span className="ml-auto text-[10px] text-white/40">
-                {catalog.filtered.length} jeu{catalog.filtered.length !== 1 ? "x" : ""}
+                {catalog.filtered.length}
+                {catalog.filtered.length !== catalog.total ? ` / ${catalog.total}` : ""} jeu{catalog.filtered.length !== 1 ? "x" : ""}
               </span>
             </div>
 

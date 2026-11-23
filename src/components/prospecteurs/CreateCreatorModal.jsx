@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { X, Youtube, Twitch, Music2, Instagram, Ghost, Loader2, RefreshCw, ImageOff, Upload } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import CreatorVisualFields from "./CreatorVisualFields";
+import TagSelector from "./TagSelector";
+import { serverTags, MAX_SERVER_TAGS } from "@/lib/serverTags";
 import { CREATOR_DEFAULT_VISUALS, needsManualVisuals } from "@/lib/creatorDefaults";
 
 const PLATFORM_OPTIONS = [
@@ -34,6 +36,7 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
   const [bannerUrl, setBannerUrl] = useState(channel?.banner_url || "");
   const [snapchatUsername, setSnapchatUsername] = useState(channel?.snapchat_username || "");
   const [snapchatLink, setSnapchatLink] = useState(channel?.snapchat_link || "");
+  const [tags, setTags] = useState(serverTags(channel));
   const [uploadingQr, setUploadingQr] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [metaError, setMetaError] = useState("");
@@ -158,6 +161,7 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
         platform,
         channel_url: isSnapchat ? snapChannelUrl : channelUrl.trim(),
         description: description.trim(),
+        tags,
         snapchat_username: isSnapchat ? pseudo : "",
         snapchat_link: isSnapchat ? snapLink : "",
         avatar_url: (manualVisuals || isSnapchat) ? (avatarUrl || defaultVisuals.avatar_url || "") : avatarUrl,
@@ -412,6 +416,14 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
               className="w-full px-3 py-2.5 rounded-lg text-sm text-white placeholder:text-white/30 outline-none resize-none"
               style={{ background: "rgba(138,79,255,0.05)", border: "1px solid rgba(138,79,255,0.2)" }}
             />
+          </div>
+
+          <div>
+            <label className="text-[9px] font-bold uppercase tracking-wider text-white/40 mb-1 block">
+              Étiquettes / Tags
+              <span className="text-white/20 ml-1 normal-case tracking-normal">(optionnel)</span>
+            </label>
+            <TagSelector value={tags} onChange={(next) => { setTags(next); setError(""); }} max={MAX_SERVER_TAGS} />
           </div>
 
           {quotaReached && (

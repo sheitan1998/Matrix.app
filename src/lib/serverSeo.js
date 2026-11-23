@@ -101,7 +101,7 @@ export function serverSeoDescription(server) {
   parts.push(
     votes || monthVotes
       ? `${votes} votes au total et ${monthVotes} votes ce mois-ci.`
-      : "Votez chaque jour pour le faire progresser dans le classement."
+      : "Votez toutes les 2 heures pour le faire progresser dans le classement."
   );
 
   return truncate(parts.join(" "), 158);

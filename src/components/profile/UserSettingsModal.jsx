@@ -3,7 +3,7 @@ import { LANGUAGES, changeLanguage, getPreferredLanguage } from '@/lib/languageP
 import { createPortal } from "react-dom";
 import { base44 } from "@/api/base44Client";
 import {
-  X, Bell, Gift, UserPlus, MessageSquare, Loader2,
+  X, Bell, UserPlus, MessageSquare, Loader2,
   Globe, Clock, Shield, Check, Headphones, Gamepad2,
 } from "lucide-react";
 import AudioSettingsPanel from "@/components/profile/AudioSettingsPanel";
@@ -255,19 +255,6 @@ export default function UserSettingsModal({ open, onClose, user }) {
                   checked={settings.notif_messages}
                   onChange={(v) => updateSetting("notif_messages", v)}
                   disabled={loading || !!savingKey || savingKey === "notif_messages"}
-                />
-              </SettingRow>
-
-              <SettingRow
-                icon={Gift}
-                color="#fbbf24"
-                title="Rappels de récompenses gratuites"
-                desc="Autoriser les rappels de récompenses gratuites lorsqu'ils sont disponibles."
-              >
-                <Toggle
-                  checked={settings.notif_free_rewards}
-                  onChange={(v) => updateSetting("notif_free_rewards", v)}
-                  disabled={loading || !!savingKey || savingKey === "notif_free_rewards"}
                 />
               </SettingRow>
             </>

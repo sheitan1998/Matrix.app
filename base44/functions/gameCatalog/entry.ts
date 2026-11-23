@@ -1,9 +1,21 @@
 const FEED_URL = "https://gamemonetize.com/feed.php";
-const PAGES = 3;
+const MAX_PAGES = 40;
+const BATCH_SIZE = 4;
 const PAGE_SIZE = 48;
 const CACHE_TTL_MS = 15 * 60 * 1000;
 
 let cache = { at: 0, games: [], source: "public-feed" };
+
+// Une page vide ou invalide signifie la fin du flux ; une erreur réseau/HTTP est remontée.
+async function fetchPage(page) {
+  const response = await fetch(`${FEED_URL}?format=0&num=${PAGE_SIZE}&page=${page}`, {
+    signal: AbortSignal.timeout(15000),
+    headers: { "User-Agent": "MATRIX-NexusGame/1.0" },
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const data = await response.json();
+  return Array.isArray(data) ? data : [];
+}
 
 const CATEGORY_RULES = [
   { key: "Action", words: ["action", "shoot", "shooter", "fight", "combat", "battle", "war", "zombie", "ninja", "survival"] },
@@ -60,52 +72,52 @@ export default async function (req) {
       return Response.json({ error: "Unknown action" }, { status: 400 });
     }
 
-    if (cache.games.length && Date.now() - cache.at < CACHE_TTL_MS) {
-      return Response.json({
-        games: cache.games,
-        total: cache.games.length,
-        cached: true,
-        source: cache.source,
-        updated_at: new Date(cache.at).toISOString(),
-      });
+    const cachedResponse = () => Response.json({
+      games: cache.games,
+      total: cache.games.length,
+      cached: true,
+      source: cache.source,
+      updated_at: new Date(cache.at).toISOString(),
+    });
+
+    if (!body.refresh && cache.games.length && Date.now() - cache.at < CACHE_TTL_MS) {
+      return cachedResponse();
     }
 
-    const requests = Array.from({ length: PAGES }, (_, index) =>
-      fetch(`${FEED_URL}?format=0&num=${PAGE_SIZE}&page=${index + 1}`, {
-        signal: AbortSignal.timeout(15000),
-        headers: { "User-Agent": "MATRIX-NexusGame/1.0" },
-      })
-    );
-
-    const responses = await Promise.allSettled(requests);
-    const batches = await Promise.allSettled(
-      responses
-        .filter((result) => result.status === "fulfilled" && result.value.ok)
-        .map((result) => result.value.json())
-    );
-
+    // Pagination jusqu'à épuisement du flux (et non plus 3 pages fixes = 144 jeux).
     const seen = new Set();
     const games = [];
-    for (const batch of batches) {
-      if (batch.status !== "fulfilled" || !Array.isArray(batch.value)) continue;
-      for (const raw of batch.value) {
-        if (!raw?.id || !raw?.url || seen.has(String(raw.id))) continue;
-        seen.add(String(raw.id));
-        games.push(normalize(raw));
+    let hadError = false;
+    let exhausted = false;
+
+    for (let start = 1; start <= MAX_PAGES && !exhausted; start += BATCH_SIZE) {
+      const pageNumbers = Array.from({ length: Math.min(BATCH_SIZE, MAX_PAGES - start + 1) }, (_, i) => start + i);
+      const results = await Promise.allSettled(pageNumbers.map((page) => fetchPage(page)));
+
+      const before = games.length;
+      for (const result of results) {
+        if (result.status !== "fulfilled") { hadError = true; continue; }
+        const batch = result.value;
+        if (batch.length < PAGE_SIZE) exhausted = true;
+        for (const raw of batch) {
+          if (!raw?.id || !raw?.url || seen.has(String(raw.id))) continue;
+          seen.add(String(raw.id));
+          games.push(normalize(raw));
+        }
       }
+      if (games.length === before && !hadError) exhausted = true;
     }
 
     if (!games.length) {
-      if (cache.games.length) {
-        return Response.json({
-          games: cache.games,
-          total: cache.games.length,
-          cached: true,
-          source: cache.source,
-          updated_at: new Date(cache.at).toISOString(),
-        });
-      }
+      if (cache.games.length) return cachedResponse();
       return Response.json({ error: "Catalogue indisponible" }, { status: 502 });
+    }
+
+    // Une page en échec ne doit pas faire disparaître des jeux déjà connus.
+    if (hadError) {
+      for (const game of cache.games) {
+        if (!seen.has(game.id)) { seen.add(game.id); games.push(game); }
+      }
     }
 
     cache = { at: Date.now(), games, source: "public-feed" };

@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { toast } from "sonner";
 import { UserCheck, MessageCircle, Bell } from "lucide-react";
 import { messageAlertsEnabled } from '@/lib/notificationPreferences';
+import ServerReminderRunner from '@/components/prospecteurs/ServerReminderRunner';
 
 const NotificationContext = createContext(null);
 
@@ -12,46 +13,9 @@ export function NotificationProvider({ children }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
   const prevFriendStatuses = useRef({});
-  const [freeRemindersEnabled, setFreeRemindersEnabled] = useState(user?.notif_free_rewards !== false);
-
   useEffect(() => {
-    setFreeRemindersEnabled(user?.notif_free_rewards !== false);
     if (user?.email) localStorage.setItem('matrix_notif_messages', String(user.notif_messages !== false));
-    const refresh = () => base44.auth.me().then(current => {
-      setFreeRemindersEnabled(current.notif_free_rewards !== false);
-    }).catch(() => {});
-    window.addEventListener('matrix-settings-updated', refresh);
-    return () => window.removeEventListener('matrix-settings-updated', refresh);
-  }, [user?.email, user?.notif_free_rewards, user?.notif_messages]);
-
-  useEffect(() => {
-    if (!isAuthenticated || !user?.email || !freeRemindersEnabled) return;
-    let cancelled = false;
-    const check = async () => {
-      try {
-        const [wheel, scratch] = await Promise.all([
-          base44.functions.invoke('wheelOfFortune', { action: 'getStatus' }),
-          base44.functions.invoke('scratchTicket', { action: 'getTicketStatus' }),
-        ]);
-        if (cancelled) return;
-        const today = new Date().toISOString().slice(0, 10);
-        const reminders = [
-          { available: wheel?.data?.freeSpinAvailable, key: 'wheel', text: 'Votre lancer gratuit de la roue est disponible !' },
-          { available: scratch?.data?.freeTicketAvailable, key: 'scratch', text: 'Votre ticket à gratter gratuit est disponible !' },
-        ];
-        reminders.forEach(({ available, key, text }) => {
-          const storageKey = `matrix_reward_reminder_${user.id}_${key}`;
-          if (available && localStorage.getItem(storageKey) !== today) {
-            localStorage.setItem(storageKey, today);
-            toast(text, { icon: <Bell className="w-4 h-4 text-purple-400" /> });
-          }
-        });
-      } catch { /* Try again on the next check. */ }
-    };
-    check();
-    const interval = setInterval(check, 15 * 60 * 1000);
-    return () => { cancelled = true; clearInterval(interval); };
-  }, [isAuthenticated, user?.email, user?.id, freeRemindersEnabled]);
+  }, [user?.email, user?.notif_messages]);
 
   // Subscribe to Friend entity changes — notify when a request is accepted or received
   useEffect(() => {
@@ -140,6 +104,7 @@ export function NotificationProvider({ children }) {
   return (
     <NotificationContext.Provider value={{ unreadCount, notifications, clearNotifications }}>
       {children}
+      <ServerReminderRunner />
     </NotificationContext.Provider>
   );
 }

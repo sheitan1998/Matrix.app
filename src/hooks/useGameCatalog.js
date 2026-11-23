@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 
 export const GAME_CATEGORIES = [
@@ -16,6 +16,7 @@ export const GAME_CATEGORIES = [
 ];
 
 const INITIAL_VISIBLE = 24;
+const REFRESH_INTERVAL_MS = 10 * 60 * 1000;
 
 export default function useGameCatalog() {
   const [games, setGames] = useState([]);
@@ -29,30 +30,43 @@ export default function useGameCatalog() {
   const [duration, setDuration] = useState("all");
   const [difficulty, setDifficulty] = useState("all");
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
+  const [updatedAt, setUpdatedAt] = useState(null);
 
-  useEffect(() => {
+  const load = useCallback((silent = false, force = false) => {
     let active = true;
     base44.functions
-      .invoke("gameCatalog", { action: "catalog" })
+      .invoke("gameCatalog", { action: "catalog", refresh: force })
       .then((res) => {
         if (!active) return;
         const data = res?.data || {};
-        if (data.error) {
-          setError("Catalogue momentanément indisponible.");
+        if (data.error || !Array.isArray(data.games)) {
+          if (!silent) setError("Catalogue momentanément indisponible.");
           return;
         }
-        setGames(data.games || []);
+        setError("");
+        setGames(data.games);
+        setUpdatedAt(data.updated_at || null);
       })
       .catch(() => {
-        if (active) setError("Impossible de joindre le catalogue. Réessaie dans un instant.");
+        if (active && !silent) setError("Impossible de joindre le catalogue. Réessaie dans un instant.");
       })
       .finally(() => {
-        if (active) setLoading(false);
+        if (active && !silent) setLoading(false);
       });
     return () => {
       active = false;
     };
   }, []);
+
+  // Chargement initial puis vérification périodique : le nombre de jeux suit le flux.
+  useEffect(() => {
+    const cancel = load();
+    const timer = setInterval(() => load(true), REFRESH_INTERVAL_MS);
+    return () => {
+      cancel();
+      clearInterval(timer);
+    };
+  }, [load]);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -102,6 +116,9 @@ export default function useGameCatalog() {
 
   return {
     games,
+    total: games.length,
+    updatedAt,
+    refresh: () => load(true, true),
     filtered,
     visibleGames: filtered.slice(0, visibleCount),
     hasMore: filtered.length > visibleCount,
