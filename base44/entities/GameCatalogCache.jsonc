@@ -1,0 +1,52 @@
+{
+  "name": "GameCatalogCache",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string",
+      "description": "Identifiant du cache (ex: nexus-game-catalog)"
+    },
+    "games_json": {
+      "type": "string",
+      "description": "Dernier catalogue valide (tableau de jeux serialise en JSON)"
+    },
+    "total": {
+      "type": "number",
+      "default": 0,
+      "description": "Nombre de jeux dans le catalogue sauvegarde"
+    },
+    "source": {
+      "type": "string",
+      "default": "public-feed",
+      "description": "Origine du catalogue"
+    },
+    "fetched_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date de la derniere recuperation reussie du flux"
+    }
+  },
+  "required": ["key"],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
