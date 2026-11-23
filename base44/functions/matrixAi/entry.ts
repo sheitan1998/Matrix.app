@@ -489,8 +489,17 @@ export default async function (req: Request): Promise<Response> {
         .get(conversationId)
         .catch((e) => (e.status === 404 ? null : Promise.reject(e)));
       // Vérification d'appartenance stricte : la discussion doit être celle de l'utilisateur connecté.
-      if (!conversation || conversation.user_id !== user.id) {
+      // Les discussions créées avant l'ajout du champ user_id sont rattachées via l'e-mail, puis réparées.
+      const ownerId = conversation?.user_id ? String(conversation.user_id) : '';
+      const owned = ownerId
+        ? ownerId === String(user.id)
+        : Boolean(conversation?.user_email) && String(conversation.user_email).toLowerCase() === String(user.email || '').toLowerCase();
+      if (!conversation || !owned) {
         return jsonError('Conversation introuvable', 404);
+      }
+      if (!ownerId) {
+        await base44.asServiceRole.entities.AiConversation.update(conversation.id, { user_id: user.id }).catch(() => null);
+        conversation.user_id = user.id;
       }
     }
 
