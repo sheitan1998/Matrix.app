@@ -82,7 +82,7 @@ export default function NexusGame() {
               className="w-1.5 h-1.5 rounded-full"
               style={{ background: online ? "#22c55e" : "#f59e0b", boxShadow: `0 0 6px ${online ? "#22c55e" : "#f59e0b"}` }} />
             
-            {online ? "Catalogue connecté" : catalog.loading ? "Connexion..." : "Catalogue indisponible"}
+            {online ? (catalog.stale ? "Catalogue en cache" : "Catalogue connecté") : catalog.loading ? "Connexion..." : "Catalogue indisponible"}
           </span>
         </div>
 
@@ -133,7 +133,7 @@ export default function NexusGame() {
               </span>
             </div>
 
-            {catalog.loading ?
+            {catalog.loading && catalog.total === 0 ?
             <div className="flex flex-col items-center justify-center py-16 gap-3">
                 <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#a855f7" }} />
                 <p className="text-xs text-white/50">Synchronisation du catalogue...</p>
@@ -146,8 +146,9 @@ export default function NexusGame() {
                 <RefreshCw className="w-7 h-7 mx-auto mb-2 text-white/30" />
                 <p className="text-xs text-white/50 mb-3">{catalog.error}</p>
                 <button
-                onClick={() => window.location.reload()}
-                className="h-9 px-4 rounded-lg text-xs font-bold text-white tap-sm"
+                onClick={catalog.reload}
+                disabled={catalog.loading}
+                className="h-9 px-4 rounded-lg text-xs font-bold text-white tap-sm disabled:opacity-60"
                 style={{ background: "linear-gradient(135deg, #a855f7, #6d28d9)" }}>
                 
                   Réessayer
