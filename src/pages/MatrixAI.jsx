@@ -63,7 +63,6 @@ export default function MatrixAI() {
   const [connectorsVersion, setConnectorsVersion] = useState(0);
   const bottomRef = useRef(null);
   const initializedFor = useRef(null);
-  const oauthHandled = useRef(false);
   const sendRef = useRef(null);
   const { quota, setQuota, refresh, remainingMs } = useAiQuota(authenticated);
 
@@ -275,26 +274,6 @@ export default function MatrixAI() {
   useEffect(() => {
     sendRef.current = sendMessage;
   });
-
-  // Retour OAuth Google Drive : ?code=...&state=... (ou ?error=...).
-  useEffect(() => {
-    if (!authenticated || oauthHandled.current) return;
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get("code");
-    const state = params.get("state");
-    const oauthError = params.get("error");
-    if (!state || (!code && !oauthError)) return;
-    oauthHandled.current = true;
-    window.history.replaceState({}, "", window.location.pathname);
-
-    base44.functions
-      .invoke("aiConnectors", { action: "callback", code, state, error: oauthError })
-      .then(() => toast.success("Google Drive connecté"))
-      .catch((err) => {
-        toast.error(err?.response?.data?.message || "Connexion Google Drive impossible");
-      })
-      .finally(() => setConnectorsVersion((v) => v + 1));
-  }, [authenticated]);
 
   const deleteConversation = async (conversation) => {
     try {
