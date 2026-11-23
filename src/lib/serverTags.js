@@ -99,7 +99,7 @@ export function serverHasTag(server, tag) {
 
 /** Classe commune des pastilles d'étiquette (annonces et fiche serveur). */
 export const TAG_CHIP_CLASS =
-  "text-[8px] font-bold px-1.5 py-0.5 rounded transition hover:brightness-125 tap-sm inline-block";
+  "text-[8px] font-bold px-1.5 py-0.5 rounded leading-tight transition hover:brightness-125 tap-sm inline-block !min-h-0 !min-w-0";
 
 /** Teinte (0-359) déterministe selon le nom de l'étiquette. */
 export function tagHue(tag) {

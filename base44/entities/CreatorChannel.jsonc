@@ -52,6 +52,13 @@
       "maxItems": 5,
       "description": "\u00c9tiquettes de la cha\u00eene (5 maximum, comme pour les serveurs)"
     },
+    "gallery_images": {
+      "type": "array",
+      "items": { "type": "string" },
+      "maxItems": 5,
+      "default": [],
+      "description": "Galerie de 5 images maximum, affich\u00e9e uniquement sur la fiche d\u00e9taill\u00e9e"
+    },
     "avatar_url": {
       "type": "string",
       "description": "Avatar / logo de la cha\u00eene (r\u00e9cup\u00e9r\u00e9 automatiquement depuis la plateforme)"

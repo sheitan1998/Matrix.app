@@ -12,6 +12,7 @@ import ServerApiPanel from "@/components/prospecteurs/ServerApiPanel";
 import { serverTags, TAG_CHIP_CLASS, tagChipStyle } from "@/lib/serverTags";
 import LiveStatusBadge from "@/components/prospecteurs/LiveStatusBadge";
 import ServerGallery from "@/components/prospecteurs/ServerGallery";
+import ReviewsSection from "@/components/prospecteurs/ReviewsSection";
 import { slugify } from "@/lib/serverDirectory";
 import usePageSEO from "@/hooks/usePageSEO";
 import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
@@ -357,6 +358,8 @@ export default function ServerProfile() {
         </div>
 
         <ServerGallery images={server.gallery_images} title={server.title} />
+
+        <ReviewsSection targetType="server" targetId={server.id} isOwner={isOwner} user={user} />
 
         {/* Server info */}
         {(server.ip || server.category || server.website_url || serverTags(server).length > 0) && (

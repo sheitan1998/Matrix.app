@@ -116,6 +116,11 @@ export default async function (req: Request): Promise<Response> {
         if (tag && !tags.some((t) => t.toLowerCase() === tag.toLowerCase())) tags.push(tag);
         if (tags.length >= 5) break;
       }
+      const gallery_images = (Array.isArray(body?.gallery_images) ? body.gallery_images : [])
+        .map((u: any) => String(u || '').trim())
+        .filter((u: string) => /^https:\/\//i.test(u) && u.length <= 1000)
+        .filter((u: string, i: number, arr: string[]) => arr.indexOf(u) === i)
+        .slice(0, 5);
       const avatarUrl = String(body?.avatar_url || '').trim();
       const bannerUrl = String(body?.banner_url || '').trim();
       const channelId = body?.id ? String(body.id) : '';
@@ -174,6 +179,7 @@ export default async function (req: Request): Promise<Response> {
           channel_url: channelUrl,
           description,
           tags,
+          gallery_images,
           snapchat_username: snapUsername,
           snapchat_link: snapLink,
           ...visuals,
@@ -197,6 +203,7 @@ export default async function (req: Request): Promise<Response> {
         channel_url: channelUrl,
         description,
         tags,
+        gallery_images,
         snapchat_username: snapUsername,
         snapchat_link: snapLink,
         ...visuals,

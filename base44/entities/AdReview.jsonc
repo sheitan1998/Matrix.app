@@ -1,0 +1,69 @@
+{
+  "name": "AdReview",
+  "type": "object",
+  "properties": {
+    "target_type": {
+      "type": "string",
+      "enum": ["server", "creator"],
+      "description": "Type de fiche notee : serveur (ServerAd) ou createur (CreatorChannel)"
+    },
+    "target_id": {
+      "type": "string",
+      "description": "ID de la fiche notee"
+    },
+    "author_email": {
+      "type": "string",
+      "description": "Email MATRIX de l'auteur de l'avis"
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "author_avatar": {
+      "type": "string"
+    },
+    "rating": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Note de 1 a 5"
+    },
+    "content": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Texte de l'avis"
+    },
+    "owner_reply": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Reponse du proprietaire de la fiche"
+    },
+    "owner_reply_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": ["target_type", "target_id", "author_email", "rating", "content"],
+  "rls": {
+    "create": {
+      "data.author_email": "{{user.email}}"
+    },
+    "read": {},
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.author_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
