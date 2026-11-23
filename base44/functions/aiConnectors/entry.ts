@@ -1,45 +1,41 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { AI_TIER_PLANS, normalizeTier } from '../../shared/aiPlans.ts';
 import {
-  GOOGLE_SCOPES,
-  buildGoogleAuthUrl,
-  decryptToken,
-  encryptToken,
-  exchangeGoogleCode,
-  googleConfig,
-  revokeGoogleToken,
-  signState,
-  verifyState,
+  MAX_WEBHOOKS_PER_USER,
+  WEBHOOK_TEST_COOLDOWN_MS,
+  WebhookError,
+  describeWebhookOutcome,
+  maskWebhookUrl,
+  normalizeWebhookName,
+  runWebhookConnector,
+  validateWebhookUrl,
 } from '../../shared/aiConnectors.ts';
 
-// Connecteurs Matrix AI (Google Drive, OAuth 100% serveur). Les tokens ne sont jamais renvoyés au client.
+// Connecteurs Matrix AI : webhooks personnalisés. L'URL complète reste côté serveur (jamais renvoyée au client).
 
-async function findConnector(base44, userId: string) {
+async function listWebhooks(base44, userId: string) {
   const page = await base44.asServiceRole.entities.AiConnector.filter(
-    { user_id: userId, provider: 'google_drive' },
+    { user_id: userId, provider: 'webhook' },
     '-created_date',
-    1,
+    MAX_WEBHOOKS_PER_USER + 5,
   );
-  return (page?.items || page || [])[0] || null;
+  return page?.items || page || [];
 }
 
-function publicState(connector, config, eligible: boolean) {
-  let state = 'disconnected';
-  if (!config.configured) state = 'not_configured';
-  else if (!eligible) state = 'upgrade_required';
-  else if (connector?.status === 'error') state = 'reauth_required';
-  else if (connector?.status === 'connected') state = 'connected';
-  else if (config.reviewPending) state = 'pending_review';
+function publicWebhook(connector) {
   return {
-    provider: 'google_drive',
-    state,
-    configured: config.configured,
-    eligible,
-    review_pending: config.reviewPending,
-    account_email: connector?.account_email || '',
-    connected_at: connector?.connected_at || null,
-    scopes: connector?.scopes || GOOGLE_SCOPES.join(' '),
+    id: connector.id,
+    name: connector.name,
+    enabled: connector.enabled !== false,
+    url_preview: maskWebhookUrl(connector.webhook_url),
+    status: connector.status || 'untested',
+    last_error: connector.last_error || '',
+    last_triggered_at: connector.last_triggered_at || null,
   };
+}
+
+function fail(error: string, message: string, status: number) {
+  return Response.json({ error, message }, { status });
 }
 
 export default async function (req: Request): Promise<Response> {
@@ -49,87 +45,97 @@ export default async function (req: Request): Promise<Response> {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json().catch(() => ({}));
-    const action = body?.action || 'status';
-    const config = googleConfig();
+    const action = String(body?.action || 'status');
 
     const account = await base44.asServiceRole.entities.User.get(user.id);
     const eligible = AI_TIER_PLANS[normalizeTier(account.plan_tier)].connectors;
-    const connector = await findConnector(base44, user.id);
+    const webhooks = await listWebhooks(base44, user.id);
+    const payload = () => ({
+      eligible,
+      max_webhooks: MAX_WEBHOOKS_PER_USER,
+      webhooks: webhooks.map(publicWebhook),
+    });
+    const owned = (id: unknown) => webhooks.find((w) => w.id === String(id || ''));
 
     if (action === 'status') {
-      return Response.json({ connectors: [publicState(connector, config, eligible)] });
+      return Response.json(payload());
     }
 
-    if (action === 'connect') {
-      if (!config.configured) {
-        return Response.json({ error: 'not_configured', message: "Le connecteur Google Drive n'est pas encore configuré." }, { status: 503 });
-      }
-      if (!eligible) {
-        return Response.json({ error: 'upgrade_required', message: 'Les connecteurs sont inclus à partir de Matrix Plus.' }, { status: 403 });
-      }
-      const state = await signState(user.id, config.encryptionKey);
-      return Response.json({ auth_url: buildGoogleAuthUrl(config, state), review_pending: config.reviewPending });
+    if (!eligible) {
+      return fail('upgrade_required', 'Les connecteurs sont inclus à partir de Matrix Plus.', 403);
     }
 
-    if (action === 'callback') {
-      if (!config.configured) return Response.json({ error: 'not_configured' }, { status: 503 });
-      if (!eligible) return Response.json({ error: 'upgrade_required' }, { status: 403 });
-
-      if (body?.error) {
-        const denied = ['access_denied', 'admin_policy_enforced'].includes(String(body.error));
-        return Response.json(
-          {
-            error: denied ? 'access_denied' : 'oauth_error',
-            message: denied
-              ? 'Autorisation Google refusée ou application en attente de validation.'
-              : 'Connexion Google impossible.',
-          },
-          { status: 400 },
-        );
+    if (action === 'webhook_save') {
+      const existing = body?.id ? owned(body.id) : null;
+      if (body?.id && !existing) return fail('not_found', 'Webhook introuvable.', 404);
+      if (!existing && webhooks.length >= MAX_WEBHOOKS_PER_USER) {
+        return fail('limit_reached', `Tu peux enregistrer ${MAX_WEBHOOKS_PER_USER} webhooks maximum.`, 400);
       }
+      if (!existing && !body?.url) return fail('invalid_url', "L'URL du webhook est obligatoire.", 400);
 
-      const code = String(body?.code || '');
-      if (!code || !(await verifyState(String(body?.state || ''), user.id, config.encryptionKey))) {
-        return Response.json({ error: 'invalid_state', message: 'Demande de connexion invalide ou expirée.' }, { status: 400 });
+      const patch: Record<string, unknown> = { name: normalizeWebhookName(body?.name ?? existing?.name) };
+      if (body?.url) {
+        patch.webhook_url = await validateWebhookUrl(body.url);
+        patch.status = 'untested';
+        patch.last_error = '';
       }
+      if (typeof body?.enabled === 'boolean') patch.enabled = body.enabled;
 
-      const { tokens, email } = await exchangeGoogleCode(config, code);
-      const patch: Record<string, unknown> = {
-        user_id: user.id,
-        provider: 'google_drive',
-        status: 'connected',
-        account_email: email,
-        scopes: String(tokens.scope || GOOGLE_SCOPES.join(' ')),
-        access_token_enc: await encryptToken(tokens.access_token, config.encryptionKey),
-        expires_at: new Date(Date.now() + Number(tokens.expires_in || 3600) * 1000).toISOString(),
-        connected_at: new Date().toISOString(),
-      };
-      // Google ne renvoie le refresh token qu'au premier consentement : on conserve l'ancien sinon.
-      if (tokens.refresh_token) patch.refresh_token_enc = await encryptToken(tokens.refresh_token, config.encryptionKey);
-
-      const saved = connector
-        ? await base44.asServiceRole.entities.AiConnector.update(connector.id, patch)
-        : await base44.asServiceRole.entities.AiConnector.create(patch);
-      return Response.json({ connector: publicState(saved, config, true) });
+      const saved = existing
+        ? await base44.asServiceRole.entities.AiConnector.update(existing.id, patch)
+        : await base44.asServiceRole.entities.AiConnector.create({
+          user_id: user.id,
+          provider: 'webhook',
+          enabled: true,
+          status: 'untested',
+          ...patch,
+        });
+      const next = existing ? webhooks.map((w) => (w.id === existing.id ? { ...w, ...saved } : w)) : [saved, ...webhooks];
+      return Response.json({ eligible, max_webhooks: MAX_WEBHOOKS_PER_USER, webhooks: next.map(publicWebhook), saved_id: saved.id });
     }
 
-    if (action === 'disconnect') {
-      if (connector) {
-        const token = connector.refresh_token_enc || connector.access_token_enc;
-        if (config.configured && token) {
-          const plain = await decryptToken(token, config.encryptionKey).catch(() => '');
-          if (plain) await revokeGoogleToken(plain);
-        }
-        await base44.asServiceRole.entities.AiConnector.delete(connector.id);
-      }
-      return Response.json({ connector: publicState(null, config, eligible) });
+    if (action === 'webhook_toggle') {
+      const existing = owned(body?.id);
+      if (!existing) return fail('not_found', 'Webhook introuvable.', 404);
+      const enabled = Boolean(body?.enabled);
+      await base44.asServiceRole.entities.AiConnector.update(existing.id, { enabled });
+      existing.enabled = enabled;
+      return Response.json(payload());
     }
 
-    return Response.json({ error: 'Action inconnue' }, { status: 400 });
+    if (action === 'webhook_delete') {
+      const existing = owned(body?.id);
+      if (!existing) return fail('not_found', 'Webhook introuvable.', 404);
+      await base44.asServiceRole.entities.AiConnector.delete(existing.id);
+      webhooks.splice(webhooks.indexOf(existing), 1);
+      return Response.json(payload());
+    }
+
+    if (action === 'webhook_test') {
+      const existing = owned(body?.id);
+      if (!existing) return fail('not_found', 'Webhook introuvable.', 404);
+      const last = existing.last_triggered_at ? Date.parse(existing.last_triggered_at) : 0;
+      if (Date.now() - last < WEBHOOK_TEST_COOLDOWN_MS) {
+        return fail('rate_limited', 'Patiente quelques secondes avant un nouveau test.', 429);
+      }
+      const pseudo = user.pseudo || user.full_name || 'membre Matrix';
+      const result = await runWebhookConnector(
+        base44,
+        existing,
+        `Test Matrix AI : le webhook « ${existing.name} » est bien connecté (demandé par ${pseudo}).`,
+        { pseudo, kind: 'test' },
+      );
+      existing.status = result.ok ? 'ok' : 'error';
+      existing.last_error = result.ok ? '' : result.error || '';
+      existing.last_triggered_at = new Date().toISOString();
+      return Response.json({ ...payload(), result: { ok: result.ok, message: describeWebhookOutcome(existing.name, result) } });
+    }
+
+    return fail('unknown_action', 'Action inconnue', 400);
   } catch (error) {
-    if ((error as any)?.code === 'invalid_grant') {
-      return Response.json({ error: 'invalid_state', message: 'Code Google expiré, relance la connexion.' }, { status: 400 });
+    if (error instanceof WebhookError) {
+      return Response.json({ error: error.code, message: error.message }, { status: 400 });
     }
-    return Response.json({ error: error.message || 'Erreur serveur' }, { status: 500 });
+    return Response.json({ error: (error as Error).message || 'Erreur serveur' }, { status: 500 });
   }
 }

@@ -14,7 +14,7 @@ const PLANS = [
     features: [
       "100 messages IA / 24 h",
       "Mémoire des discussions (souvenirs entre conversations)",
-      "Connecteurs : Google Drive (connexion sécurisée OAuth)",
+      "Connecteurs : Webhooks (Discord, Make, Zapier, n8n…) pour agir en dehors du site",
     ],
   },
   {
