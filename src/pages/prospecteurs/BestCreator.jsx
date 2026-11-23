@@ -364,7 +364,7 @@ export default function BestCreator() {
             sections={[
               { title: "YouTube et Twitch", text: "Ajoutez votre chaîne YouTube ou Twitch, récupérez automatiquement votre avatar et votre bannière, puis suivez votre progression." },
               { title: "TikTok, Instagram et Snapchat", text: "Partagez aussi vos profils de créateur sur les réseaux sociaux et rendez vos contenus courts immédiatement découvrables." },
-              { title: "Votes communautaires", text: "Les visiteurs peuvent voter une fois par jour pour leurs créateurs préférés, connectés ou non, avec un suivi des votes mensuels." },
+              { title: "Votes communautaires", text: "Les visiteurs peuvent voter une fois toutes les 2 heures par créateur préféré, connectés ou non, avec un suivi des votes mensuels." },
               { title: "Vote Auto", text: "Les abonnés Vote Auto soutiennent automatiquement jusqu'à trois chaînes chaque jour, sans action manuelle." },
               { title: "Boosts de visibilité", text: "Boostez une chaîne pour la mettre en avant sur la page et lui donner un avantage dans le classement." },
               { title: "Profils publics", text: "Chaque créateur dispose d'une fiche publique avec ses liens, sa description et ses statistiques de votes." },

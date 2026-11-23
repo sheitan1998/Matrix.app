@@ -109,6 +109,13 @@ export default async function (req: Request): Promise<Response> {
       let name = String(body?.name || '').trim().slice(0, 60);
       let channelUrl = String(body?.channel_url || '').trim();
       const description = String(body?.description || '').trim().slice(0, 1000);
+      const rawTags = Array.isArray(body?.tags) ? body.tags : [];
+      const tags: string[] = [];
+      for (const raw of rawTags) {
+        const tag = String(raw || '').replace(/^#+/, '').replace(/\s+/g, ' ').trim().slice(0, 24);
+        if (tag && !tags.some((t) => t.toLowerCase() === tag.toLowerCase())) tags.push(tag);
+        if (tags.length >= 5) break;
+      }
       const avatarUrl = String(body?.avatar_url || '').trim();
       const bannerUrl = String(body?.banner_url || '').trim();
       const channelId = body?.id ? String(body.id) : '';
@@ -166,6 +173,7 @@ export default async function (req: Request): Promise<Response> {
           platform,
           channel_url: channelUrl,
           description,
+          tags,
           snapchat_username: snapUsername,
           snapchat_link: snapLink,
           ...visuals,
@@ -188,6 +196,7 @@ export default async function (req: Request): Promise<Response> {
         platform,
         channel_url: channelUrl,
         description,
+        tags,
         snapchat_username: snapUsername,
         snapchat_link: snapLink,
         ...visuals,

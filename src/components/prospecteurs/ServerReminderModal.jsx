@@ -2,76 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Bell, X, Music, Clock, Repeat, Play, Pause, Save, Volume2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
-
-// Design sonore futuriste / cyberpunk feutré :
-// chaque preset est une séquence de notes (freq Hz, type d'onde, durée, delay)
-// avec volumes doux (0.08-0.18) et fondu d'entrée progressif (fade-in 80ms)
-const SOUND_PRESETS = [
-  {
-    id: "nebula",
-    name: "Nebula",
-    emoji: "🌌",
-    notes: [
-      { freq: 523.25, type: "sine", delay: 0, dur: 0.6, vol: 0.12 },
-      { freq: 659.25, type: "sine", delay: 120, dur: 0.6, vol: 0.12 },
-      { freq: 783.99, type: "sine", delay: 240, dur: 0.8, vol: 0.14 },
-    ],
-  },
-  {
-    id: "aurora",
-    name: "Aurora",
-    emoji: "💫",
-    notes: [
-      { freq: 440.0, type: "triangle", delay: 0, dur: 0.5, vol: 0.10 },
-      { freq: 554.37, type: "triangle", delay: 180, dur: 0.5, vol: 0.10 },
-      { freq: 659.25, type: "triangle", delay: 360, dur: 0.7, vol: 0.12 },
-      { freq: 880.0, type: "sine", delay: 540, dur: 0.9, vol: 0.08 },
-    ],
-  },
-  {
-    id: "cyber",
-    name: "Cyber",
-    emoji: "🤖",
-    notes: [
-      { freq: 329.63, type: "sine", delay: 0, dur: 0.4, vol: 0.11 },
-      { freq: 493.88, type: "sine", delay: 100, dur: 0.4, vol: 0.11 },
-      { freq: 659.25, type: "sine", delay: 200, dur: 0.5, vol: 0.13 },
-      { freq: 987.77, type: "sine", delay: 350, dur: 0.7, vol: 0.09 },
-    ],
-  },
-  {
-    id: "ethereal",
-    name: "Éthéré",
-    emoji: "✨",
-    notes: [
-      { freq: 587.33, type: "sine", delay: 0, dur: 0.8, vol: 0.08 },
-      { freq: 880.0, type: "sine", delay: 200, dur: 0.8, vol: 0.08 },
-      { freq: 1174.66, type: "sine", delay: 400, dur: 1.0, vol: 0.06 },
-    ],
-  },
-  {
-    id: "matrix",
-    name: "Matrix",
-    emoji: "🟢",
-    notes: [
-      { freq: 392.0, type: "triangle", delay: 0, dur: 0.3, vol: 0.10 },
-      { freq: 523.25, type: "triangle", delay: 80, dur: 0.3, vol: 0.10 },
-      { freq: 659.25, type: "triangle", delay: 160, dur: 0.3, vol: 0.10 },
-      { freq: 783.99, type: "triangle", delay: 240, dur: 0.5, vol: 0.12 },
-      { freq: 1046.5, type: "sine", delay: 400, dur: 0.8, vol: 0.08 },
-    ],
-  },
-  {
-    id: "lullaby",
-    name: "Berceuse",
-    emoji: "🌙",
-    notes: [
-      { freq: 440.0, type: "sine", delay: 0, dur: 0.5, vol: 0.10 },
-      { freq: 493.88, type: "sine", delay: 200, dur: 0.5, vol: 0.10 },
-      { freq: 523.25, type: "sine", delay: 400, dur: 0.7, vol: 0.11 },
-    ],
-  },
-];
+import { SOUND_PRESETS, DEFAULT_SOUND_ID, getPreset, playPreset, stopReminderLoop } from "@/lib/reminderSounds";
 
 const DURATION_OPTIONS = [
   { value: 3, label: "3 secondes" },
@@ -91,61 +22,27 @@ const FREQUENCY_OPTIONS = [
 ];
 
 export default function ServerReminderModal({ user, onClose }) {
-  const [sound, setSound] = useState(user?.server_reminder_sound || "chime");
+  const [sound, setSound] = useState(getPreset(user?.server_reminder_sound || DEFAULT_SOUND_ID).id);
   const [duration, setDuration] = useState(user?.server_reminder_duration || 5);
   const [frequency, setFrequency] = useState(user?.server_reminder_frequency || 120);
   const [enabled, setEnabled] = useState(user?.server_reminder_enabled !== false);
   const [previewing, setPreviewing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const audioCtxRef = useRef(null);
   const timeoutRef = useRef(null);
 
   useEffect(() => {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      if (audioCtxRef.current) audioCtxRef.current.close().catch(() => {});
     };
   }, []);
 
-  const playPreview = () => {
+  const playPreview = async (id = sound) => {
     if (previewing) return;
     setPreviewing(true);
-    try {
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      const ctx = audioCtxRef.current;
-      const preset = SOUND_PRESETS.find((s) => s.id === sound) || SOUND_PRESETS[0];
-      // Master gain doux avec léger fondu d'entrée global
-      const master = ctx.createGain();
-      master.gain.setValueAtTime(0, ctx.currentTime);
-      master.gain.linearRampToValueAtTime(0.9, ctx.currentTime + 0.06);
-      master.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.15);
-      master.connect(ctx.destination);
-
-      let maxEnd = 0;
-      preset.notes.forEach((note) => {
-        const start = ctx.currentTime + note.delay / 1000;
-        const end = start + note.dur;
-        if (end > maxEnd) maxEnd = end;
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.frequency.value = note.freq;
-        osc.type = note.type || "sine";
-        // Fondu d'entrée doux (80ms) + fondu de sortie naturel (120ms)
-        gain.gain.setValueAtTime(0, start);
-        gain.gain.linearRampToValueAtTime(note.vol, start + 0.08);
-        gain.gain.setValueAtTime(note.vol, end - 0.12);
-        gain.gain.linearRampToValueAtTime(0, end);
-        osc.connect(gain);
-        gain.connect(master);
-        osc.start(start);
-        osc.stop(end + 0.05);
-      });
-      timeoutRef.current = setTimeout(() => setPreviewing(false), (maxEnd - ctx.currentTime) * 1000 + 200);
-    } catch {
-      setPreviewing(false);
-    }
+    stopReminderLoop();
+    const length = await playPreset(id);
+    if (!length) toast.error("Impossible de lire le son. Vérifie le volume de ton navigateur.");
+    timeoutRef.current = setTimeout(() => setPreviewing(false), length + 200);
   };
 
   const handleSave = async () => {
@@ -157,6 +54,7 @@ export default function ServerReminderModal({ user, onClose }) {
         server_reminder_frequency: frequency,
         server_reminder_enabled: enabled,
       });
+      window.dispatchEvent(new Event("matrix-settings-updated"));
       toast.success("Rappel sonore configuré !");
       onClose();
     } catch {
@@ -212,11 +110,11 @@ export default function ServerReminderModal({ user, onClose }) {
             <label className="text-[10px] font-bold uppercase tracking-wider text-white/50 mb-2 flex items-center gap-1">
               <Music className="w-3 h-3" /> Son de la sonnerie
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2 max-h-56 overflow-y-auto">
               {SOUND_PRESETS.map((s) => (
                 <button
                   key={s.id}
-                  onClick={() => setSound(s.id)}
+                  onClick={() => { setSound(s.id); playPreview(s.id); }}
                   className="relative p-2.5 rounded-xl transition tap-sm"
                   style={
                     sound === s.id
@@ -230,7 +128,7 @@ export default function ServerReminderModal({ user, onClose }) {
               ))}
             </div>
             <button
-              onClick={playPreview}
+              onClick={() => playPreview()}
               disabled={previewing}
               className="mt-2 h-8 px-3 rounded-lg flex items-center gap-1.5 text-[10px] font-bold transition tap-sm disabled:opacity-40"
               style={{ background: "rgba(138,79,255,0.12)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}

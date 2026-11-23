@@ -1,69 +1,59 @@
 {
-  "name": "AiConversation",
+  "name": "AIConversation",
   "type": "object",
   "properties": {
-    "user_id": {
-      "type": "string",
-      "description": "Identifiant du proprietaire (isolation stricte des discussions)"
-    },
     "user_email": {
-      "type": "string",
-      "description": "Email du proprietaire de la discussion (affichage)"
+      "type": "string"
     },
     "title": {
-      "type": "string",
-      "maxLength": 120,
-      "description": "Titre genere automatiquement a partir du premier message"
+      "type": "string"
     },
-    "last_message_at": {
+    "mode": {
       "type": "string",
-      "format": "date-time",
-      "description": "Date du dernier message (tri de la sidebar)"
+      "enum": [
+        "creative",
+        "code",
+        "debate",
+        "story",
+        "image_prompt",
+        "general"
+      ],
+      "default": "general"
+    },
+    "messages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [
-    "user_id",
-    "title"
+    "user_email"
   ],
   "rls": {
     "create": {
-      "data.user_id": "{{user.id}}"
+      "data.user_email": "{{user.email}}"
     },
     "read": {
-      "$or": [
-        {
-          "data.user_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "data.user_email": "{{user.email}}"
     },
     "update": {
-      "$or": [
-        {
-          "data.user_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "data.user_email": "{{user.email}}"
     },
     "delete": {
-      "$or": [
-        {
-          "data.user_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "data.user_email": "{{user.email}}"
     }
   }
 }

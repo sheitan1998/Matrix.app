@@ -6,11 +6,13 @@ import CreatorVoteModal from "./CreatorVoteModal";
 import SnapchatChannelActions from "./SnapchatChannelActions";
 import { CREATOR_PLATFORMS } from "./CreatorPlatformCards";
 import { resolveCreatorVisuals } from "@/lib/creatorDefaults";
+import { serverTags, TAG_CHIP_CLASS, tagChipStyle } from "@/lib/serverTags";
 
 export default function CreatorChannelCard({ creator, rank, user, onVote, onEdit, onDelete }) {
   const [voteStatus, setVoteStatus] = useState({ canVote: true, remaining: null });
   const [showVoteModal, setShowVoteModal] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const creatorTags = serverTags(creator);
 
   const platform = CREATOR_PLATFORMS[creator.platform] || CREATOR_PLATFORMS.youtube;
   const PlatformIcon = platform.icon;
@@ -189,6 +191,14 @@ export default function CreatorChannelCard({ creator, rank, user, onVote, onEdit
               style={{ color: accent }}>
               {expanded ? <>Voir moins <ChevronUp className="w-2.5 h-2.5" /></> : <>Voir plus <ChevronDown className="w-2.5 h-2.5" /></>}
             </button>
+          )}
+        </div>
+        }
+
+        {creatorTags.length > 0 &&
+        <div className="relative z-10 px-3 pb-2 flex flex-wrap gap-1">
+          {creatorTags.map((tag) =>
+          <span key={tag} className={TAG_CHIP_CLASS} style={tagChipStyle(tag)}>#{tag}</span>
           )}
         </div>
         }
