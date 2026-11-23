@@ -117,12 +117,28 @@
     },
     "ip": {
       "type": "string",
-      "description": "Adresse IP du serveur Nexus"
+      "description": "Adresse IP du serveur Nexus (jamais exposee publiquement : lecture reservee au proprietaire et aux admins)",
+      "rls": {
+        "read": {
+          "$or": [
+            { "data.author_email": "{{user.email}}" },
+            { "user_condition": { "role": "admin" } }
+          ]
+        }
+      }
     },
     "port": {
       "type": "number",
       "default": 0,
-      "description": "Port du serveur Nexus"
+      "description": "Port du serveur Nexus (lecture reservee au proprietaire et aux admins)",
+      "rls": {
+        "read": {
+          "$or": [
+            { "data.author_email": "{{user.email}}" },
+            { "user_condition": { "role": "admin" } }
+          ]
+        }
+      }
     },
     "live_tracking_enabled": {
       "type": "boolean",
