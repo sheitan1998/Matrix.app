@@ -164,6 +164,13 @@ async function listAllUsers(sdk: any): Promise<any[]> {
   return Array.isArray(res) ? res : (res?.items || []);
 }
 
+const REVIEW_TARGETS: Record<string, { entity: string; ownerField: string }> = {
+  server: { entity: 'ServerAd', ownerField: 'author_email' },
+  creator: { entity: 'CreatorChannel', ownerField: 'owner_email' },
+};
+
+const listOf = (res: any): any[] => (Array.isArray(res) ? res : (res?.items || []));
+
 export default async function(req: Request): Promise<Response> {
   try {
     const body = await req.json().catch(() => ({}));
@@ -207,9 +214,100 @@ export default async function(req: Request): Promise<Response> {
 
     const user = await base44.auth.me().catch(() => null);
     // Vote and getVoteStatus don't require auth (IP-based fallback for anonymous visitors)
-    if (!user && action !== 'vote' && action !== 'getVoteStatus' && action !== 'getServerBySlug' && action !== 'trackClick' && action !== 'getLiveStatus') {
+    if (!user && action !== 'vote' && action !== 'getVoteStatus' && action !== 'getServerBySlug' &&     action !== 'trackClick' && action !== 'getLiveStatus' && action !== 'getReviews') {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+        // ---- Avis (serveurs et créateurs) : lecture publique, écriture connectée ----
+        if (action === 'getReviews' || action === 'addReview' || action === 'deleteReview' || action === 'replyReview') {
+          const reviewApi = base44.asServiceRole.entities.AdReview;
+
+          if (action === 'deleteReview' || action === 'replyReview') {
+            const reviewId = String(params.reviewId || '');
+            if (!reviewId || reviewId.length > 128) return Response.json({ error: 'Missing reviewId' }, { status: 400 });
+            const review = await reviewApi.get(reviewId).catch(() => null);
+            if (!review) return Response.json({ error: 'Review not found' }, { status: 404 });
+            const cfg = REVIEW_TARGETS[review.target_type];
+            const target = cfg ? await (base44.asServiceRole.entities as any)[cfg.entity].get(review.target_id).catch(() => null) : null;
+            const isTargetOwner = !!target && !!user && target[cfg.ownerField] === user.email;
+            const isAdmin = user?.role === 'admin';
+
+            if (action === 'deleteReview') {
+              if (!isTargetOwner && !isAdmin && review.author_email !== user?.email) {
+                return Response.json({ error: 'Forbidden' }, { status: 403 });
+              }
+              await reviewApi.delete(reviewId);
+              return Response.json({ success: true });
+            }
+
+            if (!isTargetOwner && !isAdmin) return Response.json({ error: 'Forbidden' }, { status: 403 });
+            const reply = String(params.reply || '').trim().slice(0, 1000);
+            const updated = await reviewApi.update(reviewId, {
+              owner_reply: reply,
+              owner_reply_at: reply ? new Date().toISOString() : null,
+            });
+            return Response.json({ success: true, review: updated });
+          }
+
+          const targetType = String(params.targetType || '');
+          const targetId = String(params.targetId || '');
+          const cfg = REVIEW_TARGETS[targetType];
+          if (!cfg || !targetId || targetId.length > 128) {
+            return Response.json({ error: 'Invalid target' }, { status: 400 });
+          }
+
+          if (action === 'getReviews') {
+            if (!rateLimitByIp(req, 'getReviews', 120, 60_000)) {
+              return Response.json({ error: 'Too many requests' }, { status: 429 });
+            }
+            const page = await reviewApi.filter({ target_type: targetType, target_id: targetId }, '-created_date', 100);
+            const reviews = listOf(page).map((r: any) => ({
+              id: r.id,
+              rating: r.rating,
+              content: r.content,
+              author_name: r.author_name,
+              author_avatar: r.author_avatar,
+              is_mine: !!user && r.author_email === user.email,
+              owner_reply: r.owner_reply || '',
+              owner_reply_at: r.owner_reply_at || null,
+              created_date: r.created_date,
+            }));
+            const count = reviews.length;
+            const average = count ? reviews.reduce((sum: number, r: any) => sum + (Number(r.rating) || 0), 0) / count : 0;
+            return Response.json({ reviews, count, average: Math.round(average * 10) / 10 });
+          }
+
+          // addReview
+          if (!user) return Response.json({ error: 'Authentication required' }, { status: 401 });
+          if (!rateLimitByIp(req, 'addReview', 10, 60_000)) {
+            return Response.json({ error: 'Too many requests' }, { status: 429 });
+          }
+          const rating = Math.trunc(Number(params.rating));
+          const content = String(params.content || '').trim().slice(0, 1000);
+          if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+            return Response.json({ error: 'invalid_rating' }, { status: 400 });
+          }
+          if (content.length < 3) return Response.json({ error: 'content_too_short' }, { status: 400 });
+
+          const target = await (base44.asServiceRole.entities as any)[cfg.entity].get(targetId).catch(() => null);
+          if (!target) return Response.json({ error: 'Not found' }, { status: 404 });
+          if (target[cfg.ownerField] === user.email) {
+            return Response.json({ error: 'own_listing' }, { status: 403 });
+          }
+          const existing = listOf(await reviewApi.filter({ target_type: targetType, target_id: targetId, author_email: user.email }, null, 1));
+          if (existing.length > 0) return Response.json({ error: 'already_reviewed' }, { status: 409 });
+
+          const created = await reviewApi.create({
+            target_type: targetType,
+            target_id: targetId,
+            author_email: user.email,
+            author_name: user.full_name || user.email.split('@')[0],
+            author_avatar: user.avatar_url || '',
+            rating,
+            content,
+          });
+          return Response.json({ success: true, review: { ...created, author_email: undefined, is_mine: true } });
+        }
 
     // ---- live player count (public, cached, never throws on unreachable servers) ----
     if (action === 'getLiveStatus') {
@@ -778,8 +876,7 @@ export default async function(req: Request): Promise<Response> {
 
         // Delete associated votes
         await base44.asServiceRole.entities.ServerVote.deleteMany({ server_ad_id: serverAdId });
-
-        // Delete the ad
+        await base44.asServiceRole.entities.AdReview.deleteMany({ target_type: 'server', target_id: serverAdId });
         await base44.asServiceRole.entities.ServerAd.delete(serverAdId);
 
         return Response.json({ success: true });

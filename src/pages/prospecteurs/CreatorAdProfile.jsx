@@ -6,6 +6,8 @@ import { CREATOR_PLATFORMS } from "@/components/prospecteurs/CreatorPlatformCard
 import { resolveCreatorVisuals } from "@/lib/creatorDefaults";
 import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 import usePageSEO from "@/hooks/usePageSEO";
+import ServerGallery from "@/components/prospecteurs/ServerGallery";
+import ReviewsSection from "@/components/prospecteurs/ReviewsSection";
 import { SITE_URL } from "@/lib/seoRoutes";
 
 /**
@@ -18,6 +20,13 @@ export default function CreatorAdProfile() {
   const [similar, setSimilar] = useState([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    base44.auth.me().then((me) => { if (active) setUser(me); }).catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -117,6 +126,7 @@ export default function CreatorAdProfile() {
 
   const accent = platform?.color || "#a855f7";
   const PlatformIcon = platform?.icon;
+  const isOwner = !!user && user.email === creator.owner_email;
 
   return (
     <div className="min-h-screen" style={{ background: "#12091c" }}>
@@ -200,6 +210,10 @@ export default function CreatorAdProfile() {
             {description || `Ce créateur n'a pas encore ajouté de description à sa fiche Best Creator.`}
           </p>
         </section>
+
+        <ServerGallery images={creator.gallery_images} title={creator.name} kind="créateur" />
+
+        <ReviewsSection targetType="creator" targetId={creator.id} isOwner={isOwner} user={user} />
 
         {similar.length > 0 && (
           <section className="rounded-xl p-4" style={{ background: "rgba(18,9,28,0.6)", border: "1px solid rgba(138,79,255,0.15)" }}>

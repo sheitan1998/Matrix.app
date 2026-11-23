@@ -273,7 +273,7 @@ export default function Sidebar({ noTopbar = false }) {
 
   return (
     <aside
-      className={cn("hidden lg:flex flex-col shrink-0 border-r border-border sticky overflow-y-auto scrollbar-thin py-4 px-3 gap-0.5 transition-all duration-300", positionClass)}
+      className={cn("hidden lg:flex flex-col shrink-0 border-r border-border sticky z-30 overflow-y-auto scrollbar-thin py-4 px-3 gap-0.5 transition-all duration-300", positionClass)}
       style={{ width: collapsed ? 64 : 256, background: sidebarBg, backdropFilter: isLight ? "none" : "blur(12px)" }}>
 
       {/* Collapse toggle */}

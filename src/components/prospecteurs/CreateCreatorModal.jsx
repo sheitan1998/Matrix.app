@@ -3,6 +3,7 @@ import { X, Youtube, Twitch, Music2, Instagram, Ghost, Loader2, RefreshCw, Image
 import { base44 } from "@/api/base44Client";
 import CreatorVisualFields from "./CreatorVisualFields";
 import TagSelector from "./TagSelector";
+import GalleryEditor from "./GalleryEditor";
 import { serverTags, MAX_SERVER_TAGS } from "@/lib/serverTags";
 import { CREATOR_DEFAULT_VISUALS, needsManualVisuals } from "@/lib/creatorDefaults";
 
@@ -37,6 +38,8 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
   const [snapchatUsername, setSnapchatUsername] = useState(channel?.snapchat_username || "");
   const [snapchatLink, setSnapchatLink] = useState(channel?.snapchat_link || "");
   const [tags, setTags] = useState(serverTags(channel));
+  const [gallery, setGallery] = useState(Array.isArray(channel?.gallery_images) ? channel.gallery_images.slice(0, 5) : []);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
   const [uploadingQr, setUploadingQr] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [metaError, setMetaError] = useState("");
@@ -162,6 +165,7 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
         channel_url: isSnapchat ? snapChannelUrl : channelUrl.trim(),
         description: description.trim(),
         tags,
+        gallery_images: gallery,
         snapchat_username: isSnapchat ? pseudo : "",
         snapchat_link: isSnapchat ? snapLink : "",
         avatar_url: (manualVisuals || isSnapchat) ? (avatarUrl || defaultVisuals.avatar_url || "") : avatarUrl,
@@ -426,6 +430,13 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
             <TagSelector value={tags} onChange={(next) => { setTags(next); setError(""); }} max={MAX_SERVER_TAGS} />
           </div>
 
+          <GalleryEditor
+            value={gallery}
+            onChange={setGallery}
+            onUploadingChange={setUploadingGallery}
+            labelClass="text-[9px] font-bold uppercase tracking-wider text-white/40 mb-1 block"
+          />
+
           {quotaReached && (
             <p className="text-[10px] font-bold text-amber-400">
               Quota maximal de {MAX_PER_PLATFORM} chaînes atteint pour cette catégorie.
@@ -435,7 +446,7 @@ export default function CreateCreatorModal({ channel, ownedCounts = {}, onClose,
 
           <button
             onClick={handleSubmit}
-            disabled={submitting || quotaReached}
+            disabled={submitting || quotaReached || uploadingGallery}
             className="w-full h-10 rounded-lg text-xs font-black tracking-wider uppercase text-white transition disabled:opacity-50 disabled:cursor-not-allowed tap-sm"
             style={{ background: "linear-gradient(135deg, #8a4fff, #5b21b6)", boxShadow: "0 0 15px rgba(138,79,255,0.3)" }}
           >

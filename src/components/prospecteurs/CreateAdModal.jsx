@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { uploadImageWithToast } from "@/lib/imageModeration";
 import MultiTagSelect from "@/components/prospecteurs/MultiTagSelect";
 import TagSelector from "@/components/prospecteurs/TagSelector";
+import GalleryEditor, { MAX_GALLERY } from "@/components/prospecteurs/GalleryEditor";
 import { findForbiddenLink } from "@/lib/serverLinkRules";
 
 const GAMES = [
@@ -21,7 +22,6 @@ const GAMES = [
   "Autre",
 ];
 
-const MAX_GALLERY = 5;
 const LIVE_PROTOCOLS = [
   { value: "minecraft", label: "Minecraft" },
   { value: "fivem", label: "FiveM / GTA RP" },
@@ -64,8 +64,6 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
     live_protocol: editAd?.live_protocol || "minecraft",
   });
   const [gallery, setGallery] = useState(Array.isArray(editAd?.gallery_images) ? editAd.gallery_images.slice(0, MAX_GALLERY) : []);
-  const [galleryUrl, setGalleryUrl] = useState("");
-  const galleryInputRef = useRef(null);
   const [profileImage, setProfileImage] = useState(editAd?.profile_image || editAd?.logo_url || "");
   const [coverImage, setCoverImage] = useState(editAd?.cover_image || editAd?.banner_url || "");
   const [uploadingField, setUploadingField] = useState("");
@@ -98,42 +96,6 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
       else setCoverImage(result.file_url);
     } catch { /* error already toasted */ }
     finally { setUploadingField(""); }
-  };
-
-  const handleGalleryUpload = async (files) => {
-    const room = MAX_GALLERY - gallery.length;
-    const picked = Array.from(files || []).slice(0, room);
-    if (picked.length === 0) return;
-    setUploadingField("gallery");
-    try {
-      const urls = [];
-      for (const file of picked) {
-        try {
-          const result = await uploadImageWithToast(file, { usage: "gallery" });
-          if (result?.file_url) urls.push(result.file_url);
-        } catch { /* error already toasted */ }
-      }
-      setGallery((prev) => [...prev, ...urls].slice(0, MAX_GALLERY));
-    } finally {
-      setUploadingField("");
-      if (galleryInputRef.current) galleryInputRef.current.value = "";
-    }
-  };
-
-  const handleGalleryUrlAdd = () => {
-    const url = galleryUrl.trim();
-    if (!url) return;
-    if (!url.startsWith("https://")) {
-      toast.error("L'URL de l'image doit commencer par https://");
-      return;
-    }
-    if (gallery.includes(url)) {
-      toast.error("Cette image est déjà dans la galerie");
-      return;
-    }
-    if (gallery.length >= MAX_GALLERY) return;
-    setGallery((prev) => [...prev, url]);
-    setGalleryUrl("");
   };
 
   const handleSubmit = async (e) => {
@@ -573,74 +535,12 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
           )}
 
           {!isPlayerAd && (
-            <div>
-              <label className={labelClass}>
-                <ImageIcon className="w-3 h-3 inline mr-1" />
-                Galerie de la fiche ({gallery.length}/{MAX_GALLERY})
-                <span className="text-white/20 ml-1 normal-case tracking-normal">(visible sur la fiche uniquement)</span>
-              </label>
-              {gallery.length > 0 && (
-                <div className="grid grid-cols-5 gap-1.5 mb-2">
-                  {gallery.map((url, i) => (
-                    <div
-                      key={`${url}-${i}`}
-                      className="relative aspect-square rounded-lg overflow-hidden"
-                      style={{ border: "1px solid rgba(138,79,255,0.2)" }}
-                    >
-                      <img src={url} alt="" className="w-full h-full object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => setGallery((prev) => prev.filter((_, idx) => idx !== i))}
-                        className="absolute top-0.5 right-0.5 w-5 h-5 rounded flex items-center justify-center text-white"
-                        style={{ background: "rgba(239,68,68,0.85)" }}
-                        aria-label="Supprimer l'image"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {gallery.length < MAX_GALLERY && (
-                <div className="flex items-center gap-2">
-                  <input
-                    ref={galleryInputRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={(e) => handleGalleryUpload(e.target.files)}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => galleryInputRef.current?.click()}
-                    disabled={uploadingField === "gallery"}
-                    className="h-9 px-3 rounded-lg text-[10px] font-bold transition flex items-center gap-1 tap-sm shrink-0"
-                    style={inputStyle}
-                  >
-                    <Upload className="w-3 h-3" />
-                    {uploadingField === "gallery" ? "..." : "Ajouter"}
-                  </button>
-                  <input
-                    type="url"
-                    value={galleryUrl}
-                    onChange={(e) => setGalleryUrl(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleGalleryUrlAdd(); } }}
-                    placeholder="ou URL https://..."
-                    className="flex-1 min-w-0 h-9 px-3 rounded-lg text-xs text-white placeholder:text-white/25 outline-none"
-                    style={inputStyle}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleGalleryUrlAdd}
-                    className="h-9 px-2 rounded-lg text-[10px] font-bold tap-sm shrink-0"
-                    style={inputStyle}
-                  >
-                    OK
-                  </button>
-                </div>
-              )}
-            </div>
+            <GalleryEditor
+              value={gallery}
+              onChange={setGallery}
+              onUploadingChange={(busy) => setUploadingField(busy ? "gallery" : "")}
+              labelClass={labelClass}
+            />
           )}
 
           {/* Submit */}
