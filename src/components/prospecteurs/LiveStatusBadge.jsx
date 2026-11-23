@@ -5,7 +5,7 @@ const REFRESH_MS = 60_000;
 
 /** Compteur de joueurs en direct (ex. « 12/64 en ligne » ou « Hors ligne »). Sans rendu si le suivi est désactivé. */
 export default function LiveStatusBadge({ server, className = "" }) {
-  const enabled = !!server?.live_tracking_enabled && !!server?.ip;
+  const enabled = !!server?.live_tracking_enabled || !!server?.ip;
   const [status, setStatus] = useState(null);
 
   useEffect(() => {

@@ -54,30 +54,49 @@ const fetchJson = async (url: string) => {
   return res.json();
 };
 
-async function probeLiveStatus(host: string, port: number, protocol: string) {
-  if (protocol === 'minecraft') {
-    const data = await fetchJson(`https://api.mcsrvstat.us/3/${encodeURIComponent(host)}${port ? `:${port}` : ''}`);
-    if (!data?.online) return { online: false, players: 0, max: 0 };
-    return { online: true, players: Number(data.players?.online) || 0, max: Number(data.players?.max) || 0 };
-  }
-  const targetPort = port || 30120;
-  if (protocol === 'fivem') {
-    const [info, players] = await Promise.all([
-      fetchJson(`http://${host}:${targetPort}/info.json`),
-      fetchJson(`http://${host}:${targetPort}/players.json`),
-    ]);
-    return {
-      online: true,
-      players: Array.isArray(players) ? players.length : 0,
-      max: Number(info?.vars?.sv_maxClients) || 0,
-    };
-  }
+type Probe = { online: boolean; players: number; max: number };
+
+async function probeMinecraft(host: string, port: number): Promise<Probe | null> {
+  const data = await fetchJson(`https://api.mcsrvstat.us/3/${encodeURIComponent(host)}${port ? `:${port}` : ''}`);
+  if (!data?.online) return null;
+  return { online: true, players: Number(data.players?.online) || 0, max: Number(data.players?.max) || 0 };
+}
+
+async function probeFivem(host: string, port: number): Promise<Probe | null> {
+  const [info, players] = await Promise.all([
+    fetchJson(`http://${host}:${port}/info.json`),
+    fetchJson(`http://${host}:${port}/players.json`),
+  ]);
+  const max = Number(info?.vars?.sv_maxClients) || 0;
+  if (!Array.isArray(players) || !max) return null;
+  return { online: true, players: players.length, max };
+}
+
+async function probeTcp(host: string, port: number): Promise<Probe> {
   const conn = await Promise.race([
-    Deno.connect({ hostname: host, port: targetPort }),
+    Deno.connect({ hostname: host, port }),
     new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), LIVE_TIMEOUT_MS)),
   ]);
   try { conn.close(); } catch { /* already closed */ }
   return { online: true, players: 0, max: 0 };
+}
+
+// Détection automatique : on essaie chaque protocole connu (FiveM, Minecraft), puis on se
+// replie sur un simple test d'ouverture du port. Aucun choix de jeu n'est nécessaire.
+async function probeLiveStatus(host: string, port: number): Promise<Probe> {
+  const targetPort = port || 25565;
+  const attempts = await Promise.allSettled([
+    probeFivem(host, targetPort),
+    probeMinecraft(host, port),
+  ]);
+  for (const a of attempts) {
+    if (a.status === 'fulfilled' && a.value) return a.value;
+  }
+  try {
+    return await probeTcp(host, targetPort);
+  } catch {
+    return { online: false, players: 0, max: 0 };
+  }
 }
 
 async function getLiveStatus(ad: any) {
@@ -85,16 +104,15 @@ async function getLiveStatus(ad: any) {
   if (cached && Date.now() - cached.at < LIVE_CACHE_TTL_MS) return cached.value;
 
   const host = String(ad.ip || '').trim();
-  const protocol = LIVE_PROTOCOLS.includes(ad.live_protocol) ? ad.live_protocol : 'minecraft';
   let value: Record<string, any>;
-  if (!ad.live_tracking_enabled || !host || !isSafeHost(host)) {
-    value = { enabled: false, online: false, players: 0, max: 0, protocol };
+  if (!host || !isSafeHost(host)) {
+    value = { enabled: false, online: false, players: 0, max: 0 };
   } else {
     try {
-      const r = await probeLiveStatus(host, Number(ad.port) || 0, protocol);
-      value = { enabled: true, ...r, protocol };
+      const r = await probeLiveStatus(host, Number(ad.port) || 0);
+      value = { enabled: true, ...r };
     } catch {
-      value = { enabled: true, online: false, players: 0, max: 0, protocol };
+      value = { enabled: true, online: false, players: 0, max: 0 };
     }
   }
   value.checked_at = new Date().toISOString();
@@ -130,9 +148,12 @@ const pickAdFields = (data: Record<string, any>) => {
   if (Array.isArray(clean.category_slugs)) clean.category_slugs = clean.category_slugs.slice(0, 3);
   if (clean.tags !== undefined) clean.tags = cleanTags(clean.tags);
   if (clean.gallery_images !== undefined) clean.gallery_images = cleanGallery(clean.gallery_images);
-  if (clean.live_tracking_enabled !== undefined) clean.live_tracking_enabled = !!clean.live_tracking_enabled;
-  if (clean.live_protocol !== undefined && !LIVE_PROTOCOLS.includes(clean.live_protocol)) clean.live_protocol = 'minecraft';
-  if (clean.ip !== undefined) clean.ip = String(clean.ip || '').trim().slice(0, 253);
+  if (clean.live_protocol !== undefined && !LIVE_PROTOCOLS.includes(clean.live_protocol)) clean.live_protocol = 'tcp';
+  if (clean.ip !== undefined) {
+    clean.ip = String(clean.ip || '').trim().slice(0, 253);
+    // Le suivi est automatique dès qu'une adresse est renseignée.
+    clean.live_tracking_enabled = clean.ip !== '';
+  }
   if (clean.port !== undefined) {
     const port = Math.trunc(Number(clean.port));
     clean.port = Number.isFinite(port) && port > 0 && port <= 65535 ? port : 0;
@@ -351,8 +372,8 @@ export default async function(req: Request): Promise<Response> {
         cover_image: found.cover_image,
         discord_link: found.discord_link,
         website_url: found.website_url,
-        ip: found.ip,
-        port: found.port,
+        ip: (!!user && user.email === found.author_email) ? found.ip : undefined,
+        port: (!!user && user.email === found.author_email) ? found.port : undefined,
         discord_server_id: found.discord_server_id,
         game: found.game,
         games: found.games || [],
@@ -361,8 +382,7 @@ export default async function(req: Request): Promise<Response> {
         category_slugs: found.category_slugs || [],
         tags: found.tags || [],
         gallery_images: cleanGallery(found.gallery_images),
-        live_tracking_enabled: !!found.live_tracking_enabled,
-        live_protocol: found.live_protocol,
+        live_tracking_enabled: !!found.ip,
         votes: found.votes,
         votes_month: found.votes_month,
         boosts: found.boosts,
