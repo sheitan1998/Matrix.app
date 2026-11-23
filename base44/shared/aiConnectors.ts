@@ -1,4 +1,4 @@
-// Connecteurs Matrix AI : catalogue par catégories et Webhooks utilisateur.
+// Connecteurs Matrix AI : Webhooks utilisateur (validation, envoi, détection d'intention).
 // Module pur partagé entre le serveur (aiConnectors, matrixAi) et l'interface : aucun secret ici.
 import { WebFetchError, assertSafeUrl, defaultResolver, type DnsResolver } from './aiWeb.ts';
 
@@ -8,57 +8,6 @@ export const MAX_WEBHOOK_URL_LENGTH = 500;
 export const MAX_WEBHOOKS_PER_MESSAGE = 2;
 export const WEBHOOK_TIMEOUT_MS = 8000;
 export const WEBHOOK_TEST_COOLDOWN_MS = 5000;
-
-export type CatalogStatus = 'available' | 'soon';
-
-export interface CatalogItem {
-  id: string;
-  name: string;
-  action: string;
-  status: CatalogStatus;
-}
-
-export interface CatalogCategory {
-  id: string;
-  label: string;
-  items: CatalogItem[];
-}
-
-// Seul « webhook » est fonctionnel ; les autres services sont affichés « Bientôt disponible » sans fausse connexion.
-export const CONNECTOR_CATALOG: CatalogCategory[] = [
-  {
-    id: 'actions',
-    label: 'Actions externes',
-    items: [
-      { id: 'webhook', name: 'Webhook', action: 'Envoie un message vers Discord, Make, Zapier, n8n ou ton URL.', status: 'available' },
-    ],
-  },
-  {
-    id: 'messaging',
-    label: 'Messagerie',
-    items: [
-      { id: 'slack', name: 'Slack', action: 'Publie des messages dans tes canaux.', status: 'soon' },
-      { id: 'telegram', name: 'Telegram', action: 'Envoie des alertes à ton bot.', status: 'soon' },
-    ],
-  },
-  {
-    id: 'automation',
-    label: 'Automatisation',
-    items: [
-      { id: 'make', name: 'Make', action: 'Déclenche tes scénarios (en attendant, utilise un Webhook).', status: 'soon' },
-      { id: 'zapier', name: 'Zapier', action: 'Lance tes Zaps (en attendant, utilise un Webhook).', status: 'soon' },
-      { id: 'n8n', name: 'n8n', action: 'Démarre tes workflows (en attendant, utilise un Webhook).', status: 'soon' },
-    ],
-  },
-  {
-    id: 'productivity',
-    label: 'Productivité',
-    items: [
-      { id: 'notion', name: 'Notion', action: 'Ajoute des notes à tes pages.', status: 'soon' },
-      { id: 'calendar', name: 'Google Agenda', action: 'Crée des événements.', status: 'soon' },
-    ],
-  },
-];
 
 // ---------- Validation ----------
 

@@ -5,7 +5,8 @@ import { extractUrls, isImageRequest } from '../base44/shared/aiIntent.ts';
 import { assertSafeUrl, fetchReadablePage, htmlToReadable, isPrivateAddress } from '../base44/shared/aiWeb.ts';
 import { validateAttachments } from '../base44/shared/aiFiles.ts';
 import { composeImagePrompt, normalizeBrief } from '../base44/shared/aiImage.ts';
-import { CONNECTOR_CATALOG, buildWebhookPayload, sendWebhook, validateWebhookUrl } from '../base44/shared/aiConnectors.ts';
+import { buildWebhookPayload, sendWebhook, validateWebhookUrl } from '../base44/shared/aiConnectors.ts';
+import { CONNECTOR_CATALOG } from '../src/lib/aiConnectors.js';
 
 test('webhooks : https public uniquement', async () => {
   const resolver = async () => ['93.184.216.34'];

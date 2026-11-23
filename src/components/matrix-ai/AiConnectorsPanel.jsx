@@ -9,7 +9,7 @@ import {
   CONNECTOR_CATALOG,
   MAX_WEBHOOKS_PER_USER,
   MAX_WEBHOOK_NAME_LENGTH,
-} from "../../../base44/shared/aiConnectors.ts";
+} from "@/lib/aiConnectors";
 
 const ICONS = {
   webhook: Webhook,
