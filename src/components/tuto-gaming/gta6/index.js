@@ -14,4 +14,5 @@ export { GTA6_VEHICLES } from "./gta6Vehicles";
 export { GTA6_WEAPONS } from "./gta6Weapons";
 export { GTA6_LOCATIONS } from "./gta6Locations";
 export { GTA6_MISSIONS, GTA6_WIKI_SECTIONS } from "./gta6Missions";
+export { GTA6_QUESTS } from "./gta6Quests";
 export { GTA6_TROPHIES } from "./gta6Trophies";
