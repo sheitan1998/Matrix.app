@@ -10,6 +10,7 @@ export async function uploadToR2(file, folder = "cosmetics") {
   const res = await base44.functions.invoke("r2Upload", {
     filename: file.name,
     folder,
+    size: file.size,
   });
   const data = res?.data || {};
   if (data.error) throw new Error(data.error);

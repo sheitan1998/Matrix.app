@@ -20,6 +20,8 @@ const encodeRfc3986 = (value: string) =>
   encodeURIComponent(value).replace(/[!'()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
 
 const ALLOWED_EXT = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'svg', 'mp4', 'webm', 'mov', 'm4v', 'ogg']);
+const IMAGE_EXT = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'avif']);
+const USER_FOLDERS = new Set(['gallery', 'listings', 'visuals', 'icons', 'thumbs', 'uploads']);
 const SAFE_FOLDER_RE = /^[a-z0-9/_-]{1,80}$/i;
 
 function extensionOf(filename: string) {
@@ -34,7 +36,7 @@ export default async function (req) {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
+    const isAdmin = user.role === 'admin';
 
     const body = await req.json().catch(() => ({}));
     const { filename, folder } = body;
@@ -43,6 +45,18 @@ export default async function (req) {
 
     const dir = String(folder || 'cosmetics').replace(/^\/+|\/+$/g, '');
     if (!SAFE_FOLDER_RE.test(dir)) return Response.json({ error: 'Dossier invalide' }, { status: 400 });
+
+    // Non-admin users: image-only, whitelisted folders, mandatory size limit (enforced by signing Content-Length).
+    const size = Number(body.size);
+    if (!isAdmin) {
+      if (!USER_FOLDERS.has(dir)) return Response.json({ error: 'Forbidden' }, { status: 403 });
+      if (!IMAGE_EXT.has(ext)) return Response.json({ error: 'Type de fichier non autorisé' }, { status: 400 });
+      const maxMb = Number(secrets.get('R2_MAX_UPLOAD_MB')) || 8;
+      if (!Number.isFinite(size) || size <= 0 || size > maxMb * 1024 * 1024) {
+        return Response.json({ error: `Fichier trop volumineux (max ${maxMb} Mo)` }, { status: 413 });
+      }
+    }
+    const signSize = Number.isFinite(size) && size > 0;
 
     const endpoint = (secrets.get('R2_ENDPOINT') || '').replace(/\/+$/, '');
     const bucket = secrets.get('R2_BUCKET') || '';
@@ -73,14 +87,16 @@ export default async function (req) {
       'X-Amz-Credential': `${accessKeyId}/${credentialScope}`,
       'X-Amz-Date': amzDate,
       'X-Amz-Expires': String(expires),
-      'X-Amz-SignedHeaders': 'host',
+      'X-Amz-SignedHeaders': signSize ? 'content-length;host' : 'host',
     };
     const canonicalQuery = Object.keys(query)
       .sort()
       .map((k) => `${encodeRfc3986(k)}=${encodeRfc3986(query[k])}`)
       .join('&');
 
-    const canonicalRequest = `PUT\n${canonicalUri}\n${canonicalQuery}\nhost:${host}\n\nhost\nUNSIGNED-PAYLOAD`;
+    const canonicalHeaders = signSize ? `content-length:${size}\nhost:${host}\n` : `host:${host}\n`;
+    const signedHeaders = signSize ? 'content-length;host' : 'host';
+    const canonicalRequest = `PUT\n${canonicalUri}\n${canonicalQuery}\n${canonicalHeaders}\n${signedHeaders}\nUNSIGNED-PAYLOAD`;
     const stringToSign = `AWS4-HMAC-SHA256\n${amzDate}\n${credentialScope}\n${await sha256Hex(canonicalRequest)}`;
 
     const kDate = await hmac(`AWS4${secretKey}`, dateStamp);

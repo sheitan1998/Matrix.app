@@ -11,6 +11,7 @@
 
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
+import { uploadOptimizedImage } from "@/lib/imageStorage";
 
 const ALLOWED_MIME = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
 const ALLOWED_EXT = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
@@ -62,8 +63,8 @@ export async function uploadImageModerated(file, options = {}) {
   // Step 1: client-side validation
   validateImageFile(file);
 
-  // Step 2: upload to public storage
-  const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
+  // Step 2: optimize (resize + WebP) and upload to Cloudflare R2 (falls back to platform storage)
+  const { file_url } = await uploadOptimizedImage(file, { usage: options.usage || "gallery" });
 
   if (options.skipModeration) {
     return { file_url };

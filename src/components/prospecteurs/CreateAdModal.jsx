@@ -93,7 +93,7 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
     if (!file) return;
     setUploadingField(type);
     try {
-      const result = await uploadImageWithToast(file);
+      const result = await uploadImageWithToast(file, { usage: type === "profile" ? "icon" : "banner" });
       if (type === "profile") setProfileImage(result.file_url);
       else setCoverImage(result.file_url);
     } catch { /* error already toasted */ }
@@ -109,7 +109,7 @@ export default function CreateAdModal({ onClose, onSubmit, initialType = "server
       const urls = [];
       for (const file of picked) {
         try {
-          const result = await uploadImageWithToast(file);
+          const result = await uploadImageWithToast(file, { usage: "gallery" });
           if (result?.file_url) urls.push(result.file_url);
         } catch { /* error already toasted */ }
       }
