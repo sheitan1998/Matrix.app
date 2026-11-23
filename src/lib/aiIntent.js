@@ -3,12 +3,19 @@
 export const MAX_URLS_PER_MESSAGE = 3;
 
 const IMAGE_NOUNS =
-  'image|images|illustration|illustrations|logo|logos|banni[èe]re|banner|affiche|poster|avatar|wallpaper|fond d.[ée]cran|dessin|picture|photo|portrait|visuel|miniature|thumbnail|ic[ôo]ne|icon|artwork|peinture|painting|croquis|sketch|mascotte|mascot|sticker|meme|m[èe]me|paysage|landscape';
+  'image|images|illustration|illustrations|logo|logos|banni[èe]re|banner|affiche|poster|avatar|wallpaper|fond d.[ée]cran|dessin|picture|photo|portrait|visuel|miniature|thumbnail|ic[ôo]ne|icon|artwork|peinture|painting|croquis|sketch|mascotte|mascot|sticker|meme|m[èe]me|paysage|landscape|photographie|fan ?art|concept ?art|pixel ?art|imagen|im[áa]genes|fotograf[íi]a|ilustraci[óo]n|dibujo|cartel|retrato|paisaje|bild|bilder|foto|zeichnung|hintergrundbild|porträt|immagine|immagini|illustrazione|disegno|ritratto|paesaggio|imagem|imagens|ilustra[çc][ãa]o|desenho|paisagem';
 
 const GENERATION_VERBS =
-  'g[ée]n[èe]re|g[ée]n[ée]rer|cr[ée]e|cr[ée]er|dessine|dessiner|fais|faire|fabrique|r[ée]alise|produis|imagine|montre|donne|generate|create|draw|make|design|render|produce|paint|show';
+  'g[ée]n[èe]re|g[ée]n[ée]rer|cr[ée]e|cr[ée]er|dessine|dessiner|fais|faire|fabrique|r[ée]alise|produis|imagine|montre|donne|generate|create|draw|make|design|render|produce|paint|show|peins|illustre|con[çc]ois|invente|propose|genera|generar|crea|crear|dibuja|dibujar|haz|hazme|hacer|dise[ñn]a|mu[ée]strame|erstelle|erstellen|generiere|generieren|mach|mache|zeichne|zeichnen|male|gestalte|creare|disegna|fai|fammi|realizza|mostrami|gera|gerar|cria|criar|desenha|faz|fazer|mostra';
 
-const QUESTION_START = /^(comment|pourquoi|quel(le)?s?|qu'est|c'est quoi|how|why|what|which|where|explique|explain)\b/i;
+const BLANK_CARD =
+  'carte blanche|libre cours|free hand|free rein|surprends[- ]moi|surprise me|carta blanca|sorpr[ée]ndeme|freie hand|[üu]berrasch(?:e)? mich|sorprendimi|surpreende[- ]me';
+
+const QUESTION_START =
+  /^(comment|pourquoi|quel(le)?s?|qu'est|c'est quoi|how|why|what|which|where|explique|explain|c[óo]mo|por qu[ée]|wie|warum|perch[ée]|come|porque)(?![\p{L}\p{N}])/iu;
+
+const END = '(?![\\p{L}\\p{N}])';
+const NOUN_START = '(?:^|[^\\p{L}\\p{N}])';
 
 export function normalizeText(text) {
   return String(text || '')
@@ -24,21 +31,35 @@ export function isImageRequest(text) {
   if (QUESTION_START.test(t)) return false;
 
   const head = t.slice(0, 120);
-  const politeLead = "(?:(?:s'il (?:te|vous) pla[iî]t|stp|please)[ ,]*)?(?:(?:peux|pourrais|pouvez|pourriez)[- ]?(?:tu|vous)|can you|could you|je (?:veux|voudrais|souhaite|aimerais)|j'aimerais|i (?:want|would like)|i'd like)?";
+  const politeLead = "(?:(?:s'il (?:te|vous) pla[iî]t|stp|please)[ ,]*)?(?:(?:peux|pourrais|pouvez|pourriez)[- ]?(?:tu|vous)|can you|could you|je (?:veux|voudrais|souhaite|aimerais)|j'aimerais|i (?:want|would like)|i'd like|puedes|podr[ií]as|kannst du|k[öo]nntest du|puoi|potresti|podes)?";
 
   const direct = new RegExp(
-    `^${politeLead}[ ,]*(?:${GENERATION_VERBS})(?:[- ]?(?:moi|me|nous))?\\b[^.?!]{0,50}?\\b(?:${IMAGE_NOUNS})\\b`,
-    'i',
+    `^${politeLead}[ ,]*(?:${GENERATION_VERBS})(?:[- ]?(?:moi|me|nous|mir|mi|ti))?${END}[^.?!]{0,60}?${NOUN_START}(?:${IMAGE_NOUNS})${END}`,
+    'iu',
   );
   if (direct.test(head)) return true;
 
   const wish = new RegExp(
-    `^(?:je (?:veux|voudrais|souhaite|aimerais)|j'aimerais|i (?:want|would like)|i'd like|il me faut|besoin d)[^.?!]{0,30}?\\b(?:${IMAGE_NOUNS})\\b`,
-    'i',
+    `^(?:je (?:veux|voudrais|souhaite|aimerais)|j'aimerais|i (?:want|would like)|i'd like|il me faut|besoin d|quiero|quisiera|me gustar[ií]a|ich (?:m[öo]chte|will|brauche)|vorrei|voglio|quero|queria)[^.?!]{0,30}?${NOUN_START}(?:${IMAGE_NOUNS})${END}`,
+    'iu',
   );
   if (wish.test(head)) return true;
 
-  return /^(?:dessine|draw|illustre|peins|paint)(?:[- ]moi)?\b\s+\S/i.test(head);
+  // Demande commençant par le sujet visuel : « image de ... », « un logo pour mon serveur », « photo : ... ».
+  const nounLed = new RegExp(
+    `^(?:(?:une?|des|an?|the|un[ao]?|ein[e]?|il|la|el|o)\\s+)?(?:${IMAGE_NOUNS})\\s*(?::|-|–|—|(?:de la|de|du|des|d'|of|for|pour|del|para|von|für|di|per)(?![\\p{L}\\p{N}]|'))\\s*\\S`,
+    'iu',
+  );
+  if (nounLed.test(head) && !t.endsWith('?')) return true;
+
+  const blank = new RegExp(`^(?:${BLANK_CARD})[ .!]*$`, 'iu');
+  if (blank.test(t)) return true;
+  if (new RegExp(`${NOUN_START}(?:${BLANK_CARD})${END}`, 'iu').test(head)
+    && new RegExp(`${NOUN_START}(?:${IMAGE_NOUNS})${END}`, 'iu').test(head)) {
+    return true;
+  }
+
+  return /^(?:dessine|draw|illustre|peins|paint|dibuja|zeichne|disegna|desenha)(?:[- ]moi)?(?![\p{L}\p{N}])\s+\S/iu.test(head);
 }
 
 export function stripImageCommand(text) {

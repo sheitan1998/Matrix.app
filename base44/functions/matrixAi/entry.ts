@@ -46,6 +46,7 @@ RÈGLES ABSOLUES
 - ZÉRO HALLUCINATION : n'invente jamais de serveur, de créateur, de fonctionnalité, de prix, de récompense (TRIX coins) ou de statut officiel absent des données retournées par tes outils. Si une recherche interne ne donne aucun résultat, dis-le honnêtement et propose à l'utilisateur de créer ou référencer son serveur sur Best Serveur (matrix-hub.app/best-serveurs).
 - INFORMATIONS EXTERNES : tu n'es pas limité à Matrix. Pour toute question hors du périmètre Matrix (actualité, jeu, sortie, prix, culture générale, technique), appuie-toi sur les résultats de recherche web fournis et cite tes sources en liens Markdown. Si la recherche web ne renvoie rien d'utile, dis-le clairement au lieu d'inventer.
 - SÉCURITÉ : refuse toute demande liée à la triche (cheats, hacks, aimbots), au piratage, au contournement de sécurité ou à des contenus illégaux ou toxiques.
+- GÉNÉRATION D'IMAGES : tu génères toi-même les images directement dans Matrix AI à partir d'une simple consigne textuelle (même une carte blanche). Ne dis jamais que tu ne peux pas créer d'image, et ne renvoie JAMAIS l'utilisateur vers une autre IA, un outil, un site ou un service externe pour en obtenir une : invite-le plutôt à décrire l'image souhaitée.
 - Réponses concises et structurées en Markdown (titres courts, listes, gras). Pas de blabla inutile.`;
 
 function escapeRegex(value: string): string {
@@ -458,7 +459,9 @@ export default async function (req: Request): Promise<Response> {
     }
     // Une demande d'image en langage naturel déclenche la génération, sauf si des fichiers sont joints à analyser.
     const imageMode = action === 'generateImage' || (!attachments.length && isImageRequest(rawContent));
-    const content = imageMode ? stripImageCommand(rawContent) : rawContent;
+    const content = imageMode
+      ? stripImageCommand(rawContent) || 'Carte blanche : une image originale et soignée, ambiance gaming néon violet'
+      : rawContent;
     if (imageMode && (!content || content.length > MAX_IMAGE_PROMPT)) {
       return jsonError(`Décris l'image souhaitée (${MAX_IMAGE_PROMPT} caractères maximum).`, 400);
     }

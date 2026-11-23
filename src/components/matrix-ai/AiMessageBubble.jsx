@@ -3,6 +3,8 @@ import ReactMarkdown from "react-markdown";
 import { Sparkles, User } from "lucide-react";
 import AiRecommendationCards from "./AiRecommendationCards";
 import AiImageCard from "./AiImageCard";
+import AiAttachmentImage from "./AiAttachmentImage";
+import { isImageAttachment } from "@/lib/aiFiles";
 
 export default function AiMessageBubble({ message, user }) {
   const isUser = message.role === "user";
@@ -18,16 +20,31 @@ export default function AiMessageBubble({ message, user }) {
             {message.content}
           </p>
           {Array.isArray(message.attachments) && message.attachments.length > 0 && (
-            <div className="mt-1.5 flex flex-wrap gap-1">
-              {message.attachments.map((file, index) => (
-                <span
-                  key={`${file.name}-${index}`}
-                  className="max-w-[180px] truncate rounded-md px-1.5 py-0.5 text-[10px] font-bold text-white/90"
-                  style={{ background: "rgba(255,255,255,0.14)" }}
-                >
-                  📎 {file.name}
-                </span>
-              ))}
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {message.attachments.map((file, index) =>
+                isImageAttachment(file) ? (
+                  <a
+                    key={`${file.url || file.name}-${index}`}
+                    href={file.url || undefined}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block"
+                  >
+                    <AiAttachmentImage
+                      file={file}
+                      imgClassName="max-h-48 max-w-full rounded-lg object-cover"
+                    />
+                  </a>
+                ) : (
+                  <span
+                    key={`${file.name}-${index}`}
+                    className="max-w-[180px] truncate rounded-md px-1.5 py-0.5 text-[10px] font-bold text-white/90"
+                    style={{ background: "rgba(255,255,255,0.14)" }}
+                  >
+                    📎 {file.name}
+                  </span>
+                )
+              )}
             </div>
           )}
         </div>
