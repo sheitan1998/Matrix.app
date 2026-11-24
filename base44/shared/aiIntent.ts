@@ -71,6 +71,23 @@ export function stripImageCommand(text: unknown): string {
   return String(text || '').replace(/^\/(image|imagine|img)\b\s*/i, '').trim();
 }
 
+const REGENERATE_PATTERN =
+  /^(?:(?:s'il (?:te|vous) pla[iî]t|stp|svp|please|et)[ ,]*)?(?:(?:peux|pourrais)[- ]tu\s+)?(?:r[ée]g[ée]n[èe]re|r[ée]g[ée]n[ée]rer|refais|refaire|recommence|relance|re-?g[ée]n[èe]re|regenerate|redo|retry|try again|do it again|make another|another one|une autre|un autre|encore une|encore un|autre version|regenera|rehaz|noch einmal|nochmal|rigenera|gera novamente)(?![\p{L}\p{N}])/iu;
+
+const EDIT_PATTERN =
+  /^(?:(?:s'il (?:te|vous) pla[iî]t|stp|svp|please|et|puis|maintenant|now)[ ,]*)?(?:(?:peux|pourrais)[- ]tu\s+)?(?:enl[èe]ve|enlever|retire|retirer|supprime|supprimer|efface|effacer|gomme|change|changer|modifie|modifier|[ée]dite|[ée]diter|ajoute|ajouter|rajoute|remplace|remplacer|mets|mettre|rends|rendre|transforme|transformer|colorie|recolore|agrandis|r[ée]duis|d[ée]place|floute|remove|delete|erase|change|edit|modify|add|replace|put|turn|transform|recolor|colorize|crop|blur|make (?:it|the|him|her|them)|quita|elimina|cambia|a[ñn]ade|reemplaza|entferne|[äa]ndere|f[üu]ge|ersetze|rimuovi|cambia|aggiungi|sostituisci|remove|altera|adiciona|substitui)(?![\p{L}\p{N}])/iu;
+
+export function isRegenerateRequest(text: unknown): boolean {
+  const t = normalizeText(text);
+  return Boolean(t) && t.length <= 160 && REGENERATE_PATTERN.test(t);
+}
+
+/** À n'utiliser que lorsque la dernière réponse de la discussion est une image. */
+export function isImageEditRequest(text: unknown): boolean {
+  const t = normalizeText(text);
+  return Boolean(t) && !QUESTION_START.test(t) && EDIT_PATTERN.test(t);
+}
+
 const URL_PATTERN = /\bhttps?:\/\/[^\s<>"'`)\]}]+/gi;
 
 export function extractUrls(text: unknown, max = MAX_URLS_PER_MESSAGE): string[] {
