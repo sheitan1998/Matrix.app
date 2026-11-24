@@ -404,9 +404,10 @@
       "description": "Preset sonore du rappel"
     },
     "server_reminder_frequency": {
-      "type": "string",
-      "default": "60",
-      "description": "Frequence du rappel en minutes"
+      "type": "number",
+      "default": 120,
+      "enum": [60, 120, 180, 360, 720, 1440],
+      "description": "Frequence du rappel en minutes (1h, 2h, 3h, 6h, 12h, 24h)"
     },
     "server_reminder_duration": {
       "type": "number",

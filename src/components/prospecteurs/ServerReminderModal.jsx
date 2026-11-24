@@ -3,6 +3,7 @@ import { Bell, X, Music, Clock, Repeat, Play, Pause, Save, Volume2 } from "lucid
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { SOUND_PRESETS, DEFAULT_SOUND_ID, getPreset, playPreset, stopReminderLoop } from "@/lib/reminderSounds";
+import { normalizeDuration, normalizeFrequency } from "@/lib/reminderSchedule";
 
 const DURATION_OPTIONS = [
   { value: 3, label: "3 secondes" },
@@ -23,9 +24,9 @@ const FREQUENCY_OPTIONS = [
 
 export default function ServerReminderModal({ user, onClose }) {
   const [sound, setSound] = useState(getPreset(user?.server_reminder_sound || DEFAULT_SOUND_ID).id);
-  const [duration, setDuration] = useState(user?.server_reminder_duration || 5);
-  const [frequency, setFrequency] = useState(user?.server_reminder_frequency || 120);
-  const [enabled, setEnabled] = useState(user?.server_reminder_enabled !== false);
+  const [duration, setDuration] = useState(normalizeDuration(user?.server_reminder_duration));
+  const [frequency, setFrequency] = useState(normalizeFrequency(user?.server_reminder_frequency));
+  const [enabled, setEnabled] = useState(user?.server_reminder_enabled === true);
   const [previewing, setPreviewing] = useState(false);
   const [saving, setSaving] = useState(false);
   const timeoutRef = useRef(null);
@@ -50,8 +51,8 @@ export default function ServerReminderModal({ user, onClose }) {
     try {
       await base44.auth.updateMe({
         server_reminder_sound: sound,
-        server_reminder_duration: duration,
-        server_reminder_frequency: frequency,
+        server_reminder_duration: normalizeDuration(duration),
+        server_reminder_frequency: normalizeFrequency(frequency),
         server_reminder_enabled: enabled,
       });
       window.dispatchEvent(new Event("matrix-settings-updated"));
