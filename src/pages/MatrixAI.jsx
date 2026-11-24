@@ -13,7 +13,7 @@ import AiConnectorsPanel from "@/components/matrix-ai/AiConnectorsPanel";
 import AuthModal from "@/components/landing/AuthModal";
 import useAiQuota from "@/hooks/useAiQuota";
 import { checkFileBeforeUpload, isImageAttachment, MAX_ATTACHMENTS } from "@/lib/aiFiles";
-import { isImageRequest } from "@/lib/aiIntent";
+import { isImageEditRequest, isImageRequest, isRegenerateRequest } from "@/lib/aiIntent";
 
 const THINKING_STEPS = [
   "Matrix AI réfléchit...",
@@ -120,6 +120,10 @@ export default function MatrixAI() {
     if ((!typed && !files.length) || sending || uploading) return;
     const content = typed || "Analyse le ou les fichiers joints et résume-les.";
     const asImage = Boolean(options.image) || (!files.length && isImageRequest(content));
+    // Édition / régénération : le serveur les détecte (action "chat") ; ici on affiche juste l'état « image en cours ».
+    const lastAssistant = [...messages].reverse().find((item) => item.role === "assistant");
+    const followUpImage = !files.length && !asImage && lastAssistant?.kind === "image"
+      && (isRegenerateRequest(content) || isImageEditRequest(content));
 
     // Lecture libre pour les visiteurs : l'envoi exige une connexion, le message est gardé en brouillon.
     if (!authenticated) {
@@ -140,7 +144,7 @@ export default function MatrixAI() {
     setAttachments([]);
     setError("");
     setSending(true);
-    setSendingImage(asImage);
+    setSendingImage(asImage || followUpImage);
 
     try {
       const res = await base44.functions.invoke("matrixAi", {

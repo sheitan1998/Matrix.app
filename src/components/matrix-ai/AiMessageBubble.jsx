@@ -77,7 +77,7 @@ export default function AiMessageBubble({ message, user }) {
         >
           <div className="rich-text-content text-[12px] text-white/85 leading-relaxed break-words">
             {message.kind === "image" && message.image_url ? (
-              <AiImageCard url={message.image_url} prompt={String(message.content || "").replace(/^Image générée : /, "")} />
+              <AiImageCard url={message.image_url} prompt={String(message.content || "").replace(/^Image (?:générée|modifiée|régénérée) : /, "")} />
             ) : (
               <ReactMarkdown>{message.content || ""}</ReactMarkdown>
             )}

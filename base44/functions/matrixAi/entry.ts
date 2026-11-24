@@ -2,7 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { AI_TIER_PLANS, DAY_MS, WEEK_MS, normalizeTier } from '../../shared/aiPlans.ts';
 import { buildAttachmentContext, validateAttachments } from '../../shared/aiFiles.ts';
 import { IMAGE_BRIEF_SCHEMA, buildImageBriefPrompt, composeImagePrompt, normalizeBrief } from '../../shared/aiImage.ts';
-import { extractUrls, isImageRequest, stripImageCommand } from '../../shared/aiIntent.ts';
+import { extractUrls, isImageEditRequest, isImageRequest, isRegenerateRequest, stripImageCommand } from '../../shared/aiIntent.ts';
 import { buildLinkContext, fetchReadablePage } from '../../shared/aiWeb.ts';
 import {
   MAX_WEBHOOKS_PER_MESSAGE,
@@ -25,6 +25,7 @@ const BUSY_THRESHOLD = 8;
 let inflight = 0;
 const CHAT_MODEL = 'gpt_6_luna';
 const WEB_MODEL = 'gemini_3_8_flash';
+const IMAGE_PREFIX = /^Image (?:générée|modifiée|régénérée) : /;
 
 const PLATFORM_LABELS: Record<string, string> = {
   youtube: 'YouTube',
@@ -46,7 +47,7 @@ RÈGLES ABSOLUES
 - ZÉRO HALLUCINATION : n'invente jamais de serveur, de créateur, de fonctionnalité, de prix, de récompense (TRIX coins) ou de statut officiel absent des données retournées par tes outils. Si une recherche interne ne donne aucun résultat, dis-le honnêtement et propose à l'utilisateur de créer ou référencer son serveur sur Best Serveur (matrix-hub.app/best-serveurs).
 - INFORMATIONS EXTERNES : tu n'es pas limité à Matrix. Pour toute question hors du périmètre Matrix (actualité, jeu, sortie, prix, culture générale, technique), appuie-toi sur les résultats de recherche web fournis et cite tes sources en liens Markdown. Si la recherche web ne renvoie rien d'utile, dis-le clairement au lieu d'inventer.
 - SÉCURITÉ : refuse toute demande liée à la triche (cheats, hacks, aimbots), au piratage, au contournement de sécurité ou à des contenus illégaux ou toxiques.
-- GÉNÉRATION D'IMAGES : tu génères toi-même les images directement dans Matrix AI à partir d'une simple consigne textuelle (même une carte blanche). Ne dis jamais que tu ne peux pas créer d'image, et ne renvoie JAMAIS l'utilisateur vers une autre IA, un outil, un site ou un service externe pour en obtenir une : invite-le plutôt à décrire l'image souhaitée.
+- GÉNÉRATION D'IMAGES : tu génères toi-même les images directement dans Matrix AI à partir d'une simple consigne textuelle (même une carte blanche). Ne dis jamais que tu ne peux pas créer d'image, et ne renvoie JAMAIS l'utilisateur vers une autre IA, un outil, un site ou un service externe pour en obtenir une : invite-le plutôt à décrire l'image souhaitée. Ne dis jamais « je ne vois pas l'image » : quand l'utilisateur demande de modifier ou de régénérer une image déjà générée dans la discussion, le système la traite et renvoie la nouvelle version.
 - Réponses concises et structurées en Markdown (titres courts, listes, gras). Pas de blabla inutile.`;
 
 function escapeRegex(value: string): string {
@@ -537,27 +538,61 @@ export default async function (req: Request): Promise<Response> {
         attachments: attachments.map(({ url, name, type, size, kind }) => ({ url, name, type, size, kind })),
       });
 
-      // ---------- Génération d'image (clé API uniquement côté serveur) ----------
-      if (imageMode) {
-        // Le brief structuré améliore la fidélité ; en cas d'échec on retombe sur la demande brute.
-        const recent = await base44.asServiceRole.entities.AiMessage
-          .filter({ conversation_id: conversation.id, user_id: user.id }, '-created_date', 6)
-          .then((page) => (page?.items || page || []).slice().reverse())
+      // ---------- Édition / régénération d'une image déjà présente dans la discussion ----------
+      let imageAction: 'generate' | 'edit' | 'regenerate' = 'generate';
+      let sourceImage: { url: string; prompt: string } | null = null;
+      let imageRequest = content;
+      let imageFlow = imageMode;
+      if (!imageFlow && !attachments.length && (isRegenerateRequest(rawContent) || isImageEditRequest(rawContent))) {
+        const lastAssistant = await base44.asServiceRole.entities.AiMessage
+          .filter({ conversation_id: conversation.id, user_id: user.id, role: 'assistant' }, '-created_date', 12)
+          .then((page) => (page?.items || page || []))
           .catch(() => []);
-        const briefContext = recent
-          .map((m) => `${m.role === 'user' ? 'Utilisateur' : 'Matrix AI'}: ${String(m.content || '').slice(0, 300)}`)
-          .join('\n');
-        const brief = await base44.asServiceRole.integrations.Core.InvokeLLM({
-          prompt: buildImageBriefPrompt(content, briefContext),
-          model: CHAT_MODEL,
-          response_json_schema: IMAGE_BRIEF_SCHEMA,
-        })
-          .then((raw) => normalizeBrief(parseJson(raw)))
-          .catch(() => null);
-        const imagePrompt = composeImagePrompt(content, brief);
-        const generated = await base44.asServiceRole.integrations.Core.GenerateImage({ prompt: imagePrompt });
+        const latest = lastAssistant[0];
+        const lastImage = lastAssistant.find((m) => m.kind === 'image' && m.image_url);
+        const previousPrompt = lastImage ? String(lastImage.content || '').replace(IMAGE_PREFIX, '') : '';
+        if (lastImage && isRegenerateRequest(rawContent)) {
+          imageFlow = true;
+          imageAction = 'regenerate';
+          imageRequest = previousPrompt || content;
+        } else if (lastImage && latest?.id === lastImage.id) {
+          imageFlow = true;
+          imageAction = 'edit';
+          sourceImage = { url: String(lastImage.image_url), prompt: previousPrompt };
+        }
+      }
+      if (imageFlow && imageRequest.length > MAX_IMAGE_PROMPT) imageRequest = imageRequest.slice(0, MAX_IMAGE_PROMPT);
+
+      // ---------- Génération d'image (clé API uniquement côté serveur) ----------
+      if (imageFlow) {
+        let imagePrompt: string;
+        if (imageAction === 'edit' && sourceImage) {
+          imagePrompt = `Edit the provided image according to this instruction: "${imageRequest}". Keep everything that is not mentioned identical (subject, composition, style, colors, lighting). Original image description: ${sourceImage.prompt || 'n/a'}.`.slice(0, 1800);
+        } else {
+          // Le brief structuré améliore la fidélité ; en cas d'échec on retombe sur la demande brute.
+          const recent = await base44.asServiceRole.entities.AiMessage
+            .filter({ conversation_id: conversation.id, user_id: user.id }, '-created_date', 6)
+            .then((page) => (page?.items || page || []).slice().reverse())
+            .catch(() => []);
+          const briefContext = recent
+            .map((m) => `${m.role === 'user' ? 'Utilisateur' : 'Matrix AI'}: ${String(m.content || '').slice(0, 300)}`)
+            .join('\n');
+          const brief = await base44.asServiceRole.integrations.Core.InvokeLLM({
+            prompt: buildImageBriefPrompt(imageRequest, briefContext),
+            model: CHAT_MODEL,
+            response_json_schema: IMAGE_BRIEF_SCHEMA,
+          })
+            .then((raw) => normalizeBrief(parseJson(raw)))
+            .catch(() => null);
+          imagePrompt = composeImagePrompt(imageRequest, brief);
+        }
+        const generated = await base44.asServiceRole.integrations.Core.GenerateImage(
+          sourceImage ? { prompt: imagePrompt, existing_image_urls: [sourceImage.url] } : { prompt: imagePrompt },
+        );
         const imageUrl = String(generated?.url || '');
         if (!imageUrl) throw new Error("La génération d'image a échoué.");
+        const label = imageAction === 'edit' ? 'Image modifiée' : imageAction === 'regenerate' ? 'Image régénérée' : 'Image générée';
+        const storedPrompt = imageAction === 'edit' && sourceImage?.prompt ? `${sourceImage.prompt} — ${imageRequest}` : imageRequest;
         const imageMessage = await base44.asServiceRole.entities.AiMessage.create({
           conversation_id: conversation.id,
           user_id: user.id,
@@ -565,7 +600,7 @@ export default async function (req: Request): Promise<Response> {
           role: 'assistant',
           kind: 'image',
           image_url: imageUrl,
-          content: `Image générée : ${content}`,
+          content: `${label} : ${storedPrompt}`.slice(0, MAX_CONTENT),
           attached_cards: [],
         });
         await base44.asServiceRole.entities.AiConversation.update(conversation.id, {
