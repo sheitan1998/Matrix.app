@@ -31,7 +31,7 @@ export default function Prospecteurs() {
   // Deep links: /best-serveurs?view=list&category=<slug>&tag=<tag>&q=<search>
   const urlParams = useMemo(() => new URLSearchParams(window.location.search), []);
   const [view, setView] = useState(() =>
-    urlParams.get("view") === "list" || urlParams.get("tag") ? "list" : "categories"
+  urlParams.get("view") === "list" || urlParams.get("tag") ? "list" : "categories"
   );
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
@@ -291,10 +291,10 @@ export default function Prospecteurs() {
         <div className="flex-1 px-4 sm:px-6 py-5">
           <SeoBreadcrumbs
             items={[
-              { label: "Accueil", href: "/" },
-              { label: "Best Serveur" },
-            ]}
-          />
+            { label: "Accueil", href: "/" },
+            { label: "Best Serveur" }]
+            } />
+          
           {/* Back + Publish */}
           <div className="flex items-center justify-between mb-5">
             <Link
@@ -342,11 +342,11 @@ export default function Prospecteurs() {
               <span className="text-[9px] text-white/40 ml-1">· Nexus & Discord réunis</span>
             </div>
             <button
-              onClick={() => (view === "list" ? backToCategories() : openServerList())}
+              onClick={() => view === "list" ? backToCategories() : openServerList()}
               className="h-10 px-3 sm:px-4 rounded-xl text-xs font-black tracking-wider uppercase transition flex items-center justify-center gap-1.5 tap-sm"
-              style={view === "list"
-                ? { background: "rgba(255,255,255,0.06)", color: "#fff", border: "1px solid rgba(255,255,255,0.16)" }
-                : { background: "rgba(168,85,247,0.18)", color: "#e9d5ff", border: "1px solid rgba(168,85,247,0.45)", boxShadow: "0 0 14px rgba(168,85,247,0.22)" }}
+              style={view === "list" ?
+              { background: "rgba(255,255,255,0.06)", color: "#fff", border: "1px solid rgba(255,255,255,0.16)" } :
+              { background: "rgba(168,85,247,0.18)", color: "#e9d5ff", border: "1px solid rgba(168,85,247,0.45)", boxShadow: "0 0 14px rgba(168,85,247,0.22)" }}
               title={view === "list" ? "Revenir à la grille des catégories" : "Afficher la liste complète des serveurs"}>
               
               {view === "list" ? <ArrowLeft className="w-4 h-4" /> : <ListIcon className="w-4 h-4" />}
@@ -355,7 +355,7 @@ export default function Prospecteurs() {
             </button>
             <button
               onClick={() => setShowReminder(true)}
-              className="h-10 px-3 rounded-xl text-xs font-black tracking-wider uppercase transition flex items-center justify-center gap-1.5 tap-sm"
+              className="h-10 px-3 rounded-xl text-xs font-black tracking-wider uppercase transition flex items-center justify-center gap-1.5 tap-sm hidden"
               style={{ background: "rgba(138,79,255,0.12)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.25)" }}
               title="Configurer un rappel sonore">
               
@@ -374,8 +374,8 @@ export default function Prospecteurs() {
           </div>
 
           {/* Category grid — default view */}
-          {view === "categories" && (
-            <div className="mb-5">
+          {view === "categories" &&
+          <div className="mb-5">
               <div className="flex items-center gap-2 mb-3">
                 <h2 className="text-xs font-black tracking-wider uppercase text-white">
                   Catégories
@@ -385,23 +385,23 @@ export default function Prospecteurs() {
                 </span>
               </div>
               <CategoryGrid
-                categories={tabCategories}
-                selectedSlug={null}
-                onSelect={openCategory}
-                serverCounts={serverCounts}
-                loading={loading} />
+              categories={tabCategories}
+              selectedSlug={null}
+              onSelect={openCategory}
+              serverCounts={serverCounts}
+              loading={loading} />
               
             </div>
-          )}
+          }
 
           {/* Server list view */}
-          {view === "list" && (
-            <div className="mb-5">
+          {view === "list" &&
+          <div className="mb-5">
               <div className="flex items-center justify-between gap-2 mb-3">
                 <button
-                  onClick={backToCategories}
-                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[10px] font-bold text-white transition hover:opacity-90 tap-sm"
-                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)" }}>
+                onClick={backToCategories}
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[10px] font-bold text-white transition hover:opacity-90 tap-sm"
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)" }}>
                   
                   <ArrowLeft className="w-3.5 h-3.5" />
                   Retour aux catégories
@@ -410,8 +410,8 @@ export default function Prospecteurs() {
 
               <div className="flex items-center gap-2 mb-3">
                 <div
-                  className="h-9 px-4 rounded-xl flex items-center gap-2"
-                  style={{ background: "rgba(168,85,247,0.10)", border: "1px solid rgba(168,85,247,0.25)" }}>
+                className="h-9 px-4 rounded-xl flex items-center gap-2"
+                style={{ background: "rgba(168,85,247,0.10)", border: "1px solid rgba(168,85,247,0.25)" }}>
                   
                   <ListIcon className="w-4 h-4" style={{ color: "#a855f7" }} />
                   <h2 className="text-xs font-black tracking-wider uppercase text-white">Tous les serveurs</h2>
@@ -423,53 +423,53 @@ export default function Prospecteurs() {
 
               <div className="mb-4">
                 <ServerSearchBar
-                  search={search}
-                  onSearchChange={setSearch}
-                  sortBy={sortBy}
-                  onSortChange={setSortBy}
-                  resultCount={sortedServers.length}
-                  activeTag={tagFilter}
-                  onClearTag={() => setTagFilter("")}
-                />
+                search={search}
+                onSearchChange={setSearch}
+                sortBy={sortBy}
+                onSortChange={setSortBy}
+                resultCount={sortedServers.length}
+                activeTag={tagFilter}
+                onClearTag={() => setTagFilter("")} />
+              
               </div>
 
-              {loading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="h-48 rounded-xl animate-pulse" style={{ background: "rgba(138,79,255,0.05)" }} />
-                  ))}
-                </div>
-              ) : sortedServers.length === 0 ? (
-                <div className="rounded-xl p-8 text-center" style={{ background: "rgba(18,9,28,0.4)", border: "1px dashed rgba(138,79,255,0.15)" }}>
+              {loading ?
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {Array.from({ length: 3 }).map((_, i) =>
+              <div key={i} className="h-48 rounded-xl animate-pulse" style={{ background: "rgba(138,79,255,0.05)" }} />
+              )}
+                </div> :
+            sortedServers.length === 0 ?
+            <div className="rounded-xl p-8 text-center" style={{ background: "rgba(18,9,28,0.4)", border: "1px dashed rgba(138,79,255,0.15)" }}>
                   <ServerIcon className="w-8 h-8 mx-auto mb-2 text-white/20" />
                   <p className="text-xs text-white/40">Aucun serveur pour le moment</p>
                   <button
-                    onClick={backToCategories}
-                    className="mt-3 h-8 px-3 rounded-lg text-[10px] font-bold text-white tap-sm"
-                    style={{ background: "rgba(168,85,247,0.18)", border: "1px solid rgba(168,85,247,0.4)" }}>
+                onClick={backToCategories}
+                className="mt-3 h-8 px-3 rounded-lg text-[10px] font-bold text-white tap-sm"
+                style={{ background: "rgba(168,85,247,0.18)", border: "1px solid rgba(168,85,247,0.4)" }}>
                     
                     Revenir aux catégories
                   </button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {sortedServers.map((server, i) => (
-                    <ServerDirectoryCard
-                      key={server.id}
-                      server={server}
-                      rank={i + 1}
-                      onVote={handleVote}
-                      onDelete={handleDeleteAd}
-                      onEdit={handleEditAd}
-                      onCategoryClick={openCategory}
-                      onTagClick={(tag) => openServerList({ tag })}
-                      currentUser={user}
-                    />
-                  ))}
-                </div>
+                </div> :
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {sortedServers.map((server, i) =>
+              <ServerDirectoryCard
+                key={server.id}
+                server={server}
+                rank={i + 1}
+                onVote={handleVote}
+                onDelete={handleDeleteAd}
+                onEdit={handleEditAd}
+                onCategoryClick={openCategory}
+                onTagClick={(tag) => openServerList({ tag })}
+                currentUser={user} />
+
               )}
+                </div>
+            }
             </div>
-          )}
+          }
           
 
 
