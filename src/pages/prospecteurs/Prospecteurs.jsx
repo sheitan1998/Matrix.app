@@ -353,15 +353,15 @@ export default function Prospecteurs() {
               <span className="hidden sm:inline">{view === "list" ? "Retour aux catégories" : "Tous les serveurs"}</span>
               <span className="sm:hidden">{view === "list" ? "Catégories" : "Serveurs"}</span>
             </button>
-            <button
-              onClick={() => setShowReminder(true)}
-              className="h-10 px-3 rounded-xl text-xs font-black tracking-wider uppercase transition flex items-center justify-center gap-1.5 tap-sm hidden"
-              style={{ background: "rgba(138,79,255,0.12)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.25)" }}
-              title="Configurer un rappel sonore">
-              
-              <Bell className="w-4 h-4" />
-              <span className="hidden sm:inline">Sonnerie</span>
-            </button>
+            
+
+
+
+
+
+
+
+            
             <button
               onClick={() => setShowTop10(true)}
               className="h-10 px-4 rounded-xl text-xs font-black tracking-wider uppercase transition flex items-center justify-center gap-1.5 tap-sm"
