@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import GameSeoBlock from "@/components/seo/GameSeoBlock";
 import { base44 } from "@/api/base44Client";
 import { Search, Loader2, ArrowLeft, Map as MapIcon, ShoppingBag, Shirt, User } from "lucide-react";
 import FortniteMapCard from "@/components/tuto-gaming/FortniteMapCard";
@@ -218,6 +219,8 @@ export default function FortniteMaps() {
           setShowSubmit(true);
         }} />
       
+
+      <GameSeoBlock page="fortniteMaps" />
 
       {/* Edit modal */}
       <SubmitMapModal

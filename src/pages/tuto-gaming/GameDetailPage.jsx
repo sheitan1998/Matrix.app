@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
@@ -10,6 +10,9 @@ import BlockRenderer from "@/components/tuto-gaming/BlockRenderer";
 import {
   WIKI_SECTIONS, SECTION_GROUPS, getSectionMeta,
 } from "@/components/tuto-gaming/tutoGamingData";
+import usePageSEO from "@/hooks/usePageSEO";
+import GuideLinksBlock from "@/components/seo/GuideLinksBlock";
+import { breadcrumbNode, graph, cleanText, excerpt } from "@/lib/guideSeo";
 
 export default function GameDetailPage() {
   const { gameSlug } = useParams();
@@ -105,6 +108,34 @@ export default function GameDetailPage() {
   const hasActiveFilters = filters.extension || filters.zone || filters.levelMin || filters.levelMax || filters.difficulty;
 
   const clearFilters = () => setFilters({ extension: "", zone: "", levelMin: "", levelMax: "", difficulty: "" });
+
+  const seo = useMemo(() => {
+    if (loading || !game) return { noindex: true };
+    const path = `/tuto-gaming/${gameSlug}`;
+    const content = [
+      quests.length ? "quêtes" : null,
+      wikiEntries.length ? "fiches wiki" : null,
+    ].filter(Boolean);
+    const intro = cleanText(game.description);
+    return {
+      title: `Wiki ${game.name} — ${content.length ? content.join(" et ") : "guides et astuces"} | Matrix Hub`,
+      description: intro.length >= 40
+        ? excerpt(intro)
+        : excerpt(`Wiki ${game.name} sur Matrix Hub${content.length ? ` : ${content.join(" et ")} partagées par la communauté` : ""}.`),
+      path,
+      image: game.image_url || undefined,
+      pageType: "CollectionPage",
+      noindex: !content.length && intro.length < 40,
+      schema: graph(
+        breadcrumbNode([
+          { name: "Accueil", path: "/" },
+          { name: "Guides gaming", path: "/tuto-gaming" },
+          { name: game.name, path },
+        ])
+      ),
+    };
+  }, [loading, game, gameSlug, quests.length, wikiEntries.length]);
+  usePageSEO(seo);
 
   if (loading) {
     return (
@@ -393,6 +424,8 @@ export default function GameDetailPage() {
           )}
         </div>
       </div>
+
+      <GuideLinksBlock kind="game" gameName={game.name} gameSlug={gameSlug} />
     </div>
   );
 }

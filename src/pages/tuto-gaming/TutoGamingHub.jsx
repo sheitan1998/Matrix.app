@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { Search, Loader2, ArrowLeft, Gamepad2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import GameSeoBlock from "@/components/seo/GameSeoBlock";
 import GameCard from "@/components/tuto-gaming/GameCard";
 import { COMING_SOON_GAMES, FEATURED_GAMES } from "@/components/tuto-gaming/tutoGamingData";
 import { useTutoGamingAssets, getAssetUrl, getAssetField } from "@/hooks/useTutoGamingAssets";
@@ -135,6 +136,8 @@ export default function TutoGamingHub() {
           <p className="text-sm text-white/30">Aucun jeu trouvé pour "{search}"</p>
         </div>
       )}
+
+      <GameSeoBlock page="hub" />
     </div>
   );
 }

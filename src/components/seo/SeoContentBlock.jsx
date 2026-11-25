@@ -1,37 +1,89 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useId } from "react";
 import { Link } from "react-router-dom";
 
 /**
  * SeoContentBlock — bloc de texte statique pour les pages à contenu dynamique.
  * Fournit du contenu crawlable dès le chargement initial (H2/H3 + paragraphes + liens internes),
  * ainsi qu'une FAQ optionnelle accompagnée de ses données structurées FAQPage.
+ * Props JSON-LD optionnelles (sans effet visuel) :
+ *  - itemList : [{ name, url }] → ItemList
+ *  - howTo    : { name, description?, steps: [{ name, text }] } → HowTo
+ *  - breadcrumb : [{ name, url }] → BreadcrumbList
+ * Chaque instance utilise des identifiants de script uniques (useId).
  */
-export default function SeoContentBlock({ eyebrow, title, intro, sections = [], faq = [], links = [] }) {
-  const faqKey = JSON.stringify(faq);
-
+function useJsonLd(suffix, instanceId, dataKey) {
   useEffect(() => {
-    const parsed = JSON.parse(faqKey);
-    const existing = document.getElementById("matrix-faq-jsonld");
-    if (!parsed.length) {
-      existing?.remove();
-      return;
-    }
+    if (!dataKey) return;
     const script = document.createElement("script");
     script.type = "application/ld+json";
-    script.id = "matrix-faq-jsonld";
-    script.textContent = JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      mainEntity: parsed.map((item) => ({
-        "@type": "Question",
-        name: item.question,
-        acceptedAnswer: { "@type": "Answer", text: item.answer }
-      }))
-    });
-    existing?.remove();
+    script.id = `matrix-${suffix}-jsonld-${instanceId}`;
+    script.textContent = dataKey;
     document.head.appendChild(script);
     return () => script.remove();
-  }, [faqKey]);
+  }, [suffix, instanceId, dataKey]);
+}
+
+export default function SeoContentBlock({ eyebrow, title, intro, sections = [], faq = [], links = [], itemList, howTo, breadcrumb }) {
+  const instanceId = useId().replace(/:/g, "");
+  const ctx = "https://schema.org";
+
+  const faqData = faq.length ?
+  JSON.stringify({
+    "@context": ctx,
+    "@type": "FAQPage",
+    mainEntity: faq.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: { "@type": "Answer", text: item.answer }
+    }))
+  }) :
+  "";
+
+  const itemListData = itemList?.length ?
+  JSON.stringify({
+    "@context": ctx,
+    "@type": "ItemList",
+    itemListElement: itemList.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      ...(item.url ? { url: item.url } : {})
+    }))
+  }) :
+  "";
+
+  const howToData = howTo?.steps?.length ?
+  JSON.stringify({
+    "@context": ctx,
+    "@type": "HowTo",
+    name: howTo.name || title,
+    ...(howTo.description ? { description: howTo.description } : {}),
+    step: howTo.steps.map((step, index) => ({
+      "@type": "HowToStep",
+      position: index + 1,
+      name: step.name,
+      text: step.text
+    }))
+  }) :
+  "";
+
+  const breadcrumbData = breadcrumb?.length ?
+  JSON.stringify({
+    "@context": ctx,
+    "@type": "BreadcrumbList",
+    itemListElement: breadcrumb.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      ...(item.url ? { item: item.url } : {})
+    }))
+  }) :
+  "";
+
+  useJsonLd("faq", instanceId, faqData);
+  useJsonLd("itemlist", instanceId, itemListData);
+  useJsonLd("howto", instanceId, howToData);
+  useJsonLd("breadcrumb", instanceId, breadcrumbData);
 
   return (
     <section
@@ -81,17 +133,13 @@ export default function SeoContentBlock({ eyebrow, title, intro, sections = [], 
         </div>
       }
 
-      {links.length > 0 &&
+          {links.length > 0 &&
       <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
           {links.map((link) =>
         <li key={link.href}>
-              
-
-
-
-
-
-          
+              <Link to={link.href} className="text-[11px] sm:text-xs font-bold text-purple-400 hover:text-purple-300 transition">
+                {link.label}
+              </Link>
             </li>
         )}
         </ul>

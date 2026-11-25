@@ -14,6 +14,9 @@ import { serverMatchesCategory } from "@/lib/serverCategories";
 import { serverHasTag, serverTags } from "@/lib/serverTags";
 import usePageSEO from "@/hooks/usePageSEO";
 import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
+import SeoContentBlock from "@/components/seo/SeoContentBlock";
+import { serverPath, guideLinksFor } from "@/lib/serverSeo";
+import { SITE_URL } from "@/lib/seoRoutes";
 
 export default function CategoryServers() {
   const { slug } = useParams();
@@ -234,6 +237,27 @@ export default function CategoryServers() {
           </div>
         </div>
       </div>
+
+      {!loading && category && (
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pb-12">
+          <SeoContentBlock
+            eyebrow="Best Serveur"
+            title={`Serveurs ${category.name} : comment choisir sa communauté`}
+            intro={`Cette page rassemble ${servers.length > 0 ? `les ${servers.length} serveur${servers.length > 1 ? "s" : ""}` : "les serveurs"} de la catégorie ${category.name} référencés sur Matrix Hub. Le classement suit les votes du mois et les boosts : plus une communauté ${category.name} est soutenue, plus elle remonte dans la liste.`}
+            faq={[
+              { question: `Comment trouver un bon serveur ${category.name} ?`, answer: `Regardez d'abord le Top 5 ${category.name}, puis ouvrez les fiches pour lire la description, les jeux concernés et les étiquettes. Vous pouvez aussi filtrer par étiquette ou chercher un mot-clé dans la liste.` },
+              { question: `Comment ajouter mon serveur dans la catégorie ${category.name} ?`, answer: `Depuis l'annuaire Best Serveur, cliquez sur Publier un serveur et choisissez ${category.name} parmi vos catégories (trois au maximum). La fiche apparaît ici dès sa publication.` },
+            ]}
+            links={[
+              { href: "/best-serveurs", label: "Tous les serveurs Best Serveur" },
+              { href: "/best-creator", label: "Best Creator" },
+              ...guideLinksFor(category.name, slug),
+              { href: "/tuto-gaming", label: "Guides et tutoriels gaming" },
+            ]}
+            itemList={top5.filter((s) => s.title && (s.slug || s.id)).map((s) => ({ name: s.title, url: SITE_URL + serverPath(s) }))}
+          />
+        </div>
+      )}
 
       {editingAd && (
         <CreateAdModal

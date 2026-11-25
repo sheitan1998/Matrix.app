@@ -7,6 +7,7 @@ import ChannelList from "@/components/community/ChannelList";
 import ForumChannel from "@/components/community/ForumChannel";
 import HeaderActions from "@/components/layout/HeaderActions";
 import usePageSEO from "@/hooks/usePageSEO";
+import SeoContentBlock from "@/components/seo/SeoContentBlock";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import ServerCreator from "@/components/community/ServerCreator";
@@ -543,6 +544,38 @@ export default function Community() {
                 </button>
               </div>
             </div>
+          }
+
+          {/* Contenu éditorial Nexus : visible sur mobile, lisible par les moteurs sans modifier l'interface bureau */}
+          {!selectedServer &&
+          <details className="group mx-4 mb-4 sm:max-w-3xl sm:mx-auto sm:w-full max-h-[60vh] overflow-y-auto">
+              <summary className="cursor-pointer select-none text-xs font-bold text-purple-400 hover:text-purple-300 transition py-2 text-center">
+                En savoir plus sur Nexus et FAQ
+              </summary>
+              <SeoContentBlock
+              eyebrow="Nexus"
+              title="Nexus : serveurs communautaires pour les gamers"
+              intro="Nexus est l'espace de discussion intégré à Matrix Hub. Chaque serveur Nexus propose des salons textuels, vocaux et des forums, des rôles personnalisés et une modération gérée par la communauté. Vous pouvez rejoindre un serveur public, en créer un pour votre équipe ou simplement explorer les communautés qui jouent aux mêmes jeux que vous."
+              sections={[
+              { title: "Salons textuels et vocaux", text: "Discutez par écrit, lancez un salon vocal pour jouer ensemble et organisez vos échanges par thème avec des canaux dédiés." },
+              { title: "Rôles et modération", text: "Les propriétaires définissent des rôles, des permissions et des règles pour garder un serveur accueillant et bien organisé." },
+              { title: "Serveurs publics et invitations", text: "Explorez les serveurs publics ou rejoignez une communauté privée grâce à un code d'invitation." }]
+              }
+              faq={[
+              { question: "Comment rejoindre un serveur Nexus ?", answer: "Cliquez sur Explorer pour parcourir les serveurs publics, ou sur Rejoindre pour saisir un code d'invitation reçu d'un ami." },
+              { question: "Comment créer mon propre serveur Nexus ?", answer: "Connectez-vous, cliquez sur Créer un serveur, choisissez son nom et son thème, puis ajoutez vos salons textuels, vocaux ou forums." },
+              { question: "Comment faire connaître mon serveur ?", answer: "Publiez-le dans l'annuaire Best Serveur : il gagne en visibilité grâce aux votes mensuels et aux boosts de la communauté." }]
+              }
+              links={[
+              { href: "/best-serveurs", label: "Best Serveur : l'annuaire de serveurs" },
+              { href: "/best-creator", label: "Best Creator" },
+              { href: "/tuto-gaming", label: "Guides et tutoriels gaming" },
+              { href: "/nexus-game", label: "Nexus Game" },
+              { href: "/minecraft", label: "Minecraft" },
+              { href: "/fortnite-maps", label: "Codes de maps Fortnite" }]
+              }
+                            itemList={publicServers.slice(0, 10).filter((s) => s.name).map((s) => ({ name: s.name }))} />
+            </details>
           }
 
           {/* Server welcome screen */}

@@ -157,3 +157,21 @@ export function buildServerSeo(server) {
     schema: serverSeoSchema(server),
   };
 }
+
+const GAME_GUIDES = [
+  { test: /minecraft/i, href: "/minecraft", label: "Guides Minecraft" },
+  { test: /farming/i, href: "/farming", label: "Farming Simulator 25" },
+  { test: /dofus/i, href: "/dofus", label: "Guides Dofus" },
+  { test: /rocket\s*league/i, href: "/rocket-league", label: "Rocket League" },
+  { test: /fortnite/i, href: "/fortnite-maps", label: "Codes de maps Fortnite" },
+  { test: /gta/i, href: "/gta-6", label: "GTA VI" },
+  { test: /valorant/i, href: "/valorant", label: "Guides Valorant" },
+  { test: /\brust\b/i, href: "/rust", label: "Guides Rust" },
+  { test: /valheim/i, href: "/valheim", label: "Guides Valheim" },
+];
+
+/** Liens vers les guides de jeu correspondant aux noms fournis (catégorie, jeux d'un serveur). */
+export function guideLinksFor(...names) {
+  const text = names.flat().filter(Boolean).join(" ");
+  return GAME_GUIDES.filter((guide) => guide.test.test(text)).map(({ href, label }) => ({ href, label }));
+}

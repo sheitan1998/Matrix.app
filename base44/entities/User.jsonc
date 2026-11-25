@@ -358,7 +358,7 @@
     "is_private": {
       "type": "boolean",
       "default": false,
-      "description": "Profil prive \u2014 masque l'utilisateur des resultats de recherche publique (Prospecteur)"
+      "description": "Profil prive \u2014 masque l'utilisateur des resultats de recherche publique (Best Serveur)"
     },
     "interface_language": {
       "type": "string",

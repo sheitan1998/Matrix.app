@@ -61,8 +61,7 @@ export default function ProspecteursSidebar({ active = "servers", user, onConfig
           <img
             src={VIP_IMAGE}
             alt="Matrix Hub VIP server plan at 2.99 euros per month"
-            className="w-full h-auto block"
-            style={{ minHeight: "140px" }} />
+            className="w-full h-auto block sm:min-h-[140px] max-sm:h-20 max-sm:object-cover" />
           
           <div className="absolute inset-0 ring-2 ring-yellow-500/30 rounded-xl pointer-events-none" />
           <div className="absolute inset-0 bg-transparent group-hover:bg-yellow-500/5 transition rounded-[10px]" />
@@ -80,8 +79,7 @@ export default function ProspecteursSidebar({ active = "servers", user, onConfig
           <img
             src={VOTE_AUTO_IMAGE}
             alt="Matrix Hub automatic voting plan at 4.99 euros per month"
-            className="w-full h-auto block"
-            style={{ minHeight: "140px" }} />
+            className="w-full h-auto block sm:min-h-[140px] max-sm:h-20 max-sm:object-cover" />
           
           <div className="absolute inset-0 ring-2 ring-fuchsia-500/30 rounded-xl pointer-events-none" />
           <div className="absolute inset-0 bg-transparent group-hover:bg-fuchsia-500/5 transition rounded-[10px]" />

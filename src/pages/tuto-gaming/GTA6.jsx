@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import GameSeoBlock from "@/components/seo/GameSeoBlock";
 import { ArrowLeft, Gamepad2, BookOpen, Target, Map as MapIcon, Users, Zap } from "lucide-react";
 import GTA6DetailModal from "@/components/tuto-gaming/GTA6DetailModal";
 import GTA6Catalog from "@/components/tuto-gaming/GTA6Catalog";
@@ -292,6 +293,8 @@ export default function GTA6() {
           </div>
         )}
       </div>
+
+      <GameSeoBlock page="gta" />
 
       <GTA6DetailModal
         key={`${tab}:${selectedId || ""}`}

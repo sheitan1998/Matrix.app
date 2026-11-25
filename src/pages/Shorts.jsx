@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { fetchYouTubeRaw } from "@/hooks/useYouTube";
 import { Heart, MessageCircle, Share2, ArrowLeft, Volume2, VolumeX, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import PageSeoBlock from "@/components/seo/PageSeoBlock";
 import { formatViews } from "@/lib/format";
 import YouTubePlayer from "@/components/video/YouTubePlayer";
 import { useProgression } from "@/context/ProgressionContext";
@@ -274,6 +275,10 @@ export default function Shorts() {
           <ArrowLeft className="w-5 h-5 text-white" />
         </Link>
         <span className="text-white font-black text-lg tracking-tight"><span className="text-primary">M</span>ATRIX Shorts</span>
+      </div>
+
+      <div className="absolute top-3 right-3 z-20 w-[min(92vw,34rem)] flex justify-end">
+        <PageSeoBlock page="shorts" collapsible compact overlay summary="En savoir plus" />
       </div>
 
       {/* Scroll container */}

@@ -9,6 +9,8 @@ import OpenGameTabs from "@/components/tuto-gaming/open/OpenGameTabs";
 import OpenGameCollection from "@/components/tuto-gaming/open/OpenGameCollection";
 import OpenGameItemModal from "@/components/tuto-gaming/open/OpenGameItemModal";
 import OpenGamePlayerSearch from "@/components/tuto-gaming/open/OpenGamePlayerSearch";
+import GuideLinksBlock from "@/components/seo/GuideLinksBlock";
+import { breadcrumbNode, graph, excerpt } from "@/lib/guideSeo";
 
 export default function OpenGameDetail() {
   const { slug } = useParams();
@@ -17,11 +19,24 @@ export default function OpenGameDetail() {
   const [selected, setSelected] = useState(null);
   const { data, loading, error, reload } = useOpenGame(game ? slug : null);
 
-  usePageSEO({
-    title: game ? `${game.name} — boutique, quêtes et succès | Matrix Hub` : "Jeu introuvable — Matrix Hub",
-    description: game ? `${game.description} Données publiques en direct, sans clé API.` : undefined,
-    path: `/jeu/${slug}`,
-  });
+  const seo = useMemo(() => {
+    if (!game) return { noindex: true };
+    const path = `/jeu/${slug}`;
+    return {
+      title: `${game.name} — boutique, quêtes et succès | Matrix Hub`,
+      description: excerpt(`${game.description} Données publiques en direct, sans clé API.`, 158),
+      path,
+      image: game.image_url || undefined,
+      schema: graph(
+        breadcrumbNode([
+          { name: "Accueil", path: "/" },
+          { name: "Guides gaming", path: "/tuto-gaming" },
+          { name: game.name, path },
+        ])
+      ),
+    };
+  }, [game, slug]);
+  usePageSEO(seo);
 
   useEffect(() => {
     setTab("shop");
@@ -111,6 +126,8 @@ export default function OpenGameDetail() {
           <Loader2 className="w-3 h-3 animate-spin" /> Synchronisation des données publiques…
         </div>
       )}
+
+      <GuideLinksBlock kind="open" gameName={game.name} gameSlug={game.slug} />
 
       <OpenGameItemModal
         item={selected}

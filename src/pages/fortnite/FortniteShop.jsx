@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
+import GameSeoBlock from "@/components/seo/GameSeoBlock";
 import { ShoppingBag, Loader2, ArrowLeft, Calendar } from "lucide-react";
 import ShopItemModal from "@/components/fortnite/ShopItemModal";
 import FortniteShopSection from "@/components/fortnite/FortniteShopSection";
@@ -91,6 +92,7 @@ export default function FortniteShop() {
       )}
 
       {error && <p role="alert" className="mt-3 text-sm text-destructive">Chargement impossible. Réessayez dans quelques instants.</p>}
+      <GameSeoBlock page="fortniteShop" />
       <ShopItemModal item={selectedItem} onClose={() => setSelectedItem(null)} user={user} />
     </div>
   );

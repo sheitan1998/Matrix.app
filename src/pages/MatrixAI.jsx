@@ -14,6 +14,7 @@ import AuthModal from "@/components/landing/AuthModal";
 import useAiQuota from "@/hooks/useAiQuota";
 import { checkFileBeforeUpload, isImageAttachment, MAX_ATTACHMENTS } from "@/lib/aiFiles";
 import { isImageEditRequest, isImageRequest, isRegenerateRequest } from "@/lib/aiIntent";
+import PageSeoBlock from "@/components/seo/PageSeoBlock";
 
 const THINKING_STEPS = [
   "Matrix AI réfléchit...",
@@ -424,6 +425,8 @@ export default function MatrixAI() {
             <div ref={bottomRef} />
           </div>
         )}
+
+        <PageSeoBlock page="ai" collapsible compact summary="En savoir plus sur Matrix AI et FAQ" />
 
         <AiComposer
           value={input}

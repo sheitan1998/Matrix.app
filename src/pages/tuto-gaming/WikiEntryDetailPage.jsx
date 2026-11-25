@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
@@ -6,17 +6,61 @@ import {
 } from "lucide-react";
 import QuestComments from "@/components/tuto-gaming/QuestComments";
 import { getEntryTypeMeta } from "@/components/tuto-gaming/tutoGamingData";
+import usePageSEO from "@/hooks/usePageSEO";
+import GuideLinksBlock from "@/components/seo/GuideLinksBlock";
+import { articleNode, breadcrumbNode, graph, cleanText, excerpt, slugLabel } from "@/lib/guideSeo";
 
 export default function WikiEntryDetailPage() {
   const { gameSlug, entryId } = useParams();
   const [entry, setEntry] = useState(null);
   const [user, setUser] = useState(null);
+  const [gameName, setGameName] = useState("");
   const [loading, setLoading] = useState(true);
+
+  const gameLabel = gameName || slugLabel(gameSlug);
+  const seo = useMemo(() => {
+    if (!entry) return { noindex: true };
+    const path = `/tuto-gaming/${gameSlug}/wiki/${entryId}`;
+    const summary = cleanText(entry.description);
+    const body = cleanText(entry.content);
+    const source = summary.length >= 40 ? summary : body;
+    const image = entry.image_url || entry.thumbnail_url || undefined;
+    return {
+      title: `${entry.title} — fiche ${gameLabel} | Matrix Hub`,
+      description: source.length >= 40
+        ? excerpt(source)
+        : excerpt(`Fiche « ${entry.title} » du wiki ${gameLabel} sur Matrix Hub.`),
+      path,
+      image,
+      type: "article",
+      noindex: source.length < 40,
+      schema: graph(
+        breadcrumbNode([
+          { name: "Accueil", path: "/" },
+          { name: "Guides gaming", path: "/tuto-gaming" },
+          { name: gameLabel, path: `/tuto-gaming/${gameSlug}` },
+          { name: entry.title, path },
+        ]),
+        articleNode({
+          headline: entry.title,
+          description: source.length >= 40 ? excerpt(source, 300) : undefined,
+          image,
+          path,
+          created: entry.created_date,
+          updated: entry.updated_date,
+        })
+      ),
+    };
+  }, [entry, gameLabel, gameSlug, entryId]);
+  usePageSEO(seo);
 
   const fetchData = useCallback(async () => {
     try {
       const e = await base44.entities.WikiEntry.get(entryId);
       setEntry(e);
+      base44.entities.Game.filter({ slug: gameSlug })
+        .then((games) => { if (games?.[0]?.name) setGameName(games[0].name); })
+        .catch(() => {});
       base44.auth.me().then(setUser).catch(() => {});
     } catch {
       /* silent */
@@ -194,6 +238,8 @@ export default function WikiEntryDetailPage() {
       >
         <QuestComments wikiEntryId={entry.id} currentUser={user} />
       </div>
+
+      <GuideLinksBlock kind="wiki" gameName={gameLabel} gameSlug={gameSlug} />
     </div>
   );
 }

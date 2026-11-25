@@ -106,6 +106,31 @@ const ROUTES = {
       "Rejoignez les serveurs Nexus de Matrix Hub : salons textuels et vocaux, rôles personnalisés, forums et modération communautaire pensés pour les gamers.",
     image: OG_BANNERS.nexus.url,
   },
+  "/matrix-ai": {
+    title: "Matrix AI — assistant IA pour gamers et créateurs | Matrix Hub",
+    description:
+      "Posez vos questions à Matrix AI : conseils de jeu, idées de contenu, aide à la rédaction de descriptions et réponses rapides pour la communauté gaming.",
+  },
+  "/shorts": {
+    title: "Shorts gaming : vidéos verticales de la communauté | Matrix Hub",
+    description:
+      "Regardez des vidéos courtes et verticales de créateurs gaming : meilleurs moments, astuces express et clips à partager, à faire défiler d'un geste.",
+  },
+  "/live": {
+    title: "Lives en direct : streams de la communauté | Matrix Hub",
+    description:
+      "Retrouvez les lives du moment sur Matrix Hub : streams de créateurs, chat en temps réel, réactions et nombre de spectateurs pour rejoindre le bon direct.",
+  },
+  "/trending": {
+    title: "Tendances : vidéos et streams les plus regardés | Matrix Hub",
+    description:
+      "Découvrez les vidéos et les contenus qui montent sur Matrix Hub : les plus vus du moment, les nouveautés populaires et les créateurs à suivre.",
+  },
+  "/stream": {
+    title: "Streaming : vidéos, lives et créateurs à découvrir | Matrix Hub",
+    description:
+      "Parcourez la page streaming de Matrix Hub : vidéos récentes, lives en cours et chaînes de créateurs de la communauté, classés par catégories de jeux.",
+  },
   "/about": {
     title: "À propos de Matrix Hub — la plateforme gaming tout-en-un",
     description:
@@ -123,7 +148,11 @@ const ROUTES = {
   },
 };
 
-/** Routes membres et techniques : jamais indexées. */
+/**
+ * Routes membres et techniques : jamais indexées.
+ * Les routes exactes déclarées dans ROUTES (ex. /live, /shorts, /trending, /stream)
+ * restent indexables ; leurs sous-chemins dynamiques gardent ce comportement.
+ */
 const NOINDEX_PREFIXES = [
   "/admin",
   "/mon-profil",
@@ -166,6 +195,28 @@ const NOINDEX_PREFIXES = [
   "/experience",
   "/vue",
 ];
+
+const COLLECTION_PATHS = new Set([
+  "/best-serveurs",
+  "/best-creator",
+  "/tuto-gaming",
+  "/fortnite-maps",
+  "/fortnite-shop",
+  "/fortnite-cosmetics",
+  "/shorts",
+  "/live",
+  "/trending",
+  "/stream",
+  "/nexus-game",
+]);
+
+/** Type schema.org de la page : liste/catalogue, page « à propos » ou page simple. */
+export function pageTypeFor(path) {
+  if (path === "/about") return "AboutPage";
+  if (path === "/contact") return "ContactPage";
+  if (COLLECTION_PATHS.has(path)) return "CollectionPage";
+  return "WebPage";
+}
 
 function titleize(slug) {
   return String(slug || "")
@@ -323,6 +374,7 @@ export function resolveSeo(pathname) {
     image: seo.image || pickOgImage(path),
     imageAlt: pickOgImageAlt(path),
     type: "website",
+    pageType: pageTypeFor(path),
     ogCategory: ogCategory(path),
     ...seo,
     path,

@@ -19,6 +19,8 @@ import usePageSEO from "@/hooks/usePageSEO";
 import SeoContentBlock from "@/components/seo/SeoContentBlock";
 import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 import { serverHasTag, serverTags } from "@/lib/serverTags";
+import { serverPath } from "@/lib/serverSeo";
+import { SITE_URL } from "@/lib/seoRoutes";
 
 
 export default function Prospecteurs() {
@@ -132,6 +134,17 @@ export default function Prospecteurs() {
 
   // All categories shown in unified view
   const tabCategories = useMemo(() => categories, [categories]);
+
+  // Meilleurs serveurs réellement chargés, pour les données structurées ItemList
+  const topServersSeo = useMemo(
+    () =>
+    [...typedServers].
+    filter((s) => s.title && (s.slug || s.id)).
+    sort((a, b) => (b.votes_month || 0) + (b.boosts || 0) * 2 - ((a.votes_month || 0) + (a.boosts || 0) * 2)).
+    slice(0, 10).
+    map((s) => ({ name: s.title, url: SITE_URL + serverPath(s) })),
+    [typedServers]
+  );
 
   // Switch to the global server list view (optionally filtered by tag)
   const openServerList = ({ tag = "", query = "" } = {}) => {
@@ -540,12 +553,18 @@ export default function Prospecteurs() {
             { question: "Comment mon serveur progresse dans le classement ?", answer: "Le classement combine les votes du mois et les boosts reçus. Plus votre communauté vote régulièrement, plus votre fiche remonte dans l'annuaire et dans les pages de catégorie." }]
             }
             links={[
-            { href: "/best-creator", label: "Best Creator" },
+            { href: "/best-creator", label: "Best Creator : le classement des créateurs" },
+            { href: "/nexus", label: "Nexus : serveurs et salons vocaux" },
             { href: "/tuto-gaming", label: "Guides et tutoriels gaming" },
+            { href: "/farming", label: "Farming Simulator 25" },
+            { href: "/minecraft", label: "Minecraft" },
             { href: "/dofus", label: "Guides Dofus" },
+            { href: "/rocket-league", label: "Rocket League" },
             { href: "/fortnite-maps", label: "Codes de maps Fortnite" },
+            { href: "/gta-6", label: "GTA VI" },
             { href: "/about", label: "À propos de Matrix Hub" }]
-            } />
+            }
+            itemList={topServersSeo} />
           
         </div>
       </div>

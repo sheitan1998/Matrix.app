@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Blocks, BookOpen, Gamepad2, LibraryBig } from "lucide-react";
 import { Link } from "react-router-dom";
+import GameSeoBlock from "@/components/seo/GameSeoBlock";
 import ModrinthCatalogue from "@/components/minecraft/ModrinthCatalogue";
 import MinecraftEncyclopedia from "@/components/minecraft/MinecraftEncyclopedia";
 
@@ -81,6 +82,8 @@ export default function Minecraft() {
           <BookOpen className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           Les noms officiels des contenus Minecraft restent ceux fournis par la source open source. Les champs non publiés par la source sont indiqués comme non disponibles.
         </footer>
+
+        <GameSeoBlock page="minecraft" />
       </div>
     </main>
   );

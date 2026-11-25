@@ -82,7 +82,7 @@ export default function CreatorAdProfile() {
           path,
           image: visuals.avatar_url || creator.avatar_url,
           type: "profile",
-          noindex: description.length < 80,
+          noindex: description.length < 80 || creator.is_active === false,
           schema: {
             "@context": "https://schema.org",
             "@type": "ProfilePage",
@@ -96,7 +96,7 @@ export default function CreatorAdProfile() {
             },
           },
         }
-      : {}
+      : { noindex: true }
   );
 
   if (loading) {

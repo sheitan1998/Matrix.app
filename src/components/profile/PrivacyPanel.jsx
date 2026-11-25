@@ -83,7 +83,7 @@ export default function PrivacyPanel({ user, onUpdate }) {
         <div className="flex items-center justify-between">
           <div className="flex-1 pr-3">
             <p className="text-xs text-white/70">{user?.is_private ? "Profil privé" : "Profil public"}</p>
-            <p className="text-[11px] text-white/40 mt-0.5">{user?.is_private ? "Votre profil est masqué des recherches publiques (Prospecteur)." : "Votre profil apparaît dans les résultats de recherche publique."}</p>
+            <p className="text-[11px] text-white/40 mt-0.5">{user?.is_private ? "Votre profil est masqué des recherches publiques (Best Serveur)." : "Votre profil apparaît dans les résultats de recherche publique."}</p>
           </div>
           <button
             onClick={togglePrivate}

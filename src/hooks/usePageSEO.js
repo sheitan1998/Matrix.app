@@ -22,8 +22,42 @@ function upsertLink(rel, href) {
   el.setAttribute("href", href);
 }
 
+/** BreadcrumbList déduit du chemin ; le libellé final vient du titre de la page. */
+function buildBreadcrumb(currentPath, title) {
+  const parts = currentPath.split("/").filter(Boolean);
+  if (!parts.length) return null;
+  const labelFromSlug = (slug) => {
+    let s = slug;
+    try {
+      s = decodeURIComponent(slug);
+    } catch {
+      /* slug conservé tel quel */
+    }
+    s = s.replace(/[-_]+/g, " ").trim();
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  };
+  const lastLabel = (title || "").split(/\s[—|:]\s/)[0].trim() || labelFromSlug(parts[parts.length - 1]);
+  const items = [{ name: "Accueil", url: SITE_URL + "/" }];
+  parts.forEach((segment, i) => {
+    const isLast = i === parts.length - 1;
+    items.push({
+      name: isLast ? lastLabel : labelFromSlug(segment),
+      url: SITE_URL + "/" + parts.slice(0, i + 1).join("/"),
+    });
+  });
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((it, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: it.name,
+      item: it.url,
+    })),
+  };
+}
+
 /**
- * usePageSEO — sets title, description, canonical, OpenGraph, Twitter and JSON-LD
  * for the current public page. Every page gets a valid OpenGraph image: the
  * route's thematic visual, then the site default.
  * @param {object} opts
@@ -35,6 +69,7 @@ function upsertLink(rel, href) {
  * @param {string} [opts.type]        og:type
  * @param {boolean} [opts.noindex]    Keep the page out of search results
  * @param {object} [opts.schema]      JSON-LD object for this page
+ * @param {string} [opts.pageType]    schema.org page type for the auto WebPage JSON-LD (WebPage, CollectionPage…)
  */
 export default function usePageSEO({
   title,
@@ -45,6 +80,7 @@ export default function usePageSEO({
   type = "website",
   noindex = false,
   schema,
+  pageType,
 } = {}) {
   useEffect(() => {
     document.documentElement.lang = "fr";
@@ -102,5 +138,52 @@ export default function usePageSEO({
     } else if (script) {
       script.remove();
     }
-  }, [title, description, path, image, imageAlt, type, noindex, schema]);
+
+    const schemaTypes = [].concat(schema?.["@type"] || [], (schema?.["@graph"] || []).map((n) => n["@type"]));
+    const upsertJsonLd = (id, data) => {
+      let el = document.getElementById(id);
+      if (!data) {
+        el?.remove();
+        return;
+      }
+      if (!el) {
+        el = document.createElement("script");
+        el.type = "application/ld+json";
+        el.id = id;
+        document.head.appendChild(el);
+      }
+      el.textContent = JSON.stringify(data);
+    };
+
+    const indexable = !noindex;
+    const hasBreadcrumb =
+      schemaTypes.includes("BreadcrumbList") || !!document.getElementById("matrix-breadcrumb-jsonld");
+    const hasWebPage = schemaTypes.some((t) => /Page$/.test(String(t)));
+
+    upsertJsonLd(
+      "matrix-auto-breadcrumb-jsonld",
+      indexable && !hasBreadcrumb ? buildBreadcrumb(currentPath, title) : null
+    );
+    upsertJsonLd(
+      "matrix-auto-webpage-jsonld",
+      indexable && !hasWebPage && currentPath !== "/"
+        ? {
+            "@context": "https://schema.org",
+            "@type": pageType || "WebPage",
+            "@id": canonical + "#webpage",
+            url: canonical,
+            name: title || document.title,
+            ...(description ? { description } : {}),
+            inLanguage: "fr-FR",
+            isPartOf: { "@type": "WebSite", name: SITE_NAME, url: SITE_URL + "/" },
+            primaryImageOfPage: { "@type": "ImageObject", url: ogImage },
+          }
+        : null
+    );
+
+    return () => {
+      document.getElementById("matrix-auto-breadcrumb-jsonld")?.remove();
+      document.getElementById("matrix-auto-webpage-jsonld")?.remove();
+    };
+  }, [title, description, path, image, imageAlt, type, noindex, schema, pageType]);
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
@@ -7,17 +7,66 @@ import {
 } from "lucide-react";
 import QuestComments from "@/components/tuto-gaming/QuestComments";
 import { getCategoryMeta, getDifficultyMeta } from "@/components/tuto-gaming/tutoGamingData";
+import usePageSEO from "@/hooks/usePageSEO";
+import GuideLinksBlock from "@/components/seo/GuideLinksBlock";
+import { breadcrumbNode, howToNode, graph, cleanText, excerpt, slugLabel } from "@/lib/guideSeo";
 
 export default function QuestDetailPage() {
   const { gameSlug, questId } = useParams();
   const [quest, setQuest] = useState(null);
   const [user, setUser] = useState(null);
+  const [gameName, setGameName] = useState("");
   const [loading, setLoading] = useState(true);
+
+  const gameLabel = gameName || slugLabel(gameSlug);
+  const seo = useMemo(() => {
+    if (!quest) return { noindex: true };
+    const path = `/tuto-gaming/${gameSlug}/quest/${questId}`;
+    const description = cleanText(quest.description);
+    const steps = (quest.steps || []).filter((step) => cleanText(step?.title));
+    const available = [
+      steps.length ? "étapes détaillées" : null,
+      quest.objectives ? "objectifs" : null,
+      quest.rewards ? "récompenses" : null,
+      quest.tips ? "astuces" : null,
+    ].filter(Boolean);
+    const hasContent = description.length >= 40 || available.length > 0;
+    const metaDescription =
+      description.length >= 40
+        ? excerpt(description)
+        : excerpt(`Quête « ${quest.title} » dans ${gameLabel} : ${available.join(", ")} sur Matrix Hub.`);
+    return {
+      title: `${quest.title} — quête ${gameLabel} | Matrix Hub`,
+      description: metaDescription,
+      path,
+      image: quest.image_url || undefined,
+      type: "article",
+      noindex: !hasContent,
+      schema: graph(
+        breadcrumbNode([
+          { name: "Accueil", path: "/" },
+          { name: "Guides gaming", path: "/tuto-gaming" },
+          { name: gameLabel, path: `/tuto-gaming/${gameSlug}` },
+          { name: quest.title, path },
+        ]),
+        howToNode({
+          name: quest.title,
+          description: description || undefined,
+          image: quest.image_url || undefined,
+          steps,
+        })
+      ),
+    };
+  }, [quest, gameLabel, gameSlug, questId]);
+  usePageSEO(seo);
 
   const fetchData = useCallback(async () => {
     try {
       const q = await base44.entities.Quest.get(questId);
       setQuest(q);
+      base44.entities.Game.filter({ slug: gameSlug })
+        .then((games) => { if (games?.[0]?.name) setGameName(games[0].name); })
+        .catch(() => {});
       base44.auth.me().then(setUser).catch(() => {});
     } catch {
       /* silent */
@@ -247,6 +296,8 @@ export default function QuestDetailPage() {
       >
         <QuestComments questId={quest.id} currentUser={user} />
       </div>
+
+      <GuideLinksBlock kind="quest" gameName={gameLabel} gameSlug={gameSlug} />
     </div>
   );
 }

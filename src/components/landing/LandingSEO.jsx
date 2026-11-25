@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Radio, Server, GraduationCap, Dices } from "lucide-react";
+import PageSeoBlock from "@/components/seo/PageSeoBlock";
 
 const HIGHLIGHTS = [
 {
@@ -73,19 +74,12 @@ export default function LandingSEO() {
         <nav aria-label="Pages principales de Matrix Hub" className="mt-5">
           <ul className="flex flex-wrap gap-x-5 gap-y-2">
             {INTERNAL_LINKS.map((link) =>
-            <li key={link.href}>
-                
-
-
-
-
-
-              
-              </li>
+            <li key={link.href}><Link to={link.href} className="text-xs font-bold text-primary hover:underline">{link.label}</Link></li>
             )}
           </ul>
         </nav>
       </motion.div>
+      <PageSeoBlock page="landing" />
     </section>);
 
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
+import GameSeoBlock from "@/components/seo/GameSeoBlock";
 import { ArrowLeft, Loader2, Server, Calculator, Hammer } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { RUST_TABS, RUST_SERVER_FILTERS, RUST_BUILDING_GUIDES, RUST_FALLBACK_SERVERS } from "@/components/tuto-gaming/rustData";
@@ -130,6 +131,8 @@ export default function Rust() {
           </div>
         )}
       </div>
+
+      <GameSeoBlock page="rust" />
 
       <GameItemModal item={selected} onClose={() => setSelected(null)} gameName="RUST" logoUrl={RUST_LOGO} extraFields={[{ key: "status", label: "Niveau" }, { key: "category", label: "Catégorie" }]} />
     </div>

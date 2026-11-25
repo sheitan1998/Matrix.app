@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import GameSeoBlock from "@/components/seo/GameSeoBlock";
 import { ArrowLeft, Skull, Sword, Map } from "lucide-react";
 import { VALHEIM_TABS, VALHEIM_BOSSES, VALHEIM_BIOMES, VALHEIM_WEAPONS, VALHEIM_ARMORS, VALHEIM_FOOD } from "@/components/tuto-gaming/valheimData";
 import ValheimBossCard from "@/components/tuto-gaming/ValheimBossCard";
@@ -119,6 +120,8 @@ export default function Valheim() {
           { key: "type", label: "Type" },
         ]}
       />
+
+      <GameSeoBlock page="valheim" />
     </div>
   );
 }
