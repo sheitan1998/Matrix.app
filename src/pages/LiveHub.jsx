@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { fetchYouTube, mergeYouTubeLocal } from "@/hooks/useYouTube";
 import VideoGrid from "@/components/video/VideoGrid";
+import PageSeoBlock from "@/components/seo/PageSeoBlock";
 import { Radio } from "lucide-react";
 
 export default function LiveHub() {
@@ -36,6 +37,7 @@ export default function LiveHub() {
         </div>
       </div>
       <VideoGrid videos={lives} isLoading={isLoading} emptyMessage="Aucun live pour le moment" />
+      <PageSeoBlock page="live" />
     </div>
   );
 }

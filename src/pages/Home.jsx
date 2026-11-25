@@ -4,6 +4,8 @@ import usePullToRefresh from "@/hooks/usePullToRefresh";
 import useStreamFeed from "@/hooks/useStreamFeed";
 import PullToRefreshIndicator from "@/components/ui/PullToRefreshIndicator";
 import VideoGrid from "@/components/video/VideoGrid";
+import { useLocation } from "react-router-dom";
+import PageSeoBlock from "@/components/seo/PageSeoBlock";
 
 const FILTERS = [
   { id: "all", label: "Tout" },
@@ -19,6 +21,7 @@ const FILTERS = [
 ];
 
 export default function Home() {
+  const { pathname } = useLocation();
   const [filter, setFilter] = useState("all");
   const { videos, isLoading, isLoadingMore, hasMore, loadMore, refetch } = useStreamFeed(filter);
   const sentinelRef = useRef(null);
@@ -70,6 +73,7 @@ export default function Home() {
       <div ref={sentinelRef} className="h-10 flex items-center justify-center">
         {isLoadingMore && <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />}
       </div>
+      {pathname === "/stream" && <PageSeoBlock page="stream" />}
     </div>
   );
 }

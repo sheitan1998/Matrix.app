@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import GameSeoBlock from "@/components/seo/GameSeoBlock";
 import { ArrowLeft, Fence, TrendingUp, Factory } from "lucide-react";
 import ModHubGrid from "@/components/tuto-gaming/ModHubGrid";
 import { FARMING_SIM_POSTER, fetchFarmingSimCategories } from "@/components/tuto-gaming/farmingSimData";
@@ -122,6 +123,7 @@ export default function FarmingSimulator25() {
         )
         }
       </div>
+      <GameSeoBlock page="farming" />
     </div>);
 
 }

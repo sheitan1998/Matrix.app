@@ -27,6 +27,7 @@ export default function SeoBreadcrumbs({ items = [], className = "" }) {
       }))
     });
     document.getElementById("matrix-breadcrumb-jsonld")?.remove();
+    document.getElementById("matrix-auto-breadcrumb-jsonld")?.remove();
     document.head.appendChild(script);
     return () => script.remove();
   }, [key]);

@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import GameSeoBlock from "@/components/seo/GameSeoBlock";
 import { base44 } from "@/api/base44Client";
 import { Search, Shirt, Loader2, ArrowLeft, Trophy } from "lucide-react";
 import { motion } from "framer-motion";
@@ -221,6 +222,8 @@ export default function FortniteCosmetics() {
           </div>
         )
       )}
+
+      <GameSeoBlock page="fortniteCosmetics" />
 
       <CosmeticDetailModal cosmetic={selectedItem} onClose={closeItem} onSelect={selectItem} user={user} />
     </div>

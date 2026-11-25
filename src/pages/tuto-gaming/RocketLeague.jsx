@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
+import GameSeoBlock from "@/components/seo/GameSeoBlock";
 import { ArrowLeft, ShoppingBag, Trophy } from 'lucide-react';
 import RocketLeagueGarage from '@/components/tuto-gaming/RocketLeagueGarage';
 import RocketLeagueShop from '@/components/tuto-gaming/RocketLeagueShop';
@@ -61,6 +62,7 @@ export default function RocketLeague() {
         <div role="tabpanel" id="rocket-panel-stats" aria-labelledby="rocket-tab-stats" hidden={tab !== 'stats'}>
           <RocketStatsTracker />
         </div>
+        <GameSeoBlock page="rocket" />
       </div>
     </main>
   );

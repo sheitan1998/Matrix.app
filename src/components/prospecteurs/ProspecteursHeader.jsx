@@ -20,7 +20,7 @@ export default function ProspecteursHeader({ user, trixBalance }) {
         </span>
       </Link>
 
-      {/* Center: RECHERCHE PROSPECTEURS pill */}
+      {/* Center: RECHERCHE BEST SERVEUR pill */}
       
 
 

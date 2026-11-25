@@ -50,7 +50,7 @@ export default function CreatorProfile() {
             },
           },
         }
-      : {}
+      : { noindex: true }
   );
 
   if (loading) {

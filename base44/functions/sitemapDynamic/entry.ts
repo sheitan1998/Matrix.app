@@ -48,10 +48,13 @@ export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
 
-    const [serversPage, creatorsPage, categoriesPage] = await Promise.allSettled([
+    const [serversPage, creatorsPage, categoriesPage, gamesPage, questsPage, wikiPage] = await Promise.allSettled([
       base44.asServiceRole.entities.ServerAd.filter({ type: "server" }, { sort: "-updated_date", limit: MAX_URLS }),
       base44.asServiceRole.entities.CreatorChannel.filter({ is_active: true }, { sort: "-updated_date", limit: MAX_URLS }),
       base44.asServiceRole.entities.ServerCategory.filter({ is_active: true }, { sort: "sort_order", limit: 500 }),
+      base44.asServiceRole.entities.Game.filter({ is_active: true }, { sort: "sort_order", limit: 500 }),
+      base44.asServiceRole.entities.Quest.filter({}, { sort: "-updated_date", limit: MAX_URLS }),
+      base44.asServiceRole.entities.WikiEntry.filter({}, { sort: "-updated_date", limit: MAX_URLS }),
     ]);
 
     const urls = [];
@@ -91,6 +94,42 @@ export default async function (req) {
       const description = (creator.description || "").replace(/\s+/g, " ").trim();
       if (!slug || description.length < MIN_CREATOR_DESCRIPTION) continue;
       urls.push(toEntry(`${SITE_URL}/createur/${slug}`, creator.updated_date));
+    }
+
+    // Guides gaming : memes regles d'eligibilite que les pages (contenu reel, pas de fiche vide).
+    const rowsOf = (result) => {
+      if (result.status !== "fulfilled") return [];
+      const value = result.value;
+      return Array.isArray(value) ? value : value?.items || [];
+    };
+    const clean = (text) => String(text || "").replace(/\s+/g, " ").trim();
+    const quests = rowsOf(questsPage).filter(
+      (quest) =>
+        quest.id &&
+        quest.game_slug &&
+        (clean(quest.description).length >= 40 ||
+          quest.objectives ||
+          quest.rewards ||
+          quest.tips ||
+          (quest.steps || []).some((step) => clean(step?.title)))
+    );
+    const wikiEntries = rowsOf(wikiPage).filter(
+      (entry) =>
+        entry.id &&
+        entry.game_slug &&
+        (clean(entry.description).length >= 40 || clean(entry.content).length >= 40)
+    );
+    const gamesWithContent = new Set([...quests, ...wikiEntries].map((item) => item.game_slug));
+    for (const game of rowsOf(gamesPage)) {
+      if (!game.slug) continue;
+      if (!gamesWithContent.has(game.slug) && clean(game.description).length < 40) continue;
+      urls.push(toEntry(`${SITE_URL}/tuto-gaming/${game.slug}`, game.updated_date));
+    }
+    for (const quest of quests) {
+      urls.push(toEntry(`${SITE_URL}/tuto-gaming/${quest.game_slug}/quest/${quest.id}`, quest.updated_date));
+    }
+    for (const entry of wikiEntries) {
+      urls.push(toEntry(`${SITE_URL}/tuto-gaming/${entry.game_slug}/wiki/${entry.id}`, entry.updated_date));
     }
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join("\n")}\n</urlset>`;

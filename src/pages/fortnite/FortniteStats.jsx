@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import GameSeoBlock from "@/components/seo/GameSeoBlock";
 import { base44 } from "@/api/base44Client";
 import {
   Search,
@@ -198,6 +199,8 @@ export default function FortniteStats() {
           <DetailsGrid data={overall} />
         </div>
       )}
+
+      <GameSeoBlock page="fortniteStats" />
     </div>
   );
 }

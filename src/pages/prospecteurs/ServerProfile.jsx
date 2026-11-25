@@ -18,6 +18,7 @@ import usePageSEO from "@/hooks/usePageSEO";
 import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 import { buildServerSeo } from "@/lib/serverSeo";
 import ServerSeoContent from "@/components/prospecteurs/ServerSeoContent";
+import ServerFaqBlock from "@/components/prospecteurs/ServerFaqBlock";
 
 export default function ServerProfile() {
   const { slug } = useParams();
@@ -414,6 +415,8 @@ export default function ServerProfile() {
         )}
 
         <ServerSeoContent server={server} />
+
+        <ServerFaqBlock server={server} />
 
         {/* Owner actions */}
         {isOwner && (

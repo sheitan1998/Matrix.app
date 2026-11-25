@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import PageSeoBlock from "@/components/seo/PageSeoBlock";
 
 export default function Contact() {
   const [name, setName] = useState("");
@@ -67,6 +68,7 @@ export default function Contact() {
           {loading ? "Envoi..." : "Envoyer"}
         </Button>
       </form>
+      <PageSeoBlock page="contact" />
     </div>
   );
 }

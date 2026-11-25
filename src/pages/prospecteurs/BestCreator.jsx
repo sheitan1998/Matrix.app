@@ -15,6 +15,7 @@ import CreatorAutoVoteModal from "@/components/prospecteurs/CreatorAutoVoteModal
 import CreatorDeleteConfirm from "@/components/prospecteurs/CreatorDeleteConfirm";
 import SeoContentBlock from "@/components/seo/SeoContentBlock";
 import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
+import { SITE_URL } from "@/lib/seoRoutes";
 
 const score = (c) => (c.votes_month || 0) + (c.boosts || 0) * 2;
 
@@ -84,6 +85,15 @@ export default function BestCreator() {
   }, [creators]);
 
   const generalTop = useMemo(() => [...creators].sort((a, b) => score(b) - score(a)).slice(0, 5), [creators]);
+
+  const topCreatorsSeo = useMemo(
+    () => [...creators]
+      .filter((c) => c.name && (c.slug || c.id))
+      .sort((a, b) => score(b) - score(a))
+      .slice(0, 10)
+      .map((c) => ({ name: c.name, url: `${SITE_URL}/createur/${c.slug || c.id}` })),
+    [creators]
+  );
 
   const platformTops = useMemo(() => {
     const tops = {};
@@ -377,12 +387,17 @@ export default function BestCreator() {
               { question: "Où trouver les serveurs et communautés à rejoindre ?", answer: "L'annuaire Best Serveur réunit les serveurs Discord et Nexus gaming par catégorie et par étiquette, avec leurs votes et leurs liens d'invitation." },
             ]}
             links={[
-              { href: "/best-serveurs", label: "Best Serveur" },
-              { href: "/tuto-gaming", label: "Tuto Gaming" },
-              { href: "/fortnite-maps", label: "Codes de maps Fortnite" },
+              { href: "/best-serveurs", label: "Best Serveur : l'annuaire de serveurs" },
+              { href: "/nexus", label: "Nexus : serveurs et salons vocaux" },
+              { href: "/tuto-gaming", label: "Guides et tutoriels gaming" },
+              { href: "/farming", label: "Farming Simulator 25" },
               { href: "/minecraft", label: "Guides Minecraft" },
+              { href: "/rocket-league", label: "Rocket League" },
+              { href: "/fortnite-maps", label: "Codes de maps Fortnite" },
+              { href: "/gta-6", label: "GTA VI" },
               { href: "/about", label: "À propos de Matrix Hub" },
             ]}
+            itemList={topCreatorsSeo}
           />
         </div>
       </div>

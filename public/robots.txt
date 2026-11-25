@@ -47,18 +47,39 @@ Allow: /
 Disallow: /admin
 Disallow: /mon-profil
 Disallow: /wallet
+Disallow: /profile
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /mfa
+Disallow: /oauth
 
 User-agent: ClaudeBot
 Allow: /
 Disallow: /admin
 Disallow: /mon-profil
 Disallow: /wallet
+Disallow: /profile
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /mfa
+Disallow: /oauth
 
 User-agent: PerplexityBot
 Allow: /
 Disallow: /admin
 Disallow: /mon-profil
 Disallow: /wallet
+Disallow: /profile
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /mfa
+Disallow: /oauth
 
 User-agent: Google-Extended
 Allow: /

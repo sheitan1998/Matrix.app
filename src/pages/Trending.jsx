@@ -5,6 +5,7 @@ import { fetchYouTube, mergeYouTubeLocal } from "@/hooks/useYouTube";
 import VideoGrid from "@/components/video/VideoGrid";
 import { Flame } from "lucide-react";
 import usePullToRefresh from "@/hooks/usePullToRefresh";
+import PageSeoBlock from "@/components/seo/PageSeoBlock";
 import PullToRefreshIndicator from "@/components/ui/PullToRefreshIndicator";
 
 export default function Trending() {
@@ -35,6 +36,7 @@ export default function Trending() {
         </div>
       </div>
       <VideoGrid videos={videos} isLoading={isLoading} />
+      <PageSeoBlock page="trending" />
     </div>
   );
 }

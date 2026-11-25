@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { PageLinksOnly } from "@/components/seo/PageSeoBlock";
 import { ArrowLeft, Shield, Users, FileText, Mail, Database, Cookie, Share2, CreditCard, Server, Copyright } from "lucide-react";
 
 // Official YouTube icon
@@ -263,6 +264,8 @@ export default function Privacy() {
             <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/80">Conditions d'utilisation de YouTube</a>.
           </p>
         </div>
+
+        <PageLinksOnly page="privacy" />
 
         {/* Footer note */}
         <p className="text-center text-xs text-white/30 mt-10 font-mono">

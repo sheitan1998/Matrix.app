@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import GameSeoBlock from "@/components/seo/GameSeoBlock";
 import { ArrowLeft, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import DofusFilters from '@/components/tuto-gaming/DofusFilters';
 import DofusItemCard from '@/components/tuto-gaming/DofusItemCard';
@@ -50,5 +51,6 @@ export default function Dofus() {
     <div className="flex items-center justify-center gap-4 mt-8"><button aria-label="Page précédente" disabled={query.page <= 1 || isFetching} onClick={() => setQuery({ ...query, page: query.page - 1 })} className="p-2 rounded-lg bg-secondary disabled:opacity-30"><ChevronLeft className="w-5 h-5" /></button><span className="text-sm text-muted-foreground">Page {query.page} · {data.total} résultats</span><button aria-label="Page suivante" disabled={!data.has_more || isFetching} onClick={() => setQuery({ ...query, page: query.page + 1 })} className="p-2 rounded-lg bg-secondary disabled:opacity-30"><ChevronRight className="w-5 h-5" /></button></div>
     {selectedItem && (selectedItem.category === 'sets' ? <DofusSetModal set={selectedItem} onClose={() => setSelectedItem(null)} /> : <DofusItemModal item={selectedItem} category={query.category} onClose={() => setSelectedItem(null)} />)}
     </section>
+    <GameSeoBlock page="dofus" />
   </div></main>;
 }

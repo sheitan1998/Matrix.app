@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import GameSeoBlock from "@/components/seo/GameSeoBlock";
 import { ArrowLeft, Users, Crosshair, Palette, Loader2 } from "lucide-react";
 import { useValorantData } from "@/components/tuto-gaming/useValorantData";
 import ValorantAgentCard from "@/components/tuto-gaming/ValorantAgentCard";
@@ -91,6 +92,8 @@ export default function Valorant() {
         logoUrl={VALORANT_LOGO}
         extraFields={[{ key: "role", label: "Rôle", format: (r) => r?.displayName || "" }]}
       />
+
+      <GameSeoBlock page="valorant" />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import PageSeoBlock from "@/components/seo/PageSeoBlock";
 
 export default function About() {
   return (
@@ -35,6 +36,7 @@ export default function About() {
           aujourd'hui et faites partie de l'aventure.
         </p>
       </div>
+      <PageSeoBlock page="about" />
     </div>
   );
 }
