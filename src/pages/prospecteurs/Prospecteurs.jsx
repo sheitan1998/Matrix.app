@@ -21,6 +21,8 @@ import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 import { serverHasTag, serverTags } from "@/lib/serverTags";
 import { serverPath } from "@/lib/serverSeo";
 import { SITE_URL } from "@/lib/seoRoutes";
+import AuthModal from "@/components/landing/AuthModal";
+import { setPendingAuthAction, clearPendingAuthAction, consumePendingAuthAction } from "@/lib/pendingAuthAction";
 
 
 export default function Prospecteurs() {
@@ -53,6 +55,7 @@ export default function Prospecteurs() {
   const [myServersCount, setMyServersCount] = useState(0);
   const [showReminder, setShowReminder] = useState(false);
   const [showVoteAutoSetup, setShowVoteAutoSetup] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => setUser(null)).finally(() => setAuthChecked(true));
@@ -247,7 +250,8 @@ export default function Prospecteurs() {
   const openCreateModal = () => {
     if (!user) {
       toast.info("Connecte-toi pour publier un serveur");
-      navigate("/login?returnTo=" + encodeURIComponent(window.location.pathname));
+      setPendingAuthAction("publish");
+      setShowAuth(true);
       return;
     }
     setCreateType("server");
@@ -265,6 +269,13 @@ export default function Prospecteurs() {
     window.history.replaceState({}, "", window.location.pathname);
     openCreateModal();
   }, [user, authChecked, publishHandled]);
+
+  // Reprend l'action demandée avant la connexion (pop-up ou retour OAuth)
+  useEffect(() => {
+    if (!user) return;
+    setShowAuth(false);
+    if (consumePendingAuthAction() === "publish") openCreateModal();
+  }, [user]);
 
   return (
     <div
@@ -604,6 +615,11 @@ export default function Prospecteurs() {
       {showVoteAutoSetup && user &&
       <VoteAutoSetupModal user={user} onClose={() => setShowVoteAutoSetup(false)} />
       }
+      <AuthModal
+        open={showAuth}
+        onClose={() => { setShowAuth(false); clearPendingAuthAction(); }}
+        redirectTo={window.location.pathname + window.location.search}
+      />
     </div>);
 
 }

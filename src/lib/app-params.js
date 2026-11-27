@@ -105,7 +105,38 @@ const getAppParamValue = (paramName, { defaultValue = undefined, removeFromUrl =
 	return null;
 }
 
+const YT_LINK_PENDING_KEY = "yt_link_pending";
+
+/**
+ * Au retour d'une liaison YouTube (Stream), le jeton Google présent dans l'URL
+ * ne doit jamais remplacer la session principale déjà active.
+ */
+const absorbYouTubeLinkReturn = () => {
+	if (isNode) return;
+	let pending = false;
+	try { pending = sessionStorage.getItem(YT_LINK_PENDING_KEY) === "1"; } catch { /* stockage indisponible */ }
+	const params = new URLSearchParams(window.location.search);
+	const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+	const scope = params.get("scope") || hashParams.get("scope") || "";
+	if (!pending && !scope.includes("youtube")) return;
+	const googleToken = hashParams.get("access_token") || params.get("access_token");
+	if (!googleToken) return;
+	if (!storage.getItem("base44_access_token") && !storage.getItem("token")) return;
+	try {
+		sessionStorage.setItem("yt_oauth_token", googleToken);
+		sessionStorage.removeItem(YT_LINK_PENDING_KEY);
+	} catch { /* stockage indisponible */ }
+	["access_token", "scope", "token_type", "expires_in", "state", "authuser", "prompt"].forEach((key) => {
+		params.delete(key);
+		hashParams.delete(key);
+	});
+	const search = params.toString();
+	const hash = hashParams.toString();
+	window.history.replaceState({}, document.title, `${window.location.pathname}${search ? `?${search}` : ""}${hash ? `#${hash}` : ""}`);
+};
+
 const getAppParams = () => {
+	absorbYouTubeLinkReturn();
 	if (getAppParamValue("clear_access_token") === 'true') {
 		storage.removeItem('base44_access_token');
 		storage.removeItem('token');
