@@ -173,6 +173,7 @@ export function useYouTubeAuth() {
           client_id: clientId,
           scope: YOUTUBE_SCOPE,
           callback: async (response) => {
+            try { sessionStorage.removeItem("yt_link_pending"); } catch { /* stockage indisponible */ }
             if (response.error) {
               setError(response.error);
               return;
@@ -246,6 +247,7 @@ export function useYouTubeAuth() {
       return;
     }
     setError(null);
+    try { sessionStorage.setItem("yt_link_pending", "1"); } catch { /* stockage indisponible */ }
     tokenClientRef.current.requestAccessToken({ prompt: "consent" });
   }, [clientId]);
 

@@ -16,6 +16,8 @@ import CreatorDeleteConfirm from "@/components/prospecteurs/CreatorDeleteConfirm
 import SeoContentBlock from "@/components/seo/SeoContentBlock";
 import SeoBreadcrumbs from "@/components/seo/SeoBreadcrumbs";
 import { SITE_URL } from "@/lib/seoRoutes";
+import AuthModal from "@/components/landing/AuthModal";
+import { setPendingAuthAction, clearPendingAuthAction, consumePendingAuthAction } from "@/lib/pendingAuthAction";
 
 const score = (c) => (c.votes_month || 0) + (c.boosts || 0) * 2;
 
@@ -38,6 +40,7 @@ export default function BestCreator() {
   const [showAutoVote, setShowAutoVote] = useState(false);
   const [channelToDelete, setChannelToDelete] = useState(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => setUser(null));
@@ -136,7 +139,8 @@ export default function BestCreator() {
   const openCreate = () => {
     if (!user) {
       toast.info("Connecte-toi pour publier ta chaîne");
-      navigate("/login?returnTo=" + encodeURIComponent(window.location.pathname));
+      setPendingAuthAction("publish");
+      setShowAuth(true);
       return;
     }
     setEditingChannel(null);
@@ -147,6 +151,13 @@ export default function BestCreator() {
     setEditingChannel(creator);
     setShowForm(true);
   };
+
+  // Reprend l'action demandée avant la connexion (retour OAuth ou rechargement)
+  useEffect(() => {
+    if (!user) return;
+    setShowAuth(false);
+    if (consumePendingAuthAction() === "publish") openCreate();
+  }, [user]);
 
   const confirmDelete = async () => {
     if (!channelToDelete) return;
@@ -423,6 +434,12 @@ export default function BestCreator() {
           onConfirm={confirmDelete}
         />
       )}
+
+      <AuthModal
+        open={showAuth}
+        onClose={() => { setShowAuth(false); clearPendingAuthAction(); }}
+        redirectTo={window.location.pathname + window.location.search}
+      />
     </div>
   );
 }
