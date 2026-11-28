@@ -136,7 +136,7 @@ export default function CategoryServers() {
   return (
     <div className="min-h-screen relative" style={{ background: "linear-gradient(180deg, rgba(18,9,28,0.85) 0%, rgba(26,14,46,0.82) 40%, rgba(18,9,28,0.88) 100%)" }}>
       <ProspecteursHeader user={user} trixBalance={user?.trix_balance || 0} />
-      <div className="relative z-10 flex max-w-7xl mx-auto pb-12">
+      <div className="relative z-10 flex w-full pb-12 pr-2 sm:pr-4">
         <ProspecteursSidebar active="servers" />
         <div className="flex-1 px-4 sm:px-6 py-5">
           {/* Breadcrumb */}

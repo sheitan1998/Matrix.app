@@ -3,7 +3,6 @@ import { ArrowUp, Flame, ExternalLink, Zap, Pencil, Trash2, Share2, Check, Thumb
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
-import BoostAdModal from "./BoostAdModal";
 import VoteModal from "./VoteModal";
 import { serverCategoryList } from "@/lib/serverCategories";
 import { serverTags, TAG_CHIP_CLASS, tagChipStyle } from "@/lib/serverTags";
@@ -413,15 +412,6 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
           }
         </button>
         <button
-          onClick={() => setShowBoost(true)}
-          className="h-7 px-2 rounded-md flex items-center justify-center gap-0.5 transition tap-sm text-[9px] font-bold"
-          style={{ background: "rgba(251,191,36,0.12)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.2)" }}
-          title="Booster ce serveur">
-          
-          <Zap className="w-3 h-3" />
-          <span className="hidden sm:inline">Boost</span>
-        </button>
-        <button
           onClick={handleShare}
           className="h-7 px-2 rounded-md flex items-center justify-center gap-0.5 transition tap-sm text-[9px] font-bold"
           style={{ background: "rgba(138,79,255,0.12)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.2)" }}
@@ -484,18 +474,6 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
           setVoteStatus({ canVote: false, remaining: { h: 2, m: 0, s: 0 } });
           onVote(server.id, data);
         }} />
-
-      }
-
-      {/* Boost modal */}
-      {showBoost &&
-      <BoostAdModal
-        adId={server.id}
-        adTitle={server.title}
-        flashBoosts={flashBoosts}
-        trixBalance={trixBalance}
-        onBoosted={handleBoosted}
-        onClose={() => setShowBoost(false)} />
 
       }
     </div>);
