@@ -7,17 +7,17 @@ const STORAGE_KEY = "matrix_theme_prefs";
 
 const DARK_VARS = {
   "--background": "0 0% 4%",
-  "--foreground": "0 0% 98%",
+  "--foreground": "0 0% 100%",
   "--card": "0 0% 7%",
-  "--card-foreground": "0 0% 98%",
+  "--card-foreground": "0 0% 100%",
   "--popover": "0 0% 6%",
-  "--popover-foreground": "0 0% 98%",
+  "--popover-foreground": "0 0% 100%",
   "--primary": "135 100% 50%",
   "--primary-foreground": "0 0% 5%",
   "--secondary": "0 0% 12%",
   "--secondary-foreground": "0 0% 98%",
   "--muted": "0 0% 10%",
-  "--muted-foreground": "0 0% 64%",
+  "--muted-foreground": "213 27% 84%",
   "--accent": "135 100% 50%",
   "--accent-foreground": "0 0% 5%",
   "--destructive": "0 84% 60%",
@@ -28,23 +28,23 @@ const DARK_VARS = {
 };
 
 const LIGHT_VARS = {
-  "--background": "0 0% 97%",
-  "--foreground": "0 0% 6%",
+  "--background": "216 33% 97%",
+  "--foreground": "222 47% 11%",
   "--card": "0 0% 100%",
-  "--card-foreground": "0 0% 6%",
+  "--card-foreground": "222 47% 11%",
   "--popover": "0 0% 100%",
-  "--popover-foreground": "0 0% 6%",
+  "--popover-foreground": "222 47% 11%",
   "--primary": "135 80% 38%",
   "--primary-foreground": "0 0% 100%",
   "--secondary": "0 0% 92%",
-  "--secondary-foreground": "0 0% 10%",
+  "--secondary-foreground": "222 47% 11%",
   "--muted": "0 0% 90%",
-  "--muted-foreground": "0 0% 40%",
+  "--muted-foreground": "215 25% 27%",
   "--accent": "135 80% 38%",
   "--accent-foreground": "0 0% 100%",
   "--destructive": "0 84% 50%",
   "--destructive-foreground": "0 0% 100%",
-  "--border": "0 0% 84%",
+  "--border": "214 32% 91%",
   "--input": "0 0% 88%",
   "--ring": "135 80% 38%",
 };
@@ -166,7 +166,7 @@ export function applyTheme(prefs) {
     });
   }
 
-  const pageColor = mode === "dark" ? "#000000" : mode === "light" ? "#F4F4F5" : mode === "custom" ? color : "#0a050f";
+  const pageColor = mode === "dark" ? "#000000" : mode === "light" ? "#F5F7FA" : mode === "custom" ? color : "#0a050f";
   let image = "none";
   if (mode === "original") {
     image = `linear-gradient(rgba(10,5,15,0.55), rgba(10,5,15,0.55)), url(${JSON.stringify(ORIGINAL_BG_IMAGE)})`;
@@ -230,8 +230,8 @@ export function ThemeProvider({ children }) {
       } else {
         setHasCustomBg(sub);
       }
-      // Préférences de thème enregistrées dans le profil : elles prennent le
-      // dessus pour retrouver la même apparence sur un autre appareil.
+      // PrÃ©fÃ©rences de thÃ¨me enregistrÃ©es dans le profil : elles prennent le
+      // dessus pour retrouver la mÃªme apparence sur un autre appareil.
       const stored = u?.theme_prefs;
       if (stored && typeof stored === "object") {
         const merged = { ...loadPrefs(), ...stored };
@@ -243,7 +243,7 @@ export function ThemeProvider({ children }) {
     setProfileReady(true);
   }, []);
 
-  // Sauvegarde du thème (localStorage immédiat + profil utilisateur différé).
+  // Sauvegarde du thÃ¨me (localStorage immÃ©diat + profil utilisateur diffÃ©rÃ©).
   useEffect(() => {
     if (!profileReady) return;
     const payload = JSON.stringify(prefs);
