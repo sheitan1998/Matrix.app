@@ -2,7 +2,6 @@ import React from "react";
 
 const SOURCE_LABELS = {
   auto: { label: "AUTO", color: "#a855f7" },
-  boost: { label: "BOOST", color: "#fbbf24" },
   authenticated: { label: "COMPTE", color: "#22c55e" },
   guest: { label: "INVITÉ", color: "#6b7280" },
 };

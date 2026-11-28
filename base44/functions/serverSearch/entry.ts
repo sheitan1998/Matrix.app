@@ -494,9 +494,6 @@ export default async function(req: Request): Promise<Response> {
         live_tracking_enabled: !!found.ip,
         votes: found.votes,
         votes_month: found.votes_month,
-        boosts: found.boosts,
-        is_boosted: found.is_boosted,
-        boost_until: found.boost_until,
         players_count: found.players_count,
         max_players: found.max_players,
         author_name: found.author_name,
@@ -614,11 +611,8 @@ export default async function(req: Request): Promise<Response> {
 
         const now = Date.now();
 
-        // VIP users get 1h cooldown instead of 2h
-        // is_vip is set to false by the Stripe webhook on subscription deletion,
-        // so if is_vip is true the subscription is active (even if vip_until is missing)
-        const isVip = !!(user && user.is_vip && (!user.vip_until || new Date(user.vip_until).getTime() > now));
-        const effectiveCooldown = isVip ? (1 * 60 * 60 * 1000) : VOTE_COOLDOWN_MS;
+        // Every voter gets the same 2h cooldown
+        const effectiveCooldown = VOTE_COOLDOWN_MS;
 
         if (lastVote) {
           const lastVoted = lastVote.last_voted_at
@@ -672,72 +666,6 @@ export default async function(req: Request): Promise<Response> {
           votes_month: freshAd.votes_month || 0,
           clicks: freshAd.clicks || 0,
           clicks_month: freshAd.clicks_month || 0,
-        });
-      }
-
-      // ---- Boost a server ad: both Flash and Trix count as a vote ----
-      case 'boost': {
-        const { serverAdId, method } = params;
-        if (!serverAdId) return Response.json({ error: 'Missing serverAdId' }, { status: 400 });
-
-        const ad = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
-        if (!ad) return Response.json({ error: 'Server not found' }, { status: 404 });
-
-        const nowIso = new Date().toISOString();
-        const freshUser = await base44.asServiceRole.entities.User.get(user.id);
-        const payment: Record<string, number> = {};
-
-        if (method === 'trix') {
-          const TRIX_BOOST_COST = 200;
-          const userTrix = freshUser?.trix_balance || 0;
-          if (userTrix < TRIX_BOOST_COST) {
-            return Response.json({ error: 'Trix insuffisants (200 requis)', balance: userTrix, cost: TRIX_BOOST_COST }, { status: 400 });
-          }
-          payment.newBalance = userTrix - TRIX_BOOST_COST;
-          await base44.asServiceRole.entities.User.update(user.id, { trix_balance: payment.newBalance });
-        } else {
-          const currentFlashBoosts = freshUser?.flash_boosts || 0;
-          if (currentFlashBoosts < 1) {
-            return Response.json({ error: 'Insufficient Flash Boosts', balance: currentFlashBoosts }, { status: 400 });
-          }
-          payment.newFlashBoosts = currentFlashBoosts - 1;
-          await base44.asServiceRole.entities.User.update(user.id, { flash_boosts: payment.newFlashBoosts });
-        }
-
-        // Every boost (Flash or Trix) = +1 boost AND +1 vote, in ONE atomic write so counters never drift
-        const boostUntil = new Date(Date.now() + BOOST_DURATION_HOURS * 60 * 60 * 1000).toISOString();
-        await base44.asServiceRole.entities.ServerAd.updateMany(
-          { id: serverAdId },
-          {
-            $inc: { boosts: 1, votes: 1, votes_month: 1, clicks: 1, clicks_month: 1 },
-            $set: { is_boosted: true, boost_until: boostUntil },
-          }
-        );
-
-        // Vote record for traceability (source: boost)
-        const voterPseudo = String(freshUser?.pseudo || '').split('#')[0].trim() || user.email.split('@')[0];
-        await base44.asServiceRole.entities.ServerVote.create({
-          server_ad_id: serverAdId,
-          user_email: user.email,
-          voter_pseudo: voterPseudo,
-          last_voted_at: nowIso,
-          vote_source: 'boost',
-        });
-
-        if (ad.webhook_url && ad.api_key) {
-          sendVoteWebhook(ad.webhook_url, ad.api_key, voterPseudo, serverAdId);
-        }
-
-        const freshAd = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
-        return Response.json({
-          success: true,
-          ...payment,
-          boosts: freshAd?.boosts || 0,
-          votes: freshAd?.votes || 0,
-          votes_month: freshAd?.votes_month || 0,
-          clicks: freshAd?.clicks || 0,
-          clicks_month: freshAd?.clicks_month || 0,
-          voted: true,
         });
       }
 
@@ -802,8 +730,7 @@ export default async function(req: Request): Promise<Response> {
           : 0;
         const elapsed = Date.now() - lastVoted;
 
-        const isVip = !!(user && user.is_vip && (!user.vip_until || new Date(user.vip_until).getTime() > Date.now()));
-        const effectiveCooldown = isVip ? (1 * 60 * 60 * 1000) : VOTE_COOLDOWN_MS;
+        const effectiveCooldown = VOTE_COOLDOWN_MS;
 
         if (elapsed >= effectiveCooldown) {
           return Response.json({ canVote: true });

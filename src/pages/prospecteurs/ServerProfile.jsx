@@ -3,10 +3,9 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import {
-  ArrowLeft, ArrowUp, Flame, Share2, ExternalLink, Zap, Globe, Plus,
+  ArrowLeft, ArrowUp, Flame, Share2, ExternalLink, Globe, Plus,
   Server as ServerIcon, MessageCircle, Copy, Check, Loader2, Pencil, Trash2,
 } from "lucide-react";
-import BoostAdModal from "@/components/prospecteurs/BoostAdModal";
 import VoteModal from "@/components/prospecteurs/VoteModal";
 import ServerApiPanel from "@/components/prospecteurs/ServerApiPanel";
 import { serverTags, TAG_CHIP_CLASS, tagChipStyle } from "@/lib/serverTags";
@@ -29,7 +28,6 @@ export default function ServerProfile() {
   const [voteStatus, setVoteStatus] = useState({ canVote: true, remaining: null });
   const [voting, setVoting] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [showBoost, setShowBoost] = useState(false);
   const [showVoteModal, setShowVoteModal] = useState(false);
   const [user, setUser] = useState(null);
 
@@ -173,7 +171,7 @@ export default function ServerProfile() {
   const bannerUrl = server.banner_url || server.cover_image;
   const initial = server.title?.[0]?.toUpperCase() || "S";
   const isOwner = !!server.is_owner;
-  const score = (server.votes_month || server.votes || 0) + (server.boosts || 0) * 2;
+  const score = server.votes_month || server.votes || 0;
   const fmt = (n) => String(n).padStart(2, "0");
   const shareSlug = server.slug || server.id;
 
@@ -236,14 +234,6 @@ export default function ServerProfile() {
               >
                 <TypeIcon className="w-2.5 h-2.5" /> {config.label}
               </span>
-              {server.is_boosted && (
-                <span
-                  className="text-[8px] font-black px-2 py-0.5 rounded inline-flex items-center gap-1"
-                  style={{ background: "rgba(251,191,36,0.15)", color: "#fbbf24" }}
-                >
-                  <Flame className="w-2.5 h-2.5" /> BOOSTÉ
-                </span>
-              )}
             </div>
             {server.game && (
               <p className="text-xs text-white/40 mt-0.5">{server.game}</p>
@@ -289,15 +279,6 @@ export default function ServerProfile() {
             <span className="hidden sm:inline">{copied ? "Copié" : "Partager"}</span>
           </button>
 
-          <button
-            onClick={() => setShowBoost(true)}
-            className="h-9 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition tap-sm"
-            style={{ background: "rgba(251,191,36,0.12)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.2)" }}
-          >
-            <Zap className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Boost</span>
-          </button>
-
           {server.discord_link && (
             <a
               href={server.discord_link}
@@ -334,7 +315,7 @@ export default function ServerProfile() {
         />
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-2 mb-4">
+        <div className="grid grid-cols-2 gap-2 mb-4">
           <div className="rounded-xl p-3 text-center" style={{ background: "rgba(18,9,28,0.6)", border: "1px solid rgba(138,79,255,0.15)" }}>
             <ArrowUp className="w-4 h-4 mx-auto mb-1" style={{ color: "#8a4fff" }} />
             <p className="text-lg font-black text-white">{server.votes || 0}</p>
@@ -344,11 +325,6 @@ export default function ServerProfile() {
             <Flame className="w-4 h-4 mx-auto mb-1" style={{ color: "#fbbf24" }} />
             <p className="text-lg font-black text-white">{server.votes_month || 0}</p>
             <p className="text-[8px] text-white/40 uppercase tracking-wider">Votes ce mois</p>
-          </div>
-          <div className="rounded-xl p-3 text-center" style={{ background: "rgba(18,9,28,0.6)", border: "1px solid rgba(138,79,255,0.15)" }}>
-            <Zap className="w-4 h-4 mx-auto mb-1" style={{ color: "#f59e0b" }} />
-            <p className="text-lg font-black text-white">{server.boosts || 0}</p>
-            <p className="text-[8px] text-white/40 uppercase tracking-wider">Boosts</p>
           </div>
         </div>
 
@@ -476,25 +452,6 @@ export default function ServerProfile() {
         />
       )}
 
-      {showBoost && (
-        <BoostAdModal
-          adId={server.id}
-          adTitle={server.title}
-          flashBoosts={user?.flash_boosts || 0}
-          trixBalance={user?.trix_balance || 0}
-          onBoosted={(data) => {
-            setServer((prev) => ({
-              ...prev,
-              boosts: data.boosts,
-              votes: data.votes ?? prev.votes,
-              votes_month: data.votes_month ?? prev.votes_month,
-              clicks: data.clicks ?? prev.clicks,
-              clicks_month: data.clicks_month ?? prev.clicks_month,
-            }));
-          }}
-          onClose={() => setShowBoost(false)}
-        />
-      )}
     </div>
   );
 }

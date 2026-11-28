@@ -9,9 +9,9 @@ export default function TopServers({ servers, loading, onVote, onDelete, onEdit,
     const isDiscord = link.includes("discord.gg") || link.includes("discord.com") || link.includes("discordapp.com");
     return type === "discord" ? isDiscord : !isDiscord;
   });
-  // Sort by combined score (votes + boosts*2) descending, take top 10
+  // Sort by votes descending, take top 10
   const top10 = [...filtered]
-    .sort((a, b) => ((b.votes || 0) + (b.boosts || 0) * 2) - ((a.votes || 0) + (a.boosts || 0) * 2))
+    .sort((a, b) => (b.votes || 0) - (a.votes || 0))
     .slice(0, 10);
 
   const title = type === "discord" ? "Top 10 Serveurs Discord" : type === "nexus" ? "Top 10 Serveurs Nexus" : "Top 10 Serveurs";
@@ -31,7 +31,7 @@ export default function TopServers({ servers, loading, onVote, onDelete, onEdit,
           {title}
         </h2>
         <span className="text-[9px] text-white/40 ml-auto hidden sm:inline">
-          Les mieux votés et boostés
+          Les mieux votés
         </span>
       </div>
 

@@ -28,7 +28,6 @@ export default function ServerSeoContent({ server }) {
   const type = serverTypeLabel(server);
   const votes = Number(server.votes || 0);
   const monthVotes = Number(server.votes_month || 0);
-  const boosts = Number(server.boosts || 0);
 
   const updated = server.updated_date || server.created_date;
   const updatedLabel = updated
@@ -47,7 +46,7 @@ export default function ServerSeoContent({ server }) {
         {games.length > 0 && ` Il s'adresse aux joueurs de ${games.slice(0, 3).join(", ")}.`}
         {categories.length > 0 && ` Catégories : ${categories.join(", ")}.`}
         {` Il totalise ${votes} vote${votes > 1 ? "s" : ""} et ${monthVotes} vote${monthVotes > 1 ? "s" : ""} ce mois-ci`}
-        {boosts > 0 ? `, avec ${boosts} boost${boosts > 1 ? "s" : ""} reçu${boosts > 1 ? "s" : ""}.` : "."}
+        {"."}
       </p>
 
       {games.length > 0 && (
