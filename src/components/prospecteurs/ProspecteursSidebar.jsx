@@ -1,20 +1,11 @@
-import React, { useState } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import { Server, Users, Sparkles, Zap } from "lucide-react";
-import CheckoutModal from "@/components/CheckoutModal";
-
-const VIP_IMAGE = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/ca0329832_ChatGPTImage6oct202621_00_29.png";
-const VOTE_AUTO_IMAGE = "https://media.base44.com/images/public/69e14a987a927963a9924d5a/1448fd9e6_ChatGPTImage6oct202623_19_53.png";
 
 export default function ProspecteursSidebar({ active = "servers", user, onConfigureVoteAuto }) {
-  const [showVipCheckout, setShowVipCheckout] = useState(false);
-  const [showVoteAutoCheckout, setShowVoteAutoCheckout] = useState(false);
 
   const hasVoteAuto = !!user?.has_vote_auto &&
   (!user?.vote_auto_until || new Date(user.vote_auto_until).getTime() > Date.now());
-
-  const hasVip = !!user?.is_vip &&
-  (!user?.vip_until || new Date(user.vip_until).getTime() > Date.now());
 
   return (
     <div className="w-24 sm:w-32 shrink-0 sticky top-16 self-start flex flex-col gap-1 p-2">
@@ -50,42 +41,6 @@ export default function ProspecteursSidebar({ active = "servers", user, onConfig
         <span className="text-[9px] font-bold text-center leading-tight">Best<br />Creator</span>
       </Link>
 
-      {/* VIP encart (2,99€/mois) — masqué si VIP actif */}
-      {!hasVip && (
-        <button
-          onClick={() => setShowVipCheckout(true)}
-          className="relative rounded-xl overflow-hidden transition hover:scale-[1.03] mt-2 group block w-full"
-          title="VIP - 2,99€/mois - Cooldown 1h au lieu de 2h"
-          style={{ boxShadow: "0 0 20px rgba(255,215,0,0.15)" }}>
-          
-          <img
-            src={VIP_IMAGE}
-            alt="Matrix Hub VIP server plan at 2.99 euros per month"
-            className="w-full h-auto block sm:min-h-[140px] max-sm:h-20 max-sm:object-cover" />
-          
-          <div className="absolute inset-0 ring-2 ring-yellow-500/30 rounded-xl pointer-events-none" />
-          <div className="absolute inset-0 bg-transparent group-hover:bg-yellow-500/5 transition rounded-[10px]" />
-        </button>
-      )}
-
-      {/* Vote Auto encart (4,99€/mois) — masqué si Vote Auto actif */}
-      {!hasVoteAuto && (
-        <button
-          onClick={() => setShowVoteAutoCheckout(true)}
-          className="relative rounded-xl overflow-hidden transition hover:scale-[1.03] group block w-full"
-          title="Vote Auto - 4,99€/mois - Vote automatisé pour ton serveur"
-          style={{ boxShadow: "0 0 20px rgba(191,0,255,0.15)" }}>
-          
-          <img
-            src={VOTE_AUTO_IMAGE}
-            alt="Matrix Hub automatic voting plan at 4.99 euros per month"
-            className="w-full h-auto block sm:min-h-[140px] max-sm:h-20 max-sm:object-cover" />
-          
-          <div className="absolute inset-0 ring-2 ring-fuchsia-500/30 rounded-xl pointer-events-none" />
-          <div className="absolute inset-0 bg-transparent group-hover:bg-fuchsia-500/5 transition rounded-[10px]" />
-        </button>
-      )}
-
       {/* Bouton de configuration Vote Auto — visible si Vote Auto actif */}
       {hasVoteAuto && (
         <button
@@ -98,30 +53,6 @@ export default function ProspecteursSidebar({ active = "servers", user, onConfig
           <span className="text-[9px] font-bold text-center">Configurer Vote Auto</span>
         </button>
       )}
-
-      {showVipCheckout &&
-      <CheckoutModal
-        functionName="stripePayment"
-        params={{ action: "createVIPSubscription", plan: "vip_vote" }}
-        onClose={() => setShowVipCheckout(false)}
-        onSuccess={() => {
-          setShowVipCheckout(false);
-          window.location.reload();
-        }} />
-
-      }
-
-      {showVoteAutoCheckout &&
-      <CheckoutModal
-        functionName="stripePayment"
-        params={{ action: "createVoteAutoSubscription", plan: "vote_auto" }}
-        onClose={() => setShowVoteAutoCheckout(false)}
-        onSuccess={() => {
-          setShowVoteAutoCheckout(false);
-          window.location.reload();
-        }} />
-
-      }
 
     </div>);
 

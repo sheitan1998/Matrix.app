@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import AdMessages from "./AdMessages";
-import BoostAdModal from "./BoostAdModal";
 import LiveStatusBadge from "./LiveStatusBadge";
 import { requestVoteStatus } from "@/lib/voteStatusBatch";
 
@@ -265,15 +264,6 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
             </>
           )}
         </button>
-        <button
-          onClick={() => setShowBoost(true)}
-          className="h-7 px-2 rounded-md flex items-center justify-center gap-0.5 transition tap-sm text-[9px] font-bold"
-          style={{ background: "rgba(251,191,36,0.12)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.2)" }}
-          title="Booster cette annonce"
-        >
-          <Zap className="w-3 h-3" />
-          <span className="hidden sm:inline">Boost</span>
-        </button>
       </div>
 
       {/* Liens fournis lors de la publication — un bouton par lien renseigné */}
@@ -314,18 +304,6 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
             </a>
           )}
         </div>
-      )}
-
-      {/* Boost modal */}
-      {showBoost && (
-        <BoostAdModal
-          adId={server.id}
-          adTitle={server.title}
-          flashBoosts={flashBoosts}
-          trixBalance={trixBalance}
-          onBoosted={handleBoosted}
-          onClose={() => setShowBoost(false)}
-        />
       )}
 
       {/* Messages */}

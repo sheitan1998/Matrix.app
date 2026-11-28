@@ -309,7 +309,7 @@ export default function Prospecteurs() {
 
       <ProspecteursHeader user={user} trixBalance={user?.trix_balance || 0} />
 
-      <div className="relative z-10 flex max-w-7xl mx-auto pb-12">
+      <div className="relative z-10 flex w-full pb-12 pr-2 sm:pr-4">
         <ProspecteursSidebar active="servers" user={user} onConfigureVoteAuto={() => setShowVoteAutoSetup(true)} />
 
         <div className="flex-1 px-4 sm:px-6 py-5">
