@@ -62,6 +62,10 @@ const DEFAULT_PREFS = {
   neonColor: "#a855f7",
   bgImageUrl: "",
   bgOpacity: 0.5,
+  bgSlots: ["", "", ""],
+  bgSlotIndex: -1,
+  bgBlur: 0,
+  panelOpacity: 0.8,
 };
 
 function hexToRgb(hex) {
@@ -178,7 +182,13 @@ export function applyTheme(prefs) {
   root.style.setProperty("--matrix-page-background", pageColor);
   root.style.setProperty("background-color", pageColor, "important");
   root.style.setProperty("background-image", "none", "important");
-  root.style.colorScheme = mode === "light" || (mode === "custom" && lightCustom) ? "light" : "dark";
+  const scheme = mode === "light" || (mode === "custom" && lightCustom) ? "light" : "dark";
+  const hasImage = mode === "custom" && !!prefs.bgImageUrl;
+  root.style.colorScheme = scheme;
+  root.style.setProperty("--matrix-panel-opacity", String(prefs.panelOpacity ?? 0.8));
+  root.style.setProperty("--matrix-panel-blur", `${prefs.bgBlur ?? 0}px`);
+  root.setAttribute("data-matrix-scheme", scheme);
+  root.setAttribute("data-matrix-bg", hasImage ? "image" : "none");
   body.style.setProperty("background-color", pageColor, "important");
   body.style.setProperty("background-image", image, "important");
   body.style.backgroundSize = "cover";
@@ -213,7 +223,9 @@ export function ThemeProvider({ children }) {
       const u = await base44.auth.me();
       const sub = u?.has_custom_bg || false;
       const until = u?.custom_bg_until;
-      if (sub && until) {
+      if (sub && u?.custom_theme_lifetime) {
+        setHasCustomBg(true);
+      } else if (sub && until) {
         setHasCustomBg(new Date(until) > new Date());
       } else {
         setHasCustomBg(sub);

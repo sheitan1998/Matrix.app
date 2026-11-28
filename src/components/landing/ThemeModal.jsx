@@ -3,17 +3,21 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Moon, Sun, Palette, Crown, Lock, X, Upload,
-  Check, Sparkles, Loader2, Image as ImageIcon, RotateCcw
+  Check, Sparkles, Loader2, RotateCcw
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { base44 } from "@/api/base44Client";
 import CheckoutModal from "@/components/CheckoutModal";
 
+const PRICE_LABEL = "3,00 € — Paiement unique (accès à vie)";
+const MAX_SLOTS = 3;
+const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
 const MODES = [
   { id: "original", label: "Thème Original", desc: "Le fond spatial néon par défaut de MATRIX avec ses accents violets profonds", icon: Sparkles, preview: "linear-gradient(135deg, #0a050f, #1a0a2e)" },
   { id: "light", label: "Thème Clair", desc: "Fond lumineux propre et contrasté, textes sombres", icon: Sun, preview: "#F4F4F5" },
   { id: "dark", label: "Thème Sombre", desc: "Dark mode classique optimisé, fond uni noir", icon: Moon, preview: "#000000" },
-  { id: "custom", label: "Personnalisé VIP", desc: "Couleurs et visuels personnalisés - réservé aux abonnés VIP", icon: Crown, preview: "linear-gradient(135deg, #1a0a2e, #6200ea)", vip: true, price: "2,99 €/mois" },
+  { id: "custom", label: "Personnalisé", desc: "Couleurs et image de fond sur mesure - achat unique, accès à vie", icon: Crown, preview: "linear-gradient(135deg, #1a0a2e, #6200ea)", vip: true, price: PRICE_LABEL },
 ];
 
 const COLOR_PRESETS = ["#1a0a2e", "#0d1b2a", "#1b3a1b", "#3a0d0d", "#3a2d0d", "#0d2d3a", "#2d0d3a", "#000000"];
@@ -29,9 +33,11 @@ const NEON_PRESETS = [
 ];
 
 export default function ThemeModal({ open, onClose }) {
-  const { prefs, updatePrefs, hasCustomBg, customBgChecked, refreshCustomBg } = useTheme();
-  const [uploading, setUploading] = useState(false);
+  const { prefs, updatePrefs, hasCustomBg, refreshCustomBg } = useTheme();
+  const [uploadingSlot, setUploadingSlot] = useState(null);
+  const [uploadError, setUploadError] = useState("");
   const [showCheckout, setShowCheckout] = useState(false);
+  const slots = Array.from({ length: MAX_SLOTS }, (_, i) => (Array.isArray(prefs.bgSlots) ? prefs.bgSlots[i] : "") || "");
 
   useEffect(() => {
     if (!open) return;
@@ -40,18 +46,40 @@ export default function ThemeModal({ open, onClose }) {
     return () => window.removeEventListener("keydown", onEsc);
   }, [open, onClose]);
 
-  const handleFileUpload = async (file) => {
-    if (!file) return;
-    if (!hasCustomBg) return;
-    setUploading(true);
+  const handleFileUpload = async (file, index) => {
+    if (!file || !hasCustomBg) return;
+    setUploadError("");
+    if (!IMAGE_TYPES.includes(file.type)) {
+      setUploadError("Format non supporté : utilise une image JPG, PNG ou WebP.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError("Image trop lourde (5 Mo maximum).");
+      return;
+    }
+    setUploadingSlot(index);
     try {
       const { file_url } = await base44.integrations.Core.UploadPrivateFile({ file });
-      updatePrefs({ bgImageUrl: file_url });
+      const next = [...slots];
+      next[index] = file_url;
+      updatePrefs({ bgSlots: next, bgSlotIndex: index, bgImageUrl: file_url });
     } catch (err) {
       console.error("Theme upload error:", err);
+      setUploadError("L'import a échoué, réessaie.");
     } finally {
-      setUploading(false);
+      setUploadingSlot(null);
     }
+  };
+
+  const selectSlot = (index) => {
+    if (slots[index]) updatePrefs({ bgImageUrl: slots[index], bgSlotIndex: index });
+  };
+
+  const clearSlot = (index) => {
+    const next = [...slots];
+    next[index] = "";
+    const wasActive = prefs.bgSlotIndex === index;
+    updatePrefs({ bgSlots: next, ...(wasActive ? { bgImageUrl: "", bgSlotIndex: -1 } : {}) });
   };
 
   const handleSubSuccess = async () => {
@@ -77,27 +105,22 @@ export default function ThemeModal({ open, onClose }) {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-3xl"
-            style={{
-              background: "linear-gradient(135deg, #0e0a15 0%, #1a0a2e 100%)",
-              border: "1px solid rgba(168,85,247,0.3)",
-              boxShadow: "0 0 50px rgba(168,85,247,0.2)",
-            }}
+            className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-3xl bg-card text-card-foreground border border-primary/30 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 pb-4" style={{ borderBottom: "1px solid rgba(168,85,247,0.15)" }}>
+            <div className="flex items-center justify-between p-6 pb-4 border-b border-border">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)" }}>
                   <Palette className="w-5 h-5" style={{ color: "#a855f7" }} />
                 </div>
                 <div>
-                  <h2 className="text-lg font-black text-white">Personnalisation du Thème</h2>
-                  <p className="text-xs text-white/50">Choisis l'apparence de MATRIX</p>
+                  <h2 className="text-lg font-black text-foreground">Personnalisation du Thème</h2>
+                  <p className="text-xs text-muted-foreground">Choisis l'apparence de MATRIX</p>
                 </div>
               </div>
-              <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center tap-sm hover:bg-white/10 transition">
-                <X className="w-4 h-4 text-white/60" />
+              <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center tap-sm hover:bg-foreground/10 transition">
+                <X className="w-4 h-4 text-muted-foreground" />
               </button>
             </div>
 
@@ -119,8 +142,8 @@ export default function ThemeModal({ open, onClose }) {
                       }}
                       className="relative rounded-2xl p-4 text-left transition-all"
                       style={{
-                        background: isActive ? "rgba(168,85,247,0.12)" : "rgba(255,255,255,0.02)",
-                        border: isActive ? "1.5px solid rgba(168,85,247,0.5)" : "1px solid rgba(255,255,255,0.06)",
+                        background: isActive ? "rgba(168,85,247,0.12)" : "hsl(var(--foreground) / 0.03)",
+                        border: isActive ? "1.5px solid rgba(168,85,247,0.5)" : "1px solid hsl(var(--border))",
                         boxShadow: isActive ? "0 0 20px rgba(168,85,247,0.2)" : "none",
                       }}
                     >
@@ -143,12 +166,12 @@ export default function ThemeModal({ open, onClose }) {
                       </div>
                       <div className="flex items-center gap-2 mb-1">
                         <mode.icon className="w-4 h-4" style={{ color: mode.vip ? "#ffd700" : "#a855f7" }} />
-                        <h3 className="text-sm font-bold text-white">{mode.label}</h3>
+                        <h3 className="text-sm font-bold text-foreground">{mode.label}</h3>
                         {mode.vip && (
                           <span className="text-[9px] px-1.5 py-0.5 rounded-full font-black uppercase tracking-wide" style={{ background: "rgba(255,215,0,0.15)", color: "#ffd700", border: "1px solid rgba(255,215,0,0.3)" }}>VIP</span>
                         )}
                       </div>
-                      <p className="text-[11px] text-white/40 leading-relaxed">{mode.desc}</p>
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">{mode.desc}</p>
                       {mode.price && (
                         <p className="text-[11px] font-bold mt-1" style={{ color: "#ffd700" }}>{mode.price}</p>
                       )}
@@ -158,12 +181,12 @@ export default function ThemeModal({ open, onClose }) {
               </div>
 
               {/* Sidebar neon color */}
-              <div className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(168,85,247,0.18)" }}>
+              <div className="rounded-2xl p-4 border border-border" style={{ background: "hsl(var(--foreground) / 0.03)" }}>
                 <div className="flex items-center gap-2 mb-1">
                   <Sparkles className="w-4 h-4" style={{ color: prefs.neonColor || "#a855f7" }} />
-                  <h3 className="text-sm font-bold text-white">Couleur des néons du panneau latéral</h3>
+                  <h3 className="text-sm font-bold text-foreground">Couleur des néons du panneau latéral</h3>
                 </div>
-                <p className="text-[11px] text-white/40 mb-3">
+                <p className="text-[11px] text-muted-foreground mb-3">
                   Choisis la teinte des lueurs et du menu de gauche.
                 </p>
                 <div className="flex items-center gap-3 flex-wrap">
@@ -199,8 +222,7 @@ export default function ThemeModal({ open, onClose }) {
                   <button
                     type="button"
                     onClick={() => updatePrefs({ neonColor: "#a855f7" })}
-                    className="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold transition hover:bg-white/10 tap-sm"
-                    style={{ color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.15)" }}
+                    className="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold transition hover:bg-foreground/10 tap-sm text-muted-foreground border border-border"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                     Réinitialiser par défaut
@@ -224,14 +246,14 @@ export default function ThemeModal({ open, onClose }) {
                           <div className="w-14 h-14 rounded-full mx-auto mb-3 flex items-center justify-center" style={{ background: "rgba(255,215,0,0.1)", border: "2px solid rgba(255,215,0,0.3)" }}>
                             <Crown className="w-7 h-7" style={{ color: "#ffd700", filter: "drop-shadow(0 0 6px rgba(255,215,0,0.5))" }} />
                           </div>
-                          <h3 className="text-base font-black text-white mb-1">Thème Personnalisé VIP</h3>
-                          <p className="text-xs text-white/50 mb-4 leading-relaxed">
-                            Personnalise les couleurs et les visuels de toute l'application. Upload d'images de fond, couleurs sur mesure et bien plus encore.
+                          <h3 className="text-base font-black text-foreground mb-1">Thème Personnalisé</h3>
+                          <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+                            Personnalise les couleurs et l'arrière-plan de toute l'application. Importe tes images de fond et enregistre jusqu'à 3 favoris.
                           </p>
-                          <div className="flex items-center justify-center gap-4 mb-4 text-[11px] text-white/40">
+                          <div className="flex items-center justify-center gap-4 mb-4 text-[11px] text-muted-foreground flex-wrap">
                             <span className="flex items-center gap-1"><Check className="w-3 h-3" style={{ color: "#a855f7" }} /> Couleurs illimitées</span>
-                            <span className="flex items-center gap-1"><Check className="w-3 h-3" style={{ color: "#a855f7" }} /> Image de fond</span>
-                            <span className="flex items-center gap-1"><Check className="w-3 h-3" style={{ color: "#a855f7" }} /> Sans engagement</span>
+                            <span className="flex items-center gap-1"><Check className="w-3 h-3" style={{ color: "#a855f7" }} /> 3 images sauvegardées</span>
+                            <span className="flex items-center gap-1"><Check className="w-3 h-3" style={{ color: "#a855f7" }} /> Accès à vie, sans abonnement</span>
                           </div>
                           <button
                             onClick={() => setShowCheckout(true)}
@@ -242,15 +264,15 @@ export default function ThemeModal({ open, onClose }) {
                             }}
                           >
                             <Crown className="w-4 h-4" />
-                            S'abonner VIP - 2,99 €/mois
+                            {PRICE_LABEL}
                           </button>
                         </div>
                       ) : (
                         <>
                           {/* Color picker */}
                           <div>
-                            <label className="text-sm font-bold text-white mb-2 block">Couleur de fond globale</label>
-                            <p className="text-[11px] text-white/40 mb-3">Cette couleur deviendra le fond de toute l'application.</p>
+                            <label className="text-sm font-bold text-foreground mb-2 block">Couleur de fond globale</label>
+                            <p className="text-[11px] text-muted-foreground mb-3">Cette couleur deviendra le fond de toute l'application.</p>
                             <div className="flex items-center gap-3 flex-wrap">
                               {COLOR_PRESETS.map((color) => (
                                 <button
@@ -277,59 +299,119 @@ export default function ThemeModal({ open, onClose }) {
                             </div>
                           </div>
 
-                          {/* Background image (VIP) */}
-                          <div className="rounded-2xl p-4" style={{ background: "rgba(168,85,247,0.05)", border: "1px solid rgba(168,85,247,0.15)" }}>
-                            <div className="flex items-center gap-2 mb-3">
-                              <Crown className="w-4 h-4" style={{ color: "#ffd700" }} />
-                              <h3 className="text-sm font-bold text-white">Image de fond personnalisée</h3>
-                              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(255,215,0,0.15)", color: "#ffd700", border: "1px solid rgba(255,215,0,0.3)" }}>VIP ACTIF</span>
+                          {/* Background image gallery: 3 saved slots */}
+                          <div className="rounded-2xl p-4 border border-border" style={{ background: "rgba(168,85,247,0.05)" }}>
+                            <div className="flex items-center gap-2 mb-1">
+                              <Crown className="w-4 h-4" style={{ color: "#d4a000" }} />
+                              <h3 className="text-sm font-bold text-foreground">Image de fond globale</h3>
+                              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(255,215,0,0.15)", color: "#b8860b", border: "1px solid rgba(255,215,0,0.3)" }}>DÉBLOQUÉ À VIE</span>
                             </div>
-                            <div className="space-y-3">
+                            <p className="text-[11px] text-muted-foreground mb-3">
+                              JPG, PNG ou WebP (5 Mo max). Enregistre jusqu'à {MAX_SLOTS} images, clique sur une image pour l'activer sur tout le site.
+                            </p>
+                            <div className="grid grid-cols-3 gap-3">
+                              {slots.map((url, index) => {
+                                const isActiveSlot = !!url && prefs.bgImageUrl === url && prefs.bgSlotIndex === index;
+                                return (
+                                  <div key={index} className="space-y-1.5">
+                                    <button
+                                      type="button"
+                                      disabled={!url}
+                                      onClick={() => selectSlot(index)}
+                                      className="relative w-full aspect-video rounded-xl overflow-hidden tap-sm border-2 transition"
+                                      style={{ borderColor: isActiveSlot ? "#a855f7" : "hsl(var(--border))", background: "hsl(var(--muted))" }}
+                                      aria-label={`Activer l'image ${index + 1}`}
+                                    >
+                                      {url ? (
+                                        <img src={url} alt={`Image personnalisée ${index + 1}`} className="w-full h-full object-cover" />
+                                      ) : (
+                                        <span className="absolute inset-0 flex items-center justify-center text-[11px] text-muted-foreground">Emplacement {index + 1}</span>
+                                      )}
+                                      {isActiveSlot && (
+                                        <span className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "#a855f7" }}>
+                                          <Check className="w-3 h-3 text-white" />
+                                        </span>
+                                      )}
+                                    </button>
+                                    <div className="flex gap-1.5">
+                                      <label
+                                        className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 rounded-lg cursor-pointer text-[11px] font-bold text-white"
+                                        style={{ background: "linear-gradient(135deg, #6200ea, #aa00ff)", opacity: uploadingSlot !== null ? 0.6 : 1 }}
+                                      >
+                                        {uploadingSlot === index ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                                        {url ? "Remplacer" : "Importer"}
+                                        <input
+                                          type="file"
+                                          accept="image/jpeg,image/png,image/webp"
+                                          className="hidden"
+                                          disabled={uploadingSlot !== null}
+                                          onChange={(e) => { handleFileUpload(e.target.files?.[0], index); e.target.value = ""; }}
+                                        />
+                                      </label>
+                                      {url && (
+                                        <button
+                                          type="button"
+                                          onClick={() => clearSlot(index)}
+                                          className="px-2 rounded-lg tap-sm border border-border text-muted-foreground hover:bg-foreground/10"
+                                          aria-label={`Supprimer l'image ${index + 1}`}
+                                        >
+                                          <X className="w-3 h-3" />
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            {uploadError && <p className="text-[11px] mt-2" style={{ color: "#dc2626" }}>{uploadError}</p>}
+                            <div className="space-y-3 mt-4">
                               {prefs.bgImageUrl && (
-                                <div className="relative w-full h-24 rounded-xl overflow-hidden" style={{ background: "#0a050f" }}>
-                                  <img src={prefs.bgImageUrl} alt="Selected Matrix Hub profile background artwork" className="w-full h-full object-cover" />
-                                  <button
-                                    onClick={() => updatePrefs({ bgImageUrl: "" })}
-                                    className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center tap-sm"
-                                    style={{ background: "rgba(0,0,0,0.6)" }}
-                                  >
-                                    <X className="w-3 h-3 text-white" />
-                                  </button>
-                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => updatePrefs({ bgImageUrl: "", bgSlotIndex: -1 })}
+                                  className="text-[11px] font-bold px-3 py-1.5 rounded-lg tap-sm border border-border text-muted-foreground hover:bg-foreground/10"
+                                >
+                                  Désactiver l'image de fond
+                                </button>
                               )}
-                              <label className="flex items-center justify-center gap-2 w-full py-3 rounded-xl cursor-pointer transition hover:scale-[1.01]"
-                                style={{ background: "linear-gradient(135deg, #6200ea, #aa00ff)", opacity: uploading ? 0.6 : 1 }}>
-                                {uploading ? (
-                                  <>
-                                    <Loader2 className="w-4 h-4 text-white animate-spin" />
-                                    <span className="text-sm font-bold text-white">Import en cours...</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Upload className="w-4 h-4 text-white" />
-                                    <span className="text-sm font-bold text-white">Importer une image de fond</span>
-                                  </>
-                                )}
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  className="hidden"
-                                  disabled={uploading}
-                                  onChange={(e) => handleFileUpload(e.target.files?.[0])}
-                                />
-                              </label>
                               {prefs.bgImageUrl && (
-                                <div>
-                                  <label className="text-xs text-white/50 mb-1 block">Opacité du fond: {Math.round((prefs.bgOpacity || 0.5) * 100)}%</label>
-                                  <input
-                                    type="range"
-                                    min="0.1"
-                                    max="0.9"
-                                    step="0.1"
-                                    value={prefs.bgOpacity || 0.5}
-                                    onChange={(e) => updatePrefs({ bgOpacity: parseFloat(e.target.value) })}
-                                    className="w-full"
-                                  />
+                                <div className="space-y-3">
+                                  <div>
+                                    <label className="text-xs text-muted-foreground mb-1 block">Voile sur l'image: {Math.round((1 - (prefs.bgOpacity ?? 0.5)) * 100)}%</label>
+                                    <input
+                                      type="range"
+                                      min="0.1"
+                                      max="0.9"
+                                      step="0.1"
+                                      value={prefs.bgOpacity ?? 0.5}
+                                      onChange={(e) => updatePrefs({ bgOpacity: parseFloat(e.target.value) })}
+                                      className="w-full"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-xs text-muted-foreground mb-1 block">Opacité des cartes et panneaux: {Math.round((prefs.panelOpacity ?? 0.8) * 100)}%</label>
+                                    <input
+                                      type="range"
+                                      min="0.4"
+                                      max="1"
+                                      step="0.05"
+                                      value={prefs.panelOpacity ?? 0.8}
+                                      onChange={(e) => updatePrefs({ panelOpacity: parseFloat(e.target.value) })}
+                                      className="w-full"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-xs text-muted-foreground mb-1 block">Flou derrière les panneaux: {prefs.bgBlur ?? 0}px</label>
+                                    <input
+                                      type="range"
+                                      min="0"
+                                      max="20"
+                                      step="1"
+                                      value={prefs.bgBlur ?? 0}
+                                      onChange={(e) => updatePrefs({ bgBlur: parseInt(e.target.value, 10) })}
+                                      className="w-full"
+                                    />
+                                  </div>
                                 </div>
                               )}
                             </div>
@@ -344,7 +426,7 @@ export default function ThemeModal({ open, onClose }) {
               {/* Preview note */}
               <div className="flex items-start gap-2 p-3 rounded-xl" style={{ background: "rgba(168,85,247,0.05)" }}>
                 <Sparkles className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "#a855f7" }} />
-                <p className="text-xs text-white/50">
+                <p className="text-xs text-muted-foreground">
                   Tes préférences sont sauvegardées automatiquement et conservées lors de tes prochaines visites.
                 </p>
               </div>
@@ -356,7 +438,7 @@ export default function ThemeModal({ open, onClose }) {
       {showCheckout && (
         <CheckoutModal
           functionName="stripePayment"
-          params={{ action: "createCustomBgSubscription", plan: "vip_custom_theme" }}
+          params={{ action: "createCustomThemePurchase" }}
           onClose={() => setShowCheckout(false)}
           onSuccess={handleSubSuccess}
         />

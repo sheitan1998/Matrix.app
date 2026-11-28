@@ -8,6 +8,7 @@ import ProspecteursHeader from "@/components/prospecteurs/ProspecteursHeader";
 import ProspecteursSidebar from "@/components/prospecteurs/ProspecteursSidebar";
 import CreatorPlatformCards, { CREATOR_PLATFORMS } from "@/components/prospecteurs/CreatorPlatformCards";
 import CreatorRankingBlock from "@/components/prospecteurs/CreatorRankingBlock";
+import { CreatorTopPanel, LatestCreatorCard, CreatorGuideCard } from "@/components/prospecteurs/CreatorInfoPanels";
 import CreatorSearchBar from "@/components/prospecteurs/CreatorSearchBar";
 import CreatorChannelCard from "@/components/prospecteurs/CreatorChannelCard";
 import CreateCreatorModal from "@/components/prospecteurs/CreateCreatorModal";
@@ -316,11 +317,28 @@ export default function BestCreator() {
           </div>
 
           {/* Classement : général sur "Toutes", top de la plateforme sélectionnée sinon */}
-          <div className="grid grid-cols-1 gap-3 mb-5 md:max-w-xl">
-            {rankingBlocks.map((block) => (
-              <CreatorRankingBlock key={block.title} {...block} loading={loading} />
-            ))}
-          </div>
+          {platform ? (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-5">
+              <div className="lg:col-span-7">
+                <CreatorTopPanel
+                  title={`Top 5 ${CREATOR_PLATFORMS[platform].label}`}
+                  creators={platformTops[platform] || []}
+                  loading={loading}
+                  emptyText={`Aucune chaîne ${CREATOR_PLATFORMS[platform].label}`}
+                />
+              </div>
+              <div className="lg:col-span-5 space-y-4">
+                <LatestCreatorCard creators={creators} platform={platform} loading={loading} />
+                <CreatorGuideCard />
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 mb-5 md:max-w-xl">
+              {rankingBlocks.map((block) => (
+                <CreatorRankingBlock key={block.title} {...block} loading={loading} />
+              ))}
+            </div>
+          )}
 
           {/* Liste des chaînes */}
           <div className="rounded-2xl p-4 sm:p-5" style={{ background: "rgba(18,9,28,0.6)", border: "1px solid rgba(168,85,247,0.2)" }}>
