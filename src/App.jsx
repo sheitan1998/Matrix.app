@@ -64,6 +64,8 @@ const NexusGame = lazy(() => import('@/pages/NexusGame'));
 const Prospecteurs = lazy(() => import('@/pages/prospecteurs/Prospecteurs'));
 const BestCreator = lazy(() => import('@/pages/prospecteurs/BestCreator'));
 const CategoryServers = lazy(() => import('@/pages/prospecteurs/CategoryServers'));
+const ServerGuides = lazy(() => import('@/pages/prospecteurs/ServerGuides'));
+const ServerGuideDetail = lazy(() => import('@/pages/prospecteurs/ServerGuideDetail'));
 const ServerProfile = lazy(() => import('@/pages/prospecteurs/ServerProfile'));
 const CommunitySubscription = lazy(() => import('@/pages/community/CommunitySubscription'));
 const Wallet = lazy(() => import('@/pages/Wallet'));
@@ -231,6 +233,9 @@ const AuthenticatedApp = () => {
           <Route path="/best-serveurs" element={<Prospecteurs />} />
           <Route path="/best-creator" element={<BestCreator />} />
           <Route path="/best-serveurs/category/:slug" element={<CategoryServers />} />
+          <Route path="/guides-serveurs" element={<ServerGuides />} />
+          <Route path="/guides-serveurs/:slug" element={<ServerGuideDetail />} />
+          <Route path="/best-serveurs/guides" element={<Navigate to="/guides-serveurs" replace />} />
           <Route path="/servers/:slug" element={<ServerProfile />} />
           <Route path="/createur/:slug" element={<CreatorAdProfile />} />
         </Route>
