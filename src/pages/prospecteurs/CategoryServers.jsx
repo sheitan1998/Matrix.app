@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Trophy, Server as ServerIcon } from "lucide-react";
+import { ArrowLeft, Server as ServerIcon } from "lucide-react";
 import { toast } from "sonner";
 import ProspecteursHeader from "@/components/prospecteurs/ProspecteursHeader";
 import ProspecteursSidebar from "@/components/prospecteurs/ProspecteursSidebar";
 import ServerDirectoryCard from "@/components/prospecteurs/ServerDirectoryCard";
 import ServerSearchBar from "@/components/prospecteurs/ServerSearchBar";
-import LatestServerBanner from "@/components/prospecteurs/LatestServerBanner";
-import ServerRankingBlock from "@/components/prospecteurs/ServerRankingBlock";
+import { LatestServerCard, CategoryGuideCard, CategoryTopPanel } from "@/components/prospecteurs/CategoryInfoPanels";
 import CreateAdModal from "@/components/prospecteurs/CreateAdModal";
 import { fetchAllServers, sortByScore, slugify, detectServerType } from "@/lib/serverDirectory";
 import { serverMatchesCategory } from "@/lib/serverCategories";
@@ -213,15 +212,19 @@ export default function CategoryServers() {
           </div>
 
           {/* Top 5 of this category (same universe only) */}
-          <div className="mb-5">
-            <ServerRankingBlock
-              title={`Top 5 ${category?.name || ""}`}
-              icon={Trophy}
-              servers={top5}
-              accentColor={accentColor}
-              loading={loading}
-              emptyText="Aucun serveur classé dans cette catégorie pour le moment"
-            />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-5">
+            <div className="lg:col-span-5 space-y-4">
+              <LatestServerCard servers={servers} loading={loading} />
+              <CategoryGuideCard categoryName={category?.name || ""} />
+            </div>
+            <div className="lg:col-span-7">
+              <CategoryTopPanel
+                title={`Top 5 ${category?.name || ""}`}
+                servers={top5}
+                loading={loading}
+                emptyText="Aucun serveur classé dans cette catégorie pour le moment"
+              />
+            </div>
           </div>
 
           {/* Full list */}
@@ -230,7 +233,6 @@ export default function CategoryServers() {
               <h2 className="text-xs font-black tracking-wider uppercase text-white">Tous les serveurs — {category?.name}</h2>
               <span className="text-[9px] text-white/40 ml-auto">{visibleServers.length} serveur{visibleServers.length !== 1 ? "s" : ""}</span>
             </div>
-            <LatestServerBanner servers={servers} className="mb-3" />
             <div className="mb-4">
               <ServerSearchBar
                 search={search}
@@ -243,7 +245,7 @@ export default function CategoryServers() {
               />
             </div>
             {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {Array.from({ length: 3 }).map((_, i) => (
                   <div key={i} className="h-48 rounded-xl animate-pulse" style={{ background: "rgba(138,79,255,0.05)" }} />
                 ))}
@@ -254,7 +256,7 @@ export default function CategoryServers() {
                 <p className="text-xs text-white/40">Aucun serveur dans cette catégorie</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {visibleServers.map((server, i) => (
                   <ServerDirectoryCard
                     key={server.id}
