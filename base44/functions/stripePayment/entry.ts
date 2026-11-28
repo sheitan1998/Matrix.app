@@ -32,7 +32,7 @@ const VOTE_AUTO_PLANS: Record<string, { priceCents: number; label: string }> = {
 };
 
 const CUSTOM_BG_PLANS: Record<string, { priceCents: number; label: string }> = {
-  custom_bg: { priceCents: 299, label: 'Fond d\'écran personnalisé (2,99€/mois)' },
+  custom_bg: { priceCents: 300, label: 'Thème personnalisé — Paiement unique (accès à vie)' },
 };
 
 const AI_PLANS: Record<string, { priceCents: number; label: string }> = {
@@ -312,6 +312,26 @@ export default async function(req: Request): Promise<Response> {
               stripe_event_id: data.id,
               description: `Abonnement Fond d'écran personnalisé - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
             });
+          }
+
+          if (type === 'custom_theme_purchase') {
+            if (userId && data.payment_status === 'paid') {
+              const target = await base44.asServiceRole.entities.User.get(userId);
+              if (target) {
+                await base44.asServiceRole.entities.User.update(userId, {
+                  has_custom_bg: true,
+                  custom_theme_lifetime: true,
+                  stripe_customer_id: data.customer || undefined,
+                });
+              }
+              await base44.asServiceRole.entities.TrixTransaction.create({
+                user_email: userEmail,
+                type: 'subscription_payment',
+                amount: 0,
+                stripe_event_id: data.id,
+                description: `Thème personnalisé (paiement unique) - ${(data.amount_total / 100).toFixed(2)}€ (session ${data.id})`,
+              });
+            }
           }
 
           if (type === 'nitro_subscription') {
@@ -1208,35 +1228,30 @@ export default async function(req: Request): Promise<Response> {
     }
 
     // ---- createCustomBgSubscription ----
-    if (action === 'createCustomBgSubscription') {
-      const { plan } = body;
+    // One-time payment (lifetime access); the legacy action name is kept as an alias.
+    if (action === 'createCustomBgSubscription' || action === 'createCustomThemePurchase') {
       const planCfg = await loadSubscriptionPlan(base44, 'custom_bg');
       if (planCfg && planCfg.is_active === false) {
-        return Response.json({ error: 'Cet abonnement est temporairement indisponible' }, { status: 400 });
+        return Response.json({ error: 'Cette offre est temporairement indisponible' }, { status: 400 });
       }
-      const selected = CUSTOM_BG_PLANS[plan || 'custom_bg'] || CUSTOM_BG_PLANS.custom_bg;
-      const unitAmount = planCfg?.price_cents > 0 ? planCfg.price_cents : selected.priceCents;
-      const productName = planCfg?.label || selected.label;
+      if (user.has_custom_bg && user.custom_theme_lifetime) {
+        return Response.json({ error: 'Thème personnalisé déjà débloqué' }, { status: 400 });
+      }
+      const selected = CUSTOM_BG_PLANS.custom_bg;
 
       const params = new URLSearchParams();
       params.append('payment_method_types[]', 'card');
-      params.append('mode', 'subscription');
+      params.append('mode', 'payment');
       params.append('ui_mode', 'embedded');
       params.append('return_url', `${origin}`);
       params.append('customer_email', user.email);
       params.append('line_items[0][price_data][currency]', 'eur');
-      params.append('line_items[0][price_data][product_data][name]', productName);
-      params.append('line_items[0][price_data][unit_amount]', String(unitAmount));
-      params.append('line_items[0][price_data][recurring][interval]', 'month');
+      params.append('line_items[0][price_data][product_data][name]', selected.label);
+      params.append('line_items[0][price_data][unit_amount]', String(selected.priceCents));
       params.append('line_items[0][quantity]', '1');
-      params.append('metadata[type]', 'custom_bg_subscription');
+      params.append('metadata[type]', 'custom_theme_purchase');
       params.append('metadata[user_email]', user.email);
       params.append('metadata[user_id]', user.id);
-      params.append('metadata[plan]', plan || 'custom_bg');
-      params.append('subscription_data[metadata][type]', 'custom_bg_subscription');
-      params.append('subscription_data[metadata][user_email]', user.email);
-      params.append('subscription_data[metadata][user_id]', user.id);
-      params.append('subscription_data[metadata][plan]', plan || 'custom_bg');
 
       const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
         method: 'POST',

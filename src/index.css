@@ -417,3 +417,83 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .landing-sidebar-neon__indicator { transition: none; }
 }
+
+/* ------------------------------------------------------------------
+   Global light scheme (Thème Clair / Personnalisé clair)
+   Remaps the hard-coded dark surfaces and white text used across pages
+   (utility classes and inline styles) onto the theme variables so every
+   page, modal, card and form stays readable on a light background.
+   ------------------------------------------------------------------ */
+html[data-matrix-scheme="light"] {
+  --matrix-surface: hsl(var(--card));
+  --matrix-surface-soft: hsl(var(--foreground) / 0.04);
+  --matrix-surface-hover: hsl(var(--foreground) / 0.08);
+}
+
+html[data-matrix-scheme="light"] :is(.text-white, [class*="text-white"]:not([class*="hover:"])) {
+  color: hsl(var(--foreground));
+}
+html[data-matrix-scheme="light"] :is([class*="text-white/"]:not([class*="hover:"]), [class*="text-gray-"], [class*="text-zinc-"], [class*="text-slate-"], [class*="text-neutral-"]) {
+  color: hsl(var(--muted-foreground));
+}
+html[data-matrix-scheme="light"] :is([class*="text-gray-"], [class*="text-zinc-"], [class*="text-slate-"], [class*="text-neutral-"]):is([class*="-100"], [class*="-200"], [class*="-300"]) {
+  color: hsl(var(--foreground) / 0.8);
+}
+html[data-matrix-scheme="light"] [style*="color: rgb(255, 255, 255)"],
+html[data-matrix-scheme="light"] [style*="color: white"] {
+  color: hsl(var(--foreground)) !important;
+}
+html[data-matrix-scheme="light"] [style*="color: rgba(255, 255, 255"] {
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+html[data-matrix-scheme="light"] :is(.bg-black, .bg-zinc-900, .bg-zinc-950, .bg-gray-900, .bg-gray-950, .bg-slate-900, .bg-slate-950, .bg-neutral-900, .bg-neutral-950, [class*="bg-black/"], [class*="bg-[#0"], [class*="bg-[#1"], [class*="bg-zinc-900/"], [class*="bg-zinc-950/"], [class*="bg-gray-900/"], [class*="bg-slate-900/"]):not(.fixed):not([class*="inset-0"]) {
+  background-color: var(--matrix-surface) !important;
+}
+html[data-matrix-scheme="light"] :is([class*="bg-white/"]) {
+  background-color: var(--matrix-surface-soft);
+}
+html[data-matrix-scheme="light"] :is([class*="hover:bg-white/"]:hover) {
+  background-color: var(--matrix-surface-hover);
+}
+html[data-matrix-scheme="light"] :is([class*="border-white/"], [class*="border-gray-8"], [class*="border-zinc-8"], [class*="divide-white/"]) {
+  border-color: hsl(var(--border));
+}
+html[data-matrix-scheme="light"] :is(
+  [style*="background: rgb(0, 0, 0)"], [style*="background-color: rgb(0, 0, 0)"],
+  [style*="background: rgba(0, 0, 0"], [style*="background-color: rgba(0, 0, 0"],
+  [style*="background: rgb(10, 5, 15"], [style*="background: rgba(10, 5, 15"],
+  [style*="background: rgb(14, 10, 21"], [style*="background: rgb(26, 10, 46"],
+  [style*="rgb(14, 10, 21"], [style*="rgb(10, 5, 15"], [style*="rgb(13, 13, 13"], [style*="rgb(17, 17, 17"]
+):not(.fixed):not([class*="inset-0"]):not([style*="position: fixed"]) {
+  background: var(--matrix-surface) !important;
+}
+html[data-matrix-scheme="light"] :is(
+  [style*="background: rgba(255, 255, 255"], [style*="background-color: rgba(255, 255, 255"]
+) {
+  background: var(--matrix-surface-soft) !important;
+}
+html[data-matrix-scheme="light"] [style*="border: 1px solid rgba(255, 255, 255"] {
+  border-color: hsl(var(--border)) !important;
+}
+
+/* Colored / gradient surfaces keep their light-on-color text. */
+html[data-matrix-scheme="light"] :is([class*="bg-gradient"], [class*="bg-primary"], [style*="gradient"]) :is(.text-white, [class*="text-white"], [style*="color: rgb(255, 255, 255)"]),
+html[data-matrix-scheme="light"] :is(.text-white, [class*="text-white"]):is([class*="bg-gradient"], [class*="bg-primary"], [style*="gradient"], [class*="bg-green-6"], [class*="bg-red-"], [class*="bg-purple-6"], [class*="bg-blue-6"], [class*="bg-indigo-"], [class*="bg-pink-"], [class*="bg-violet-"]):not([class*="/"]) {
+  color: #fff !important;
+}
+
+/* Form controls follow the theme. */
+html[data-matrix-scheme="light"] :is(input, textarea, select):not([type="color"]):not([type="range"]):not([type="checkbox"]):not([type="radio"]) {
+  color: hsl(var(--foreground));
+}
+html[data-matrix-scheme="light"] ::placeholder {
+  color: hsl(var(--muted-foreground));
+}
+
+/* Custom wallpaper: translucent, blurred panels keep text readable. */
+html[data-matrix-bg="image"] :is(.bg-card, [class*="bg-card"], .bg-popover, [class*="bg-black/"], [class*="bg-background/"], [class*="bg-secondary"]):not(.fixed):not([class*="inset-0"]) {
+  background-color: hsl(var(--card) / var(--matrix-panel-opacity)) !important;
+  -webkit-backdrop-filter: blur(var(--matrix-panel-blur));
+  backdrop-filter: blur(var(--matrix-panel-blur));
+}
