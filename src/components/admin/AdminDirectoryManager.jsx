@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
-import { Search, Server as ServerIcon, Sparkles } from "lucide-react";
+import { Search, Server as ServerIcon, Sparkles, Upload, Wand2 } from "lucide-react";
 import AdminDirectoryRow from "./AdminDirectoryRow";
+import TransferServerModal from "./TransferServerModal";
+import ImportServersModal from "./ImportServersModal";
 import CreateAdModal from "@/components/prospecteurs/CreateAdModal";
 import CreateCreatorModal from "@/components/prospecteurs/CreateCreatorModal";
 import { slugify, detectServerType } from "@/lib/serverDirectory";
@@ -21,6 +23,24 @@ export default function AdminDirectoryManager() {
   const [editingServer, setEditingServer] = useState(null);
   const [editingChannel, setEditingChannel] = useState(null);
   const [busyId, setBusyId] = useState("");
+  const [transferring, setTransferring] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const [seeding, setSeeding] = useState(false);
+
+  const seedCategories = async () => {
+    if (!window.confirm("Compléter chaque catégorie Best Serveur jusqu'à 10 serveurs ?")) return;
+    setSeeding(true);
+    try {
+      const res = await base44.functions.invoke("serverSearch", { action: "adminSeedCategories", perCategory: 10 });
+      if (res.data?.error) throw new Error(res.data.error);
+      toast.success(`${res.data.created} fiche(s) créée(s)`);
+      load();
+    } catch (err) {
+      toast.error(err?.response?.data?.error || err?.message || "Création impossible");
+    } finally {
+      setSeeding(false);
+    }
+  };
 
   const load = async () => {
     try {
@@ -151,6 +171,28 @@ export default function AdminDirectoryManager() {
         </div>
       </div>
 
+      {tab === "servers" && (
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setImporting(true)}
+            className="h-8 px-3 rounded-lg text-[10px] font-bold flex items-center gap-1.5 tap-sm"
+            style={{ background: "rgba(138,79,255,0.16)", color: "#a855f7", border: "1px solid rgba(138,79,255,0.3)" }}
+          >
+            <Upload className="w-3 h-3" /> Import rapide (CSV / JSON)
+          </button>
+          <button
+            type="button"
+            onClick={seedCategories}
+            disabled={seeding}
+            className="h-8 px-3 rounded-lg text-[10px] font-bold flex items-center gap-1.5 tap-sm disabled:opacity-40"
+            style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.1)" }}
+          >
+            <Wand2 className="w-3 h-3" /> {seeding ? "Création..." : "Compléter à 10 par catégorie"}
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <div className="space-y-2">
           {Array.from({ length: 4 }).map((_, index) => (
@@ -169,6 +211,7 @@ export default function AdminDirectoryManager() {
               busy={busyId === server.id}
               onEdit={setEditingServer}
               onDelete={deleteServer}
+              onTransfer={setTransferring}
             />
           ))}
         </div>
@@ -187,6 +230,24 @@ export default function AdminDirectoryManager() {
             />
           ))}
         </div>
+      )}
+
+      {transferring && (
+        <TransferServerModal
+          server={transferring}
+          onClose={() => setTransferring(null)}
+          onTransferred={(ad) => {
+            setServers((prev) => prev.map((s) => (s.id === ad.id ? { ...s, ...ad } : s)));
+            setTransferring(null);
+          }}
+        />
+      )}
+
+      {importing && (
+        <ImportServersModal
+          onClose={() => setImporting(false)}
+          onImported={() => { setImporting(false); load(); }}
+        />
       )}
 
       {editingServer && (

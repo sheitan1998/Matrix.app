@@ -1,8 +1,8 @@
 import React from "react";
-import { ExternalLink, Pencil, Trash2, Server as ServerIcon, User } from "lucide-react";
+import { ArrowRightLeft, ExternalLink, Pencil, Trash2, Server as ServerIcon, User } from "lucide-react";
 import { serverTags } from "@/lib/serverTags";
 
-export default function AdminDirectoryRow({ item, type, busy, onEdit, onDelete }) {
+export default function AdminDirectoryRow({ item, type, busy, onEdit, onDelete, onTransfer }) {
   const isServer = type === "server";
   const title = isServer ? item.title : item.name;
   const image = isServer
@@ -67,6 +67,20 @@ export default function AdminDirectoryRow({ item, type, busy, onEdit, onDelete }
         >
           <ExternalLink className="w-3.5 h-3.5" />
         </a>
+      )}
+
+      {isServer && onTransfer && (
+        <button
+          type="button"
+          onClick={() => onTransfer(item)}
+          disabled={busy}
+          className="h-8 px-2 rounded-lg flex items-center gap-1 shrink-0 text-[10px] font-bold transition disabled:opacity-40 tap-sm"
+          style={{ background: "rgba(34,197,94,0.14)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.3)" }}
+          title="Transférer la propriété"
+        >
+          <ArrowRightLeft className="w-3.5 h-3.5" />
+          Transférer
+        </button>
       )}
 
       <button
