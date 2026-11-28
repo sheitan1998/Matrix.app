@@ -15,7 +15,7 @@ export default function ProspecteursHeader({ user, trixBalance }) {
       
       {/* Left: MATRIX logo */}
       <Link to="/" className="flex items-center gap-2 tap-sm">
-        <span className="text-xl font-black text-white tracking-tight">
+        <span className="text-xl font-black text-white tracking-tight text-left">
           MATRI<span style={{ color: "#8a4fff" }}>X</span>
         </span>
       </Link>
