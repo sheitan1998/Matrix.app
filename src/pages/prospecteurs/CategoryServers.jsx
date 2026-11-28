@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+﻿import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { ArrowLeft, Server as ServerIcon } from "lucide-react";
@@ -214,8 +214,8 @@ export default function CategoryServers() {
           {/* Top 5 of this category (same universe only) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-5">
             <div className="lg:col-span-5 space-y-4">
-              <LatestServerCard servers={servers} loading={loading} />
-              <CategoryGuideCard categoryName={category?.name || ""} />
+              <LatestServerCard servers={servers} category={category ? { slug, name: category.name } : null} loading={loading} />
+              <CategoryGuideCard />
             </div>
             <div className="lg:col-span-7">
               <CategoryTopPanel
