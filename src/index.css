@@ -497,3 +497,90 @@ html[data-matrix-bg="image"] :is(.bg-card, [class*="bg-card"], .bg-popover, [cla
   -webkit-backdrop-filter: blur(var(--matrix-panel-blur));
   backdrop-filter: blur(var(--matrix-panel-blur));
 }
+/* ------------------------------------------------------------------
+   Global theme enforcement (backgrounds, surfaces, text contrast)
+   The theme-selection popup ([data-theme-modal]) is intentionally excluded.
+   ------------------------------------------------------------------ */
+html[data-matrix-scheme="light"] body,
+html[data-matrix-scheme="light"] #root {
+  background-image: none !important;
+  background-color: #F5F7FA !important;
+}
+html[data-matrix-scheme="light"][data-matrix-theme="custom"] body,
+html[data-matrix-scheme="light"][data-matrix-theme="custom"] #root {
+  background-color: var(--matrix-page-background) !important;
+}
+/* Fixed cosmic/space layers and page wrappers forcing a dark background */
+html[data-matrix-scheme="light"] [class*="fixed"][class*="inset-0"].pointer-events-none:not([data-theme-modal]):not([data-theme-modal] *) {
+  display: none !important;
+}
+html[data-matrix-scheme="light"][data-matrix-theme="light"] :is(.min-h-screen, .min-h-full, main, [class*="min-h-[calc"]):is([style*="url("], [style*="gradient"], [style*="rgb(5, 5, 8"], [style*="rgba(18, 9, 28"], [style*="rgb(10, 5, 15"], [style*="rgb(0, 0, 0"]):not([data-theme-modal] *) {
+  background: transparent !important;
+}
+html[data-matrix-scheme="light"] header:is([class*="sticky"], [class*="fixed"], [class*="top-0"]):not([data-theme-modal] *) {
+  background: #FFFFFF !important;
+  border-bottom: 1px solid #E2E8F0 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+html[data-matrix-scheme="light"] :is(aside, nav):is([class*="bg-[#"], [class*="bg-black"], [class*="bg-zinc-9"], [class*="bg-slate-9"]):not([data-theme-modal] *):not(.landing-sidebar-neon) {
+  background: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+}
+
+/* Opaque white surfaces, thin border, soft shadow (light theme) */
+html[data-matrix-scheme="light"] :is(.bg-black, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, [class*="bg-black/"], [class*="bg-[#0"], [class*="bg-[#1"], [class*="bg-[#2"], [class*="bg-[#3"], [class*="bg-zinc-8"], [class*="bg-zinc-9"], [class*="bg-gray-8"], [class*="bg-gray-9"], [class*="bg-slate-8"], [class*="bg-slate-9"], [class*="bg-neutral-8"], [class*="bg-neutral-9"], [class*="bg-card"], [class*="bg-popover"], [class*="bg-background/"], [class*="bg-secondary"], [class*="bg-muted"]):not(.fixed):not([class*="inset-0"]):not([data-theme-modal] *) {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0;
+}
+html[data-matrix-scheme="light"] :is(.rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl):is([class*="bg-black/"], [class*="bg-[#"], [class*="bg-zinc-9"], [class*="bg-slate-9"], [class*="bg-card"], [class*="bg-white/"]):not([data-theme-modal] *) {
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+html[data-matrix-scheme="light"] [class*="bg-white/"]:not([data-theme-modal] *):is(.rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl) {
+  background-color: #FFFFFF;
+  border-color: #E2E8F0;
+}
+html[data-matrix-scheme="light"] :is([class*="backdrop-blur"], [style*="backdrop-filter"]):not([data-theme-modal]):not([data-theme-modal] *) {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+html[data-matrix-scheme="light"] :is(input, textarea, select):not([type="color"]):not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([data-theme-modal] *) {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+  color: #0F172A !important;
+}
+
+/* Text contrast: light theme */
+html[data-matrix-scheme="light"] body {
+  color: #0F172A;
+}
+html[data-matrix-scheme="light"] :is(h1, h2, h3, h4, h5, h6, label, th, strong, b):not([data-theme-modal] *):not(:is([class*="bg-gradient"], [class*="bg-primary"], [style*="gradient"]) *) {
+  color: #0F172A;
+}
+html[data-matrix-scheme="light"] :is(p, span, li, td, small, time, dd, dt):not([data-theme-modal] *):not([class*="text-"]):not(:is([class*="bg-gradient"], [class*="bg-primary"], [style*="gradient"], button) *) {
+  color: #334155;
+}
+html[data-matrix-scheme="light"] :is([class*="text-white/"], [class*="text-gray-"], [class*="text-zinc-"], [class*="text-slate-"], [class*="text-neutral-"], .text-muted-foreground):not([class*="hover:"]):not([data-theme-modal] *):not(:is([class*="bg-gradient"], [class*="bg-primary"]) *) {
+  color: #334155;
+}
+html[data-matrix-scheme="light"] :is(.text-white, [class*="text-white"]:not([class*="/"])):not([class*="hover:"]):not([data-theme-modal] *):not(:is([class*="bg-gradient"], [class*="bg-primary"], [style*="gradient"]) *):not([class*="bg-green-6"]):not([class*="bg-red-"]):not([class*="bg-purple-6"]):not([class*="bg-blue-6"]):not([class*="bg-indigo-"]):not([class*="bg-pink-"]):not([class*="bg-violet-"]) {
+  color: #0F172A;
+}
+
+/* Text contrast: dark themes */
+html[data-matrix-scheme="dark"] body {
+  color: #FFFFFF;
+}
+html[data-matrix-scheme="dark"] :is([class*="text-white/"], [class*="text-gray-4"], [class*="text-gray-5"], [class*="text-gray-6"], [class*="text-zinc-4"], [class*="text-zinc-5"], [class*="text-zinc-6"], [class*="text-slate-4"], [class*="text-slate-5"], [class*="text-slate-6"], [class*="text-neutral-4"], [class*="text-neutral-5"], [class*="text-neutral-6"], .text-muted-foreground):not([class*="hover:"]):not([data-theme-modal] *) {
+  color: #CBD5E1;
+}
+html[data-matrix-scheme="dark"] :is(h1, h2, h3, h4, h5, h6):not([data-theme-modal] *):not([class*="text-"]):not([style*="color"]) {
+  color: #FFFFFF;
+}
+
+/* Neon accents stay active in both schemes */
+html[data-matrix-scheme="light"] .landing-sidebar-neon__indicator {
+  border-color: var(--app-neon-solid);
+  box-shadow: var(--app-neon-active-shadow);
+}

@@ -96,6 +96,7 @@ export default function ThemeModal({ open, onClose }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          data-theme-modal
           className="fixed inset-0 z-[10000] flex items-center justify-center p-4"
           style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", pointerEvents: "auto" }}
           onClick={onClose}
