@@ -226,6 +226,26 @@ const cleanTags = (raw: any): string[] => {
   return out;
 };
 
+const slugifyText = (text: string): string =>
+  String(text || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+// Modèles de fiches pour compléter chaque catégorie jusqu'à 10 serveurs.
+const SEED_NAME_PATTERNS: { prefix: string; suffix: string; tags: string[]; description: string }[] = [
+  { prefix: 'Elite', suffix: 'France', tags: ['Francophone', 'Compétitif'], description: 'Communauté francophone {cat} axée sur le fair-play et la progression, avec un staff actif, des événements hebdomadaires et un accueil soigné pour les nouveaux joueurs.' },
+  { prefix: 'Legacy', suffix: 'Community', tags: ['Communauté', 'Événements'], description: 'Une communauté {cat} historique et conviviale : règles claires, équipe à l\'écoute et soirées organisées chaque semaine pour jouer ensemble.' },
+  { prefix: 'Nova', suffix: 'RP', tags: ['Roleplay', 'Immersion'], description: 'Serveur {cat} orienté immersion et scénarios, avec une équipe de modération disponible et un système de recrutement ouvert à tous.' },
+  { prefix: 'Apex', suffix: 'Network', tags: ['Réseau', 'Actif'], description: 'Réseau {cat} stable et très actif : mises à jour régulières, support rapide et une communauté qui grandit chaque jour.' },
+  { prefix: 'Infinity', suffix: 'Hub', tags: ['Hub', 'Amical'], description: 'Le point de rencontre des passionnés de {cat} : discussions, recherche de partenaires de jeu, tournois et animations toute la semaine.' },
+  { prefix: 'Phoenix', suffix: 'Squad', tags: ['Équipe', 'Recrutement'], description: 'Équipe {cat} soudée qui recrute des joueurs motivés. Ambiance détendue, entraide et objectifs communs.' },
+  { prefix: 'Horizon', suffix: 'Server', tags: ['Nouveau', 'Qualité'], description: 'Serveur {cat} moderne et optimisé, pensé pour offrir une expérience fluide, équilibrée et accessible aux débutants comme aux confirmés.' },
+  { prefix: 'Titan', suffix: 'Arena', tags: ['Compétition', 'Tournois'], description: 'Arène {cat} dédiée à la compétition : classements, tournois réguliers et récompenses pour les meilleurs joueurs.' },
+  { prefix: 'Aurora', suffix: 'Club', tags: ['Chill', 'Entraide'], description: 'Club {cat} chaleureux pour jouer sans pression : entraide, bons plans et sessions de jeu organisées par les membres.' },
+  { prefix: 'Vortex', suffix: 'Official', tags: ['Officiel', 'Staff actif'], description: 'Serveur {cat} sérieux avec staff présent 7j/7, règlement transparent et système de support par tickets.' },
+  { prefix: 'Eclipse', suffix: 'Gaming', tags: ['Gaming', 'Fun'], description: 'Communauté {cat} dynamique où l\'on trouve toujours quelqu\'un avec qui jouer : giveaways, défis et événements mensuels.' },
+  { prefix: 'Zenith', suffix: 'Land', tags: ['Univers', 'Évolutif'], description: 'Univers {cat} en constante évolution, façonné par ses joueurs avec de nouvelles fonctionnalités chaque mois.' },
+];
+
 const pickAdFields = (data: Record<string, any>) => {
   const clean: Record<string, any> = {};
   for (const field of AD_EDITABLE_FIELDS) {
@@ -589,6 +609,149 @@ export default async function(req: Request): Promise<Response> {
         const update = pickAdFields(data);
         await base44.asServiceRole.entities.ServerAd.update(serverAdId, update);
         return Response.json({ success: true, ad: { ...existing, ...update } });
+      }
+
+      // ---- Admin : transfert de propriété (votes, clics, visuels et stats conservés) ----
+      case 'adminTransferAd': {
+        if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
+        const { serverAdId } = params;
+        const query = String(params.target || '').trim().toLowerCase();
+        if (!serverAdId || !query) return Response.json({ error: 'Fiche et destinataire obligatoires.' }, { status: 400 });
+
+        const ad = await base44.asServiceRole.entities.ServerAd.get(serverAdId);
+        if (!ad) return Response.json({ error: 'Fiche introuvable.' }, { status: 404 });
+
+        const allUsers = await listAllUsers(base44);
+        const target = allUsers.find((u: any) => {
+          if (!u) return false;
+          if (u.email && u.email.toLowerCase() === query) return true;
+          const pseudo = String(u.pseudo || '').toLowerCase();
+          if (!pseudo) return false;
+          const full = u.pseudo_tag && !pseudo.includes('#') ? `${pseudo}#${String(u.pseudo_tag).toLowerCase()}` : pseudo;
+          return full === query || pseudo === query || pseudo.split('#')[0] === query;
+        });
+        if (!target?.email) return Response.json({ error: 'Aucun utilisateur Matrix trouvé pour cet e-mail ou pseudo.' }, { status: 404 });
+
+        const ownerName = target.pseudo || target.full_name || target.email.split('@')[0];
+        const update = {
+          author_email: target.email,
+          author_name: ownerName,
+          author_avatar: target.avatar_url || '',
+        };
+        await base44.asServiceRole.entities.ServerAd.update(serverAdId, update);
+        return Response.json({ success: true, ad: { ...ad, ...update }, owner: { email: target.email, name: ownerName } });
+      }
+
+      // ---- Admin : import rapide de fiches (votes à 0, rattachées à l'admin) ----
+      case 'adminImportAds': {
+        if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
+        const items = Array.isArray(params.items) ? params.items.slice(0, 200) : [];
+        if (!items.length) return Response.json({ error: 'Aucune fiche à importer.' }, { status: 400 });
+
+        const categories = listOf(await base44.asServiceRole.entities.ServerCategory.list('sort_order', 500));
+        const created: any[] = [];
+        const errors: string[] = [];
+        for (const [index, raw] of items.entries()) {
+          const title = String(raw?.name || raw?.title || '').trim().slice(0, 100);
+          const description = String(raw?.description || '').trim();
+          if (!title || !description) { errors.push(`Ligne ${index + 1} : nom et description obligatoires`); continue; }
+          const invite = String(raw?.invite_url || raw?.discord_link || '').trim();
+          const linkError = validateServerLinks(title, description, invite);
+          if (linkError) { errors.push(`Ligne ${index + 1} : ${linkError}`); continue; }
+
+          const catName = String(raw?.category || '').trim();
+          const cat = categories.find((c: any) => c.name?.toLowerCase() === catName.toLowerCase() || c.slug === catName.toLowerCase());
+          const isDiscord = /discord\.(gg|com)|discordapp\.com/i.test(invite);
+          try {
+            const ad = await base44.asServiceRole.entities.ServerAd.create({
+              ...pickAdFields({
+                title,
+                slug: slugifyText(title),
+                description,
+                discord_link: isDiscord ? invite : '',
+                website_url: isDiscord ? '' : invite,
+                server_type: isDiscord ? 'discord' : 'nexus',
+                category: cat?.name || catName,
+                category_slug: cat?.slug || slugifyText(catName),
+                categories: catName ? [cat?.name || catName] : [],
+                category_slugs: catName ? [cat?.slug || slugifyText(catName)] : [],
+                tags: raw?.tags,
+                logo_url: String(raw?.logo_url || '').trim(),
+                profile_image: String(raw?.logo_url || '').trim(),
+                banner_url: String(raw?.banner_url || '').trim(),
+                cover_image: String(raw?.banner_url || '').trim(),
+              }),
+              title,
+              description,
+              type: 'server',
+              votes: 0,
+              votes_month: 0,
+              author_email: user.email,
+              author_name: user.full_name || user.email.split('@')[0],
+              author_avatar: user.avatar_url || '',
+              api_key: crypto.randomUUID(),
+            });
+            created.push(ad);
+          } catch {
+            errors.push(`Ligne ${index + 1} : création impossible`);
+          }
+        }
+        return Response.json({ success: true, created: created.length, errors, ads: created });
+      }
+
+      // ---- Admin : complète chaque catégorie jusqu'à 10 serveurs (rattachés à l'admin) ----
+      case 'adminSeedCategories': {
+        if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
+        const target = Math.min(Math.max(Number(params.perCategory) || 10, 1), 30);
+        const categories = listOf(await base44.asServiceRole.entities.ServerCategory.list('sort_order', 500))
+          .filter((c: any) => c.is_active !== false);
+        const ads = listOf(await base44.asServiceRole.entities.ServerAd.filter({ type: 'server' }, '-created_date', 2000));
+
+        const summary: Record<string, number> = {};
+        for (const cat of categories) {
+          const owned = ads.filter((a: any) => {
+            const names = Array.isArray(a.categories) && a.categories.length ? a.categories : a.category ? [a.category] : [];
+            const slugs = Array.isArray(a.category_slugs) && a.category_slugs.length ? a.category_slugs : a.category_slug ? [a.category_slug] : [];
+            return slugs.includes(cat.slug) || names.includes(cat.name);
+          }).length;
+          const existingSlugs = new Set(ads.map((a: any) => a.slug).filter(Boolean));
+          let added = 0;
+          for (let i = 0; owned + added < target && i < SEED_NAME_PATTERNS.length * 3; i++) {
+            const pattern = SEED_NAME_PATTERNS[i % SEED_NAME_PATTERNS.length];
+            const title = `${pattern.prefix} ${cat.name}${pattern.suffix ? ' ' + pattern.suffix : ''}`.trim();
+            const slug = slugifyText(title);
+            if (existingSlugs.has(slug)) continue;
+            const tags = cleanTags([cat.name, ...pattern.tags]);
+            const image = cat.image_url || '';
+            await base44.asServiceRole.entities.ServerAd.create({
+              title,
+              slug,
+              description: pattern.description.replaceAll('{cat}', cat.name),
+              type: 'server',
+              server_type: cat.type === 'discord' ? 'discord' : 'nexus',
+              category: cat.name,
+              category_slug: cat.slug,
+              categories: [cat.name],
+              category_slugs: [cat.slug],
+              tags,
+              logo_url: image,
+              profile_image: image,
+              banner_url: image,
+              cover_image: image,
+              votes: 0,
+              votes_month: 0,
+              author_email: user.email,
+              author_name: user.full_name || user.email.split('@')[0],
+              author_avatar: user.avatar_url || '',
+              api_key: crypto.randomUUID(),
+            });
+            existingSlugs.add(slug);
+            added++;
+          }
+          summary[cat.name] = added;
+        }
+        const total = Object.values(summary).reduce((a, b) => a + b, 0);
+        return Response.json({ success: true, created: total, summary });
       }
 
       // ---- Vote for a server (2h cooldown, no auth required - IP fallback) ----
