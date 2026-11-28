@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { ArrowLeft, Server as ServerIcon } from "lucide-react";
@@ -245,7 +245,7 @@ export default function CategoryServers() {
               />
             </div>
             {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {Array.from({ length: 3 }).map((_, i) => (
                   <div key={i} className="h-48 rounded-xl animate-pulse" style={{ background: "rgba(138,79,255,0.05)" }} />
                 ))}
@@ -256,7 +256,7 @@ export default function CategoryServers() {
                 <p className="text-xs text-white/40">Aucun serveur dans cette catégorie</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {visibleServers.map((server, i) => (
                   <ServerDirectoryCard
                     key={server.id}
