@@ -17,8 +17,8 @@ const NEON_ACTIVE_BG = "var(--app-neon-active-bg)";
 const NEON_ACTIVE_BORDER = "var(--app-neon-active-border)";
 const NEON_ACTIVE_SHADOW = "var(--app-neon-active-shadow)";
 const NEON_ACTIVE_TEXT = "var(--app-neon-active-text)";
-const LIGHT_ACTIVE_BG = "rgba(124,58,237,0.08)";
-const LIGHT_ACTIVE_BORDER = "2px solid #7c3aed";
+const LIGHT_ACTIVE_BG = "var(--app-neon-active-bg)";
+const LIGHT_ACTIVE_BORDER = "var(--app-neon-active-border)";
 
 function CountBadge({ count, color, collapsed }) {
   if (!count) return null;
@@ -51,9 +51,9 @@ function QuickActionButton({ icon: Icon, text, count, badgeColor, active, onClic
   const glow = active || hovered;
 
   const iconColor = isLight
-    ? (glow ? "#6d28d9" : "#7c3aed")
+    ? (glow ? "var(--app-neon-solid)" : "var(--app-neon-icon)")
     : (glow ? NEON_ICON_BRIGHT : NEON_ICON_COLOR);
-  const iconFilter = isLight ? "none" : (glow ? NEON_ICON_GLOW : NEON_ICON_IDLE);
+  const iconFilter = glow ? NEON_ICON_GLOW : NEON_ICON_IDLE;
 
   const className = cn(
     "relative flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 border border-transparent",
@@ -65,7 +65,7 @@ function QuickActionButton({ icon: Icon, text, count, badgeColor, active, onClic
 
   const style = glow
     ? isLight
-      ? { background: LIGHT_ACTIVE_BG, borderLeft: collapsed ? undefined : LIGHT_ACTIVE_BORDER }
+      ? { background: LIGHT_ACTIVE_BG, borderLeft: collapsed ? undefined : LIGHT_ACTIVE_BORDER, boxShadow: NEON_ACTIVE_SHADOW }
       : { background: NEON_ACTIVE_BG, borderLeft: collapsed ? undefined : NEON_ACTIVE_BORDER, boxShadow: NEON_ACTIVE_SHADOW, textShadow: NEON_ACTIVE_TEXT }
     : isLight
       ? { background: hovered ? "rgba(0,0,0,0.04)" : undefined }

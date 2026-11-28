@@ -26,7 +26,7 @@ export default function ServerCardGrid({ servers, loading, onVote, onDelete, onE
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
@@ -44,7 +44,7 @@ export default function ServerCardGrid({ servers, loading, onVote, onDelete, onE
           <p className="text-xs text-white/40">Aucun serveur pour le moment</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 max-h-[600px] overflow-y-auto scrollbar-thin pr-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[600px] overflow-y-auto scrollbar-thin pr-1">
           {servers.map((server) => (
             <ServerCard
               key={server.id}
