@@ -145,9 +145,6 @@ export default function MyServersModal({ user, onClose, onEdit }) {
                           <span className="flex items-center gap-0.5">
                             <ServerIcon className="w-2.5 h-2.5" /> {s.votes_month || 0} votes/mois
                           </span>
-                          {s.is_boosted && (
-                            <span className="text-amber-400 font-bold">BOOSTÉ</span>
-                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">

@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Trophy, ArrowUp, Flame } from "lucide-react";
+import { Trophy, ArrowUp } from "lucide-react";
 
 const RANK_STYLES = [
   { bg: "linear-gradient(135deg, #fbbf24, #f59e0b)", glow: "rgba(251,191,36,0.3)" },
@@ -69,7 +69,6 @@ export default function ServerRankingBlock({ title, icon: Icon = Trophy, servers
                   {logoUrl ? <img src={logoUrl} alt="" className="w-full h-full object-cover" /> : (server.title?.[0]?.toUpperCase() || "S")}
                 </div>
                 <span className="relative z-10 flex-1 min-w-0 text-sm font-bold text-white truncate" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}>{server.title}</span>
-                {server.is_boosted && <Flame className="relative z-10 w-3.5 h-3.5 shrink-0" style={{ color: "#fbbf24" }} />}
                 <span
                   className="relative z-10 shrink-0 text-xs font-black flex items-center gap-1 px-2.5 py-0.5 rounded-full"
                                     style={{ color: accentColor, background: "rgba(18,9,28,0.85)", border: `1px solid ${accentColor}80`, boxShadow: `0 0 8px ${accentColor}55` }}

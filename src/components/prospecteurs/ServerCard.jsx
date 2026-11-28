@@ -10,10 +10,6 @@ import { requestVoteStatus } from "@/lib/voteStatusBatch";
 export default function ServerCard({ server, onVote, onDelete, onEdit, currentUser }) {
   const [voteStatus, setVoteStatus] = useState({ canVote: true, remaining: null });
   const [loading, setLoading] = useState(false);
-  const [showBoost, setShowBoost] = useState(false);
-  const [flashBoosts, setFlashBoosts] = useState(currentUser?.flash_boosts || 0);
-  const [trixBalance, setTrixBalance] = useState(currentUser?.trix_balance || 0);
-  const [boostCount, setBoostCount] = useState(server.boosts || 0);
 
   const isDiscord = server.server_type === "discord";
   const typeColor = isDiscord ? "#5865F2" : "#22c55e";
@@ -71,12 +67,6 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
     }
   };
 
-  const handleBoosted = (data) => {
-    setFlashBoosts(data.newFlashBoosts ?? flashBoosts);
-    setTrixBalance(data.newBalance ?? trixBalance);
-    setBoostCount(data.boosts ?? boostCount);
-  };
-
   const handleDelete = async () => {
     try {
       const res = await base44.functions.invoke("serverSearch", {
@@ -105,9 +95,7 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
       className="rounded-xl overflow-hidden transition group flex flex-col"
       style={{
         background: "rgba(18, 9, 28, 0.6)",
-        border: server.is_boosted
-          ? "1px solid rgba(251, 191, 36, 0.3)"
-          : "1px solid rgba(138, 79, 255, 0.15)",
+        border: "1px solid rgba(138, 79, 255, 0.15)",
       }}
     >
       {/* Cover image */}
@@ -121,15 +109,6 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
           >
             {typeLabel}
           </span>
-          {server.is_boosted && (
-            <span
-              className="absolute top-1.5 right-1.5 text-[7px] font-black px-1.5 py-0.5 rounded flex items-center gap-0.5"
-              style={{ background: "rgba(251, 191, 36, 0.2)", color: "#fbbf24", backdropFilter: "blur(4px)" }}
-            >
-              <Flame className="w-2 h-2" />
-              BOOSTÉ
-            </span>
-          )}
           {isOwner && (
             <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1">
               <button
@@ -157,15 +136,7 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
           >
             {typeLabel}
           </span>
-          {server.is_boosted ? (
-            <span
-              className="text-[7px] font-black px-1.5 py-0.5 rounded inline-flex items-center gap-0.5"
-              style={{ background: "rgba(251, 191, 36, 0.15)", color: "#fbbf24" }}
-            >
-              <Flame className="w-2 h-2" />
-              BOOSTÉ
-            </span>
-          ) : isOwner ? (
+          {isOwner ? (
             <div className="flex items-center gap-1">
               <button
                 onClick={() => onEdit?.(server)}
@@ -234,10 +205,6 @@ export default function ServerCard({ server, onVote, onDelete, onEdit, currentUs
         <span className="flex items-center gap-0.5">
           <ArrowUp className="w-2.5 h-2.5" style={{ color: "#8a4fff" }} />
           {server.votes || 0}
-        </span>
-        <span className="flex items-center gap-0.5 font-bold" style={{ color: "#fbbf24" }}>
-          <Flame className="w-2.5 h-2.5" style={{ color: "#fbbf24" }} />
-          {boostCount} boost{boostCount !== 1 ? "s" : ""}
         </span>
       </div>
 

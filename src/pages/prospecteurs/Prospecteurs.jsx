@@ -8,6 +8,7 @@ import ProspecteursHeader from "@/components/prospecteurs/ProspecteursHeader";
 import ProspecteursSidebar from "@/components/prospecteurs/ProspecteursSidebar";
 import CategoryGrid from "@/components/prospecteurs/CategoryGrid";
 import ServerSearchBar from "@/components/prospecteurs/ServerSearchBar";
+import LatestServerBanner from "@/components/prospecteurs/LatestServerBanner";
 import ServerDirectoryCard from "@/components/prospecteurs/ServerDirectoryCard";
 import CreateAdModal from "@/components/prospecteurs/CreateAdModal";
 import Top10Modal from "@/components/prospecteurs/Top10Modal";
@@ -111,12 +112,12 @@ export default function Prospecteurs() {
   const sortedServers = useMemo(() => {
     const arr = [...searchFiltered];
     if (sortBy === "votes_month") {
-      arr.sort((a, b) => (b.votes_month || 0) + (b.boosts || 0) * 2 - ((a.votes_month || 0) + (a.boosts || 0) * 2));
+      arr.sort((a, b) => (b.votes_month || 0) - (a.votes_month || 0));
     } else if (sortBy === "newest") {
       arr.sort((a, b) => (b.created_date || "").localeCompare(a.created_date || ""));
     } else {
       // general ranking
-      arr.sort((a, b) => (b.votes || 0) + (b.boosts || 0) * 2 - ((a.votes || 0) + (a.boosts || 0) * 2));
+      arr.sort((a, b) => (b.votes || 0) - (a.votes || 0));
     }
     return arr;
   }, [searchFiltered, sortBy]);
@@ -143,7 +144,7 @@ export default function Prospecteurs() {
     () =>
     [...typedServers].
     filter((s) => s.title && (s.slug || s.id)).
-    sort((a, b) => (b.votes_month || 0) + (b.boosts || 0) * 2 - ((a.votes_month || 0) + (a.boosts || 0) * 2)).
+    sort((a, b) => (b.votes_month || 0) - (a.votes_month || 0)).
     slice(0, 10).
     map((s) => ({ name: s.title, url: SITE_URL + serverPath(s) })),
     [typedServers]
@@ -445,6 +446,8 @@ export default function Prospecteurs() {
                 </span>
               </div>
 
+              <LatestServerBanner servers={typedServers} className="mb-3" />
+
               <div className="mb-4">
                 <ServerSearchBar
                 search={search}
@@ -553,15 +556,14 @@ export default function Prospecteurs() {
             { title: "Serveurs Discord", text: "Découvrez des serveurs Discord francophones par jeu, ambiance ou taille de communauté, avec un lien d'invitation vérifié." },
             { title: "Votes et classement", text: "Votez une fois toutes les 2 heures par serveur préféré et consultez le classement mensuel des communautés les plus soutenues." },
             { title: "Recrutement de joueurs", text: "Publiez une annonce de recrutement ou une recherche de coéquipiers pour trouver des joueurs partageant votre style de jeu." },
-            { title: "Catégories de jeux", text: "Parcourez les serveurs par catégorie : FPS, RPG, survie, sandbox, simulation, course et bien d'autres univers." },
-            { title: "Boosts et visibilité", text: "Mettez en avant votre serveur grâce aux boosts et gagnez en visibilité auprès de la communauté Matrix Hub." }]
+            { title: "Catégories de jeux", text: "Parcourez les serveurs par catégorie : FPS, RPG, survie, sandbox, simulation, course et bien d'autres univers." }            ]
             }
             faq={[
             { question: "Comment trouver un serveur Discord gaming ?", answer: "Parcourez l'annuaire Best Serveur : les catégories regroupent les serveurs par jeu et par thème, et les étiquettes comme #Chill ou #Communauté filtrent la liste. Chaque fiche indique la description, les votes et le lien d'invitation du serveur." },
             { question: "Comment publier mon serveur sur Matrix Hub ?", answer: "Créez un compte, cliquez sur Publier un serveur puis renseignez le nom, la description, jusqu'à trois catégories, cinq étiquettes et votre lien d'invitation. La publication est gratuite et la fiche est immédiatement visible dans l'annuaire." },
             { question: "Le vote pour un serveur est-il gratuit ?", answer: "Oui. Chaque visiteur peut voter une fois toutes les 2 heures par serveur préféré, sans paiement. Les votes du mois alimentent le classement et sont remis à zéro au début de chaque mois." },
             { question: "Quelle différence entre un serveur Nexus et un serveur Discord ?", answer: "Un serveur Nexus est hébergé directement dans Matrix Hub avec ses salons textuels et vocaux. Un serveur Discord renvoie vers une communauté Discord externe via son lien d'invitation." },
-            { question: "Comment mon serveur progresse dans le classement ?", answer: "Le classement combine les votes du mois et les boosts reçus. Plus votre communauté vote régulièrement, plus votre fiche remonte dans l'annuaire et dans les pages de catégorie." }]
+            { question: "Comment mon serveur progresse dans le classement ?", answer: "Le classement repose sur les votes du mois. Plus votre communauté vote régulièrement, plus votre fiche remonte dans l'annuaire et dans les pages de catégorie." }]
             }
             links={[
             { href: "/best-creator", label: "Best Creator : le classement des créateurs" },

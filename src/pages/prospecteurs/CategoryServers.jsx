@@ -7,6 +7,7 @@ import ProspecteursHeader from "@/components/prospecteurs/ProspecteursHeader";
 import ProspecteursSidebar from "@/components/prospecteurs/ProspecteursSidebar";
 import ServerDirectoryCard from "@/components/prospecteurs/ServerDirectoryCard";
 import ServerSearchBar from "@/components/prospecteurs/ServerSearchBar";
+import LatestServerBanner from "@/components/prospecteurs/LatestServerBanner";
 import ServerRankingBlock from "@/components/prospecteurs/ServerRankingBlock";
 import CreateAdModal from "@/components/prospecteurs/CreateAdModal";
 import { fetchAllServers, sortByScore, slugify, detectServerType } from "@/lib/serverDirectory";
@@ -76,7 +77,7 @@ export default function CategoryServers() {
     }
     if (sortBy === "newest") return [...arr].sort((a, b) => (b.created_date || "").localeCompare(a.created_date || ""));
     if (sortBy === "votes_month") return sortByScore(arr);
-    return [...arr].sort((a, b) => ((b.votes || 0) + (b.boosts || 0) * 2) - ((a.votes || 0) + (a.boosts || 0) * 2));
+    return [...arr].sort((a, b) => (b.votes || 0) - (a.votes || 0));
   }, [servers, search, sortBy, tagFilter]);
 
   const handleVote = (adId, data) => {
@@ -193,6 +194,7 @@ export default function CategoryServers() {
               <h2 className="text-xs font-black tracking-wider uppercase text-white">Tous les serveurs — {category?.name}</h2>
               <span className="text-[9px] text-white/40 ml-auto">{visibleServers.length} serveur{visibleServers.length !== 1 ? "s" : ""}</span>
             </div>
+            <LatestServerBanner servers={servers} className="mb-3" />
             <div className="mb-4">
               <ServerSearchBar
                 search={search}
@@ -243,7 +245,7 @@ export default function CategoryServers() {
           <SeoContentBlock
             eyebrow="Best Serveur"
             title={`Serveurs ${category.name} : comment choisir sa communauté`}
-            intro={`Cette page rassemble ${servers.length > 0 ? `les ${servers.length} serveur${servers.length > 1 ? "s" : ""}` : "les serveurs"} de la catégorie ${category.name} référencés sur Matrix Hub. Le classement suit les votes du mois et les boosts : plus une communauté ${category.name} est soutenue, plus elle remonte dans la liste.`}
+            intro={`Cette page rassemble ${servers.length > 0 ? `les ${servers.length} serveur${servers.length > 1 ? "s" : ""}` : "les serveurs"} de la catégorie ${category.name} référencés sur Matrix Hub. Le classement suit les votes : plus une communauté ${category.name} est soutenue, plus elle remonte dans la liste.`}
             faq={[
               { question: `Comment trouver un bon serveur ${category.name} ?`, answer: `Regardez d'abord le Top 5 ${category.name}, puis ouvrez les fiches pour lire la description, les jeux concernés et les étiquettes. Vous pouvez aussi filtrer par étiquette ou chercher un mot-clé dans la liste.` },
               { question: `Comment ajouter mon serveur dans la catégorie ${category.name} ?`, answer: `Depuis l'annuaire Best Serveur, cliquez sur Publier un serveur et choisissez ${category.name} parmi vos catégories (trois au maximum). La fiche apparaît ici dès sa publication.` },

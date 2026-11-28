@@ -273,7 +273,7 @@ function resolveDynamic(parts) {
     const name = titleize(parts[1]);
     return {
       title: `${name} — fiche serveur de jeu | Matrix Hub`,
-      description: `Découvrez ${name} sur Matrix Hub : description, votes, boosts et informations pour rejoindre ce serveur communautaire.`,
+      description: `Découvrez ${name} sur Matrix Hub : description, votes et informations pour rejoindre ce serveur communautaire.`,
       image: OG_BANNERS.bestServer.url,
     };
   }

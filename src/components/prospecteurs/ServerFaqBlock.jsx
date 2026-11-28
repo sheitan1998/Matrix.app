@@ -24,7 +24,7 @@ export default function ServerFaqBlock({ server }) {
     },
     {
       question: `Comment soutenir ${name} dans le classement ?`,
-      answer: `Chaque visiteur peut voter pour ${name} une fois toutes les 2 heures. Les votes du mois et les boosts déterminent sa place dans l'annuaire Best Serveur.`,
+      answer: `Chaque visiteur peut voter pour ${name} une fois toutes les 2 heures. Les votes du mois déterminent sa place dans l'annuaire Best Serveur.`,
     },
   ];
 

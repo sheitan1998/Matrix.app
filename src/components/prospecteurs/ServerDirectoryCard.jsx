@@ -17,10 +17,6 @@ const BADGE_CONFIG = {
 export default function ServerDirectoryCard({ server, rank, onVote, onDelete, onEdit, onCategoryClick, onTagClick, currentUser }) {
   const [voteStatus, setVoteStatus] = useState({ canVote: true, remaining: null });
   const [loading, setLoading] = useState(false);
-  const [showBoost, setShowBoost] = useState(false);
-  const [flashBoosts, setFlashBoosts] = useState(currentUser?.flash_boosts || 0);
-  const [trixBalance, setTrixBalance] = useState(currentUser?.trix_balance || 0);
-  const [boostCount, setBoostCount] = useState(server.boosts || 0);
   const [copied, setCopied] = useState(false);
   const [showVoteModal, setShowVoteModal] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -115,21 +111,6 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
     }
   };
 
-  const handleBoosted = (data) => {
-    setFlashBoosts(data.newFlashBoosts ?? flashBoosts);
-    setTrixBalance(data.newBalance ?? trixBalance);
-    setBoostCount(data.boosts ?? boostCount);
-    // Propagate vote counters to parent (boost now counts as a vote)
-    if (data.voted) {
-      onVote(server.id, {
-        votes: data.votes,
-        votes_month: data.votes_month,
-        clicks: data.clicks,
-        clicks_month: data.clicks_month
-      });
-    }
-  };
-
   const handleDelete = async () => {
     try {
       const res = await base44.functions.invoke("serverSearch", {
@@ -160,9 +141,7 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
       className="rounded-xl overflow-hidden transition group flex flex-col"
       style={{
         background: "rgba(18,9,28,0.6)",
-        border: server.is_boosted ?
-        "1px solid rgba(251,191,36,0.3)" :
-        "1px solid rgba(138,79,255,0.15)"
+        border: "1px solid rgba(138,79,255,0.15)"
       }}>
       
       {/* Banner */}
@@ -195,14 +174,6 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
           
             {typeConfig.label}
           </span>
-          {server.is_boosted &&
-        <span
-          className="absolute bottom-1.5 right-1.5 text-[7px] font-black px-1.5 py-0.5 rounded flex items-center gap-0.5"
-          style={{ background: "rgba(251,191,36,0.2)", color: "#fbbf24", backdropFilter: "blur(4px)" }}>
-          
-              <Flame className="w-2 h-2" /> BOOSTÉ
-            </span>
-        }
           {canManage &&
         <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1">
               <button
@@ -243,14 +214,7 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
               {typeConfig.label}
             </span>
           </div>
-          {server.is_boosted ?
-        <span
-          className="text-[7px] font-black px-1.5 py-0.5 rounded inline-flex items-center gap-0.5"
-          style={{ background: "rgba(251,191,36,0.15)", color: "#fbbf24" }}>
-          
-              <Flame className="w-2 h-2" /> BOOSTÉ
-            </span> :
-        canManage ?
+          {canManage ?
         <div className="flex items-center gap-1">
               <button
             onClick={() => onEdit?.(server)}
@@ -379,13 +343,6 @@ export default function ServerDirectoryCard({ server, rank, onVote, onDelete, on
             </div>
           </div>
         </div>
-      </div>
-      {/* Secondary stats */}
-      <div className="px-3 pb-2 flex items-center gap-2 text-[9px] text-white/40">
-        <span className="flex items-center gap-0.5 font-bold" style={{ color: "#fbbf24" }}>
-          <Flame className="w-2.5 h-2.5" style={{ color: "#fbbf24" }} />
-          {boostCount}
-        </span>
       </div>
 
       {/* Actions */}
