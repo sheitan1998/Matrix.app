@@ -40,7 +40,8 @@ export function useIncomingCall(user, onAccept) {
   useEffect(() => {
     if (!user?.email) return;
     fetchRinging();
-    const interval = setInterval(fetchRinging, 3000);
+    // Filet de sécurité : la souscription temps réel remonte déjà les appels entrants.
+    const interval = setInterval(fetchRinging, 15000);
     const unsubscribe = base44.entities.VoiceCallSignal.subscribe((event) => {
       const rec = event.data;
       if (!rec) return;

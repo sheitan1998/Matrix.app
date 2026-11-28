@@ -19,6 +19,38 @@ import SeoContentBlock from "@/components/seo/SeoContentBlock";
 import { serverPath, guideLinksFor } from "@/lib/serverSeo";
 import { SITE_URL } from "@/lib/seoRoutes";
 
+const CACHE_TTL_MS = 60_000;
+const isRateLimit = (err) => err?.status === 429 || /rate limit/i.test(err?.message || "");
+
+// Cache partagé entre les pages catégorie : changer de catégorie ne relance pas les requêtes.
+let categoriesCache = { at: 0, items: null };
+let serversCache = { at: 0, items: null };
+
+const loadCategories = async () => {
+  if (categoriesCache.items && Date.now() - categoriesCache.at < CACHE_TTL_MS) return categoriesCache.items;
+  const items = await base44.entities.ServerCategory.filter({}, "sort_order", 200);
+  categoriesCache = { at: Date.now(), items };
+  return items;
+};
+
+const loadServers = async () => {
+  if (serversCache.items && Date.now() - serversCache.at < CACHE_TTL_MS) return serversCache.items;
+  const items = await fetchAllServers();
+  serversCache = { at: Date.now(), items };
+  return items;
+};
+
+// Un 429 est temporaire : une seule nouvelle tentative suffit dans la plupart des cas.
+const withRateLimitRetry = async (fn) => {
+  try {
+    return await fn();
+  } catch (err) {
+    if (!isRateLimit(err)) throw err;
+    await new Promise((resolve) => setTimeout(resolve, 2500));
+    return fn();
+  }
+};
+
 export default function CategoryServers() {
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -43,21 +75,25 @@ export default function CategoryServers() {
   });
 
   useEffect(() => {
+    let active = true;
     const fetchData = async () => {
       setLoading(true);
-      base44.auth.me().then(setUser).catch(() => setUser(null));
+      base44.auth.me().then((u) => { if (active) setUser(u); }).catch(() => { if (active) setUser(null); });
 
-      const cats = await base44.entities.ServerCategory.filter({ slug }, "sort_order", 1);
-      const cat = cats[0] || null;
+      const categories = await withRateLimitRetry(loadCategories);
+      if (!active) return;
+      const cat = (categories || []).find((c) => c.slug === slug) || null;
       setCategory(cat);
       if (!cat) { setLoading(false); return; }
 
       // Unified: fetch all server ads, then keep those owning this category (multi-catégories incluses)
-      const list = await fetchAllServers();
+      const list = await withRateLimitRetry(loadServers);
+      if (!active) return;
       setServers((list || []).filter((server) => serverMatchesCategory(server, { slug, name: cat.name })));
       setLoading(false);
     };
     fetchData();
+    return () => { active = false; };
   }, [slug]);
 
   const top5 = useMemo(() => sortByScore(servers).slice(0, 5), [servers]);
